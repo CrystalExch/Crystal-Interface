@@ -26,7 +26,7 @@
   gap: 5px;
   font-family: 'Funnel Display', sans-serif;
   font-size: 12px;
-  color: #aaaecf;
+  color: rgb(209, 209, 250);
 }
 
 .meme-utc-label {
@@ -50,7 +50,7 @@
 .meme-timeframe-button {
   background: transparent;
   border: none;
-  color: #aaaecf;
+  color: rgb(209, 209, 250);
   cursor: pointer;
   font-family: 'Funnel Display', sans-serif;
   font-size: 11px;
@@ -68,7 +68,7 @@
 }
 
 .meme-timeframe-button.active {
-  background: #aaaecf;
+  background: rgb(209, 209, 250);
   color: rgb(6, 6, 6);
   font-weight: 600;
 }
@@ -101,7 +101,7 @@
 }
 
 .meme-chart-placeholder {
-  color: #aaaecf;
+  color: rgb(209, 209, 250);
   font-family: 'Funnel Display', sans-serif;
   font-size: 14px;
   opacity: 0.6;
@@ -142,6 +142,6 @@ body:has(.markets-dropdown-content.visible) .meme-chartwrapper .advanced-chart-c
   --tv-color-toolbar-button-background-active: rgb(255 255 255 / 8%);
   --tv-color-toolbar-button-background-active-hover: rgb(255 255 255 / 12%);
   --tv-color-popup-background: rgb(6, 6, 6);
-  --tv-color-popup-element-text: #aaaecf;
-  --tv-color-popup-element-background-active: #aaaecf;
+  --tv-color-popup-element-text: rgb(209, 209, 250);
+  --tv-color-popup-element-background-active: rgb(209, 209, 250);
 }

@@ -726,115 +726,115 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
 
 
-const handleSellPosition = async (position: any, monAmount: string) => {
-  if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
-    walletPopup.showConnectionError();
-    return;
-  }
-
-  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-  if (account.chainId !== targetChainId) {
-    walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
-    setChain?.();
-    return;
-  }
-
-  let txId: string = '';
-
-  try {
-    txId = walletPopup.showSellTransaction(monAmount, 'MON', position.symbol); 
-
-    const monAmountNum = parseFloat(monAmount);
-    const tokenPrice = position.lastPrice || currentPrice;
-
-    if (tokenPrice <= 0) {
-      throw new Error('Invalid token price');
-    }
-
-    const tokenAmountToSell = monAmountNum / tokenPrice;
-    const decimals = tokendict?.[position.tokenId]?.decimals || 18;
-    const amountTokenWei = BigInt(Math.round(tokenAmountToSell * (10 ** Number(decimals))));
-    
-    walletPopup.updateTransactionConfirming(txId, tokenAmountToSell.toFixed(4), position.symbol, position.symbol);
-
-    const sellUo = {
-      target: routerAddress as `0x${string}`,
-      data: encodeFunctionData({
-        abi: CrystalRouterAbi,
-        functionName: "sell",
-        args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
-      }),
-      value: 0n,
-    };
-
-    await sendUserOperationAsync({ uo: sellUo });
-
-    walletPopup.updateTransactionSuccess(txId, {
-      tokenAmount: tokenAmountToSell,
-      receivedAmount: monAmountNum,
-      tokenSymbol: position.symbol,
-      currencyUnit: 'MON'
-    });
-
-  } catch (e: any) {
-    console.error(e);
-    if (txId) {
-      walletPopup.updateTransactionError(txId, e?.message || walletPopup.texts.TRANSACTION_REJECTED);
-    }
-  }
-};
-
-const handleMobileTrade = async (amount: string, tradeType: 'buy' | 'sell') => {
-  if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
-    walletPopup.showConnectionError();
-    return;
-  }
-
-  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-  if (account.chainId !== targetChainId) {
-    walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
-    setChain();
-    return;
-  }
-
-  if (tradeType === 'buy') {
-    const requestedAmount = parseFloat(amount);
-    const currentMONBalance = getCurrentMobileWalletMONBalance();
-    
-    if (requestedAmount > currentMONBalance) {
-      walletPopup.showInsufficientBalance(
-        amount,
-        currentMONBalance.toFixed(4),
-        'MON'
-      );
-      return;
-    }
-    setTradeAmount(amount);
-    setActiveTradeType('buy');
-    setInputCurrency('MON');
-    handleTrade();
-  } else {
-    const pct = BigInt(parseInt(amount.replace('%', ''), 10));
-    const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
-    
-    if (currentBalance <= 0n) {
-      walletPopup.showInsufficientBalance('1', '0', token.symbol);
+  const handleSellPosition = async (position: any, monAmount: string) => {
+    if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
+      walletPopup.showConnectionError();
       return;
     }
 
-    const amountTokenWei = pct === 100n
-      ? (currentBalance > 1n ? currentBalance - 1n : 0n)
-      : (currentBalance * pct) / 100n;
+    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    if (account.chainId !== targetChainId) {
+      walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
+      setChain?.();
+      return;
+    }
 
-    const decimals = tokendict?.[token.id]?.decimals || 18;
-    const tokenAmount = Number(amountTokenWei) / (10 ** Number(decimals));
+    let txId: string = '';
 
-    setTradeAmount(tokenAmount.toString());
-    setActiveTradeType('sell');
-    setInputCurrency('TOKEN');
-    handleTrade();
-  }
-};
+    try {
+      txId = walletPopup.showSellTransaction(monAmount, 'MON', position.symbol);
+
+      const monAmountNum = parseFloat(monAmount);
+      const tokenPrice = position.lastPrice || currentPrice;
+
+      if (tokenPrice <= 0) {
+        throw new Error('Invalid token price');
+      }
+
+      const tokenAmountToSell = monAmountNum / tokenPrice;
+      const decimals = tokendict?.[position.tokenId]?.decimals || 18;
+      const amountTokenWei = BigInt(Math.round(tokenAmountToSell * (10 ** Number(decimals))));
+
+      walletPopup.updateTransactionConfirming(txId, tokenAmountToSell.toFixed(4), position.symbol, position.symbol);
+
+      const sellUo = {
+        target: routerAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: CrystalRouterAbi,
+          functionName: "sell",
+          args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
+        }),
+        value: 0n,
+      };
+
+      await sendUserOperationAsync({ uo: sellUo });
+
+      walletPopup.updateTransactionSuccess(txId, {
+        tokenAmount: tokenAmountToSell,
+        receivedAmount: monAmountNum,
+        tokenSymbol: position.symbol,
+        currencyUnit: 'MON'
+      });
+
+    } catch (e: any) {
+      console.error(e);
+      if (txId) {
+        walletPopup.updateTransactionError(txId, e?.message || walletPopup.texts.TRANSACTION_REJECTED);
+      }
+    }
+  };
+
+  const handleMobileTrade = async (amount: string, tradeType: 'buy' | 'sell') => {
+    if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
+      walletPopup.showConnectionError();
+      return;
+    }
+
+    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    if (account.chainId !== targetChainId) {
+      walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
+      setChain();
+      return;
+    }
+
+    if (tradeType === 'buy') {
+      const requestedAmount = parseFloat(amount);
+      const currentMONBalance = getCurrentMobileWalletMONBalance();
+
+      if (requestedAmount > currentMONBalance) {
+        walletPopup.showInsufficientBalance(
+          amount,
+          currentMONBalance.toFixed(4),
+          'MON'
+        );
+        return;
+      }
+      setTradeAmount(amount);
+      setActiveTradeType('buy');
+      setInputCurrency('MON');
+      handleTrade();
+    } else {
+      const pct = BigInt(parseInt(amount.replace('%', ''), 10));
+      const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
+
+      if (currentBalance <= 0n) {
+        walletPopup.showInsufficientBalance('1', '0', token.symbol);
+        return;
+      }
+
+      const amountTokenWei = pct === 100n
+        ? (currentBalance > 1n ? currentBalance - 1n : 0n)
+        : (currentBalance * pct) / 100n;
+
+      const decimals = tokendict?.[token.id]?.decimals || 18;
+      const tokenAmount = Number(amountTokenWei) / (10 ** Number(decimals));
+
+      setTradeAmount(tokenAmount.toString());
+      setActiveTradeType('sell');
+      setInputCurrency('TOKEN');
+      handleTrade();
+    }
+  };
 
   const baseDefaults: Token = {
     id: tokenAddress || "",
@@ -1012,12 +1012,16 @@ const handleMobileTrade = async (amount: string, tradeType: 'buy' | 'sell') => {
                   amountIn
                   amountOut
                 }
-                series: ${'series' + (selectedInterval === '1m' ? '60' :
-                selectedInterval === '5m' ? '300' :
-                  selectedInterval === '15m' ? '900' :
-                    selectedInterval === '1h' ? '3600' :
-                      selectedInterval === '4h' ? '14400' :
-                        '86400')} {
+                series: ${'series' + (
+                selectedInterval === '1s' ? '1' :
+                  selectedInterval === '5s' ? '5' :
+                    selectedInterval === '15s' ? '15' :
+                      selectedInterval === '1m' ? '60' :
+                        selectedInterval === '5m' ? '300' :
+                          selectedInterval === '15m' ? '900' :
+                            selectedInterval === '1h' ? '3600' :
+                              selectedInterval === '4h' ? '14400' :
+                                '86400')} {
                   klines(first: 1000, orderBy: time, orderDirection: desc) {
                     time open high low close baseVolume
                   }
@@ -1906,130 +1910,130 @@ const handleMobileTrade = async (amount: string, tradeType: 'buy' | 'sell') => {
         ? `$${(n / 1e3).toFixed(1)}K`
         : `$${n.toFixed(0)}`;
 
-const handleTrade = async () => {
-  if (!tradeAmount || !account.connected) return;
-  if (activeOrderType === "Limit" && !limitPrice) return;
+  const handleTrade = async () => {
+    if (!tradeAmount || !account.connected) return;
+    if (activeOrderType === "Limit" && !limitPrice) return;
 
-  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-  if (account.chainId !== targetChainId) {
-    walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
-    setChain();
-    return;
-  }
-
-  let txId: string;
-
-  try {
-    setIsSigning(true);
-
-    if (activeTradeType === "buy") {
-      txId = walletPopup.showBuyTransaction(tradeAmount, inputCurrency, token.symbol, token.image);
-
-      const valNum = parseFloat(tradeAmount);
-      const value = BigInt(Math.round(valNum * 1e18));
-
-      const uo = {
-        target: routerAddress,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: "buy",
-          args: [true, token.tokenAddress as `0x${string}`, value, 0n],
-        }),
-        value,
-      };
-
-      walletPopup.updateTransactionConfirming(txId, tradeAmount, inputCurrency, token.symbol);
-
-      await sendUserOperationAsync({ uo });
-
-      walletPopup.updateTransactionSuccess(txId, {
-        tokenAmount: Number(quoteValue ?? 0),
-        spentAmount: Number(tradeAmount),
-        tokenSymbol: token.symbol,
-        currencyUnit: inputCurrency
-      });
-      
-      terminalRefetch()
-    } else {
-      txId = walletPopup.showSellTransaction(
-        tradeAmount, 
-        inputCurrency === "TOKEN" ? token.symbol : "MON", 
-        token.symbol, 
-        token.image
-      );
-
-      let amountTokenWei: bigint;
-      let monAmountWei: bigint;
-      let isExactInput: boolean;
-
-      const decimals = tokendict?.[token.id]?.decimals || 18;
-
-      if (inputCurrency === "TOKEN") {
-        amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * (10 ** Number(decimals))));
-        isExactInput = true;
-        monAmountWei = 0n;
-      } else {
-        monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
-        const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
-        const tokensToSell = parseFloat(tradeAmount) / currentPrice;
-        amountTokenWei = BigInt(Math.round(tokensToSell * (10 ** Number(decimals))));
-        isExactInput = false;
-      }
-
-      const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
-      if (amountTokenWei > currentBalance) {
-        amountTokenWei = currentBalance > 1n ? currentBalance - 1n : 0n;
-      }
-
-      if (amountTokenWei <= 0n) {
-        throw new Error(walletPopup.texts.INSUFFICIENT_TOKEN_BALANCE);
-      }
-
-      walletPopup.updateTransactionConfirming(txId, tradeAmount, inputCurrency === "TOKEN" ? token.symbol : "MON", token.symbol);
-
-      const sellUo = {
-        target: routerAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: "sell",
-          args: [isExactInput, tokenAddress as `0x${string}`, amountTokenWei, monAmountWei],
-        }),
-        value: 0n,
-      };
-
-      await sendUserOperationAsync({ uo: sellUo });
-
-      walletPopup.updateTransactionSuccess(txId, {
-        tokenAmount: Number(tradeAmount),
-        receivedAmount: Number(quoteValue ?? 0),
-        tokenSymbol: token.symbol,
-        currencyUnit: 'MON'
-      });
-      
-      terminalRefetch()
+    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    if (account.chainId !== targetChainId) {
+      walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
+      setChain();
+      return;
     }
 
-    setTradeAmount("");
-    setLimitPrice("");
-    setSliderPercent(0);
-  } catch (e: any) {
-    console.error(e);
-    walletPopup.updateTransactionError(txId!, e?.message || walletPopup.texts.PLEASE_TRY_AGAIN);
-  } finally {
-    setIsSigning(false);
-  }
-};
+    let txId: string;
 
-const getButtonText = () => {
-  if (!account.connected) return walletPopup.texts.CONNECT_WALLET;
-  const targetChainId =
-    settings.chainConfig[activechain]?.chainId || activechain;
-  if (account.chainId !== targetChainId)
-    return `${walletPopup.texts.SWITCH_CHAIN} to ${settings.chainConfig[activechain]?.name || "Monad"}`;
-  if (activeOrderType === "market")
-    return `${activeTradeType === "buy" ? "Buy" : "Sell"} ${token.symbol}`;
-  return `Set ${activeTradeType === "buy" ? "Buy" : "Sell"} Limit`;
-};
+    try {
+      setIsSigning(true);
+
+      if (activeTradeType === "buy") {
+        txId = walletPopup.showBuyTransaction(tradeAmount, inputCurrency, token.symbol, token.image);
+
+        const valNum = parseFloat(tradeAmount);
+        const value = BigInt(Math.round(valNum * 1e18));
+
+        const uo = {
+          target: routerAddress,
+          data: encodeFunctionData({
+            abi: CrystalRouterAbi,
+            functionName: "buy",
+            args: [true, token.tokenAddress as `0x${string}`, value, 0n],
+          }),
+          value,
+        };
+
+        walletPopup.updateTransactionConfirming(txId, tradeAmount, inputCurrency, token.symbol);
+
+        await sendUserOperationAsync({ uo });
+
+        walletPopup.updateTransactionSuccess(txId, {
+          tokenAmount: Number(quoteValue ?? 0),
+          spentAmount: Number(tradeAmount),
+          tokenSymbol: token.symbol,
+          currencyUnit: inputCurrency
+        });
+
+        terminalRefetch()
+      } else {
+        txId = walletPopup.showSellTransaction(
+          tradeAmount,
+          inputCurrency === "TOKEN" ? token.symbol : "MON",
+          token.symbol,
+          token.image
+        );
+
+        let amountTokenWei: bigint;
+        let monAmountWei: bigint;
+        let isExactInput: boolean;
+
+        const decimals = tokendict?.[token.id]?.decimals || 18;
+
+        if (inputCurrency === "TOKEN") {
+          amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * (10 ** Number(decimals))));
+          isExactInput = true;
+          monAmountWei = 0n;
+        } else {
+          monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
+          const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
+          const tokensToSell = parseFloat(tradeAmount) / currentPrice;
+          amountTokenWei = BigInt(Math.round(tokensToSell * (10 ** Number(decimals))));
+          isExactInput = false;
+        }
+
+        const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
+        if (amountTokenWei > currentBalance) {
+          amountTokenWei = currentBalance > 1n ? currentBalance - 1n : 0n;
+        }
+
+        if (amountTokenWei <= 0n) {
+          throw new Error(walletPopup.texts.INSUFFICIENT_TOKEN_BALANCE);
+        }
+
+        walletPopup.updateTransactionConfirming(txId, tradeAmount, inputCurrency === "TOKEN" ? token.symbol : "MON", token.symbol);
+
+        const sellUo = {
+          target: routerAddress as `0x${string}`,
+          data: encodeFunctionData({
+            abi: CrystalRouterAbi,
+            functionName: "sell",
+            args: [isExactInput, tokenAddress as `0x${string}`, amountTokenWei, monAmountWei],
+          }),
+          value: 0n,
+        };
+
+        await sendUserOperationAsync({ uo: sellUo });
+
+        walletPopup.updateTransactionSuccess(txId, {
+          tokenAmount: Number(tradeAmount),
+          receivedAmount: Number(quoteValue ?? 0),
+          tokenSymbol: token.symbol,
+          currencyUnit: 'MON'
+        });
+
+        terminalRefetch()
+      }
+
+      setTradeAmount("");
+      setLimitPrice("");
+      setSliderPercent(0);
+    } catch (e: any) {
+      console.error(e);
+      walletPopup.updateTransactionError(txId!, e?.message || walletPopup.texts.PLEASE_TRY_AGAIN);
+    } finally {
+      setIsSigning(false);
+    }
+  };
+
+  const getButtonText = () => {
+    if (!account.connected) return walletPopup.texts.CONNECT_WALLET;
+    const targetChainId =
+      settings.chainConfig[activechain]?.chainId || activechain;
+    if (account.chainId !== targetChainId)
+      return `${walletPopup.texts.SWITCH_CHAIN} to ${settings.chainConfig[activechain]?.name || "Monad"}`;
+    if (activeOrderType === "market")
+      return `${activeTradeType === "buy" ? "Buy" : "Sell"} ${token.symbol}`;
+    return `Set ${activeTradeType === "buy" ? "Buy" : "Sell"} Limit`;
+  };
   const isTradeDisabled = () => {
     if (!account.connected) return false;
     const targetChainId =
@@ -2731,24 +2735,24 @@ const getButtonText = () => {
             </div>
           )}
 
-<button
-  onClick={() => {
-    if (!account.connected) {
-      walletPopup.showConnectionError();
-    } else {
-      const targetChainId =
-        settings.chainConfig[activechain]?.chainId || activechain;
-      if (account.chainId !== targetChainId) {
-        walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
-        setChain();
-      } else {
-        handleTrade();
-      }
-    }
-  }}
-  className={`meme-trade-action-button ${activeTradeType}`}
-  disabled={isTradeDisabled()}
->
+          <button
+            onClick={() => {
+              if (!account.connected) {
+                walletPopup.showConnectionError();
+              } else {
+                const targetChainId =
+                  settings.chainConfig[activechain]?.chainId || activechain;
+                if (account.chainId !== targetChainId) {
+                  walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
+                  setChain();
+                } else {
+                  handleTrade();
+                }
+              }
+            }}
+            className={`meme-trade-action-button ${activeTradeType}`}
+            disabled={isTradeDisabled()}
+          >
 
             {isSigning ? (
               <div className="meme-button-spinner"></div>
@@ -3306,19 +3310,19 @@ const getButtonText = () => {
             </div>
 
             <div className="meme-mobile-amount-buttons">
-{mobileBuyAmounts.map((amount, index) => (
-  <button
-    key={index}
-    className={`meme-mobile-amount-btn ${mobileSelectedBuyAmount === amount ? 'active' : ''}`}
-    onClick={() => {
-      setMobileSelectedBuyAmount(amount);
-      handleMobileTrade(amount, 'buy');
-    }}
-    disabled={!account?.connected}
-  >
-    {amount}
-  </button>
-))}
+              {mobileBuyAmounts.map((amount, index) => (
+                <button
+                  key={index}
+                  className={`meme-mobile-amount-btn ${mobileSelectedBuyAmount === amount ? 'active' : ''}`}
+                  onClick={() => {
+                    setMobileSelectedBuyAmount(amount);
+                    handleMobileTrade(amount, 'buy');
+                  }}
+                  disabled={!account?.connected}
+                >
+                  {amount}
+                </button>
+              ))}
 
             </div>
           </div>
@@ -3352,19 +3356,19 @@ const getButtonText = () => {
             </div>
 
             <div className="meme-mobile-percent-buttons">
-           {mobileSellPercents.map((percent, index) => (
-  <button
-    key={index}
-    className={`meme-mobile-percent-btn ${mobileSelectedSellPercent === percent ? 'active' : ''}`}
-    onClick={() => {
-      setMobileSelectedSellPercent(percent);
-      handleMobileTrade(percent, 'sell');
-    }}
-    disabled={!account?.connected || walletTokenBalances?.[userAddr]?.[token.id] <= 0}
-  >
-    {percent}
-  </button>
-))}
+              {mobileSellPercents.map((percent, index) => (
+                <button
+                  key={index}
+                  className={`meme-mobile-percent-btn ${mobileSelectedSellPercent === percent ? 'active' : ''}`}
+                  onClick={() => {
+                    setMobileSelectedSellPercent(percent);
+                    handleMobileTrade(percent, 'sell');
+                  }}
+                  disabled={!account?.connected || walletTokenBalances?.[userAddr]?.[token.id] <= 0}
+                >
+                  {percent}
+                </button>
+              ))}
 
             </div>
           </div>
@@ -3448,35 +3452,35 @@ const getButtonText = () => {
           </div>
         )}
       </div>
-    <QuickBuyWidget
-  isOpen={isWidgetOpen}
-  onClose={() => setIsWidgetOpen(false)}
-  tokenSymbol={token.symbol}
-  tokenAddress={tokenAddress}
-  tokenPrice={currentPrice}
-  buySlippageValue={buySlippageValue}
-  buyPriorityFee={buyPriorityFee}
-  sellSlippageValue={sellSlippageValue}
-  sellPriorityFee={sellPriorityFee}
-  sendUserOperationAsync={sendUserOperationAsync}
-  account={account}
-  setChain={setChain}
-  activechain={activechain}
-  routerAddress={routerAddress}
-  setpopup={setpopup}
-  subWallets={subWallets}
-  walletTokenBalances={walletTokenBalances}
-  activeWalletPrivateKey={activeWalletPrivateKey}
-  setOneCTSigner={setOneCTSigner}
-  tokenList={tokenList}
-  isBlurred={isBlurred}
-  terminalRefetch={terminalRefetch}
-  userStats={userStats}
-  monUsdPrice={monUsdPrice}
-  showUSD={showUSD}
-  onToggleCurrency={handleToggleCurrency}
-  tokenImage={token.image}
-/>
+      <QuickBuyWidget
+        isOpen={isWidgetOpen}
+        onClose={() => setIsWidgetOpen(false)}
+        tokenSymbol={token.symbol}
+        tokenAddress={tokenAddress}
+        tokenPrice={currentPrice}
+        buySlippageValue={buySlippageValue}
+        buyPriorityFee={buyPriorityFee}
+        sellSlippageValue={sellSlippageValue}
+        sellPriorityFee={sellPriorityFee}
+        sendUserOperationAsync={sendUserOperationAsync}
+        account={account}
+        setChain={setChain}
+        activechain={activechain}
+        routerAddress={routerAddress}
+        setpopup={setpopup}
+        subWallets={subWallets}
+        walletTokenBalances={walletTokenBalances}
+        activeWalletPrivateKey={activeWalletPrivateKey}
+        setOneCTSigner={setOneCTSigner}
+        tokenList={tokenList}
+        isBlurred={isBlurred}
+        terminalRefetch={terminalRefetch}
+        userStats={userStats}
+        monUsdPrice={monUsdPrice}
+        showUSD={showUSD}
+        onToggleCurrency={handleToggleCurrency}
+        tokenImage={token.image}
+      />
 
     </div>
   );

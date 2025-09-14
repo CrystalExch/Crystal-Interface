@@ -123,7 +123,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         .setQuantityBackgroundColor('rgba(0,0,0,0)') 
         .setQuantityBorderColor('rgba(0,0,0,0)')
         .setQuantityTextColor('rgba(0,0,0,0)')
-        .setLineColor('#aaaecf')
+        .setLineColor('rgb(209, 209, 250)')
         .setBodyBackgroundColor('rgba(6,6,6,0.9)')
         .setBodyTextColor('#D8DCFF')
         .setBodyBorderColor('#D8DCFF')
@@ -375,7 +375,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       custom_font_family: 'Funnel Display',
       loading_screen: {
         backgroundColor: 'rgb(6,6,6)',
-        foregroundColor: '#aaaecf',
+        foregroundColor: 'rgb(209, 209, 250)',
       },
       favorites: {
         intervals: ['5', '60', '1D'],
