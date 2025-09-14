@@ -20,9 +20,13 @@ function v2ToOrderbook(
 
   const BASE_DECIMALS = 18;
   const QUOTE_DECIMALS = 6;
+
   const UNI_V2_FEE_BIPS = 25;
   const fee = Math.max(0, UNI_V2_FEE_BIPS) / 10_000;
   const oneMinusFee = Math.max(1e-12, 1 - fee);
+
+  const TAKER_FEE_BIPS = 25;
+  const takerFee = Math.max(0, TAKER_FEE_BIPS) / 10_000;
 
   const toHuman = (raw: number | bigint, decimals: number) => {
     const n = typeof raw === 'bigint' ? Number(raw) : raw;
@@ -77,8 +81,10 @@ function v2ToOrderbook(
 
       const baseIn = dxEff / oneMinusFee;
       if (baseIn <= 0) break;
+
+      const effectivePrice = pLow * (1 - takerFee);
       bids.push({
-        price: pLow,
+        price: effectivePrice,
         size: baseIn,
         totalSize: 0,
         shouldFlash: false,
@@ -101,8 +107,10 @@ function v2ToOrderbook(
       const xN = xFromP(pHigh);
       const baseOut = Math.max(0, xA - xN);
       if (baseOut <= 0) break;
+
+      const effectivePrice = pHigh * (1 + takerFee);
       asks.push({
-        price: pHigh,
+        price: effectivePrice,
         size: baseOut,
         totalSize: 0,
         shouldFlash: false,
