@@ -255,154 +255,154 @@ const formatTradeAmount = (value: number): string => {
   return value.toFixed(2);
 };
 const Tooltip: React.FC<{
-    content: string;
-    children: React.ReactNode;
-    position?: 'top' | 'bottom' | 'left' | 'right';
+  content: string;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
 }> = ({ content, children, position = 'top' }) => {
-    const [shouldRender, setShouldRender] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
-    const [isLeaving, setIsLeaving] = useState(false);
-    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
-    const containerRef = useRef<HTMLDivElement>(null);
-    const tooltipRef = useRef<HTMLDivElement>(null);
-    const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const updatePosition = useCallback(() => {
-        if (!containerRef.current || !tooltipRef.current) return;
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current || !tooltipRef.current) return;
 
-        const rect = containerRef.current.getBoundingClientRect();
-        const tooltipRect = tooltipRef.current.getBoundingClientRect();
-        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const rect = containerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
-        let top = 0;
-        let left = 0;
+    let top = 0;
+    let left = 0;
 
-        switch (position) {
-            case 'top':
-                top = rect.top + scrollY - tooltipRect.height - 10;
-                left = rect.left + scrollX + rect.width / 2;
-                break;
-            case 'bottom':
-                top = rect.bottom + scrollY + 10;
-                left = rect.left + scrollX + rect.width / 2;
-                break;
-            case 'left':
-                top = rect.top + scrollY + rect.height / 2;
-                left = rect.left + scrollX - tooltipRect.width - 10;
-                break;
-            case 'right':
-                top = rect.top + scrollY + rect.height / 2;
-                left = rect.right + scrollX + 10;
-                break;
-        }
+    switch (position) {
+      case 'top':
+        top = rect.top + scrollY - tooltipRect.height - 10;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'bottom':
+        top = rect.bottom + scrollY + 10;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'left':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.left + scrollX - tooltipRect.width - 10;
+        break;
+      case 'right':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.right + scrollX + 10;
+        break;
+    }
 
-        const margin = 10;
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
+    const margin = 10;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
 
-        if (position === 'top' || position === 'bottom') {
-            left = Math.min(
-                Math.max(left, margin + tooltipRect.width / 2),
-                viewportWidth - margin - tooltipRect.width / 2,
-            );
-        } else {
-            top = Math.min(
-                Math.max(top, margin),
-                viewportHeight - margin - tooltipRect.height,
-            );
-        }
+    if (position === 'top' || position === 'bottom') {
+      left = Math.min(
+        Math.max(left, margin + tooltipRect.width / 2),
+        viewportWidth - margin - tooltipRect.width / 2,
+      );
+    } else {
+      top = Math.min(
+        Math.max(top, margin),
+        viewportHeight - margin - tooltipRect.height,
+      );
+    }
 
-        setTooltipPosition({ top, left });
-    }, [position]);
+    setTooltipPosition({ top, left });
+  }, [position]);
 
-    const handleMouseEnter = useCallback(() => {
-        if (fadeTimeoutRef.current) {
-            clearTimeout(fadeTimeoutRef.current);
-            fadeTimeoutRef.current = null;
-        }
+  const handleMouseEnter = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
 
-        setIsLeaving(false);
-        setShouldRender(true);
+    setIsLeaving(false);
+    setShouldRender(true);
 
-        fadeTimeoutRef.current = setTimeout(() => {
-            setIsVisible(true);
-            fadeTimeoutRef.current = null;
-        }, 10);
-    }, []);
+    fadeTimeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+      fadeTimeoutRef.current = null;
+    }, 10);
+  }, []);
 
-    const handleMouseLeave = useCallback(() => {
-        if (fadeTimeoutRef.current) {
-            clearTimeout(fadeTimeoutRef.current);
-            fadeTimeoutRef.current = null;
-        }
+  const handleMouseLeave = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
 
-        setIsLeaving(true);
-        setIsVisible(false);
+    setIsLeaving(true);
+    setIsVisible(false);
 
-        fadeTimeoutRef.current = setTimeout(() => {
-            setShouldRender(false);
-            setIsLeaving(false);
-            fadeTimeoutRef.current = null;
-        }, 150);
-    }, []);
+    fadeTimeoutRef.current = setTimeout(() => {
+      setShouldRender(false);
+      setIsLeaving(false);
+      fadeTimeoutRef.current = null;
+    }, 150);
+  }, []);
 
-    useEffect(() => {
-        if (shouldRender && !isLeaving) {
-            updatePosition();
-            window.addEventListener('scroll', updatePosition);
-            window.addEventListener('resize', updatePosition);
-            return () => {
-                window.removeEventListener('scroll', updatePosition);
-                window.removeEventListener('resize', updatePosition);
-            };
-        }
-    }, [shouldRender, updatePosition, isLeaving]);
+  useEffect(() => {
+    if (shouldRender && !isLeaving) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [shouldRender, updatePosition, isLeaving]);
 
-    useEffect(() => {
-        return () => {
-            if (fadeTimeoutRef.current) {
-                clearTimeout(fadeTimeoutRef.current);
-            }
-        };
-    }, []);
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current);
+      }
+    };
+  }, []);
 
-    return (
+  return (
+    <div
+      ref={containerRef}
+      className="tooltip-container"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {shouldRender && createPortal(
         <div
-            ref={containerRef}
-            className="tooltip-container"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+          ref={tooltipRef}
+          className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+          style={{
+            position: 'absolute',
+            top: `${tooltipPosition.top - 20}px`,
+            left: `${tooltipPosition.left}px`,
+            transform: `${position === 'top' || position === 'bottom'
+              ? 'translateX(-50%)'
+              : position === 'left' || position === 'right'
+                ? 'translateY(-50%)'
+                : 'none'} scale(${isVisible ? 1 : 0})`,
+            opacity: isVisible ? 1 : 0,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'transform, opacity'
+          }}
         >
-            {children}
-            {shouldRender && createPortal(
-                <div
-                    ref={tooltipRef}
-                    className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
-                    style={{
-                        position: 'absolute',
-                        top: `${tooltipPosition.top - 20}px`,
-                        left: `${tooltipPosition.left}px`,
-                        transform: `${position === 'top' || position === 'bottom'
-                            ? 'translateX(-50%)'
-                            : position === 'left' || position === 'right'
-                                ? 'translateY(-50%)'
-                                : 'none'} scale(${isVisible ? 1 : 0})`,
-                        opacity: isVisible ? 1 : 0,
-                        zIndex: 9999,
-                        pointerEvents: 'none',
-                        transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-                        willChange: 'transform, opacity'
-                    }}
-                >
-                    <div className="tooltip-content">
-                        {content}
-                    </div>
-                </div>,
-                document.body
-            )}
-        </div>
-    );
+          <div className="tooltip-content">
+            {content}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
 };
 
 const MemeInterface: React.FC<MemeInterfaceProps> = ({
@@ -465,6 +465,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     },
     [tradesByMarket, markets, resolveNative, usdc],
   );
+  const [selectedStatsTimeframe, setSelectedStatsTimeframe] = useState('24h');
+  const [hoveredStatsContainer, setHoveredStatsContainer] = useState(false);
+  const [selectedStatsAge, setSelectedStatsAge] = useState('Age');
+  const [showStatsAgeDropdown, setShowStatsAgeDropdown] = useState(false);
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
   const [isWidgetOpen, setIsWidgetOpen] = useState(() => {
@@ -821,18 +825,28 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       if (showLoadingPopup) {
         showLoadingPopup(txId, {
           title: 'Sending transaction...',
-          subtitle: `Selling ${monAmount} ${position.symbol}`,
+          subtitle: `Selling ${monAmount} MON worth of ${position.symbol}`,
           amount: monAmount,
-          amountUnit: position.symbol
+          amountUnit: 'MON'
         });
       }
 
-      const amountTokenWei = BigInt(Math.round(parseFloat(monAmount) * 1e18));
+      // Convert MON amount to token amount
+      const monAmountNum = parseFloat(monAmount);
+      const tokenPrice = position.lastPrice || currentPrice;
+
+      if (tokenPrice <= 0) {
+        throw new Error('Invalid token price');
+      }
+
+      // Calculate how many tokens to sell to get the desired MON amount
+      const tokenAmountToSell = monAmountNum / tokenPrice;
+      const amountTokenWei = BigInt(Math.round(tokenAmountToSell * 1e18));
 
       if (updatePopup) {
         updatePopup(txId, {
           title: 'Confirming sell...',
-          subtitle: `Selling ${monAmount} ${position.symbol}`,
+          subtitle: `Selling ${tokenAmountToSell.toFixed(4)} ${position.symbol} for ~${monAmount} MON`,
           variant: 'info'
         });
       }
@@ -849,12 +863,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
       await sendUserOperationAsync({ uo: sellUo });
 
-      const soldTokens = Number(amountTokenWei) / 1e18;
-      const expectedMON = soldTokens * (position.lastPrice || 0);
       if (updatePopup) {
         updatePopup(txId, {
-          title: `Sold ${Number(soldTokens).toFixed(4)} ${position.symbol}`,
-          subtitle: `Received ≈ ${Number(expectedMON).toFixed(4)} MON`,
+          title: `Sold ${Number(tokenAmountToSell).toFixed(4)} ${position.symbol}`,
+          subtitle: `Received ≈ ${Number(monAmountNum).toFixed(4)} MON`,
           variant: 'success',
           isLoading: false
         });
@@ -1989,7 +2001,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             title: 'Sending transaction...',
             subtitle: `Buying ${tradeAmount} ${inputCurrency} worth of ${token.symbol}`,
             amount: tradeAmount,
-            amountUnit: inputCurrency
+            amountUnit: inputCurrency,
+            tokenImage: token.image
           });
         }
 
@@ -2190,7 +2203,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       <div className="memechartandtradesandordercenter">
         <div className="memecharttradespanel">
           <div className={`meme-chart-container ${mobileActiveView !== 'chart' ? 'mobile-hidden' : ''}`}>
-               <MemeChart
+            <MemeChart
               token={token}
               data={chartData}
               selectedInterval={selectedInterval}
@@ -2250,6 +2263,64 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       </div>
 
       <div className="meme-trade-panel desktop-only">
+                <div
+          className="meme-trading-stats-enhanced"
+          onMouseEnter={() => setHoveredStatsContainer(true)}
+          onMouseLeave={() => setHoveredStatsContainer(false)}
+        >
+          <div className="top-stats-grid">
+            <div className="stat-group-vol">
+              <span className="stat-label">24h Vol</span>
+              <span className="stat-value">$0</span>
+            </div>
+
+            <div className="stat-group buys">
+              <span className="stat-label">Buys</span>
+              <span className="stat-value green">{formatNumberWithCommas(buyers)} / ${formatNumberWithCommas(buyVolume, 1)}</span>
+            </div>
+
+            <div className="stat-group sells">
+              <span className="stat-label">Sells</span>
+              <span className="stat-value red">{formatNumberWithCommas(sellers)}/ ${formatNumberWithCommas(sellVolume, 1)}</span>
+            </div>
+
+            <div className="stat-group-net-vol">
+              <span className="stat-label">Net Vol.</span>
+              <span className="stat-value red">-$0</span>
+            </div>
+          </div>
+
+          <div className={`stats-hover-overlay ${hoveredStatsContainer ? 'visible' : ''}`}>
+            <div className="stats-blur-backdrop" />
+
+            <div className="overlay-controls-grid">
+              <div className="timeframe-buttons">
+                {[
+                  { label: '5m', value: '5m', percentage: '0%' },
+                  { label: '1h', value: '1h', percentage: '0%' },
+                  { label: '6h', value: '6h', percentage: '0%' },
+                  { label: '24h', value: '24h', percentage: '0%' }
+                ].map((tf) => (
+                  <button
+                    key={tf.value}
+                    className={`timeframe-toggle ${selectedStatsTimeframe === tf.value ? 'active' : ''}`}
+                    onClick={() => setSelectedStatsTimeframe(tf.value)}
+                  >
+                    <span className="tf-label">{tf.label}</span>
+                    <span className="tf-percentage">{tf.percentage}</span>
+                  </button>
+                ))}
+              </div>
+
+
+
+            </div>
+          </div>
+          <div className="indicator-legend">
+                        <div className="indicator-line green-line" />
+              <div className="indicator-line red-line" />
+              </div>
+        </div>
         <div className="meme-buy-sell-container">
           <button
             className={`meme-buy-button ${activeTradeType === "buy" ? "active" : "inactive"}`}
@@ -2545,17 +2616,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           <div className="meme-trade-settings">
             <div className="meme-settings-toggle">
               <div className="meme-settings-collapsed">
-              <Tooltip content="Slippage">
-                <div className="meme-settings-item">
-                  <img src={slippage} className="meme-settings-icon1" />
-                  <span className="meme-settings-value">{slippageValue}%</span>
-                </div>
+                <Tooltip content="Slippage">
+                  <div className="meme-settings-item">
+                    <img src={slippage} className="meme-settings-icon1" />
+                    <span className="meme-settings-value">{slippageValue}%</span>
+                  </div>
                 </Tooltip>
                 <Tooltip content="Priority Fee">
-                <div className="meme-settings-item">
-                  <img src={gas} className="meme-settings-icon2" />
-                  <span className="meme-settings-value">{priorityFee}</span>
-                </div>
+                  <div className="meme-settings-item">
+                    <img src={gas} className="meme-settings-icon2" />
+                    <span className="meme-settings-value">{priorityFee}</span>
+                  </div>
                 </Tooltip>
               </div>
               <button
@@ -2921,107 +2992,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           </div>
 
         </div>
-        <div className="meme-trading-stats-container">
-          <div className="meme-trading-stats-row">
-            <div className="meme-stat-group">
-              <div className="meme-stat-header">
-                <span className="meme-stat-label">TXNS</span>
-                <div className="meme-stat-value">
-                  {formatNumberWithCommas(totalTraders)}
-                </div>
-              </div>
-              <div className="meme-stat-details">
-                <div className="meme-stat-subrow">
-                  <div className="stat-sublabel">BUYS</div>
-                  <div className="stat-sublabel">SELLS</div>
-                </div>
-                <div className="meme-stat-subrow">
-                  <div className="stat-subvalue buy">
-                    {formatNumberWithCommas(buyers)}
-                  </div>
-                  <div className="stat-subvalue sell">
-                    {formatNumberWithCommas(sellers)}
-                  </div>
-                </div>
-                <div className="meme-progress-bar">
-                  <div
-                    className="progress-buy"
-                    style={{ width: `${currentData.buyerPercentage}%` }}
-                  ></div>
-                  <div
-                    className="progress-sell"
-                    style={{ width: `${currentData.sellerPercentage}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-            <div className="meme-stat-group">
-              <div className="meme-stat-header">
-                <span className="meme-stat-label">VOLUME</span>
-                <div className="meme-stat-value">
-                  {formatVolume(currentData.volume)}
-                </div>
-              </div>
-              <div className="meme-stat-details">
-                <div className="meme-stat-subrow">
-                  <div className="stat-sublabel">BUY VOL</div>
-                  <div className="stat-sublabel">SELL VOL</div>
-                </div>
-                <div className="meme-stat-subrow">
-                  <div className="stat-subvalue buy">
-                    {formatVolume(buyVolume)}
-                  </div>
-                  <div className="stat-subvalue sell">
-                    {formatVolume(sellVolume)}
-                  </div>
-                </div>
-                <div className="meme-progress-bar">
-                  <div
-                    className="progress-buy"
-                    style={{ width: `${currentData.buyVolumePercentage}%` }}
-                  ></div>
-                  <div
-                    className="progress-sell"
-                    style={{ width: `${currentData.sellVolumePercentage}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-            <div className="meme-stat-group">
-              <div className="meme-stat-header">
-                <span className="meme-stat-label">MAKERS</span>
-                <div className="meme-stat-value">
-                  {formatNumberWithCommas(totalTraders)}
-                </div>
-              </div>
-              <div className="meme-stat-details">
-                <div className="meme-stat-subrow">
-                  <div className="stat-sublabel">BUYERS</div>
-                  <div className="stat-sublabel">SELLERS</div>
-                </div>
-                <div className="meme-stat-subrow">
-                  <div className="stat-subvalue buy">
-                    {formatNumberWithCommas(buyers)}
-                  </div>
-                  <div className="stat-subvalue sell">
-                    {formatNumberWithCommas(sellers)}
-                  </div>
-                </div>
-                <div className="meme-progress-bar">
-                  <div
-                    className="progress-buy"
-                    style={{ width: `${currentData.buyerPercentage}%` }}
-                  ></div>
-                  <div
-                    className="progress-sell"
-                    style={{ width: `${currentData.sellerPercentage}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
 
-          </div>
-        </div>
+
         <div className="meme-token-info-container">
           <div className="meme-token-info-header">
             <h3 className="meme-token-info-title">Token Info</h3>
@@ -3178,30 +3150,30 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   </div>
                   <span className="meme-token-info-label">Insiders</span>
                 </div>
-         <div className="meme-token-info-item">
-  <div className="meme-token-info-icon-container">
-    <svg
-      className="meme-interface-traders-icon"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="#ced0df"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
-    </svg>
-    <span
-      className="meme-token-info-value"
-      style={{
-        color:
-          "#ced0df"
-      }}
-    >
-      {holders.length}
-    </span>
-  </div>
-  <span className="meme-token-info-label">Holders</span>
-</div>
+                <div className="meme-token-info-item">
+                  <div className="meme-token-info-icon-container">
+                    <svg
+                      className="meme-interface-traders-icon"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="#ced0df"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
+                    </svg>
+                    <span
+                      className="meme-token-info-value"
+                      style={{
+                        color:
+                          "#ced0df"
+                      }}
+                    >
+                      {holders.length}
+                    </span>
+                  </div>
+                  <span className="meme-token-info-label">Holders</span>
+                </div>
                 <div className="meme-token-info-item">
                   <div className="meme-token-info-icon-container">
                     <svg
@@ -3233,42 +3205,42 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   <span className="meme-address-title">CA:</span>{" "}
                   {token.id.slice(0, 21)}...{token.id.slice(-4)}
                   <Tooltip content="View on Monad Explorer">
-                  <svg
-                    className="meme-address-link"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                    <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                  </svg>        
-                  </Tooltip>          
+                    <svg
+                      className="meme-address-link"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                      <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                    </svg>
+                  </Tooltip>
                 </span>
                 <span className="meme-address">
                   <img className="meme-contract-icon" src={contract} />
                   <span className="meme-address-title">DA:</span>{" "}
                   {token.dev.slice(0, 21)}...{token.dev.slice(-4)}
-                   <Tooltip content="View on Monad Explorer">
-                  <svg
-                    className="meme-address-link"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                    <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                  </svg>        
-                  </Tooltip>     
+                  <Tooltip content="View on Monad Explorer">
+                    <svg
+                      className="meme-address-link"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                      <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                    </svg>
+                  </Tooltip>
                 </span>
               </div>
             </div>
           )}
         </div>
-                <div className="meme-token-info-container">
+        <div className="meme-token-info-container">
           <div className="meme-token-info-header">
             <h3 className="meme-token-info-title">Similar Tokens</h3>
             <button
@@ -3527,6 +3499,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         monUsdPrice={monUsdPrice}
         showUSD={showUSD}
         onToggleCurrency={handleToggleCurrency}
+        showLoadingPopup={showLoadingPopup}
+        updatePopup={updatePopup}
+        tokenImage={token.image}
       />
     </div>
   );
