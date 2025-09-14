@@ -1851,12 +1851,7 @@ function App() {
       setIsVaultWithdrawSigning(false);
     }
   };
-
-  const toKey = (base: string, quote: string, wethticker: string, ethticker: string) =>
-    `${base === wethticker ? ethticker : base}${quote === wethticker ? ethticker : quote}`;
-
-  const pfDecimals = (pf: number) => Math.max(0, Math.floor(Math.log10(pf)));
-
+  
   const [walletTokenBalances, setWalletTokenBalances] = useState({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
   const [walletsLoading, setWalletsLoading] = useState(false);
@@ -3182,33 +3177,33 @@ function App() {
         setmids(tempmids);
       }
       if (data?.[3]?.result) {
-        setReserveQuote(data[3].result[0])
-        setReserveBase(data[3].result[1])
-        const orderdata = data[3].result.slice(2);
-        let ammPrice = data[3].result[1] == 0n ? 0 : ((BigInt(data[3].result[0]) * activeMarket.scaleFactor * 9975n * 100000n + (BigInt(data[3].result[1]) * 10000n * activeMarket.makerRebate - 1n)) / (BigInt(data[3].result[1]) * 10000n * activeMarket.makerRebate));
+        const orderdata = data[3].result;
+        setReserveQuote(orderdata[0])
+        setReserveBase(orderdata[1])
+        let ammPrice = orderdata[1] == 0n ? 0 : ((BigInt(orderdata[0]) * activeMarket.scaleFactor * 9975n * 100000n + (BigInt(orderdata[1]) * 10000n * activeMarket.makerRebate - 1n)) / (BigInt(orderdata[1]) * 10000n * activeMarket.makerRebate));
         let temphighestBid = orderdata[0] < ammPrice ? ammPrice : orderdata[0]
         sethighestBid(temphighestBid || BigInt(0));
         temphighestBid = Number(temphighestBid);
-        ammPrice = data[3].result[1] == 0n ? 0 : ((BigInt(data[3].result[0]) * activeMarket.scaleFactor * 10000n * activeMarket.makerRebate) / (BigInt(data[3].result[1]) * 9975n * 100000n));
+        ammPrice = orderdata[1] == 0n ? 0 : ((BigInt(orderdata[0]) * activeMarket.scaleFactor * 10000n * activeMarket.makerRebate) / (BigInt(orderdata[1]) * 9975n * 100000n));
         let templowestAsk = orderdata[1] > ammPrice ? ammPrice : orderdata[1]
         setlowestAsk(templowestAsk || BigInt(0));
         templowestAsk = Number(templowestAsk);
         setPrevOrderData(orderdata as any);
-        if (orderdata && Array.isArray(orderdata) && orderdata.length >= 4 && !(orderdata[0] == prevOrderData[0] &&
-          orderdata[1] == prevOrderData[1] &&
-          orderdata[2]?.toLowerCase() == prevOrderData[2]?.toLowerCase() &&
-          orderdata[3]?.toLowerCase() == prevOrderData[3]?.toLowerCase())) {
+        if (orderdata && Array.isArray(orderdata) && orderdata.length >= 4 && !(orderdata[2] == prevOrderData[0] &&
+          orderdata[3] == prevOrderData[1] &&
+          orderdata[4]?.toLowerCase() == prevOrderData[2]?.toLowerCase() &&
+          orderdata[5]?.toLowerCase() == prevOrderData[3]?.toLowerCase())) {
           try {
             const buyOrdersRaw: bigint[] = [];
             const sellOrdersRaw: bigint[] = [];
 
-            for (let i = 2; i < orderdata[2].length; i += 64) {
-              const chunk = orderdata[2].slice(i, i + 64);
+            for (let i = 2; i < orderdata[4].length; i += 64) {
+              const chunk = orderdata[4].slice(i, i + 64);
               buyOrdersRaw.push(BigInt(`0x${chunk}`));
             }
 
-            for (let i = 2; i < orderdata[3].length; i += 64) {
-              const chunk = orderdata[3].slice(i, i + 64);
+            for (let i = 2; i < orderdata[5].length; i += 64) {
+              const chunk = orderdata[5].slice(i, i + 64);
               sellOrdersRaw.push(BigInt(`0x${chunk}`));
             }
 
@@ -4109,18 +4104,18 @@ function App() {
                     } else {
                       updatedBars.push({
                         time: flooredTradeTimeSec * 1000,
-                        open: lastBar.close ?? openPrice,
-                        high: Math.max(lastBar.close ?? openPrice, closePrice),
-                        low: Math.min(lastBar.close ?? openPrice, closePrice),
+                        open: lastBar?.close ?? openPrice,
+                        high: Math.max(lastBar?.close ?? openPrice, closePrice),
+                        low: Math.min(lastBar?.close ?? openPrice, closePrice),
                         close: closePrice,
                         volume: rawVolume,
                       });
                       if (realtimeCallbackRef.current[existingIntervalLabel]) {
                         realtimeCallbackRef.current[existingIntervalLabel]({
                           time: flooredTradeTimeSec * 1000,
-                          open: lastBar.close ?? openPrice,
-                          high: Math.max(lastBar.close ?? openPrice, closePrice),
-                          low: Math.min(lastBar.close ?? openPrice, closePrice),
+                          open: lastBar?.close ?? openPrice,
+                          high: Math.max(lastBar?.close ?? openPrice, closePrice),
+                          low: Math.min(lastBar?.close ?? openPrice, closePrice),
                           close: closePrice,
                           volume: rawVolume,
                         });
@@ -4138,8 +4133,8 @@ function App() {
                     const newTrades = temptrades?.[marketKey]
                     if (!Array.isArray(newTrades) || newTrades.length < 1) return market;
                     const firstKlineOpen: number =
-                      market?.series && Array.isArray(market?.series) && market?.series.length > 0
-                        ? Number(market?.series[0].open)
+                      market?.mini && Array.isArray(market?.mini) && market?.mini.length > 0
+                        ? Number(market?.mini[0].value * Number(market.priceFactor))
                         : 0;
                     const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
                     const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
@@ -4163,7 +4158,7 @@ function App() {
                       volume: formatCommas(
                         (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
                       ),
-                      currentPrice: formatSubscript(
+                      currentPrice: formatSig(
                         (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
                       ),
                       priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
@@ -4979,18 +4974,18 @@ function App() {
                       } else {
                         updatedBars.push({
                           time: flooredTradeTimeSec * 1000,
-                          open: lastBar.close ?? openPrice,
-                          high: Math.max(lastBar.close ?? openPrice, closePrice),
-                          low: Math.min(lastBar.close ?? openPrice, closePrice),
+                          open: lastBar?.close ?? openPrice,
+                          high: Math.max(lastBar?.close ?? openPrice, closePrice),
+                          low: Math.min(lastBar?.close ?? openPrice, closePrice),
                           close: closePrice,
                           volume: rawVolume,
                         });
                         if (realtimeCallbackRef.current[existingIntervalLabel]) {
                           realtimeCallbackRef.current[existingIntervalLabel]({
                             time: flooredTradeTimeSec * 1000,
-                            open: lastBar.close ?? openPrice,
-                            high: Math.max(lastBar.close ?? openPrice, closePrice),
-                            low: Math.min(lastBar.close ?? openPrice, closePrice),
+                            open: lastBar?.close ?? openPrice,
+                            high: Math.max(lastBar?.close ?? openPrice, closePrice),
+                            low: Math.min(lastBar?.close ?? openPrice, closePrice),
                             close: closePrice,
                             volume: rawVolume,
                           });
@@ -5008,8 +5003,8 @@ function App() {
                       const newTrades = temptrades?.[marketKey]
                       if (!Array.isArray(newTrades) || newTrades.length < 1) return market;
                       const firstKlineOpen: number =
-                        market?.series && Array.isArray(market?.series) && market?.series.length > 0
-                          ? Number(market?.series[0].open)
+                        market?.mini && Array.isArray(market?.mini) && market?.mini.length > 0
+                          ? Number(market?.mini[0].value * Number(market.priceFactor))
                           : 0;
                       const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
                       const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
@@ -5033,7 +5028,7 @@ function App() {
                         volume: formatCommas(
                           (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
                         ),
-                        currentPrice: formatSubscript(
+                        currentPrice: formatSig(
                           (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
                         ),
                         priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
@@ -20225,7 +20220,8 @@ function App() {
                     roundedBuyOrders: roundedBuyOrders?.orders,
                     roundedSellOrders: roundedSellOrders?.orders,
                     spreadData,
-                    priceFactor: markets[roundedBuyOrders?.key]?.marketType != 0 && spreadData?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spreadData?.averagePrice ?? 1)) - 1) : Number(markets[roundedBuyOrders?.key]?.priceFactor),
+                    priceFactor: Number(markets[roundedBuyOrders?.key]?.priceFactor),
+                    marketType: markets[roundedBuyOrders?.key]?.marketType,
                     symbolIn: markets[roundedBuyOrders?.key]?.quoteAsset,
                     symbolOut: markets[roundedBuyOrders?.key]?.baseAsset,
                   }}

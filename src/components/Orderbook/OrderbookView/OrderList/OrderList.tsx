@@ -28,6 +28,7 @@ interface OrderListProps {
   spreadPrice?: number;
   orderbookPosition: string;
   updateLimitAmount: any;
+  marketType: any;
 }
 
 const OrderList: React.FC<OrderListProps> = ({
@@ -43,6 +44,7 @@ const OrderList: React.FC<OrderListProps> = ({
   spreadPrice,
   orderbookPosition,
   updateLimitAmount,
+  marketType,
 }) => {
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({
     x: 0,
@@ -174,6 +176,7 @@ const OrderList: React.FC<OrderListProps> = ({
               updateLimitAmount={updateLimitAmount}
               shouldFlash={order.shouldFlash}
               hasUserOrder={order.userPrice}
+              marketType={marketType}
             />
           );
         })}
@@ -184,6 +187,7 @@ const OrderList: React.FC<OrderListProps> = ({
             orderbookPosition={orderbookPosition}
             containerRef={containerRef}
             priceFactor={priceFactor}
+            marketType={marketType}
           />
         )}
       </ul>

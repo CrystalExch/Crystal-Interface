@@ -117,6 +117,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
         priceFactor={orderdata.priceFactor}
         symbolQuote={orderdata.symbolIn}
         symbolBase={orderdata.symbolOut}
+        marketType={orderdata.marketType}
         orderbookPosition={orderbookPosition}
         interval={interval}
         amountsQuote={amountsQuote}

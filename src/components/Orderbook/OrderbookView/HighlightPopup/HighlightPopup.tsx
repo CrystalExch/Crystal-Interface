@@ -16,6 +16,7 @@ interface OrderHighlightPopupProps {
   orderbookPosition: string;
   containerRef: React.RefObject<HTMLElement>;
   priceFactor: number;
+  marketType: any;
 }
 
 const OrderHighlightPopup: React.FC<OrderHighlightPopupProps> = ({
@@ -24,6 +25,7 @@ const OrderHighlightPopup: React.FC<OrderHighlightPopupProps> = ({
   orderbookPosition,
   containerRef,
   priceFactor,
+  marketType,
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = React.useState({ x: 0, y: 0 });
@@ -72,7 +74,7 @@ const OrderHighlightPopup: React.FC<OrderHighlightPopupProps> = ({
       <div>
       <span style={{color: '#ffffffef'}}>{t('avgPrice')}: </span>
         {formatCommas(
-          highlightData.averagePrice.toFixed(Math.floor(Math.log10(priceFactor))),
+          marketType == 0 ? highlightData.averagePrice.toFixed(Math.floor(Math.log10(priceFactor))) : highlightData.averagePrice.toFixed(Math.floor(Math.log10(10 ** Math.max(0, 5 - Math.floor(Math.log10(highlightData.averagePrice ?? 1)) - 1)))),
         )}{' '}
         {highlightData.unit}
       </div>

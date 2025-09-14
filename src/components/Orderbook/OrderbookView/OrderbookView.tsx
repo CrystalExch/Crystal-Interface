@@ -18,6 +18,7 @@ interface OrderbookViewProps {
   priceFactor: number;
   symbolQuote: string;
   symbolBase: string;
+  marketType: any;
   orderbookPosition: string;
   interval: number;
   amountsQuote: string;
@@ -39,6 +40,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   priceFactor,
   symbolQuote,
   symbolBase,
+  marketType,
   orderbookPosition,
   interval,
   amountsQuote,
@@ -160,6 +162,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={spreadData.averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
+              marketType={marketType}
             />
             <SpreadDisplay
               averagePrice={spreadData.averagePrice}
@@ -179,6 +182,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={spreadData.averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
+              marketType={marketType}
             />
           </div>
         )}
@@ -197,6 +201,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={spreadData.averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
+              marketType={marketType}
             />
             <SpreadDisplay
               averagePrice={spreadData.averagePrice}
@@ -225,6 +230,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={spreadData.averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
+              marketType={marketType}
             />
           </div>
         )}

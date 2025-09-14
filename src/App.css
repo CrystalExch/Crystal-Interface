@@ -6838,7 +6838,7 @@ input::-webkit-inner-spin-button {
   flex-direction: column;
   min-width: 150px;
   padding-top: 1px;
-  gap: 10px;
+  gap: 5px;
 }
 
 .settings-section-button span {
