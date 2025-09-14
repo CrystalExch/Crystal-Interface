@@ -964,6 +964,8 @@ function App() {
   const [warning, setwarning] = useState(0);
   const [lowestAsk, setlowestAsk] = useState(BigInt(0));
   const [highestBid, sethighestBid] = useState(BigInt(0));
+  const [reserveQuote, setReserveQuote] = useState(BigInt(0));
+  const [reserveBase, setReserveBase] = useState(BigInt(0));
   const [priceImpact, setPriceImpact] = useState('');
   const [averagePrice, setAveragePrice] = useState('');
   const [tradeFee, setTradeFee] = useState('');
@@ -1399,8 +1401,7 @@ function App() {
   const loading =
     (stateloading ||
       tradesloading ||
-      addressinfoloading) && false;
-
+      addressinfoloading);
 
   const [sendAmountIn, setSendAmountIn] = useState(BigInt(0));
   const [sendInputAmount, setSendInputAmount] = useState('');
@@ -2200,10 +2201,10 @@ function App() {
           ]
         },
         {
-          to: router,
-          abi: CrystalRouterAbi,
-          functionName: 'getPriceLevelsFromMid',
-          args: [activeMarket?.address, BigInt(1000000), BigInt(1), BigInt(100)]
+          to: balancegetter,
+          abi: CrystalDataHelperAbi,
+          functionName: 'getMarketData',
+          args: [router, activeMarket?.address, BigInt(1000000), BigInt(1), BigInt(100)]
         },
         {
           to: balancegetter,
@@ -3181,9 +3182,17 @@ function App() {
         setmids(tempmids);
       }
       if (data?.[3]?.result) {
-        sethighestBid((data as any)[3].result[0] || BigInt(0));
-        setlowestAsk((data as any)[3].result[1] || BigInt(0));
-        const orderdata = data[3].result;
+        setReserveQuote(data[3].result[0])
+        setReserveBase(data[3].result[1])
+        const orderdata = data[3].result.slice(2);
+        let ammPrice = data[3].result[1] == 0n ? 0 : ((BigInt(data[3].result[0]) * activeMarket.scaleFactor * 9975n * 100000n + (BigInt(data[3].result[1]) * 10000n * activeMarket.makerRebate - 1n)) / (BigInt(data[3].result[1]) * 10000n * activeMarket.makerRebate));
+        let temphighestBid = orderdata[0] < ammPrice ? ammPrice : orderdata[0]
+        sethighestBid(temphighestBid || BigInt(0));
+        temphighestBid = Number(temphighestBid);
+        ammPrice = data[3].result[1] == 0n ? 0 : ((BigInt(data[3].result[0]) * activeMarket.scaleFactor * 10000n * activeMarket.makerRebate) / (BigInt(data[3].result[1]) * 9975n * 100000n));
+        let templowestAsk = orderdata[1] > ammPrice ? ammPrice : orderdata[1]
+        setlowestAsk(templowestAsk || BigInt(0));
+        templowestAsk = Number(templowestAsk);
         setPrevOrderData(orderdata as any);
         if (orderdata && Array.isArray(orderdata) && orderdata.length >= 4 && !(orderdata[0] == prevOrderData[0] &&
           orderdata[1] == prevOrderData[1] &&
@@ -3227,20 +3236,17 @@ function App() {
               false,
             );
 
-            const highestBid =
-              roundedBuy.length > 0 ? roundedBuy[0].price : undefined;
-            const lowestAsk =
-              roundedSell.length > 0 ? roundedSell[0].price : undefined;
-
+            temphighestBid /= Number(activeMarket.priceFactor)
+            templowestAsk /= Number(activeMarket.priceFactor)
             const spread = {
               spread:
-                highestBid !== undefined && lowestAsk !== undefined
-                  ? lowestAsk - highestBid
+              temphighestBid !== undefined && templowestAsk !== undefined
+                  ? templowestAsk - temphighestBid
                   : NaN,
               averagePrice:
-                highestBid !== undefined && lowestAsk !== undefined
+              temphighestBid !== undefined && templowestAsk !== undefined
                   ? Number(
-                    ((highestBid + lowestAsk) / 2).toFixed(
+                    ((temphighestBid + templowestAsk) / 2).toFixed(
                       Math.floor(Math.log10(Number(activeMarket.priceFactor))) + 1,
                     ),
                   )
@@ -20240,6 +20246,8 @@ function App() {
                   setActiveTab={setOBTab}
                   updateLimitAmount={updateLimitAmount}
                   renderChartComponent={renderChartComponent}
+                  reserveQuote={reserveQuote}
+                  reserveBase={reserveBase}
                 />
               </div>
               <div

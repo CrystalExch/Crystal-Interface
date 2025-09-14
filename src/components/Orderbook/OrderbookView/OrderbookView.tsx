@@ -28,6 +28,8 @@ interface OrderbookViewProps {
   setViewMode: (mode: 'both' | 'buy' | 'sell') => void;
   show?: boolean;
   updateLimitAmount: any;
+  reserveQuote: any;
+  reserveBase: any;
 }
 
 const OrderbookView: React.FC<OrderbookViewProps> = ({
@@ -47,6 +49,8 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   setViewMode,
   updateLimitAmount,
   show = true,
+  reserveQuote,
+  reserveBase,
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
@@ -86,6 +90,8 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   const { orders: processedBuyOrders, leftoverPerRow: extraBuy } = useMemo(() => {
     return scaleOrders(
       roundedBuy,
+      reserveBase,
+      reserveQuote,
       obInterval,
       true,
       viewMode,
@@ -93,10 +99,12 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
       20.5,
     );
   }, [roundedBuy, obInterval, viewMode, containerHeight]);
-  
+
   const { orders: processedSellOrders, leftoverPerRow: extraSell } = useMemo(() => {
     return scaleOrders(
       roundedSell,
+      reserveBase,
+      reserveQuote,
       obInterval,
       false,
       viewMode,
