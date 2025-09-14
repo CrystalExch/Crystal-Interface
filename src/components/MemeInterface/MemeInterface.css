@@ -2380,7 +2380,6 @@
 .stat-group-vol .stat-value {
   color: #ffffff;
   font-size: 0.85rem;
-  font-weight: 500;
 }
 .stat-group-vol .stat-label {
   color: rgba(255, 255, 255, 0.6);
@@ -2399,7 +2398,6 @@
 .stat-group-net-vol .stat-value {
   color: #ffffff;
   font-size: 0.85rem;
-  font-weight: 500;
 }
 .stat-group-net-vol .stat-label {
   color: rgba(255, 255, 255, 0.6);
@@ -2427,7 +2425,6 @@
 .stat-group .stat-value {
   color: #ffffff;
   font-size: 0.85rem;
-  font-weight: 500;
 }
 
 .stat-group .stat-value.green {
@@ -2534,7 +2531,7 @@
 }
 
 .tf-percentage {
-  font-size: 0.65rem;
+  font-size: 0.85rem;
   color: #f77f7d;
 }
 

@@ -2276,12 +2276,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
             <div className="stat-group buys">
               <span className="stat-label">Buys</span>
-              <span className="stat-value green">{formatNumberWithCommas(buyers)} / {formatNumberWithCommas(buyVolume, 1)}</span>
+              <span className="stat-value green">{formatNumberWithCommas(buyers)} / ${formatNumberWithCommas(buyVolume, 1)}</span>
             </div>
 
             <div className="stat-group sells">
               <span className="stat-label">Sells</span>
-              <span className="stat-value red">{formatNumberWithCommas(sellers)}/ {formatNumberWithCommas(sellVolume, 1)}</span>
+              <span className="stat-value red">{formatNumberWithCommas(sellers)}/ ${formatNumberWithCommas(sellVolume, 1)}</span>
             </div>
 
             <div className="stat-group-net-vol">
