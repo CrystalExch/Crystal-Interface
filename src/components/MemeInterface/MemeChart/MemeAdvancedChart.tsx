@@ -204,7 +204,8 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       locale: 'en',
       debug: false,
       theme: 'dark',
-      supported_resolutions: ['1', '5', '15', '60', '240', '1D'],
+supported_resolutions: ['1S', '5S', '15S', '1', '5', '15', '60', '240', '1D'],
+  enabled_features: ['seconds_resolution'],  
       auto_save_delay: 0.1,
       disabled_features: [
         'header_symbol_search',
@@ -236,10 +237,10 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       custom_font_family: 'Funnel Display',
       loading_screen: {
         backgroundColor: 'rgb(6,6,6)',
-        foregroundColor: '#aaaecf',
+        foregroundColor: 'rgb(209, 209, 250)',
       },
       favorites: {
-        intervals: ['5', '60', '1D'],
+  intervals: ['1S', '5S', '15S', '5', '60', '1D'],
       },
       overrides: memeOverrides,
       studies: ['Volume@tv-basicstudies'],
@@ -254,7 +255,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         onReady: (callback: Function) => {
           setTimeout(() => {
             callback({
-              supported_resolutions: ['1', '5', '15', '60', '240', '1D'],
+supported_resolutions: ['1S', '5S', '15S', '1', '5', '15', '60', '240', '1D'],
               exchanges: [
                 {
                   value: 'crystal.exchange',
@@ -280,8 +281,10 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               minmov: 1,
               pricescale: 10 ** Math.max(0, 5 - Math.floor(Math.log10(0.000001)) - 1),
               has_intraday: true,
+              has_seconds: true,  
+                seconds_multipliers: ['1', '5', '15'],   
               has_volume: true,
-              supported_resolutions: ['1', '5', '15', '60', '240', '1D'],
+supported_resolutions: ['1S', '5S', '15S', '1', '5', '15', '60', '240', '1D'],
               data_status: 'streaming',
             });
           }, 0);
@@ -297,15 +300,17 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           const { from, to } = periodParams;
 
           try {
-            setSelectedInterval(
-              resolution === '1D'
-                ? '1d'
-                : resolution === '240'
-                  ? '4h'
-                  : resolution === '60'
-                    ? '1h'
-                    : resolution + 'm',
-            );
+setSelectedInterval(
+  resolution === '1D'
+    ? '1d'
+    : resolution === '240'
+      ? '4h'
+      : resolution === '60'
+        ? '1h'
+        : resolution.endsWith('S')
+          ? resolution.slice(0, -1).toLowerCase() + 's'
+          : resolution + 'm',
+);
 
             const key = token.symbol + 'MON' + resolution;
 
@@ -408,7 +413,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
 
         const styleButton = (button:any, isActive:any) => {
           if (isActive) {
-            button.style.color = '#aaaecf';
+            button.style.color = 'rgb(209, 209, 250)';
           } else {
           }
           button.style.cursor = 'pointer';
@@ -562,27 +567,31 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       tokenRef.current = token;
       if (chartReady && widgetRef.current) {
         setOverlayVisible(true);
-        localStorage.setItem('meme_chart_timeframe', selectedInterval === '1d'
-          ? '1D'
-          : selectedInterval === '4h'
-            ? '240'
-            : selectedInterval === '1h'
-              ? '60'
-              : selectedInterval.slice(0, -1));
+localStorage.setItem('meme_chart_timeframe',
+  selectedInterval === '1d'
+    ? '1D'
+    : selectedInterval === '4h'
+      ? '240'
+      : selectedInterval === '1h'
+        ? '60'
+        : selectedInterval.endsWith('s')
+          ? selectedInterval.slice(0, -1).toUpperCase() + 'S'
+          : selectedInterval.slice(0, -1));
 
-        widgetRef.current.setSymbol(
-          `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,
-          selectedInterval === '1d'
-            ? '1D'
-            : selectedInterval === '4h'
-              ? '240'
-              : selectedInterval === '1h'
-                ? '60'
-                : selectedInterval.slice(0, -1),
-          () => {
-            setOverlayVisible(false);
-          },
-        );
+widgetRef.current.setSymbol(
+  `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,
+  selectedInterval === '1d'
+    ? '1D'
+    : selectedInterval === '4h'
+      ? '240'
+      : selectedInterval === '1h'
+        ? '60'
+        : selectedInterval.endsWith('s')
+          ? selectedInterval.slice(0, -1).toUpperCase() + 'S'
+          : selectedInterval.slice(0, -1),
+  () => { setOverlayVisible(false); },
+);
+
       }
     }
     catch (e) {

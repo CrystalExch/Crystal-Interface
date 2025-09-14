@@ -31,12 +31,12 @@ export const overrides = {
 
   'mainSeriesProperties.hlcAreaStyle.highLineColor': '#50f08d',
   'mainSeriesProperties.hlcAreaStyle.lowLineColor': 'rgb(239, 81, 81)',
-  'mainSeriesProperties.hlcAreaStyle.closeLineColor': '#aaaecf',
+  'mainSeriesProperties.hlcAreaStyle.closeLineColor': 'rgb(209, 209, 250)',
   'mainSeriesProperties.hlcAreaStyle.highLineWidth': 1,
   'mainSeriesProperties.hlcAreaStyle.lowLineWidth': 1,
   'mainSeriesProperties.hlcAreaStyle.closeLineWidth': 1,
 
-  'mainSeriesProperties.baselineStyle.baselineColor': '#aaaecf',
+  'mainSeriesProperties.baselineStyle.baselineColor': 'rgb(209, 209, 250)',
   'mainSeriesProperties.baselineStyle.topFillColor1':
     'rgba(80, 240, 141, 0.28)',
   'mainSeriesProperties.baselineStyle.topFillColor2':
@@ -51,19 +51,19 @@ export const overrides = {
   'mainSeriesProperties.baselineStyle.bottomLineWidth': 2,
 
   'charts_dialogs_background_color': 'rgb(6,6,6)',
-  'charts_dialogs_text_color': '#aaaecf',
-  'charts_toggles_button_text_color': '#aaaecf',
+  'charts_dialogs_text_color': 'rgb(209, 209, 250)',
+  'charts_toggles_button_text_color': 'rgb(209, 209, 250)',
   'popup.background.color': 'rgb(6,6,6)',
-  'popup.text.color': '#aaaecf',
+  'popup.text.color': 'rgb(209, 209, 250)',
   'calendar.background.color': 'rgb(6,6,6)',
-  'calendar.text.color': '#aaaecf',
+  'calendar.text.color': 'rgb(209, 209, 250)',
   'calendar.header.background.color': 'rgb(6,6,6)',
-  'calendar.header.text.color': '#aaaecf',
+  'calendar.header.text.color': 'rgb(209, 209, 250)',
   'dialog.background.color': 'rgb(6,6,6)',
-  'dialog.text.color': '#aaaecf',
+  'dialog.text.color': 'rgb(209, 209, 250)',
   'dialog.button.background.color': 'rgb(6,6,6)',
-  'dialog.button.text.color': '#aaaecf',
+  'dialog.button.text.color': 'rgb(209, 209, 250)',
   'dialog.input.background.color': 'rgb(6,6,6)',
-  'dialog.input.text.color': '#aaaecf',
+  'dialog.input.text.color': 'rgb(209, 209, 250)',
 
 };
