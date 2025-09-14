@@ -64,30 +64,29 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
     }
 
     // Look for common patterns where we want to insert the token image
-    // Priority: token being traded gets the image, not the currency
+    // Pattern: "word TOKEN" -> "word [IMAGE] TOKEN"
     const patterns = [
-      // Trading patterns - token before "for" gets priority
-      /(\bSold\s+[\d.,]+[A-Z]*\s+)([A-Z][A-Z0-9]*\b)(\s+for)/i, // "Sold 123M CRYSTAL for" - CRYSTAL gets image
-      /(\bBought\s+[≈~]?\s*[\d.,]+[A-Z]*\s+)([A-Z][A-Z0-9]*\b)(\s+(?:for|with))/i, // "Bought ~ 123 CRYSTAL for/with" 
-      /(\bReceived\s+[≈~]?\s*[\d.,]+[A-Z]*\s+)([A-Z][A-Z0-9]*\b)(\s+(?:for|from))/i, // "Received ~ 123 CRYSTAL for"
-      
-      // "worth of" patterns - token after "of" gets image
+      // Trading patterns
       /(\b(?:worth of|of)\s+)([A-Z][A-Z0-9]*\b)/i, // "worth of TOKEN" or "of TOKEN"
       /(\bBuying\s+[\d.,]+\s+[A-Z]+\s+worth\s+of\s+)([A-Z][A-Z0-9]*\b)/i, // "Buying 5 MON worth of TOKEN"
-      /(\bSelling\s+[\d.,]+\s+(?:[A-Z]+\s+worth\s+)?(?:of\s+)?)([A-Z][A-Z0-9]*\b)/i, // "Selling 25% of TOKEN"
+      /(\bSelling\s+[\d.,]+\s+(?:[A-Z]+\s+worth\s+)?(?:of\s+)?)([A-Z][A-Z0-9]*\b)/i, // "Selling 25% of TOKEN" or "Selling 5 MON worth of TOKEN"
       
-      // Confirmation patterns - look for token in transaction context
-      /(\bConfirming\s+(?:transaction|buy|sell)[\w\s]*?worth\s+of\s+)([A-Z][A-Z0-9]*\b)/i, // "Confirming transaction... worth of TOKEN"
-      /(\bConfirming\s+(?:sell)[\w\s]*?)([A-Z][A-Z0-9]*\b)(\s+(?:for|to))/i, // "Confirming sell... TOKEN for"
+      // Success patterns
+      /(\bBought\s+[≈~]?\s*[\d.,]+\s+)([A-Z][A-Z0-9]*\b)/i, // "Bought ~ 123 TOKEN"
+      /(\bSold\s+[\d.,]+\s+)([A-Z][A-Z0-9]*\b)/i, // "Sold 123 TOKEN"
+      /(\bReceived\s+[≈~]?\s*[\d.,]+\s+)([A-Z][A-Z0-9]*\b)/i, // "Received ~ 123 TOKEN"
       
-      // Simple patterns when no "for" present
-      /(\bBought\s+[≈~]?\s*[\d.,]+[A-Z]*\s+)([A-Z][A-Z0-9]*\b)(?!\s+for)/i, // "Bought ~ 123 TOKEN" (not followed by "for")
-      /(\bSold\s+[\d.,]+[A-Z]*\s+)([A-Z][A-Z0-9]*\b)(?!\s+for)/i, // "Sold 123 TOKEN" (not followed by "for")
-      /(\bReceived\s+[≈~]?\s*[\d.,]+[A-Z]*\s+)([A-Z][A-Z0-9]*\b)(?!\s+for)/i, // "Received ~ 123 TOKEN" (not followed by "for")
+      // Confirmation patterns  
+      /(\bConfirming\s+[\w\s]*?\s+)([A-Z][A-Z0-9]*\b)/i, // "Confirming transaction... TOKEN"
+      /(\bfor\s+[≈~]?\s*[\d.,]+\s+)([A-Z][A-Z0-9]*\b)/i, // "for ~ 5.4 TOKEN"
       
       // Error patterns
       /(\bNot\s+enough\s+)([A-Z][A-Z0-9]*\b)/i, // "Not enough TOKEN"
       /(\bInsufficient\s+)([A-Z][A-Z0-9]*\b)/i, // "Insufficient TOKEN"
+      
+      // General patterns - must be last as they're more generic
+      /(\s)([A-Z][A-Z0-9]*\b)(\s+for)/i, // "TOKEN for"
+      /(\s)([A-Z][A-Z0-9]*\b)(\s*$)/i, // "TOKEN" at end of string
     ];
 
     for (const pattern of patterns) {
@@ -106,10 +105,6 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
               className="wallet-popup-token-image"
               style={{ 
                 display: 'inline', 
-                width: '16px', 
-                height: '16px', 
-                marginRight: '4px',
-                verticalAlign: 'text-bottom'
               }}
             />
             {tokenSymbol}

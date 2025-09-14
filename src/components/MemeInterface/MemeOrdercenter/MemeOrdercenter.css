@@ -83,6 +83,7 @@
   background-color: rgb(6, 6, 6);
     max-width: 100vw;
   overflow-x: auto;
+  
 }
 
 .meme-oc-no-data-container {
@@ -141,6 +142,7 @@
   overflow: hidden;
     max-width: 100vw !important;
   overflow-x: auto;
+
 }
 
 .meme-oc-header {
@@ -161,6 +163,8 @@
   overflow-y: auto;
   min-height: 0;
   width: 100%;
+    scrollbar-width: thin;
+  scrollbar-color: rgba(170, 174, 207, 0.15) transparent;
 }
 
 .meme-oc-item {
