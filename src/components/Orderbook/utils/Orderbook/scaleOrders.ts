@@ -11,18 +11,12 @@ const SPREAD_DISPLAY_HEIGHT = 50;
 const HEADER_HEIGHT = 18;
 const MIN_ORDERS = 0;
 
-const BASE_DECIMALS = 18;
-const QUOTE_DECIMALS = 6;
-
-const DEFAULT_RESERVE1_RAW = 100_000n * 10n ** BigInt(BASE_DECIMALS);
-const DEFAULT_RESERVE2_RAW = 100_000n * 10n ** BigInt(QUOTE_DECIMALS);
-
 function v2ToOrderbook(
   reserve1Raw: number | bigint,
   reserve2Raw: number | bigint,
   interval: number,
 ): { bids: Order[]; asks: Order[] } {
-  if (interval <= 0) return { bids: [], asks: [] };
+  if (reserve1Raw == 0 || reserve2Raw == 0 || interval <= 0) return { bids: [], asks: [] };
 
   const BASE_DECIMALS = 18;
   const QUOTE_DECIMALS = 6;
@@ -83,10 +77,9 @@ function v2ToOrderbook(
 
       const baseIn = dxEff / oneMinusFee;
       if (baseIn <= 0) break;
-
       bids.push({
         price: pLow,
-        size: Math.round(baseIn * 1e8) / 1e8,
+        size: baseIn,
         totalSize: 0,
         shouldFlash: false,
         userPrice: false,
@@ -108,10 +101,9 @@ function v2ToOrderbook(
       const xN = xFromP(pHigh);
       const baseOut = Math.max(0, xA - xN);
       if (baseOut <= 0) break;
-
       asks.push({
         price: pHigh,
-        size: Math.round(baseOut * 1e8) / 1e8,
+        size: baseOut,
         totalSize: 0,
         shouldFlash: false,
         userPrice: false,
@@ -126,6 +118,8 @@ function v2ToOrderbook(
 
 export function scaleOrders(
   _orders: Order[],
+  reserveQuote: bigint,
+  reserveBase: bigint,
   interval: number,
   isBuyOrder: boolean,
   viewMode: string,
@@ -136,7 +130,7 @@ export function scaleOrders(
     return { orders: [], leftoverPerRow: 0 };
   }
 
-  const { bids, asks } = v2ToOrderbook(DEFAULT_RESERVE1_RAW, DEFAULT_RESERVE2_RAW, interval);
+  const { bids, asks } = v2ToOrderbook(reserveQuote, reserveBase, interval);
   const ammSide = isBuyOrder ? bids : asks;
 
   const live = Array.isArray(_orders) ? _orders : [];

@@ -209,7 +209,7 @@
 }
 
 .meme-tag-icon.dev {
-  color: #ffc107;
+  color: #fff27a;
 }
 
 .meme-tag-icon.kol {
@@ -225,7 +225,7 @@
 }
 
 .meme-top-holder-icon {
-  color: #ffd97a;
+  color: #fff27a;
   opacity: 0.9;
   transition: opacity 0.2s ease;
 }

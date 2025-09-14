@@ -119,6 +119,7 @@
 }
 
 .wallet-popup-subtitle {
+  display: flex;
   color: #ffffff7d;
   font-size: 0.74rem;
   font-weight: 300;
@@ -175,13 +176,13 @@
   align-items: center;
   justify-content: center;
   width: 22px; height: 22px;
-  border-radius: 999px;
+  border-radius: 5px;
   flex-shrink: 0;
   margin-top: -3px;
 }
 
 .wallet-popup-status-icon.status-success {
-  background: rgba(67, 254, 154, 0.15); color: #43fe9a;
+  background: #aaaecf22; color: #aaaecf;
 }
 
 .wallet-popup-status-icon.status-error {
@@ -214,4 +215,40 @@
 @keyframes walletPopupSpinnerRotate {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Token Icon Styles */
+.wallet-popup-token-amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wallet-popup-token-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wallet-popup-text-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+
+.wallet-popup-token-image {
+  width: 13px;
+  height: 13px;
+  margin-right: 3px;
+  vertical-align: middle;
+  border-radius: 3px;
+  margin-left: 5px;
+  margin-bottom: 2px;
 }

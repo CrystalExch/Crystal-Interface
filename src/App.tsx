@@ -964,6 +964,8 @@ function App() {
   const [warning, setwarning] = useState(0);
   const [lowestAsk, setlowestAsk] = useState(BigInt(0));
   const [highestBid, sethighestBid] = useState(BigInt(0));
+  const [reserveQuote, setReserveQuote] = useState(BigInt(0));
+  const [reserveBase, setReserveBase] = useState(BigInt(0));
   const [priceImpact, setPriceImpact] = useState('');
   const [averagePrice, setAveragePrice] = useState('');
   const [tradeFee, setTradeFee] = useState('');
@@ -1399,8 +1401,7 @@ function App() {
   const loading =
     (stateloading ||
       tradesloading ||
-      addressinfoloading) && false;
-
+      addressinfoloading);
 
   const [sendAmountIn, setSendAmountIn] = useState(BigInt(0));
   const [sendInputAmount, setSendInputAmount] = useState('');
@@ -1850,12 +1851,7 @@ function App() {
       setIsVaultWithdrawSigning(false);
     }
   };
-
-  const toKey = (base: string, quote: string, wethticker: string, ethticker: string) =>
-    `${base === wethticker ? ethticker : base}${quote === wethticker ? ethticker : quote}`;
-
-  const pfDecimals = (pf: number) => Math.max(0, Math.floor(Math.log10(pf)));
-
+  
   const [walletTokenBalances, setWalletTokenBalances] = useState({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
   const [walletsLoading, setWalletsLoading] = useState(false);
@@ -2200,10 +2196,10 @@ function App() {
           ]
         },
         {
-          to: router,
-          abi: CrystalRouterAbi,
-          functionName: 'getPriceLevelsFromMid',
-          args: [activeMarket?.address, BigInt(1000000), BigInt(1), BigInt(100)]
+          to: balancegetter,
+          abi: CrystalDataHelperAbi,
+          functionName: 'getMarketData',
+          args: [router, activeMarket?.address, BigInt(1000000), BigInt(1), BigInt(100)]
         },
         {
           to: balancegetter,
@@ -3181,25 +3177,33 @@ function App() {
         setmids(tempmids);
       }
       if (data?.[3]?.result) {
-        sethighestBid((data as any)[3].result[0] || BigInt(0));
-        setlowestAsk((data as any)[3].result[1] || BigInt(0));
         const orderdata = data[3].result;
+        setReserveQuote(orderdata[0])
+        setReserveBase(orderdata[1])
+        let ammPrice = orderdata[1] == 0n ? 0 : ((BigInt(orderdata[0]) * activeMarket.scaleFactor * 9975n * 100000n + (BigInt(orderdata[1]) * 10000n * activeMarket.makerRebate - 1n)) / (BigInt(orderdata[1]) * 10000n * activeMarket.makerRebate));
+        let temphighestBid = orderdata[0] < ammPrice ? ammPrice : orderdata[0]
+        sethighestBid(temphighestBid || BigInt(0));
+        temphighestBid = Number(temphighestBid);
+        ammPrice = orderdata[1] == 0n ? 0 : ((BigInt(orderdata[0]) * activeMarket.scaleFactor * 10000n * activeMarket.makerRebate) / (BigInt(orderdata[1]) * 9975n * 100000n));
+        let templowestAsk = orderdata[1] > ammPrice ? ammPrice : orderdata[1]
+        setlowestAsk(templowestAsk || BigInt(0));
+        templowestAsk = Number(templowestAsk);
         setPrevOrderData(orderdata as any);
-        if (orderdata && Array.isArray(orderdata) && orderdata.length >= 4 && !(orderdata[0] == prevOrderData[0] &&
-          orderdata[1] == prevOrderData[1] &&
-          orderdata[2]?.toLowerCase() == prevOrderData[2]?.toLowerCase() &&
-          orderdata[3]?.toLowerCase() == prevOrderData[3]?.toLowerCase())) {
+        if (orderdata && Array.isArray(orderdata) && orderdata.length >= 4 && !(orderdata[2] == prevOrderData[0] &&
+          orderdata[3] == prevOrderData[1] &&
+          orderdata[4]?.toLowerCase() == prevOrderData[2]?.toLowerCase() &&
+          orderdata[5]?.toLowerCase() == prevOrderData[3]?.toLowerCase())) {
           try {
             const buyOrdersRaw: bigint[] = [];
             const sellOrdersRaw: bigint[] = [];
 
-            for (let i = 2; i < orderdata[2].length; i += 64) {
-              const chunk = orderdata[2].slice(i, i + 64);
+            for (let i = 2; i < orderdata[4].length; i += 64) {
+              const chunk = orderdata[4].slice(i, i + 64);
               buyOrdersRaw.push(BigInt(`0x${chunk}`));
             }
 
-            for (let i = 2; i < orderdata[3].length; i += 64) {
-              const chunk = orderdata[3].slice(i, i + 64);
+            for (let i = 2; i < orderdata[5].length; i += 64) {
+              const chunk = orderdata[5].slice(i, i + 64);
               sellOrdersRaw.push(BigInt(`0x${chunk}`));
             }
 
@@ -3227,20 +3231,17 @@ function App() {
               false,
             );
 
-            const highestBid =
-              roundedBuy.length > 0 ? roundedBuy[0].price : undefined;
-            const lowestAsk =
-              roundedSell.length > 0 ? roundedSell[0].price : undefined;
-
+            temphighestBid /= Number(activeMarket.priceFactor)
+            templowestAsk /= Number(activeMarket.priceFactor)
             const spread = {
               spread:
-                highestBid !== undefined && lowestAsk !== undefined
-                  ? lowestAsk - highestBid
+              temphighestBid !== undefined && templowestAsk !== undefined
+                  ? templowestAsk - temphighestBid
                   : NaN,
               averagePrice:
-                highestBid !== undefined && lowestAsk !== undefined
+              temphighestBid !== undefined && templowestAsk !== undefined
                   ? Number(
-                    ((highestBid + lowestAsk) / 2).toFixed(
+                    ((temphighestBid + templowestAsk) / 2).toFixed(
                       Math.floor(Math.log10(Number(activeMarket.priceFactor))) + 1,
                     ),
                   )
@@ -4103,18 +4104,18 @@ function App() {
                     } else {
                       updatedBars.push({
                         time: flooredTradeTimeSec * 1000,
-                        open: lastBar.close ?? openPrice,
-                        high: Math.max(lastBar.close ?? openPrice, closePrice),
-                        low: Math.min(lastBar.close ?? openPrice, closePrice),
+                        open: lastBar?.close ?? openPrice,
+                        high: Math.max(lastBar?.close ?? openPrice, closePrice),
+                        low: Math.min(lastBar?.close ?? openPrice, closePrice),
                         close: closePrice,
                         volume: rawVolume,
                       });
                       if (realtimeCallbackRef.current[existingIntervalLabel]) {
                         realtimeCallbackRef.current[existingIntervalLabel]({
                           time: flooredTradeTimeSec * 1000,
-                          open: lastBar.close ?? openPrice,
-                          high: Math.max(lastBar.close ?? openPrice, closePrice),
-                          low: Math.min(lastBar.close ?? openPrice, closePrice),
+                          open: lastBar?.close ?? openPrice,
+                          high: Math.max(lastBar?.close ?? openPrice, closePrice),
+                          low: Math.min(lastBar?.close ?? openPrice, closePrice),
                           close: closePrice,
                           volume: rawVolume,
                         });
@@ -4132,8 +4133,8 @@ function App() {
                     const newTrades = temptrades?.[marketKey]
                     if (!Array.isArray(newTrades) || newTrades.length < 1) return market;
                     const firstKlineOpen: number =
-                      market?.series && Array.isArray(market?.series) && market?.series.length > 0
-                        ? Number(market?.series[0].open)
+                      market?.mini && Array.isArray(market?.mini) && market?.mini.length > 0
+                        ? Number(market?.mini[0].value * Number(market.priceFactor))
                         : 0;
                     const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
                     const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
@@ -4157,7 +4158,7 @@ function App() {
                       volume: formatCommas(
                         (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
                       ),
-                      currentPrice: formatSubscript(
+                      currentPrice: formatSig(
                         (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
                       ),
                       priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
@@ -4973,18 +4974,18 @@ function App() {
                       } else {
                         updatedBars.push({
                           time: flooredTradeTimeSec * 1000,
-                          open: lastBar.close ?? openPrice,
-                          high: Math.max(lastBar.close ?? openPrice, closePrice),
-                          low: Math.min(lastBar.close ?? openPrice, closePrice),
+                          open: lastBar?.close ?? openPrice,
+                          high: Math.max(lastBar?.close ?? openPrice, closePrice),
+                          low: Math.min(lastBar?.close ?? openPrice, closePrice),
                           close: closePrice,
                           volume: rawVolume,
                         });
                         if (realtimeCallbackRef.current[existingIntervalLabel]) {
                           realtimeCallbackRef.current[existingIntervalLabel]({
                             time: flooredTradeTimeSec * 1000,
-                            open: lastBar.close ?? openPrice,
-                            high: Math.max(lastBar.close ?? openPrice, closePrice),
-                            low: Math.min(lastBar.close ?? openPrice, closePrice),
+                            open: lastBar?.close ?? openPrice,
+                            high: Math.max(lastBar?.close ?? openPrice, closePrice),
+                            low: Math.min(lastBar?.close ?? openPrice, closePrice),
                             close: closePrice,
                             volume: rawVolume,
                           });
@@ -5002,8 +5003,8 @@ function App() {
                       const newTrades = temptrades?.[marketKey]
                       if (!Array.isArray(newTrades) || newTrades.length < 1) return market;
                       const firstKlineOpen: number =
-                        market?.series && Array.isArray(market?.series) && market?.series.length > 0
-                          ? Number(market?.series[0].open)
+                        market?.mini && Array.isArray(market?.mini) && market?.mini.length > 0
+                          ? Number(market?.mini[0].value * Number(market.priceFactor))
                           : 0;
                       const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
                       const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
@@ -5027,7 +5028,7 @@ function App() {
                         volume: formatCommas(
                           (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
                         ),
-                        currentPrice: formatSubscript(
+                        currentPrice: formatSig(
                           (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
                         ),
                         priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
@@ -8677,6 +8678,32 @@ function App() {
     refetchInterval: ['board', 'explorer', 'meme'].includes(location.pathname.slice(1)) ? 800 : 5000,
     gcTime: 0,
   })
+
+    const resolveNative = useCallback(
+      (symbol: string | undefined) => {
+        if (!symbol) return "";
+        if (symbol === wethticker) return ethticker ?? symbol;
+        return symbol;
+      },
+      [wethticker, ethticker],
+    );
+  
+  
+    const usdPer = useCallback(
+      (symbol?: string): number => {
+        if (!symbol || !tradesByMarket || !markets) return 0;
+        const sym = resolveNative(symbol);
+        if (usdc && sym === "USDC") return 1;
+        const pair = `${sym}USDC`;
+        const top = tradesByMarket[pair]?.[0]?.[3];
+        const pf = Number(markets[pair]?.priceFactor) || 1;
+        if (!top || !pf) return 0;
+        return Number(top) / pf;
+      },
+      [tradesByMarket, markets, resolveNative, usdc],
+    );
+    const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
+
   //popup modals
   const Modals = (
     <>
@@ -20219,7 +20246,8 @@ function App() {
                     roundedBuyOrders: roundedBuyOrders?.orders,
                     roundedSellOrders: roundedSellOrders?.orders,
                     spreadData,
-                    priceFactor: markets[roundedBuyOrders?.key]?.marketType != 0 && spreadData?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spreadData?.averagePrice ?? 1)) - 1) : Number(markets[roundedBuyOrders?.key]?.priceFactor),
+                    priceFactor: Number(markets[roundedBuyOrders?.key]?.priceFactor),
+                    marketType: markets[roundedBuyOrders?.key]?.marketType,
                     symbolIn: markets[roundedBuyOrders?.key]?.quoteAsset,
                     symbolOut: markets[roundedBuyOrders?.key]?.baseAsset,
                   }}
@@ -20240,6 +20268,8 @@ function App() {
                   setActiveTab={setOBTab}
                   updateLimitAmount={updateLimitAmount}
                   renderChartComponent={renderChartComponent}
+                  reserveQuote={reserveQuote}
+                  reserveBase={reserveBase}
                 />
               </div>
               <div
@@ -20409,6 +20439,7 @@ function App() {
               tokenBalances={tokenBalances}
               lastRefGroupFetch={lastRefGroupFetch}
               tokenData={tokenData}
+              monUsdPrice={monUsdPrice}
             />
           </div>
           <div className="headerfiller"></div>
@@ -20634,6 +20665,7 @@ function App() {
               terminalRefetch={terminalRefetch}
               tokenData={tokenData}
               setTokenData={setTokenData}
+              monUsdPrice={monUsdPrice}
             />
           } />
           <Route

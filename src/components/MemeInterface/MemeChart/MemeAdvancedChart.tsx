@@ -23,21 +23,20 @@ function formatMemePrice(price: number): string {
   const neg = price < 0 ? '-' : '';
   const abs = Math.abs(price);
 
-  // Compact K/M/B
   if (abs >= 1_000_000_000) return neg + (abs / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B';
-  if (abs >= 1_000_000)     return neg + (abs / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (abs >= 1_000)         return neg + (abs / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  if (abs >= 1_000_000) return neg + (abs / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (abs >= 1_000) return neg + (abs / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
 
   if (abs >= 1e-3) return neg + abs.toFixed(2).replace(/\.00$/, '');
 
-  const exp = Math.floor(Math.log10(abs)); 
+  const exp = Math.floor(Math.log10(abs));
   let zeros = -exp - 1;
   if (zeros < 0) zeros = 0;
 
-  const tailDigits = 2;                        
+  const tailDigits = 2;
   const factor = Math.pow(10, tailDigits);
-  let scaled = abs * Math.pow(10, zeros + 1);  
-  let t = Math.round(scaled * factor);        
+  let scaled = abs * Math.pow(10, zeros + 1);
+  let t = Math.round(scaled * factor);
 
   if (t >= Math.pow(10, 1 + tailDigits)) {
     zeros = Math.max(0, zeros - 1);
@@ -45,8 +44,8 @@ function formatMemePrice(price: number): string {
     t = Math.round(scaled * factor);
   }
 
-  const s = t.toString().padStart(1 + tailDigits, '0'); 
-  const tail2 = s.slice(0, 2);                          
+  const s = t.toString().padStart(1 + tailDigits, '0');
+  const tail2 = s.slice(0, 2);
 
   return `${neg}0.0${toSub(zeros)}${tail2}`;
 }
@@ -219,7 +218,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         'use_localstorage_for_settings',
         'symbol_info',
       ],
-       custom_formatters: {
+      custom_formatters: {
         priceFormatterFactory: (_symbolInfo: any, _minTick: number) => {
           return {
             format: (price: number) => {
@@ -401,6 +400,109 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
 
     widgetRef.current.onChartReady(() => {
       setChartReady(true);
+      widgetRef.current.headerReady().then(() => {
+        if (!widgetRef.current.activeChart()) {
+          console.warn('Chart not ready yet');
+          return;
+        }
+
+        const styleButton = (button:any, isActive:any) => {
+          if (isActive) {
+            button.style.color = '#aaaecf';
+          } else {
+          }
+          button.style.cursor = 'pointer';
+          button.style.fontFamily = 'Funnel Display';
+        };
+
+        const monBtn = widgetRef.current.createButton();
+        monBtn.setAttribute('title', 'Switch to MON');
+        monBtn.textContent = 'MON';
+        monBtn.addEventListener('click', () => {
+          if (!showUSD) return; 
+
+          setShowUSD(false);
+          try {
+            widgetRef.current.activeChart().setSymbol(
+              `${token.symbol}/MON`,
+              widgetRef.current.activeChart().resolution()
+            );
+            styleButton(monBtn, true);
+            styleButton(usdBtn, false);
+          } catch (error) {
+            console.error('Error changing to MON:', error);
+          }
+        });
+
+        const usdBtn = widgetRef.current.createButton();
+        usdBtn.setAttribute('title', 'Switch to USD');
+        usdBtn.textContent = 'USD';
+        usdBtn.addEventListener('click', () => {
+          if (showUSD) return;
+
+          setShowUSD(true);
+          try {
+            widgetRef.current.activeChart().setSymbol(
+              `${token.symbol}/USD`,
+              widgetRef.current.activeChart().resolution()
+            );
+            styleButton(usdBtn, true);
+            styleButton(monBtn, false);
+          } catch (error) {
+            console.error('Error changing to USD:', error);
+          }
+        });
+
+        styleButton(monBtn, !showUSD);
+        styleButton(usdBtn, showUSD);
+
+        const priceBtn = widgetRef.current.createButton();
+        priceBtn.setAttribute('title', 'Switch to Price');
+        priceBtn.textContent = 'Price';
+        priceBtn.addEventListener('click', () => {
+          if (!showMarketCap) return; 
+
+          setShowMarketCap(false);
+          try {
+            const currentSymbol = widgetRef.current.activeChart().symbol();
+            const currentResolution = widgetRef.current.activeChart().resolution();
+
+            setTimeout(() => {
+              widgetRef.current.activeChart().setSymbol(currentSymbol, currentResolution);
+            }, 10);
+
+            styleButton(priceBtn, true);
+            styleButton(marketCapBtn, false);
+          } catch (error) {
+            console.error('Error switching to Price:', error);
+          }
+        });
+
+        const marketCapBtn = widgetRef.current.createButton();
+        marketCapBtn.setAttribute('title', 'Switch to MarketCap');
+        marketCapBtn.textContent = 'MarketCap';
+        marketCapBtn.addEventListener('click', () => {
+          if (showMarketCap) return;
+
+          setShowMarketCap(true);
+          try {
+            const currentSymbol = widgetRef.current.activeChart().symbol();
+            const currentResolution = widgetRef.current.activeChart().resolution();
+
+            setTimeout(() => {
+              widgetRef.current.activeChart().setSymbol(currentSymbol, currentResolution);
+            }, 10);
+
+            styleButton(marketCapBtn, true);
+            styleButton(priceBtn, false);
+          } catch (error) {
+            console.error('Error switching to MarketCap:', error);
+          }
+        });
+
+        styleButton(priceBtn, !showMarketCap);
+        styleButton(marketCapBtn, showMarketCap);
+      });
       const chartId = `meme_layout_${token.symbol}`;
 
       localAdapterRef.current
@@ -447,7 +549,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       });
       setOverlayVisible(false);
     });
-  return () => {
+    return () => {
       setChartReady(false);
       if (widgetRef.current) {
         widgetRef.current.remove();
@@ -468,7 +570,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               ? '60'
               : selectedInterval.slice(0, -1));
 
-           widgetRef.current.setSymbol(
+        widgetRef.current.setSymbol(
           `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,
           selectedInterval === '1d'
             ? '1D'
@@ -489,16 +591,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   return (
     <div className="advanced-chart-container">
       <div ref={chartRef} />
-      <div className="usd-mon-toggle" onClick={() => setShowUSD(v => !v)}>
-        <span className={!showUSD ? 'active' : ''}>MON</span>
-        <span className="separator">/</span>
-        <span className={showUSD ? 'active' : ''}>USD</span>
-      </div>
-      <div className="price-marketcap-toggle" onClick={() => setShowMarketCap(v => !v)}>
-        <span className={!showMarketCap ? 'active' : ''}>Price</span>
-        <span className="separator">/</span>
-        <span className={showMarketCap ? 'active' : ''}>MarketCap</span>
-      </div>
     </div>
   );
 };
