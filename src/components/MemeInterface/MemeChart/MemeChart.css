@@ -208,9 +208,8 @@ body:has(.markets-dropdown-content.visible) .meme-chartwrapper .advanced-chart-c
 
 .usd-mon-toggle {
   position: absolute;
-  right: 225px;
+  margin-left: 365px;
   margin-top: 7px;
-  margin-left: auto;
   font-size: 0.85rem;
   color: #d1d4dc;
   cursor: pointer;
@@ -221,7 +220,8 @@ body:has(.markets-dropdown-content.visible) .meme-chartwrapper .advanced-chart-c
   transition: all 0.2s ease;
   max-width: 90px;
   max-height: 24.41px;
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  padding-left: 15px;
 }
 
 .usd-mon-toggle span {
@@ -253,9 +253,9 @@ body:has(.markets-dropdown-content.visible) .meme-chartwrapper .advanced-chart-c
 
 .price-marketcap-toggle {
   position: absolute;
-  right: 110px;
+  margin-left: 215px;
   margin-top: 7px;
-  margin-left: auto;
+  margin-right: auto;
   font-size: 0.85rem;
   color: #d1d4dc;
   cursor: pointer;
@@ -266,4 +266,7 @@ body:has(.markets-dropdown-content.visible) .meme-chartwrapper .advanced-chart-c
   transition: all 0.2s ease;
  max-width: 100px;
   max-height: 24.41px;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    padding-left: 15px;
+
 }
