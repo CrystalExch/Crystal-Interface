@@ -65,6 +65,7 @@ interface HeaderProps {
   tokenBalances: { [address: string]: bigint };
   lastRefGroupFetch: any;
   tokenData?: any;
+  monUsdPrice?: number;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -100,6 +101,7 @@ const Header: React.FC<HeaderProps> = ({
   logout,
   lastRefGroupFetch,
   tokenData,
+  monUsdPrice,
 }) => {
   const location = useLocation();
   const [isNetworkSelectorOpen, setNetworkSelectorOpen] = useState(false);
@@ -345,6 +347,7 @@ const Header: React.FC<HeaderProps> = ({
             tradesByMarket={tradesByMarket}
             isMemeToken={isMemeTokenPage}
             memeTokenData={memeTokenData}
+            monUsdPrice={monUsdPrice}
           />
         </div>
         <div className={rightHeaderClass}>

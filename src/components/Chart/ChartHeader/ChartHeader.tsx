@@ -47,6 +47,7 @@ interface ChartHeaderProps {
     telegramHandle?: string;
     discordHandle?: string;
   };
+  monUsdPrice: number;
 }
 
 const ChartHeader: React.FC<ChartHeaderProps> = ({
@@ -68,6 +69,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   tradesByMarket,
   isMemeToken = false,
   memeTokenData,
+  monUsdPrice
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
@@ -246,6 +248,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         simpleView={simpleView}
         isMemeToken={isMemeToken}
         memeTokenData={memeTokenData}
+        monUsdPrice={monUsdPrice}
       />
       {shouldShowFullHeader && (
         <AdditionalMetrics 

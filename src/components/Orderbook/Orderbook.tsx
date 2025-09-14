@@ -21,6 +21,8 @@ interface OrderBookProps {
   activeTab: 'orderbook' | 'trades';
   setActiveTab: any;
   updateLimitAmount: any;
+  reserveQuote: any;
+  reserveBase: any;
 }
 
 const OrderBook: React.FC<OrderBookProps> = ({
@@ -39,6 +41,8 @@ const OrderBook: React.FC<OrderBookProps> = ({
   activeTab,
   setActiveTab,
   updateLimitAmount,
+  reserveQuote,
+  reserveBase,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
@@ -113,6 +117,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
         priceFactor={orderdata.priceFactor}
         symbolQuote={orderdata.symbolIn}
         symbolBase={orderdata.symbolOut}
+        marketType={orderdata.marketType}
         orderbookPosition={orderbookPosition}
         interval={interval}
         amountsQuote={amountsQuote}
@@ -123,6 +128,8 @@ const OrderBook: React.FC<OrderBookProps> = ({
         setViewMode={setViewMode}
         show={activeTab === 'orderbook' ? true : false}
         updateLimitAmount={updateLimitAmount}
+        reserveQuote={reserveQuote}
+        reserveBase={reserveBase}
       />
 
       <TradesView

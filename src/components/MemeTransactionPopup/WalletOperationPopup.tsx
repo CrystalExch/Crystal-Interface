@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import './WalletOperationPopup.css';
 import closebutton from '../../assets/close_button.png';
@@ -56,6 +55,69 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
     }, 300);
   };
 
+  // Function to render subtitle with inline token image
+  const renderSubtitleWithImage = () => {
+    if (!subtitle) return null;
+    
+    if (!tokenImage) {
+      return <span>{subtitle}</span>;
+    }
+
+    // Look for common patterns where we want to insert the token image
+    // Pattern: "word TOKEN" -> "word [IMAGE] TOKEN"
+    const patterns = [
+      // Trading patterns
+      /(\b(?:worth of|of)\s+)([A-Z][A-Z0-9]*\b)/i, // "worth of TOKEN" or "of TOKEN"
+      /(\bBuying\s+[\d.,]+\s+[A-Z]+\s+worth\s+of\s+)([A-Z][A-Z0-9]*\b)/i, // "Buying 5 MON worth of TOKEN"
+      /(\bSelling\s+[\d.,]+\s+(?:[A-Z]+\s+worth\s+)?(?:of\s+)?)([A-Z][A-Z0-9]*\b)/i, // "Selling 25% of TOKEN" or "Selling 5 MON worth of TOKEN"
+      
+      // Success patterns
+      /(\bBought\s+[≈~]?\s*[\d.,]+\s+)([A-Z][A-Z0-9]*\b)/i, // "Bought ~ 123 TOKEN"
+      /(\bSold\s+[\d.,]+\s+)([A-Z][A-Z0-9]*\b)/i, // "Sold 123 TOKEN"
+      /(\bReceived\s+[≈~]?\s*[\d.,]+\s+)([A-Z][A-Z0-9]*\b)/i, // "Received ~ 123 TOKEN"
+      
+      // Confirmation patterns  
+      /(\bConfirming\s+[\w\s]*?\s+)([A-Z][A-Z0-9]*\b)/i, // "Confirming transaction... TOKEN"
+      /(\bfor\s+[≈~]?\s*[\d.,]+\s+)([A-Z][A-Z0-9]*\b)/i, // "for ~ 5.4 TOKEN"
+      
+      // Error patterns
+      /(\bNot\s+enough\s+)([A-Z][A-Z0-9]*\b)/i, // "Not enough TOKEN"
+      /(\bInsufficient\s+)([A-Z][A-Z0-9]*\b)/i, // "Insufficient TOKEN"
+      
+      // General patterns - must be last as they're more generic
+      /(\s)([A-Z][A-Z0-9]*\b)(\s+for)/i, // "TOKEN for"
+      /(\s)([A-Z][A-Z0-9]*\b)(\s*$)/i, // "TOKEN" at end of string
+    ];
+
+    for (const pattern of patterns) {
+      const match = subtitle.match(pattern);
+      if (match) {
+        const beforeToken = subtitle.substring(0, match.index! + match[1].length);
+        const tokenSymbol = match[2];
+        const afterToken = subtitle.substring(match.index! + match[0].length);
+        
+        return (
+          <span>
+            {beforeToken}
+            <img
+              src={tokenImage}
+              alt="Token"
+              className="wallet-popup-token-image"
+              style={{ 
+                display: 'inline', 
+              }}
+            />
+            {tokenSymbol}
+            {afterToken}
+          </span>
+        );
+      }
+    }
+
+    // If no pattern matches, just show the subtitle normally
+    return <span>{subtitle}</span>;
+  };
+
   if (!shouldRender) return null;
 
   return (
@@ -96,20 +158,13 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
               </span>
             )}
 
-          <div className="wallet-popup-text-content">
+            <div className="wallet-popup-text-content">
               <h3 className="wallet-popup-title">
                 {isLoading ? 'Confirming transaction' : title}
               </h3>
               {subtitle && (
                 <p className="wallet-popup-subtitle">
-                  {tokenImage && (
-                    <img 
-                      src={tokenImage} 
-                      alt="Token" 
-                      className="wallet-popup-token-image"
-                    />
-                  )}
-                  {subtitle}
+                  {renderSubtitleWithImage()}
                 </p>
               )}
             </div>

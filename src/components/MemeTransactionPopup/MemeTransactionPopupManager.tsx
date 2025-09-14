@@ -139,6 +139,7 @@ const MemeTransactionPopupManager: React.FC = () => {
                 autoCloseDelay={popup.isLoading || !popup.confirmed ? 999999 : 6000}
                 type="transfer"
                 isLoading={popup.isLoading}
+                tokenImage={popup.tokenImage}
               />
             </div>
           </div>

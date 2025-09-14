@@ -18,6 +18,7 @@ interface OrderbookViewProps {
   priceFactor: number;
   symbolQuote: string;
   symbolBase: string;
+  marketType: any;
   orderbookPosition: string;
   interval: number;
   amountsQuote: string;
@@ -28,6 +29,8 @@ interface OrderbookViewProps {
   setViewMode: (mode: 'both' | 'buy' | 'sell') => void;
   show?: boolean;
   updateLimitAmount: any;
+  reserveQuote: any;
+  reserveBase: any;
 }
 
 const OrderbookView: React.FC<OrderbookViewProps> = ({
@@ -37,6 +40,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   priceFactor,
   symbolQuote,
   symbolBase,
+  marketType,
   orderbookPosition,
   interval,
   amountsQuote,
@@ -47,6 +51,8 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   setViewMode,
   updateLimitAmount,
   show = true,
+  reserveQuote,
+  reserveBase,
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
@@ -86,6 +92,8 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   const { orders: processedBuyOrders, leftoverPerRow: extraBuy } = useMemo(() => {
     return scaleOrders(
       roundedBuy,
+      reserveBase,
+      reserveQuote,
       obInterval,
       true,
       viewMode,
@@ -93,10 +101,12 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
       20.5,
     );
   }, [roundedBuy, obInterval, viewMode, containerHeight]);
-  
+
   const { orders: processedSellOrders, leftoverPerRow: extraSell } = useMemo(() => {
     return scaleOrders(
       roundedSell,
+      reserveBase,
+      reserveQuote,
       obInterval,
       false,
       viewMode,
@@ -152,6 +162,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={spreadData.averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
+              marketType={marketType}
             />
             <SpreadDisplay
               averagePrice={spreadData.averagePrice}
@@ -171,6 +182,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={spreadData.averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
+              marketType={marketType}
             />
           </div>
         )}
@@ -189,6 +201,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={spreadData.averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
+              marketType={marketType}
             />
             <SpreadDisplay
               averagePrice={spreadData.averagePrice}
@@ -217,6 +230,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={spreadData.averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
+              marketType={marketType}
             />
           </div>
         )}

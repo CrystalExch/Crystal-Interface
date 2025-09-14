@@ -11,6 +11,8 @@ import ToggleSwitch from "../ToggleSwitch/ToggleSwitch";
 import { CrystalRouterAbi } from "../../abis/CrystalRouterAbi";
 import { useSharedContext } from "../../contexts/SharedContext";
 import TooltipLabel from '../../components/TooltipLabel/TooltipLabel.tsx';
+import customRound from '../../utils/customRound';
+import { useWalletPopup, setGlobalPopupHandlers } from '../MemeTransactionPopup/useWalletPopup';
 
 import contract from "../../assets/contract.svg";
 import gas from "../../assets/gas.svg";
@@ -111,6 +113,7 @@ interface MemeInterfaceProps {
   terminalRefetch: any;
   tokenData?: any;
   setTokenData: any;
+  monUsdPrice: number;
 }
 
 const MARKET_UPDATE_EVENT = "0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e";
@@ -255,154 +258,154 @@ const formatTradeAmount = (value: number): string => {
   return value.toFixed(2);
 };
 const Tooltip: React.FC<{
-    content: string;
-    children: React.ReactNode;
-    position?: 'top' | 'bottom' | 'left' | 'right';
+  content: string;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
 }> = ({ content, children, position = 'top' }) => {
-    const [shouldRender, setShouldRender] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
-    const [isLeaving, setIsLeaving] = useState(false);
-    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
-    const containerRef = useRef<HTMLDivElement>(null);
-    const tooltipRef = useRef<HTMLDivElement>(null);
-    const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const updatePosition = useCallback(() => {
-        if (!containerRef.current || !tooltipRef.current) return;
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current || !tooltipRef.current) return;
 
-        const rect = containerRef.current.getBoundingClientRect();
-        const tooltipRect = tooltipRef.current.getBoundingClientRect();
-        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const rect = containerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
-        let top = 0;
-        let left = 0;
+    let top = 0;
+    let left = 0;
 
-        switch (position) {
-            case 'top':
-                top = rect.top + scrollY - tooltipRect.height - 10;
-                left = rect.left + scrollX + rect.width / 2;
-                break;
-            case 'bottom':
-                top = rect.bottom + scrollY + 10;
-                left = rect.left + scrollX + rect.width / 2;
-                break;
-            case 'left':
-                top = rect.top + scrollY + rect.height / 2;
-                left = rect.left + scrollX - tooltipRect.width - 10;
-                break;
-            case 'right':
-                top = rect.top + scrollY + rect.height / 2;
-                left = rect.right + scrollX + 10;
-                break;
-        }
+    switch (position) {
+      case 'top':
+        top = rect.top + scrollY - tooltipRect.height - 10;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'bottom':
+        top = rect.bottom + scrollY + 10;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'left':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.left + scrollX - tooltipRect.width - 10;
+        break;
+      case 'right':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.right + scrollX + 10;
+        break;
+    }
 
-        const margin = 10;
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
+    const margin = 10;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
 
-        if (position === 'top' || position === 'bottom') {
-            left = Math.min(
-                Math.max(left, margin + tooltipRect.width / 2),
-                viewportWidth - margin - tooltipRect.width / 2,
-            );
-        } else {
-            top = Math.min(
-                Math.max(top, margin),
-                viewportHeight - margin - tooltipRect.height,
-            );
-        }
+    if (position === 'top' || position === 'bottom') {
+      left = Math.min(
+        Math.max(left, margin + tooltipRect.width / 2),
+        viewportWidth - margin - tooltipRect.width / 2,
+      );
+    } else {
+      top = Math.min(
+        Math.max(top, margin),
+        viewportHeight - margin - tooltipRect.height,
+      );
+    }
 
-        setTooltipPosition({ top, left });
-    }, [position]);
+    setTooltipPosition({ top, left });
+  }, [position]);
 
-    const handleMouseEnter = useCallback(() => {
-        if (fadeTimeoutRef.current) {
-            clearTimeout(fadeTimeoutRef.current);
-            fadeTimeoutRef.current = null;
-        }
+  const handleMouseEnter = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
 
-        setIsLeaving(false);
-        setShouldRender(true);
+    setIsLeaving(false);
+    setShouldRender(true);
 
-        fadeTimeoutRef.current = setTimeout(() => {
-            setIsVisible(true);
-            fadeTimeoutRef.current = null;
-        }, 10);
-    }, []);
+    fadeTimeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+      fadeTimeoutRef.current = null;
+    }, 10);
+  }, []);
 
-    const handleMouseLeave = useCallback(() => {
-        if (fadeTimeoutRef.current) {
-            clearTimeout(fadeTimeoutRef.current);
-            fadeTimeoutRef.current = null;
-        }
+  const handleMouseLeave = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
 
-        setIsLeaving(true);
-        setIsVisible(false);
+    setIsLeaving(true);
+    setIsVisible(false);
 
-        fadeTimeoutRef.current = setTimeout(() => {
-            setShouldRender(false);
-            setIsLeaving(false);
-            fadeTimeoutRef.current = null;
-        }, 150);
-    }, []);
+    fadeTimeoutRef.current = setTimeout(() => {
+      setShouldRender(false);
+      setIsLeaving(false);
+      fadeTimeoutRef.current = null;
+    }, 150);
+  }, []);
 
-    useEffect(() => {
-        if (shouldRender && !isLeaving) {
-            updatePosition();
-            window.addEventListener('scroll', updatePosition);
-            window.addEventListener('resize', updatePosition);
-            return () => {
-                window.removeEventListener('scroll', updatePosition);
-                window.removeEventListener('resize', updatePosition);
-            };
-        }
-    }, [shouldRender, updatePosition, isLeaving]);
+  useEffect(() => {
+    if (shouldRender && !isLeaving) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [shouldRender, updatePosition, isLeaving]);
 
-    useEffect(() => {
-        return () => {
-            if (fadeTimeoutRef.current) {
-                clearTimeout(fadeTimeoutRef.current);
-            }
-        };
-    }, []);
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current);
+      }
+    };
+  }, []);
 
-    return (
+  return (
+    <div
+      ref={containerRef}
+      className="tooltip-container"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {shouldRender && createPortal(
         <div
-            ref={containerRef}
-            className="tooltip-container"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+          ref={tooltipRef}
+          className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+          style={{
+            position: 'absolute',
+            top: `${tooltipPosition.top - 20}px`,
+            left: `${tooltipPosition.left}px`,
+            transform: `${position === 'top' || position === 'bottom'
+              ? 'translateX(-50%)'
+              : position === 'left' || position === 'right'
+                ? 'translateY(-50%)'
+                : 'none'} scale(${isVisible ? 1 : 0})`,
+            opacity: isVisible ? 1 : 0,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'transform, opacity'
+          }}
         >
-            {children}
-            {shouldRender && createPortal(
-                <div
-                    ref={tooltipRef}
-                    className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
-                    style={{
-                        position: 'absolute',
-                        top: `${tooltipPosition.top - 20}px`,
-                        left: `${tooltipPosition.left}px`,
-                        transform: `${position === 'top' || position === 'bottom'
-                            ? 'translateX(-50%)'
-                            : position === 'left' || position === 'right'
-                                ? 'translateY(-50%)'
-                                : 'none'} scale(${isVisible ? 1 : 0})`,
-                        opacity: isVisible ? 1 : 0,
-                        zIndex: 9999,
-                        pointerEvents: 'none',
-                        transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-                        willChange: 'transform, opacity'
-                    }}
-                >
-                    <div className="tooltip-content">
-                        {content}
-                    </div>
-                </div>,
-                document.body
-            )}
-        </div>
-    );
+          <div className="tooltip-content">
+            {content}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
 };
 
 const MemeInterface: React.FC<MemeInterfaceProps> = ({
@@ -433,6 +436,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   terminalRefetch,
   tokenData,
   setTokenData,
+  monUsdPrice,
 }) => {
   const getSliderPosition = (activeView: 'chart' | 'trades' | 'ordercenter') => {
     switch (activeView) {
@@ -442,31 +446,33 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       default: return 0;
     }
   };
-
-  const resolveNative = useCallback(
-    (symbol: string | undefined) => {
-      if (!symbol) return "";
-      if (symbol === wethticker) return ethticker ?? symbol;
-      return symbol;
-    },
-    [wethticker, ethticker],
-  );
-
-  const usdPer = useCallback(
-    (symbol?: string): number => {
-      if (!symbol || !tradesByMarket || !markets) return 0;
-      const sym = resolveNative(symbol);
-      if (usdc && sym === "USDC") return 1;
-      const pair = `${sym}USDC`;
-      const top = tradesByMarket[pair]?.[0]?.[3];
-      const pf = Number(markets[pair]?.priceFactor) || 1;
-      if (!top || !pf) return 0;
-      return Number(top) / pf;
-    },
-    [tradesByMarket, markets, resolveNative, usdc],
-  );
+  const walletPopup = useWalletPopup();
+  useEffect(() => {
+    setGlobalPopupHandlers(showLoadingPopup, updatePopup);
+  }, []);
+  const [selectedStatsTimeframe, setSelectedStatsTimeframe] = useState('24h');
+  const [hoveredStatsContainer, setHoveredStatsContainer] = useState(false);
+  const [selectedStatsAge, setSelectedStatsAge] = useState('Age');
+  const [showStatsAgeDropdown, setShowStatsAgeDropdown] = useState(false);
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
+  const [monPresets, setMonPresets] = useState(() => {
+    try {
+      const saved = localStorage.getItem('crystal_mon_presets');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+      return [5, 20, 100, 500];
+    } catch (error) {
+      console.error('Error loading MON presets:', error);
+      return [5, 20, 100, 500];
+    }
+  });
+  const [selectedMonPreset, setSelectedMonPreset] = useState<number | null>(null);
+  const [isPresetEditMode, setIsPresetEditMode] = useState(false);
+  const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
+  const [tempPresetValue, setTempPresetValue] = useState('');
+  const presetInputRef = useRef<HTMLInputElement>(null);
   const [isWidgetOpen, setIsWidgetOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('crystal_quickbuy_widget_open');
@@ -481,6 +487,20 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     } catch (error) {
     }
   }, [isWidgetOpen]);
+  useEffect(() => {
+    try {
+      localStorage.setItem('crystal_mon_presets', JSON.stringify(monPresets));
+    } catch (error) {
+      console.error('Error saving MON presets:', error);
+    }
+  }, [monPresets]);
+
+  useEffect(() => {
+    if (editingPresetIndex !== null && presetInputRef.current) {
+      presetInputRef.current.focus();
+      presetInputRef.current.select();
+    }
+  }, [editingPresetIndex]);
 
   const [tradeAmount, setTradeAmount] = useState("");
   const [limitPrice, setLimitPrice] = useState("");
@@ -704,251 +724,117 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     return getMobileWalletBalance(currentWallet.address);
   };
 
-  const handleMobileBuyTrade = async (amount: string) => {
-    if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
-      if (setpopup) setpopup(4);
-      return;
+
+
+const handleSellPosition = async (position: any, monAmount: string) => {
+  if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
+    walletPopup.showConnectionError();
+    return;
+  }
+
+  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+  if (account.chainId !== targetChainId) {
+    walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
+    setChain?.();
+    return;
+  }
+
+  let txId: string = '';
+
+  try {
+    txId = walletPopup.showSellTransaction(monAmount, 'MON', position.symbol); 
+
+    const monAmountNum = parseFloat(monAmount);
+    const tokenPrice = position.lastPrice || currentPrice;
+
+    if (tokenPrice <= 0) {
+      throw new Error('Invalid token price');
     }
 
-    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-    if (account.chainId !== targetChainId) {
-      setChain();
-      return;
-    }
+    const tokenAmountToSell = monAmountNum / tokenPrice;
+    const decimals = tokendict?.[position.tokenId]?.decimals || 18;
+    const amountTokenWei = BigInt(Math.round(tokenAmountToSell * (10 ** Number(decimals))));
+    
+    walletPopup.updateTransactionConfirming(txId, tokenAmountToSell.toFixed(4), position.symbol, position.symbol);
 
+    const sellUo = {
+      target: routerAddress as `0x${string}`,
+      data: encodeFunctionData({
+        abi: CrystalRouterAbi,
+        functionName: "sell",
+        args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
+      }),
+      value: 0n,
+    };
+
+    await sendUserOperationAsync({ uo: sellUo });
+
+    walletPopup.updateTransactionSuccess(txId, {
+      tokenAmount: tokenAmountToSell,
+      receivedAmount: monAmountNum,
+      tokenSymbol: position.symbol,
+      currencyUnit: 'MON'
+    });
+
+  } catch (e: any) {
+    console.error(e);
+    if (txId) {
+      walletPopup.updateTransactionError(txId, e?.message || walletPopup.texts.TRANSACTION_REJECTED);
+    }
+  }
+};
+
+const handleMobileTrade = async (amount: string, tradeType: 'buy' | 'sell') => {
+  if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
+    walletPopup.showConnectionError();
+    return;
+  }
+
+  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+  if (account.chainId !== targetChainId) {
+    walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
+    setChain();
+    return;
+  }
+
+  if (tradeType === 'buy') {
     const requestedAmount = parseFloat(amount);
     const currentMONBalance = getCurrentMobileWalletMONBalance();
-
+    
     if (requestedAmount > currentMONBalance) {
-      const txId = `insufficient-${Date.now()}`;
-      if (showLoadingPopup) {
-        showLoadingPopup(txId, {
-          title: 'Insufficient Balance',
-          subtitle: `Need ${amount} MON but only have ${currentMONBalance.toFixed(4)} MON`,
-          amount: amount,
-          amountUnit: 'MON'
-        });
-      }
-
-      if (updatePopup) {
-        setTimeout(() => {
-          updatePopup(txId, {
-            title: 'Insufficient Balance',
-            subtitle: `You need ${amount} MON but only have ${currentMONBalance.toFixed(4)} MON available`,
-            variant: 'error',
-            isLoading: false
-          });
-        }, 100);
-      }
+      walletPopup.showInsufficientBalance(
+        amount,
+        currentMONBalance.toFixed(4),
+        'MON'
+      );
+      return;
+    }
+    setTradeAmount(amount);
+    setActiveTradeType('buy');
+    setInputCurrency('MON');
+    handleTrade();
+  } else {
+    const pct = BigInt(parseInt(amount.replace('%', ''), 10));
+    const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
+    
+    if (currentBalance <= 0n) {
+      walletPopup.showInsufficientBalance('1', '0', token.symbol);
       return;
     }
 
-    const txId = `mobile-buy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const amountTokenWei = pct === 100n
+      ? (currentBalance > 1n ? currentBalance - 1n : 0n)
+      : (currentBalance * pct) / 100n;
 
-    try {
-      if (showLoadingPopup) {
-        showLoadingPopup(txId, {
-          title: 'Sending transaction...',
-          subtitle: `Buying ${amount} MON worth of ${token.symbol}`,
-          amount: amount,
-          amountUnit: 'MON'
-        });
-      }
+    const decimals = tokendict?.[token.id]?.decimals || 18;
+    const tokenAmount = Number(amountTokenWei) / (10 ** Number(decimals));
 
-      const valNum = parseFloat(amount);
-      const value = BigInt(Math.round(valNum * 1e18));
-
-      const uo = {
-        target: routerAddress,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: "buy",
-          args: [true, token.tokenAddress as `0x${string}`, value, 0n],
-        }),
-        value,
-      };
-
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Confirming transaction...',
-          subtitle: `Buying ${amount} MON worth of ${token.symbol}`,
-          variant: 'info'
-        });
-      }
-
-      await sendUserOperationAsync({ uo });
-
-      const expectedTokens = currentPrice > 0 ? parseFloat(amount) / currentPrice : 0;
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: `Bought ~${Number(expectedTokens).toFixed(4)} ${token.symbol}`,
-          subtitle: `Spent ${Number(amount).toFixed(4)} MON`,
-          variant: 'success',
-          isLoading: false
-        });
-      }
-
-    } catch (e: any) {
-      console.error(e);
-      const msg = String(e?.message ?? '');
-
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: msg.toLowerCase().includes('insufficient') ? 'Insufficient balance' : 'Transaction failed',
-          subtitle: msg || 'Please try again.',
-          variant: 'error',
-          isLoading: false
-        });
-      }
-    }
-  };
-
-  const handleSellPosition = async (position: any, monAmount: string) => {
-    if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
-      setpopup?.(4);
-      return;
-    }
-
-    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-    if (account.chainId !== targetChainId) {
-      setChain?.();
-      return;
-    }
-
-    const txId = `sell-position-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-    try {
-      if (showLoadingPopup) {
-        showLoadingPopup(txId, {
-          title: 'Sending transaction...',
-          subtitle: `Selling ${monAmount} ${position.symbol}`,
-          amount: monAmount,
-          amountUnit: position.symbol
-        });
-      }
-
-      const amountTokenWei = BigInt(Math.round(parseFloat(monAmount) * 1e18));
-
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Confirming sell...',
-          subtitle: `Selling ${monAmount} ${position.symbol}`,
-          variant: 'info'
-        });
-      }
-
-      const sellUo = {
-        target: routerAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: "sell",
-          args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
-        }),
-        value: 0n,
-      };
-
-      await sendUserOperationAsync({ uo: sellUo });
-
-      const soldTokens = Number(amountTokenWei) / 1e18;
-      const expectedMON = soldTokens * (position.lastPrice || 0);
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: `Sold ${Number(soldTokens).toFixed(4)} ${position.symbol}`,
-          subtitle: `Received ≈ ${Number(expectedMON).toFixed(4)} MON`,
-          variant: 'success',
-          isLoading: false
-        });
-      }
-
-    } catch (e: any) {
-      console.error(e);
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Sell failed',
-          subtitle: e?.message || 'Transaction was rejected',
-          variant: 'error',
-          isLoading: false
-        });
-      }
-    }
-  };
-
-  const handleMobileSellTrade = async (value: string) => {
-    if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
-      setpopup?.(4);
-      return;
-    }
-
-    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-    if (account.chainId !== targetChainId) {
-      setChain?.();
-      return;
-    }
-
-    const txId = `mobile-sell-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-    try {
-      if (showLoadingPopup) {
-        showLoadingPopup(txId, {
-          title: 'Sending transaction...',
-          subtitle: `Selling ${value} of ${token.symbol}`,
-          amount: value,
-          amountUnit: '%'
-        });
-      }
-
-      const pct = BigInt(parseInt(value.replace('%', ''), 10));
-      const amountTokenWei = pct === 100n
-        ? (walletTokenBalances?.[userAddr]?.[token.id] && walletTokenBalances?.[userAddr]?.[token.id] > 0n ? walletTokenBalances?.[userAddr]?.[token.id] - 1n : 0n)
-        : ((walletTokenBalances?.[userAddr]?.[token.id] || 0n) * pct) / 100n;
-
-      if (amountTokenWei <= 0n) {
-        throw new Error(`Invalid sell amount`);
-      }
-
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Confirming sell...',
-          subtitle: `Selling ${value} of ${token.symbol}`,
-          variant: 'info'
-        });
-      }
-
-      const sellUo = {
-        target: routerAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: "sell",
-          args: [true, tokenAddress as `0x${string}`, amountTokenWei, 0n],
-        }),
-        value: 0n,
-      };
-
-      await sendUserOperationAsync({ uo: sellUo });
-
-      const soldTokens = Number(amountTokenWei) / 1e18;
-      const expectedMON = soldTokens * currentPrice;
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: `Sold ${Number(soldTokens).toFixed(4)} ${token.symbol}`,
-          subtitle: `Received ≈ ${Number(expectedMON).toFixed(4)} MON`,
-          variant: 'success',
-          isLoading: false
-        });
-      }
-
-    } catch (e: any) {
-      console.error(e);
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Sell failed',
-          subtitle: e?.message || 'Transaction was rejected',
-          variant: 'error',
-          isLoading: false
-        });
-      }
-    }
-  };
+    setTradeAmount(tokenAmount.toString());
+    setActiveTradeType('sell');
+    setInputCurrency('TOKEN');
+    handleTrade();
+  }
+};
 
   const baseDefaults: Token = {
     id: tokenAddress || "",
@@ -1021,8 +907,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const getCurrentTokenBalance = useCallback(() => {
     if (!account?.address || !token.id) return 0;
     const balance = walletTokenBalances[account.address]?.[token.id];
-    return balance ? Number(balance) / 1e18 : 0;
-  }, [account?.address, walletTokenBalances, token.id]);
+    if (!balance || balance <= 0n) return 0;
+
+    const decimals = tokendict?.[token.id]?.decimals || 18;
+    return Number(balance) / (10 ** Number(decimals));
+  }, [account?.address, walletTokenBalances, token.id, tokendict]);
+
   const pushRealtimeTick = useCallback(
     (lastPrice: number, volNative: number) => {
       if (!lastPrice || lastPrice <= 0) return;
@@ -1723,7 +1613,57 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     return () => { cancelled = true; };
   }, [token.dev, token.id]);
+  const handlePresetEditToggle = useCallback(() => {
+    setIsPresetEditMode(!isPresetEditMode);
+    setEditingPresetIndex(null);
+    setTempPresetValue('');
+  }, [isPresetEditMode]);
 
+  const handlePresetButtonClick = useCallback((preset: number, index: number) => {
+    if (isPresetEditMode) {
+      setEditingPresetIndex(index);
+      setTempPresetValue(preset.toString());
+    } else {
+      setSelectedMonPreset(preset);
+      if (activeTradeType === "buy") {
+        setTradeAmount(preset.toString());
+        const currentBalance = getCurrentMONBalance();
+        const percentage = currentBalance > 0 ? (preset / currentBalance) * 100 : 0;
+        setSliderPercent(Math.min(100, percentage));
+      } else {
+        if (currentPrice > 0) {
+          const tokenAmount = preset / currentPrice;
+          setTradeAmount(tokenAmount.toString());
+          const currentTokenBalance = getCurrentTokenBalance();
+          const percentage = currentTokenBalance > 0 ? (tokenAmount / currentTokenBalance) * 100 : 0;
+          setSliderPercent(Math.min(100, percentage));
+        }
+      }
+    }
+  }, [isPresetEditMode, activeTradeType, currentPrice, getCurrentMONBalance, getCurrentTokenBalance]);
+
+  const handlePresetInputSubmit = useCallback(() => {
+    if (editingPresetIndex === null || tempPresetValue.trim() === '') return;
+
+    const newValue = parseFloat(tempPresetValue);
+    if (isNaN(newValue) || newValue <= 0) return;
+
+    const newPresets = [...monPresets];
+    newPresets[editingPresetIndex] = newValue;
+    setMonPresets(newPresets);
+
+    setEditingPresetIndex(null);
+    setTempPresetValue('');
+  }, [editingPresetIndex, tempPresetValue, monPresets]);
+
+  const handlePresetInputKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handlePresetInputSubmit();
+    } else if (e.key === 'Escape') {
+      setEditingPresetIndex(null);
+      setTempPresetValue('');
+    }
+  }, [handlePresetInputSubmit]);
   // top traders
   useEffect(() => {
     if (!token.id) return;
@@ -1934,11 +1874,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       let converted = 0;
 
       if (activeTradeType === "buy") {
-        if (inputCurrency === "MON") {
-          converted = amt / currentPrice;
-        } else {
-          converted = amt * currentPrice;
-        }
+        converted = amt / currentPrice;
       } else {
         if (inputCurrency === "TOKEN") {
           converted = amt * currentPrice;
@@ -1957,6 +1893,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   useEffect(() => {
     if (activeTradeType === 'sell') {
       setInputCurrency('TOKEN')
+    } else if (activeTradeType === 'buy') {
+      setInputCurrency('MON')
     }
   }, [activeTradeType])
 
@@ -1968,152 +1906,130 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         ? `$${(n / 1e3).toFixed(1)}K`
         : `$${n.toFixed(0)}`;
 
-  const handleTrade = async () => {
-    if (!tradeAmount || !account.connected) return;
-    if (activeOrderType === "Limit" && !limitPrice) return;
+const handleTrade = async () => {
+  if (!tradeAmount || !account.connected) return;
+  if (activeOrderType === "Limit" && !limitPrice) return;
 
-    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-    if (account.chainId !== targetChainId) {
-      setChain();
-      return;
-    }
+  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+  if (account.chainId !== targetChainId) {
+    walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
+    setChain();
+    return;
+  }
 
-    const txId = `meme-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  let txId: string;
 
-    try {
-      setIsSigning(true);
+  try {
+    setIsSigning(true);
 
-      if (activeTradeType === "buy") {
-        if (showLoadingPopup) {
-          showLoadingPopup(txId, {
-            title: 'Sending transaction...',
-            subtitle: `Buying ${tradeAmount} ${inputCurrency} worth of ${token.symbol}`,
-            amount: tradeAmount,
-            amountUnit: inputCurrency
-          });
-        }
+    if (activeTradeType === "buy") {
+      txId = walletPopup.showBuyTransaction(tradeAmount, inputCurrency, token.symbol, token.image);
 
-        const valNum =
-          inputCurrency === "MON"
-            ? parseFloat(tradeAmount)
-            : parseFloat(tradeAmount) * currentPrice;
-        const value = BigInt(Math.round(valNum * 1e18));
+      const valNum = parseFloat(tradeAmount);
+      const value = BigInt(Math.round(valNum * 1e18));
 
-        const uo = {
-          target: routerAddress,
-          data: encodeFunctionData({
-            abi: CrystalRouterAbi,
-            functionName: "buy",
-            args: [true, token.tokenAddress as `0x${string}`, value, 0n],
-          }),
-          value,
-        };
+      const uo = {
+        target: routerAddress,
+        data: encodeFunctionData({
+          abi: CrystalRouterAbi,
+          functionName: "buy",
+          args: [true, token.tokenAddress as `0x${string}`, value, 0n],
+        }),
+        value,
+      };
 
-        if (updatePopup) {
-          updatePopup(txId, {
-            title: 'Confirming transaction...',
-            subtitle: `Buying ${tradeAmount} ${inputCurrency} worth of ${token.symbol}`,
-            variant: 'info'
-          });
-        }
+      walletPopup.updateTransactionConfirming(txId, tradeAmount, inputCurrency, token.symbol);
 
-        await sendUserOperationAsync({ uo });
+      await sendUserOperationAsync({ uo });
 
-        if (updatePopup) {
-          updatePopup(txId, {
-            title: `Bought ~${Number(quoteValue ?? 0).toFixed(4)} ${token.symbol}`,
-            subtitle: `Spent ${Number(tradeAmount).toFixed(4)} ${inputCurrency}`,
-            variant: 'success',
-            isLoading: false
+      walletPopup.updateTransactionSuccess(txId, {
+        tokenAmount: Number(quoteValue ?? 0),
+        spentAmount: Number(tradeAmount),
+        tokenSymbol: token.symbol,
+        currencyUnit: inputCurrency
+      });
+      
+      terminalRefetch()
+    } else {
+      txId = walletPopup.showSellTransaction(
+        tradeAmount, 
+        inputCurrency === "TOKEN" ? token.symbol : "MON", 
+        token.symbol, 
+        token.image
+      );
 
-          });
-        }
-        terminalRefetch()
+      let amountTokenWei: bigint;
+      let monAmountWei: bigint;
+      let isExactInput: boolean;
+
+      const decimals = tokendict?.[token.id]?.decimals || 18;
+
+      if (inputCurrency === "TOKEN") {
+        amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * (10 ** Number(decimals))));
+        isExactInput = true;
+        monAmountWei = 0n;
       } else {
-        if (showLoadingPopup) {
-          showLoadingPopup(txId, {
-            title: 'Sending transaction...',
-            subtitle: `Selling ${tradeAmount} ${token.symbol}`,
-            amount: tradeAmount,
-            amountUnit: token.symbol
-          });
-        }
-
-        let amountTokenWei: bigint;
-        let monAmountWei: bigint;
-        let isExactInput: boolean;
-
-        if (inputCurrency === "TOKEN") {
-          amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
-          isExactInput = true;
-          monAmountWei = 0n;
-        } else {
-          monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
-          amountTokenWei = BigInt(Math.round(Number(walletTokenBalances?.[userAddr]?.[token.id])));
-          isExactInput = false;
-        }
-        if (updatePopup) {
-          updatePopup(txId, {
-            title: 'Confirming sell...',
-            subtitle: `Selling ${tradeAmount} ${token.symbol}`,
-            variant: 'info'
-          });
-        }
-
-        const sellUo = {
-          target: routerAddress as `0x${string}`,
-          data: encodeFunctionData({
-            abi: CrystalRouterAbi,
-            functionName: "sell",
-            args: [isExactInput, tokenAddress as `0x${string}`, amountTokenWei, monAmountWei],
-          }),
-          value: 0n,
-        };
-
-        await sendUserOperationAsync({ uo: sellUo });
-
-        if (updatePopup) {
-          updatePopup(txId, {
-            title: `Sold ${Number(tradeAmount).toFixed(4)} ${token.symbol}`,
-            subtitle: `Received ≈ ${Number(quoteValue ?? 0).toFixed(4)} MON`,
-            variant: 'success',
-            isLoading: false
-          });
-        }
-        terminalRefetch()
+        monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
+        const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
+        const tokensToSell = parseFloat(tradeAmount) / currentPrice;
+        amountTokenWei = BigInt(Math.round(tokensToSell * (10 ** Number(decimals))));
+        isExactInput = false;
       }
 
-      setTradeAmount("");
-      setLimitPrice("");
-      setSliderPercent(0);
-    } catch (e: any) {
-      console.error(e);
-      const msg = String(e?.message ?? '');
-
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: msg.toLowerCase().includes('insufficient') ? 'Insufficient balance' : 'Transaction failed',
-          subtitle: msg || 'Please try again.',
-          variant: 'error',
-          isLoading: false
-        });
+      const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
+      if (amountTokenWei > currentBalance) {
+        amountTokenWei = currentBalance > 1n ? currentBalance - 1n : 0n;
       }
-    } finally {
-      setIsSigning(false);
+
+      if (amountTokenWei <= 0n) {
+        throw new Error(walletPopup.texts.INSUFFICIENT_TOKEN_BALANCE);
+      }
+
+      walletPopup.updateTransactionConfirming(txId, tradeAmount, inputCurrency === "TOKEN" ? token.symbol : "MON", token.symbol);
+
+      const sellUo = {
+        target: routerAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: CrystalRouterAbi,
+          functionName: "sell",
+          args: [isExactInput, tokenAddress as `0x${string}`, amountTokenWei, monAmountWei],
+        }),
+        value: 0n,
+      };
+
+      await sendUserOperationAsync({ uo: sellUo });
+
+      walletPopup.updateTransactionSuccess(txId, {
+        tokenAmount: Number(tradeAmount),
+        receivedAmount: Number(quoteValue ?? 0),
+        tokenSymbol: token.symbol,
+        currencyUnit: 'MON'
+      });
+      
+      terminalRefetch()
     }
-  };
 
-  const getButtonText = () => {
-    if (!account.connected) return "Connect Wallet";
-    const targetChainId =
-      settings.chainConfig[activechain]?.chainId || activechain;
-    if (account.chainId !== targetChainId)
-      return `Switch to ${settings.chainConfig[activechain]?.name || "Monad"}`;
-    if (activeOrderType === "market")
-      return `${activeTradeType === "buy" ? "Buy" : "Sell"} ${token.symbol}`;
-    return `Set ${activeTradeType === "buy" ? "Buy" : "Sell"} Limit`;
-  };
+    setTradeAmount("");
+    setLimitPrice("");
+    setSliderPercent(0);
+  } catch (e: any) {
+    console.error(e);
+    walletPopup.updateTransactionError(txId!, e?.message || walletPopup.texts.PLEASE_TRY_AGAIN);
+  } finally {
+    setIsSigning(false);
+  }
+};
 
+const getButtonText = () => {
+  if (!account.connected) return walletPopup.texts.CONNECT_WALLET;
+  const targetChainId =
+    settings.chainConfig[activechain]?.chainId || activechain;
+  if (account.chainId !== targetChainId)
+    return `${walletPopup.texts.SWITCH_CHAIN} to ${settings.chainConfig[activechain]?.name || "Monad"}`;
+  if (activeOrderType === "market")
+    return `${activeTradeType === "buy" ? "Buy" : "Sell"} ${token.symbol}`;
+  return `Set ${activeTradeType === "buy" ? "Buy" : "Sell"} Limit`;
+};
   const isTradeDisabled = () => {
     if (!account.connected) return false;
     const targetChainId =
@@ -2125,7 +2041,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     return false;
   };
 
-  const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
   const timePeriodsData = {
     "24H": {
       change: token.change24h || 0,
@@ -2190,7 +2105,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       <div className="memechartandtradesandordercenter">
         <div className="memecharttradespanel">
           <div className={`meme-chart-container ${mobileActiveView !== 'chart' ? 'mobile-hidden' : ''}`}>
-               <MemeChart
+            <MemeChart
               token={token}
               data={chartData}
               selectedInterval={selectedInterval}
@@ -2215,6 +2130,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               setpopup={setpopup}
               holders={holders}
               currentUserAddress={userAddr}
+              devAddress={token.dev}
+              monUsdPrice={monUsdPrice}
             />
           </div>
         </div>
@@ -2250,6 +2167,64 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       </div>
 
       <div className="meme-trade-panel desktop-only">
+        <div
+          className="meme-trading-stats-enhanced"
+          onMouseEnter={() => setHoveredStatsContainer(true)}
+          onMouseLeave={() => setHoveredStatsContainer(false)}
+        >
+          <div className="top-stats-grid">
+            <div className="stat-group-vol">
+              <span className="stat-label">24h Vol</span>
+              <span className="stat-value">$0</span>
+            </div>
+
+            <div className="stat-group buys">
+              <span className="stat-label">Buys</span>
+              <span className="stat-value green">{formatNumberWithCommas(buyers)} / ${formatNumberWithCommas(buyVolume, 1)}</span>
+            </div>
+
+            <div className="stat-group sells">
+              <span className="stat-label">Sells</span>
+              <span className="stat-value red">{formatNumberWithCommas(sellers)}/ ${formatNumberWithCommas(sellVolume, 1)}</span>
+            </div>
+
+            <div className="stat-group-net-vol">
+              <span className="stat-label">Net Vol.</span>
+              <span className="stat-value red">-$0</span>
+            </div>
+          </div>
+
+          <div className={`stats-hover-overlay ${hoveredStatsContainer ? 'visible' : ''}`}>
+            <div className="stats-blur-backdrop" />
+
+            <div className="overlay-controls-grid">
+              <div className="timeframe-buttons">
+                {[
+                  { label: '5m', value: '5m', percentage: '0%' },
+                  { label: '1h', value: '1h', percentage: '0%' },
+                  { label: '6h', value: '6h', percentage: '0%' },
+                  { label: '24h', value: '24h', percentage: '0%' }
+                ].map((tf) => (
+                  <button
+                    key={tf.value}
+                    className={`timeframe-toggle ${selectedStatsTimeframe === tf.value ? 'active' : ''}`}
+                    onClick={() => setSelectedStatsTimeframe(tf.value)}
+                  >
+                    <span className="tf-label">{tf.label}</span>
+                    <span className="tf-percentage">{tf.percentage}</span>
+                  </button>
+                ))}
+              </div>
+
+
+
+            </div>
+          </div>
+          <div className="indicator-legend">
+            <div className="indicator-line green-line" />
+            <div className="indicator-line red-line" />
+          </div>
+        </div>
         <div className="meme-buy-sell-container">
           <button
             className={`meme-buy-button ${activeTradeType === "buy" ? "active" : "inactive"}`}
@@ -2281,21 +2256,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           </div>
           <div className="meme-amount-header">
             <div className="meme-amount-header-left">
-              <span className="meme-amount-label">
-                {inputCurrency === "TOKEN" ? "Qty" : "Amount"}
-              </span>
-              <button
-                className="meme-currency-switch-button"
-                onClick={() =>
-                  setInputCurrency((p) => (p === "MON" ? "TOKEN" : "MON"))
-                }
-              >
-                <img
-                  src={switchicon}
-                  alt=""
-                  className="meme-currency-switch-icon"
-                />
-              </button>
+              <span className="meme-amount-label">Amount</span>
             </div>
             <div className="meme-balance-right">
               {activeTradeType === 'buy' && (
@@ -2320,7 +2281,26 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   </div>
                   <button
                     className="meme-balance-max-sell"
-                    onClick={() => setTradeAmount(formatTradeAmount(getCurrentTokenBalance()))}
+                    onClick={() => {
+                      if (!account?.address || !token.id) return;
+
+                      const balance = walletTokenBalances[account.address]?.[token.id];
+                      if (!balance || balance <= 0n) return;
+
+                      const decimals = tokendict?.[token.id]?.decimals || 18;
+                      let maxAmount = balance;
+
+                      if (maxAmount > 1n) {
+                        maxAmount = maxAmount - 1n;
+                      }
+
+                      const maxAmountFormatted = customRound(
+                        Number(maxAmount) / (10 ** Number(decimals)),
+                        3
+                      );
+                      setTradeAmount(maxAmountFormatted);
+                      setSliderPercent(100);
+                    }}
                   >
                     MAX
                   </button>
@@ -2338,16 +2318,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               className="meme-trade-input"
             />
 
-            <div
-              className="meme-trade-currency"
-              style={{
-                left: `${Math.max(12 + (tradeAmount.length || 1) * 10, 12)}px`,
-              }}
-            >
-              {inputCurrency === "TOKEN" ? token.symbol : "MON"}
+            <div className="meme-trade-currency">
+              <img className="meme-currency-monad-icon" src={monadicon} alt="MON" />
             </div>
 
-            {isQuoteLoading ? (
+            {/* {isQuoteLoading ? (
               <div className="meme-trade-spinner"></div>
             ) : (
               <div className="meme-trade-conversion">
@@ -2388,7 +2363,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   ""
                 )}
               </div>
-            )}
+            )} */}
           </div>
           {activeOrderType === "Limit" && (
             <div className="meme-trade-input-wrapper">
@@ -2405,26 +2380,43 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             {sliderMode === "presets" && (
               <div className="meme-slider-container meme-presets-mode">
                 <div className="meme-preset-buttons">
-                  {sliderPresets.map((preset: number) => (
-                    <button
-                      key={preset}
-                      className={`meme-preset-button ${sliderPercent === preset ? `active ${activeTradeType}` : ""}`}
-                      onClick={() => {
-                        setSliderPercent(preset);
-                        if (activeTradeType === "buy") {
-                          const currentBalance = getCurrentMONBalance();
-                          const newAmount = (currentBalance * preset) / 100;
-                          setTradeAmount(newAmount.toString());
-                        } else {
-                          const currentBalance = getCurrentTokenBalance();
-                          const newAmount = (currentBalance * preset) / 100;
-                          setTradeAmount(newAmount.toString());
-                        }
-                      }}
-                    >
-                      {preset}%
-                    </button>
+                  {monPresets.map((preset: number, index: number) => (
+                    <div key={index} className="meme-preset-button-container">
+                      {editingPresetIndex === index ? (
+                        <input
+                          ref={presetInputRef}
+                          type="number"
+                          value={tempPresetValue}
+                          onChange={(e) => setTempPresetValue(e.target.value)}
+                          onKeyDown={handlePresetInputKeyDown}
+                          onBlur={handlePresetInputSubmit}
+                          className="meme-preset-edit-input"
+                          min="0"
+                          step="0.1"
+                        />
+                      ) : (
+                        <button
+                          className={`meme-preset-button ${isPresetEditMode ? 'edit-mode' : ''} ${selectedMonPreset === preset ? `active ${activeTradeType}` : ""}`}
+                          onClick={() => handlePresetButtonClick(preset, index)}
+                        >
+                          {preset}
+                        </button>
+                      )}
+                    </div>
                   ))}
+                  <div className="meme-preset-edit-container">
+                    <button
+                      className={`meme-preset-edit-button ${isPresetEditMode ? 'active' : ''}`}
+                      onClick={handlePresetEditToggle}
+                      title={isPresetEditMode ? 'Exit Edit Mode' : 'Edit Presets'}
+                    >
+                      <img
+                        src={editicon}
+                        alt="Edit"
+                        className={`meme-preset-edit-icon ${isPresetEditMode ? 'active' : ''}`}
+                      />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -2542,111 +2534,22 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               </div>
             )}
           </div>
-          <div className="meme-trade-settings">
-            <div className="meme-settings-toggle">
-              <div className="meme-settings-collapsed">
+          <div className="meme-settings-toggle">
+            <div className="meme-settings-collapsed">
               <Tooltip content="Slippage">
                 <div className="meme-settings-item">
                   <img src={slippage} className="meme-settings-icon1" />
                   <span className="meme-settings-value">{slippageValue}%</span>
                 </div>
-                </Tooltip>
-                <Tooltip content="Priority Fee">
+              </Tooltip>
+              <Tooltip content="Priority Fee">
                 <div className="meme-settings-item">
                   <img src={gas} className="meme-settings-icon2" />
                   <span className="meme-settings-value">{priorityFee}</span>
                 </div>
-                </Tooltip>
-              </div>
-              <button
-                className="meme-settings-edit-button"
-                onClick={() => setSettingsExpanded(!settingsExpanded)}
-              >
-                <img
-                  src={editicon}
-                  className={`meme-settings-edit-icon ${settingsExpanded ? "expanded" : ""}`}
-                />
-              </button>
+              </Tooltip>
             </div>
-            {settingsExpanded && (
-              <div className="meme-settings-content">
-                <div className="meme-settings-presets">
-                  <button
-                    className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1 ? 'active' : ''}`}
-                    onClick={() => handlePresetSelect(1)}
-                  >
-                    Preset 1
-                  </button>
-                  <button
-                    className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2 ? 'active' : ''}`}
-                    onClick={() => handlePresetSelect(2)}
-                  >
-                    Preset 2
-                  </button>
-                  <button
-                    className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3 ? 'active' : ''}`}
-                    onClick={() => handlePresetSelect(3)}
-                  >
-                    Preset 3
-                  </button>
-                </div>
-
-                <div className="meme-settings-mode-toggle">
-                  <button
-                    className={`meme-settings-mode-btn ${settingsMode === 'buy' ? 'active' : ''}`}
-                    onClick={() => setSettingsMode('buy')}
-                  >
-                    Buy settings
-                  </button>
-                  <button
-                    className={`meme-settings-mode-btn ${settingsMode === 'sell' ? 'active' : ''}`}
-                    onClick={() => setSettingsMode('sell')}
-                  >
-                    Sell settings
-                  </button>
-                </div>
-                <div className="meme-settings-grid">
-                  <div className="meme-setting-item">
-                    <label className="meme-setting-label">
-                      <img src={slippage} alt="Slippage" className="meme-setting-label-icon" />
-                      Slippage
-                    </label>
-                    <div className="meme-setting-input-wrapper">
-                      <input
-                        type="number"
-                        className="meme-setting-input"
-                        value={settingsMode === 'buy' ? buySlippageValue : sellSlippageValue}
-                        onChange={(e) => settingsMode === 'buy' ? setBuySlippageValue(e.target.value) : setSellSlippageValue(e.target.value)}
-                        step="0.1"
-                        min="0"
-                        max="100"
-                      />
-                      <span className="meme-setting-unit">%</span>
-                    </div>
-                  </div>
-
-                  <div className="meme-setting-item">
-                    <label className="meme-setting-label">
-                      <img src={gas} alt="Priority Fee" className="meme-setting-label-icon" />
-                      Priority
-                    </label>
-                    <div className="meme-setting-input-wrapper">
-                      <input
-                        type="number"
-                        className="meme-setting-input"
-                        value={settingsMode === 'buy' ? buyPriorityFee : sellPriorityFee}
-                        onChange={(e) => settingsMode === 'buy' ? setBuyPriorityFee(e.target.value) : setSellPriorityFee(e.target.value)}
-                        step="0.001"
-                        min="0"
-                      />
-                      <span className="meme-setting-unit">MON</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
-
           {activeTradeType === "buy" && (
             <div className="meme-advanced-trading-section">
               <div className="meme-advanced-trading-toggle">
@@ -2828,23 +2731,25 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             </div>
           )}
 
-          <button
-            onClick={() => {
-              if (!account.connected) {
-                setpopup(4);
-              } else {
-                const targetChainId =
-                  settings.chainConfig[activechain]?.chainId || activechain;
-                if (account.chainId !== targetChainId) {
-                  setChain();
-                } else {
-                  handleTrade();
-                }
-              }
-            }}
-            className={`meme-trade-action-button ${activeTradeType}`}
-            disabled={isTradeDisabled()}
-          >
+<button
+  onClick={() => {
+    if (!account.connected) {
+      walletPopup.showConnectionError();
+    } else {
+      const targetChainId =
+        settings.chainConfig[activechain]?.chainId || activechain;
+      if (account.chainId !== targetChainId) {
+        walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
+        setChain();
+      } else {
+        handleTrade();
+      }
+    }
+  }}
+  className={`meme-trade-action-button ${activeTradeType}`}
+  disabled={isTradeDisabled()}
+>
+
             {isSigning ? (
               <div className="meme-button-spinner"></div>
             ) : (
@@ -2919,109 +2824,112 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               </div>
             </div>
           </div>
+          <div className="meme-trade-settings">
 
-        </div>
-        <div className="meme-trading-stats-container">
-          <div className="meme-trading-stats-row">
-            <div className="meme-stat-group">
-              <div className="meme-stat-header">
-                <span className="meme-stat-label">TXNS</span>
-                <div className="meme-stat-value">
-                  {formatNumberWithCommas(totalTraders)}
-                </div>
-              </div>
-              <div className="meme-stat-details">
-                <div className="meme-stat-subrow">
-                  <div className="stat-sublabel">BUYS</div>
-                  <div className="stat-sublabel">SELLS</div>
-                </div>
-                <div className="meme-stat-subrow">
-                  <div className="stat-subvalue buy">
-                    {formatNumberWithCommas(buyers)}
-                  </div>
-                  <div className="stat-subvalue sell">
-                    {formatNumberWithCommas(sellers)}
-                  </div>
-                </div>
-                <div className="meme-progress-bar">
-                  <div
-                    className="progress-buy"
-                    style={{ width: `${currentData.buyerPercentage}%` }}
-                  ></div>
-                  <div
-                    className="progress-sell"
-                    style={{ width: `${currentData.sellerPercentage}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-            <div className="meme-stat-group">
-              <div className="meme-stat-header">
-                <span className="meme-stat-label">VOLUME</span>
-                <div className="meme-stat-value">
-                  {formatVolume(currentData.volume)}
-                </div>
-              </div>
-              <div className="meme-stat-details">
-                <div className="meme-stat-subrow">
-                  <div className="stat-sublabel">BUY VOL</div>
-                  <div className="stat-sublabel">SELL VOL</div>
-                </div>
-                <div className="meme-stat-subrow">
-                  <div className="stat-subvalue buy">
-                    {formatVolume(buyVolume)}
-                  </div>
-                  <div className="stat-subvalue sell">
-                    {formatVolume(sellVolume)}
-                  </div>
-                </div>
-                <div className="meme-progress-bar">
-                  <div
-                    className="progress-buy"
-                    style={{ width: `${currentData.buyVolumePercentage}%` }}
-                  ></div>
-                  <div
-                    className="progress-sell"
-                    style={{ width: `${currentData.sellVolumePercentage}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-            <div className="meme-stat-group">
-              <div className="meme-stat-header">
-                <span className="meme-stat-label">MAKERS</span>
-                <div className="meme-stat-value">
-                  {formatNumberWithCommas(totalTraders)}
-                </div>
-              </div>
-              <div className="meme-stat-details">
-                <div className="meme-stat-subrow">
-                  <div className="stat-sublabel">BUYERS</div>
-                  <div className="stat-sublabel">SELLERS</div>
-                </div>
-                <div className="meme-stat-subrow">
-                  <div className="stat-subvalue buy">
-                    {formatNumberWithCommas(buyers)}
-                  </div>
-                  <div className="stat-subvalue sell">
-                    {formatNumberWithCommas(sellers)}
-                  </div>
-                </div>
-                <div className="meme-progress-bar">
-                  <div
-                    className="progress-buy"
-                    style={{ width: `${currentData.buyerPercentage}%` }}
-                  ></div>
-                  <div
-                    className="progress-sell"
-                    style={{ width: `${currentData.sellerPercentage}%` }}
-                  ></div>
-                </div>
-              </div>
+
+            <div className="meme-settings-presets">
+              <button
+                className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1 ? 'active' : ''}`}
+                onClick={() => {
+                  if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1) {
+                    setSettingsExpanded(false);
+                  } else {
+                    handlePresetSelect(1);
+                    setSettingsExpanded(true);
+                  }
+                }}
+              >
+                PRESET 1
+              </button>
+              <button
+                className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2 ? 'active' : ''}`}
+                onClick={() => {
+                  if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2) {
+                    setSettingsExpanded(false);
+                  } else {
+                    handlePresetSelect(2);
+                    setSettingsExpanded(true);
+                  }
+                }}
+              >
+                PRESET 2
+              </button>
+              <button
+                className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3 ? 'active' : ''}`}
+                onClick={() => {
+                  if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3) {
+                    setSettingsExpanded(false);
+                  } else {
+                    handlePresetSelect(3);
+                    setSettingsExpanded(true);
+                  }
+                }}
+              >
+                PRESET 3
+              </button>
             </div>
 
+            {settingsExpanded && (
+              <div className="meme-settings-content">
+                <div className="meme-settings-mode-toggle">
+                  <button
+                    className={`meme-settings-mode-btn ${settingsMode === 'buy' ? 'active' : ''}`}
+                    onClick={() => setSettingsMode('buy')}
+                  >
+                    Buy settings
+                  </button>
+                  <button
+                    className={`meme-settings-mode-btn ${settingsMode === 'sell' ? 'active' : ''}`}
+                    onClick={() => setSettingsMode('sell')}
+                  >
+                    Sell settings
+                  </button>
+                </div>
+                <div className="meme-settings-grid">
+                  <div className="meme-setting-item">
+                    <label className="meme-setting-label">
+                      <img src={slippage} alt="Slippage" className="meme-setting-label-icon-slippage" />
+                      Slippage
+                    </label>
+                    <div className="meme-setting-input-wrapper">
+                      <input
+                        type="number"
+                        className="meme-setting-input"
+                        value={settingsMode === 'buy' ? buySlippageValue : sellSlippageValue}
+                        onChange={(e) => settingsMode === 'buy' ? setBuySlippageValue(e.target.value) : setSellSlippageValue(e.target.value)}
+                        step="0.1"
+                        min="0"
+                        max="100"
+                      />
+                      <span className="meme-setting-unit">%</span>
+                    </div>
+                  </div>
+
+                  <div className="meme-setting-item">
+                    <label className="meme-setting-label">
+                      <img src={gas} alt="Priority Fee" className="meme-setting-label-icon" />
+                      Priority
+                    </label>
+                    <div className="meme-setting-input-wrapper">
+                      <input
+                        type="number"
+                        className="meme-setting-input"
+                        value={settingsMode === 'buy' ? buyPriorityFee : sellPriorityFee}
+                        onChange={(e) => settingsMode === 'buy' ? setBuyPriorityFee(e.target.value) : setSellPriorityFee(e.target.value)}
+                        step="0.001"
+                        min="0"
+                      />
+                      <span className="meme-setting-unit">MON</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+
         </div>
+
+
         <div className="meme-token-info-container">
           <div className="meme-token-info-header">
             <h3 className="meme-token-info-title">Token Info</h3>
@@ -3178,30 +3086,30 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   </div>
                   <span className="meme-token-info-label">Insiders</span>
                 </div>
-         <div className="meme-token-info-item">
-  <div className="meme-token-info-icon-container">
-    <svg
-      className="meme-interface-traders-icon"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="#ced0df"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
-    </svg>
-    <span
-      className="meme-token-info-value"
-      style={{
-        color:
-          "#ced0df"
-      }}
-    >
-      {holders.length}
-    </span>
-  </div>
-  <span className="meme-token-info-label">Holders</span>
-</div>
+                <div className="meme-token-info-item">
+                  <div className="meme-token-info-icon-container">
+                    <svg
+                      className="meme-interface-traders-icon"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="#ced0df"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
+                    </svg>
+                    <span
+                      className="meme-token-info-value"
+                      style={{
+                        color:
+                          "#ced0df"
+                      }}
+                    >
+                      {holders.length}
+                    </span>
+                  </div>
+                  <span className="meme-token-info-label">Holders</span>
+                </div>
                 <div className="meme-token-info-item">
                   <div className="meme-token-info-icon-container">
                     <svg
@@ -3229,46 +3137,84 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               </div>
               <div className="meme-token-info-footer">
                 <span className="meme-address">
-                  <img className="meme-contract-icon" src={contract} />
-                  <span className="meme-address-title">CA:</span>{" "}
-                  {token.id.slice(0, 21)}...{token.id.slice(-4)}
-                  <Tooltip content="View on Monad Explorer">
-                  <svg
-                    className="meme-address-link"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                    <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                  </svg>        
-                  </Tooltip>          
+                  <div className="address-top">
+                    <div className="meme-address-content">
+                      <img className="meme-contract-icon" src={contract} />
+                      <span className="meme-address-title">CA:</span>{" "}
+                      <Tooltip content="Copy contract address">
+                        {token.id.slice(0, 15)}...{token.id.slice(-4)}
+                      </Tooltip>
+                    </div>
+                    <Tooltip content="View on Monad Explorer">
+                      <svg
+                        className="meme-address-link"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                        <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                      </svg>
+                    </Tooltip>
+                  </div>
                 </span>
                 <span className="meme-address">
-                  <img className="meme-contract-icon" src={contract} />
-                  <span className="meme-address-title">DA:</span>{" "}
-                  {token.dev.slice(0, 21)}...{token.dev.slice(-4)}
-                   <Tooltip content="View on Monad Explorer">
-                  <svg
-                    className="meme-address-link"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                    <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                  </svg>        
-                  </Tooltip>     
+                  <div className="address-top">
+                    <div className="meme-address-content">
+                      <img className="meme-contract-icon" src={contract} />
+                      <span className="meme-address-title">DA:</span>{" "}
+                      <Tooltip content="Copy developer address">
+                        {token.dev.slice(0, 15)}...{token.dev.slice(-4)}
+                      </Tooltip>
+                    </div>
+                    <Tooltip content="View on Monad Explorer">
+                      <svg
+                        className="meme-address-link"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                        <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                      </svg>
+                    </Tooltip>
+                  </div>
+                  <div className="dev-address-bottom">
+                    <div className="dev-address-bottom-left">
+                      <Tooltip content="View funding on Monadscan">
+                        <div
+                          className="funding-location"
+                          onClick={() => window.open(`https://testnet.monadscan.com/address/${token.id}`, '_blank')}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="funding-by-wallet-icon">
+                            <path d="m5 12 7-7 7 7" />
+                            <path d="M12 19V5" />
+                          </svg>
+                          {token.id.slice(0, 6)}...{token.id.slice(-4)}
+                        </div>
+                      </Tooltip>
+                      <Tooltip content={`$${(4.0 * monUsdPrice).toFixed(2)}`}>
+                        <div className="funding-amount">
+                          <img src={monadicon} className="meme-mobile-monad-icon" /> 4.00
+                        </div>
+                      </Tooltip>
+                    </div>
+                    <div className="funding-time-ago">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="funding-time-ago-icon"><path d="M12 6v6l4 2" /><circle cx="12" cy="12" r="10" /></svg>
+                      <span>3 mo</span>
+                    </div>
+                  </div>
                 </span>
               </div>
             </div>
           )}
         </div>
-                <div className="meme-token-info-container">
+        <div className="meme-similar-tokens-container">
           <div className="meme-token-info-header">
             <h3 className="meme-token-info-title">Similar Tokens</h3>
             <button
@@ -3360,19 +3306,20 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             </div>
 
             <div className="meme-mobile-amount-buttons">
-              {mobileBuyAmounts.map((amount, index) => (
-                <button
-                  key={index}
-                  className={`meme-mobile-amount-btn ${mobileSelectedBuyAmount === amount ? 'active' : ''}`}
-                  onClick={() => {
-                    setMobileSelectedBuyAmount(amount);
-                    handleMobileBuyTrade(amount);
-                  }}
-                  disabled={!account?.connected}
-                >
-                  {amount}
-                </button>
-              ))}
+{mobileBuyAmounts.map((amount, index) => (
+  <button
+    key={index}
+    className={`meme-mobile-amount-btn ${mobileSelectedBuyAmount === amount ? 'active' : ''}`}
+    onClick={() => {
+      setMobileSelectedBuyAmount(amount);
+      handleMobileTrade(amount, 'buy');
+    }}
+    disabled={!account?.connected}
+  >
+    {amount}
+  </button>
+))}
+
             </div>
           </div>
         ) : (
@@ -3405,19 +3352,20 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             </div>
 
             <div className="meme-mobile-percent-buttons">
-              {mobileSellPercents.map((percent, index) => (
-                <button
-                  key={index}
-                  className={`meme-mobile-percent-btn ${mobileSelectedSellPercent === percent ? 'active' : ''}`}
-                  onClick={() => {
-                    setMobileSelectedSellPercent(percent);
-                    handleMobileSellTrade(percent);
-                  }}
-                  disabled={!account?.connected || walletTokenBalances?.[userAddr]?.[token.id] <= 0}
-                >
-                  {percent}
-                </button>
-              ))}
+           {mobileSellPercents.map((percent, index) => (
+  <button
+    key={index}
+    className={`meme-mobile-percent-btn ${mobileSelectedSellPercent === percent ? 'active' : ''}`}
+    onClick={() => {
+      setMobileSelectedSellPercent(percent);
+      handleMobileTrade(percent, 'sell');
+    }}
+    disabled={!account?.connected || walletTokenBalances?.[userAddr]?.[token.id] <= 0}
+  >
+    {percent}
+  </button>
+))}
+
             </div>
           </div>
         )}
@@ -3500,34 +3448,36 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           </div>
         )}
       </div>
-      <QuickBuyWidget
-        isOpen={isWidgetOpen}
-        onClose={() => setIsWidgetOpen(false)}
-        tokenSymbol={token.symbol}
-        tokenAddress={tokenAddress}
-        tokenPrice={currentPrice}
-        buySlippageValue={buySlippageValue}
-        buyPriorityFee={buyPriorityFee}
-        sellSlippageValue={sellSlippageValue}
-        sellPriorityFee={sellPriorityFee}
-        sendUserOperationAsync={sendUserOperationAsync}
-        account={account}
-        setChain={setChain}
-        activechain={activechain}
-        routerAddress={routerAddress}
-        setpopup={setpopup}
-        subWallets={subWallets}
-        walletTokenBalances={walletTokenBalances}
-        activeWalletPrivateKey={activeWalletPrivateKey}
-        setOneCTSigner={setOneCTSigner}
-        tokenList={tokenList}
-        isBlurred={isBlurred}
-        terminalRefetch={terminalRefetch}
-        userStats={userStats}
-        monUsdPrice={monUsdPrice}
-        showUSD={showUSD}
-        onToggleCurrency={handleToggleCurrency}
-      />
+    <QuickBuyWidget
+  isOpen={isWidgetOpen}
+  onClose={() => setIsWidgetOpen(false)}
+  tokenSymbol={token.symbol}
+  tokenAddress={tokenAddress}
+  tokenPrice={currentPrice}
+  buySlippageValue={buySlippageValue}
+  buyPriorityFee={buyPriorityFee}
+  sellSlippageValue={sellSlippageValue}
+  sellPriorityFee={sellPriorityFee}
+  sendUserOperationAsync={sendUserOperationAsync}
+  account={account}
+  setChain={setChain}
+  activechain={activechain}
+  routerAddress={routerAddress}
+  setpopup={setpopup}
+  subWallets={subWallets}
+  walletTokenBalances={walletTokenBalances}
+  activeWalletPrivateKey={activeWalletPrivateKey}
+  setOneCTSigner={setOneCTSigner}
+  tokenList={tokenList}
+  isBlurred={isBlurred}
+  terminalRefetch={terminalRefetch}
+  userStats={userStats}
+  monUsdPrice={monUsdPrice}
+  showUSD={showUSD}
+  onToggleCurrency={handleToggleCurrency}
+  tokenImage={token.image}
+/>
+
     </div>
   );
 };

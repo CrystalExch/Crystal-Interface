@@ -6,13 +6,13 @@ import closebutton from '../../../assets/close_button.png';
 import squares from '../../../assets/squares.svg';
 import editicon from '../../../assets/edit.svg';
 import switchicon from '../../../assets/switch.svg';
-import { showLoadingPopup, updatePopup } from '../../MemeTransactionPopup/MemeTransactionPopupManager';
 import walleticon from '../../../assets/wallet_icon.png';
 import slippage from '../../../assets/slippage.svg';
 import gas from '../../../assets/gas.svg';
 import { CrystalRouterAbi } from '../../../abis/CrystalRouterAbi';
 import { encodeFunctionData } from 'viem';
 import { createPortal } from 'react-dom';
+import { showLoadingPopup, updatePopup } from '../../MemeTransactionPopup/MemeTransactionPopupManager';
 
 interface PendingTransaction {
     id: string;
@@ -57,6 +57,9 @@ interface QuickBuyWidgetProps {
     monUsdPrice?: number;
     showUSD?: boolean;
     onToggleCurrency?: () => void;
+    showLoadingPopup?: (id: string, config: any) => void;
+    updatePopup?: (id: string, config: any) => void;
+    tokenImage?: string;
 }
 const Tooltip: React.FC<{
     content: string;
@@ -242,9 +245,10 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     monUsdPrice = 0,
     showUSD = false,
     onToggleCurrency,
+    tokenImage
 }) => {
 
-
+    
     const [position, setPosition] = useState(() => {
         try {
             const saved = localStorage.getItem('crystal_quickbuy_widget_position');
@@ -506,7 +510,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         }
 
         const requestedAmount = parseFloat(amount);
-        const currentMONBalance = getWalletBalance(account?.address);;
+        const currentMONBalance = getWalletBalance(account?.address);
 
         if (requestedAmount > currentMONBalance) {
             const txId = `insufficient-${Date.now()}`;
@@ -532,7 +536,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             return;
         }
 
-        const txId = `buy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
         const newTx: PendingTransaction = {
             id: txId,
@@ -542,17 +546,15 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             status: 'pending'
         };
 
-        setPendingTransactions(prev => {
-            const updated = [...prev, newTx];
-            return updated;
-        });
+        setPendingTransactions(prev => [...prev, newTx]);
 
         if (showLoadingPopup) {
             showLoadingPopup(txId, {
                 title: 'Sending transaction...',
                 subtitle: `Buying ${amount} MON worth of ${tokenSymbol}`,
                 amount,
-                amountUnit: 'MON'
+                amountUnit: 'MON',
+                tokenImage: tokenImage
             });
         }
 
@@ -590,12 +592,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 });
             }
 
-            setPendingTransactions(prev => {
-                const updated = prev.filter(tx => tx.id !== txId);
-                return updated;
-            });
-
-            terminalRefetch()
+            setPendingTransactions(prev => prev.filter(tx => tx.id !== txId));
+            terminalRefetch();
 
         } catch (error: any) {
             if (updatePopup) {
@@ -607,12 +605,10 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 });
             }
 
-            setPendingTransactions(prev => {
-                const updated = prev.filter(tx => tx.id !== txId);
-                return updated;
-            });
+            setPendingTransactions(prev => prev.filter(tx => tx.id !== txId));
         }
     };
+
 
     const handleSellTrade = async (value: string) => {
         if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
@@ -626,7 +622,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             return;
         }
 
-        const txId = `sell-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const txId = `quicksell-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
         const newTx: PendingTransaction = {
             id: txId,
@@ -636,17 +632,15 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             status: 'pending'
         };
 
-        setPendingTransactions(prev => {
-            const updated = [...prev, newTx];
-            return updated;
-        });
+        setPendingTransactions(prev => [...prev, newTx]);
 
         if (showLoadingPopup) {
             showLoadingPopup(txId, {
                 title: 'Sending transaction...',
                 subtitle: `Selling ${value} ${sellMode === 'percent' ? '' : 'MON worth'} of ${tokenSymbol}`,
                 amount: value,
-                amountUnit: sellMode === 'percent' ? '%' : 'MON'
+                amountUnit: sellMode === 'percent' ? '%' : 'MON',
+                tokenImage: tokenImage
             });
         }
 
@@ -699,13 +693,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 });
             }
 
-            setPendingTransactions(prev => {
-                const updated = prev.filter(tx => tx.id !== txId);
-                return updated;
-            });
-
-            terminalRefetch()
-
+            setPendingTransactions(prev => prev.filter(tx => tx.id !== txId));
+            terminalRefetch();
 
         } catch (e: any) {
             if (updatePopup) {
@@ -717,10 +706,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 });
             }
 
-            setPendingTransactions(prev => {
-                const updated = prev.filter(tx => tx.id !== txId);
-                return updated;
-            });
+            setPendingTransactions(prev => prev.filter(tx => tx.id !== txId));
 
             if (String(e?.message || '').includes('Invalid sell amount')) {
                 if (updatePopup) {
@@ -1040,7 +1026,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                         </div>
 
                         <div className="amount-buttons">
-                            {buyAmounts.map((amount:any, index: any) => (
+                            {buyAmounts.map((amount: any, index: any) => (
                                 <div key={index} className="button-container">
                                     {editingIndex === index ? (
                                         <input

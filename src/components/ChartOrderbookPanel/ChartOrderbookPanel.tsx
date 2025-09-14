@@ -25,6 +25,8 @@ interface ChartOrderbookPanelProps {
   setActiveTab: any;
   updateLimitAmount: any;
   renderChartComponent: any;
+  reserveQuote: any;
+  reserveBase: any;
 }
 
 const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
@@ -48,6 +50,8 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   setActiveTab,
   updateLimitAmount,
   renderChartComponent,
+  reserveQuote,
+  reserveBase,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -183,6 +187,8 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           updateLimitAmount={updateLimitAmount}
+          reserveQuote={reserveQuote}
+          reserveBase={reserveBase}
         />
       </div>
     </div>

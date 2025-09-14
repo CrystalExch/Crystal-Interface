@@ -20,6 +20,7 @@ interface OrderItemProps {
   updateLimitAmount: any;
   shouldFlash: boolean;
   hasUserOrder?: boolean;
+  marketType: any;
 }
 
 const OrderItem = React.forwardRef<HTMLLIElement, OrderItemProps>(
@@ -40,6 +41,7 @@ const OrderItem = React.forwardRef<HTMLLIElement, OrderItemProps>(
       updateLimitAmount,
       shouldFlash,
       hasUserOrder = false,
+      marketType,
     },
     ref,
   ) => {
@@ -76,7 +78,7 @@ const OrderItem = React.forwardRef<HTMLLIElement, OrderItemProps>(
         style={dynamicStyle}
         className={`order-item-wrapper ${isHighlighted ? 'highlighted' : ''}`}
         onClick={() => {
-          updateLimitAmount(price, priceFactor);
+          updateLimitAmount(price, priceFactor, marketType != 0 && price ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(price ?? 1)) - 1) : Number(priceFactor));
         }}
       >
         <div
@@ -88,7 +90,7 @@ const OrderItem = React.forwardRef<HTMLLIElement, OrderItemProps>(
           <div className="totalSizeBar" style={totalSizeBarStyle} />
           <div className="order-content">
             <span className="order-price" style={{ color }}>
-              {formatCommas(price.toFixed(Math.floor(Math.log10(priceFactor))))}
+              {formatCommas(price.toFixed(Math.floor(Math.log10(marketType != 0 && price ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(price ?? 1)) - 1) : Number(priceFactor)))))}
               {hasUserOrder && (
                 <span className="user-order-dot">•</span>
               )}

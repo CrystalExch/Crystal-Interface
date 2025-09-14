@@ -112,6 +112,10 @@
     border-bottom: 1px solid rgba(179, 184, 249, .09);
 }
 
+.meme-similar-tokens-container {
+    padding: 10px 12px;
+}
+
 .meme-token-info-title {
     color: #f4f5f9f4;
     font-size: .9rem;
@@ -431,10 +435,10 @@
 
 .meme-trade-input {
     width: 100%;
-    padding: 6px 80px 6px 12px;
+    padding: 4px 80px 4px 12px;
     background: transparent;
     border: 1px solid rgba(179, 184, 249, 0.1);
-    border-radius: 6px;
+    border-radius: 4px;
     color: #fff;
     font-size: 1.1rem;
     outline: none;
@@ -474,13 +478,12 @@
 .meme-trade-currency {
     position: absolute;
     top: 50%;
-    padding-left: 18px;
+    right: 20px;
     transform: translateY(-50%);
     color: rgba(255, 255, 255, 0.5);
     font-size: .95rem;
     pointer-events: none;
 }
-
 
 .meme-trade-panel-content {
     display: flex;
@@ -585,14 +588,16 @@
 
 .meme-address {
     display: flex;
+    flex-direction: column;
     align-items: center;
+    justify-content: space-between;
     font-size: 0.9rem;
     color: rgb(169, 169, 174);
-    align-self: center;
     border: 1px solid rgba(179, 184, 249, 0.1);
     border-radius: 5px;
-    padding: 1px 6px;
+    padding: 4px 8px;
     cursor: pointer;
+    width: 100%;
 }
 
 .meme-address-title {
@@ -613,7 +618,6 @@
 }
 
 .meme-address-link {
-    margin-left: 4px;
     cursor: pointer;
 }
 
@@ -759,23 +763,23 @@
 
 .meme-preset-buttons {
     display: flex;
-    gap: 5px;
+    gap: 3px;
     justify-content: center;
-    margin-top: 2px;
+    margin-top: -3px;
 }
 
 .meme-preset-button {
     border: 1px solid rgba(179, 184, 249, 0.1);
-    border-radius: 8px;
+    border-radius: 4px;
     color: rgb(255, 255, 255, 0.7);
     cursor: pointer;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     padding: 0 16px;
-    height: 30px;
+    height: 20px;
     transition: all 0.2s ease;
-    min-width: 60px;
-    width: 33%;
+    width: 100%;
     background: transparent;
+    font-weight: 300;
 }
 
 .meme-preset-button:disabled {
@@ -956,8 +960,8 @@
 }
 
 .meme-trade-settings {
-    padding: 6px 12px;
-    padding-top: 0;
+    padding: 0 12px;
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .meme-settings-toggle {
@@ -977,6 +981,7 @@
     align-items: center;
     gap: 8px;
     width: 100%;
+    padding: 0 16px
 }
 
 .meme-settings-item {
@@ -1012,10 +1017,14 @@
     color: #a1a2ab;
     transform: scaleX(1.05);
 }
-
+.meme-setting-label-icon-slippage {
+    width: 15px;
+    height: 15px;
+    opacity: 0.7;
+}
 .meme-setting-label-icon {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     opacity: 0.7;
 }
 
@@ -1035,7 +1044,7 @@
 }
 
 .meme-settings-content {
-    margin-top: 12px;
+    margin-top: 6px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -1048,9 +1057,9 @@
 
 .meme-settings-preset {
     flex: 1;
-    padding: 4px 12px;
+    padding: 2px 12px;
     background: transparent;
-    border: 1px solid rgba(179, 184, 249, 0.1);
+    border: 1px solid transparent;
     border-radius: 6px;
     color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
@@ -1066,14 +1075,14 @@
 }
 
 .meme-settings-preset:hover:not(.active) {
-    background: rgba(179, 184, 249, 0.05);
-    border-color: rgba(179, 184, 249, 0.15);
+    background: rgba(190, 192, 225, 0.05);
 }
 
 .meme-settings-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
+    padding-bottom: 10px;
 }
 
 .meme-setting-item {
@@ -1099,12 +1108,12 @@
 
 .meme-setting-input {
     width: 100%;
-    padding: 6px 28px 6px 8px;
+    padding: 4px 28px 4px 8px;
     background: transparent;
     border: 1.5px solid rgba(179, 184, 249, 0.1);
     border-radius: 4px;
     color: #fff;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     outline: none;
     transition: all 0.2s ease;
     box-sizing: border-box;
@@ -1119,7 +1128,7 @@
     position: absolute;
     right: 8px;
     color: rgba(255, 255, 255, 0.4);
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     pointer-events: none;
 }
 
@@ -1157,34 +1166,6 @@
 .meme-token-info-arrow.expanded {
     transform: rotate(0deg);
 }
-
-.meme-settings-edit-button {
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.6);
-    cursor: pointer;
-    padding: 2px;
-    transition: all 0.2s ease;
-}
-
-.meme-settings-edit-button:hover {
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.meme-settings-edit-icon {
-    width: 14px;
-    height: 14px;
-    transition: transform 0.2s ease;
-    border-radius: 2px;
-}
-
-.meme-settings-edit-icon.expanded {
-    opacity: 1;
-    filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%);
-    background-color: #aaaecf32;
-}
-
-
 
 .meme-oc-drag-handle {
     display: flex;
@@ -1540,6 +1521,13 @@
     width: 14px;
     height: 14px;
     margin-right: 3px;
+}
+
+
+.meme-currency-monad-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
 }
 
 .meme-mobile-amount-buttons,
@@ -2343,4 +2331,458 @@
     border-color: rgba(235, 112, 112, 0.4);
     box-shadow: 0 0 0 1px rgba(235, 112, 112, 0.6);
     color: rgb(235, 112, 112);
+}
+
+.meme-trading-stats-enhanced {
+  background: rgb(6, 6, 6);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  margin-bottom: 16px;
+  position: relative;
+  transition: all 0.3s ease;
+  padding: 10px;
+  padding-top: 5px;
+}
+
+.top-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+  padding: 4px;
+}
+
+.stat-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+
+.stat-group-vol {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.stat-group-vol .stat-value {
+  color: #ffffff;
+  font-size: 0.85rem;
+}
+.stat-group-vol .stat-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  font-weight: 300;
+  line-height: 1;
+}
+
+
+.stat-group-net-vol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  position: relative;
+}
+.stat-group-net-vol .stat-value {
+  color: #ffffff;
+  font-size: 0.85rem;
+}
+.stat-group-net-vol .stat-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.stat-group-net-vol .stat-value.green {
+  color: #28ed8a;
+}
+
+.stat-group-net-vol .stat-value.red {
+  color: #f77f7d;
+}
+
+.stat-group .stat-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  font-weight: 300;
+    line-height: 1;
+
+}
+
+.stat-group .stat-value {
+  color: #ffffff;
+  font-size: 0.85rem;
+}
+
+.stat-group .stat-value.green {
+  color: #28ed8a;
+}
+
+.stat-group .stat-value.red {
+  color: #f77f7d;
+}
+
+.indicator-legend{
+    width: 100%;
+    display: flex;
+    gap: 3px;
+}
+
+
+.indicator-line {
+  bottom: 8px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.green-line {
+  background: #28ed8a;
+}
+
+.red-line {
+  background: #f77f7d;
+}
+
+.stats-hover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.stats-hover-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.stats-blur-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(6, 6, 6, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.overlay-controls-grid {
+  position: relative;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 100%;
+}
+
+.timeframe-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+}
+
+.timeframe-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  height: 100%;
+}
+
+.timeframe-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(179, 184, 249, 0.2);
+}
+
+
+
+.tf-label {
+  font-size: 0.75rem;
+}
+
+.tf-percentage {
+  font-size: 0.85rem;
+  color: #f77f7d;
+}
+
+.age-dropdown-wrapper {
+  position: relative;
+}
+
+.age-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.age-dropdown-trigger:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(179, 184, 249, 0.2);
+}
+
+.age-dropdown-arrow {
+  transition: transform 0.2s ease;
+}
+
+.age-dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+.age-dropdown-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: rgb(6, 6, 6);
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.age-option-btn {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.age-option-btn:hover {
+  background: rgba(170, 174, 207, 0.1);
+  color: #ffffff;
+}
+
+.trading-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.enhanced-buy-btn {
+  padding: 8px 24px;
+  background: #28ed8a;
+  border: none;
+  border-radius: 6px;
+  color: #000000;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.enhanced-buy-btn:hover {
+  background: #25d47a;
+  transform: translateY(-1px);
+}
+
+.sell-btn-wrapper {
+  position: relative;
+}
+
+.enhanced-sell-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid rgba(179, 184, 249, 0.2);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.enhanced-sell-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(179, 184, 249, 0.3);
+  color: #ffffff;
+}
+
+.meme-preset-buttons {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+    align-items: center;
+}
+
+.meme-preset-button-container {
+    flex: 1;
+    position: relative;
+}
+
+.meme-preset-button.edit-mode {
+    background: rgba(176, 196, 222, 0.08);
+    border-color: #aaaecf;
+    color: #b0c4de;
+    box-shadow: inset 0 0 4px 2px rgba(176, 196, 222, 0.15);
+}
+
+.meme-preset-edit-input {
+    width: 100%;
+    padding: 0 12px;
+    border-radius: 4px;
+    background: #b0c4de3e;
+    border: 1.5px solid #b0c4de;
+    color: #d8dcff;
+    font-size: 0.8rem;
+    text-align: center;
+    outline: none;
+    height: 20px;
+    box-sizing: border-box;
+}
+
+.meme-preset-edit-input:focus {
+    border-color: #b0c4de;
+    box-shadow: 0 0 0 2px rgba(176, 196, 222, 0.2);
+}
+
+.meme-preset-edit-input::-webkit-outer-spin-button,
+.meme-preset-edit-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.meme-preset-edit-input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.meme-preset-edit-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    flex-shrink: 0;
+    margin-left: 4px;
+}
+
+.meme-preset-edit-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 3px;
+}
+
+
+.meme-preset-edit-icon {
+    width: 14px;
+    height: 14px;
+    transition: all 0.2s ease;
+    margin-top: 1px;
+}
+
+.meme-preset-edit-icon.active {
+    opacity: 1;
+    filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%);
+}
+
+.meme-trade-settings .meme-settings-presets {
+    display: flex;
+    gap: 6px;
+    margin: 8px 0;
+
+}
+
+.meme-address-content{
+    display: flex;
+    align-items: center;
+}
+
+.address-top{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.funding-amount{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgb(184, 187, 193);
+    font-size: 0.9rem;
+}
+
+.funding-location{
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.8rem;
+    background-color: rgba(28, 28, 35, 0.4);
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: -0.3px;
+}
+
+
+.funding-by-wallet-icon{
+    width: 14px;
+    height: 14px;
+}
+
+.funding-time-ago{
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.8rem;
+    background-color: rgba(28, 28, 35, 0.4);
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: -0.5px;
+}
+
+.dev-address-bottom-left{
+    display: flex;
+    gap: 7px;
+}
+
+.dev-address-bottom{
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 4px 0;
+}
+
+.funding-time-ago-icon{
+    width: 14px;
+    height: 14px;
 }
