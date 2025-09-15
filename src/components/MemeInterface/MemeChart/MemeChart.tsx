@@ -94,7 +94,7 @@ const MemeChart: React.FC<MemeChartProps> = ({
   return (
     <div className="meme-chartwrapper">
       {useAdvancedChart ? (
-               <MemeAdvancedChart
+        <MemeAdvancedChart
           data={data}
           token={token}
           selectedInterval={selectedInterval}

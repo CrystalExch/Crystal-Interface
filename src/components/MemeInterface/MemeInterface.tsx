@@ -10,14 +10,12 @@ import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTrans
 import ToggleSwitch from "../ToggleSwitch/ToggleSwitch";
 import { CrystalRouterAbi } from "../../abis/CrystalRouterAbi";
 import { useSharedContext } from "../../contexts/SharedContext";
-import TooltipLabel from '../../components/TooltipLabel/TooltipLabel.tsx';
 import customRound from '../../utils/customRound';
 import { useWalletPopup, setGlobalPopupHandlers } from '../MemeTransactionPopup/useWalletPopup';
 
 import contract from "../../assets/contract.svg";
 import gas from "../../assets/gas.svg";
 import slippage from "../../assets/slippage.svg";
-import switchicon from "../../assets/switch.svg";
 import editicon from "../../assets/edit.svg";
 import walleticon from "../../assets/wallet_icon.png"
 import closebutton from "../../assets/close_button.png";
@@ -119,8 +117,7 @@ interface MemeInterfaceProps {
 const MARKET_UPDATE_EVENT = "0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e";
 const MARKET_CREATED_EVENT = "0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540";
 const TOTAL_SUPPLY = 1e9;
-// const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.5';
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const PAGE_SIZE = 100;
 
@@ -232,6 +229,9 @@ const TOP_TRADERS_QUERY = `
 `;
 
 const RESOLUTION_SECS: Record<string, number> = {
+  "1s": 1,
+  "5s": 5,
+  "15s": 15,
   "1m": 60,
   "5m": 300,
   "15m": 900,
@@ -411,7 +411,7 @@ const Tooltip: React.FC<{
 
 const MemeInterface: React.FC<MemeInterfaceProps> = ({
   sliderMode,
-  sliderPresets,
+  // sliderPresets,
   sliderIncrement,
   tokenList,
   onMarketSelect,
@@ -453,8 +453,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   }, []);
   const [selectedStatsTimeframe, setSelectedStatsTimeframe] = useState('24h');
   const [hoveredStatsContainer, setHoveredStatsContainer] = useState(false);
-  const [selectedStatsAge, setSelectedStatsAge] = useState('Age');
-  const [showStatsAgeDropdown, setShowStatsAgeDropdown] = useState(false);
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
   const [monPresets, setMonPresets] = useState(() => {
@@ -482,6 +480,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       return false;
     }
   });
+
   useEffect(() => {
     try {
       localStorage.setItem('crystal_quickbuy_widget_open', JSON.stringify(isWidgetOpen));
@@ -983,6 +982,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   useEffect(() => {
     if (!token.id) return;
     let isCancelled = false;
+    console.log(selectedInterval);
 
     const fetchMemeTokenData = async () => {
       try {
@@ -1619,6 +1619,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     return () => { cancelled = true; };
   }, [token.dev, token.id]);
+  
   const handlePresetEditToggle = useCallback(() => {
     setIsPresetEditMode(!isPresetEditMode);
     setEditingPresetIndex(null);
@@ -1670,6 +1671,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       setTempPresetValue('');
     }
   }, [handlePresetInputSubmit]);
+
   // top traders
   useEffect(() => {
     if (!token.id) return;
@@ -1905,12 +1907,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   }, [activeTradeType])
 
   const formatNumberWithCommas = fmt;
-  const formatVolume = (n: number) =>
-    n >= 1e6
-      ? `$${(n / 1e6).toFixed(1)}M`
-      : n >= 1e3
-        ? `$${(n / 1e3).toFixed(1)}K`
-        : `$${n.toFixed(0)}`;
 
   const handleTrade = async () => {
     if (!tradeAmount || !account.connected) return;
@@ -1976,7 +1972,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           monAmountWei = 0n;
         } else {
           monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
-          const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
+          // const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
           const tokensToSell = parseFloat(tradeAmount) / currentPrice;
           amountTokenWei = BigInt(Math.round(tokensToSell * (10 ** Number(decimals))));
           isExactInput = false;
@@ -2036,6 +2032,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       return `${activeTradeType === "buy" ? "Buy" : "Sell"} ${token.symbol}`;
     return `Set ${activeTradeType === "buy" ? "Buy" : "Sell"} Limit`;
   };
+
   const isTradeDisabled = () => {
     if (!account.connected) return false;
     const targetChainId =

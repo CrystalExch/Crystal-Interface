@@ -155,8 +155,7 @@ const TOTAL_SUPPLY = 1e9;
 
 const ROUTER_EVENT = '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
 const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-// const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e'
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.5';
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e'
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
   quickBuySize: 'small',
@@ -1723,6 +1722,7 @@ const TokenRow = React.memo<{
 
     setBondingPopupPosition({ top, left });
   }, []);
+  
   useEffect(() => {
     if (hoveredImage === token.id) {
       updatePreviewPosition();
@@ -1752,6 +1752,7 @@ const TokenRow = React.memo<{
       };
     }
   }, [hoveredToken, token.id, updateBondingPopupPosition]);
+
   const totalTraders = useMemo(() => token.holders + token.proTraders + token.kolTraders, [token.holders, token.proTraders, token.kolTraders]);
 
   const showBonding = (token.status === 'new' || token.status === 'graduating') && hoveredToken === token.id;
@@ -2285,16 +2286,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     }
   });
   const [, forceUpdate] = useReducer(x => x + 1, 0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-      forceUpdate();
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
   const [alertSettings, setAlertSettings] = useState<AlertSettings>(() => {
     const saved = localStorage.getItem('explorer-alert-settings');
     if (!saved) return ALERT_DEFAULTS;
@@ -2331,6 +2322,15 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const [hoveredToken, setHoveredToken] = useState<string | null>(null);
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+      forceUpdate();
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => { localStorage.setItem('explorer-display-settings', JSON.stringify(displaySettings)); }, [displaySettings]);
   useEffect(() => { localStorage.setItem('explorer-alert-settings', JSON.stringify(alertSettings)); }, [alertSettings]);
   useEffect(() => { localStorage.setItem('explorer-blacklist-settings', JSON.stringify(blacklistSettings)); }, [blacklistSettings]);
@@ -2350,7 +2350,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const subIdRef = useRef(1);
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const trackedMarketsRef = useRef<Set<string>>(new Set());
-  const backlogRef = useRef<Array<{ type: 'ADD_MARKET' | 'UPDATE_MARKET', payload: any }>>([]);
   const connectionStateRef = useRef<'disconnected' | 'connecting' | 'connected' | 'reconnecting'>('disconnected');
   const retryCountRef = useRef(0);
   const reconnectTimerRef = useRef<number | null>(null);

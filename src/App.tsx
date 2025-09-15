@@ -5386,7 +5386,6 @@ function App() {
         Object.keys(markets).forEach((k) => { temptradesByMarket[k] = []; });
 
         const endpoint = `https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e`;
-
         const query = `
           query {
             markets(first: 100, orderBy: volume, orderDirection: desc, where: {isCanonical:true}) {

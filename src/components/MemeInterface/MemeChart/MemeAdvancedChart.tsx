@@ -200,20 +200,20 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       autosize: true,
       symbol: `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,
       interval: selectedInterval === '1d'
-      ? '1D'
-      : selectedInterval === '4h'
-        ? '240'
-        : selectedInterval === '1h'
-          ? '60'
-          : selectedInterval.endsWith('s')
-            ? selectedInterval.slice(0, -1).toUpperCase() + 'S'
-            : selectedInterval.slice(0, -1),
+        ? '1D'
+        : selectedInterval === '4h'
+          ? '240'
+          : selectedInterval === '1h'
+            ? '60'
+            : selectedInterval.endsWith('S')
+              ? selectedInterval.slice(0, -1).toUpperCase() + 'S'
+              : selectedInterval.slice(0, -1),
       timezone: 'Etc/UTC',
       locale: 'en',
       debug: false,
       theme: 'dark',
-supported_resolutions: ['1S', '5S', '15S', '1', '5', '15', '60', '240', '1D'],
-  enabled_features: ['seconds_resolution'],  
+      supported_resolutions: ['1S', '5S', '15S', '1', '5', '15', '60', '240', '1D'],
+      enabled_features: ['seconds_resolution'],
       auto_save_delay: 0.1,
       disabled_features: [
         'header_symbol_search',
@@ -248,7 +248,7 @@ supported_resolutions: ['1S', '5S', '15S', '1', '5', '15', '60', '240', '1D'],
         foregroundColor: 'rgb(209, 209, 250)',
       },
       favorites: {
-  intervals: ['1S', '5S', '15S', '5', '60', '1D'],
+        intervals: ['1S', '5S', '15S', '5', '60', '1D'],
       },
       overrides: memeOverrides,
       studies: ['Volume@tv-basicstudies'],
@@ -263,7 +263,7 @@ supported_resolutions: ['1S', '5S', '15S', '1', '5', '15', '60', '240', '1D'],
         onReady: (callback: Function) => {
           setTimeout(() => {
             callback({
-supported_resolutions: ['1S', '5S', '15S', '1', '5', '15', '60', '240', '1D'],
+              supported_resolutions: ['1S', '5S', '15S', '1', '5', '15', '60', '240', '1D'],
               exchanges: [
                 {
                   value: 'crystal.exchange',
@@ -289,10 +289,10 @@ supported_resolutions: ['1S', '5S', '15S', '1', '5', '15', '60', '240', '1D'],
               minmov: 1,
               pricescale: 10 ** Math.max(0, 5 - Math.floor(Math.log10(0.000001)) - 1),
               has_intraday: true,
-              has_seconds: true,  
-                seconds_multipliers: ['1', '5', '15'],   
+              has_seconds: true,
+              seconds_multipliers: ['1', '5', '15'],
               has_volume: true,
-supported_resolutions: ['1S', '5S', '15S', '1', '5', '15', '60', '240', '1D'],
+              supported_resolutions: ['1S', '5S', '15S', '1', '5', '15', '60', '240', '1D'],
               data_status: 'streaming',
             });
           }, 0);
@@ -308,17 +308,17 @@ supported_resolutions: ['1S', '5S', '15S', '1', '5', '15', '60', '240', '1D'],
           const { from, to } = periodParams;
 
           try {
-setSelectedInterval(
-  resolution === '1D'
-    ? '1d'
-    : resolution === '240'
-      ? '4h'
-      : resolution === '60'
-        ? '1h'
-        : resolution.endsWith('S')
-          ? resolution.slice(0, -1).toLowerCase() + 's'
-          : resolution + 'm',
-);
+            setSelectedInterval(
+              resolution === '1D'
+                ? '1d'
+                : resolution === '240'
+                  ? '4h'
+                  : resolution === '60'
+                    ? '1h'
+                    : resolution.endsWith('S')
+                      ? resolution.slice(0, -1).toLowerCase() + 's'
+                      : resolution + 'm',
+            );
 
             const key = token.symbol + 'MON' + resolution;
 
@@ -421,9 +421,9 @@ setSelectedInterval(
 
         const monBtn = widgetRef.current.createButton();
         monBtn.setAttribute('title', 'Switch Currencies');
-        monBtn.innerHTML = showUSD 
-        ? `<span style="color:rgb(209,209,250)">USD</span> / <span>MON</span>` 
-        : `<span>USD</span> / <span style="color:rgb(209,209,250)">MON</span>`
+        monBtn.innerHTML = showUSD
+          ? `<span style="color:rgb(209,209,250)">USD</span> / <span>MON</span>`
+          : `<span>USD</span> / <span style="color:rgb(209,209,250)">MON</span>`
         monBtn.addEventListener('click', () => {
           if (showUSD) {
             setShowUSD(false);
@@ -451,20 +451,20 @@ setSelectedInterval(
 
         const priceBtn = widgetRef.current.createButton();
         priceBtn.setAttribute('title', 'Toggle Market Cap');
-        priceBtn.innerHTML = showMarketCap 
-        ? `<span style="color:rgb(209,209,250)">Market Cap</span> / <span>Price</span>` 
-        : `<span>Market Cap</span> / <span style="color:rgb(209,209,250)">Price</span>`
+        priceBtn.innerHTML = showMarketCap
+          ? `<span style="color:rgb(209,209,250)">Market Cap</span> / <span>Price</span>`
+          : `<span>Market Cap</span> / <span style="color:rgb(209,209,250)">Price</span>`
         priceBtn.addEventListener('click', () => {
           if (showMarketCap) {
             setShowMarketCap(false);
             try {
               const currentSymbol = widgetRef.current.activeChart().symbol();
               const currentResolution = widgetRef.current.activeChart().resolution();
-  
+
               setTimeout(() => {
                 widgetRef.current.activeChart().setSymbol(currentSymbol, currentResolution);
               }, 10);
-  
+
             } catch (error) {
               console.error('Error switching to Price:', error);
             }
@@ -474,11 +474,11 @@ setSelectedInterval(
             try {
               const currentSymbol = widgetRef.current.activeChart().symbol();
               const currentResolution = widgetRef.current.activeChart().resolution();
-  
+
               setTimeout(() => {
                 widgetRef.current.activeChart().setSymbol(currentSymbol, currentResolution);
               }, 10);
-  
+
             } catch (error) {
               console.error('Error switching to MarketCap:', error);
             }
@@ -531,6 +531,7 @@ setSelectedInterval(
       });
       setOverlayVisible(false);
     });
+    
     return () => {
       setChartReady(false);
       if (widgetRef.current) {
@@ -544,27 +545,27 @@ setSelectedInterval(
       tokenRef.current = token;
       if (chartReady && widgetRef.current) {
         setOverlayVisible(true);
-localStorage.setItem('meme_chart_timeframe', selectedInterval);
+        localStorage.setItem('meme_chart_timeframe', selectedInterval);
 
-widgetRef.current.setSymbol(
-  `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,
-  selectedInterval === '1d'
-    ? '1D'
-    : selectedInterval === '4h'
-      ? '240'
-      : selectedInterval === '1h'
-        ? '60'
-        : selectedInterval.endsWith('s')
-          ? selectedInterval.slice(0, -1).toUpperCase() + 'S'
-          : selectedInterval.slice(0, -1),
-  () => { setOverlayVisible(false); },
-);
+        widgetRef.current.setSymbol(
+          `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,
+          selectedInterval === '1d'
+            ? '1D'
+            : selectedInterval === '4h'
+              ? '240'
+              : selectedInterval === '1h'
+                ? '60'
+                : selectedInterval.endsWith('s')
+                  ? selectedInterval.slice(0, -1).toUpperCase() + 'S'
+                  : selectedInterval.slice(0, -1),
+          () => { setOverlayVisible(false); },
+        );
 
       }
     }
-    catch (e) {
-    }
+    catch (e) {}
   }, [token.symbol, selectedInterval]);
+
   return (
     <div className="advanced-chart-container">
       <div ref={chartRef} />
