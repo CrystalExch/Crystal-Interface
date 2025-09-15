@@ -1882,7 +1882,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
       if (
         typeof tradeTime === 'number' &&
-        tradeTime >= timeago
+        tradeTime >= timeago && markets[marketKey]
       ) {
         const quotePrice = markets[marketKey].quoteAsset == 'USDC' ? 1 : trades[(markets[marketKey].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[marketKey].quoteAsset) + 'USDC']?.[0]?.[3]
           / Number(markets[(markets[marketKey].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[marketKey].quoteAsset) + 'USDC']?.priceFactor)

@@ -564,7 +564,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             </div>
 
             <div className="progress-bar-container">
-              <div className="progress-bar">
+              <div className="detail-progress-bar">
                 <div className="progress-indicator" style={{ left: '50%' }} />
               </div>
             </div>
