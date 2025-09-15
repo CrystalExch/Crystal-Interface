@@ -164,13 +164,22 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [activeFilter, setActiveFilter] = useState('All');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [hoveredToken, setHoveredToken] = useState(false);
+  const [currentTime, setCurrentTime] = useState(Date.now()); 
   const filterTabsRef = useRef<HTMLDivElement>(null);
   const marketsListRef = useRef<HTMLDivElement>(null);
 
   const isAdvancedView = isTradeRoute && !simpleView;
 
-  const bondingPercentage = useMemo(() => {
-    if (!isMemeToken || !activeMarket) return 0;
+useEffect(() => {
+  const interval = setInterval(() => {
+    setCurrentTime(Date.now());
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, []);
+
+const bondingPercentage = useMemo(() => {
+      if (!isMemeToken || !activeMarket) return 0;
     const TOTAL_SUPPLY = 1e9;
     const marketCap = parseFloat(price.replace(/,/g, '')) * TOTAL_SUPPLY;
     return calculateBondingPercentage(marketCap || 0);
@@ -189,8 +198,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     return `$${price.toFixed(2)}`;
   };
 
-  const formatTimeAgo = (createdTimestamp: number) => {
-    const now = Math.floor(Date.now() / 1000);
+const formatTimeAgo = useMemo(() => {
+  return (createdTimestamp: number) => {
+    const now = Math.floor(currentTime / 1000); 
     const ageSec = now - createdTimestamp;
 
     if (ageSec < 60) {
@@ -205,6 +215,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       return `${Math.floor(ageSec / 604800)}w`;
     }
   };
+}, [currentTime]);
   const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) => {
     if (formatted.type === 'simple') {
       return <span>{formatted.text}</span>;
