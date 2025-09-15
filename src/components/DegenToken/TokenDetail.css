@@ -45,9 +45,6 @@
   min-width: 0;
 }
 
-/* ================================
-   Header
-===================================*/
 .detail-header {
   display: flex;
   align-items: center;
