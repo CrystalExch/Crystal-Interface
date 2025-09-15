@@ -79,6 +79,7 @@ interface TokenDetailProps {
   terminalRefetch: any;
   walletTokenBalances: any;
   tokenData?: Token;
+  monUsdPrice: any;
 }
 
 const SUBGRAPH_URL =
@@ -175,6 +176,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   terminalRefetch,
   walletTokenBalances,
   tokenData,
+  monUsdPrice
 }) => {
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const navigate = useNavigate();
@@ -461,7 +463,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           <div className="detail-quick-stats">
             <div className="detail-stat">
               <div className="detail-stat-label">Market Cap</div>
-              <div className="detail-stat-value">{formatPrice(token.marketCap)}</div>
+              <div className="detail-stat-value">{formatPrice(token.marketCap * monUsdPrice)}</div>
             </div>
             <div className="detail-stat">
               <div className="detail-stat-label">ATH</div>
@@ -478,6 +480,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               selectedInterval={selectedInterval}
               setSelectedInterval={setSelectedInterval}
               realtimeCallbackRef={realtimeCallbackRef}
+              monUsdPrice={monUsdPrice}
             />
           </div>
 
@@ -529,7 +532,12 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
           <div className="detail-trade-form">
             <div className="detail-trade-input-group">
-              <label className="detail-trade-label">{tradeType === 'buy' ? 'Switch to' : 'Set max slippage'} {token.symbol}</label>
+              <div className="detail-balance-info">
+                <span className="detail-trade-label">{'Switch to'} {tradeType === 'buy' ? token.symbol : 'MON'}</span>
+                <span>
+                  Balance: {tradeType === 'buy' ? formatNumber(walletTokenBalance) : formatNumber(walletTokenBalance)} {tradeType === 'buy' ? 'MON' : token.symbol}
+                </span>
+              </div>
               <div className="detail-trade-input-wrapper">
                 <input
                   type="number"
@@ -541,7 +549,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                 <span className="detail-trade-unit">{tradeType === 'buy' ? 'MON' : token.symbol}</span>
               </div>
 
-              {tradeType === 'buy' && (
+              {tradeType === 'buy' ? (
                 <div className="detail-preset-buttons">
                   {['1', '5', '10', '50'].map((amount) => (
                     <button key={amount} onClick={() => setTradeAmount(amount)} className="detail-preset-button">
@@ -552,19 +560,19 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                     Max
                   </button>
                 </div>
+              ) : (
+                <div className="detail-preset-buttons">
+                  {['10%', '25%', '50%', '75%'].map((amount) => (
+                    <button key={amount} onClick={() => setTradeAmount(amount)} className="detail-preset-button">
+                      {amount}
+                    </button>
+                  ))}
+                  <button onClick={() => setTradeAmount('100')} className="detail-preset-button detail-preset-max">
+                    Max
+                  </button>
+                </div>
               )}
             </div>
-
-            {tradeType === 'sell' && walletTokenBalance > 0 && (
-              <div className="detail-balance-info">
-                <span>
-                  Balance: {formatNumber(walletTokenBalance)} {token.symbol}
-                </span>
-                <button onClick={() => setTradeAmount(walletTokenBalance.toString())} className="detail-max-button">
-                  MAX
-                </button>
-              </div>
-            )}
 
             <button
               onClick={handleTrade}
@@ -639,7 +647,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
         <div className="detail-meme-address">
           <span className="detail-meme-address-title">CA:</span>{' '}
-          <CopyableAddress address={token.id} className="detail-meme-address-value" truncate={{ start: 24, end: 4 }} />
+          <CopyableAddress address={token.id} className="detail-meme-address-value" truncate={{ start: 20, end: 10 }} />
         </div>
 
         <div className="detail-info-section">
@@ -674,7 +682,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               <p>chat with friends, share coins, and discover alpha all in one place.</p>
 
               <div className="detail-chat-qr-section">
-                <span className="detail-chat-app-label">pump app</span>
                 <div className="detail-chat-qr-code">
                   <div className="detail-qr-placeholder">
                     <div className="detail-qr-pattern" />

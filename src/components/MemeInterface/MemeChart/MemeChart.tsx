@@ -7,7 +7,7 @@ import './MemeChart.css';
 
 interface TimeFrameSelectorProps {
   selectedInterval: string;
-  handleTimeChange: (interval: string) => void;
+  handleTimeChange: any;
 }
 
 const TimeFrameSelector: React.FC<TimeFrameSelectorProps> = ({

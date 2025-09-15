@@ -275,7 +275,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
           },
         });
         lastRefGroupFetch.current = 0;
-        refetch();
+        await refetch();
       } catch (error) {
       } finally {
         setIsSigning(false);

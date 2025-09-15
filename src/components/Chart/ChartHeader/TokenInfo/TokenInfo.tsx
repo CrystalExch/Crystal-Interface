@@ -44,7 +44,7 @@ const createColorGradient = (base: string) => {
 };
 
 const calculateBondingPercentage = (marketCap: number) => {
-  const bondingPercentage = Math.min((marketCap / 10000) * 100, 100);
+  const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
   return bondingPercentage;
 };
 
@@ -130,7 +130,6 @@ interface TokenInfoProps {
     tokenAddress: string;
     marketCap: number;
     change24h: number;
-    bondingPercentage: number;
     status: 'new' | 'graduating' | 'graduated';
     created: string;
     website?: string;
@@ -564,8 +563,8 @@ const formatTimeAgo = useMemo(() => {
                 style={
                   memeTokenData.status !== 'graduated'
                     ? {
-                      '--progress-angle': `${(memeTokenData.bondingPercentage / 100) * 360}deg`,
-                      '--progress-color': getBondingColorMeme(memeTokenData.bondingPercentage),
+                      '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
+                      '--progress-color': getBondingColorMeme(bondingPercentage),
                     } as React.CSSProperties
                     : {}
                 }
@@ -685,7 +684,7 @@ const formatTimeAgo = useMemo(() => {
           <div className="meme-interface-token-header-right">
             <div className="meme-interface-token-metrics">
               <span className="meme-interface-market-cap">
-                {formatPrice(memeTokenData.marketCap * monUsdPrice)}
+                {formatPrice((memeTokenData.marketCap || 1000) * monUsdPrice)}
               </span>
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">Price</span>
@@ -721,7 +720,7 @@ const formatTimeAgo = useMemo(() => {
                   <span className="meme-interface-metric-label">B. Curve</span>
                   <span
                     className="meme-interface-metric-value"
-                    style={{ color: getBondingColorMeme(memeTokenData.bondingPercentage) }}
+                    style={{ color: getBondingColorMeme(bondingPercentage) }}
                   >
                     Graduated
                   </span>
@@ -731,9 +730,9 @@ const formatTimeAgo = useMemo(() => {
                   <span className="meme-interface-metric-label">B. Curve</span>
                   <span
                     className="meme-interface-metric-value"
-                    style={{ color: getBondingColorMeme(memeTokenData.bondingPercentage) }}
+                    style={{ color: getBondingColorMeme(bondingPercentage) }}
                   >
-                    {memeTokenData.bondingPercentage.toFixed(1)}%
+                    {bondingPercentage.toFixed(1)}%
                   </span>
                 </div>
               )}
