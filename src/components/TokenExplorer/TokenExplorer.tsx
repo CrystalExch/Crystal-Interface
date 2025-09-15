@@ -1626,7 +1626,7 @@ const TokenRow = React.memo<{
     onCopyToClipboard,
     displaySettings,
     isHidden,
-    monUsdPrice,,
+    monUsdPrice,
     blacklistSettings
   } = props;
   const imageContainerRef = useRef<HTMLDivElement>(null);
