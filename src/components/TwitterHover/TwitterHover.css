@@ -1,0 +1,305 @@
+.twitter-hover-card {
+  z-index: 1000;
+  width: 300px;
+  border-radius: 6px;
+  border: 1px solid #b5bcf837;
+  background: #000000;
+  backdrop-filter: blur(8px);
+  padding: 1rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+.twitter-hover-skeleton {
+  height: 7rem;
+  border-radius: 0.75rem;
+  background: #f3f3f3;
+  animation: pulse 1.5s infinite;
+}
+
+
+.twitter-hover-error {
+  color: #b00020;
+  font-size: 0.875rem;
+}
+
+.twitter-hover-ref {
+  display: inline-flex;
+}
+
+.twitter-hover-usercard,
+.twitter-hover-tweetcard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.twitter-hover-avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+}
+
+.twitter-hover-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.twitter-hover-header {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  font-weight: 600;
+}
+
+.twitter-hover-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1.1rem;
+  margin-top: -3px;
+  margin-bottom: -3px;
+}
+
+.twitter-hover-username {
+  color: #8098a5;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.twitter-hover-verified {
+  width: 1rem;
+  height: 1rem;
+  fill: #1d9bf0;
+}
+
+.twitter-hover-desc {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #85989e;
+}
+
+.twitter-hover-metrics {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #8f95a2;
+}
+
+.twitter-hover-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.5rem;
+  display: inline-block;
+  font-size: 0.875rem;
+  color: #8fc7f6;
+  border: 1px solid #5d6073a0;
+  width: 100%;
+  border-radius: 100px;
+  font-weight: 500;
+  overflow: hidden;
+}
+
+.twitter-link{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding: 5px 0;
+  transition: all 0.3s ease;
+}
+
+.twitter-link:hover{
+    background-color: #2d3745;
+}
+.twitter-hover-text {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.twitter-hover-photos {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.25rem;
+}
+.twitter-hover-photos-1 { grid-template-columns: 1fr; }
+.twitter-hover-photos-2 { grid-template-columns: 1fr 1fr; }
+.twitter-hover-photo {
+  border-radius: 0.5rem;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.twitter-hover-meta {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+
+.twitter-hover-metrics-number{
+    color: white
+}
+
+.twitter-hover-header-text{
+    display: flex;
+    flex-direction: column;
+    margin-left: 5px;
+}
+
+/* Clickable username in header */
+.twitter-hover-username-link {
+  color: #1d9bf0;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 400;
+  transition: color 0.2s ease;
+}
+
+.twitter-hover-username-link:hover {
+  color: #8fc7f6;
+  text-decoration: underline;
+}
+
+.twitter-mention {
+  color: #1d9bf0;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.twitter-mention:hover {
+  color: #8fc7f6;
+  text-decoration: underline;
+}
+
+.twitter-hover-username {
+  color: #8098a5;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.twitter-hover-usercard .twitter-hover-banner {
+  margin: -1rem -1rem 0.75rem -1rem;
+  height: 6rem;
+  overflow: hidden;
+  border-radius: 6px 6px 0 0;
+  position: relative;
+}
+
+
+.twitter-hover-usercard .twitter-hover-banner + .twitter-hover-body .twitter-hover-header {
+  margin-top: -1rem;
+}
+
+.verify-name{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Join date and location styling */
+.twitter-hover-details {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: #8098a5;
+}
+
+.twitter-hover-location,
+.twitter-hover-join-date {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.twitter-hover-location-icon,
+.twitter-hover-calendar-icon {
+  width: 14px;
+  height: 14px;
+  color: #8098a5;
+  flex-shrink: 0;
+}
+
+.twitter-hover-location {
+  color: #8098a5;
+}
+
+.twitter-hover-join-date {
+  color: #8098a5;
+}
+
+.verify-name {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+
+/* Tweet card specific styling */
+.twitter-hover-tweetcard {
+  display: block;
+  gap: 0;
+}
+
+.twitter-hover-tweetcard .twitter-hover-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.twitter-hover-text-container {
+  max-height: 120px;
+  overflow-y: auto;
+  line-height: 1.4;
+}
+
+.twitter-hover-text-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.twitter-hover-text-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.twitter-hover-text-container::-webkit-scrollbar-thumb {
+  background: #3f4a57;
+  border-radius: 2px;
+}
+
+.twitter-hover-text-container::-webkit-scrollbar-thumb:hover {
+  background: #5d6073;
+}
+
+.twitter-hover-engagement {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #8098a5;
+  margin-top: 0.5rem;
+}
+
+.engagement-stat {
+  white-space: nowrap;
+}
+
+.engagement-stat b {
+  color: white;
+}
+
+/* Adjust tweet card width for more content */
+.twitter-hover-card:has(.twitter-hover-tweetcard) {
+  width: 320px;
+  max-width: 90vw;
+}

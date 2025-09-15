@@ -20682,6 +20682,7 @@ function App() {
                 setTerminalToken={setTerminalToken}
                 terminalRefetch={terminalRefetch}
                 setTokenData={setTokenData}
+                monUsdPrice={monUsdPrice}
               />
             }
           />
