@@ -47,7 +47,7 @@
   color: #ffffff73;
   cursor: pointer;
   flex: 1;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   padding: 8px 20px;
   text-align: flex-start;
   text-decoration: none;
@@ -56,7 +56,7 @@
   outline: none;
   font-family: inherit;
   letter-spacing: -0.1px;
-  font-weight: 400;
+  font-weight: 300;
 }
 
 .meme-oc-type:hover {
