@@ -1851,7 +1851,7 @@ function App() {
       setIsVaultWithdrawSigning(false);
     }
   };
-  
+
   const [walletTokenBalances, setWalletTokenBalances] = useState({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
   const [walletsLoading, setWalletsLoading] = useState(false);
@@ -3235,11 +3235,11 @@ function App() {
             templowestAsk /= Number(activeMarket.priceFactor)
             const spread = {
               spread:
-              temphighestBid !== undefined && templowestAsk !== undefined
+                temphighestBid !== undefined && templowestAsk !== undefined
                   ? templowestAsk - temphighestBid
                   : NaN,
               averagePrice:
-              temphighestBid !== undefined && templowestAsk !== undefined
+                temphighestBid !== undefined && templowestAsk !== undefined
                   ? Number(
                     ((temphighestBid + templowestAsk) / 2).toFixed(
                       Math.floor(Math.log10(Number(activeMarket.priceFactor))) + 1,
@@ -4485,7 +4485,7 @@ function App() {
                     tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
                     if (size == 0) {
                       tempcanceledorders[canceledOrderIndex][9] =
-                      1;
+                        1;
                       tempcanceledorders[canceledOrderIndex][7] = order[2]
                       tempcanceledorders[canceledOrderIndex][8] = order[8];
                     }
@@ -5352,7 +5352,7 @@ function App() {
                     tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
                     if (size == 0) {
                       tempcanceledorders[canceledOrderIndex][9] =
-                      1;
+                        1;
                       tempcanceledorders[canceledOrderIndex][7] = order[2]
                       tempcanceledorders[canceledOrderIndex][8] = order[8];
                     }
@@ -8249,18 +8249,46 @@ function App() {
 
   const [explorerFilters, setExplorerFilters] = useState(() => {
     const saved = localStorage.getItem('crystal_explorer_filters');
-    return saved ? JSON.parse(saved) : initialExplorerFilters;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Handle migration from old single filter to per-tab filters
+      if (!parsed.new && !parsed.graduating && !parsed.graduated) {
+        return {
+          new: parsed,
+          graduating: initialExplorerFilters,
+          graduated: initialExplorerFilters
+        };
+      }
+      return parsed;
+    }
+    return {
+      new: initialExplorerFilters,
+      graduating: initialExplorerFilters,
+      graduated: initialExplorerFilters
+    };
   });
 
   const [appliedExplorerFilters, setAppliedExplorerFilters] = useState(() => {
     const saved = localStorage.getItem('crystal_applied_explorer_filters');
-    return saved ? JSON.parse(saved) : null;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Handle migration from old single filter to per-tab filters
+      if (!parsed.new && !parsed.graduating && !parsed.graduated) {
+        return {
+          new: null,
+          graduating: null,
+          graduated: null
+        };
+      }
+      return parsed;
+    }
+    return {
+      new: null,
+      graduating: null,
+      graduated: null
+    };
   });
 
-  const [activeExplorerFilterTab, setActiveExplorerFilterTab] = useState<'new' | 'graduating' | 'graduated'>(() => {
-    const saved = localStorage.getItem('crystal_active_explorer_filter_tab');
-    return (saved as 'new' | 'graduating' | 'graduated') || 'new';
-  });
 
   useEffect(() => {
     localStorage.setItem('crystal_explorer_active_tab', explorerFiltersActiveTab);
@@ -8275,33 +8303,38 @@ function App() {
   }, [explorerFilters]);
 
   useEffect(() => {
-    if (appliedExplorerFilters) {
+    const hasAnyFilters = Object.values(appliedExplorerFilters).some(tabFilters => tabFilters !== null);
+    if (hasAnyFilters) {
       localStorage.setItem('crystal_applied_explorer_filters', JSON.stringify(appliedExplorerFilters));
     } else {
       localStorage.removeItem('crystal_applied_explorer_filters');
     }
   }, [appliedExplorerFilters]);
-
-  useEffect(() => {
-    localStorage.setItem('crystal_active_explorer_filter_tab', activeExplorerFilterTab);
-  }, [activeExplorerFilterTab]);
-
   const handleExplorerFilterInputChange = useCallback((field: string, value: string | boolean) => {
-    setExplorerFilters((prev: any) => {
-      const newFilters = { ...prev, [field]: value };
-      return newFilters;
-    });
-  }, []);
+    setExplorerFilters((prev: any) => ({
+      ...prev,
+      [explorerFiltersActiveTab]: {
+        ...prev[explorerFiltersActiveTab],
+        [field]: value
+      }
+    }));
+  }, [explorerFiltersActiveTab]);
 
   const handleExplorerFiltersReset = useCallback(() => {
-    setExplorerFilters(initialExplorerFilters);
-    setAppliedExplorerFilters(null);
-    setActiveExplorerFilterTab('new');
+    setExplorerFilters({
+      new: initialExplorerFilters,
+      graduating: initialExplorerFilters,
+      graduated: initialExplorerFilters
+    });
+    setAppliedExplorerFilters({
+      new: null,
+      graduating: null,
+      graduated: null
+    });
     setExplorerFiltersActiveTab('new');
     setExplorerFiltersActiveSection('audit');
     localStorage.removeItem('crystal_explorer_filters');
     localStorage.removeItem('crystal_applied_explorer_filters');
-    localStorage.removeItem('crystal_active_explorer_filter_tab');
     localStorage.setItem('crystal_explorer_active_tab', 'new');
     localStorage.setItem('crystal_explorer_active_section', 'audit');
   }, []);
@@ -8317,7 +8350,10 @@ function App() {
         reader.onload = (e) => {
           try {
             const importedFilters = JSON.parse(e.target?.result as string);
-            setExplorerFilters(importedFilters);
+            setExplorerFilters(prev => ({
+              ...prev,
+              [explorerFiltersActiveTab]: importedFilters
+            }));
           } catch (error) {
             alert('Invalid JSON file');
           }
@@ -8326,10 +8362,9 @@ function App() {
       }
     };
     input.click();
-  }, []);
-
+  }, [explorerFiltersActiveTab]);
   const handleExplorerFiltersExport = useCallback(() => {
-    const dataStr = JSON.stringify(explorerFilters, null, 2);
+    const dataStr = JSON.stringify(explorerFilters[explorerFiltersActiveTab], null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
@@ -8340,21 +8375,18 @@ function App() {
   }, [explorerFilters, explorerFiltersActiveTab]);
 
   const handleExplorerFiltersApply = useCallback(() => {
-    const hasActiveFilters = Object.values(explorerFilters).some(value =>
+    const currentTabFilters = explorerFilters[explorerFiltersActiveTab];
+    const hasActiveFilters = Object.values(currentTabFilters).some(value =>
       value !== '' && value !== false && value !== null && value !== undefined
     );
 
-    if (hasActiveFilters) {
-      setAppliedExplorerFilters(explorerFilters);
-      setActiveExplorerFilterTab(explorerFiltersActiveTab);
-    } else {
-      setAppliedExplorerFilters(null);
-      setActiveExplorerFilterTab('new');
-    }
+    setAppliedExplorerFilters(prev => ({
+      ...prev,
+      [explorerFiltersActiveTab]: hasActiveFilters ? currentTabFilters : null
+    }));
 
     setpopup(0);
   }, [explorerFilters, explorerFiltersActiveTab]);
-
   const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(newTab);
   }, []);
@@ -8377,7 +8409,7 @@ function App() {
         ...Object.values(tokendict).map(t => t.address),
         ...(terminalToken ? [terminalToken] : [])
       ];
-      
+
       if (address && (amountIn || amountOutSwap)) {
         try {
           const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);
@@ -8633,7 +8665,7 @@ function App() {
         gasEstimate = BigInt(json[1].result)
       }
 
-      [{address: address}].concat(subWallets as any).forEach((wallet, walletIndex) => {
+      [{ address: address }].concat(subWallets as any).forEach((wallet, walletIndex) => {
         const balanceMap: { [key: string]: bigint } = {};
         let totalValue = 0;
         tokenAddresses.forEach((tokenAddress, index) => {
@@ -8679,30 +8711,30 @@ function App() {
     gcTime: 0,
   })
 
-    const resolveNative = useCallback(
-      (symbol: string | undefined) => {
-        if (!symbol) return "";
-        if (symbol === wethticker) return ethticker ?? symbol;
-        return symbol;
-      },
-      [wethticker, ethticker],
-    );
-  
-  
-    const usdPer = useCallback(
-      (symbol?: string): number => {
-        if (!symbol || !tradesByMarket || !markets) return 0;
-        const sym = resolveNative(symbol);
-        if (usdc && sym === "USDC") return 1;
-        const pair = `${sym}USDC`;
-        const top = tradesByMarket[pair]?.[0]?.[3];
-        const pf = Number(markets[pair]?.priceFactor) || 1;
-        if (!top || !pf) return 0;
-        return Number(top) / pf;
-      },
-      [tradesByMarket, markets, resolveNative, usdc],
-    );
-    const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
+  const resolveNative = useCallback(
+    (symbol: string | undefined) => {
+      if (!symbol) return "";
+      if (symbol === wethticker) return ethticker ?? symbol;
+      return symbol;
+    },
+    [wethticker, ethticker],
+  );
+
+
+  const usdPer = useCallback(
+    (symbol?: string): number => {
+      if (!symbol || !tradesByMarket || !markets) return 0;
+      const sym = resolveNative(symbol);
+      if (usdc && sym === "USDC") return 1;
+      const pair = `${sym}USDC`;
+      const top = tradesByMarket[pair]?.[0]?.[3];
+      const pf = Number(markets[pair]?.priceFactor) || 1;
+      if (!top || !pf) return 0;
+      return Number(top) / pf;
+    },
+    [tradesByMarket, markets, resolveNative, usdc],
+  );
+  const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
 
   //popup modals
   const Modals = (
@@ -12743,14 +12775,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.ageMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.ageMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('ageMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.ageMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.ageMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('ageMax', e.target.value)}
                         className="filter-input"
                       />
@@ -12763,14 +12795,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.holdersMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.holdersMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('holdersMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.holdersMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.holdersMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('holdersMax', e.target.value)}
                         className="filter-input"
                       />
@@ -12783,14 +12815,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.proTradersMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.proTradersMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('proTradersMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.proTradersMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.proTradersMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('proTradersMax', e.target.value)}
                         className="filter-input"
                       />
@@ -12803,14 +12835,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.kolTradersMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.kolTradersMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('kolTradersMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.kolTradersMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.kolTradersMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('kolTradersMax', e.target.value)}
                         className="filter-input"
                       />
@@ -12823,14 +12855,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.top10HoldingMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.top10HoldingMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('top10HoldingMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.top10HoldingMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.top10HoldingMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('top10HoldingMax', e.target.value)}
                         className="filter-input"
                       />
@@ -12843,14 +12875,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.devHoldingMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.devHoldingMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('devHoldingMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.devHoldingMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.devHoldingMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('devHoldingMax', e.target.value)}
                         className="filter-input"
                       />
@@ -12863,14 +12895,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.sniperHoldingMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.sniperHoldingMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('sniperHoldingMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.sniperHoldingMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.sniperHoldingMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('sniperHoldingMax', e.target.value)}
                         className="filter-input"
                       />
@@ -12883,14 +12915,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.bundleHoldingMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.bundleHoldingMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('bundleHoldingMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.bundleHoldingMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.bundleHoldingMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('bundleHoldingMax', e.target.value)}
                         className="filter-input"
                       />
@@ -12903,14 +12935,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.insiderHoldingMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.insiderHoldingMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('insiderHoldingMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.insiderHoldingMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.insiderHoldingMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('insiderHoldingMax', e.target.value)}
                         className="filter-input"
                       />
@@ -12927,14 +12959,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.marketCapMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.marketCapMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('marketCapMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.marketCapMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.marketCapMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('marketCapMax', e.target.value)}
                         className="filter-input"
                       />
@@ -12947,14 +12979,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.volume24hMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.volume24hMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('volume24hMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.volume24hMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.volume24hMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('volume24hMax', e.target.value)}
                         className="filter-input"
                       />
@@ -12967,14 +12999,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.globalFeesMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.globalFeesMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('globalFeesMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.globalFeesMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.globalFeesMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('globalFeesMax', e.target.value)}
                         className="filter-input"
                       />
@@ -12987,14 +13019,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.buyTransactionsMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.buyTransactionsMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('buyTransactionsMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.buyTransactionsMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.buyTransactionsMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('buyTransactionsMax', e.target.value)}
                         className="filter-input"
                       />
@@ -13007,14 +13039,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.sellTransactionsMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.sellTransactionsMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('sellTransactionsMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.sellTransactionsMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.sellTransactionsMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('sellTransactionsMax', e.target.value)}
                         className="filter-input"
                       />
@@ -13027,14 +13059,14 @@ function App() {
                       <input
                         type="text"
                         placeholder="Min"
-                        value={explorerFilters.priceMin}
+                        value={explorerFilters[explorerFiltersActiveTab]?.priceMin || ''}
                         onChange={(e) => handleExplorerFilterInputChange('priceMin', e.target.value)}
                         className="filter-input"
                       />
                       <input
                         type="text"
                         placeholder="Max"
-                        value={explorerFilters.priceMax}
+                        value={explorerFilters[explorerFiltersActiveTab]?.priceMax || ''}
                         onChange={(e) => handleExplorerFilterInputChange('priceMax', e.target.value)}
                         className="filter-input"
                       />
@@ -13051,7 +13083,7 @@ function App() {
                       <input
                         type="text"
                         placeholder="keyword1, keyword2..."
-                        value={explorerFilters.searchKeywords}
+                        value={explorerFilters[explorerFiltersActiveTab]?.searchKeywords || ''}
                         onChange={(e) => handleExplorerFilterInputChange('searchKeywords', e.target.value)}
                         className="keyword-input"
                       />
@@ -13061,7 +13093,7 @@ function App() {
                       <input
                         type="text"
                         placeholder="keyword1, keyword2..."
-                        value={explorerFilters.excludeKeywords}
+                        value={explorerFilters[explorerFiltersActiveTab]?.excludeKeywords || ''}
                         onChange={(e) => handleExplorerFilterInputChange('excludeKeywords', e.target.value)}
                         className="keyword-input"
                       />
@@ -13073,7 +13105,7 @@ function App() {
                       <input
                         type="checkbox"
                         id="hasWebsite"
-                        checked={explorerFilters.hasWebsite}
+                        checked={explorerFilters[explorerFiltersActiveTab]?.hasWebsite || false}
                         onChange={(e) => handleExplorerFilterInputChange('hasWebsite', e.target.checked)}
                         className="filter-checkbox"
                       />
@@ -13084,7 +13116,7 @@ function App() {
                       <input
                         type="checkbox"
                         id="hasTwitter"
-                        checked={explorerFilters.hasTwitter}
+                        checked={explorerFilters[explorerFiltersActiveTab]?.hasTwitter || false}
                         onChange={(e) => handleExplorerFilterInputChange('hasTwitter', e.target.checked)}
                         className="filter-checkbox"
                       />
@@ -13095,7 +13127,7 @@ function App() {
                       <input
                         type="checkbox"
                         id="hasTelegram"
-                        checked={explorerFilters.hasTelegram}
+                        checked={explorerFilters[explorerFiltersActiveTab]?.hasTelegram || false}
                         onChange={(e) => handleExplorerFilterInputChange('hasTelegram', e.target.checked)}
                         className="filter-checkbox"
                       />
@@ -13687,34 +13719,34 @@ function App() {
                 <div className="form-group">
                   <label className="market-selector-label">Trading Market</label>
                   <div className="market-selector-container">
-                      {(() => {
-                        const selectedMarket = Object.values(markets).find((market) =>
-                          `${market.baseAsset}${market.quoteAsset}` === createVaultForm.selectedMarket
-                        );
-                        return selectedMarket ? (
-                          <div className="selected-token-indicator">
-                            <img src={selectedMarket.image || tokendict[selectedMarket.baseAddress]?.image} alt={selectedMarket.baseAsset} className="token-icon-small" />
-                            <span className="token-symbol">{selectedMarket.baseAsset}/{selectedMarket.quoteAsset}</span>
-                          </div>
-                        ) : null;
-                      })()}
-                   <div className="market-selector-input-wrapper">
-                    <input
-                      type="text"
-                      value=""
-                      onFocus={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: true }))}
-                      className="form-input market-selector-input"
-                      placeholder={createVaultForm.selectedMarket ? "" : "Select trading market..."}
-                      readOnly
-                    />
-                    <button
-                      type="button"
-                      className="token-dropdown-button"
-                      onClick={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: !prev.showMarketDropdown }))}
-                    >
-                      <ChevronDown size={16} />
-                    </button>
-                  </div>
+                    {(() => {
+                      const selectedMarket = Object.values(markets).find((market) =>
+                        `${market.baseAsset}${market.quoteAsset}` === createVaultForm.selectedMarket
+                      );
+                      return selectedMarket ? (
+                        <div className="selected-token-indicator">
+                          <img src={selectedMarket.image || tokendict[selectedMarket.baseAddress]?.image} alt={selectedMarket.baseAsset} className="token-icon-small" />
+                          <span className="token-symbol">{selectedMarket.baseAsset}/{selectedMarket.quoteAsset}</span>
+                        </div>
+                      ) : null;
+                    })()}
+                    <div className="market-selector-input-wrapper">
+                      <input
+                        type="text"
+                        value=""
+                        onFocus={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: true }))}
+                        className="form-input market-selector-input"
+                        placeholder={createVaultForm.selectedMarket ? "" : "Select trading market..."}
+                        readOnly
+                      />
+                      <button
+                        type="button"
+                        className="token-dropdown-button"
+                        onClick={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: !prev.showMarketDropdown }))}
+                      >
+                        <ChevronDown size={16} />
+                      </button>
+                    </div>
                     {createVaultForm.showMarketDropdown && (
                       <div className="create-vault-token-dropdown">
                         <div className="create-vault-token-list">
@@ -20674,7 +20706,6 @@ function App() {
               <TokenExplorer
                 setpopup={setpopup}
                 appliedFilters={appliedExplorerFilters}
-                activeFilterTab={activeExplorerFilterTab}
                 onOpenFiltersForColumn={handleOpenFiltersForColumn}
                 sendUserOperationAsync={sendUserOperationAsync}
                 terminalQueryData={terminalQueryData}

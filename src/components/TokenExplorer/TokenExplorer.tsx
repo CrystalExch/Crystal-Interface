@@ -130,10 +130,15 @@ interface BlacklistSettings {
 }
 
 type BlacklistTab = 'all' | 'dev' | 'ca' | 'keyword' | 'website' | 'handle';
+interface TabFilters {
+  new: any;
+  graduating: any;
+  graduated: any;
+}
 
 interface TokenExplorerProps {
   setpopup?: (popup: number) => void;
-  appliedFilters?: any;
+  appliedFilters?: TabFilters;
   onOpenFiltersForColumn: (c: Token['status']) => void;
   activeFilterTab?: Token['status'];
   sendUserOperationAsync: any;
@@ -2881,22 +2886,23 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       return true;
     });
   }, []);
+const visibleTokens = useMemo(() => {
+  const base = {
+    new: displaySettings.hideHiddenTokens ? tokensByStatus.new.filter((t) => !hidden.has(t.id)) : tokensByStatus.new,
+    graduating: displaySettings.hideHiddenTokens ? tokensByStatus.graduating.filter((t) => !hidden.has(t.id)) : tokensByStatus.graduating,
+    graduated: displaySettings.hideHiddenTokens ? tokensByStatus.graduated.filter((t) => !hidden.has(t.id)) : tokensByStatus.graduated,
+  } as Record<Token['status'], Token[]>;
 
-  const visibleTokens = useMemo(() => {
-    const base = {
-      new: displaySettings.hideHiddenTokens ? tokensByStatus.new.filter((t) => !hidden.has(t.id)) : tokensByStatus.new,
-      graduating: displaySettings.hideHiddenTokens ? tokensByStatus.graduating.filter((t) => !hidden.has(t.id)) : tokensByStatus.graduating,
-      graduated: displaySettings.hideHiddenTokens ? tokensByStatus.graduated.filter((t) => !hidden.has(t.id)) : tokensByStatus.graduated,
-    } as Record<Token['status'], Token[]>;
+  if (!appliedFilters) return base;
 
-    if (!appliedFilters) return base;
-
-    return (['new', 'graduating', 'graduated'] as Token['status'][]).reduce(
-      (acc, s) => ({ ...acc, [s]: activeFilterTab === s ? applyFilters(base[s], appliedFilters) : base[s] }),
-      {} as Record<Token['status'], Token[]>
-    );
-  }, [tokensByStatus, hidden, appliedFilters, activeFilterTab, applyFilters, displaySettings.hideHiddenTokens]);
-
+  return (['new', 'graduating', 'graduated'] as Token['status'][]).reduce(
+    (acc, s) => ({ 
+      ...acc, 
+      [s]: appliedFilters[s] ? applyFilters(base[s], appliedFilters[s]) : base[s] 
+    }),
+    {} as Record<Token['status'], Token[]>
+  );
+}, [tokensByStatus, hidden, appliedFilters, applyFilters, displaySettings.hideHiddenTokens]);
   const newTokens = visibleTokens.new;
   const graduatingTokens = visibleTokens.graduating;
   const graduatedTokens = visibleTokens.graduated;
@@ -2981,14 +2987,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                         ))}
                       </div>
                     </div>
-                    <button
-                      className={`column-filter-icon ${appliedFilters && activeFilterTab === 'new' ? 'active' : ''}`}
-                      onClick={() => onOpenFiltersForColumn('new')}
-                      title="filter new pairs"
-                    >
-                      <img className="filter-icon" src={filter} />
-                      {appliedFilters && activeFilterTab === 'new' && <span className="filter-active-dot" />}
-                    </button>
+                <button
+  className={`column-filter-icon ${appliedFilters?.new ? 'active' : ''}`}
+  onClick={() => onOpenFiltersForColumn('new')}
+  title="filter new pairs"
+>
+  <img className="filter-icon" src={filter} />
+  {appliedFilters?.new && <span className="filter-active-dot" />}
+</button>
                   </div>
                 </div>
 
@@ -3097,14 +3103,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           ))}
                         </div>
                       </div>
-                      <button
-                        className={`column-filter-icon ${appliedFilters && activeFilterTab === 'graduating' ? 'active' : ''}`}
-                        onClick={() => onOpenFiltersForColumn('graduating')}
-                        title="Filter graduating tokens"
-                      >
-                        <img className="filter-icon" src={filter} />
-                        {appliedFilters && activeFilterTab === 'graduating' && <span className="filter-active-dot" />}
-                      </button>
+<button
+  className={`column-filter-icon ${appliedFilters?.graduating ? 'active' : ''}`}
+  onClick={() => onOpenFiltersForColumn('graduating')}
+  title="Filter graduating tokens"
+>
+  <img className="filter-icon" src={filter} />
+  {appliedFilters?.graduating && <span className="filter-active-dot" />}
+</button>
                     </div>
                   </div>
 
@@ -3164,7 +3170,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           isHidden={hidden.has(t.id)}
                           monUsdPrice={monUsdPrice}
                           blacklistSettings={blacklistSettings}
-                                                  formatTimeAgo={formatTimeAgo}
+                          formatTimeAgo={formatTimeAgo}
 
                         />
                       ))
@@ -3212,14 +3218,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           ))}
                         </div>
                       </div>
-                      <button
-                        className={`column-filter-icon ${appliedFilters && activeFilterTab === 'graduated' ? 'active' : ''}`}
-                        onClick={() => onOpenFiltersForColumn('graduated')}
-                        title="filter graduated tokens"
-                      >
-                        <img className="filter-icon" src={filter} />
-                        {appliedFilters && activeFilterTab === 'graduated' && <span className="filter-active-dot" />}
-                      </button>
+<button
+  className={`column-filter-icon ${appliedFilters?.graduated ? 'active' : ''}`}
+  onClick={() => onOpenFiltersForColumn('graduated')}
+  title="filter graduated tokens"
+>
+  <img className="filter-icon" src={filter} />
+  {appliedFilters?.graduated && <span className="filter-active-dot" />}
+</button>
                     </div>
                   </div>
 
@@ -3281,7 +3287,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           isHidden={hidden.has(t.id)}
                           monUsdPrice={monUsdPrice}
                           blacklistSettings={blacklistSettings}
-                                                  formatTimeAgo={formatTimeAgo}
+                          formatTimeAgo={formatTimeAgo}
 
                         />
                       ))

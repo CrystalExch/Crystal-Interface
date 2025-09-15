@@ -26,14 +26,19 @@ const Tooltip: React.FC<{
   children: React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
 }> = ({ content, children, position = 'top' }) => {
-  const [vis, setVis] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const updatePosition = useCallback(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !tooltipRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
     const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
     const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
@@ -42,28 +47,75 @@ const Tooltip: React.FC<{
 
     switch (position) {
       case 'top':
-        top = rect.top + scrollY - 25;
+        top = rect.top + scrollY - tooltipRect.height - 25;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'bottom':
-        top = rect.bottom + scrollY + 25;
+        top = rect.bottom + scrollY + 10;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'left':
         top = rect.top + scrollY + rect.height / 2;
-        left = rect.left + scrollX - 25;
+        left = rect.left + scrollX - tooltipRect.width - 10;
         break;
       case 'right':
         top = rect.top + scrollY + rect.height / 2;
-        left = rect.right + scrollX + 25;
+        left = rect.right + scrollX + 10;
         break;
+    }
+
+    const margin = 10;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    if (position === 'top' || position === 'bottom') {
+      left = Math.min(
+        Math.max(left, margin + tooltipRect.width / 2),
+        viewportWidth - margin - tooltipRect.width / 2,
+      );
+    } else {
+      top = Math.min(
+        Math.max(top, margin),
+        viewportHeight - margin - tooltipRect.height,
+      );
     }
 
     setTooltipPosition({ top, left });
   }, [position]);
 
+  const handleMouseEnter = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    setIsLeaving(false);
+    setShouldRender(true);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+      fadeTimeoutRef.current = null;
+    }, 10);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    setIsLeaving(true);
+    setIsVisible(false);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      setShouldRender(false);
+      setIsLeaving(false);
+      fadeTimeoutRef.current = null;
+    }, 150);
+  }, []);
+
   useEffect(() => {
-    if (vis) {
+    if (shouldRender && !isLeaving) {
       updatePosition();
       window.addEventListener('scroll', updatePosition);
       window.addEventListener('resize', updatePosition);
@@ -72,30 +124,42 @@ const Tooltip: React.FC<{
         window.removeEventListener('resize', updatePosition);
       };
     }
-  }, [vis, updatePosition]);
+  }, [shouldRender, updatePosition, isLeaving]);
+
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div
       ref={containerRef}
       className="tooltip-container"
-      onMouseEnter={() => setVis(true)}
-      onMouseLeave={() => setVis(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {children}
-      {vis && createPortal(
+      {shouldRender && createPortal(
         <div
-          className={`tooltip tooltip-${position} fade-popup visible`}
+          ref={tooltipRef}
+          className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
           style={{
             position: 'absolute',
             top: `${tooltipPosition.top}px`,
             left: `${tooltipPosition.left}px`,
-            transform: position === 'top' || position === 'bottom'
+            transform: `${position === 'top' || position === 'bottom'
               ? 'translateX(-50%)'
               : position === 'left' || position === 'right'
                 ? 'translateY(-50%)'
-                : 'none',
+                : 'none'} scale(${isVisible ? 1 : 0})`,
+            opacity: isVisible ? 1 : 0,
             zIndex: 9999,
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'transform, opacity'
           }}
         >
           <div className="tooltip-content">
