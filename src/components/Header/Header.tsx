@@ -65,7 +65,7 @@ interface HeaderProps {
   tokenBalances: { [address: string]: bigint };
   lastRefGroupFetch: any;
   tokenData?: any;
-  monUsdPrice?: number;
+  monUsdPrice: number;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -184,7 +184,6 @@ const Header: React.FC<HeaderProps> = ({
     const token = tokenData;
     const mergedData = { ...token, ...liveTokenData };
     const currentMarketCap = liveTokenData.marketCap || token.marketCap;
-    const bondingPercentage = Math.min((currentMarketCap / 10000) * 100, 100);
 
     return {
       symbol: token.symbol,
@@ -193,7 +192,6 @@ const Header: React.FC<HeaderProps> = ({
       tokenAddress: token.tokenAddress,
       marketCap: currentMarketCap,
       change24h: mergedData.change24h,
-      bondingPercentage: bondingPercentage,
       status: token.status,
       created: token.created,
       website: token.website || '',
@@ -318,7 +316,7 @@ const Header: React.FC<HeaderProps> = ({
             in_icon={tokendict[activeMarket.baseAddress].image}
             out_icon={tokendict[activeMarket.quoteAddress].image}
             price={isMemeTokenPage && memeTokenData ?
-              memeTokenData.price?.toString() || 'n/a' :
+              (memeTokenData.price || 0.000001)?.toString() || 'n/a' :
               marketHeader?.currentPrice || 'n/a'
             }
             priceChangeAmount={isMemeTokenPage && memeTokenData ?

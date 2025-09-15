@@ -6,7 +6,7 @@ interface MemeAdvancedChartProps {
   data: any;
   token: any;
   selectedInterval: string;
-  setSelectedInterval: (interval: string) => void;
+  setSelectedInterval: any;
   setOverlayVisible: (visible: boolean) => void;
   tradehistory?: any[];
   isMarksVisible?: boolean;
@@ -419,102 +419,71 @@ setSelectedInterval(
           return;
         }
 
-        const styleButton = (button:any, isActive:any) => {
-          if (isActive) {
-            button.style.color = 'rgb(209, 209, 250)';
-          } else {
-          }
-          button.style.cursor = 'pointer';
-          button.style.fontFamily = 'Funnel Display';
-        };
-
         const monBtn = widgetRef.current.createButton();
-        monBtn.setAttribute('title', 'Switch to MON');
-        monBtn.textContent = 'MON';
+        monBtn.setAttribute('title', 'Switch Currencies');
+        monBtn.innerHTML = showUSD 
+        ? `<span style="color:rgb(209,209,250)">USD</span> / <span>MON</span>` 
+        : `<span>USD</span> / <span style="color:rgb(209,209,250)">MON</span>`
         monBtn.addEventListener('click', () => {
-          if (!showUSD) return; 
-
-          setShowUSD(false);
-          try {
-            widgetRef.current.activeChart().setSymbol(
-              `${token.symbol}/MON`,
-              widgetRef.current.activeChart().resolution()
-            );
-            styleButton(monBtn, true);
-            styleButton(usdBtn, false);
-          } catch (error) {
-            console.error('Error changing to MON:', error);
+          if (showUSD) {
+            setShowUSD(false);
+            try {
+              widgetRef.current.activeChart().setSymbol(
+                `${token.symbol}/MON`,
+                widgetRef.current.activeChart().resolution()
+              );
+            } catch (error) {
+              console.error('Error changing to MON:', error);
+            }
+          }
+          else {
+            setShowUSD(true);
+            try {
+              widgetRef.current.activeChart().setSymbol(
+                `${token.symbol}/USD`,
+                widgetRef.current.activeChart().resolution()
+              );
+            } catch (error) {
+              console.error('Error changing to USD:', error);
+            }
           }
         });
-
-        const usdBtn = widgetRef.current.createButton();
-        usdBtn.setAttribute('title', 'Switch to USD');
-        usdBtn.textContent = 'USD';
-        usdBtn.addEventListener('click', () => {
-          if (showUSD) return;
-
-          setShowUSD(true);
-          try {
-            widgetRef.current.activeChart().setSymbol(
-              `${token.symbol}/USD`,
-              widgetRef.current.activeChart().resolution()
-            );
-            styleButton(usdBtn, true);
-            styleButton(monBtn, false);
-          } catch (error) {
-            console.error('Error changing to USD:', error);
-          }
-        });
-
-        styleButton(monBtn, !showUSD);
-        styleButton(usdBtn, showUSD);
 
         const priceBtn = widgetRef.current.createButton();
-        priceBtn.setAttribute('title', 'Switch to Price');
-        priceBtn.textContent = 'Price';
+        priceBtn.setAttribute('title', 'Toggle Market Cap');
+        priceBtn.innerHTML = showMarketCap 
+        ? `<span style="color:rgb(209,209,250)">Market Cap</span> / <span>Price</span>` 
+        : `<span>Market Cap</span> / <span style="color:rgb(209,209,250)">Price</span>`
         priceBtn.addEventListener('click', () => {
-          if (!showMarketCap) return; 
-
-          setShowMarketCap(false);
-          try {
-            const currentSymbol = widgetRef.current.activeChart().symbol();
-            const currentResolution = widgetRef.current.activeChart().resolution();
-
-            setTimeout(() => {
-              widgetRef.current.activeChart().setSymbol(currentSymbol, currentResolution);
-            }, 10);
-
-            styleButton(priceBtn, true);
-            styleButton(marketCapBtn, false);
-          } catch (error) {
-            console.error('Error switching to Price:', error);
+          if (showMarketCap) {
+            setShowMarketCap(false);
+            try {
+              const currentSymbol = widgetRef.current.activeChart().symbol();
+              const currentResolution = widgetRef.current.activeChart().resolution();
+  
+              setTimeout(() => {
+                widgetRef.current.activeChart().setSymbol(currentSymbol, currentResolution);
+              }, 10);
+  
+            } catch (error) {
+              console.error('Error switching to Price:', error);
+            }
+          }
+          else {
+            setShowMarketCap(true);
+            try {
+              const currentSymbol = widgetRef.current.activeChart().symbol();
+              const currentResolution = widgetRef.current.activeChart().resolution();
+  
+              setTimeout(() => {
+                widgetRef.current.activeChart().setSymbol(currentSymbol, currentResolution);
+              }, 10);
+  
+            } catch (error) {
+              console.error('Error switching to MarketCap:', error);
+            }
           }
         });
-
-        const marketCapBtn = widgetRef.current.createButton();
-        marketCapBtn.setAttribute('title', 'Switch to MarketCap');
-        marketCapBtn.textContent = 'MarketCap';
-        marketCapBtn.addEventListener('click', () => {
-          if (showMarketCap) return;
-
-          setShowMarketCap(true);
-          try {
-            const currentSymbol = widgetRef.current.activeChart().symbol();
-            const currentResolution = widgetRef.current.activeChart().resolution();
-
-            setTimeout(() => {
-              widgetRef.current.activeChart().setSymbol(currentSymbol, currentResolution);
-            }, 10);
-
-            styleButton(marketCapBtn, true);
-            styleButton(priceBtn, false);
-          } catch (error) {
-            console.error('Error switching to MarketCap:', error);
-          }
-        });
-
-        styleButton(priceBtn, !showMarketCap);
-        styleButton(marketCapBtn, showMarketCap);
       });
       const chartId = `meme_layout_${token.symbol}`;
 

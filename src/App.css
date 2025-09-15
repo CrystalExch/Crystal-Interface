@@ -793,6 +793,7 @@ html {
   text-align: center;
   text-decoration: none;
   z-index: 2;
+  transition: opacity 0.2s, color 0.3s, text-shadow 0.3s;
 }
 
 .navlink.active {

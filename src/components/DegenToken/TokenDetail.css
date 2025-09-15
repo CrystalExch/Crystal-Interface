@@ -96,7 +96,6 @@
   margin-bottom: var(--gap);
   font-size: 1rem;
   font-weight: 500;
-  text-transform: uppercase;
   color: var(--c-muted);
 }
 
@@ -334,7 +333,7 @@
 
 .detail-balance-info {
   display: flex; align-items: center; justify-content: space-between;
-  font-size: .85rem; color: var(--c-muted);
+  font-size: .85rem; color: var(--c-muted); margin: 0px 4px;
 }
 
 .detail-max-button {
@@ -424,7 +423,7 @@
 }
 .detail-loading-spinner {
   width: 40px; height: 40px; border-radius: 50%;
-  border: 3px solid #333; border-top: 3px solid var(--c-gold);
+  border: 3px solid #333; border-top: 3px solid #aaaecf;
   animation: detailSpin 1s linear infinite;
 }
 .detail-error h2 { margin: 0; color: var(--c-text); }
@@ -437,8 +436,12 @@
 }
 .copyable-address:hover { text-decoration: underline; }
 .copy-hint { margin-left: 4px; font-weight: 600; }
-.detail-meta-address {}
 .detail-meme-address-value { text-decoration: underline dotted; }
+.detail-meme-address {
+  padding: 10px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+}
 
 /* Chat section (unchanged behavior, cleaned grouping) */
 .detail-chat-section { padding: 5px; }

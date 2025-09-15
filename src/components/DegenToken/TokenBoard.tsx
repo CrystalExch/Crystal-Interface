@@ -48,6 +48,7 @@ interface TokenBoardProps {
   setTerminalToken: any;
   terminalRefetch: any;
   setTokenData: any;
+  monUsdPrice: any;
 }
 
 const activechain = (settings as any).activechain ?? Object.keys(settings.chainConfig)[0];
@@ -82,7 +83,7 @@ const getBondingColor = (percentage: number) => {
 };
 
 const calculateBondingPercentage = (marketCap: number) => {
-  return Math.min((marketCap / 10000) * 100, 100);
+  return Math.min((marketCap / 25000) * 100, 100);
 };
 
 const SkeletonCard: React.FC = () => (
@@ -218,7 +219,8 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
   terminalToken,
   setTerminalToken,
   terminalRefetch,
-  setTokenData
+  setTokenData,
+  monUsdPrice
 }) => {
   const navigate = useNavigate();
   const [tokens, setTokens] = useState<Token[]>([]);

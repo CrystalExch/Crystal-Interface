@@ -599,8 +599,22 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
 
       const amountQuoteMin = (withdrawPreview.amountQuote * 95n) / 100n;
       const amountBaseMin = (withdrawPreview.amountBase * 95n) / 100n;
-
-      const withdrawUo = {
+      console.log(selectedVaultData)
+      const withdrawUo = (selectedVaultData.quoteAddress == settings.chainConfig[activechain]?.eth || selectedVaultData.baseAddress == settings.chainConfig[activechain]?.eth) ? {
+        target: router as `0x${string}`,
+        data: encodeFunctionData({
+          abi: CrystalRouterAbi,
+          functionName: "removeLiquidityETH",
+          args: [
+            selectedVaultData.address as `0x${string}`,
+            account.address,
+            sharesToWithdraw,
+            amountQuoteMin,
+            amountBaseMin
+          ],
+        }),
+        value: 0n,
+      } : {
         target: router as `0x${string}`,
         data: encodeFunctionData({
           abi: CrystalRouterAbi,

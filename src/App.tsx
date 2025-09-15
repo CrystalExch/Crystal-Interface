@@ -112,10 +112,6 @@ import firstPlacePfp from './assets/leaderboard_first.png';
 import secondPlacePfp from './assets/leaderboard_second.png';
 import thirdPlacePfp from './assets/leaderboard_third.png';
 import defaultPfp from './assets/leaderboard_default.png';
-import LogoText from './assets/LogoText.png';
-
-import PNLBG from './assets/PNLBG.png';
-import PNLBG2 from './assets/PNLBG2.png'
 
 //audio
 import stepaudio from './assets/step_audio.mp3';
@@ -149,8 +145,6 @@ import Launchpad from './components/Launchpad/Launchpad.tsx';
 import TokenExplorer from './components/TokenExplorer/TokenExplorer.tsx';
 import MemeInterface from './components/MemeInterface/MemeInterface.tsx';
 import MemeTransactionPopupManager from './components/MemeTransactionPopup/MemeTransactionPopupManager';
-import html2canvas from 'html2canvas';
-import { HexColorPicker } from 'react-colorful';
 import TokenBoard from './components/DegenToken/TokenBoard';
 import TokenDetail from './components/DegenToken/TokenDetail';
 import Tracker from './components/Tracker/Tracker.tsx';
@@ -383,7 +377,6 @@ function App() {
   //   return className;
   // };
 
-
   const [oneCTSigner, setOneCTSigner] = useState('');
   const validOneCT = oneCTSigner
   const oneCTNonceRef = useRef<number>(0);
@@ -393,28 +386,18 @@ function App() {
   };
   const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : scaAddress as `0x${string}`
   const connected = address != undefined
-  const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>([]);
-  useEffect(() => {
+  const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>(() => {
     const storedSubWallets = localStorage.getItem('crystal_sub_wallets');
     if (storedSubWallets) {
       try {
-        setSubWallets(JSON.parse(storedSubWallets));
-      } catch (error) {
-        console.error('Error loading stored subwallets:', error);
-      }
+        return JSON.parse(storedSubWallets);
+      } catch {}
     }
-  }, []);
-  const getCurrentConnector = () => {
-    const connection = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1];
-    return connection?.connector;
-  };
-  const getConnectorName = () => {
-    const connector = getCurrentConnector();
-    return connector?.name || 'Unknown';
-  };
+    return [];
+  });
 
   const getWalletIcon = () => {
-    const connectorName = getConnectorName();
+    const connectorName = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.name || 'Unknown';
 
     switch (connectorName) {
       case 'MetaMask':
@@ -440,28 +423,17 @@ function App() {
         return;
     }
   };
-  useEffect(() => {
-    if (connected) {
-      const connector = getCurrentConnector();
-      console.log('Connector details:', {
-        name: connector?.name,
-        type: connector?.type,
-        id: connector?.id
-      });
-    }
-  }, [connected]);
 
   const [withdrawPercentage, setWithdrawPercentage] = useState('');
   const [currentWalletIcon, setCurrentWalletIcon] = useState(walleticon);
 
   useEffect(() => {
     if (connected) {
-      const connectorName = getConnectorName();
-      setCurrentWalletIcon(getWalletIcon() ?? '');
+      setCurrentWalletIcon(getWalletIcon() ?? walleticon);
     } else {
       setCurrentWalletIcon(walleticon);
     }
-  }, [connected, alchemyconfig]);
+  }, [connected, alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.name]);
   const saveSubWalletsToStorage = (wallets: Array<{ address: string, privateKey: string }>) => {
     localStorage.setItem('crystal_sub_wallets', JSON.stringify(wallets));
   };
@@ -509,8 +481,6 @@ function App() {
       setSubWallets(updatedWallets);
       saveSubWalletsToStorage(updatedWallets);
 
-      console.log('New Subwallet Created:', newWallet);
-
       if (!validOneCT && updatedWallets.length === 1) {
         setOneCTSigner(privateKey);
         setpopup(25);
@@ -519,18 +489,6 @@ function App() {
     } catch (error) {
       console.error('Error creating subwallet:', error);
     }
-  };
-
-  const deleteSubWallet = (index: number) => {
-    const updatedWallets = subWallets.filter((_, i) => i !== index);
-    setSubWallets(updatedWallets);
-    saveSubWalletsToStorage(updatedWallets);
-  };
-
-  const setActiveSubWallet = (privateKey: string) => {
-    setOneCTSigner(privateKey);
-    setpopup(25);
-    refetch();
   };
 
   const sendUserOperationAsync = useCallback(
@@ -5586,6 +5544,7 @@ function App() {
         setSendInputAmount('');
         setSendAmountIn(BigInt(0));
         settokenString('');
+        window.dispatchEvent(new Event('high-impact-cancel'));
         setSelectedConnector(null);
 
         if (showTrade && !simpleView) {
@@ -5618,6 +5577,7 @@ function App() {
           setSendInputAmount('');
           setSendAmountIn(BigInt(0));
           settokenString('');
+          window.dispatchEvent(new Event('high-impact-cancel'));
           return 0;
         }
         return popup;
@@ -16888,7 +16848,7 @@ function App() {
               value={limitPriceString}
               step={1 / Math.pow(10, Math.floor(Math.log10(Number(activeMarket.priceFactor))))}
             />
-            <span className="limit-order-usd-label">USDC</span>
+            <span className="limit-order-usd-label">{activeMarket.quoteAsset}</span>
           </div>
           <div className="limit-price-buttons">
             <button
@@ -20421,6 +20381,8 @@ function App() {
               orderdata={{
                 liquidityBuyOrders,
                 liquiditySellOrders,
+                reserveQuote,
+                reserveBase
               }}
               onMarketSelect={onMarketSelect}
               marketsData={sortedMarkets}
@@ -20587,6 +20549,7 @@ function App() {
                 setTerminalToken={setTerminalToken}
                 terminalRefetch={terminalRefetch}
                 setTokenData={setTokenData}
+                monUsdPrice={monUsdPrice}
               />
             }
           />
@@ -20608,6 +20571,7 @@ function App() {
                 terminalRefetch={terminalRefetch}
                 walletTokenBalances={walletTokenBalances}
                 tokenData={tokenData}
+                monUsdPrice={monUsdPrice}
               />
             }
           />

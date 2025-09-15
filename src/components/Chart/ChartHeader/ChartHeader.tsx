@@ -39,7 +39,6 @@ interface ChartHeaderProps {
     tokenAddress: string;
     marketCap: number;
     change24h: number;
-    bondingPercentage: number;
     status: 'new' | 'graduating' | 'graduated';
     created: string;
     website?: string;
@@ -161,7 +160,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   ]);
 
   useEffect(() => {
-    if (orderdata.liquidityBuyOrders?.orders || orderdata.liquiditySellOrders?.orders) {
+    if (orderdata.liquidityBuyOrders?.orders || orderdata.liquiditySellOrders?.orders || orderdata?.reserveQuote || orderdata?.reserveBase) {
       const roundedBuys =
         orderdata.liquidityBuyOrders?.orders.length !== 0
           ? orderdata.liquidityBuyOrders?.orders
@@ -176,14 +175,16 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         tradesByMarket[(activeMarket.quoteAsset == settings.chainConfig[activechain]?.wethticker ? 
           settings.chainConfig[activechain]?.ethticker : activeMarket.quoteAsset) + 'USDC']?.[0]?.[3];
       
-      if (roundedBuys.length !== 0 && quotePrice) {
-        const buyLiquidity = roundedBuys[roundedBuys.length - 1].totalSize * quotePrice;
+      if ((roundedBuys.length !== 0 || orderdata?.reserveQuote != 0) && quotePrice) {
+        const ammBuyLiquidity = Number(orderdata?.reserveQuote) / Number(10n ** activeMarket.quoteDecimals) * quotePrice || 0
+        const buyLiquidity = (roundedBuys[roundedBuys.length - 1]?.totalSize * quotePrice || 0) + ammBuyLiquidity;
         setBuyLiquidity(formatCommas(buyLiquidity.toFixed(2)));
       } else {
         setBuyLiquidity('n/a');
       }
-      if (roundedSells.length !== 0 && quotePrice) {
-        const sellLiquidity = roundedSells[roundedSells.length - 1].totalSize * quotePrice;
+      if ((roundedSells.length !== 0 || orderdata?.reserveQuote != 0) && quotePrice) {
+        const ammSellLiquidity = Number(orderdata?.reserveQuote) / Number(10n ** activeMarket.quoteDecimals) * quotePrice || 0
+        const sellLiquidity = (roundedSells[roundedSells.length - 1]?.totalSize * quotePrice || 0) + ammSellLiquidity;
         setSellLiquidity(formatCommas(sellLiquidity.toFixed(2)));
       } else {
         setSellLiquidity('n/a');

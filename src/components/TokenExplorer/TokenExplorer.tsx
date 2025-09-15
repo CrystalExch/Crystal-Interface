@@ -273,7 +273,7 @@ const formatPrice = (p: number, noDecimals = false) => {
 
 
 const calculateBondingPercentage = (marketCap: number) => {
-  const bondingPercentage = Math.min((marketCap / 10000) * 100, 100);
+  const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
   return bondingPercentage;
 };
 
@@ -1108,6 +1108,15 @@ const DisplayDropdown: React.FC<{
     setDragOverIndex(null);
   };
 
+  const handleHide = (e: React.MouseEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (dropIndex === null) return;
+    const newOrder = [...safeOrder];
+    newOrder.splice(dropIndex, 1);
+
+    onSettingsChange({ ...settings, columnOrder: newOrder });
+  }
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -1428,6 +1437,7 @@ const DisplayDropdown: React.FC<{
                         onDragOver={(e) => handleDragOver(e, index)}
                         onDrop={(e) => handleDrop(e, index)}
                         onDragEnd={handleDragEnd}
+                        onClick={(e) => handleHide(e, index)}
                       >
                         {column === 'new' ? 'New Pairs' :
                           column === 'graduating' ? 'Final Stretch' : 'Migrated'}
