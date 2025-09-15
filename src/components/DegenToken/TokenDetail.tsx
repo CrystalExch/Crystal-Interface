@@ -106,6 +106,8 @@ const CopyableAddress: React.FC<{
   labelPrefix?: string;
 }> = ({ address, className, truncate = { start: 6, end: 4 }, labelPrefix }) => {
   const [copied, setCopied] = useState(false);
+  const [copyTooltipVisible, setCopyTooltipVisible] = useState(false); // ADD THIS
+  const [showHoverTooltip, setShowHoverTooltip] = useState(false);
 
   if (!address) return <span className={className}>{labelPrefix ?? ''}Unknown</span>;
 
@@ -123,22 +125,42 @@ const CopyableAddress: React.FC<{
       document.body.removeChild(ta);
     } finally {
       setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
+      setCopyTooltipVisible(true);    // ADD THIS
+      setShowHoverTooltip(false);
+      setTimeout(() => {
+        setCopied(false);
+        setCopyTooltipVisible(false); // ADD THIS
+      }, 1200);
     }
+
   };
 
   return (
-    <button
-      type="button"
-      onClick={copy}
-      className={className ? `${className} copyable-address` : 'copyable-address'}
-      title={copied ? 'Copied!' : 'Click to copy full address'}
-      aria-label="Copy address to clipboard"
-    >
-      {labelPrefix}
-      {short}
-      <span className="copy-hint">{copied ? ' ✓' : ''}</span>
-    </button>
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      <button
+        type="button"
+        onClick={copy}
+        onMouseEnter={() => !copyTooltipVisible && setShowHoverTooltip(true)} // ADD THIS
+        onMouseLeave={() => setShowHoverTooltip(false)} 
+        className={className ? `${className} copyable-address` : 'copyable-address'}
+        title={copied ? 'Copied!' : 'Click to copy full address'}
+        aria-label="Copy address to clipboard"
+      >
+        {labelPrefix}
+        {short}
+      </button>
+
+      {copyTooltipVisible && (
+        <div className="wallet-popup-copy-tooltip">
+          Copied!
+        </div>
+      )}
+      {!copyTooltipVisible && showHoverTooltip && (
+        <div className="wallet-popup-hover-tooltip">
+          Click to copy address
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -564,7 +586,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             </div>
 
             <div className="progress-bar-container">
-              <div className="progress-bar">
+              <div className="detail-progress-bar">
                 <div className="progress-indicator" style={{ left: '50%' }} />
               </div>
             </div>

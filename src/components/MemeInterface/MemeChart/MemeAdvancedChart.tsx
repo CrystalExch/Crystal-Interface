@@ -199,7 +199,15 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       library_path: '/charting_library/',
       autosize: true,
       symbol: `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,
-      interval: localStorage.getItem('meme_chart_timeframe') || '5',
+      interval: selectedInterval === '1d'
+      ? '1D'
+      : selectedInterval === '4h'
+        ? '240'
+        : selectedInterval === '1h'
+          ? '60'
+          : selectedInterval.endsWith('s')
+            ? selectedInterval.slice(0, -1).toUpperCase() + 'S'
+            : selectedInterval.slice(0, -1),
       timezone: 'Etc/UTC',
       locale: 'en',
       debug: false,
@@ -567,16 +575,7 @@ setSelectedInterval(
       tokenRef.current = token;
       if (chartReady && widgetRef.current) {
         setOverlayVisible(true);
-localStorage.setItem('meme_chart_timeframe',
-  selectedInterval === '1d'
-    ? '1D'
-    : selectedInterval === '4h'
-      ? '240'
-      : selectedInterval === '1h'
-        ? '60'
-        : selectedInterval.endsWith('s')
-          ? selectedInterval.slice(0, -1).toUpperCase() + 'S'
-          : selectedInterval.slice(0, -1));
+localStorage.setItem('meme_chart_timeframe', selectedInterval);
 
 widgetRef.current.setSymbol(
   `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,

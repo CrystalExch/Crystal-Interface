@@ -535,7 +535,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [activeOrderType, setActiveOrderType] = useState<"market" | "Limit">("market");
   const [live, setLive] = useState<Partial<Token>>({});
   const [trades, setTrades] = useState<Trade[]>([]);
-  const [selectedInterval, setSelectedInterval] = useState("5m");
+  const [selectedInterval, setSelectedInterval] = useState(() => localStorage.getItem('meme_chart_timeframe') || '5m');
   const [chartData, setChartData] = useState<any>(null);
   const realtimeCallbackRef = useRef<any>({});
   const wsRef = useRef<WebSocket | null>(null);
@@ -1035,6 +1035,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         });
 
         const data = (await response.json())?.data;
+        console.log(data)
         if (isCancelled || !data) return;
 
         if (data.launchpadTokens?.length) {
@@ -1143,7 +1144,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     fetchMemeTokenData();
     return () => { isCancelled = true; };
-  }, [token.id, selectedInterval, setTokenData, token.name, token.symbol, token.image, token.dev]);
+  }, [token.id, selectedInterval]);
 
   const lastInvalidateRef = useRef(0);
 
@@ -3189,13 +3190,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   </div>
                   <div className="dev-address-bottom">
                     <div className="dev-address-bottom-left">
-                      <Tooltip content="View funding on Monadscan">
+                      <Tooltip content="View funding on MonadScan">
                         <div
                           className="funding-location"
                           onClick={() => window.open(`https://testnet.monadscan.com/address/${token.id}`, '_blank')}
                           style={{ cursor: 'pointer' }}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="funding-by-wallet-icon">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="funding-by-wallet-icon">
                             <path d="m5 12 7-7 7 7" />
                             <path d="M12 19V5" />
                           </svg>
@@ -3209,7 +3210,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       </Tooltip>
                     </div>
                     <div className="funding-time-ago">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="funding-time-ago-icon"><path d="M12 6v6l4 2" /><circle cx="12" cy="12" r="10" /></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="funding-time-ago-icon"><path d="M12 6v6l4 2" /><circle cx="12" cy="12" r="10" /></svg>
                       <span>3 mo</span>
                     </div>
                   </div>
