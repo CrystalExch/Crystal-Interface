@@ -583,10 +583,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
   filter: brightness(0) saturate(100%) invert(66%) sepia(59%) saturate(337%) hue-rotate(175deg) brightness(103%) contrast(94%);
 }
+
+.avatar-icon{
+  width: 20px;
+  height: 20px;
+}
+
+
+.tweet-icon{
+
+  width: 16px;
+  height: 16px;
+}
+
+
+
 
 .explorer-discord-btn, 
 .explorer-website-btn{

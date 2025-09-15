@@ -31,6 +31,7 @@ import { TwitterHover } from '../TwitterHover/TwitterHover'
 import stepaudio from '../../assets/step_audio.mp3';
 import kaching from '../../assets/ka-ching.mp3';
 import avatar from '../../assets/avatar.png'
+import tweet from '../../assets/tweet.png'
 
 export interface Token {
   id: string;
@@ -1878,20 +1879,23 @@ const TokenRow = React.memo<{
 
                 {displaySettings.visibleRows.socials && (
                   <>
-                    {!!token.twitterHandle && (
-                      <TwitterHover url={token.twitterHandle}>
-                        <a
-                          className="explorer-avatar-btn"
-                          href={token.twitterHandle}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={e => e.stopPropagation()}
-                        >
-                          <img src={avatar} alt="Twitter" />
-                        </a>
-                      </TwitterHover>
-
-                    )}
+                 {!!token.twitterHandle && (
+  <TwitterHover url={token.twitterHandle}>
+    <a
+      className="explorer-avatar-btn"
+      href={token.twitterHandle}
+      target="_blank"
+      rel="noreferrer"
+      onClick={e => e.stopPropagation()}
+    >
+      <img 
+        src={token.twitterHandle.includes('/status/') ? tweet : avatar} 
+        alt="Twitter"
+        className={token.twitterHandle.includes('/status/') ? 'tweet-icon' : 'avatar-icon'}
+      />
+    </a>
+  </TwitterHover>
+)}
 
                     {!!token.website && (
                       <a
