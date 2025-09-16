@@ -19,8 +19,7 @@
   border-radius: 6px;
   width: 100%;
   max-width: 650px;
-    max-height: 530px;
-
+  max-height: 530px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -685,17 +684,7 @@ filter: brightness(0) saturate(100%) invert(74%) sepia(14%) saturate(326%) hue-r
   color: transparent;
 }
 
-.quickbuy-loading-spinner {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 14px;
-  height: 14px;
-  border: 2px solid transparent;
-  border-top: 2px solid currentColor;
-  border-radius: 50%;
-}
+
 
 
 
