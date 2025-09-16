@@ -563,15 +563,21 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                 </div>
               )}
 
-              {searchTerm.trim().length > 0 &&
-                searchTerm.trim().length < 2 &&
-                searchHistory.length > 0 && (
-                  <div className="meme-search-section">
-                    <div className="meme-search-section-header">
-                      <span>Results</span>
-                    </div>
+              {searchTerm.trim().length >= 2 && (loading || isSearching) && (
+                <div className="meme-search-section">
+                  <div className="meme-search-section-header">
+                    <span>Searching...</span>
                   </div>
-                )}
+                </div>
+              )}
+
+              {searchTerm.trim().length >= 2 && !(loading || isSearching) && (
+                <div className="meme-search-section">
+                  <div className="meme-search-section-header">
+                    <span>Results</span>
+                  </div>
+                </div>
+              )}
 
               <div className="meme-search-list">
                 {filteredTokens.length > 0 ? (
