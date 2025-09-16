@@ -73,6 +73,8 @@ interface MemeChartProps {
   setSelectedInterval: (interval: string) => void;
   realtimeCallbackRef: any;
   monUsdPrice?: number;
+  tradehistory?: any[];
+  isMarksVisible?: boolean;
 }
 
 const MemeChart: React.FC<MemeChartProps> = ({
@@ -82,6 +84,8 @@ const MemeChart: React.FC<MemeChartProps> = ({
   setSelectedInterval,
   realtimeCallbackRef,
   monUsdPrice,
+  tradehistory,
+  isMarksVisible,
 }) => {
   const [overlayVisible, setLocalOverlayVisible] = useState(true);
 
@@ -100,6 +104,8 @@ const MemeChart: React.FC<MemeChartProps> = ({
           selectedInterval={selectedInterval}
           setSelectedInterval={setSelectedInterval}
           setOverlayVisible={handleOverlayChange}
+          tradehistory={tradehistory}
+          isMarksVisible={isMarksVisible}
           realtimeCallbackRef={realtimeCallbackRef}
           monUsdPrice={monUsdPrice}
         />
