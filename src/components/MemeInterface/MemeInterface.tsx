@@ -228,6 +228,47 @@ const TOP_TRADERS_QUERY = `
   }
 `;
 
+const FILTERED_TRADES_QUERY = `
+  query ($id: ID!, $accounts: [Bytes!], $first: Int!) {
+    launchpadTokens(where: { id: $id }) {
+      trades(
+        where: { account_in: $accounts }
+        orderBy: block
+        orderDirection: desc
+        first: $first
+      ) {
+        id
+        account { id }
+        block
+        isBuy
+        priceNativePerTokenWad
+        amountIn
+        amountOut
+      }
+    }
+  }
+`;
+
+const GENERIC_TRADES_QUERY = `
+  query ($id: ID!, $first: Int!) {
+    launchpadTokens(where: { id: $id }) {
+      trades(
+        orderBy: block
+        orderDirection: desc
+        first: $first
+      ) {
+        id
+        account { id }
+        block
+        isBuy
+        priceNativePerTokenWad
+        amountIn
+        amountOut
+      }
+    }
+  }
+`;
+
 const RESOLUTION_SECS: Record<string, number> = {
   "1s": 1,
   "5s": 5,
@@ -258,6 +299,7 @@ const formatTradeAmount = (value: number): string => {
   }
   return value.toFixed(2);
 };
+
 const Tooltip: React.FC<{
   content: string;
   children: React.ReactNode;
@@ -504,7 +546,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const [tradeAmount, setTradeAmount] = useState("");
   const [limitPrice, setLimitPrice] = useState("");
-  const [isQuoteLoading, setIsQuoteLoading] = useState(false);
   const [quoteValue, setQuoteValue] = useState<number | undefined>(undefined);
   const [inputCurrency, setInputCurrency] = useState<"MON" | "TOKEN">("MON");
   const [sliderPercent, setSliderPercent] = useState(0);
@@ -578,16 +619,20 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [mobileWalletsExpanded, setMobileWalletsExpanded] = useState(false);
   const [mobileWalletNames, setMobileWalletNames] = useState<{ [address: string]: string }>({});
   const [showUSD, setShowUSD] = useState(false);
+  const [top10HoldingPercentage, setTop10HoldingPercentage] = useState(0);
+  const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
+  const trackedAddressesRef = useRef<string[]>([]);
   const { activechain } = useSharedContext();
 
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
-
+  const explorer = settings.chainConfig[activechain]?.explorer;
 
   const buyPresets = {
     1: { slippage: '20', priority: '0.01' },
     2: { slippage: '15', priority: '0.02' },
     3: { slippage: '10', priority: '0.05' }
   };
+
   const sellPresets = {
     1: { slippage: '15', priority: '0.005' },
     2: { slippage: '12', priority: '0.01' },
@@ -607,7 +652,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     }
   }, []);
 
-  const [top10HoldingPercentage, setTop10HoldingPercentage] = useState(0);
+  const openInExplorer = (addr: string) => window.open(`${explorer}/address/${addr}`, '_blank');
+
+  const toPct = (balance: number) => (balance / TOTAL_SUPPLY) * 100;
+
+  const calcDevHoldingPct = (list: Holder[], dev?: string) => {
+    if (!dev) return 0;
+    const row = list.find(h => (h.address || '').toLowerCase() === dev.toLowerCase());
+    return row ? toPct(Math.max(0, row.balance)) : 0;
+  };
 
   const handleBuyPresetSelect = useCallback((preset: number) => {
     setSelectedBuyPreset(preset);
@@ -645,9 +698,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const handleAdvancedOrderRemove = (orderId: string) => {
     setAdvancedOrders(prev => prev.filter(order => order.id !== orderId));
   };
+
   const handleToggleCurrency = () => {
     setShowUSD(!showUSD);
   };
+
   const positionPopup = useCallback((percent: number) => {
     const input = sliderRef.current;
     const popup = popupRef.current;
@@ -724,7 +779,27 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     return getMobileWalletBalance(currentWallet.address);
   };
 
-
+  const copyToClipboard = async (text: string, label = 'Address copied') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setNotif({ title: label, subtitle: `${text.slice(0, 6)}...${text.slice(-4)}`, variant: 'success', visible: true });
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        setNotif({ title: label, subtitle: `${text.slice(0, 6)}...${text.slice(-4)}`, variant: 'success', visible: true });
+      } finally {
+        document.body.removeChild(ta);
+      }
+    }
+    setTimeout(() => setNotif(n => (n ? { ...n, visible: false } : n)), 900);
+    setTimeout(() => setNotif(null), 1200);
+  };
 
   const handleSellPosition = async (position: any, monAmount: string) => {
     if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
@@ -972,17 +1047,109 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     [selectedInterval, token.symbol]
   );
 
+  const toggleTrackedAddress = useCallback((addr: string) => {
+    const a = (addr || '').toLowerCase();
+    setTrackedAddresses(prev =>
+      prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]
+    );
+  }, []);
+
+  const setTrackedToDev = useCallback(() => {
+    const d = (token.dev || '').toLowerCase();
+    setTrackedAddresses(d ? [d] : []);
+  }, [token.dev]);
+
+  const setTrackedToYou = useCallback(() => {
+    const me = (userAddr || '').toLowerCase();
+    setTrackedAddresses(me ? [me] : []);
+  }, [userAddr]);
+
+  const clearTracked = useCallback(() => setTrackedAddresses([]), []);
+
   useEffect(() => {
     if (!trades.length) return;
     const t = trades[0];
     pushRealtimeTick(t.price, t.nativeAmount);
   }, [trades, pushRealtimeTick]);
 
+  useEffect(() => {
+    trackedAddressesRef.current = trackedAddresses.map(a => a.toLowerCase());
+  }, [trackedAddresses]);
+
+  useEffect(() => {
+    if (!token.id) return;
+
+    if (trackedAddresses.length === 0) {
+      let cancelled = false;
+      (async () => {
+        try {
+          const res = await fetch(SUBGRAPH_URL, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              query: GENERIC_TRADES_QUERY,
+              variables: { id: token.id.toLowerCase(), first: 1000 },
+            }),
+          });
+          const json = await res.json();
+          const t = json?.data?.launchpadTokens?.[0]?.trades ?? [];
+          const mapped: Trade[] = t.map((tt: any) => ({
+            id: tt.id,
+            timestamp: Number(tt.block),
+            isBuy: !!tt.isBuy,
+            price: Number(tt.priceNativePerTokenWad) / 1e18,
+            tokenAmount: Number(tt.isBuy ? tt.amountOut : tt.amountIn) / 1e18,
+            nativeAmount: Number(tt.isBuy ? tt.amountIn : tt.amountOut) / 1e18,
+            caller: tt.account.id,
+          }));
+          if (!cancelled) setTrades(mapped);
+        } catch (e) {
+          console.error('generic trades fetch failed', e);
+        }
+      })();
+      return () => { cancelled = true; };
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: FILTERED_TRADES_QUERY,
+            variables: {
+              id: token.id.toLowerCase(),
+              accounts: trackedAddresses.map(a => a.toLowerCase()),
+              first: 1000,
+            },
+          }),
+        });
+        const json = await res.json();
+        const t = json?.data?.launchpadTokens?.[0]?.trades ?? [];
+        const mapped: Trade[] = t.map((tt: any) => ({
+          id: tt.id,
+          timestamp: Number(tt.block),
+          isBuy: !!tt.isBuy,
+          price: Number(tt.priceNativePerTokenWad) / 1e18,
+          tokenAmount: Number(tt.isBuy ? tt.amountOut : tt.amountIn) / 1e18,
+          nativeAmount: Number(tt.isBuy ? tt.amountIn : tt.amountOut) / 1e18,
+          caller: tt.account.id,
+        }));
+        if (!cancelled) setTrades(mapped);
+      } catch (e) {
+        console.error('filtered trades fetch failed', e);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [token.id, trackedAddresses]);
+
   // metadata n klines
   useEffect(() => {
     if (!token.id) return;
     let isCancelled = false;
-    console.log(selectedInterval);
 
     const fetchMemeTokenData = async () => {
       try {
@@ -1272,18 +1439,23 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             volume24h: (p.volume24h || 0) + (isBuy ? amountIn : amountOut),
           }));
 
-          setTrades((prev) => [
-            {
-              id: `${log.transactionHash}-${log.logIndex}`,
-              timestamp: Date.now() / 1000,
-              isBuy,
-              price: tradePrice,
-              nativeAmount: isBuy ? amountIn : amountOut,
-              tokenAmount: isBuy ? amountOut : amountIn,
-              caller: `0x${log.topics[2].slice(26)}`,
-            },
-            ...prev.slice(0, 99),
-          ]);
+          const passesFilter = trackedAddressesRef.current.length === 0 || trackedAddressesRef.current.includes(callerAddr);
+
+          if (passesFilter) {
+            setTrades((prev) => [
+              {
+                id: `${log.transactionHash}-${log.logIndex}`,
+                timestamp: Date.now() / 1000,
+                isBuy,
+                price: tradePrice,
+                nativeAmount: isBuy ? amountIn : amountOut,
+                tokenAmount: isBuy ? amountOut : amountIn,
+                caller: `0x${log.topics[2].slice(26)}`,
+              },
+              ...prev.slice(0, 99),
+            ]);
+          }
+
           setTokenData((prev: any) => ({
             ...prev,
             price: price,
@@ -1327,12 +1499,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             copy[idx] = row;
 
             const topSum = copy
-              .map((h) => Math.max(0, h.balance))
+              .map(h => Math.max(0, h.balance))
               .sort((a, b) => b - a)
               .slice(0, 10)
               .reduce((s, n) => s + n, 0);
-            const pct = (topSum / TOTAL_SUPPLY) * 100;
+            const pct = toPct(topSum);
             setTop10HoldingPercentage(pct);
+
+            const devPctNow = calcDevHoldingPct(copy, token.dev);
+            setLive(p => ({ ...p, devHolding: devPctNow }));
 
             return copy;
           });
@@ -1553,6 +1728,18 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         };
       });
 
+      const top10Pct = toPct(
+        mapped
+          .map(h => Math.max(0, h.balance))
+          .sort((a, b) => b - a)
+          .slice(0, 10)
+          .reduce((s, n) => s + n, 0)
+      );
+      setTop10HoldingPercentage(top10Pct);
+
+      const devPct = calcDevHoldingPct(mapped, token.dev);
+      setLive(p => ({ ...p, devHolding: devPct }));
+
       setHolders(mapped);
       holdersMapRef.current = new Map(mapped.map((h: Holder, i: number) => [h.address.toLowerCase(), i]));
     })();
@@ -1619,7 +1806,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     return () => { cancelled = true; };
   }, [token.dev, token.id]);
-  
+
   const handlePresetEditToggle = useCallback(() => {
     setIsPresetEditMode(!isPresetEditMode);
     setEditingPresetIndex(null);
@@ -1860,14 +2047,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   }, [userAddr]);
 
   useEffect(() => {
-    if (tradeAmount && tradeAmount !== "" && tradeAmount !== "0" && currentPrice && currentPrice > 0) {
-      setIsQuoteLoading(true);
-    }
-
     const id = setTimeout(() => {
       if (!tradeAmount || tradeAmount === "" || !currentPrice || currentPrice === 0) {
         setQuoteValue(undefined);
-        setIsQuoteLoading(false);
         return;
       }
 
@@ -1875,7 +2057,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
       if (isNaN(amt) || amt <= 0) {
         setQuoteValue(undefined);
-        setIsQuoteLoading(false);
         return;
       }
 
@@ -1892,7 +2073,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       }
 
       setQuoteValue(converted);
-      setIsQuoteLoading(false);
     }, 400);
 
     return () => clearTimeout(id);
@@ -2135,6 +2315,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               currentUserAddress={userAddr}
               devAddress={token.dev}
               monUsdPrice={monUsdPrice}
+              trackedAddresses={trackedAddresses}
+              onFilterDev={setTrackedToDev}
+              onFilterYou={setTrackedToYou}
+              onClearTracked={clearTracked}
             />
           </div>
         </div>
@@ -2165,6 +2349,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             currentPrice={currentPrice}
             monUsdPrice={monUsdPrice}
             onSellPosition={handleSellPosition}
+            trackedAddresses={trackedAddresses}
+            onToggleTrackedAddress={toggleTrackedAddress}
           />
         </div>
       </div>
@@ -3145,7 +3331,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       <img className="meme-contract-icon" src={contract} />
                       <span className="meme-address-title">CA:</span>{" "}
                       <Tooltip content="Copy contract address">
-                        {token.id.slice(0, 15)}...{token.id.slice(-4)}
+                        <span
+                          className="meme-explorer-link"
+                          onClick={() => copyToClipboard(token.id, 'Contract address copied')}
+                          style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                          {token.id.slice(0, 15)}...{token.id.slice(-4)}
+                        </span>
                       </Tooltip>
                     </div>
                     <Tooltip content="View on Monad Explorer">
@@ -3156,6 +3348,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         height="15"
                         viewBox="0 0 24 24"
                         fill="currentColor"
+                        onClick={() => openInExplorer(token.id)}
                       >
                         <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
                         <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
@@ -3169,7 +3362,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       <img className="meme-contract-icon" src={contract} />
                       <span className="meme-address-title">DA:</span>{" "}
                       <Tooltip content="Copy developer address">
-                        {token.dev.slice(0, 15)}...{token.dev.slice(-4)}
+                        <span
+                          className="meme-explorer-link"
+                          onClick={() => copyToClipboard(token.dev, 'Dev address copied')}
+                          style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                          {token.dev.slice(0, 15)}...{token.dev.slice(-4)}
+                        </span>
                       </Tooltip>
                     </div>
                     <Tooltip content="View on Monad Explorer">
@@ -3180,6 +3379,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         height="15"
                         viewBox="0 0 24 24"
                         fill="currentColor"
+                        onClick={() => openInExplorer(token.dev)}
                       >
                         <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
                         <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />

@@ -5,6 +5,7 @@ import switchicon from "../../../assets/switch.svg";
 import monadlogo from "../../../assets/monadlogo.svg";
 import TraderPortfolioPopup from "./TraderPortfolioPopup/TraderPortfolioPopup";
 import filtercup from "../../../assets/filtercup.svg";
+import filledcup from "../../../assets/filledcup.svg";
 import filter from "../../../assets/filter.svg";
 
 import {
@@ -15,154 +16,154 @@ import {
 import "./MemeTradesComponent.css";
 
 const Tooltip: React.FC<{
-    content: string;
-    children: React.ReactNode;
-    position?: 'top' | 'bottom' | 'left' | 'right';
+  content: string;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
 }> = ({ content, children, position = 'top' }) => {
-    const [shouldRender, setShouldRender] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
-    const [isLeaving, setIsLeaving] = useState(false);
-    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
-    const containerRef = useRef<HTMLDivElement>(null);
-    const tooltipRef = useRef<HTMLDivElement>(null);
-    const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const updatePosition = useCallback(() => {
-        if (!containerRef.current || !tooltipRef.current) return;
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current || !tooltipRef.current) return;
 
-        const rect = containerRef.current.getBoundingClientRect();
-        const tooltipRect = tooltipRef.current.getBoundingClientRect();
-        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const rect = containerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
-        let top = 0;
-        let left = 0;
+    let top = 0;
+    let left = 0;
 
-        switch (position) {
-            case 'top':
-                top = rect.top + scrollY - tooltipRect.height - 10;
-                left = rect.left + scrollX + rect.width / 2;
-                break;
-            case 'bottom':
-                top = rect.bottom + scrollY + 10;
-                left = rect.left + scrollX + rect.width / 2;
-                break;
-            case 'left':
-                top = rect.top + scrollY + rect.height / 2;
-                left = rect.left + scrollX - tooltipRect.width - 10;
-                break;
-            case 'right':
-                top = rect.top + scrollY + rect.height / 2;
-                left = rect.right + scrollX + 10;
-                break;
-        }
+    switch (position) {
+      case 'top':
+        top = rect.top + scrollY - tooltipRect.height - 10;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'bottom':
+        top = rect.bottom + scrollY + 10;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'left':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.left + scrollX - tooltipRect.width - 10;
+        break;
+      case 'right':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.right + scrollX + 10;
+        break;
+    }
 
-        const margin = 10;
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
+    const margin = 10;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
 
-        if (position === 'top' || position === 'bottom') {
-            left = Math.min(
-                Math.max(left, margin + tooltipRect.width / 2),
-                viewportWidth - margin - tooltipRect.width / 2,
-            );
-        } else {
-            top = Math.min(
-                Math.max(top, margin),
-                viewportHeight - margin - tooltipRect.height,
-            );
-        }
+    if (position === 'top' || position === 'bottom') {
+      left = Math.min(
+        Math.max(left, margin + tooltipRect.width / 2),
+        viewportWidth - margin - tooltipRect.width / 2,
+      );
+    } else {
+      top = Math.min(
+        Math.max(top, margin),
+        viewportHeight - margin - tooltipRect.height,
+      );
+    }
 
-        setTooltipPosition({ top, left });
-    }, [position]);
+    setTooltipPosition({ top, left });
+  }, [position]);
 
-    const handleMouseEnter = useCallback(() => {
-        if (fadeTimeoutRef.current) {
-            clearTimeout(fadeTimeoutRef.current);
-            fadeTimeoutRef.current = null;
-        }
+  const handleMouseEnter = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
 
-        setIsLeaving(false);
-        setShouldRender(true);
+    setIsLeaving(false);
+    setShouldRender(true);
 
-        fadeTimeoutRef.current = setTimeout(() => {
-            setIsVisible(true);
-            fadeTimeoutRef.current = null;
-        }, 10);
-    }, []);
+    fadeTimeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+      fadeTimeoutRef.current = null;
+    }, 10);
+  }, []);
 
-    const handleMouseLeave = useCallback(() => {
-        if (fadeTimeoutRef.current) {
-            clearTimeout(fadeTimeoutRef.current);
-            fadeTimeoutRef.current = null;
-        }
+  const handleMouseLeave = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
 
-        setIsLeaving(true);
-        setIsVisible(false);
+    setIsLeaving(true);
+    setIsVisible(false);
 
-        fadeTimeoutRef.current = setTimeout(() => {
-            setShouldRender(false);
-            setIsLeaving(false);
-            fadeTimeoutRef.current = null;
-        }, 150);
-    }, []);
+    fadeTimeoutRef.current = setTimeout(() => {
+      setShouldRender(false);
+      setIsLeaving(false);
+      fadeTimeoutRef.current = null;
+    }, 150);
+  }, []);
 
-    useEffect(() => {
-        if (shouldRender && !isLeaving) {
-            updatePosition();
-            window.addEventListener('scroll', updatePosition);
-            window.addEventListener('resize', updatePosition);
-            return () => {
-                window.removeEventListener('scroll', updatePosition);
-                window.removeEventListener('resize', updatePosition);
-            };
-        }
-    }, [shouldRender, updatePosition, isLeaving]);
+  useEffect(() => {
+    if (shouldRender && !isLeaving) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [shouldRender, updatePosition, isLeaving]);
 
-    useEffect(() => {
-        return () => {
-            if (fadeTimeoutRef.current) {
-                clearTimeout(fadeTimeoutRef.current);
-            }
-        };
-    }, []);
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current);
+      }
+    };
+  }, []);
 
-    return (
+  return (
+    <div
+      ref={containerRef}
+      className="tooltip-container"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {shouldRender && createPortal(
         <div
-            ref={containerRef}
-            className="tooltip-container"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+          ref={tooltipRef}
+          className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+          style={{
+            position: 'absolute',
+            top: `${tooltipPosition.top - 20}px`,
+            left: `${tooltipPosition.left}px`,
+            transform: `${position === 'top' || position === 'bottom'
+              ? 'translateX(-50%)'
+              : position === 'left' || position === 'right'
+                ? 'translateY(-50%)'
+                : 'none'} scale(${isVisible ? 1 : 0})`,
+            opacity: isVisible ? 1 : 0,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'transform, opacity'
+          }}
         >
-            {children}
-            {shouldRender && createPortal(
-                <div
-                    ref={tooltipRef}
-                    className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
-                    style={{
-                        position: 'absolute',
-                        top: `${tooltipPosition.top - 20}px`,
-                        left: `${tooltipPosition.left}px`,
-                        transform: `${position === 'top' || position === 'bottom'
-                            ? 'translateX(-50%)'
-                            : position === 'left' || position === 'right'
-                                ? 'translateY(-50%)'
-                                : 'none'} scale(${isVisible ? 1 : 0})`,
-                        opacity: isVisible ? 1 : 0,
-                        zIndex: 9999,
-                        pointerEvents: 'none',
-                        transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-                        willChange: 'transform, opacity'
-                    }}
-                >
-                    <div className="tooltip-content">
-                        {content}
-                    </div>
-                </div>,
-                document.body
-            )}
-        </div>
-    );
+          <div className="tooltip-content">
+            {content}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
 };
 
 export interface RawTrade {
@@ -230,6 +231,10 @@ interface Props {
   backlogCount?: number;
   devAddress?: string;
   monUsdPrice: number;
+  trackedAddresses?: string[];
+  onFilterDev?: () => void;
+  onFilterYou?: () => void;
+  onClearTracked?: () => void;
 }
 
 export default function MemeTradesComponent({
@@ -247,7 +252,11 @@ export default function MemeTradesComponent({
   holders = [],
   currentUserAddress,
   devAddress,
-  monUsdPrice
+  monUsdPrice,
+  trackedAddresses = [],
+  onFilterDev,
+  onFilterYou,
+  onClearTracked,
 }: Props) {
   const [amountMode, setAmountMode] = useState<AmountMode>("MON");
   const [mcMode, setMcMode] = useState<MCMode>("MC");
@@ -257,10 +266,37 @@ export default function MemeTradesComponent({
   const [displayTrades, setDisplayTrades] = useState<RawTrade[]>([]);
   const tradesBacklogRef = useRef<RawTrade[]>([]);
   const lastProcessedTradesRef = useRef<RawTrade[]>([]);
+
+  const norm = (s?: string) => (s || "").toLowerCase();
+  const trackedSet = new Set((trackedAddresses || []).map(norm));
+  const dev = norm(devAddress);
+  const you = norm(currentUserAddress);
+  const devEqualsYou = dev !== "" && dev === you;
+
+  let devActive = false;
+  let youActive = false;
+  let trackedActive = false;
+
+  if (trackedSet.size === 0) {} else if (trackedSet.size === 1) {
+    const [only] = Array.from(trackedSet);
+    if (devEqualsYou && only === dev) {
+      youActive = true;
+    } else if (only === you) {
+      youActive = true;
+    } else if (only === dev) {
+      devActive = true;
+   } else {
+      trackedActive = true;
+    }
+  } else {
+    trackedActive = true;
+  }
+
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(Date.now() / 1000), 1000);
     return () => clearInterval(interval);
   }, []);
+
   useEffect(() => {
     const newTrades = trades.slice(0, 40);
 
@@ -288,6 +324,7 @@ export default function MemeTradesComponent({
       lastProcessedTradesRef.current = newTrades;
     }
   }, [trades, hover]);
+
   const top10HolderAddresses = useMemo(() => {
     return new Set(
       holders.slice(0, 10).map((holder) => holder.address.toLowerCase()),
@@ -329,7 +366,6 @@ export default function MemeTradesComponent({
     const latestQuotePerBase = fetchLatestPriceInQuote(trades) ?? 0;
     const quoteUsd = usdPer(market?.quoteAsset);
     const monUsd = (usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker));
-    const baseUsdPerToken = latestQuotePerBase * (quoteUsd || 0);
 
     return displayTrades.map((r) => {
       const callerLower = r.caller.toLowerCase();
@@ -548,16 +584,31 @@ export default function MemeTradesComponent({
         <div className="meme-trades-title-header">
           <div className="meme-trades-filters">
             <div className="meme-trade-filter-container">
-              <img src={filtercup} alt="Filter" className="filter-cup" />
-              <button className="meme-trade-filter-btn">DEV</button>
+              <img src={devActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
+              <button 
+                className={`meme-trade-filter-btn ${devActive ? "active" : ""}`}
+                onClick={() => onFilterDev?.()}
+              >
+                DEV
+              </button>
             </div>
             <div className="meme-trade-filter-container">
-              <img src={filtercup} alt="Filter" className="filter-cup" />
-              <button className="meme-trade-filter-btn">TRACKED</button>
+              <img src={trackedActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
+              <button 
+                className={`meme-trade-filter-btn ${trackedActive ? "active" : ""}`}
+                onClick={() => onClearTracked?.()}
+              >
+                TRACKED
+              </button>
             </div>
             <div className="meme-trade-filter-container">
-              <img src={filtercup} alt="Filter" className="filter-cup" />
-              <button className="meme-trade-filter-btn">YOU</button>
+              <img src={youActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
+              <button 
+                className={`meme-trade-filter-btn ${youActive ? "active" : ""}`}
+                onClick={() => onFilterYou?.()}
+              >
+                YOU
+              </button>
             </div>
           </div>
           <img className="filter-icon" src={filter} />
