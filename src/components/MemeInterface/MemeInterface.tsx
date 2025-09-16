@@ -111,20 +111,21 @@ interface MemeInterfaceProps {
   tokenData?: any;
   setTokenData: any;
   monUsdPrice: number;
-    quickAmounts?: { [key: string]: string };
+  quickAmounts?: { [key: string]: string };
   setQuickAmount?: (category: string, amount: string) => void;
   activePresets?: { [key: string]: number };
   setActivePreset?: (category: string, preset: number) => void;
   buyPresets?: { [key: number]: { slippage: string; priority: string; amount: string } };
   sellPresets?: { [key: number]: { slippage: string; priority: string } };
-    monPresets?: number[]; 
-  setMonPresets?: (presets: number[]) => void; 
+  monPresets?: number[];
+  setMonPresets?: (presets: number[]) => void;
 }
 
 const MARKET_UPDATE_EVENT = "0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e";
 const MARKET_CREATED_EVENT = "0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540";
 const TOTAL_SUPPLY = 1e9;
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
+// const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.8';
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const STATS_WS_BASE = 'wss://crystal-backend.up.railway.app';
 const PAGE_SIZE = 100;
@@ -278,9 +279,9 @@ const GENERIC_TRADES_QUERY = `
 `;
 
 const RESOLUTION_SECS: Record<string, number> = {
-  "1s": 1,
-  "5s": 5,
-  "15s": 15,
+  "1Sm": 1,
+  "5Sm": 5,
+  "15Sm": 15,
   "1m": 60,
   "5m": 300,
   "15m": 900,
@@ -300,6 +301,7 @@ const fmt = (v: number, d = 6) => {
   if (v >= 1) return v.toLocaleString("en-US", { maximumFractionDigits: d });
   return v.toFixed(Math.min(d, 8));
 };
+
 const formatTradeAmount = (value: number): string => {
   if (value === 0) return "0";
   if (value > 0 && value < 0.01) {
@@ -493,7 +495,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   // setActivePreset,
   buyPresets,
   sellPresets,
-  monPresets = [5, 20, 100, 500], // default fallback
+  monPresets = [5, 20, 100, 500],
   setMonPresets,
 }) => {
   const getSliderPosition = (activeView: 'chart' | 'trades' | 'ordercenter') => {
@@ -651,7 +653,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     const row = list.find(h => (h.address || '').toLowerCase() === dev.toLowerCase());
     return row ? toPct(Math.max(0, row.balance)) : 0;
   };
- const handleBuyPresetSelect = useCallback((preset: number) => {
+
+  const handleBuyPresetSelect = useCallback((preset: number) => {
     setSelectedBuyPreset(preset);
     setMobileQuickBuyPreset(preset);
     if (buyPresets && buyPresets[preset]) {
@@ -1061,16 +1064,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setTrackedAddresses(me ? [me] : []);
   }, [userAddr]);
 
-const clearTracked = useCallback(() => {
-  setIsLoadingTrades(true); 
-  setTrackedAddresses([]);
-}, []);
+  const clearTracked = useCallback(() => {
+    setIsLoadingTrades(true);
+    setTrackedAddresses([]);
+  }, []);
 
-useEffect(() => {
-  if (isLoadingTrades) {
-    setIsLoadingTrades(false); // Stop loading when trades update
-  }
-}, [trades]); // This will trigger when trades array changes
+  useEffect(() => {
+    if (isLoadingTrades) {
+      setIsLoadingTrades(false);
+    }
+  }, [trades]);
+
   useEffect(() => {
     if (!trades.length) return;
     const t = trades[0];
@@ -1178,7 +1182,7 @@ useEffect(() => {
               typeof v === 'number' && /volume/i.test(k) ? v / 1e18 : v;
           }
           setStatsRaw(normalized);
-        } catch (e) {}
+        } catch (e) { }
       };
 
       ws.onclose = () => {
@@ -1188,7 +1192,7 @@ useEffect(() => {
       };
 
       ws.onerror = () => {
-        try { ws.close(); } catch {}
+        try { ws.close(); } catch { }
       };
     };
 
@@ -1196,7 +1200,7 @@ useEffect(() => {
 
     return () => {
       disposed = true;
-      try { statsWsRef.current?.close(); } catch {}
+      try { statsWsRef.current?.close(); } catch { }
     };
   }, [tokenAddress]);
 
@@ -1235,15 +1239,17 @@ useEffect(() => {
                   amountOut
                 }
                 series: ${'series' + (
-                selectedInterval === '1s' ? '1' :
-                  selectedInterval === '5s' ? '5' :
-                    selectedInterval === '15s' ? '15' :
-                      selectedInterval === '1m' ? '60' :
-                        selectedInterval === '5m' ? '300' :
-                          selectedInterval === '15m' ? '900' :
-                            selectedInterval === '1h' ? '3600' :
-                              selectedInterval === '4h' ? '14400' :
-                                '86400')} {
+                  selectedInterval === '1Sm' ? '1' :
+                  selectedInterval === '5Sm' ? '5' :
+                  selectedInterval === '15Sm' ? '15' :
+                  selectedInterval === '1m' ? '60' :
+                  selectedInterval === '5m' ? '300' :
+                  selectedInterval === '15m' ? '900' :
+                  selectedInterval === '1h' ? '3600' :
+                  selectedInterval === '4h' ? '14400':
+                    '86400'
+                )} 
+                  {
                   klines(first: 1000, orderBy: time, orderDirection: desc) {
                     time open high low close baseVolume
                   }
@@ -1257,7 +1263,7 @@ useEffect(() => {
         });
 
         const data = (await response.json())?.data;
-        console.log(data)
+        console.log(data);
         if (isCancelled || !data) return;
 
         if (data.launchpadTokens?.length) {
@@ -1335,18 +1341,15 @@ useEffect(() => {
               volume: Number(c.baseVolume) / 1e18,
             }));
 
-          const key =
-            (data.launchpadTokens[0].symbol || token.symbol) +
-            "MON" +
-            (selectedInterval === "1d"
-              ? "1D"
-              : selectedInterval === "4h"
-                ? "240"
-                : selectedInterval === "1h"
-                  ? "60"
-                  : selectedInterval.slice(0, -1));
+            const resForChart =
+              selectedInterval === "1d" ? "1D" :
+              selectedInterval === "4h" ? "240" :
+              selectedInterval === "1h" ? "60"  :
+              selectedInterval.endsWith("s")
+                ? selectedInterval.slice(0, -1).toUpperCase() + "S"
+                : selectedInterval.slice(0, -1);
 
-          setChartData([bars, key, false]);
+            setChartData([bars, resForChart, false]);
         }
 
       } catch (e) {
@@ -1889,6 +1892,7 @@ useEffect(() => {
       }
     }
   }, [isPresetEditMode, activeTradeType, currentPrice, getCurrentMONBalance, getCurrentTokenBalance]);
+
   const handlePresetInputSubmit = useCallback(() => {
     if (editingPresetIndex === null || tempPresetValue.trim() === '') return;
     if (!setMonPresets || !monPresets) return;
@@ -1903,6 +1907,7 @@ useEffect(() => {
     setEditingPresetIndex(null);
     setTempPresetValue('');
   }, [editingPresetIndex, tempPresetValue, monPresets, setMonPresets]);
+
   const handlePresetInputKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handlePresetInputSubmit();
@@ -2291,11 +2296,11 @@ useEffect(() => {
       }
     };
 
-    const volume = g.buy_vol_native + g.sell_vol_native;
+    const volume = (g.buy_vol_native + g.sell_vol_native) / 1e18;
     const buyTransactions = g.buy_cnt;
     const sellTransactions = g.sell_cnt;
-    const buyVolume = g.buy_vol_native;
-    const sellVolume = g.sell_vol_native;
+    const buyVolume = g.buy_vol_native / 1e18;
+    const sellVolume = g.sell_vol_native / 1e18;
 
     return {
       change: buyVolume - sellVolume,
@@ -2433,37 +2438,37 @@ useEffect(() => {
         >
           <div className="top-stats-grid">
             <div className="stat-group-vol">
-              <span className="stat-label">24h Vol</span>
-                <span className="stat-value">
-                  ${fmt(currentStats.volume, 1)}
-                </span>
+              <span className="stat-label">{selectedStatsTimeframe} Vol</span>
+              <span className="stat-value">
+                ${fmt(currentStats.volume * monUsdPrice, 1)}
+              </span>
             </div>
 
             <div className="stat-group buys">
               <span className="stat-label">Buys</span>
-                <span className="stat-value green">
-                  {fmt(currentStats.buyTransactions, 0)} / ${fmt(currentStats.buyVolume, 1)}
-                </span>
+              <span className="stat-value green">
+                {fmt(currentStats.buyTransactions, 0)} / ${fmt(currentStats.buyVolume * monUsdPrice, 1)}
+              </span>
             </div>
 
             <div className="stat-group sells">
               <span className="stat-label">Sells</span>
-                <span className="stat-value red">
-                  {fmt(currentStats.sellTransactions, 0)} / ${fmt(currentStats.sellVolume, 1)}
-                </span>
+              <span className="stat-value red">
+                {fmt(currentStats.sellTransactions, 0)} / ${fmt(currentStats.sellVolume * monUsdPrice, 1)}
+              </span>
             </div>
 
             <div className="stat-group-net-vol">
               <span className="stat-label">Net Vol.</span>
-                <span 
-                  className="stat-value" 
-                  style={{
-                    color: (currentStats.buyVolume - currentStats.sellVolume) >= 0 ? 'rgb(67 254 154)' : 'rgb(235 112 112)'
-                  }}
-                >
-                  { (currentStats.buyVolume - currentStats.sellVolume) >= 0 ? '+' : '' }
-                  ${fmt(Math.abs(currentStats.buyVolume - currentStats.sellVolume), 1)}
-                </span>
+              <span
+                className="stat-value"
+                style={{
+                  color: (currentStats.buyVolume - currentStats.sellVolume) >= 0 ? 'rgb(67 254 154)' : 'rgb(235 112 112)'
+                }}
+              >
+                {(currentStats.buyVolume - currentStats.sellVolume) >= 0 ? '+' : ''}
+                ${fmt(Math.abs((currentStats.buyVolume - currentStats.sellVolume) * monUsdPrice), 1)}
+              </span>
             </div>
           </div>
 
@@ -2488,9 +2493,6 @@ useEffect(() => {
                   </button>
                 ))}
               </div>
-
-
-
             </div>
           </div>
           <div className="indicator-legend">
@@ -2594,49 +2596,6 @@ useEffect(() => {
             <div className="meme-trade-currency">
               <img className="meme-currency-monad-icon" src={monadicon} alt="MON" />
             </div>
-
-            {/* {isQuoteLoading ? (
-              <div className="meme-trade-spinner"></div>
-            ) : (
-              <div className="meme-trade-conversion">
-                {quoteValue !== undefined && quoteValue > 0 ? (
-                  <>
-                    ≈ {formatNumberWithCommas(quoteValue, 6)}{" "}
-                    {(() => {
-                      if (activeTradeType === "buy") {
-                        return inputCurrency === "MON" ? token.symbol : "MON";
-                      } else {
-                        return inputCurrency === "TOKEN" ? "MON" : token.symbol;
-                      }
-                    })()}
-                  </>
-                ) : tradeAmount && tradeAmount !== "" && tradeAmount !== "0" ? (
-                  <>
-                    ≈ 0.00{" "}
-                    {(() => {
-                      if (activeTradeType === "buy") {
-                        return inputCurrency === "MON" ? token.symbol : "MON";
-                      } else {
-                        return inputCurrency === "TOKEN" ? "MON" : token.symbol;
-                      }
-                    })()}
-                  </>
-                ) : tradeAmount === "0" ? (
-                  <>
-                    ≈ 0.00{" "}
-                    {(() => {
-                      if (activeTradeType === "buy") {
-                        return inputCurrency === "MON" ? token.symbol : "MON";
-                      } else {
-                        return inputCurrency === "TOKEN" ? "MON" : token.symbol;
-                      }
-                    })()}
-                  </>
-                ) : (
-                  ""
-                )}
-              </div>
-            )} */}
           </div>
           {activeOrderType === "Limit" && (
             <div className="meme-trade-input-wrapper">
@@ -2943,7 +2902,6 @@ useEffect(() => {
                       </div>
                     ))}
 
-                    {/* Add Button with Dropdown */}
                     {advancedOrders.length < 5 && (
                       <div className="meme-advanced-add-container">
                         <button
@@ -3098,8 +3056,6 @@ useEffect(() => {
             </div>
           </div>
           <div className="meme-trade-settings">
-
-
             <div className="meme-settings-presets">
               <button
                 className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1 ? 'active' : ''}`}
@@ -3199,7 +3155,6 @@ useEffect(() => {
               </div>
             )}
           </div>
-
         </div>
 
 
@@ -3560,7 +3515,6 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Trading Section */}
         {mobileTradeType === 'buy' ? (
           <div className="meme-mobile-buy-section">
             <div className="meme-mobile-section-header">
@@ -3655,7 +3609,6 @@ useEffect(() => {
           </div>
         )}
 
-        {/* Settings Display */}
         <div className="meme-mobile-settings-display">
           <div className="meme-mobile-settings-item">
             <img src={slippage} alt="Slippage" className="meme-mobile-settings-icon" />
@@ -3762,7 +3715,6 @@ useEffect(() => {
         onToggleCurrency={handleToggleCurrency}
         tokenImage={token.image}
       />
-
     </div>
   );
 };
