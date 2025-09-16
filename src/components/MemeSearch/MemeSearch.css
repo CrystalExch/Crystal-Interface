@@ -105,7 +105,10 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: calc(100% - 37px);
+      overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(179, 184, 249, 0.2) transparent;
 }
 
 .meme-search-list::-webkit-scrollbar {
@@ -920,10 +923,8 @@ filter: brightness(0) saturate(100%) invert(74%) sepia(14%) saturate(326%) hue-r
 }
 
 .meme-search-results{
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(179, 184, 249, 0.2) transparent;
-    height: 100%;
+  height: calc(100% - 85px);
+  overflow-y: auto;
 }
 
 .meme-search-section {
@@ -940,27 +941,6 @@ filter: brightness(0) saturate(100%) invert(74%) sepia(14%) saturate(326%) hue-r
   font-size: 0.8rem;
 }
 
-.meme-clear-history {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  font-size: 0.8rem;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.meme-clear-history:hover {
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(179, 184, 249, 0.1);
-}
-
-.meme-search-history-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
 
 .meme-search-history-item {
   background: rgba(179, 184, 249, 0.1);
