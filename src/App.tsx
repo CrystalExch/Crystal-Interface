@@ -8404,8 +8404,6 @@ const handleInputFocus = () => {
 
 const handleExplorerFiltersApply = useCallback(() => {
   const newAppliedFilters = { ...appliedExplorerFilters };
-  
-  // Check and apply filters for all tabs
   (['new', 'graduating', 'graduated'] as const).forEach(tab => {
     const tabFilters = explorerFilters[tab];
     const hasActiveFilters = Object.values(tabFilters).some(value =>
