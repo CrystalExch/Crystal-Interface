@@ -2747,7 +2747,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           })
         });
         const json = await res.json();
-        console.log(json);
         const rawMarkets = [...(json.data?.active ?? []), ...(json.data?.migrated ?? [])];
 
         const tokens: Token[] = await Promise.all(

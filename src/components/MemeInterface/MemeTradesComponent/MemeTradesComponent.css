@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap');
+
 .meme-trades-container {
   height: 100%;
   color: #fff;
@@ -150,7 +151,7 @@
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.8rem;
   font-weight: 300;
-    font-family: 'Geist Mono';
+  font-family: 'Geist Mono';
 
 }
 
@@ -234,7 +235,7 @@
   opacity: 1;
 }
 
-.meme-header-switch-icon{
+.meme-header-switch-icon {
   width: 14px;
   height: 14px;
   cursor: pointer;
@@ -306,7 +307,7 @@
   padding: 2px 8px;
   font-size: 0.8rem;
   transition: background-color 0.2s ease;
-  position: relative; 
+  position: relative;
 }
 
 .meme-trade-volume-bar {
@@ -320,19 +321,17 @@
 }
 
 .meme-trade-volume-bar.positive {
-  background: linear-gradient(270deg, 
-    rgba(67, 254, 154, 0.1) 0%, 
-    rgba(67, 254, 154, 0.05) 70%, 
-    rgba(67, 254, 154, 0.03) 100%
-  );
+  background: linear-gradient(270deg,
+      rgba(67, 254, 154, 0.1) 0%,
+      rgba(67, 254, 154, 0.05) 70%,
+      rgba(67, 254, 154, 0.03) 100%);
 }
 
 .meme-trade-volume-bar.negative {
-  background: linear-gradient(270deg, 
-    rgba(235, 112, 112, 0.1) 0%, 
-    rgba(235, 112, 112, 0.05) 70%, 
-    rgba(235, 112, 112, 0.03) 100%
-  );
+  background: linear-gradient(270deg,
+      rgba(235, 112, 112, 0.1) 0%,
+      rgba(235, 112, 112, 0.05) 70%,
+      rgba(235, 112, 112, 0.03) 100%);
 }
 
 .meme-trade-amount,
@@ -348,6 +347,7 @@
     width: 0;
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -357,7 +357,7 @@
   animation: barSlideIn 0.4s ease-out;
 }
 
-.meme-trades-title{
+.meme-trades-title {
   font-size: 1.1rem;
   letter-spacing: -0.3px;
   color: rgba(255, 255, 255, 0.8);
@@ -388,15 +388,15 @@
 
 .meme-trade-filter-btn:hover,
 .meme-trade-filter-btn.active {
-  color: #d9dbf6;
+  color: #aaaecf;
 }
 
-.meme-trade-filter-container{
+.meme-trade-filter-container {
   display: flex;
   align-items: center;
 }
 
-.filter-cup{
+.filter-cup {
   width: 14px;
   height: 14px;
   margin-right: 4px;
@@ -405,6 +405,6 @@
   transition: opacity 0.2s ease;
 }
 
-.pause-icon-svg{
+.pause-icon-svg {
   color: #aaaecf;
 }

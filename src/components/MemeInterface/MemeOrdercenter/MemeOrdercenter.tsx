@@ -2,10 +2,9 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 
 import { mockOrders, mockHolders, mockTopTraders, mockDevTokens } from './MemeTraderData';
 
-import { formatSubscript, FormattedNumber } from '../../../utils/memeFormatSubscript';
-
 import monadicon from '../../../assets/monadlogo.svg';
 import filtercup from "../../../assets/filtercup.svg";
+import filledcup from "../../../assets/filledcup.svg";
 import switchicon from "../../../assets/switch.svg";
 import closebutton from "../../../assets/close_button.png";
 import walleticon from '../../../assets/wallet_icon.png';
@@ -57,6 +56,8 @@ interface MemeOrderCenterProps {
   currentPrice?: number;
   monUsdPrice?: number;
   onSellPosition?: (position: Position, monAmount: string) => void;
+  trackedAddresses?: string[];
+  onToggleTrackedAddress?: (addr: string) => void;
 }
 
 interface DevToken {
@@ -77,6 +78,7 @@ const fmt = (v: number, d = 3) => {
   if (v >= 1e3) return (v / 1e3).toFixed(2) + 'K';
   return v.toLocaleString('en-US', { maximumFractionDigits: d });
 };
+
 const fmtAvgPrice = (v: number) => {
   if (v === 0) return '0.00';
   if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B';
@@ -84,6 +86,7 @@ const fmtAvgPrice = (v: number) => {
   if (v >= 1e3) return (v / 1e3).toFixed(2) + 'K';
   return v.toFixed(2);
 };
+
 const timeAgo = (tsSec?: number) => {
   if (!tsSec) return '—';
   const diffMs = Date.now() - tsSec * 1000;
@@ -322,6 +325,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   currentPrice = 0,
   monUsdPrice = 0,
   onSellPosition,
+  trackedAddresses = [],
+  onToggleTrackedAddress,
 }) => {
   const [activeSection, setActiveSection] = useState<'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens'>('positions');
   const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
@@ -548,20 +553,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       if (resizeObserver) resizeObserver.disconnect();
     };
   }, [activeSection]);
-
-  const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) => {
-    if (formatted.type === 'simple') {
-      return <span>{formatted.text}</span>;
-    }
-
-    return (
-      <span>
-        {formatted.beforeSubscript}
-        <span className="subscript">{formatted.subscriptValue}</span>
-        {formatted.afterSubscript}
-      </span>
-    );
-  };
 
   const handleSellClick = (position: Position) => {
     setSelectedPosition(position);
@@ -827,9 +818,15 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       </div>
                     </div>
                   </div>
-                  <div className="meme-oc-cell"><button className="meme-filter-action-btn">
-                    <img src={filtercup} alt="Filter" className="oc-filter-cup" />
-                  </button></div>
+                  <div className="meme-oc-cell">
+                    <button
+                      className={`meme-filter-action-btn ${trackedAddresses.includes(row.wallet.toLowerCase()) ? 'active' : ''}`}
+                      onClick={() => onToggleTrackedAddress?.(row.wallet)}
+                      title={trackedAddresses.includes(row.wallet.toLowerCase()) ? 'Untrack' : 'Track'}
+                    >
+                      <img src={trackedAddresses.includes(row.wallet.toLowerCase()) ? filledcup : filtercup} alt="Filter" className="oc-filter-cup" />
+                    </button>
+                  </div>
                 </div>
               ))}
 
@@ -927,8 +924,12 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                     </div>
 
                     <div className="meme-oc-cell">
-                      <button className="meme-filter-action-btn">
-                        <img src={filtercup} alt="Filter" className="oc-filter-cup" />
+                      <button
+                        className={`meme-filter-action-btn ${trackedAddresses.includes(row.address.toLowerCase()) ? 'active' : ''}`}
+                        onClick={() => onToggleTrackedAddress?.(row.address)}
+                        title={trackedAddresses.includes(row.address.toLowerCase()) ? 'Untrack' : 'Track'}
+                      >
+                        <img src={trackedAddresses.includes(row.address.toLowerCase()) ? filledcup : filtercup} alt="Filter" className="oc-filter-cup" />
                       </button>
                     </div>
                   </div>
