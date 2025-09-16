@@ -343,10 +343,16 @@
 }
 
 .meme-stat-value {
-    font-size: .9rem;
+    font-size: .85rem;
     color: #fff;
+
 }
 
+
+.stat-value{
+          white-space: nowrap; 
+
+}
 .stat-subrow {
     display: flex;
     justify-content: space-between;
