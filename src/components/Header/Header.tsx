@@ -70,7 +70,7 @@ interface HeaderProps {
   tokenData?: any;
   monUsdPrice: number;
   sendUserOperationAsync?: any;
-  setTerminalToken?: (address: string) => void;
+  setTerminalToken?: any;
   setTokenData?: (data: any) => void;
    quickAmounts?: { [key: string]: string };
   setQuickAmount?: (category: string, amount: string) => void;

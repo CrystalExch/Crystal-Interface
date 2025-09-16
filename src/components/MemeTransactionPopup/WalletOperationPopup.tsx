@@ -83,10 +83,6 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
       // Error patterns
       /(\bNot\s+enough\s+)([A-Z][A-Z0-9]*\b)/i, // "Not enough TOKEN"
       /(\bInsufficient\s+)([A-Z][A-Z0-9]*\b)/i, // "Insufficient TOKEN"
-      
-      // General patterns - must be last as they're more generic
-      /(\s)([A-Z][A-Z0-9]*\b)(\s+for)/i, // "TOKEN for"
-      /(\s)([A-Z][A-Z0-9]*\b)(\s*$)/i, // "TOKEN" at end of string
     ];
 
     for (const pattern of patterns) {

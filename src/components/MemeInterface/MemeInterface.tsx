@@ -80,7 +80,6 @@ interface Holder {
 }
 
 interface MemeInterfaceProps {
-  tradingMode: "spot" | "trenches";
   sliderMode: string;
   sliderPresets: number[];
   sliderIncrement: number;

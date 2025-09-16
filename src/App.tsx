@@ -4633,8 +4633,7 @@ const handleInputFocus = () => {
 
           const getMarketKey = (m: any) => {
             if (m?.id && addresstoMarket?.[m.id]) return addresstoMarket[m.id];
-            if (m?.baseAsset && m?.quoteAsset) return `${m.baseAsset}-${m.quoteAsset}`;
-            return "unknown";
+            return ''
           };
 
           const acct = result?.data?.account;
@@ -4646,65 +4645,70 @@ const handleInputFocus = () => {
             const trades = flatten(acct.tradeMap, "trades") || [];
             for (const t of trades) {
               const marketKey = getMarketKey(t.market);
-              temptradehistory.push([
-                Number(t.amountIn ?? 0),
-                Number(t.amountOut ?? 0),
-                t.isBuy ? 1 : 0,
-                Number((t.endPrice ?? t.startPrice) ?? 0),
-                marketKey,
-                t.tx,
-                Number(t.timestamp ?? 0),
-                1,
-              ]);
+              if (marketKey) {
+                temptradehistory.push([
+                  Number(t.amountIn ?? 0),
+                  Number(t.amountOut ?? 0),
+                  t.isBuy ? 1 : 0,
+                  Number((t.endPrice ?? t.startPrice) ?? 0),
+                  marketKey,
+                  t.tx,
+                  Number(t.timestamp ?? 0),
+                  1,
+                ]);
+              }
             }
 
             const openOrders = flatten(acct.openOrderMap, "orders") || [];
             for (const o of openOrders) {
               const marketKey = getMarketKey(o.market);
-              const idParts = (o.id ?? "").split(":");
-              const price = Number(o.price);
-              const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
-              const original = Number(o.originalSize ?? 0);
-              const remaining = Number(o.remainingSize ?? 0);
-              const filled = Math.max(0, original - remaining);
-              console.log(markets, o)
-
-              temporders.push([
-                price,
-                tail,
-                o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
-                o.isBuy ? 1 : 0,
-                marketKey,
-                o.txHash,
-                Number(o.placedAt ?? o.updatedAt ?? 0),
-                o.isBuy ? filled * Number(markets[marketKey].scaleFactor) / price : filled,
-                o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
-                statusCode(o.status),
-              ]);
+              if (marketKey) {
+                const idParts = (o.id ?? "").split(":");
+                const price = Number(o.price);
+                const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
+                const original = Number(o.originalSize ?? 0);
+                const remaining = Number(o.remainingSize ?? 0);
+                const filled = Math.max(0, original - remaining);
+  
+                temporders.push([
+                  price,
+                  tail,
+                  o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
+                  o.isBuy ? 1 : 0,
+                  marketKey,
+                  o.txHash,
+                  Number(o.placedAt ?? o.updatedAt ?? 0),
+                  o.isBuy ? filled * Number(markets[marketKey].scaleFactor) / price : filled,
+                  o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
+                  statusCode(o.status),
+                ]);
+              }
             }
 
             const allOrders = flatten(acct.orderMap, "orders") || [];
             for (const o of allOrders) {
               const marketKey = getMarketKey(o.market);
-              const idParts = (o.id ?? "").split(":");
-              const price = Number(o.price);
-              const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
-              const original = Number(o.originalSize ?? 0);
-              const remaining = Number(o.remainingSize ?? 0);
-              const filled = Math.max(0, original - remaining);
+              if (marketKey) {
+                const idParts = (o.id ?? "").split(":");
+                const price = Number(o.price);
+                const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
+                const original = Number(o.originalSize ?? 0);
+                const remaining = Number(o.remainingSize ?? 0);
+                const filled = Math.max(0, original - remaining);
 
-              tempcanceledorders.push([
-                price,
-                tail,
-                o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
-                o.isBuy ? 1 : 0,
-                marketKey,
-                o.txHash,
-                Number(o.updatedAt ?? o.placedAt ?? 0),
-                o.isBuy ? filled * Number(markets[marketKey].scaleFactor) / price : filled,
-                o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
-                statusCode(o.status),
-              ]);
+                tempcanceledorders.push([
+                  price,
+                  tail,
+                  o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
+                  o.isBuy ? 1 : 0,
+                  marketKey,
+                  o.txHash,
+                  Number(o.updatedAt ?? o.placedAt ?? 0),
+                  o.isBuy ? filled * Number(markets[marketKey].scaleFactor) / price : filled,
+                  o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
+                  statusCode(o.status),
+                ]);
+              }
             }
           }
 
@@ -8314,7 +8318,6 @@ const handleInputFocus = () => {
     };
   });
 
-
   useEffect(() => {
     localStorage.setItem('crystal_explorer_active_tab', explorerFiltersActiveTab);
   }, [explorerFiltersActiveTab]);
@@ -8415,8 +8418,6 @@ const handleInputFocus = () => {
   const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(newTab);
   }, []);
-
-  const [tradingMode, setTradingMode] = useState<'spot' | 'trenches'>('spot');
 
   const [terminalToken, setTerminalToken] = useState();
   const [tokenData, setTokenData] = useState();
@@ -8745,7 +8746,6 @@ const handleInputFocus = () => {
     [wethticker, ethticker],
   );
 
-
   const usdPer = useCallback(
     (symbol?: string): number => {
       if (!symbol || !tradesByMarket || !markets) return 0;
@@ -8759,6 +8759,7 @@ const handleInputFocus = () => {
     },
     [tradesByMarket, markets, resolveNative, usdc],
   );
+
   const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
 
   //popup modals
@@ -9539,8 +9540,6 @@ const handleInputFocus = () => {
                     localStorage.setItem('crystal_slippage_string', '1');
                     localStorage.setItem('crystal_slippage', '9900');
 
-                    setTradingMode('spot');
-                    localStorage.setItem('crystal_trading_mode', 'spot');
                     setActiveSection('orders');
                     localStorage.setItem('crystal_oc_tab', 'orders');
 
@@ -9628,39 +9627,6 @@ const handleInputFocus = () => {
                       </div>
                       <div className="slider-settings-section">
                         <div className="settings-subsection">
-                          <div className="layout-section-title">{t('tradingMode')}</div>
-                          <div className="settings-section-subtitle">
-                            {t('chooseTradingInterface')}
-                          </div>
-
-                          <div className="slider-mode-options">
-                            <button
-                              className={`control-layout-option ${tradingMode === 'spot' ? 'active' : ''}`}
-                              onClick={() => {
-                                setTradingMode('spot');
-                                localStorage.setItem('crystal_trading_mode', 'spot');
-                              }}
-                            >
-                              <div className="layout-label">
-                                <span className="control-layout-name">{t('spot')}</span>
-                              </div>
-                            </button>
-
-                            <button
-                              className={`control-layout-option ${tradingMode === 'trenches' ? 'active' : ''}`}
-                              onClick={() => {
-                                setTradingMode('trenches');
-                                localStorage.setItem('crystal_trading_mode', 'trenches');
-                              }}
-                            >
-                              <div className="layout-label">
-                                <span className="control-layout-name">{t('trenches')}</span>
-                              </div>
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="settings-subsection">
                           <div className="layout-section-title">{t('balanceSliderMode')}</div>
                           <div className="settings-section-subtitle">
                             {t('chooseBalancePercentages')}
@@ -9668,9 +9634,9 @@ const handleInputFocus = () => {
 
                           <div className="slider-mode-options">
                             <button
-                              className={`control-layout-option ${(tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode) === 'slider' ? 'active' : ''}`}
+                              className={`control-layout-option ${('spot' === 'spot' ? spotSliderMode : trenchesSliderMode) === 'slider' ? 'active' : ''}`}
                               onClick={() => {
-                                if (tradingMode === 'spot') {
+                                if ('spot' === 'spot') {
                                   setSpotSliderMode('slider');
                                   localStorage.setItem('crystal_spot_slider_mode', 'slider');
                                 } else {
@@ -9685,9 +9651,9 @@ const handleInputFocus = () => {
                             </button>
 
                             <button
-                              className={`control-layout-option ${(tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode) === 'presets' ? 'active' : ''}`}
+                              className={`control-layout-option ${('spot' === 'spot' ? spotSliderMode : trenchesSliderMode) === 'presets' ? 'active' : ''}`}
                               onClick={() => {
-                                if (tradingMode === 'spot') {
+                                if ('spot' === 'spot') {
                                   setSpotSliderMode('presets');
                                   localStorage.setItem('crystal_spot_slider_mode', 'presets');
                                 } else {
@@ -9702,9 +9668,9 @@ const handleInputFocus = () => {
                             </button>
 
                             <button
-                              className={`control-layout-option ${(tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode) === 'increment' ? 'active' : ''}`}
+                              className={`control-layout-option ${('spot' === 'spot' ? spotSliderMode : trenchesSliderMode) === 'increment' ? 'active' : ''}`}
                               onClick={() => {
-                                if (tradingMode === 'spot') {
+                                if ('spot' === 'spot') {
                                   setSpotSliderMode('increment');
                                   localStorage.setItem('crystal_spot_slider_mode', 'increment');
                                 } else {
@@ -9720,14 +9686,14 @@ const handleInputFocus = () => {
                           </div>
                         </div>
 
-                        {(tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode) === 'presets' && (
+                        {('spot' === 'spot' ? spotSliderMode : trenchesSliderMode) === 'presets' && (
                           <div className="settings-subsection">
                             <div className="layout-section-title">{t('presetPercentages')}</div>
                             <div className="settings-section-subtitle">
                               {t('setThreeFavoritePercentages')}
                             </div>
                             <div className="preset-inputs">
-                              {(tradingMode === 'spot' ? spotSliderPresets : trenchesSliderPresets).map((preset: number, index: number) => (
+                              {('spot' === 'spot' ? spotSliderPresets : trenchesSliderPresets).map((preset: number, index: number) => (
                                 <div key={index} className="preset-input-group">
                                   <label className="preset-label">{t('preset')} {index + 1}</label>
                                   <div className="preset-input-container">
@@ -9736,9 +9702,9 @@ const handleInputFocus = () => {
                                       value={preset === 0 ? '' : preset.toString()}
                                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                         const inputValue = e.target.value;
-                                        const currentPresets = tradingMode === 'spot' ? spotSliderPresets : trenchesSliderPresets;
-                                        const setCurrentPresets = tradingMode === 'spot' ? setSpotSliderPresets : setTrenchesSliderPresets;
-                                        const storageKey = tradingMode === 'spot' ? 'crystal_spot_slider_presets' : 'crystal_trenches_slider_presets';
+                                        const currentPresets = 'spot' === 'spot' ? spotSliderPresets : trenchesSliderPresets;
+                                        const setCurrentPresets = 'spot' === 'spot' ? setSpotSliderPresets : setTrenchesSliderPresets;
+                                        const storageKey = 'spot' === 'spot' ? 'crystal_spot_slider_presets' : 'crystal_trenches_slider_presets';
 
                                         if (inputValue === '') {
                                           const newPresets = [...currentPresets];
@@ -9766,7 +9732,7 @@ const handleInputFocus = () => {
                           </div>
                         )}
 
-                        {(tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode) === 'increment' && (
+                        {('spot' === 'spot' ? spotSliderMode : trenchesSliderMode) === 'increment' && (
                           <div className="settings-subsection">
                             <div className="layout-section-title">{t('incrementAmount')}</div>
                             <div className="settings-section-subtitle">
@@ -9777,11 +9743,11 @@ const handleInputFocus = () => {
                                 <div className="percentage-input-wrapper">
                                   <input
                                     type="text"
-                                    value={(tradingMode === 'spot' ? spotSliderIncrement : trenchesSliderIncrement) === 0 ? '' : (tradingMode === 'spot' ? spotSliderIncrement : trenchesSliderIncrement).toString()}
+                                    value={('spot' === 'spot' ? spotSliderIncrement : trenchesSliderIncrement) === 0 ? '' : ('spot' === 'spot' ? spotSliderIncrement : trenchesSliderIncrement).toString()}
                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                       const inputValue = e.target.value;
-                                      const setCurrentIncrement = tradingMode === 'spot' ? setSpotSliderIncrement : setTrenchesSliderIncrement;
-                                      const storageKey = tradingMode === 'spot' ? 'crystal_spot_slider_increment' : 'crystal_trenches_slider_increment';
+                                      const setCurrentIncrement = 'spot' === 'spot' ? setSpotSliderIncrement : setTrenchesSliderIncrement;
+                                      const storageKey = 'spot' === 'spot' ? 'crystal_spot_slider_increment' : 'crystal_trenches_slider_increment';
 
                                       if (inputValue === '') {
                                         setCurrentIncrement(0);
@@ -10346,8 +10312,6 @@ const handleInputFocus = () => {
                       case 'general':
                         setLanguage('EN');
                         localStorage.setItem('crystal_language', 'EN');
-                        setTradingMode('spot');
-                        localStorage.setItem('crystal_trading_mode', 'spot');
                         setSpotSliderMode('slider');
                         localStorage.setItem('crystal_spot_slider_mode', 'slider');
                         setSpotSliderPresets([25, 50, 75]);
@@ -20701,10 +20665,9 @@ const handleInputFocus = () => {
           />
           <Route path="/meme/:tokenAddress" element={
             <MemeInterface
-              tradingMode={tradingMode}
-              sliderMode={tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode}
-              sliderPresets={tradingMode === 'spot' ? spotSliderPresets : trenchesSliderPresets}
-              sliderIncrement={tradingMode === 'spot' ? spotSliderIncrement : trenchesSliderIncrement}
+              sliderMode={'spot' === 'spot' ? spotSliderMode : trenchesSliderMode}
+              sliderPresets={'spot' === 'spot' ? spotSliderPresets : trenchesSliderPresets}
+              sliderIncrement={'spot' === 'spot' ? spotSliderIncrement : trenchesSliderIncrement}
               marketsData={marketsData}
               onMarketSelect={onMarketSelect}
               setSendTokenIn={setSendTokenIn}

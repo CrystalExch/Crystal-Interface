@@ -43,7 +43,7 @@
   color: #ffffff73;
   cursor: pointer;
   flex: 1;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 300;
   padding: 8px 20px 8px 20px;
   text-align: center;
@@ -53,7 +53,6 @@
     color 0.3s,
     text-shadow 0.3s;
   white-space: nowrap;
-  letter-spacing: -0.3px;
 }
 
 .oc-type:hover {

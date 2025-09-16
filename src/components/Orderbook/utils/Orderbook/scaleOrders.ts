@@ -25,9 +25,6 @@ function v2ToOrderbook(
   const fee = Math.max(0, UNI_V2_FEE_BIPS) / 10_000;
   const oneMinusFee = Math.max(1e-12, 1 - fee);
 
-  const TAKER_FEE_BIPS = 25;
-  const takerFee = Math.max(0, TAKER_FEE_BIPS) / 10_000;
-
   const toHuman = (raw: number | bigint, decimals: number) => {
     const n = typeof raw === 'bigint' ? Number(raw) : raw;
     return n / Math.pow(10, decimals);
@@ -38,7 +35,7 @@ function v2ToOrderbook(
   const k = x0 * y0;
   const pMid = y0 / x0;
 
-  const xFromP = (p: number) => Math.sqrt(k / Math.max(p, 1e-18));
+  const xFromP = (p: number) => Math.sqrt(k * Math.max(p, 1e-18));
 
   const intervalToScale = (iv: number) => {
     const s = iv.toString();
@@ -77,16 +74,16 @@ function v2ToOrderbook(
 
       const xLow = xFromP(pLow);
       const xHi = xFromP(pHere);
-      const dxEff = Math.max(0, xLow - xHi);
+      const dxEff = Math.max(0, xHi - xLow);
 
       const baseIn = dxEff / oneMinusFee;
       if (baseIn <= 0) break;
 
-      const effectivePrice = pLow * (1 - takerFee);
+      const effectivePrice = pLow * (1 - fee);
       bids.push({
         price: effectivePrice,
         size: baseIn,
-        totalSize: 0,
+        totalSize: baseIn,
         shouldFlash: false,
         userPrice: false,
       });
@@ -105,14 +102,14 @@ function v2ToOrderbook(
 
       const xA = xFromP(pHere);
       const xN = xFromP(pHigh);
-      const baseOut = Math.max(0, xA - xN);
+      const baseOut = Math.max(0, xN - xA);
       if (baseOut <= 0) break;
 
-      const effectivePrice = pHigh * (1 + takerFee);
+      const effectivePrice = pHigh * (1 + fee);
       asks.push({
         price: effectivePrice,
         size: baseOut,
-        totalSize: 0,
+        totalSize: baseOut,
         shouldFlash: false,
         userPrice: false,
       });
@@ -138,7 +135,7 @@ export function scaleOrders(
     return { orders: [], leftoverPerRow: 0 };
   }
 
-  const { bids, asks } = v2ToOrderbook(reserveQuote, reserveBase, interval);
+  const { bids, asks } = v2ToOrderbook(reserveQuote, reserveBase, interval*25);
   const ammSide = isBuyOrder ? bids : asks;
 
   const live = Array.isArray(_orders) ? _orders : [];
