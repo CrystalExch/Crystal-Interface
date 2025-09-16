@@ -73,7 +73,7 @@ const getTokenStatus = (progress: number) => {
 };
 
 const calculateBondingPercentage = (marketCap: number) =>
-  Math.min((marketCap / 10000) * 100, 100);
+  Math.min((marketCap / 25000) * 100, 100);
 
 const getBondingColor = (b: number) => {
   if (b < 25) return '#ee5b5bff';
@@ -98,20 +98,6 @@ const createColorGradient = (base: string) => {
   };
 };
 
-const sanitizeUrl = (s?: string) => {
-  if (!s) return '';
-  const u = s.startsWith('http') ? s : `https://${s}`;
-  try {
-    return new URL(u).toString();
-  } catch {
-    return '';
-  }
-};
-
-const isTwitter = (u: string) => /https:\/\/(x\.com|twitter\.com)\//i.test(u);
-const isTelegram = (u: string) => /https:\/\/t\.me\//i.test(u);
-const isDiscord = (u: string) => /https:\/\/(discord\.gg|discord\.com)\//i.test(u);
-
 const TOKENS_QUERY = `
   query ($first: Int!, $skip: Int!) {
     launchpadTokens(
@@ -124,6 +110,7 @@ const TOKENS_QUERY = `
       name
       symbol
       timestamp
+      description
       metadataCID
       social1
       social2
@@ -134,10 +121,6 @@ const TOKENS_QUERY = `
     }
   }
 `;
-
-type HydrationInfo = { cid?: string; s1?: string; s2?: string; s3?: string };
-const metaCache = new Map<string, any>();
-const hydratedIds = new Set<string>();
 
 const MemeSearch: React.FC<MemeSearchProps> = ({
   isOpen,
@@ -179,8 +162,6 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
   });
 
   const abortRef = useRef<AbortController | null>(null);
-  const reqIdRef = useRef(0);
-  const hydrateMapRef = useRef<Map<string, HydrationInfo>>(new Map());
 
   const saveSearchHistory = (history: string[]) => {
     try {
@@ -246,140 +227,85 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
     onClose();
   };
 
-  const mapGraphTokenToUi = useCallback((g: any): Token => {
-    const price = Number(g.lastPriceNativePerTokenWad || 0) / 1e18;
-    hydrateMapRef.current.set(g.id.toLowerCase(), {
-      cid: g.metadataCID,
-      s1: g.social1,
-      s2: g.social2,
-      s3: g.social3,
-    });
+  const mapGraphTokenToUi = useCallback(async (m: any): Promise<Token> => {
+    const price = Number(m.lastPriceNativePerTokenWad || 0) / 1e18;
+    
+    let meta: any = {};
+    try {
+      if (m.metadataCID) {
+        const metaRes = await fetch(m.metadataCID);
+        if (metaRes.ok) meta = await metaRes.json();
+      }
+    } catch (e) {
+      console.warn('failed to load metadata for', m.metadataCID, e);
+    }
+
+    const socials = [m.social1, m.social2, m.social3].map((s: string) => 
+      s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s
+    ).filter(Boolean);
+
+    const twitter = socials.find((s: string) => 
+      s?.startsWith("https://x.com") || s?.startsWith("https://twitter.com")
+    );
+    if (twitter) {
+      const index = socials.indexOf(twitter);
+      if (index >= 0) socials.splice(index, 1);
+    }
+
+    const telegramUrl = socials.find((s: string) => s?.startsWith("https://t.me"));
+    if (telegramUrl) {
+      const index = socials.indexOf(telegramUrl);
+      if (index >= 0) socials.splice(index, 1);
+    }
+
+    const discordUrl = socials.find((s: string) => 
+      s?.startsWith("https://discord.gg") || s?.startsWith("https://discord.com")
+    );
+    if (discordUrl) {
+      const index = socials.indexOf(discordUrl);
+      if (index >= 0) socials.splice(index, 1);
+    }
+
+    const website = meta?.website || socials[0] || '';
+
+    let createdTimestamp = Number(m.timestamp);
+    if (createdTimestamp > 1e10) {
+      createdTimestamp = Math.floor(createdTimestamp / 1000);
+    }
+
     return {
-      id: g.id.toLowerCase(),
-      tokenAddress: g.id.toLowerCase(),
-      dev: g.creator?.id || '',
-      name: g.name || '',
-      symbol: g.symbol || '',
-      image: '',
+      id: m.id.toLowerCase(),
+      tokenAddress: m.id.toLowerCase(),
+      dev: m.creator?.id || '',
+      name: m.name || '',
+      symbol: m.symbol || '',
+      image: meta?.image || '',
       price,
       marketCap: price * 1e9,
       change24h: 0,
-      volume24h: Number(g.volumeNative) / 1e18,
-      website: '',
-      twitterHandle: '',
-      progress: (price * 1e9) / 250,
-      created: Number(g.timestamp || 0),
+      volume24h: Number(m.volumeNative) / 1e18,
+      website: website || '',
+      twitterHandle: twitter || '',
+      progress: (price * 1e9) / 25000 * 100,
+      created: createdTimestamp,
       bondingAmount: 0,
       volumeDelta: 0,
-      telegramHandle: '',
-      discordHandle: '',
-      description: '',
+      telegramHandle: telegramUrl || '',
+      discordHandle: discordUrl || '',
+      description: meta?.description || m.description || '',
     };
   }, []);
-
-  const pLimitAll = async <T,>(
-    items: T[],
-    limit: number,
-    worker: (item: T) => Promise<void>
-  ) => {
-    const queue = [...items];
-    const runners: Promise<void>[] = [];
-    for (let i = 0; i < Math.min(limit, queue.length); i++) {
-      runners.push(
-        (async function run() {
-          while (queue.length) {
-            const it = queue.shift()!;
-            await worker(it);
-          }
-        })()
-      );
-    }
-    await Promise.all(runners);
-  };
-
-  const extractSocials = (info: HydrationInfo, meta: any) => {
-    const raw = [sanitizeUrl(info.s1), sanitizeUrl(info.s2), sanitizeUrl(info.s3)].filter(Boolean);
-
-    const firstMatchIndex = (arr: string[], pred: (u: string) => boolean) =>
-      arr.findIndex(pred);
-
-    let twitter = raw.find(isTwitter) || sanitizeUrl(meta?.twitter);
-    if (twitter) {
-      const i = firstMatchIndex(raw, isTwitter);
-      if (i >= 0) raw.splice(i, 1);
-    }
-
-    let telegram = raw.find(isTelegram) || sanitizeUrl(meta?.telegram);
-    if (telegram) {
-      const i = firstMatchIndex(raw, isTelegram);
-      if (i >= 0) raw.splice(i, 1);
-    }
-
-    let discord = raw.find(isDiscord) || sanitizeUrl(meta?.discord);
-    if (discord) {
-      const i = firstMatchIndex(raw, isDiscord);
-      if (i >= 0) raw.splice(i, 1);
-    }
-
-    const website = sanitizeUrl(meta?.website) || raw[0] || '';
-    return { twitter, telegram, discord, website };
-  };
-
-  const hydrateTokens = useCallback(
-    async (base: Token[], reqId: number, signal: AbortSignal) => {
-      const work = base
-        .filter(t => !hydratedIds.has(t.id))
-        .map(t => ({ id: t.id, info: hydrateMapRef.current.get(t.id) }));
-
-      if (!work.length) return;
-
-      const updates: Record<string, Partial<Token>> = {};
-
-      await pLimitAll(work, 6, async ({ id, info }) => {
-        if (signal.aborted || reqId !== reqIdRef.current) return;
-        if (!info?.cid) {
-          updates[id] = { image: '', website: '', twitterHandle: '', telegramHandle: '', discordHandle: '' };
-          hydratedIds.add(id);
-          return;
-        }
-        try {
-          let meta = metaCache.get(info.cid);
-          if (!meta) {
-            const res = await fetch(info.cid, { signal });
-            meta = res.ok ? await res.json() : {};
-            metaCache.set(info.cid, meta);
-          }
-          const { twitter, telegram, discord, website } = extractSocials(info, meta);
-          updates[id] = {
-            image: meta?.image || '',
-            website,
-            twitterHandle: twitter || '',
-            telegramHandle: telegram || '',
-            discordHandle: discord || '',
-            description: meta?.description || '',
-          };
-        } catch {
-          updates[id] = { image: '', website: '', twitterHandle: '', telegramHandle: '', discordHandle: '' };
-        } finally {
-          hydratedIds.add(id);
-        }
-      });
-
-      if (reqId === reqIdRef.current && !signal.aborted && Object.keys(updates).length) {
-        setTokens(prev => prev.map(t => (updates[t.id] ? { ...t, ...updates[t.id] } : t)));
-      }
-    },
-    []
-  );
 
   const fetchLatest = useCallback(async () => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    const reqId = ++reqIdRef.current;
 
     try {
       setError(null);
+      setLoading(true);
+      setIsSearching(true);
+
       const body = JSON.stringify({
         query: TOKENS_QUERY,
         variables: { first: 100, skip: 0 },
@@ -391,27 +317,88 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         body,
         signal: controller.signal,
       });
+      
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const json = await res.json();
-      if (reqId !== reqIdRef.current) return;
-
       const rows = json?.data?.launchpadTokens ?? [];
-      hydrateMapRef.current = new Map();
-      const base = rows.map(mapGraphTokenToUi);
 
-      setTokens(base);
-      setIsSearching(false);
-      await hydrateTokens(base, reqId, controller.signal);
+      const processedTokens = await Promise.all(
+        rows.map((row: any) => mapGraphTokenToUi(row))
+      );
+
+      if (!controller.signal.aborted) {
+        setTokens(processedTokens);
+      }
     } catch (e: any) {
-      if (e?.name !== 'AbortError') setError('Failed to load search results.');
-      setIsSearching(false);
+      if (e?.name !== 'AbortError') {
+        setError('Failed to load search results.');
+        console.error('Search fetch failed:', e);
+      }
     } finally {
-      if (reqId === reqIdRef.current) setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+        setIsSearching(false);
+      }
     }
-  }, [mapGraphTokenToUi, hydrateTokens]);
+  }, [mapGraphTokenToUi]);
 
-  // Kick off search immediately with skeleton when 2+ chars; otherwise show recently viewed
+
+  const fetchRecentlyViewedFromSubgraph = useCallback(async (tokens: Token[]) => {
+    if (tokens.length === 0) return tokens;
+    
+    try {
+      const tokenIds = tokens.map(t => t.id.toLowerCase());
+      const query = `
+        query {
+          launchpadTokens(
+            where: { id_in: ${JSON.stringify(tokenIds)} }
+            orderBy: timestamp
+            orderDirection: desc
+          ) {
+            id
+            name
+            symbol
+            timestamp
+            description
+            metadataCID
+            social1
+            social2
+            social3
+            creator { id }
+            lastPriceNativePerTokenWad
+            volumeNative
+          }
+        }
+      `;
+
+      const res = await fetch(SUBGRAPH_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ query }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const json = await res.json();
+      const rows = json?.data?.launchpadTokens ?? [];
+
+      const freshTokens = await Promise.all(
+        rows.map((row: any) => mapGraphTokenToUi(row))
+      );
+
+      const orderedTokens = tokens.map(originalToken => {
+        const freshToken = freshTokens.find(ft => ft.id.toLowerCase() === originalToken.id.toLowerCase());
+        return freshToken || originalToken; 
+      });
+
+      return orderedTokens;
+    } catch (e) {
+      console.warn('Failed to fetch recently viewed from subgraph:', e);
+      return tokens; 
+    }
+  }, [mapGraphTokenToUi]);
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -420,18 +407,19 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
     if (term.length < 2) {
       setIsSearching(false);
       setLoading(false);
-      setTokens(recentlyViewed.length > 0 ? recentlyViewed : []);
+      
+      if (recentlyViewed.length > 0) {
+        fetchRecentlyViewedFromSubgraph(recentlyViewed).then(setTokens);
+      } else {
+        setTokens([]);
+      }
       return;
     }
 
-    // Immediate skeleton
-    setIsSearching(true);
-    setLoading(true);
     addToSearchHistory(term);
     fetchLatest();
-  }, [isOpen, searchTerm, recentlyViewed, fetchLatest]);
+  }, [isOpen, searchTerm, recentlyViewed, fetchLatest, fetchRecentlyViewedFromSubgraph]);
 
-  // Abort on close
   useEffect(() => {
     if (!isOpen) {
       abortRef.current?.abort();
