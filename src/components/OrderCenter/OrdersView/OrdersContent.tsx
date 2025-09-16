@@ -197,7 +197,8 @@ const OrdersContent: React.FC<OrdersContentProps> = ({
               openEditOrderSizePopup={openEditOrderSizePopup}
             />
           ))
-        ) : (null
+        ) : (
+          null
         )}
     </>
   );

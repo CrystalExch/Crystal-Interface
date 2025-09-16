@@ -1062,16 +1062,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setTrackedAddresses(me ? [me] : []);
   }, [userAddr]);
 
-const clearTracked = useCallback(() => {
-  setIsLoadingTrades(true); 
-  setTrackedAddresses([]);
-}, []);
+  const clearTracked = useCallback(() => {
+    setIsLoadingTrades(true); 
+    setTrackedAddresses([]);
+  }, []);
 
-useEffect(() => {
-  if (isLoadingTrades) {
-    setIsLoadingTrades(false); // Stop loading when trades update
-  }
-}, [trades]); // This will trigger when trades array changes
+  useEffect(() => {
+    if (isLoadingTrades) {
+      setIsLoadingTrades(false);
+    }
+  }, [trades]);
+
   useEffect(() => {
     if (!trades.length) return;
     const t = trades[0];
@@ -1890,6 +1891,7 @@ useEffect(() => {
       }
     }
   }, [isPresetEditMode, activeTradeType, currentPrice, getCurrentMONBalance, getCurrentTokenBalance]);
+
   const handlePresetInputSubmit = useCallback(() => {
     if (editingPresetIndex === null || tempPresetValue.trim() === '') return;
     if (!setMonPresets || !monPresets) return;
@@ -1904,6 +1906,7 @@ useEffect(() => {
     setEditingPresetIndex(null);
     setTempPresetValue('');
   }, [editingPresetIndex, tempPresetValue, monPresets, setMonPresets]);
+  
   const handlePresetInputKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handlePresetInputSubmit();
