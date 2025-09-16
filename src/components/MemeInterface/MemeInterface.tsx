@@ -488,10 +488,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   tokenData,
   setTokenData,
   monUsdPrice,
-    quickAmounts,
-  setQuickAmount,
-  activePresets, 
-  setActivePreset,
+  // quickAmounts,
+  // setQuickAmount,
+  // activePresets, 
+  // setActivePreset,
   buyPresets,
   sellPresets,
   monPresets = [5, 20, 100, 500], // default fallback
@@ -1048,7 +1048,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]
     );
   }, []);
-const [isLoadingTrades, setIsLoadingTrades] = useState(false);
 
   const setTrackedToDev = useCallback(() => {
     const d = (token.dev || '').toLowerCase();
