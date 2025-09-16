@@ -1053,19 +1053,31 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]
     );
   }, []);
+const [isLoadingTrades, setIsLoadingTrades] = useState(false);
 
   const setTrackedToDev = useCallback(() => {
     const d = (token.dev || '').toLowerCase();
+    setIsLoadingTrades(true); 
     setTrackedAddresses(d ? [d] : []);
   }, [token.dev]);
 
   const setTrackedToYou = useCallback(() => {
     const me = (userAddr || '').toLowerCase();
+        setIsLoadingTrades(true); 
+
     setTrackedAddresses(me ? [me] : []);
   }, [userAddr]);
 
-  const clearTracked = useCallback(() => setTrackedAddresses([]), []);
+const clearTracked = useCallback(() => {
+  setIsLoadingTrades(true); 
+  setTrackedAddresses([]);
+}, []);
 
+useEffect(() => {
+  if (isLoadingTrades) {
+    setIsLoadingTrades(false); // Stop loading when trades update
+  }
+}, [trades]); // This will trigger when trades array changes
   useEffect(() => {
     if (!trades.length) return;
     const t = trades[0];
@@ -2321,6 +2333,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               onFilterDev={setTrackedToDev}
               onFilterYou={setTrackedToYou}
               onClearTracked={clearTracked}
+                isLoadingTrades={isLoadingTrades}
+
             />
           </div>
         </div>
@@ -3336,7 +3350,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         <span
                           className="meme-explorer-link"
                           onClick={() => copyToClipboard(token.id, 'Contract address copied')}
-                          style={{ cursor: 'pointer', textDecoration: 'underline' }}
                         >
                           {token.id.slice(0, 15)}...{token.id.slice(-4)}
                         </span>
@@ -3367,7 +3380,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         <span
                           className="meme-explorer-link"
                           onClick={() => copyToClipboard(token.dev, 'Dev address copied')}
-                          style={{ cursor: 'pointer', textDecoration: 'underline' }}
                         >
                           {token.dev.slice(0, 15)}...{token.dev.slice(-4)}
                         </span>

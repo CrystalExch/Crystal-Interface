@@ -379,22 +379,29 @@
 }
 
 .meme-trade-filter-btn {
+  display: flex;
+  align-items: center;
   border-radius: 4px;
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.8rem;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .meme-trade-filter-btn:hover,
 .meme-trade-filter-btn.active {
-  color: #aaaecf;
+  color: #d8dcff;
 }
 
 .meme-trade-filter-container {
   display: flex;
   align-items: center;
 }
+.meme-trade-filter-btn.active .filter-cup,
+.meme-trade-filter-btn:hover .filter-cup {
+  filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%);
+  opacity: 1;
+}
+
 
 .filter-cup {
   width: 14px;
@@ -402,9 +409,107 @@
   margin-right: 4px;
   cursor: pointer;
   opacity: 0.4;
-  transition: opacity 0.2s ease;
 }
 
 .pause-icon-svg {
   color: #aaaecf;
+}
+
+.pause-icon-svg {
+  color: #aaaecf;
+}
+
+.meme-trades-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meme-trade-skeleton {
+  display: flex;
+  align-items: center;
+  padding: 2px 8px;
+  position: relative;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+
+.skeleton-amount {
+  width: 75px;
+  height: 15px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
+  position: relative;
+  z-index: 2;
+  margin-right:10px;
+}
+
+.skeleton-mc {
+  width: 65px;
+  height: 15px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
+  margin-left: 0;
+  margin-right: 10px;
+}
+
+.skeleton-trader {
+  width: 50px;
+  height: 15px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius:2px;
+}
+
+.skeleton-age {
+  width: 30px;
+  height: 15px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
+  margin-left: auto;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.meme-filter-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 6px;
+  margin: 0 8px 8px 8px;
+  font-size: 0.75rem;
+}
+
+.filter-status-text {
+  color: rgba(220, 225, 247, 0.8);
+  font-family: 'Geist Mono';
+}
+
+.filter-reset-btn {
+  border-radius: 4px;
+  color: #d8dcff;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-reset-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
 }

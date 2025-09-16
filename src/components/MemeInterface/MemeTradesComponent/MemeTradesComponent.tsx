@@ -235,6 +235,8 @@ interface Props {
   onFilterDev?: () => void;
   onFilterYou?: () => void;
   onClearTracked?: () => void;
+  isLoadingTrades?: boolean;
+
 }
 
 export default function MemeTradesComponent({
@@ -257,6 +259,8 @@ export default function MemeTradesComponent({
   onFilterDev,
   onFilterYou,
   onClearTracked,
+  isLoadingTrades = false,
+
 }: Props) {
   const [amountMode, setAmountMode] = useState<AmountMode>("MON");
   const [mcMode, setMcMode] = useState<MCMode>("MC");
@@ -277,7 +281,7 @@ export default function MemeTradesComponent({
   let youActive = false;
   let trackedActive = false;
 
-  if (trackedSet.size === 0) {} else if (trackedSet.size === 1) {
+  if (trackedSet.size === 0) { } else if (trackedSet.size === 1) {
     const [only] = Array.from(trackedSet);
     if (devEqualsYou && only === dev) {
       youActive = true;
@@ -285,7 +289,7 @@ export default function MemeTradesComponent({
       youActive = true;
     } else if (only === dev) {
       devActive = true;
-   } else {
+    } else {
       trackedActive = true;
     }
   } else {
@@ -552,6 +556,42 @@ export default function MemeTradesComponent({
     </svg>
   );
 
+  const LoadingSkeleton = () => (
+    <div className="meme-trades-loading">
+      {Array.from({ length: 20 }, (_, i) => (
+        <div key={i} className="meme-trade-skeleton">
+          <div className="skeleton-bar"></div>
+          <div className="skeleton-amount"></div>
+          <div className="skeleton-mc"></div>
+          <div className="skeleton-trader"></div>
+          <div className="skeleton-age"></div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const handleFilterClick = (filterType: 'dev' | 'you' | 'tracked') => {
+    switch (filterType) {
+      case 'dev':
+        if (devActive) {
+          onClearTracked?.();
+        } else {
+          onFilterDev?.();
+        }
+        break;
+      case 'you':
+        if (youActive) {
+          onClearTracked?.();
+        } else {
+          onFilterYou?.();
+        }
+        break;
+      case 'tracked':
+        onClearTracked?.();
+        break;
+    }
+  };
+
   const renderTraderTags = (
     tags: ("sniper" | "dev" | "kol" | "bundler" | "insider" | "topHolder")[],
   ) => {
@@ -576,43 +616,73 @@ export default function MemeTradesComponent({
 
   return (
     <>
-      <div
-        className="meme-trades-container"
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-      >
+      <div className="meme-trades-container">
+
         <div className="meme-trades-title-header">
           <div className="meme-trades-filters">
             <div className="meme-trade-filter-container">
-              <img src={devActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
-              <button 
-                className={`meme-trade-filter-btn ${devActive ? "active" : ""}`}
-                onClick={() => onFilterDev?.()}
-              >
-                DEV
-              </button>
+<div className="meme-trade-filter-container">
+  <button
+    className={`meme-trade-filter-btn ${devActive ? "active" : ""}`}
+    onClick={() => handleFilterClick('dev')}
+  >
+    <img src={devActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
+    DEV
+  </button>
+</div>
             </div>
             <div className="meme-trade-filter-container">
-              <img src={trackedActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
-              <button 
-                className={`meme-trade-filter-btn ${trackedActive ? "active" : ""}`}
-                onClick={() => onClearTracked?.()}
-              >
-                TRACKED
-              </button>
+ <div className="meme-trade-filter-container">
+  <button
+    className={`meme-trade-filter-btn ${trackedActive ? "active" : ""}`}
+    onClick={() => handleFilterClick('tracked')}
+  >
+    <img src={trackedActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
+    TRACKED
+  </button>
+</div>
+
             </div>
             <div className="meme-trade-filter-container">
-              <img src={youActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
-              <button 
-                className={`meme-trade-filter-btn ${youActive ? "active" : ""}`}
-                onClick={() => onFilterYou?.()}
-              >
-                YOU
-              </button>
+  <button
+    className={`meme-trade-filter-btn ${youActive ? "active" : ""}`}
+    onClick={() => handleFilterClick('you')}
+  >
+    <img src={youActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
+    YOU
+  </button>
             </div>
           </div>
           <img className="filter-icon" src={filter} />
         </div>
+
+        {devActive && (
+          <div className="meme-filter-status">
+            <div className="filter-status-text">
+              Showing {viewTrades.length} transactions of maker {devAddress?.slice(0, 6)}...{devAddress?.slice(-4)}
+            </div>
+            <button
+              className="filter-reset-btn"
+              onClick={() => onClearTracked?.()}
+            >
+              RESET
+            </button>
+          </div>
+        )}
+        {youActive && (
+          <div className="meme-filter-status">
+            <div className="filter-status-text">
+              Showing {viewTrades.length} of your transactions
+            </div>
+            <button
+              className="filter-reset-btn"
+              onClick={() => onClearTracked?.()}
+            >
+              RESET
+            </button>
+          </div>
+        )}
+
 
         <div className="meme-trades-header">
           <div
@@ -638,66 +708,74 @@ export default function MemeTradesComponent({
           </div>
         </div>
 
-        <div className="meme-trades-list">
-          {viewTrades.map((t) => {
-            const shownAmount =
-              amountMode === "USDC" ? t.amountUSD : t.amountMON;
-            const barWidth = getBarWidth(shownAmount);
-            const positive = shownAmount >= 0;
+        <div
+          className="meme-trades-list"
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+        >
+          {isLoadingTrades ? (
+            <LoadingSkeleton />
+          ) : (
+            viewTrades.map((t) => {
+              const shownAmount =
+                amountMode === "USDC" ? t.amountUSD : t.amountMON;
+              const barWidth = getBarWidth(shownAmount);
+              const positive = shownAmount >= 0;
 
-            return (
-              <div key={t.id} className="meme-trade-row">
-                <div
-                  className={`meme-trade-volume-bar ${positive ? "positive" : "negative"}`}
-                  style={{ width: `${barWidth}%` }}
-                />
+              return (
+                <div key={t.id} className="meme-trade-row">
+                  <div
+                    className={`meme-trade-volume-bar ${positive ? "positive" : "negative"}`}
+                    style={{ width: `${barWidth}%` }}
+                  />
 
-                <div
-                  className={`meme-trade-amount ${positive ? "positive" : "negative"}`}
-                >
-                  {amountMode === "MON" && (
-                    <img
-                      src={monadlogo}
-                      alt=""
-                      className="meme-trade-mon-logo"
-                    />
-                  )}
-                  {fmtAmount(shownAmount)}
-                </div>
-
-                <div className="meme-trade-mc">
-                  {mcMode === "MC" ? (
-                    <span className="meme-trade-mc">${(t.mcUSD / 1000).toFixed(1)}K</span>
-                  ) : (
-                    <span>
-                      $
-                      <FormattedNumberDisplay
-                        formatted={formatSubscript(t.priceUSD.toFixed(8))}
+                  <div
+                    className={`meme-trade-amount ${positive ? "positive" : "negative"}`}
+                  >
+                    {amountMode === "MON" && (
+                      <img
+                        src={monadlogo}
+                        alt=""
+                        className="meme-trade-mon-logo"
                       />
-                    </span>
-                  )}
-                </div>
-
-                <div
-                  className={`meme-trade-trader ${t.isCurrentUser ? "current-user" : "clickable"}`}
-                  onClick={() =>
-                    !t.isCurrentUser && setPopupAddr(t.fullAddress)
-                  }
-                >
-                  {t.trader}
-                </div>
-
-                <div className="meme-trade-age-container">
-                  <div className="meme-trade-tags">
-                    {t.tags.length > 0 && renderTraderTags(t.tags)}
+                    )}
+                    {fmtAmount(shownAmount)}
                   </div>
-                  <span className="meme-trade-age">
-                    {fmtTimeAgo(t.timestamp)}
-                  </span>
+
+                  <div className="meme-trade-mc">
+                    {mcMode === "MC" ? (
+                      <span className="meme-trade-mc">${(t.mcUSD / 1000).toFixed(1)}K</span>
+                    ) : (
+                      <span>
+                        $
+                        <FormattedNumberDisplay
+                          formatted={formatSubscript(t.priceUSD.toFixed(8))}
+                        />
+                      </span>
+                    )}
+                  </div>
+
+                  <div
+                    className={`meme-trade-trader ${t.isCurrentUser ? "current-user" : "clickable"}`}
+                    onClick={() =>
+                      !t.isCurrentUser && setPopupAddr(t.fullAddress)
+                    }
+                  >
+                    {t.trader}
+                  </div>
+
+                  <div className="meme-trade-age-container">
+                    <div className="meme-trade-tags">
+                      {t.tags.length > 0 && renderTraderTags(t.tags)}
+                    </div>
+                    <span className="meme-trade-age">
+                      {fmtTimeAgo(t.timestamp)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
 
         <div className={`pause-indicator ${hover ? "visible" : ""}`}>
