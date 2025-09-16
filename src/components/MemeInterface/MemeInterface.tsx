@@ -2292,11 +2292,11 @@ useEffect(() => {
       }
     };
 
-    const volume = g.buy_vol_native + g.sell_vol_native;
+    const volume = (g.buy_vol_native + g.sell_vol_native) / 1e18;
     const buyTransactions = g.buy_cnt;
     const sellTransactions = g.sell_cnt;
-    const buyVolume = g.buy_vol_native;
-    const sellVolume = g.sell_vol_native;
+    const buyVolume = g.buy_vol_native / 1e18;
+    const sellVolume = g.sell_vol_native / 1e18;
 
     return {
       change: buyVolume - sellVolume,
@@ -2434,9 +2434,9 @@ useEffect(() => {
         >
           <div className="top-stats-grid">
             <div className="stat-group-vol">
-              <span className="stat-label">24h Vol</span>
+              <span className="stat-label">{selectedStatsTimeframe} Vol</span>
                 <span className="stat-value">
-                  ${fmt(currentStats.volume, 1)}
+                  {fmt(currentStats.volume, 1)} MON
                 </span>
             </div>
 
@@ -2463,7 +2463,7 @@ useEffect(() => {
                   }}
                 >
                   { (currentStats.buyVolume - currentStats.sellVolume) >= 0 ? '+' : '' }
-                  ${fmt(Math.abs(currentStats.buyVolume - currentStats.sellVolume), 1)}
+                  {fmt(Math.abs(currentStats.buyVolume - currentStats.sellVolume), 1)} MON
                 </span>
             </div>
           </div>
