@@ -19,6 +19,8 @@
   border-radius: 6px;
   width: 100%;
   max-width: 650px;
+    max-height: 530px;
+
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -244,9 +246,10 @@
 }
 
 .meme-no-results p {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8rem;
   margin: 0;
+  font-weight: 300;
 }
 
 /* Results Count */
@@ -768,4 +771,161 @@ filter: brightness(0) saturate(100%) invert(74%) sepia(14%) saturate(326%) hue-r
 .meme-search-filters{
     display: flex;
     gap: 5px
+}
+
+/* Skeleton loading styles */
+.meme-search-skeleton-container {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px;
+}
+
+.meme-search-skeleton-row {
+  padding: 8px 0;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.meme-search-skeleton-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.meme-search-skeleton-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.meme-search-skeleton-avatar {
+  width: 57px;
+  height: 57px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.meme-search-skeleton-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meme-search-skeleton-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meme-search-skeleton-symbol {
+  width: 45px;
+  height: 16px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
+}
+
+.meme-search-skeleton-name {
+  width: 80px;
+  height: 16px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
+}
+
+.meme-search-skeleton-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meme-search-skeleton-age {
+  width: 25px;
+  height: 12px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
+}
+
+.meme-search-skeleton-socials {
+  display: flex;
+  gap: 6px;
+}
+
+.meme-search-skeleton-social {
+  width: 16px;
+  height: 16px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
+}
+
+.meme-search-skeleton-stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.meme-search-skeleton-stat {
+  width: 45px;
+  height: 16px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
+}
+
+.meme-search-skeleton-button {
+  width: 90px;
+  height: 32px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 16px;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .meme-search-skeleton-content {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .meme-search-skeleton-stats {
+    width: 100%;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .meme-search-skeleton-avatar {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .meme-search-skeleton-stats {
+    gap: 12px;
+  }
+
+  .meme-search-skeleton-stat {
+    width: 35px;
+  }
+
+  .meme-search-skeleton-button {
+    width: 75px;
+    height: 28px;
+  }
+
+  .meme-search-skeleton-avatar {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.meme-search-results{
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(179, 184, 249, 0.2) transparent;
 }

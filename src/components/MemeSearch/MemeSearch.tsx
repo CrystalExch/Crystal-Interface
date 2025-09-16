@@ -156,7 +156,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [buyingTokens, setBuyingTokens] = useState<Set<string>>(new Set());
-    
+
     // Function to get the current quick buy amount
     const getCurrentQuickBuyAmount = useCallback(() => {
         // Use custom amount if available, otherwise use preset amount
@@ -164,7 +164,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         if (customAmount && customAmount.trim() !== '') {
             return customAmount;
         }
-        
+
         // Fall back to preset amount
         const activePreset = activePresets?.new || 1;
         const presetAmount = buyPresets?.[activePreset]?.amount;
@@ -356,6 +356,24 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         }
     }, [mapGraphTokenToUi, hydrateTokens]);
 
+useEffect(() => {
+    if (!isOpen) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    // If no tokens loaded yet, fetch immediately without debounce
+    if (tokens.length === 0) {
+        fetchLatest();
+        return;
+    }
+
+    debounceRef.current = setTimeout(() => {
+        if (searchTerm.trim().length >= 3) fetchLatest();
+    }, 250);
+
+    return () => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+}, [isOpen, searchTerm, fetchLatest, tokens.length]);
     useEffect(() => {
         if (!isOpen) return;
         if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -439,12 +457,39 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                     />
                 </div>
 
+<div className="meme-search-results">
                 {error && <div className="meme-search-error">{error}</div>}
-                {loading && tokens.length === 0 && (
-                    <div className="meme-search-loading">Loading latest…</div>
-                )}
-                {!loading && searchTerm.length > 0 && searchTerm.length < 3 && (
-                    <div className="meme-search-hint">Type 3+ characters to refresh results.</div>
+                {loading && (
+                    <div className="meme-search-skeleton-container">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="meme-search-skeleton-row">
+                                <div className="meme-search-skeleton-content">
+                                    <div className="meme-search-skeleton-info">
+                                        <div className="meme-search-skeleton-avatar"></div>
+                                        <div className="meme-search-skeleton-details">
+                                            <div className="meme-search-skeleton-header">
+                                                <div className="meme-search-skeleton-symbol"></div>
+                                                <div className="meme-search-skeleton-name"></div>
+                                            </div>
+                                            <div className="meme-search-skeleton-meta">
+                                                <div className="meme-search-skeleton-age"></div>
+                                                <div className="meme-search-skeleton-socials">
+                                                    <div className="meme-search-skeleton-social"></div>
+                                                    <div className="meme-search-skeleton-social"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="meme-search-skeleton-stats">
+                                        <div className="meme-search-skeleton-stat"></div>
+                                        <div className="meme-search-skeleton-stat"></div>
+                                        <div className="meme-search-skeleton-stat"></div>
+                                        <div className="meme-search-skeleton-button"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 )}
 
                 <div className="meme-search-list">
@@ -611,6 +656,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                             {loading ? <p>Loading...</p> : <p>No tokens found matching "{searchTerm}"</p>}
                         </div>
                     )}
+                </div>
                 </div>
             </div>
         </div>
