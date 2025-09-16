@@ -1344,7 +1344,7 @@ const DisplayDropdown: React.FC<{
                         ['socials', 'Socials'],
                         ['holders', 'Holders'],
                         ['proTraders', 'Pro Traders'],
-                        ['kols', 'KOLs'],
+                        ['devMigrations', 'Dev Migrations'],
                         ['top10Holders', 'Top 10 Holders'],
                         ['devHolding', 'Dev Holding'],
                         ['snipers', 'Snipers'],
@@ -1722,7 +1722,7 @@ const TokenRow = React.memo<{
 
     setBondingPopupPosition({ top, left });
   }, []);
-  
+
   useEffect(() => {
     if (hoveredImage === token.id) {
       updatePreviewPosition();
@@ -1987,18 +1987,11 @@ const TokenRow = React.memo<{
                 )}
 
                 {displaySettings.visibleRows.kols && (
-                  <Tooltip content="KOLs">
+                  <Tooltip content="Dev Migrations ">
                     <div className="explorer-stat-item">
-                      <svg
-                        className="traders-icon"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path d="M 2 3 L 2 4 C 2 6.7666667 3.1395226 8.7620178 4.1679688 10.304688 C 5.1964149 11.847357 6 12.944444 6 14 L 8 14 C 8 13.983831 7.9962584 13.96922 7.9960938 13.953125 C 8.97458 16.166161 10 17 10 17 L 14 17 C 14 17 15.02542 16.166161 16.003906 13.953125 C 16.003742 13.96922 16 13.983831 16 14 L 18 14 C 18 12.944444 18.803585 11.847356 19.832031 10.304688 C 20.860477 8.7620178 22 6.7666667 22 4 L 22 3 L 2 3 z M 4.1914062 5 L 6.2734375 5 C 6.337283 7.4080712 6.6187571 9.3802374 7.0078125 10.974609 C 6.6365749 10.366787 6.2230927 9.7819045 5.8320312 9.1953125 C 5.0286664 7.9902652 4.4191868 6.6549795 4.1914062 5 z M 8.3027344 5 L 15.697266 5 L 15.697266 6 L 15.693359 6 C 15.380359 11.398 13.843047 14.041 13.123047 15 L 10.882812 15 C 10.142812 14.016 8.6176406 11.371 8.3066406 6 L 8.3027344 6 L 8.3027344 5 z M 17.726562 5 L 19.808594 5 C 19.580813 6.6549795 18.971334 7.9902652 18.167969 9.1953125 C 17.776907 9.7819045 17.363425 10.366787 16.992188 10.974609 C 17.381243 9.3802374 17.662717 7.4080712 17.726562 5 z M 7 19 L 7 21 L 17 21 L 17 19 L 7 19 z" />
-                      </svg>                    <span className="explorer-stat-value">{token.kolTraders.toLocaleString()}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="traders-icon"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" /><path d="M5 21h14" /></svg>
+                     <div className="dev-migrations-container"><span className="explorer-dev-migrations">{token.kolTraders.toLocaleString()}</span> <span className="dev-migrations-slash">/</span><span className="explorer-dev-migrations">{token.kolTraders.toLocaleString()}</span></div>
+
                     </div>
                   </Tooltip>
                 )}
@@ -2905,14 +2898,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     if (!appliedFilters) return base;
 
     return (['new', 'graduating', 'graduated'] as Token['status'][]).reduce(
-      (acc, s) => ({ 
-        ...acc, 
-        [s]: appliedFilters[s] ? applyFilters(base[s], appliedFilters[s]) : base[s] 
+      (acc, s) => ({
+        ...acc,
+        [s]: appliedFilters[s] ? applyFilters(base[s], appliedFilters[s]) : base[s]
       }),
       {} as Record<Token['status'], Token[]>
     );
   }, [tokensByStatus, hidden, appliedFilters, applyFilters, displaySettings.hideHiddenTokens]);
-  
+
   const newTokens = visibleTokens.new;
   const graduatingTokens = visibleTokens.graduating;
   const graduatedTokens = visibleTokens.graduated;
@@ -2997,14 +2990,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                         ))}
                       </div>
                     </div>
-                <button
-  className={`column-filter-icon ${appliedFilters?.new ? 'active' : ''}`}
-  onClick={() => onOpenFiltersForColumn('new')}
-  title="filter new pairs"
->
-  <img className="filter-icon" src={filter} />
-  {appliedFilters?.new && <span className="filter-active-dot" />}
-</button>
+                    <button
+                      className={`column-filter-icon ${appliedFilters?.new ? 'active' : ''}`}
+                      onClick={() => onOpenFiltersForColumn('new')}
+                      title="filter new pairs"
+                    >
+                      <img className="filter-icon" src={filter} />
+                      {appliedFilters?.new && <span className="filter-active-dot" />}
+                    </button>
                   </div>
                 </div>
 
@@ -3113,14 +3106,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           ))}
                         </div>
                       </div>
-<button
-  className={`column-filter-icon ${appliedFilters?.graduating ? 'active' : ''}`}
-  onClick={() => onOpenFiltersForColumn('graduating')}
-  title="Filter graduating tokens"
->
-  <img className="filter-icon" src={filter} />
-  {appliedFilters?.graduating && <span className="filter-active-dot" />}
-</button>
+                      <button
+                        className={`column-filter-icon ${appliedFilters?.graduating ? 'active' : ''}`}
+                        onClick={() => onOpenFiltersForColumn('graduating')}
+                        title="Filter graduating tokens"
+                      >
+                        <img className="filter-icon" src={filter} />
+                        {appliedFilters?.graduating && <span className="filter-active-dot" />}
+                      </button>
                     </div>
                   </div>
 
@@ -3228,14 +3221,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           ))}
                         </div>
                       </div>
-<button
-  className={`column-filter-icon ${appliedFilters?.graduated ? 'active' : ''}`}
-  onClick={() => onOpenFiltersForColumn('graduated')}
-  title="filter graduated tokens"
->
-  <img className="filter-icon" src={filter} />
-  {appliedFilters?.graduated && <span className="filter-active-dot" />}
-</button>
+                      <button
+                        className={`column-filter-icon ${appliedFilters?.graduated ? 'active' : ''}`}
+                        onClick={() => onOpenFiltersForColumn('graduated')}
+                        title="filter graduated tokens"
+                      >
+                        <img className="filter-icon" src={filter} />
+                        {appliedFilters?.graduated && <span className="filter-active-dot" />}
+                      </button>
                     </div>
                   </div>
 

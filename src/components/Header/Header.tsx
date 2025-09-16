@@ -643,7 +643,8 @@ const handleQuickBuy = useCallback(async (token: any, amt: string) => {
                       </button>
                     </div>
                   )}
-                  <div className="wallet-dropdown-actions">
+                </div>
+                                  <div className="wallet-dropdown-actions">
                     <button
                       className="wallet-dropdown-action-btn portfolio-btn"
                       onClick={handleOpenPortfolio}
@@ -663,7 +664,6 @@ const handleQuickBuy = useCallback(async (token: any, amt: string) => {
                       Logout
                     </button>
                   </div>
-                </div>
               </div>
             )}
           </div>

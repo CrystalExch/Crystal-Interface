@@ -209,8 +209,15 @@
   align-items: center;
   gap: 3px;
 }
+.dev-migrations-slash{
+  font-size: 0.8rem;
+}
 
-
+.dev-migrations-container{
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
 .explorer-third-row-section {
   display: flex;
   gap: 5px;
@@ -4330,3 +4337,8 @@
   color: #ffffff;
 }
 
+
+
+.explorer-dev-migrations{
+  font-size: 0.8rem;
+}

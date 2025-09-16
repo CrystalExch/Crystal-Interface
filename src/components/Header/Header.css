@@ -459,6 +459,10 @@
 .wallet-dropdown-list {
   flex: 1;
   overflow-y: auto;
+  max-height: 312px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(179, 184, 249, 0.1) transparent;
 }
 
 .wallet-dropdown-list::-webkit-scrollbar {
@@ -471,7 +475,7 @@
 }
 
 .wallet-dropdown-list::-webkit-scrollbar-thumb {
-  background: rgba(179, 184, 249, 0.2);
+  background: rgba(179, 184, 249, 0.1);
   border-radius: 2px;
 }
 
