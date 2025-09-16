@@ -845,3 +845,26 @@
   line-height: 1.5;
   margin: 0;
 }
+
+.meme-search-button {
+  align-items: center;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  transition: all.2s cubic-bezier(0.2, 0, 0.1, 1);
+  width: 35px;
+  height: 35px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 6px;
+}
+
+.meme-search-button:hover {
+  opacity: 0.8;
+}
+
+.meme-search-icon {
+  opacity: 0.5;
+  width: 20px
+}

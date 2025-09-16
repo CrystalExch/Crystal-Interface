@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import LanguageSelector from './LanguageSelector/LanguageSelector';
-import NetworkSelector from './NetworkSelector/NetworkSelector';
 import SideMenuOverlay from './SideMenuOverlay/SideMenuOverlay';
 import TransactionHistoryMenu from '../TransactionHistoryMenu/TransactionHistoryMenu';
 import ChartHeader from '../Chart/ChartHeader/ChartHeader';
-
+import MemeSearch from '../MemeSearch/MemeSearch';
 import { formatCommas } from '../../utils/numberDisplayFormat';
 import { formatSig } from '../OrderCenter/utils';
 import { settings } from '../../settings';
@@ -104,7 +103,6 @@ const Header: React.FC<HeaderProps> = ({
   monUsdPrice,
 }) => {
   const location = useLocation();
-  const [isNetworkSelectorOpen, setNetworkSelectorOpen] = useState(false);
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
   const [pendingNotifs, setPendingNotifs] = useState(0);
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
@@ -179,6 +177,7 @@ const Header: React.FC<HeaderProps> = ({
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isWalletDropdownOpen]);
+const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
 
   const memeTokenData = isMemeTokenPage && tokenData ? (() => {
     const token = tokenData;
@@ -349,6 +348,15 @@ const Header: React.FC<HeaderProps> = ({
           />
         </div>
         <div className={rightHeaderClass}>
+          <button
+  type="button"
+  className="meme-search-button"
+  onClick={() => setIsMemeSearchOpen(true)}
+>
+
+
+</button>
+
           {/* <NetworkSelector
             isNetworkSelectorOpen={isNetworkSelectorOpen}
             setNetworkSelectorOpen={setNetworkSelectorOpen}
@@ -394,6 +402,10 @@ const Header: React.FC<HeaderProps> = ({
                 isHeader={true}
               />
             )}
+            <MemeSearch 
+  isOpen={isMemeSearchOpen} 
+  onClose={() => setIsMemeSearchOpen(false)} 
+/>
           </div>
           
           <div className="wallet-dropdown-container" ref={walletDropdownRef}>
