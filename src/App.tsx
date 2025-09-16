@@ -391,7 +391,7 @@ function App() {
     if (storedSubWallets) {
       try {
         return JSON.parse(storedSubWallets);
-      } catch {}
+      } catch { }
     }
     return [];
   });
@@ -915,6 +915,72 @@ function App() {
     }
     return '';
   });
+
+  const [quickAmounts, setQuickAmounts] = useState({
+    new: '',
+    graduating: '',
+    graduated: ''
+  });
+
+  const [activePresets, setActivePresets] = useState({
+    new: 1,
+    graduating: 1,
+    graduated: 1
+  });
+
+  const buyPresets = {
+    1: { slippage: '20', priority: '0.01', amount: '5' },
+    2: { slippage: '15', priority: '0.02', amount: '20' },
+    3: { slippage: '10', priority: '0.05', amount: '100' }
+  };
+
+  const sellPresets = {
+    1: { slippage: '15', priority: '0.005' },
+    2: { slippage: '12', priority: '0.01' },
+    3: { slippage: '8', priority: '0.03' }
+  };
+
+  const [monPresets, setMonPresets] = useState(() => {
+    try {
+      const saved = localStorage.getItem('crystal_mon_presets');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+      return [5, 20, 100, 500];
+    } catch (error) {
+      console.error('Error loading MON presets:', error);
+      return [5, 20, 100, 500];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('crystal_mon_presets', JSON.stringify(monPresets));
+    } catch (error) {
+      console.error('Error saving MON presets:', error);
+    }
+  }, [monPresets]);
+
+const setQuickAmount = (category: string, amount: string) => {
+  setQuickAmounts(prev => ({
+    ...prev,
+    [category]: amount
+  }));
+};
+
+const setActivePreset = (category: string, preset: number) => {
+  setActivePresets(prev => ({
+    ...prev,
+    [category]: preset
+  }));
+
+  const presetAmount = buyPresets[preset as keyof typeof buyPresets]?.amount || '5';
+  setQuickAmount(category, presetAmount);
+};
+
+
+const handleInputFocus = () => {
+};
   const [isComposing, setIsComposing] = useState(false);
   const [sendInputString, setsendInputString] = useState('');
   const [limitPriceString, setlimitPriceString] = useState('');
@@ -20433,6 +20499,16 @@ function App() {
               lastRefGroupFetch={lastRefGroupFetch}
               tokenData={tokenData}
               monUsdPrice={monUsdPrice}
+              sendUserOperationAsync={sendUserOperationAsync}
+              setTerminalToken={setTerminalToken}
+              setTokenData={setTokenData}
+              quickAmounts={quickAmounts}
+              setQuickAmount={setQuickAmount}
+              activePresets={activePresets}
+              setActivePreset={setActivePreset}
+              handleInputFocus={handleInputFocus}
+              buyPresets={buyPresets}
+              sellPresets={sellPresets}
             />
           </div>
           <div className="headerfiller"></div>
@@ -20661,6 +20737,14 @@ function App() {
               tokenData={tokenData}
               setTokenData={setTokenData}
               monUsdPrice={monUsdPrice}
+              quickAmounts={quickAmounts}
+              setQuickAmount={setQuickAmount}
+              activePresets={activePresets}
+              setActivePreset={setActivePreset}
+              buyPresets={buyPresets}
+              sellPresets={sellPresets}
+              monPresets={monPresets}
+              setMonPresets={setMonPresets}
             />
           } />
           <Route

@@ -302,7 +302,7 @@ export default function MemeTradesComponent({
   }, []);
 
   useEffect(() => {
-    const newTrades = trades.slice(0, 40);
+    const newTrades = trades.slice(0,100);
 
     if (hover) {
       const previousTrades = lastProcessedTradesRef.current;
@@ -621,36 +621,36 @@ export default function MemeTradesComponent({
         <div className="meme-trades-title-header">
           <div className="meme-trades-filters">
             <div className="meme-trade-filter-container">
-<div className="meme-trade-filter-container">
-  <button
-    className={`meme-trade-filter-btn ${devActive ? "active" : ""}`}
-    onClick={() => handleFilterClick('dev')}
-  >
-    <img src={devActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
-    DEV
-  </button>
-</div>
+              <div className="meme-trade-filter-container">
+                <button
+                  className={`meme-trade-filter-btn ${devActive ? "active" : ""}`}
+                  onClick={() => handleFilterClick('dev')}
+                >
+                  <img src={devActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
+                  DEV
+                </button>
+              </div>
             </div>
             <div className="meme-trade-filter-container">
- <div className="meme-trade-filter-container">
-  <button
-    className={`meme-trade-filter-btn ${trackedActive ? "active" : ""}`}
-    onClick={() => handleFilterClick('tracked')}
-  >
-    <img src={trackedActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
-    TRACKED
-  </button>
-</div>
+              <div className="meme-trade-filter-container">
+                <button
+                  className={`meme-trade-filter-btn ${trackedActive ? "active" : ""}`}
+                  onClick={() => handleFilterClick('tracked')}
+                >
+                  <img src={trackedActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
+                  TRACKED
+                </button>
+              </div>
 
             </div>
             <div className="meme-trade-filter-container">
-  <button
-    className={`meme-trade-filter-btn ${youActive ? "active" : ""}`}
-    onClick={() => handleFilterClick('you')}
-  >
-    <img src={youActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
-    YOU
-  </button>
+              <button
+                className={`meme-trade-filter-btn ${youActive ? "active" : ""}`}
+                onClick={() => handleFilterClick('you')}
+              >
+                <img src={youActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
+                YOU
+              </button>
             </div>
           </div>
           <img className="filter-icon" src={filter} />

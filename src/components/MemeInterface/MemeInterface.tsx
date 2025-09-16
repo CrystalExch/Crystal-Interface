@@ -112,6 +112,14 @@ interface MemeInterfaceProps {
   tokenData?: any;
   setTokenData: any;
   monUsdPrice: number;
+    quickAmounts?: { [key: string]: string };
+  setQuickAmount?: (category: string, amount: string) => void;
+  activePresets?: { [key: string]: number };
+  setActivePreset?: (category: string, preset: number) => void;
+  buyPresets?: { [key: number]: { slippage: string; priority: string; amount: string } };
+  sellPresets?: { [key: number]: { slippage: string; priority: string } };
+    monPresets?: number[]; 
+  setMonPresets?: (presets: number[]) => void; 
 }
 
 const MARKET_UPDATE_EVENT = "0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e";
@@ -453,7 +461,6 @@ const Tooltip: React.FC<{
 
 const MemeInterface: React.FC<MemeInterfaceProps> = ({
   sliderMode,
-  // sliderPresets,
   sliderIncrement,
   tokenList,
   onMarketSelect,
@@ -480,6 +487,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   tokenData,
   setTokenData,
   monUsdPrice,
+    quickAmounts,
+  setQuickAmount,
+  activePresets, 
+  setActivePreset,
+  buyPresets,
+  sellPresets,
+  monPresets = [5, 20, 100, 500], // default fallback
+  setMonPresets,
 }) => {
   const getSliderPosition = (activeView: 'chart' | 'trades' | 'ordercenter') => {
     switch (activeView) {
@@ -497,18 +512,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [hoveredStatsContainer, setHoveredStatsContainer] = useState(false);
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
-  const [monPresets, setMonPresets] = useState(() => {
-    try {
-      const saved = localStorage.getItem('crystal_mon_presets');
-      if (saved) {
-        return JSON.parse(saved);
-      }
-      return [5, 20, 100, 500];
-    } catch (error) {
-      console.error('Error loading MON presets:', error);
-      return [5, 20, 100, 500];
-    }
-  });
+
   const [selectedMonPreset, setSelectedMonPreset] = useState<number | null>(null);
   const [isPresetEditMode, setIsPresetEditMode] = useState(false);
   const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
@@ -529,13 +533,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     } catch (error) {
     }
   }, [isWidgetOpen]);
-  useEffect(() => {
-    try {
-      localStorage.setItem('crystal_mon_presets', JSON.stringify(monPresets));
-    } catch (error) {
-      console.error('Error saving MON presets:', error);
-    }
-  }, [monPresets]);
+
 
   useEffect(() => {
     if (editingPresetIndex !== null && presetInputRef.current) {
@@ -626,19 +624,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
   const explorer = settings.chainConfig[activechain]?.explorer;
-
-  const buyPresets = {
-    1: { slippage: '20', priority: '0.01' },
-    2: { slippage: '15', priority: '0.02' },
-    3: { slippage: '10', priority: '0.05' }
-  };
-
-  const sellPresets = {
-    1: { slippage: '15', priority: '0.005' },
-    2: { slippage: '12', priority: '0.01' },
-    3: { slippage: '8', priority: '0.03' }
-  };
-
   const userAddr = (address ?? account?.address ?? "");
 
   useEffect(() => {
@@ -661,21 +646,25 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     const row = list.find(h => (h.address || '').toLowerCase() === dev.toLowerCase());
     return row ? toPct(Math.max(0, row.balance)) : 0;
   };
-
-  const handleBuyPresetSelect = useCallback((preset: number) => {
+ const handleBuyPresetSelect = useCallback((preset: number) => {
     setSelectedBuyPreset(preset);
     setMobileQuickBuyPreset(preset);
-    const presetValues = buyPresets[preset as keyof typeof buyPresets];
-    setBuySlippageValue(presetValues.slippage);
-    setBuyPriorityFee(presetValues.priority);
-  }, []);
+    if (buyPresets && buyPresets[preset]) {
+      const presetValues = buyPresets[preset];
+      setBuySlippageValue(presetValues.slippage);
+      setBuyPriorityFee(presetValues.priority);
+    }
+  }, [buyPresets]);
 
   const handleSellPresetSelect = useCallback((preset: number) => {
     setSelectedSellPreset(preset);
-    const presetValues = sellPresets[preset as keyof typeof sellPresets];
-    setSellSlippageValue(presetValues.slippage);
-    setSellPriorityFee(presetValues.priority);
-  }, []);
+    if (sellPresets && sellPresets[preset]) {
+      const presetValues = sellPresets[preset];
+      setSellSlippageValue(presetValues.slippage);
+      setSellPriorityFee(presetValues.priority);
+    }
+  }, [sellPresets]);
+
 
   const handleAdvancedOrderAdd = (orderType: 'takeProfit' | 'stopLoss' | 'devSell' | 'migration') => {
     if (advancedOrders.length >= 5) return;
@@ -1053,31 +1042,31 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]
     );
   }, []);
-const [isLoadingTrades, setIsLoadingTrades] = useState(false);
+  const [isLoadingTrades, setIsLoadingTrades] = useState(false);
 
   const setTrackedToDev = useCallback(() => {
     const d = (token.dev || '').toLowerCase();
-    setIsLoadingTrades(true); 
+    setIsLoadingTrades(true);
     setTrackedAddresses(d ? [d] : []);
   }, [token.dev]);
 
   const setTrackedToYou = useCallback(() => {
     const me = (userAddr || '').toLowerCase();
-        setIsLoadingTrades(true); 
+    setIsLoadingTrades(true);
 
     setTrackedAddresses(me ? [me] : []);
   }, [userAddr]);
 
-const clearTracked = useCallback(() => {
-  setIsLoadingTrades(true); 
-  setTrackedAddresses([]);
-}, []);
+  const clearTracked = useCallback(() => {
+    setIsLoadingTrades(true);
+    setTrackedAddresses([]);
+  }, []);
 
-useEffect(() => {
-  if (isLoadingTrades) {
-    setIsLoadingTrades(false); // Stop loading when trades update
-  }
-}, [trades]); // This will trigger when trades array changes
+  useEffect(() => {
+    if (isLoadingTrades) {
+      setIsLoadingTrades(false);
+    }
+  }, [trades]);
   useEffect(() => {
     if (!trades.length) return;
     const t = trades[0];
@@ -1847,9 +1836,9 @@ useEffect(() => {
       }
     }
   }, [isPresetEditMode, activeTradeType, currentPrice, getCurrentMONBalance, getCurrentTokenBalance]);
-
   const handlePresetInputSubmit = useCallback(() => {
     if (editingPresetIndex === null || tempPresetValue.trim() === '') return;
+    if (!setMonPresets || !monPresets) return;
 
     const newValue = parseFloat(tempPresetValue);
     if (isNaN(newValue) || newValue <= 0) return;
@@ -1860,8 +1849,7 @@ useEffect(() => {
 
     setEditingPresetIndex(null);
     setTempPresetValue('');
-  }, [editingPresetIndex, tempPresetValue, monPresets]);
-
+  }, [editingPresetIndex, tempPresetValue, monPresets, setMonPresets]);
   const handlePresetInputKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handlePresetInputSubmit();
@@ -2331,7 +2319,7 @@ useEffect(() => {
               onFilterDev={setTrackedToDev}
               onFilterYou={setTrackedToYou}
               onClearTracked={clearTracked}
-                isLoadingTrades={isLoadingTrades}
+              isLoadingTrades={isLoadingTrades}
 
             />
           </div>
