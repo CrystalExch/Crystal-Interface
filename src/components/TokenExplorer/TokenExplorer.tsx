@@ -2894,23 +2894,25 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       return true;
     });
   }, []);
-const visibleTokens = useMemo(() => {
-  const base = {
-    new: displaySettings.hideHiddenTokens ? tokensByStatus.new.filter((t) => !hidden.has(t.id)) : tokensByStatus.new,
-    graduating: displaySettings.hideHiddenTokens ? tokensByStatus.graduating.filter((t) => !hidden.has(t.id)) : tokensByStatus.graduating,
-    graduated: displaySettings.hideHiddenTokens ? tokensByStatus.graduated.filter((t) => !hidden.has(t.id)) : tokensByStatus.graduated,
-  } as Record<Token['status'], Token[]>;
 
-  if (!appliedFilters) return base;
+  const visibleTokens = useMemo(() => {
+    const base = {
+      new: displaySettings.hideHiddenTokens ? tokensByStatus.new.filter((t) => !hidden.has(t.id)) : tokensByStatus.new,
+      graduating: displaySettings.hideHiddenTokens ? tokensByStatus.graduating.filter((t) => !hidden.has(t.id)) : tokensByStatus.graduating,
+      graduated: displaySettings.hideHiddenTokens ? tokensByStatus.graduated.filter((t) => !hidden.has(t.id)) : tokensByStatus.graduated,
+    } as Record<Token['status'], Token[]>;
 
-  return (['new', 'graduating', 'graduated'] as Token['status'][]).reduce(
-    (acc, s) => ({ 
-      ...acc, 
-      [s]: appliedFilters[s] ? applyFilters(base[s], appliedFilters[s]) : base[s] 
-    }),
-    {} as Record<Token['status'], Token[]>
-  );
-}, [tokensByStatus, hidden, appliedFilters, applyFilters, displaySettings.hideHiddenTokens]);
+    if (!appliedFilters) return base;
+
+    return (['new', 'graduating', 'graduated'] as Token['status'][]).reduce(
+      (acc, s) => ({ 
+        ...acc, 
+        [s]: appliedFilters[s] ? applyFilters(base[s], appliedFilters[s]) : base[s] 
+      }),
+      {} as Record<Token['status'], Token[]>
+    );
+  }, [tokensByStatus, hidden, appliedFilters, applyFilters, displaySettings.hideHiddenTokens]);
+  
   const newTokens = visibleTokens.new;
   const graduatingTokens = visibleTokens.graduating;
   const graduatedTokens = visibleTokens.graduated;
