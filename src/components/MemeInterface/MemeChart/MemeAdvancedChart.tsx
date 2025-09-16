@@ -111,9 +111,17 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
 
   useEffect(() => {
     if (data && data[0] && data[1]) {
-      dataRef.current[data[1]] = enforceOpenEqualsPrevClose(data[0]);
+      const [bars, resRaw] = data as [any[], string];
+      const res =
+        typeof resRaw === 'string'
+          ? resRaw.endsWith('s')
+            ? resRaw.slice(0, -1).toUpperCase() + 'S'
+            : resRaw.toUpperCase()
+          : String(resRaw);
+      const key = toResKey(token.symbol, res);
+      dataRef.current[key] = enforceOpenEqualsPrevClose(bars);
     }
-  }, [data]);
+  }, [data, token.symbol]);
 
   useEffect(() => {
     try {
@@ -226,7 +234,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           ? '240'
           : selectedInterval === '1h'
             ? '60'
-            : selectedInterval.endsWith('S')
+            : selectedInterval.endsWith('s')
               ? selectedInterval.slice(0, -1).toUpperCase() + 'S'
               : selectedInterval.slice(0, -1),
       timezone: 'Etc/UTC',
@@ -320,39 +328,40 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         },
 
         getBars: async (
-          symbolInfo: any,
+          _symbolInfo: any,
           resolution: string,
           periodParams: any,
           onHistoryCallback: Function,
           onErrorCallback: Function,
         ) => {
-          const { from, to } = periodParams;
+          const { from, to, isSeconds } = periodParams || {};
 
           try {
             setSelectedInterval(
-              resolution === '1D'
-                ? '1d'
-                : resolution === '240'
-                  ? '4h'
-                  : resolution === '60'
-                    ? '1h'
-                    : resolution.endsWith('S')
-                      ? resolution.slice(0, -1).toLowerCase() + 's'
-                      : resolution + 'm',
+              isSeconds
+                ? `${resolution}s`
+                : resolution === '1D'
+                  ? '1d'
+                  : resolution === '240'
+                    ? '4h'
+                    : resolution === '60'
+                      ? '1h'
+                      : resolution + 'm'
             );
 
-            const key = token.symbol + 'MON' + resolution;
+            const resKey = isSeconds ? `${resolution}S` : resolution;
+            const key = toResKey(token.symbol, resKey);
 
             await new Promise<void>((resolve) => {
-              const check = () => {
-                if (dataRef.current[key]) {
-                  clearInterval(intervalCheck);
+              const t0 = Date.now();
+              const tick = () => {
+                if (dataRef.current[key] || Date.now() - t0 > 1500) {
+                  clearInterval(iv);
                   resolve();
                 }
               };
-
-              const intervalCheck = setInterval(check, 50);
-              check();
+              const iv = setInterval(tick, 50);
+              tick();
             });
 
             let bars = enforceOpenEqualsPrevClose(dataRef.current[key]) || [];
@@ -410,22 +419,24 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
             };
           });
 
-          // store callback like the working component does so we can push diffs later
           marksRef.current = onDataCallback;
           setTimeout(() => onDataCallback(marks), 0);
         },
 
         subscribeBars: (
-          symbolInfo: any,
+          _symbolInfo: any,
           resolution: string,
           onRealtimeCallback: (bar: any) => void,
           subscriberUID: string,
           onResetCacheNeeded: () => void,
         ) => {
-          const key = toResKey(token.symbol, resolution);
+          const isSec = selectedInterval.endsWith('s');
+          const resKey = isSec ? `${resolution}S` : resolution;
+          const key = toResKey(token.symbol, resKey);
+
           realtimeCallbackRef.current[key] = onRealtimeCallback;
           subsRef.current[subscriberUID] = key;
-          onResetCacheNeededRef.current = onResetCacheNeeded
+          onResetCacheNeededRef.current = onResetCacheNeeded;
         },
 
         unsubscribeBars: (subscriberUID: string) => {

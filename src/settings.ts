@@ -474,7 +474,7 @@ export const settings: any = {
         },
       },
       addresstomarket: Object.fromEntries([
-        ['0xB39bda9358cDAdBA68Bb01d358D376FbB19d4A85', 'MONUSDC'],
+        ['0xe6f4D9ac52D3DDb3d741220d5e538E1Cd03e87F0', 'MONUSDC'],
         ['0xcd954176d1f67099edF2E40bD74D80f5A1FCF955', 'sMONMON'],
         ['0x89dFE4E8D2cFf219Ff906706744Df7d02043AB11', 'aprMONMON'],
         ['0x7AC44E7CdFa3c98490FBe29049A32044e105da3C', 'shMONMON'],
