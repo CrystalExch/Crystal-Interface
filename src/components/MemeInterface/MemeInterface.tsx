@@ -119,6 +119,7 @@ const MARKET_CREATED_EVENT = "0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517
 const TOTAL_SUPPLY = 1e9;
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+const STATS_WS_BASE = 'wss://crystal-backend.up.railway.app';
 const PAGE_SIZE = 100;
 
 const HOLDERS_QUERY = `
@@ -513,7 +514,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [isPresetEditMode, setIsPresetEditMode] = useState(false);
   const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
   const [tempPresetValue, setTempPresetValue] = useState('');
+  const [statsRaw, setStatsRaw] = useState<Record<string, any> | null>(null);
   const presetInputRef = useRef<HTMLInputElement>(null);
+  const statsWsRef = useRef<WebSocket | null>(null);
+  const reconnectRef = useRef(0);
   const [isWidgetOpen, setIsWidgetOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('crystal_quickbuy_widget_open');
@@ -529,6 +533,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     } catch (error) {
     }
   }, [isWidgetOpen]);
+
   useEffect(() => {
     try {
       localStorage.setItem('crystal_mon_presets', JSON.stringify(monPresets));
@@ -622,6 +627,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [top10HoldingPercentage, setTop10HoldingPercentage] = useState(0);
   const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
   const trackedAddressesRef = useRef<string[]>([]);
+  const [isLoadingTrades, setIsLoadingTrades] = useState(false);
   const { activechain } = useSharedContext();
 
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
@@ -1053,7 +1059,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]
     );
   }, []);
-const [isLoadingTrades, setIsLoadingTrades] = useState(false);
 
   const setTrackedToDev = useCallback(() => {
     const d = (token.dev || '').toLowerCase();
@@ -1068,16 +1073,17 @@ const [isLoadingTrades, setIsLoadingTrades] = useState(false);
     setTrackedAddresses(me ? [me] : []);
   }, [userAddr]);
 
-const clearTracked = useCallback(() => {
-  setIsLoadingTrades(true); 
-  setTrackedAddresses([]);
-}, []);
+  const clearTracked = useCallback(() => {
+    setIsLoadingTrades(true); 
+    setTrackedAddresses([]);
+  }, []);
 
-useEffect(() => {
-  if (isLoadingTrades) {
-    setIsLoadingTrades(false); // Stop loading when trades update
-  }
-}, [trades]); // This will trigger when trades array changes
+  useEffect(() => {
+    if (isLoadingTrades) {
+      setIsLoadingTrades(false);
+    }
+  }, [trades]);
+
   useEffect(() => {
     if (!trades.length) return;
     const t = trades[0];
@@ -1157,6 +1163,55 @@ useEffect(() => {
 
     return () => { cancelled = true; };
   }, [token.id, trackedAddresses]);
+
+  // backend ws
+  useEffect(() => {
+    if (!tokenAddress) return;
+    let disposed = false;
+
+    const origin = STATS_WS_BASE.replace(/\/$/, '');
+    const url = `${origin}/ws/stats/${tokenAddress.toLowerCase()}`;
+
+    const open = () => {
+      const ws = new WebSocket(url);
+      statsWsRef.current = ws;
+
+      ws.onopen = () => {
+        reconnectRef.current = 0;
+      };
+
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(String(evt.data));
+          if (msg?.type !== 'stats') return;
+
+          const normalized: Record<string, any> = {};
+          for (const [k, v] of Object.entries(msg)) {
+            normalized[k] =
+              typeof v === 'number' && /volume/i.test(k) ? v / 1e18 : v;
+          }
+          setStatsRaw(normalized);
+        } catch (e) {}
+      };
+
+      ws.onclose = () => {
+        if (disposed) return;
+        const backoff = Math.min(30000, 1000 * 2 ** Math.min(6, reconnectRef.current++));
+        setTimeout(open, backoff);
+      };
+
+      ws.onerror = () => {
+        try { ws.close(); } catch {}
+      };
+    };
+
+    open();
+
+    return () => {
+      disposed = true;
+      try { statsWsRef.current?.close(); } catch {}
+    };
+  }, [tokenAddress]);
 
   // metadata n klines
   useEffect(() => {
@@ -2236,25 +2291,38 @@ useEffect(() => {
     return false;
   };
 
-  const timePeriodsData = {
-    "24H": {
-      change: token.change24h || 0,
-      volume: token.volume24h || 0,
-      buyTransactions: token.buyTransactions || 0,
-      sellTransactions: token.sellTransactions || 0,
-      buyVolumePercentage: 65,
-      sellVolumePercentage: 35,
-      buyerPercentage: 70,
-      sellerPercentage: 30,
-    },
+  const readTf = (tf: '5m' | '1h' | '6h' | '24h') => {
+    const s = statsRaw || {};
+    const g = s[tf];
+    if (g == null) {
+      return {
+        change: 0,
+        volume: 0,
+        buyTransactions: 0,
+        sellTransactions: 0,
+        buyVolume: 0,
+        sellVolume: 0,
+      }
+    };
+
+    const volume = g.buy_vol_native + g.sell_vol_native;
+    const buyTransactions = g.buy_cnt;
+    const sellTransactions = g.sell_cnt;
+    const buyVolume = g.buy_vol_native;
+    const sellVolume = g.sell_vol_native;
+
+    return {
+      change: buyVolume - sellVolume,
+      volume,
+      buyTransactions,
+      sellTransactions,
+      buyVolume,
+      sellVolume,
+    };
   };
-  const currentData = timePeriodsData["24H"];
-  const totalTraders = (token.holders || 0) + (token.proTraders || 0) + (token.kolTraders || 0);
-  const buyVolume = (currentData.volume * currentData.buyVolumePercentage) / 100;
-  const sellVolume = (currentData.volume * currentData.sellVolumePercentage) / 100;
-  const buyers = Math.floor((totalTraders * currentData.buyerPercentage) / 100);
-  const sellers = Math.floor(
-    (totalTraders * currentData.sellerPercentage) / 100,
+
+  const currentStats = readTf(
+    (selectedStatsTimeframe as '5m' | '1h' | '6h' | '24h') ?? '24h'
   );
 
   return (
@@ -2380,22 +2448,36 @@ useEffect(() => {
           <div className="top-stats-grid">
             <div className="stat-group-vol">
               <span className="stat-label">24h Vol</span>
-              <span className="stat-value">$0</span>
+                <span className="stat-value">
+                  ${fmt(currentStats.volume, 1)}
+                </span>
             </div>
 
             <div className="stat-group buys">
               <span className="stat-label">Buys</span>
-              <span className="stat-value green">{formatNumberWithCommas(buyers)} / ${formatNumberWithCommas(buyVolume, 1)}</span>
+                <span className="stat-value green">
+                  {fmt(currentStats.buyTransactions, 0)} / ${fmt(currentStats.buyVolume, 1)}
+                </span>
             </div>
 
             <div className="stat-group sells">
               <span className="stat-label">Sells</span>
-              <span className="stat-value red">{formatNumberWithCommas(sellers)}/ ${formatNumberWithCommas(sellVolume, 1)}</span>
+                <span className="stat-value red">
+                  {fmt(currentStats.sellTransactions, 0)} / ${fmt(currentStats.sellVolume, 1)}
+                </span>
             </div>
 
             <div className="stat-group-net-vol">
               <span className="stat-label">Net Vol.</span>
-              <span className="stat-value red">-$0</span>
+                <span 
+                  className="stat-value" 
+                  style={{
+                    color: (currentStats.buyVolume - currentStats.sellVolume) >= 0 ? 'rgb(67 254 154)' : 'rgb(235 112 112)'
+                  }}
+                >
+                  { (currentStats.buyVolume - currentStats.sellVolume) >= 0 ? '+' : '' }
+                  ${fmt(Math.abs(currentStats.buyVolume - currentStats.sellVolume), 1)}
+                </span>
             </div>
           </div>
 
