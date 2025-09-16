@@ -8402,19 +8402,22 @@ const handleInputFocus = () => {
     URL.revokeObjectURL(url);
   }, [explorerFilters, explorerFiltersActiveTab]);
 
-  const handleExplorerFiltersApply = useCallback(() => {
-    const currentTabFilters = explorerFilters[explorerFiltersActiveTab];
-    const hasActiveFilters = Object.values(currentTabFilters).some(value =>
+const handleExplorerFiltersApply = useCallback(() => {
+  const newAppliedFilters = { ...appliedExplorerFilters };
+  
+  // Check and apply filters for all tabs
+  (['new', 'graduating', 'graduated'] as const).forEach(tab => {
+    const tabFilters = explorerFilters[tab];
+    const hasActiveFilters = Object.values(tabFilters).some(value =>
       value !== '' && value !== false && value !== null && value !== undefined
     );
+    
+    newAppliedFilters[tab] = hasActiveFilters ? tabFilters : null;
+  });
 
-    setAppliedExplorerFilters(prev => ({
-      ...prev,
-      [explorerFiltersActiveTab]: hasActiveFilters ? currentTabFilters : null
-    }));
-
-    setpopup(0);
-  }, [explorerFilters, explorerFiltersActiveTab]);
+  setAppliedExplorerFilters(newAppliedFilters);
+  setpopup(0);
+}, [explorerFilters, appliedExplorerFilters]);
   const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(newTab);
   }, []);
