@@ -508,8 +508,3 @@
   cursor: pointer;
   transition: all 0.2s ease;
 }
-
-.filter-reset-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.9);
-}

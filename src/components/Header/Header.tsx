@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import LanguageSelector from './LanguageSelector/LanguageSelector';
@@ -8,7 +8,11 @@ import ChartHeader from '../Chart/ChartHeader/ChartHeader';
 import MemeSearch from '../MemeSearch/MemeSearch';
 import { formatCommas } from '../../utils/numberDisplayFormat';
 import { formatSig } from '../OrderCenter/utils';
+import { useNavigate } from 'react-router-dom';
+import { encodeFunctionData } from 'viem';
+import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { settings } from '../../settings';
+import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 
 import settingsicon from '../../assets/settings.svg';
 import walleticon from '../../assets/wallet_icon.png';
@@ -65,6 +69,16 @@ interface HeaderProps {
   lastRefGroupFetch: any;
   tokenData?: any;
   monUsdPrice: number;
+  sendUserOperationAsync?: any;
+  setTerminalToken?: (address: string) => void;
+  setTokenData?: (data: any) => void;
+   quickAmounts?: { [key: string]: string };
+  setQuickAmount?: (category: string, amount: string) => void;
+  activePresets?: { [key: string]: number };
+  setActivePreset?: (category: string, preset: number) => void;
+  handleInputFocus?: () => void;
+  buyPresets?: { [key: number]: { slippage: string; priority: string; amount: string } };
+  sellPresets?: { [key: number]: { slippage: string; priority: string } };
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -101,9 +115,105 @@ const Header: React.FC<HeaderProps> = ({
   lastRefGroupFetch,
   tokenData,
   monUsdPrice,
+  sendUserOperationAsync,
+  setTerminalToken,
+  setTokenData,
+    quickAmounts,
+  setQuickAmount, 
+  activePresets,
+  setActivePreset,
+  handleInputFocus,
+  buyPresets,
+  sellPresets,
 }) => {
   const location = useLocation();
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
+const navigate = useNavigate();
+
+const handleTokenClick = (token: any) => {
+  if (setTerminalToken) {
+    setTerminalToken(token.tokenAddress);
+  }
+  if (setTokenData) {
+    setTokenData(token);
+  }
+  navigate(`/meme/${token.tokenAddress}`);
+  setIsMemeSearchOpen(false);
+};
+
+const handleQuickBuy = useCallback(async (token: any, amt: string) => {
+  const val = BigInt(amt || '0') * 10n ** 18n;
+  if (val === 0n) return;
+
+  const routerAddress = settings.chainConfig[activechain]?.launchpadRouter?.toLowerCase();
+  if (!routerAddress) {
+    console.error('Router address not found');
+    return;
+  }
+
+  const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+  try {
+    if (showLoadingPopup) {
+      showLoadingPopup(txId, {
+        title: 'Sending transaction...',
+        subtitle: `${amt} MON worth of ${token.symbol}`,
+        amount: amt,
+        amountUnit: 'MON',
+        tokenImage: token.image
+      });
+    }
+
+    const uo = {
+      target: routerAddress,
+      data: encodeFunctionData({ 
+        abi: CrystalRouterAbi, 
+        functionName: 'buy', 
+        args: [true, token.tokenAddress as `0x${string}`, val, 0n] 
+      }),
+      value: val,
+    };
+
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: 'Confirming transaction...',
+        subtitle: `${amt} MON worth of ${token.symbol}`,
+        variant: 'info',
+        tokenImage: token.image
+      });
+    }
+
+    await sendUserOperationAsync({ uo });
+    
+    if (terminalRefetch) {
+      terminalRefetch();
+    }
+    
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: 'Quick Buy Complete',
+        subtitle: `Successfully bought ${token.symbol} with ${amt} MON`,
+        variant: 'success',
+        confirmed: true,
+        isLoading: false,
+        tokenImage: token.image
+      });
+    }
+  } catch (e: any) {
+    console.error('Quick buy failed', e);
+    const msg = String(e?.message ?? '');
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
+        subtitle: msg || 'Please try again.',
+        variant: 'error',
+        confirmed: true,
+        isLoading: false,
+        tokenImage: token.image
+      });
+    }
+  }
+}, [sendUserOperationAsync, activechain, terminalRefetch]);
   const [pendingNotifs, setPendingNotifs] = useState(0);
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
@@ -144,12 +254,12 @@ const Header: React.FC<HeaderProps> = ({
   // Load and restore active wallet from localStorage
   useEffect(() => {
     const storedActiveWalletPrivateKey = localStorage.getItem('crystal_active_wallet_private_key');
-    
+
     // Only restore if we have subWallets loaded and a stored active wallet
     if (storedActiveWalletPrivateKey && subWallets.length > 0) {
       // Check if the stored private key is still valid (exists in current subWallets)
       const isValidWallet = subWallets.some(wallet => wallet.privateKey === storedActiveWalletPrivateKey);
-      
+
       if (isValidWallet) {
         // Only set if it's different from current active wallet to avoid unnecessary calls
         if (activeWalletPrivateKey !== storedActiveWalletPrivateKey) {
@@ -177,7 +287,7 @@ const Header: React.FC<HeaderProps> = ({
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isWalletDropdownOpen]);
-const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
+  const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
 
   const memeTokenData = isMemeTokenPage && tokenData ? (() => {
     const token = tokenData;
@@ -258,12 +368,12 @@ const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
       setOneCTSigner('');
       localStorage.removeItem('crystal_active_wallet_private_key');
     }
-    
+
     // Call the logout function if available
     if (logout) {
       logout();
     }
-    
+
     setIsWalletDropdownOpen(false);
   };
 
@@ -348,14 +458,17 @@ const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
           />
         </div>
         <div className={rightHeaderClass}>
+          
           <button
-  type="button"
-  className="meme-search-button"
-  onClick={() => setIsMemeSearchOpen(true)}
->
+            type="button"
+            className="meme-search-button"
+            onClick={() => setIsMemeSearchOpen(true)}
+          >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="meme-button-search-icon"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+              Search by token or CA...
+              <span className="meme-search-keybind">/</span>
 
-
-</button>
+          </button>
 
           {/* <NetworkSelector
             isNetworkSelectorOpen={isNetworkSelectorOpen}
@@ -402,12 +515,22 @@ const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
                 isHeader={true}
               />
             )}
-            <MemeSearch 
-  isOpen={isMemeSearchOpen} 
-  onClose={() => setIsMemeSearchOpen(false)} 
+           <MemeSearch
+  isOpen={isMemeSearchOpen}
+  onClose={() => setIsMemeSearchOpen(false)}
+  monUsdPrice={monUsdPrice}
+  onTokenClick={handleTokenClick}
+  onQuickBuy={handleQuickBuy}
+  sendUserOperationAsync={sendUserOperationAsync}
+  quickAmounts={quickAmounts}
+  setQuickAmount={setQuickAmount}
+  activePresets={activePresets}
+  setActivePreset={setActivePreset}
+  handleInputFocus={handleInputFocus}
+  buyPresets={buyPresets}
 />
           </div>
-          
+
           <div className="wallet-dropdown-container" ref={walletDropdownRef}>
             <button
               type="button"
@@ -419,9 +542,9 @@ const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
                   'Connect Wallet'
                 ) : (
                   <span className="transparent-button-container">
-                      <img 
-                      src={walleticon} 
-                      className="img-wallet-icon" 
+                    <img
+                      src={walleticon}
+                      className="img-wallet-icon"
                     />
                     {subWallets.length > 0 && (
                       <span className="wallet-count">{subWallets.length}</span>
@@ -430,25 +553,25 @@ const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
                       <span className="wallet-count">0</span>
                     )}
                     <span className="wallet-separator"></span>
-                                        <img 
-                      src={currentWalletIcon || walleticon} 
-                      className="wallet-icon" 
+                    <img
+                      src={currentWalletIcon || walleticon}
+                      className="wallet-icon"
                     />
                     <span className="header-wallet-address">
                       {displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'}
                     </span>
-                      <svg 
-                        className={`wallet-dropdown-arrow ${isWalletDropdownOpen ? 'open' : ''}`}
-                        width="16" 
-                        height="16" 
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeWidth="2"
-                      >
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                      </svg>
-                    
+                    <svg
+                      className={`wallet-dropdown-arrow ${isWalletDropdownOpen ? 'open' : ''}`}
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+
                   </span>
                 )}
               </div>
@@ -464,68 +587,68 @@ const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
                     <img src={closebutton} className="wallet-dropdown-close-icon" />
                   </button>
                 </div>
-                  <div className="wallet-dropdown-list">
-                    {subWallets.length > 0 ? (
-                      subWallets.map((wallet, index) => {
-                        const balance = getWalletBalance(wallet.address);
-                        const isActive = isWalletActive(wallet.privateKey);
-                        return (
-                          <div
-                            key={wallet.address}
-                            className={`wallet-dropdown-item ${isActive ? 'active' : ''}`}
-                            onClick={(e) => {
-                              handleSetActiveWallet(wallet.privateKey)
-                              e.stopPropagation()
-                            }}
-                          >
-                            <div className="wallet-dropdown-checkbox-container">
-                              <input
-                                type="checkbox"
-                                className="wallet-dropdown-checkbox"
-                                checked={isActive}
-                              />
-                            </div>
-
-                            <div 
-                              className="wallet-dropdown-info"
-                            >
-                              <div className="wallet-dropdown-name">
-                                {getWalletName(wallet.address, index)}
-                              </div>
-                              <div className="wallet-dropdown-address">
-                                {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                              </div>
-                            </div>
-
-                            <div className="wallet-dropdown-balance">
-                              <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
-                                <img src={monadicon} className="wallet-dropdown-mon-icon"/>
-                                {formatNumberWithCommas(balance, 2)}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="wallet-dropdown-no-subwallets">
-                        <button
-                          className="wallet-dropdown-action-btn 1ct-trading-btn"
-                          onClick={() => {
-                            setpopup(28);
-                            setIsWalletDropdownOpen(false);
+                <div className="wallet-dropdown-list">
+                  {subWallets.length > 0 ? (
+                    subWallets.map((wallet, index) => {
+                      const balance = getWalletBalance(wallet.address);
+                      const isActive = isWalletActive(wallet.privateKey);
+                      return (
+                        <div
+                          key={wallet.address}
+                          className={`wallet-dropdown-item ${isActive ? 'active' : ''}`}
+                          onClick={(e) => {
+                            handleSetActiveWallet(wallet.privateKey)
+                            e.stopPropagation()
                           }}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="wallet-dropdown-action-icon"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
-                          Enable 1CT
-                        </button>
-                      </div>
-                    )}
+                          <div className="wallet-dropdown-checkbox-container">
+                            <input
+                              type="checkbox"
+                              className="wallet-dropdown-checkbox"
+                              checked={isActive}
+                            />
+                          </div>
+
+                          <div
+                            className="wallet-dropdown-info"
+                          >
+                            <div className="wallet-dropdown-name">
+                              {getWalletName(wallet.address, index)}
+                            </div>
+                            <div className="wallet-dropdown-address">
+                              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                            </div>
+                          </div>
+
+                          <div className="wallet-dropdown-balance">
+                            <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+                              <img src={monadicon} className="wallet-dropdown-mon-icon" />
+                              {formatNumberWithCommas(balance, 2)}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="wallet-dropdown-no-subwallets">
+                      <button
+                        className="wallet-dropdown-action-btn 1ct-trading-btn"
+                        onClick={() => {
+                          setpopup(28);
+                          setIsWalletDropdownOpen(false);
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="wallet-dropdown-action-icon"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
+                        Enable 1CT
+                      </button>
+                    </div>
+                  )}
                   <div className="wallet-dropdown-actions">
                     <button
                       className="wallet-dropdown-action-btn portfolio-btn"
                       onClick={handleOpenPortfolio}
                     >
-                      <img className="wallet-dropdown-action-icon" src={walleticon}/>
+                      <img className="wallet-dropdown-action-icon" src={walleticon} />
                       Portfolio
                     </button>
                     <button

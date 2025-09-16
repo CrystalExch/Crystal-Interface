@@ -92,7 +92,7 @@
   background: none;
   border: none;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 5px;
+  border-radius: 20px;
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -156,7 +156,7 @@
   width: 35px;
   height: 35px;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 6px;
+  border-radius: 20px;
 }
 
 .app-settings-button:hover {
@@ -174,7 +174,7 @@
   width: 35px;
   height: 35px;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 6px;
+  border-radius: 20px;
 }
 
 .history-button:hover {
@@ -854,17 +854,36 @@
   justify-content: center;
   overflow: hidden;
   transition: all.2s cubic-bezier(0.2, 0, 0.1, 1);
-  width: 35px;
   height: 35px;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 6px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  letter-spacing: -0.3px;
+  padding: 0 12px;
+  gap:8px;
+  color: #ffffff72;
+  font-weight: 300;
+  padding-right: 8px;
 }
 
 .meme-search-button:hover {
   opacity: 0.8;
 }
 
+.meme-button-search-icon{
+  color:rgb(159, 156, 156);
+}
+
 .meme-search-icon {
   opacity: 0.5;
   width: 20px
+}
+
+
+
+.meme-search-keybind{
+  padding: 0px 10px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 20px;
+  color: white;
 }
