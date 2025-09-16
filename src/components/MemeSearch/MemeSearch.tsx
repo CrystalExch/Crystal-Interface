@@ -653,7 +653,7 @@ useEffect(() => {
                         })
                     ) : (
                         <div className="meme-no-results">
-                            {loading ? <p>Loading...</p> : <p>No tokens found matching "{searchTerm}"</p>}
+                            {loading ? <p></p> : <p>No tokens found matching "{searchTerm}"</p>}
                         </div>
                     )}
                 </div>

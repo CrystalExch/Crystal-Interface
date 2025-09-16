@@ -12759,7 +12759,7 @@ const handleInputFocus = () => {
               {explorerFiltersActiveSection === 'audit' && (
                 <div className="audit-filters">
                   <div className="filter-row">
-                    <span className="filter-label">Age (mins)</span>
+                    <span className="filter-label">Age (hours)</span>
                     <div className="filter-inputs">
                       <input
                         type="text"
