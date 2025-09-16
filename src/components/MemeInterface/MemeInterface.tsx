@@ -2439,21 +2439,21 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             <div className="stat-group-vol">
               <span className="stat-label">{selectedStatsTimeframe} Vol</span>
                 <span className="stat-value">
-                  {fmt(currentStats.volume, 1)} MON
+                  ${fmt(currentStats.volume * monUsdPrice, 1)}
                 </span>
             </div>
 
             <div className="stat-group buys">
               <span className="stat-label">Buys</span>
                 <span className="stat-value green">
-                  {fmt(currentStats.buyTransactions, 0)} / ${fmt(currentStats.buyVolume, 1)}
+                  {fmt(currentStats.buyTransactions, 0)} / ${fmt(currentStats.buyVolume * monUsdPrice, 1)}
                 </span>
             </div>
 
             <div className="stat-group sells">
               <span className="stat-label">Sells</span>
                 <span className="stat-value red">
-                  {fmt(currentStats.sellTransactions, 0)} / ${fmt(currentStats.sellVolume, 1)}
+                  {fmt(currentStats.sellTransactions, 0)} / ${fmt(currentStats.sellVolume * monUsdPrice, 1)}
                 </span>
             </div>
 
@@ -2466,7 +2466,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   }}
                 >
                   { (currentStats.buyVolume - currentStats.sellVolume) >= 0 ? '+' : '' }
-                  {fmt(Math.abs(currentStats.buyVolume - currentStats.sellVolume), 1)} MON
+                  ${fmt(Math.abs((currentStats.buyVolume - currentStats.sellVolume) * monUsdPrice), 1)} 
                 </span>
             </div>
           </div>
