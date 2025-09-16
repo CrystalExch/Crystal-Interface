@@ -2295,6 +2295,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               setSelectedInterval={setSelectedInterval}
               realtimeCallbackRef={realtimeCallbackRef}
               monUsdPrice={monUsdPrice}
+              tradehistory={trades}
+              isMarksVisible={trackedAddresses.length > 0}
             />
           </div>
           <div className={`meme-trades-container ${mobileActiveView !== 'trades' ? 'mobile-hidden' : ''}`}>

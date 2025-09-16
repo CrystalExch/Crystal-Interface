@@ -267,8 +267,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                 }
                 try {
                   await setChain();
-                  let hash;
-                  hash = await sendUserOperationAsync({uo: replaceOrder(
+                  await sendUserOperationAsync({uo: replaceOrder(
                     router,
                     BigInt(0),
                     (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
@@ -664,8 +663,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                     }
                     try {
                       await setChain();
-                      let hash;
-                      hash = await sendUserOperationAsync({uo: replaceOrder(
+                      await sendUserOperationAsync({uo: replaceOrder(
                         router,
                         BigInt(0),
                         (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,

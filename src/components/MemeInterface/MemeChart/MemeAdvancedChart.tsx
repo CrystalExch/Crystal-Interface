@@ -13,6 +13,7 @@ interface MemeAdvancedChartProps {
   realtimeCallbackRef: any;
   monUsdPrice?: number;
 }
+
 const SUB = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
 const toSub = (n: number) => String(n).split('').map(d => SUB[+d]).join('');
 
@@ -71,6 +72,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
   const subsRef = useRef<Record<string, string>>({});
+  const onResetCacheNeededRef = useRef<(() => void) | null>(null);
   const [showMarketCap, setShowMarketCap] = useState<boolean>(() => {
     try {
       const raw = localStorage.getItem('meme_chart_showMarketCap');
@@ -112,82 +114,101 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       dataRef.current[data[1]] = enforceOpenEqualsPrevClose(data[0]);
     }
   }, [data]);
+
   useEffect(() => {
     try {
       localStorage.setItem('meme_chart_showMarketCap', JSON.stringify(showMarketCap));
     } catch { }
   }, [showMarketCap]);
+
   useEffect(() => {
     try {
       localStorage.setItem('meme_chart_showUSD', JSON.stringify(showUSD));
     } catch { }
   }, [showUSD]);
+
   useEffect(() => {
     try {
-      const diff = tradehistory.slice((tradeHistoryRef.current || []).length);
+      const prev = tradeHistoryRef.current || [];
+      const diff = tradehistory.slice(prev.length);
+
       const becameVisible = !isMarksVisibleRef.current && isMarksVisible;
       isMarksVisibleRef.current = isMarksVisible;
-      tradeHistoryRef.current = [...tradehistory];
+
+      tradeHistoryRef.current = Array.isArray(tradehistory) ? [...tradehistory] : [];
+
+      const chart = widgetRef.current?.activeChart?.();
+      const canPush = chartReady && typeof marksRef.current === 'function' && !!chart && !!chart.symbol?.();
 
       if (tradehistory.length > 0 && becameVisible) {
-        if (chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol()) {
-          const marks = tradehistory.map((trade: any) => ({
-            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            time: trade.timestamp || trade[6],
-            hoveredBorderWidth: 0,
-            borderWidth: 0,
-            color: (trade.isBuy || trade[2] == 1)
-              ? { background: 'rgb(131, 251, 155)', border: '' }
-              : { background: 'rgb(210, 82, 82)', border: '' },
-            text: `${(trade.isBuy || trade[2] == 1) ? 'Bought' : 'Sold'} ${formatDisplay(trade.amount || trade[0])} ${token.symbol} on ` +
-              new Date((trade.timestamp || trade[6]) * 1000).toLocaleString('en-US', {
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hourCycle: 'h23',
-              }).replace(/, \d{2}$/, ''),
-            label: (trade.isBuy || trade[2] == 1) ? 'B' : 'S',
-            labelFontColor: 'black',
-            minSize: 17,
-          }));
+        if (canPush) {
+          const marks = tradehistory.map((trade: any) => {
+            const ts = trade.timestamp ?? trade[6];
+            const sideBuy = (trade.isBuy ?? trade[2] === 1) === true;
+            const baseAmt = trade.tokenAmount ?? trade.amount ?? trade[0] ?? 0;
+
+            return {
+              id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              time: ts,
+              hoveredBorderWidth: 0,
+              borderWidth: 0,
+              color: sideBuy
+                ? { background: 'rgb(131, 251, 155)', border: '' }
+                : { background: 'rgb(210, 82, 82)', border: '' },
+              text:
+                `${sideBuy ? 'Bought' : 'Sold'} ${formatDisplay(baseAmt)} ${token.symbol} on ` +
+                new Date(ts * 1000).toLocaleString('en-US', {
+                  month: '2-digit', day: '2-digit', hour: '2-digit',
+                  minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+                }).replace(/, \d{2}$/, ''),
+              label: sideBuy ? 'B' : 'S',
+              labelFontColor: 'black',
+              minSize: 17,
+            };
+          });
           marksRef.current(marks);
         }
-      } else if (tradehistory.length > 0 && isMarksVisible) {
-        if (chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol()) {
-          const marks = diff.map((trade: any) => ({
-            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            time: trade.timestamp || trade[6],
-            hoveredBorderWidth: 0,
-            borderWidth: 0,
-            color: (trade.isBuy || trade[2] == 1)
-              ? { background: 'rgb(131, 251, 155)', border: '' }
-              : { background: 'rgb(210, 82, 82)', border: '' },
-            text: `${(trade.isBuy || trade[2] == 1) ? 'Bought' : 'Sold'} ${formatDisplay(trade.amount || trade[0])} ${token.symbol} on ` +
-              new Date((trade.timestamp || trade[6]) * 1000).toLocaleString('en-US', {
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hourCycle: 'h23',
-              }).replace(/, \d{2}$/, ''),
-            label: (trade.isBuy || trade[2] == 1) ? 'B' : 'S',
-            labelFontColor: 'black',
-            minSize: 17,
-          }));
+        return;
+      }
+
+      if (tradehistory.length > 0 && isMarksVisible) {
+        if (canPush && diff.length > 0) {
+          const marks = diff.map((trade: any) => {
+            const ts = trade.timestamp ?? trade[6];
+            const sideBuy = (trade.isBuy ?? trade[2] === 1) === true;
+            const baseAmt = trade.tokenAmount ?? trade.amount ?? trade[0] ?? 0;
+
+            return {
+              id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              time: ts,
+              hoveredBorderWidth: 0,
+              borderWidth: 0,
+              color: sideBuy
+                ? { background: 'rgb(131, 251, 155)', border: '' }
+                : { background: 'rgb(210, 82, 82)', border: '' },
+              text:
+                `${sideBuy ? 'Bought' : 'Sold'} ${formatDisplay(baseAmt)} ${token.symbol} on ` +
+                new Date(ts * 1000).toLocaleString('en-US', {
+                  month: '2-digit', day: '2-digit', hour: '2-digit',
+                  minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+                }).replace(/, \d{2}$/, ''),
+              label: sideBuy ? 'B' : 'S',
+              labelFontColor: 'black',
+              minSize: 17,
+            };
+          });
           marksRef.current(marks);
         }
-      } else {
-        if (chartReady) {
-          widgetRef.current?.activeChart()?.clearMarks();
-        }
+        return;
+      }
+
+      if (chartReady) {
+        chart?.clearMarks?.();
       }
     } catch (e) {
       console.error('Error updating trade marks:', e);
     }
-  }, [tradehistory.length, isMarksVisible, token.symbol]);
+  }, [tradehistory]);
 
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
@@ -353,42 +374,45 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         },
 
         getMarks: async (
-          symbolInfo: any,
+          _symbolInfo: any,
           from: number,
           to: number,
           onDataCallback: (marks: any[]) => void,
         ) => {
-          const marks = isMarksVisibleRef.current === false ? [] : tradeHistoryRef.current
-            .filter((trade: any) => {
-              const tradeTime = trade.timestamp || trade[6];
-              return tradeTime >= from && tradeTime <= to;
-            })
-            .map((trade: any) => ({
+          const rows = isMarksVisibleRef.current === false ? [] :
+            (Array.isArray(tradeHistoryRef.current) ? tradeHistoryRef.current : []).filter((trade: any) => {
+              const ts = trade.timestamp ?? trade[6];
+              return ts >= from && ts <= to;
+            });
+
+          const marks = rows.map((trade: any) => {
+            const ts = trade.timestamp ?? trade[6];
+            const sideBuy = (trade.isBuy ?? trade[2] === 1) === true;
+            const baseAmt = trade.tokenAmount ?? trade.amount ?? trade[0] ?? 0;
+
+            return {
               id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              time: trade.timestamp || trade[6],
+              time: ts,
               hoveredBorderWidth: 0,
               borderWidth: 0,
-              color: (trade.isBuy || trade[2] == 1)
+              color: sideBuy
                 ? { background: 'rgb(131, 251, 155)', border: '' }
                 : { background: 'rgb(210, 82, 82)', border: '' },
-              text: `${(trade.isBuy || trade[2] == 1) ? 'Bought' : 'Sold'} ${formatDisplay(trade.amount || trade[0])} ${token.symbol} on ` +
-                new Date((trade.timestamp || trade[6]) * 1000).toLocaleString('en-US', {
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                  hourCycle: 'h23',
+              text:
+                `${sideBuy ? 'Bought' : 'Sold'} ${formatDisplay(baseAmt)} ${token.symbol} on ` +
+                new Date(ts * 1000).toLocaleString('en-US', {
+                  month: '2-digit', day: '2-digit', hour: '2-digit',
+                  minute: '2-digit', second: '2-digit', hourCycle: 'h23',
                 }).replace(/, \d{2}$/, ''),
-              label: (trade.isBuy || trade[2] == 1) ? 'B' : 'S',
+              label: sideBuy ? 'B' : 'S',
               labelFontColor: 'black',
               minSize: 17,
-            }));
+            };
+          });
 
+          // store callback like the working component does so we can push diffs later
           marksRef.current = onDataCallback;
-          setTimeout(() => {
-            onDataCallback(marks);
-          }, 0);
+          setTimeout(() => onDataCallback(marks), 0);
         },
 
         subscribeBars: (
@@ -396,11 +420,12 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           resolution: string,
           onRealtimeCallback: (bar: any) => void,
           subscriberUID: string,
-          onResetCacheNeeded?: () => void,
+          onResetCacheNeeded: () => void,
         ) => {
           const key = toResKey(token.symbol, resolution);
           realtimeCallbackRef.current[key] = onRealtimeCallback;
           subsRef.current[subscriberUID] = key;
+          onResetCacheNeededRef.current = onResetCacheNeeded
         },
 
         unsubscribeBars: (subscriberUID: string) => {
@@ -531,7 +556,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       });
       setOverlayVisible(false);
     });
-    
+
     return () => {
       setChartReady(false);
       if (widgetRef.current) {
@@ -563,7 +588,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
 
       }
     }
-    catch (e) {}
+    catch (e) { }
   }, [token.symbol, selectedInterval]);
 
   return (
