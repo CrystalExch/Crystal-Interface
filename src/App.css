@@ -1162,7 +1162,7 @@ body {
   align-items: center;
   background: #21212716;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 5px;
+  border-radius: 20px;
   color: #ffffffd8;
   cursor: pointer;
   display: inline-flex;
@@ -1172,6 +1172,7 @@ body {
   margin-right: 15px;
   overflow: hidden;
   padding: 4px;
+  padding-left: 6px;
   position: relative;
   transform: translateY(0);
   white-space: nowrap;

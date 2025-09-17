@@ -164,6 +164,14 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={swap} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Swap')}</span>
             </Link>
+                        <Link
+              to="/spectra"
+              className={`page-mode-button ${path === '/spectra' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              onClick={handleLinkClick}
+            >
+              <img src={explorer} className="sidebar-icon" />
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Spectra')}</span>
+            </Link>
             <Link
               to="/portfolio"
               className={`page-mode-button ${path === '/portfolio' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -208,14 +216,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             >
               <img src={fun} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('crystal.fun')}</span>
-            </Link>
-            <Link
-              to="/spectra"
-              className={`page-mode-button ${path === '/spectra' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
-              onClick={handleLinkClick}
-            >
-              <img src={explorer} className="sidebar-icon" />
-              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Spectra')}</span>
             </Link>
             <Link
               to="/trackers"

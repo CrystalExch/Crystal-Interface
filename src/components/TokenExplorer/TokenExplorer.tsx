@@ -750,7 +750,7 @@ const AlertsPopup: React.FC<{
             <div className="alerts-main-toggle">
               <div>
                 <h4 className="alerts-main-label">Sound Alerts</h4>
-                <p className="alerts-description">Play sound alerts for Tokens in Terminal</p>
+                <p className="alerts-description">Play sound alerts for Tokens in Spectra</p>
               </div>
               <div
                 className={`toggle-switch ${settings.soundAlertsEnabled ? 'active' : ''}`}
