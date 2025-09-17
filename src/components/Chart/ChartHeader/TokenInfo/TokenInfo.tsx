@@ -1,6 +1,6 @@
 import { Search, SearchIcon } from 'lucide-react';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-
+import camera from '../../../../assets/camera.svg'
 import CopyButton from '../../../CopyButton/CopyButton';
 import TokenInfoPopup from './TokenInfoPopup/TokenInfoPopup';
 import MiniChart from './MiniChart/MiniChart';
@@ -10,6 +10,9 @@ import PriceDisplay from '../PriceDisplay/PriceDisplay';
 import TokenIcons from '../TokenIcons/TokenIcons';
 import telegram from '../../../../assets/telegram.png';
 import discord from '../../../../assets/discord1.svg';
+import avatar from '../../../../assets/avatar.png';
+import tweet from '../../../../assets/tweet.png';
+import { TwitterHover } from '../../../TwitterHover/TwitterHover';
 import { useSharedContext } from '../../../../contexts/SharedContext';
 import {
   formatCommas,
@@ -163,22 +166,22 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [activeFilter, setActiveFilter] = useState('All');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [hoveredToken, setHoveredToken] = useState(false);
-  const [currentTime, setCurrentTime] = useState(Date.now()); 
+  const [currentTime, setCurrentTime] = useState(Date.now());
   const filterTabsRef = useRef<HTMLDivElement>(null);
   const marketsListRef = useRef<HTMLDivElement>(null);
 
   const isAdvancedView = isTradeRoute && !simpleView;
 
-useEffect(() => {
-  const interval = setInterval(() => {
-    setCurrentTime(Date.now());
-  }, 1000);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
 
-  return () => clearInterval(interval);
-}, []);
+    return () => clearInterval(interval);
+  }, []);
 
-const bondingPercentage = useMemo(() => {
-      if (!isMemeToken || !activeMarket) return 0;
+  const bondingPercentage = useMemo(() => {
+    if (!isMemeToken || !activeMarket) return 0;
     const TOTAL_SUPPLY = 1e9;
     const marketCap = parseFloat(price.replace(/,/g, '')) * TOTAL_SUPPLY;
     return calculateBondingPercentage(marketCap || 0);
@@ -197,24 +200,24 @@ const bondingPercentage = useMemo(() => {
     return `$${price.toFixed(2)}`;
   };
 
-const formatTimeAgo = useMemo(() => {
-  return (createdTimestamp: number) => {
-    const now = Math.floor(currentTime / 1000); 
-    const ageSec = now - createdTimestamp;
+  const formatTimeAgo = useMemo(() => {
+    return (createdTimestamp: number) => {
+      const now = Math.floor(currentTime / 1000);
+      const ageSec = now - createdTimestamp;
 
-    if (ageSec < 60) {
-      return `${ageSec}s`;
-    } else if (ageSec < 3600) {
-      return `${Math.floor(ageSec / 60)}m`;
-    } else if (ageSec < 86400) {
-      return `${Math.floor(ageSec / 3600)}h`;
-    } else if (ageSec < 604800) {
-      return `${Math.floor(ageSec / 86400)}d`;
-    } else {
-      return `${Math.floor(ageSec / 604800)}w`;
-    }
-  };
-}, [currentTime]);
+      if (ageSec < 60) {
+        return `${ageSec}s`;
+      } else if (ageSec < 3600) {
+        return `${Math.floor(ageSec / 60)}m`;
+      } else if (ageSec < 86400) {
+        return `${Math.floor(ageSec / 3600)}h`;
+      } else if (ageSec < 604800) {
+        return `${Math.floor(ageSec / 86400)}d`;
+      } else {
+        return `${Math.floor(ageSec / 604800)}w`;
+      }
+    };
+  }, [currentTime]);
   const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) => {
     if (formatted.type === 'simple') {
       return <span>{formatted.text}</span>;
@@ -568,8 +571,37 @@ const formatTimeAgo = useMemo(() => {
                     } as React.CSSProperties
                     : {}
                 }
+                onClick={() => handleImageSearch(memeTokenData.image || '')}
               >
-                <img src={memeTokenData.image} alt={memeTokenData.name} className="meme-interface-token-icon" />
+                <div className="meme-interface-image-container">
+                  {memeTokenData.image ? (
+                    <img src={memeTokenData.image} alt={memeTokenData.name} className="meme-interface-token-icon" />
+                  ) : (
+                    <div
+                      className="meme-interface-token-icon"
+                      style={{
+                        width: '37px',
+                        height: '37px',
+                        backgroundColor: '#000000',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '24px',
+                        color: '#ffffff',
+                        borderRadius: '3px',
+                        boxShadow: '0px 0px 0 1.5px rgb(6, 6, 6)',
+                        position: 'relative',
+                        zIndex: 3
+                      }}
+                    >
+                      {memeTokenData.symbol.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="meme-interface-image-overlay">
+                    <img className="token-info-camera-icon" src={camera} alt="inspect" />
+
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -588,13 +620,13 @@ const formatTimeAgo = useMemo(() => {
                     </svg>
                   </button>
                 </div>
-                <button
-                  className="meme-interface-share-btn"
-                  onClick={() => copyToClipboard(memeTokenData.tokenAddress)}
-                  title="Copy contract address"
-                >
-                  <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" ><path d="M 36.5 5 A 6.5 6.5 0 0 0 30.236328 13.207031 L 30.121094 13.263672 L 16.738281 19.953125 L 16.623047 20.009766 A 6.5 6.5 0 0 0 11.5 17.5 A 6.5 6.5 0 0 0 11.5 30.5 A 6.5 6.5 0 0 0 16.626953 27.990234 L 16.738281 28.046875 L 30.121094 34.736328 L 30.230469 34.791016 A 6.5 6.5 0 0 0 36.5 43 A 6.5 6.5 0 0 0 36.5 30 A 6.5 6.5 0 0 0 31.671875 32.158203 L 31.460938 32.052734 L 18.080078 25.363281 L 17.871094 25.259766 A 6.5 6.5 0 0 0 17.869141 22.742188 L 18.080078 22.636719 L 31.460938 15.947266 L 31.666016 15.84375 A 6.5 6.5 0 0 0 36.5 18 A 6.5 6.5 0 0 0 36.5 5 z" /></svg>
-                </button>
+<button
+  className="meme-interface-share-btn"
+  onClick={() => copyToClipboard(`app.crystal.exchange/meme/${memeTokenData.tokenAddress}`)}
+  title="Copy share link"
+>
+  <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" ><path d="M 36.5 5 A 6.5 6.5 0 0 0 30.236328 13.207031 L 30.121094 13.263672 L 16.738281 19.953125 L 16.623047 20.009766 A 6.5 6.5 0 0 0 11.5 17.5 A 6.5 6.5 0 0 0 11.5 30.5 A 6.5 6.5 0 0 0 16.626953 27.990234 L 16.738281 28.046875 L 30.121094 34.736328 L 30.230469 34.791016 A 6.5 6.5 0 0 0 36.5 43 A 6.5 6.5 0 0 0 36.5 30 A 6.5 6.5 0 0 0 31.671875 32.158203 L 31.460938 32.052734 L 18.080078 25.363281 L 17.871094 25.259766 A 6.5 6.5 0 0 0 17.869141 22.742188 L 18.080078 22.636719 L 31.460938 15.947266 L 31.666016 15.84375 A 6.5 6.5 0 0 0 36.5 18 A 6.5 6.5 0 0 0 36.5 5 z" /></svg>
+</button>
 
                 <button
                   className="meme-interface-share-btn"
@@ -623,24 +655,29 @@ const formatTimeAgo = useMemo(() => {
                 <div className="meme-interface-token-social-links">
 
                   {memeTokenData.twitterHandle && (
-                    <a
-                      className="meme-interface-social-btn"
-                      href={memeTokenData.twitterHandle}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                      </svg>
-                    </a>
+                    <TwitterHover url={memeTokenData.twitterHandle}>
+                      <a
+                      className="token-info-meme-interface-twitter-btn"
+                        href={memeTokenData.twitterHandle}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <img
+                          src={memeTokenData.twitterHandle.includes('/status/') ? tweet : avatar}
+                          className={memeTokenData.twitterHandle.includes('/status/') ? 'tweet-icon' : 'avatar-icon'}
+                          style={{ width: '18px', height: '18px' }}
+                        />
+                      </a>
+                    </TwitterHover>
                   )}
 
                   {memeTokenData.website && (
                     <a
-                      className="meme-interface-social-btn"
+                      className="token-info-meme-interface-social-btn"
                       href={memeTokenData.website}
                       target="_blank"
-                      rel="noreferrer"                    >
+                      rel="noreferrer"
+                    >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
                       </svg>
@@ -649,33 +686,35 @@ const formatTimeAgo = useMemo(() => {
 
                   {memeTokenData.telegramHandle && (
                     <a
-                      className="explorer-telegram-btn"
+                      className="token-info-meme-interface-social-btn"
                       href={memeTokenData.telegramHandle}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <img src={telegram} alt="discord" />
+                      <img src={telegram} alt="telegram" style={{ width: '16px', height: '16px' }} />
                     </a>
                   )}
 
                   {memeTokenData.discordHandle && (
                     <a
-                      className="explorer-discord-btn"
+                      className="token-info-meme-interface-social-btn"
                       href={memeTokenData.discordHandle}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <img src={discord} alt="discord" />
+                      <img src={discord} alt="discord" style={{ width: '14px', height: '14px' }} />
                     </a>
                   )}
 
-                  <button
-                    className="meme-interface-social-btn"
-                    onClick={() => handleImageSearch(memeTokenData.image)}
-                    title="Reverse image search"
+                  <a
+                      className="token-info-meme-interface-social-btn"
+                    href={`https://twitter.com/search?q=${memeTokenData.tokenAddress}`}
+                    target="_blank"
+                    rel="noreferrer"
                   >
-                    <SearchIcon size={14} />
-                  </button>
+                    <Search size={14} />
+                  </a>
+
                 </div>
               </div>
             </div>

@@ -15,6 +15,7 @@ import {
 import './TwitterHover.css';
 import type { Placement } from '@floating-ui/react';
 import verified from '../../assets/verified.png'
+
 /** ---------- Types returned by the backend ---------- */
 type Media = { type: 'photo' | 'video' | 'animated_gif'; url: string; width?: number; height?: number };
 
@@ -73,38 +74,54 @@ function parseTextWithMentions(text: string, hasMedia = false) {
     processedText = processedText.replace(/https:\/\/t\.co\/\S+/g, '').trim();
   }
 
+  // Preserve line breaks by converting them to JSX
+  const lines = processedText.split('\n');
   const mentionRegex = /@([A-Za-z0-9_]{1,15})\b/g;
-  const parts = [];
-  let lastIndex = 0;
-  let match;
+  
+  const processedLines = lines.map((line, lineIndex) => {
+    const parts = [];
+    let lastIndex = 0;
+    let match;
 
-  while ((match = mentionRegex.exec(processedText)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(processedText.slice(lastIndex, match.index));
+    while ((match = mentionRegex.exec(line)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(line.slice(lastIndex, match.index));
+      }
+
+      const username = match[1];
+      parts.push(
+        <a
+          key={`mention-${lineIndex}-${match.index}`}
+          href={`https://x.com/${username}`}
+          target="_blank"
+          rel="noreferrer"
+          className="twitter-mention"
+          onClick={(e) => e.stopPropagation()}
+        >
+          @{username}
+        </a>
+      );
+
+      lastIndex = match.index + match[0].length;
     }
 
-    const username = match[1];
-    parts.push(
-      <a
-        key={`mention-${match.index}`}
-        href={`https://x.com/${username}`}
-        target="_blank"
-        rel="noreferrer"
-        className="twitter-mention"
-        onClick={(e) => e.stopPropagation()}
-      >
-        @{username}
-      </a>
-    );
+    if (lastIndex < line.length) {
+      parts.push(line.slice(lastIndex));
+    }
 
-    lastIndex = match.index + match[0].length;
-  }
+    return parts.length > 1 ? parts : line;
+  });
 
-  if (lastIndex < processedText.length) {
-    parts.push(processedText.slice(lastIndex));
-  }
+  // Join lines with <br> elements, but don't add <br> after the last line
+  const result = [];
+  processedLines.forEach((line, index) => {
+    result.push(line);
+    if (index < processedLines.length - 1) {
+      result.push(<br key={`br-${index}`} />);
+    }
+  });
 
-  return parts.length > 1 ? parts : processedText;
+  return result.length > 1 ? result : processedText;
 }
 
 export function TwitterHover({ url, children, openDelayMs = 180, placement = 'top', portal = true }: Props) {
@@ -112,8 +129,8 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
   const [loading, setLoading] = React.useState(false);
   const [data, setData] = React.useState<Preview | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-const [hasFetched, setHasFetched] = React.useState(false);
-const [maxHeight, setMaxHeight] = React.useState<number | undefined>(undefined);
+  const [hasFetched, setHasFetched] = React.useState(false);
+  const [maxHeight, setMaxHeight] = React.useState<number | undefined>(undefined);
   const arrowRef = React.useRef<HTMLDivElement | null>(null);
   const abortRef = React.useRef<AbortController | null>(null);
   const fetchingRef = React.useRef(false);
@@ -132,20 +149,22 @@ const [maxHeight, setMaxHeight] = React.useState<number | undefined>(undefined);
   const role = useRole(context, { role: 'dialog' });
   const dismiss = useDismiss(context);
   const { getReferenceProps, getFloatingProps } = useInteractions([hover, role, dismiss]);
-React.useEffect(() => {
-  if (open && refs.floating.current) {
-    const floating = refs.floating.current;
-    const rect = floating.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const availableBelow = viewportHeight - rect.top - 20;
-    const availableAbove = rect.top - 20; 
-    
-    const maxAvailable = Math.max(availableBelow, availableAbove);
-    const calculatedMaxHeight = Math.min(maxAvailable, 500); 
-    
-    setMaxHeight(Math.max(calculatedMaxHeight, 200)); // Minimum 200px
-  }
-}, [open, floatingStyles]);
+
+  React.useEffect(() => {
+    if (open && refs.floating.current) {
+      const floating = refs.floating.current;
+      const rect = floating.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const availableBelow = viewportHeight - rect.top - 20;
+      const availableAbove = rect.top - 20; 
+      
+      const maxAvailable = Math.max(availableBelow, availableAbove);
+      const calculatedMaxHeight = Math.min(maxAvailable, 500); 
+      
+      setMaxHeight(Math.max(calculatedMaxHeight, 200)); // Minimum 200px
+    }
+  }, [open, floatingStyles]);
+
   React.useEffect(() => {
     console.log('🎭 TwitterHover State:', {
       open,
@@ -275,15 +294,15 @@ React.useEffect(() => {
   }, []);
 
   const card = open ? (
-<div
-  ref={refs.setFloating}
-  style={{
-    ...floatingStyles as React.CSSProperties,
-    maxHeight: maxHeight ? `${maxHeight}px` : undefined
-  }}
-  {...getFloatingProps()}
-  className="twitter-hover-card"
->
+    <div
+      ref={refs.setFloating}
+      style={{
+        ...floatingStyles as React.CSSProperties,
+        maxHeight: maxHeight ? `${maxHeight}px` : undefined
+      }}
+      {...getFloatingProps()}
+      className="twitter-hover-card"
+    >
       <div ref={arrowRef} className="twitter-hover-arrow" />
       {loading && (
         <div className="twitter-hover-skeleton">
@@ -426,7 +445,13 @@ function TweetCard(payload: {
   console.log('🐦 TweetCard: Rendering with payload:', payload);
 
   const a = payload.author;
-  const photos = payload.tweet.media?.filter((m) => m.type === 'photo') ?? [];
+  // Get all media (photos, videos, GIFs)
+  const allMedia = payload.tweet.media ?? [];
+  const photos = allMedia.filter((m) => m.type === 'photo');
+  const videos = allMedia.filter((m) => m.type === 'video' || m.type === 'animated_gif');
+
+  // Consider any media present for text processing
+  const hasAnyMedia = allMedia.length > 0;
 
   return (
     <div className="twitter-hover-tweetcard">
@@ -454,17 +479,64 @@ function TweetCard(payload: {
 
         <div className="twitter-hover-text-container">
           <p className="twitter-hover-text">
-            {parseTextWithMentions(payload.tweet.text, photos.length > 0)}
+            {parseTextWithMentions(payload.tweet.text, hasAnyMedia)}
           </p>
-        </div>
 
-        {photos.length > 0 && (
-          <div className={`twitter-hover-photos twitter-hover-photos-${photos.length}`}>
-            {photos.map((m, i) => (
-              <img key={i} src={m.url} alt="" className="twitter-hover-photo" />
-            ))}
-          </div>
-        )}
+          {/* Display photos inside scrollable container */}
+          {photos.length > 0 && (
+            <div className={`twitter-hover-photos twitter-hover-photos-${photos.length}`}>
+              {photos.map((m, i) => (
+                <img key={i} src={m.url} alt="" className="twitter-hover-photo" />
+              ))}
+            </div>
+          )}
+
+          {/* Display videos/GIFs inside scrollable container */}
+          {videos.length > 0 && (
+            <div className="twitter-hover-videos">
+              {videos.map((m, i) => (
+                <div key={i} className="twitter-hover-video-container">
+                  {m.type === 'animated_gif' ? (
+                    <video 
+                      src={m.url} 
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="twitter-hover-video"
+                      style={{ borderRadius: '0.5rem', width: '100%', height: 'auto' }}
+                      onError={(e) => {
+                        console.error('GIF video failed to load:', m.url);
+                        // Fallback to img tag if video fails
+                        const target = e.target as HTMLVideoElement;
+                        const img = document.createElement('img');
+                        img.src = m.url;
+                        img.className = 'twitter-hover-video';
+                        img.style.borderRadius = '0.5rem';
+                        img.style.width = '100%';
+                        img.style.height = 'auto';
+                        target.parentNode?.replaceChild(img, target);
+                      }}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <video 
+                      src={m.url} 
+                      controls 
+                      className="twitter-hover-video"
+                      style={{ borderRadius: '0.5rem', width: '100%', height: 'auto' }}
+                      preload="metadata"
+                      onError={(e) => console.error('Video failed to load:', m.url)}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="twitter-hover-meta">
           <span>{new Date(payload.tweet.created_at).toLocaleString()}</span>

@@ -796,6 +796,7 @@
   align-items: center;
   gap: 5px;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 @media(max-width: 1020px) {
@@ -925,7 +926,7 @@
 .meme-interface-token-social-links {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .meme-interface-social-btn {
@@ -1152,4 +1153,52 @@
   inset: 0;
   position: absolute;
   transform: translateX(-100%);
+}
+
+.meme-interface-image-container {
+  position: relative;
+  cursor: pointer;
+}
+
+.meme-interface-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 3px;
+  z-index: 4;
+}
+
+.meme-interface-image-container:hover .meme-interface-image-overlay {
+  opacity: 1;
+}
+
+.meme-camera-icon {
+  color: white;
+  width: 16px;
+  height: 16px;
+}
+
+
+.token-info-camera-icon{
+  width: 23px;
+  height: 23px;
+}
+
+.token-info-meme-interface-twitter-btn{
+    filter: brightness(0) saturate(100%) invert(66%) sepia(59%) saturate(337%) hue-rotate(175deg) brightness(103%) contrast(94%);
+}
+.token-info-meme-interface-social-btn{
+  filter: brightness(0) saturate(100%) invert(74%) sepia(14%) saturate(326%) hue-rotate(185deg) brightness(85%) contrast(84%);
+}
+.token-info-meme-interface-social-btn:hover{
+    filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%) opacity(1);
+
 }

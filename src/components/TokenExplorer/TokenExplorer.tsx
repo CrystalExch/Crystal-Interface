@@ -1662,7 +1662,7 @@ const TokenRow = React.memo<{
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    const previewWidth = 150;
+    const previewWidth = 120;
     const previewHeight = 180;
     const offset = 12;
 
@@ -1713,7 +1713,7 @@ const TokenRow = React.memo<{
     const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
     const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
-    const popupWidth = 80;
+    const popupWidth = 0;
     const popupHeight = 28;
     const offset = 4;
 
@@ -1828,8 +1828,27 @@ const TokenRow = React.memo<{
           >
             <div className={`explorer-progress-spacer ${!displaySettings.squareImages ? 'circle-mode' : ''}`}>
               <div className={`explorer-image-wrapper ${!displaySettings.squareImages ? 'circle-mode' : ''}`}>
-                <img src={token.image} alt={token.name} className={`explorer-token-image ${!displaySettings.squareImages ? 'circle-mode' : ''}`} />
-                <div className={`explorer-image-overlay ${!displaySettings.squareImages ? 'circle-mode' : ''}`}>
+                {token.image ? (
+                  <img src={token.image} alt={token.name} className={`explorer-token-image ${!displaySettings.squareImages ? 'circle-mode' : ''}`} />
+                ) : (
+                  <div
+                    className={`explorer-token-letter ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      backgroundColor: 'rgb(6,6,6)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '40px',
+                      fontWeight: '200',
+                      color: '#ffffff',
+                      borderRadius: displaySettings.squareImages ? '8px' : '50%'
+                    }}
+                  >
+                    {token.symbol.charAt(0).toUpperCase()}
+                  </div>
+                )}                <div className={`explorer-image-overlay ${!displaySettings.squareImages ? 'circle-mode' : ''}`}>
                   <img className="camera-icon" src={camera} alt="inspect" />
                 </div>
               </div>
@@ -1990,7 +2009,7 @@ const TokenRow = React.memo<{
                   <Tooltip content="Dev Migrations ">
                     <div className="explorer-stat-item">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="traders-icon"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" /><path d="M5 21h14" /></svg>
-                     <div className="dev-migrations-container"><span className="explorer-dev-migrations">{token.kolTraders.toLocaleString()}</span> <span className="dev-migrations-slash">/</span><span className="explorer-dev-migrations">{token.kolTraders.toLocaleString()}</span></div>
+                      <div className="dev-migrations-container"><span className="explorer-dev-migrations">{token.kolTraders.toLocaleString()}</span> <span className="dev-migrations-slash">/</span><span className="explorer-dev-migrations">{token.kolTraders.toLocaleString()}</span></div>
 
                     </div>
                   </Tooltip>
@@ -2425,7 +2444,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       tokenAddress: args.token,
       name: args.name,
       symbol: args.symbol,
-      image: meta?.image ?? '',
+      image: meta?.image || null,
       description: args.description ?? '',
       twitterHandle: twitter ?? '',
       website: meta?.website ?? '',
@@ -2774,7 +2793,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               dev: m.creator.id,
               name: m.name,
               symbol: m.symbol,
-              image: meta.image ?? '/discord.svg',
+              image: meta.image || null,
               description: meta.description ?? '',
               twitterHandle: twitter ?? '',
               website: website ?? '',

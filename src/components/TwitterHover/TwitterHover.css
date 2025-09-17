@@ -19,7 +19,6 @@
   animation: pulse 1.5s infinite;
 }
 
-
 .twitter-hover-error {
   color: #b00020;
   font-size: 0.875rem;
@@ -138,8 +137,24 @@
   object-fit: cover;
 }
 
+.twitter-hover-videos {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 
+.twitter-hover-video-container {
+  width: 100%;
+}
 
+.twitter-hover-video {
+  border-radius: 0.5rem;
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: cover;
+}
 
 .twitter-hover-metrics-number{
     color: white
@@ -190,7 +205,6 @@
   position: relative;
 }
 
-
 .twitter-hover-usercard .twitter-hover-banner + .twitter-hover-body .twitter-hover-header {
   margin-top: -1rem;
 }
@@ -239,7 +253,6 @@
   gap: 0.25rem;
 }
 
-
 /* Tweet card specific styling */
 .twitter-hover-tweetcard {
   display: block;
@@ -253,9 +266,10 @@
 }
 
 .twitter-hover-text-container {
-  max-height: 120px;
+  max-height: 200px;
   overflow-y: auto;
   line-height: 1.4;
+  padding-right: 4px;
 }
 
 .twitter-hover-text-container::-webkit-scrollbar {
@@ -274,9 +288,6 @@
 .twitter-hover-text-container::-webkit-scrollbar-thumb:hover {
   background: #5d6073;
 }
-
-
-
 
 .engagement-stat {
   display: flex;
@@ -379,7 +390,6 @@
   cursor: pointer;
 }
 
-
 .like-engagement-stat {
   display: flex;
   align-items: center;
@@ -391,8 +401,6 @@
   transition: background-color 0.2s ease;
   cursor: pointer;
 }
-
-
 
 .comment-engagement-icon {
   width: 16px;
@@ -419,4 +427,3 @@
   font-size: 0.75rem;
   min-width: 16px;
 }
-
