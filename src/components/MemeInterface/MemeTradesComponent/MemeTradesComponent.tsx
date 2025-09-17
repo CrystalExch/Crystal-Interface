@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import switchicon from "../../../assets/switch.svg";
 import monadlogo from "../../../assets/monadlogo.svg";
 import TraderPortfolioPopup from "./TraderPortfolioPopup/TraderPortfolioPopup";
+import TransactionFiltersPopup from "./TransactionFiltersPopup";
 import filtercup from "../../../assets/filtercup.svg";
 import filledcup from "../../../assets/filledcup.svg";
 import filter from "../../../assets/filter.svg";
@@ -203,6 +204,12 @@ interface Holder {
   valueSold: number;
 }
 
+interface TransactionFilters {
+  makerAddress: string;
+  minUSD: string;
+  maxUSD: string;
+}
+
 type AmountMode = "USDC" | "MON";
 type MCMode = "MC" | "Price";
 
@@ -236,7 +243,6 @@ interface Props {
   onFilterYou?: () => void;
   onClearTracked?: () => void;
   isLoadingTrades?: boolean;
-
 }
 
 export default function MemeTradesComponent({
@@ -260,7 +266,6 @@ export default function MemeTradesComponent({
   onFilterYou,
   onClearTracked,
   isLoadingTrades = false,
-
 }: Props) {
   const [amountMode, setAmountMode] = useState<AmountMode>("MON");
   const [mcMode, setMcMode] = useState<MCMode>("MC");
@@ -268,6 +273,12 @@ export default function MemeTradesComponent({
   const [popupAddr, setPopupAddr] = useState<string | null>(null);
   const [_currentTime, setCurrentTime] = useState(() => Date.now() / 1000);
   const [displayTrades, setDisplayTrades] = useState<RawTrade[]>([]);
+  const [showFiltersPopup, setShowFiltersPopup] = useState(false);
+  const [transactionFilters, setTransactionFilters] = useState<TransactionFilters>({
+    makerAddress: '',
+    minUSD: '',
+    maxUSD: ''
+  });
   const tradesBacklogRef = useRef<RawTrade[]>([]);
   const lastProcessedTradesRef = useRef<RawTrade[]>([]);
 
@@ -296,13 +307,18 @@ export default function MemeTradesComponent({
     trackedActive = true;
   }
 
+  // Check if transaction filters are active
+  const hasActiveFilters = transactionFilters.makerAddress.trim() !== '' || 
+                          transactionFilters.minUSD.trim() !== '' || 
+                          transactionFilters.maxUSD.trim() !== '';
+
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(Date.now() / 1000), 1000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    const newTrades = trades.slice(0,100);
+    const newTrades = trades.slice(0, 100);
 
     if (hover) {
       const previousTrades = lastProcessedTradesRef.current;
@@ -371,7 +387,62 @@ export default function MemeTradesComponent({
     const quoteUsd = usdPer(market?.quoteAsset);
     const monUsd = (usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker));
 
-    return displayTrades.map((r) => {
+    let filteredTrades = displayTrades;
+
+    // Apply transaction filters
+    if (hasActiveFilters) {
+      filteredTrades = displayTrades.filter((r) => {
+        // Filter by maker address
+        if (transactionFilters.makerAddress.trim() !== '') {
+          const filterAddress = transactionFilters.makerAddress.toLowerCase().trim();
+          const callerAddress = r.caller.toLowerCase();
+          if (!callerAddress.includes(filterAddress)) {
+            return false;
+          }
+        }
+
+        // Calculate USD amount for filtering
+        let amountUSD = 0;
+        const sign = r.isBuy ? 1 : -1;
+        let amountMON = sign * (r.nativeAmount ?? 0);
+
+        if (!amountMON) {
+          const priceInQuote = r.price ?? latestQuotePerBase;
+          if (market?.quoteAsset && (market.quoteAsset === wethticker || market.quoteAsset === ethticker)) {
+            amountMON = sign * (r.tokenAmount ?? 0) * priceInQuote;
+          } else {
+            if (monUsd > 0 && quoteUsd > 0) {
+              const amountUSDfromToken = sign * (r.tokenAmount ?? 0) * priceInQuote * quoteUsd;
+              amountMON = amountUSDfromToken / monUsd;
+            } else {
+              amountMON = 0;
+            }
+          }
+        }
+
+        amountUSD = monUsd > 0 ? Math.abs(amountMON) * monUsd : 0;
+
+        // Filter by min USD
+        if (transactionFilters.minUSD.trim() !== '') {
+          const minUSD = parseFloat(transactionFilters.minUSD);
+          if (!isNaN(minUSD) && amountUSD < minUSD) {
+            return false;
+          }
+        }
+
+        // Filter by max USD
+        if (transactionFilters.maxUSD.trim() !== '') {
+          const maxUSD = parseFloat(transactionFilters.maxUSD);
+          if (!isNaN(maxUSD) && amountUSD > maxUSD) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+    }
+
+    return filteredTrades.map((r) => {
       const callerLower = r.caller.toLowerCase();
       const currentUserLower = currentUserAddress?.toLowerCase();
       const devAddressLower = devAddress?.toLowerCase();
@@ -430,6 +501,8 @@ export default function MemeTradesComponent({
     currentUserAddress,
     top10HolderAddresses,
     devAddress,
+    transactionFilters,
+    hasActiveFilters,
   ]);
 
   const maxForMode = useMemo(() => {
@@ -462,7 +535,6 @@ export default function MemeTradesComponent({
     );
   };
 
-
   const fmtAmount = (v: number) =>
     amountMode === "USDC"
       ? `$${Math.abs(v).toFixed(3)}`
@@ -476,6 +548,10 @@ export default function MemeTradesComponent({
     if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m`;
     if (secondsAgo < 86400) return `${Math.floor(secondsAgo / 3600)}h`;
     return `${Math.floor(secondsAgo / 86400)}d`;
+  };
+
+  const handleApplyFilters = (filters: TransactionFilters) => {
+    setTransactionFilters(filters);
   };
 
   const TopHolderIcon = () => (
@@ -617,31 +693,25 @@ export default function MemeTradesComponent({
   return (
     <>
       <div className="meme-trades-container">
-
         <div className="meme-trades-title-header">
           <div className="meme-trades-filters">
             <div className="meme-trade-filter-container">
-              <div className="meme-trade-filter-container">
-                <button
-                  className={`meme-trade-filter-btn ${devActive ? "active" : ""}`}
-                  onClick={() => handleFilterClick('dev')}
-                >
-                  <img src={devActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
-                  DEV
-                </button>
-              </div>
+              <button
+                className={`meme-trade-filter-btn ${devActive ? "active" : ""}`}
+                onClick={() => handleFilterClick('dev')}
+              >
+                <img src={devActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
+                DEV
+              </button>
             </div>
             <div className="meme-trade-filter-container">
-              <div className="meme-trade-filter-container">
-                <button
-                  className={`meme-trade-filter-btn ${trackedActive ? "active" : ""}`}
-                  onClick={() => handleFilterClick('tracked')}
-                >
-                  <img src={trackedActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
-                  TRACKED
-                </button>
-              </div>
-
+              <button
+                className={`meme-trade-filter-btn ${trackedActive ? "active" : ""}`}
+                onClick={() => handleFilterClick('tracked')}
+              >
+                <img src={trackedActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
+                TRACKED
+              </button>
             </div>
             <div className="meme-trade-filter-container">
               <button
@@ -653,7 +723,21 @@ export default function MemeTradesComponent({
               </button>
             </div>
           </div>
-          <img className="filter-icon" src={filter} />
+          <button
+            className={`filter-icon-button ${hasActiveFilters ? 'active' : ''}`}
+            onClick={() => setShowFiltersPopup(true)}
+            title="Advanced Filters"
+          >
+            <img 
+              className="filter-icon" 
+              src={filter} 
+              alt="Advanced Filters"
+              style={{
+                filter: hasActiveFilters ? 'brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%)' : undefined
+              }}
+            />
+            {hasActiveFilters && <span className="trades-filter-active-dot" />}
+          </button>
         </div>
 
         {devActive && (
@@ -682,7 +766,19 @@ export default function MemeTradesComponent({
             </button>
           </div>
         )}
-
+        {hasActiveFilters && !devActive && !youActive && (
+          <div className="meme-filter-status">
+            <div className="filter-status-text">
+              Showing {viewTrades.length} filtered transactions
+            </div>
+            <button
+              className="filter-reset-btn"
+              onClick={() => setTransactionFilters({ makerAddress: '', minUSD: '', maxUSD: '' })}
+            >
+              RESET
+            </button>
+          </div>
+        )}
 
         <div className="meme-trades-header">
           <div
@@ -803,6 +899,13 @@ export default function MemeTradesComponent({
           setpopup={setpopup}
         />
       )}
+
+      <TransactionFiltersPopup
+        isOpen={showFiltersPopup}
+        onClose={() => setShowFiltersPopup(false)}
+        onApplyFilters={handleApplyFilters}
+        currentFilters={transactionFilters}
+      />
     </>
   );
 }

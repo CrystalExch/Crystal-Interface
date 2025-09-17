@@ -2933,8 +2933,8 @@ const handleInputFocus = () => {
       case location.pathname === '/launchpad':
         title = 'Launchpad | Crystal';
         break;
-      case location.pathname === '/explorer':
-        title = 'Explorer | Crystal';
+      case location.pathname === '/spectra':
+        title = 'Spectra | Crystal';
         break;
       case location.pathname === '/trackers':
         title = 'Trackers | Crystal';
@@ -20712,7 +20712,7 @@ const handleExplorerFiltersApply = useCallback(() => {
             />
           } />
           <Route
-            path="/explorer"
+            path="/spectra"
             element={
               <TokenExplorer
                 setpopup={setpopup}

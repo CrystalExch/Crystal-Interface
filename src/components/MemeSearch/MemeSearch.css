@@ -254,11 +254,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.8rem;
+  color: rgba(227, 229, 243, 0.4);
+  font-size: 0.9em;
   margin: 0;
   font-weight: 300;
   height: 100%;
+  letter-spacing: -0.2px;
 }
 
 .meme-results-count {
@@ -957,4 +958,35 @@ filter: brightness(0) saturate(100%) invert(74%) sepia(14%) saturate(326%) hue-r
 .meme-search-history-item:hover {
   background: rgba(179, 184, 249, 0.2);
   color: white;
+}
+
+.meme-search-token-name-container {
+  display: flex;
+  align-items: center;
+}
+
+.meme-search-token-name-container:hover .meme-search-token-name {
+  color: #d8dbf5;
+}
+
+.meme-search-copy-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.meme-search-copy-btn svg {
+  color: rgba(237, 236, 252, 0.4);
+  transition: color 0.2s ease;
+}
+
+.meme-search-token-name-container:hover .meme-search-copy-btn svg {
+  color: #d8dbf5;
 }
