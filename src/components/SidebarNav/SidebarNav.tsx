@@ -12,8 +12,8 @@ import docs from '../../assets/docs.png';
 import vaults from '../../assets/yeildvaults.png';
 import earn from '../../assets/earn.png';
 import liquidity from '../../assets/liquidity.svg';
-import explorer from '../../assets/explorer.png';
-import tracker from '../../assets/tracker.svg';
+import explorer from '../../assets/prism.png';
+import tracker from '../../assets/tracker.png';
 import earnvaults from '../../assets/vaults.png';
 import fun from '../../assets/fun.png';
 
@@ -210,12 +210,12 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('crystal.fun')}</span>
             </Link>
             <Link
-              to="/explorer"
-              className={`page-mode-button ${path === '/explorer' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              to="/spectra"
+              className={`page-mode-button ${path === '/spectra' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
               onClick={handleLinkClick}
             >
               <img src={explorer} className="sidebar-icon" />
-              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Explorer')}</span>
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Spectra')}</span>
             </Link>
             <Link
               to="/trackers"

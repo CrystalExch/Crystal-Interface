@@ -1043,6 +1043,7 @@
   justify-content: space-between;
   flex-direction: column;
   gap: 5px;
+  width: 100%;
 }
 
 .filter-label {
@@ -4341,4 +4342,20 @@
 
 .explorer-dev-migrations{
   font-size: 0.8rem;
+}
+
+.column-filter-icon {
+  position: relative; /* Ensure this exists for absolute positioning */
+}
+
+.filter-active-dot {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 10px;
+  height: 10px;
+  background: #aaaecf;
+  border-radius: 50%;
+  border: 2px solid rgb(6, 6, 6);
+  z-index: 10;
 }

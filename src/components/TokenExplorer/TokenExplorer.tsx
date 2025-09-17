@@ -2925,7 +2925,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     <div className="explorer-main">
       <div className="explorer-header-row">
         <div className="explorer-header-left">
-          <h1 className="explorer-app-title">Terminal</h1>
+          <h1 className="explorer-app-title">Spectra</h1>
         </div>
         <div className="explorer-header-right">
           <button className="alerts-popup-trigger" onClick={() => setShowAlertsPopup(true)}>
