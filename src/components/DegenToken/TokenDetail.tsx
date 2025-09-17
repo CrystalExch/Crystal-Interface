@@ -100,6 +100,11 @@ const formatNumber = (n: number) => {
   return n.toFixed(2);
 };
 
+const formatTradeAmount = (amount: number): string => {
+  if (amount === 0) return '';
+  return amount.toFixed(6).replace(/\.?0+$/, '');
+};
+
 const CopyableAddress: React.FC<{
   address?: string | null;
   className?: string;
@@ -107,7 +112,7 @@ const CopyableAddress: React.FC<{
   labelPrefix?: string;
 }> = ({ address, className, truncate = { start: 6, end: 4 }, labelPrefix }) => {
   const [copied, setCopied] = useState(false);
-  const [copyTooltipVisible, setCopyTooltipVisible] = useState(false); // ADD THIS
+  const [copyTooltipVisible, setCopyTooltipVisible] = useState(false);
   const [showHoverTooltip, setShowHoverTooltip] = useState(false);
 
   if (!address) return <span className={className}>{labelPrefix ?? ''}Unknown</span>;
@@ -126,14 +131,13 @@ const CopyableAddress: React.FC<{
       document.body.removeChild(ta);
     } finally {
       setCopied(true);
-      setCopyTooltipVisible(true);    // ADD THIS
+      setCopyTooltipVisible(true);
       setShowHoverTooltip(false);
       setTimeout(() => {
         setCopied(false);
-        setCopyTooltipVisible(false); // ADD THIS
+        setCopyTooltipVisible(false);
       }, 1200);
     }
-
   };
 
   return (
@@ -141,7 +145,7 @@ const CopyableAddress: React.FC<{
       <button
         type="button"
         onClick={copy}
-        onMouseEnter={() => !copyTooltipVisible && setShowHoverTooltip(true)} // ADD THIS
+        onMouseEnter={() => !copyTooltipVisible && setShowHoverTooltip(true)}
         onMouseLeave={() => setShowHoverTooltip(false)} 
         className={className ? `${className} copyable-address` : 'copyable-address'}
         title={copied ? 'Copied!' : 'Click to copy full address'}
@@ -195,13 +199,30 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const [chartData, setChartData] = useState<any>(null);
   const realtimeCallbackRef = useRef<any>({});
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState<'MON' | 'TOKEN'>('MON');
 
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter as `0x${string}` | undefined;
+
+  // get mon balance Ws in the chattttt
+  const getCurrentMONBalance = useCallback(() => {
+    if (!account?.address) return 0;
+    const balances = walletTokenBalances[account.address];
+    if (!balances) return 0;
+    const ethToken = settings.chainConfig[activechain]?.eth;
+    if (ethToken && balances[ethToken]) {
+      return Number(balances[ethToken]) / 1e18;
+    }
+    return 0;
+  }, [account?.address, walletTokenBalances, activechain]);
 
   const walletTokenBalance = useMemo(() => {
     const raw = walletTokenBalances?.[account?.address]?.[token?.id ?? ''];
     return (Number(raw) || 0) / 1e18;
   }, [walletTokenBalances, account?.address, token?.id]);
+
+  const walletMonBalance = useMemo(() => {
+    return getCurrentMONBalance();
+  }, [getCurrentMONBalance]);
 
   const fetchTokenData = useCallback(async () => {
     if (!token) return;
@@ -295,6 +316,23 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     fetchTokenData();
   }, [fetchTokenData]);
 
+  const handleCurrencySwitch = () => {
+    setSelectedCurrency(prev => prev === 'MON' ? 'TOKEN' : 'MON');
+    setTradeAmount('');
+  };
+
+  const currentCurrency = selectedCurrency === 'MON' ? 'MON' : token?.symbol || 'TOKEN';
+  const currentBalance = selectedCurrency === 'MON' ? walletMonBalance : walletTokenBalance;
+
+  const handleMaxClick = () => {
+    if (selectedCurrency === 'MON') {
+      const monBalance = getCurrentMONBalance();
+      setTradeAmount(formatTradeAmount(monBalance));
+    } else {
+      setTradeAmount(formatTradeAmount(walletTokenBalance));
+    }
+  };
+
   const handleTrade = async () => {
     if (!tradeAmount || !account.connected || !token || !sendUserOperationAsync || !routerAddress) {
       setpopup?.(4);
@@ -318,9 +356,9 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       if (tradeType === 'buy') {
         showLoadingPopup(txId, {
           title: 'Sending transaction...',
-          subtitle: `Buying ${tradeAmount} MON worth of ${token.symbol}`,
+          subtitle: `Buying ${tradeAmount} ${currentCurrency} worth of ${token.symbol}`,
           amount: tradeAmount,
-          amountUnit: 'MON',
+          amountUnit: currentCurrency,
         });
 
         const value = BigInt(Math.round(parsedAmount * 1e18));
@@ -337,7 +375,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
         updatePopup(txId, {
           title: 'Confirming transaction...',
-          subtitle: `Buying ${tradeAmount} MON worth of ${token.symbol}`,
+          subtitle: `Buying ${tradeAmount} ${currentCurrency} worth of ${token.symbol}`,
           variant: 'info',
         });
 
@@ -345,7 +383,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
         updatePopup(txId, {
           title: `Bought ${token.symbol}`,
-          subtitle: `Spent ${tradeAmount} MON`,
+          subtitle: `Spent ${tradeAmount} ${currentCurrency}`,
           variant: 'success',
           isLoading: false,
         });
@@ -533,9 +571,14 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           <div className="detail-trade-form">
             <div className="detail-trade-input-group">
               <div className="detail-balance-info">
-                <span className="detail-trade-label">{'Switch to'} {tradeType === 'buy' ? token.symbol : 'MON'}</span>
+                <button 
+                  className="detail-currency-switch-button" 
+                  onClick={handleCurrencySwitch}
+                >
+                  Switch to {currentCurrency}
+                </button>
                 <span>
-                  Balance: {tradeType === 'buy' ? formatNumber(walletTokenBalance) : formatNumber(walletTokenBalance)} {tradeType === 'buy' ? 'MON' : token.symbol}
+                  Balance: {formatNumber(currentBalance)} {currentCurrency}
                 </span>
               </div>
               <div className="detail-trade-input-wrapper">
@@ -546,28 +589,17 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                   onChange={(e) => setTradeAmount(e.target.value)}
                   className="detail-trade-input"
                 />
-                <span className="detail-trade-unit">{tradeType === 'buy' ? 'MON' : token.symbol}</span>
+                <span className="detail-trade-unit">{currentCurrency}</span>
               </div>
 
-              {tradeType === 'buy' ? (
+              {selectedCurrency === 'MON' && (
                 <div className="detail-preset-buttons">
                   {['1', '5', '10', '50'].map((amount) => (
                     <button key={amount} onClick={() => setTradeAmount(amount)} className="detail-preset-button">
                       {amount} MON
                     </button>
                   ))}
-                  <button onClick={() => setTradeAmount('100')} className="detail-preset-button detail-preset-max">
-                    Max
-                  </button>
-                </div>
-              ) : (
-                <div className="detail-preset-buttons">
-                  {['10%', '25%', '50%', '75%'].map((amount) => (
-                    <button key={amount} onClick={() => setTradeAmount(amount)} className="detail-preset-button">
-                      {amount}
-                    </button>
-                  ))}
-                  <button onClick={() => setTradeAmount('100')} className="detail-preset-button detail-preset-max">
+                  <button onClick={handleMaxClick} className="detail-preset-button detail-preset-max">
                     Max
                   </button>
                 </div>

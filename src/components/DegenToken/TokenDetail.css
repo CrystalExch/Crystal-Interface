@@ -84,7 +84,9 @@
   object-fit: cover;
 }
 
-.detail-token-info { flex: 1; }
+.detail-token-info { 
+  flex: 1; 
+}
 
 .detail-token-name {
   font-size: 1.5rem;
@@ -332,8 +334,30 @@
 }
 
 .detail-balance-info {
-  display: flex; align-items: center; justify-content: space-between;
-  font-size: .85rem; color: var(--c-muted); margin: 0px 4px;
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between;
+  font-size: .85rem; 
+  color: var(--c-muted); 
+  margin: 0px 4px;
+}
+
+/* New currency switch button styles */
+.detail-currency-switch-button {
+  padding: 4px 8px;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--c-text);
+  background: transparent;
+  border: 1px solid var(--c-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--tr-fast);
+}
+
+.detail-currency-switch-button:hover {
+  background: rgba(179, 184, 249, 0.1);
+  border-color: rgba(179, 184, 249, 0.3);
 }
 
 .detail-max-button {
@@ -372,12 +396,10 @@
 
 @keyframes detailSpin { to { transform: rotate(360deg); } }
 
-
 .detail-trade-stats { display: flex; flex-direction: column; }
 .detail-stat-row { display: flex; align-items: center; justify-content: space-between; font-size: .85rem; }
 .detail-stat-row span:first-child { color: var(--c-muted); }
 .detail-stat-row span:last-child { color: var(--c-text); font-weight: 500; }
-
 
 .progress-bar-container { margin: var(--gap-lg) 0; }
 .detail-progress-bar {
@@ -560,12 +582,10 @@
   .detail-info-section { text-align: center; }
 }
 
-
 .detail-comments-list::-webkit-scrollbar { width: 6px; }
 .detail-comments-list::-webkit-scrollbar-track { background: #1a1a1a; border-radius: 3px; }
 .detail-comments-list::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
 .detail-comments-list::-webkit-scrollbar-thumb:hover { background: #444; }
-
 
 .detail-holder-item:hover {
   margin: 0 -12px; padding: 8px 12px;
@@ -573,7 +593,6 @@
   border-radius: var(--radius-sm);
 }
 .detail-comment:hover { background: #1f1f1f; border-color: #333; }
-
 
 .detail-trade-input::-webkit-outer-spin-button,
 .detail-trade-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
