@@ -4345,7 +4345,7 @@
 }
 
 .column-filter-icon {
-  position: relative; /* Ensure this exists for absolute positioning */
+  position: relative; 
 }
 
 .filter-active-dot {

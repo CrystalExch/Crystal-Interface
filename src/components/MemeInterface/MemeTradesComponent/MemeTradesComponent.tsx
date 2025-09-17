@@ -736,7 +736,7 @@ export default function MemeTradesComponent({
                 filter: hasActiveFilters ? 'brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%)' : undefined
               }}
             />
-            {hasActiveFilters && <span className="filter-active-dot" />}
+            {hasActiveFilters && <span className="trades-filter-active-dot" />}
           </button>
         </div>
 

@@ -563,3 +563,15 @@
   margin-top: 1px;
   opacity: 0.7;
 }
+
+.trades-filter-active-dot{
+    position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 10px;
+  height: 10px;
+  background: #aaaecf;
+  border-radius: 50%;
+  border: 2px solid rgb(6, 6, 6);
+  z-index: 10;
+}
