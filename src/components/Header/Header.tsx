@@ -21,6 +21,7 @@ import monadicon from '../../assets/monadlogo.svg';
 import closebutton from '../../assets/close_button.png';
 
 import './Header.css';
+import { createPortal } from 'react-dom';
 
 interface Language {
   code: string;
@@ -72,7 +73,7 @@ interface HeaderProps {
   sendUserOperationAsync?: any;
   setTerminalToken?: any;
   setTokenData?: (data: any) => void;
-   quickAmounts?: { [key: string]: string };
+  quickAmounts?: { [key: string]: string };
   setQuickAmount?: (category: string, amount: string) => void;
   activePresets?: { [key: string]: number };
   setActivePreset?: (category: string, preset: number) => void;
@@ -80,7 +81,156 @@ interface HeaderProps {
   buyPresets?: { [key: number]: { slippage: string; priority: string; amount: string } };
   sellPresets?: { [key: number]: { slippage: string; priority: string } };
 }
+const Tooltip: React.FC<{
+  content: string;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
+}> = ({ content, children, position = 'top' }) => {
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current || !tooltipRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+    let top = 0;
+    let left = 0;
+
+    switch (position) {
+      case 'top':
+        top = rect.top + scrollY - tooltipRect.height - 25;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'bottom':
+        top = rect.bottom + scrollY + 10;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'left':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.left + scrollX - tooltipRect.width - 10;
+        break;
+      case 'right':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.right + scrollX + 10;
+        break;
+    }
+
+    const margin = 10;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    if (position === 'top' || position === 'bottom') {
+      left = Math.min(
+        Math.max(left, margin + tooltipRect.width / 2),
+        viewportWidth - margin - tooltipRect.width / 2,
+      );
+    } else {
+      top = Math.min(
+        Math.max(top, margin),
+        viewportHeight - margin - tooltipRect.height,
+      );
+    }
+
+    setTooltipPosition({ top, left });
+  }, [position]);
+
+  const handleMouseEnter = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    setIsLeaving(false);
+    setShouldRender(true);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+      fadeTimeoutRef.current = null;
+    }, 10);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    setIsLeaving(true);
+    setIsVisible(false);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      setShouldRender(false);
+      setIsLeaving(false);
+      fadeTimeoutRef.current = null;
+    }, 150);
+  }, []);
+
+  useEffect(() => {
+    if (shouldRender && !isLeaving) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [shouldRender, updatePosition, isLeaving]);
+
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="tooltip-container"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {shouldRender && createPortal(
+        <div
+          ref={tooltipRef}
+          className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+          style={{
+            position: 'absolute',
+            top: `${tooltipPosition.top}px`,
+            left: `${tooltipPosition.left}px`,
+            transform: `${position === 'top' || position === 'bottom'
+              ? 'translateX(-50%)'
+              : position === 'left' || position === 'right'
+                ? 'translateY(-50%)'
+                : 'none'} scale(${isVisible ? 1 : 0})`,
+            opacity: isVisible ? 1 : 0,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'transform, opacity'
+          }}
+        >
+          <div className="tooltip-content">
+            {content}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
 const Header: React.FC<HeaderProps> = ({
   setTokenIn,
   setTokenOut,
@@ -118,8 +268,8 @@ const Header: React.FC<HeaderProps> = ({
   sendUserOperationAsync,
   setTerminalToken,
   setTokenData,
-    quickAmounts,
-  setQuickAmount, 
+  quickAmounts,
+  setQuickAmount,
   activePresets,
   setActivePreset,
   handleInputFocus,
@@ -128,92 +278,92 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const location = useLocation();
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
-const navigate = useNavigate();
+  const navigate = useNavigate();
 
-const handleTokenClick = (token: any) => {
-  if (setTerminalToken) {
-    setTerminalToken(token.tokenAddress);
-  }
-  if (setTokenData) {
-    setTokenData(token);
-  }
-  navigate(`/meme/${token.tokenAddress}`);
-  setIsMemeSearchOpen(false);
-};
+  const handleTokenClick = (token: any) => {
+    if (setTerminalToken) {
+      setTerminalToken(token.tokenAddress);
+    }
+    if (setTokenData) {
+      setTokenData(token);
+    }
+    navigate(`/meme/${token.tokenAddress}`);
+    setIsMemeSearchOpen(false);
+  };
 
-const handleQuickBuy = useCallback(async (token: any, amt: string) => {
-  const val = BigInt(amt || '0') * 10n ** 18n;
-  if (val === 0n) return;
+  const handleQuickBuy = useCallback(async (token: any, amt: string) => {
+    const val = BigInt(amt || '0') * 10n ** 18n;
+    if (val === 0n) return;
 
-  const routerAddress = settings.chainConfig[activechain]?.launchpadRouter?.toLowerCase();
-  if (!routerAddress) {
-    console.error('Router address not found');
-    return;
-  }
-
-  const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-  try {
-    if (showLoadingPopup) {
-      showLoadingPopup(txId, {
-        title: 'Sending transaction...',
-        subtitle: `${amt} MON worth of ${token.symbol}`,
-        amount: amt,
-        amountUnit: 'MON',
-        tokenImage: token.image
-      });
+    const routerAddress = settings.chainConfig[activechain]?.launchpadRouter?.toLowerCase();
+    if (!routerAddress) {
+      console.error('Router address not found');
+      return;
     }
 
-    const uo = {
-      target: routerAddress,
-      data: encodeFunctionData({ 
-        abi: CrystalRouterAbi, 
-        functionName: 'buy', 
-        args: [true, token.tokenAddress as `0x${string}`, val, 0n] 
-      }),
-      value: val,
-    };
+    const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: 'Confirming transaction...',
-        subtitle: `${amt} MON worth of ${token.symbol}`,
-        variant: 'info',
-        tokenImage: token.image
-      });
-    }
+    try {
+      if (showLoadingPopup) {
+        showLoadingPopup(txId, {
+          title: 'Sending transaction...',
+          subtitle: `${amt} MON worth of ${token.symbol}`,
+          amount: amt,
+          amountUnit: 'MON',
+          tokenImage: token.image
+        });
+      }
 
-    await sendUserOperationAsync({ uo });
-    
-    if (terminalRefetch) {
-      terminalRefetch();
+      const uo = {
+        target: routerAddress,
+        data: encodeFunctionData({
+          abi: CrystalRouterAbi,
+          functionName: 'buy',
+          args: [true, token.tokenAddress as `0x${string}`, val, 0n]
+        }),
+        value: val,
+      };
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Confirming transaction...',
+          subtitle: `${amt} MON worth of ${token.symbol}`,
+          variant: 'info',
+          tokenImage: token.image
+        });
+      }
+
+      await sendUserOperationAsync({ uo });
+
+      if (terminalRefetch) {
+        terminalRefetch();
+      }
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Quick Buy Complete',
+          subtitle: `Successfully bought ${token.symbol} with ${amt} MON`,
+          variant: 'success',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: token.image
+        });
+      }
+    } catch (e: any) {
+      console.error('Quick buy failed', e);
+      const msg = String(e?.message ?? '');
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
+          subtitle: msg || 'Please try again.',
+          variant: 'error',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: token.image
+        });
+      }
     }
-    
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: 'Quick Buy Complete',
-        subtitle: `Successfully bought ${token.symbol} with ${amt} MON`,
-        variant: 'success',
-        confirmed: true,
-        isLoading: false,
-        tokenImage: token.image
-      });
-    }
-  } catch (e: any) {
-    console.error('Quick buy failed', e);
-    const msg = String(e?.message ?? '');
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
-        subtitle: msg || 'Please try again.',
-        variant: 'error',
-        confirmed: true,
-        isLoading: false,
-        tokenImage: token.image
-      });
-    }
-  }
-}, [sendUserOperationAsync, activechain, terminalRefetch]);
+  }, [sendUserOperationAsync, activechain, terminalRefetch]);
   const [pendingNotifs, setPendingNotifs] = useState(0);
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
@@ -323,7 +473,21 @@ const handleQuickBuy = useCallback(async (token: any, amt: string) => {
     if (num >= 1) return num.toLocaleString("en-US", { maximumFractionDigits: decimals });
     return num.toFixed(Math.min(decimals, 8));
   };
+  const getWalletTokenCount = (address: string) => {
+    const balances = walletTokenBalances[address];
+    if (!balances) return 0;
 
+    const ethAddress = settings.chainConfig[activechain]?.eth;
+    let count = 0;
+
+    for (const [tokenAddr, balance] of Object.entries(balances)) {
+      if (tokenAddr !== ethAddress && balance && BigInt(balance.toString()) > 0n) {
+        count++;
+      }
+    }
+
+    return count;
+  };
   const getWalletBalance = (address: string) => {
     const balances = walletTokenBalances[address];
     if (!balances || !tokenList.length) return 0;
@@ -421,7 +585,7 @@ const handleQuickBuy = useCallback(async (token: any, amt: string) => {
           </div>
         </div>
         <div className="left-header">
-     <ChartHeader
+          <ChartHeader
             in_icon={tokendict[activeMarket.baseAddress].image}
             out_icon={tokendict[activeMarket.quoteAddress].image}
             price={isMemeTokenPage && memeTokenData ?
@@ -460,15 +624,15 @@ const handleQuickBuy = useCallback(async (token: any, amt: string) => {
           />
         </div>
         <div className={rightHeaderClass}>
-          
+
           <button
             type="button"
             className="meme-search-button"
             onClick={() => setIsMemeSearchOpen(true)}
           >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="meme-button-search-icon"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-              Search by token or CA...
-              <span className="meme-search-keybind">/</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="meme-button-search-icon"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></svg>
+            Search by token or CA...
+            <span className="meme-search-keybind">/</span>
 
           </button>
 
@@ -517,20 +681,20 @@ const handleQuickBuy = useCallback(async (token: any, amt: string) => {
                 isHeader={true}
               />
             )}
-           <MemeSearch
-  isOpen={isMemeSearchOpen}
-  onClose={() => setIsMemeSearchOpen(false)}
-  monUsdPrice={monUsdPrice}
-  onTokenClick={handleTokenClick}
-  onQuickBuy={handleQuickBuy}
-  sendUserOperationAsync={sendUserOperationAsync}
-  quickAmounts={quickAmounts}
-  setQuickAmount={setQuickAmount}
-  activePresets={activePresets}
-  setActivePreset={setActivePreset}
-  handleInputFocus={handleInputFocus}
-  buyPresets={buyPresets}
-/>
+            <MemeSearch
+              isOpen={isMemeSearchOpen}
+              onClose={() => setIsMemeSearchOpen(false)}
+              monUsdPrice={monUsdPrice}
+              onTokenClick={handleTokenClick}
+              onQuickBuy={handleQuickBuy}
+              sendUserOperationAsync={sendUserOperationAsync}
+              quickAmounts={quickAmounts}
+              setQuickAmount={setQuickAmount}
+              activePresets={activePresets}
+              setActivePreset={setActivePreset}
+              handleInputFocus={handleInputFocus}
+              buyPresets={buyPresets}
+            />
           </div>
 
           <div className="wallet-dropdown-container" ref={walletDropdownRef}>
@@ -621,13 +785,26 @@ const handleQuickBuy = useCallback(async (token: any, amt: string) => {
                               {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
                             </div>
                           </div>
-
+                          <Tooltip content="MON Balance">
                           <div className="wallet-dropdown-balance">
                             <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
                               <img src={monadicon} className="wallet-dropdown-mon-icon" />
                               {formatNumberWithCommas(balance, 2)}
                             </div>
                           </div>
+                          </Tooltip>
+                        <Tooltip content="Tokens">
+                          <div className="wallet-drag-tokens">
+                            <div className="wallet-token-count">
+                              <div className="wallet-token-structure-icons">
+                                <div className="token1"></div>
+                                <div className="token2"></div>
+                                <div className="token3"></div>
+                              </div>
+                              <span className="wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
+                            </div>
+                          </div>
+                          </Tooltip>
                         </div>
                       );
                     })
@@ -646,26 +823,26 @@ const handleQuickBuy = useCallback(async (token: any, amt: string) => {
                     </div>
                   )}
                 </div>
-                                  <div className="wallet-dropdown-actions">
-                    <button
-                      className="wallet-dropdown-action-btn portfolio-btn"
-                      onClick={handleOpenPortfolio}
-                    >
-                      <img className="wallet-dropdown-action-icon" src={walleticon} />
-                      Portfolio
-                    </button>
-                    <button
-                      className="wallet-dropdown-action-btn logout-btn"
-                      onClick={handleLogout}
-                    >
-                      <svg className="wallet-dropdown-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                      </svg>
-                      Logout
-                    </button>
-                  </div>
+                <div className="wallet-dropdown-actions">
+                  <button
+                    className="wallet-dropdown-action-btn portfolio-btn"
+                    onClick={handleOpenPortfolio}
+                  >
+                    <img className="wallet-dropdown-action-icon" src={walleticon} />
+                    Portfolio
+                  </button>
+                  <button
+                    className="wallet-dropdown-action-btn logout-btn"
+                    onClick={handleLogout}
+                  >
+                    <svg className="wallet-dropdown-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                      <polyline points="16 17 21 12 16 7"></polyline>
+                      <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Logout
+                  </button>
+                </div>
               </div>
             )}
           </div>

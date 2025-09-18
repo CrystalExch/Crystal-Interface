@@ -191,6 +191,22 @@ interface TradesByMarket {
   [key: string]: any[];
 }
 
+interface Position {
+  tokenId: string;
+  symbol?: string;
+  name?: string;
+  metadataCID?: string;
+  imageUrl?: string;
+  boughtTokens: number;
+  soldTokens: number;
+  spentNative: number;
+  receivedNative: number;
+  remainingTokens: number;
+  remainingPct: number;
+  pnlNative: number;
+  lastPrice?: number;
+}
+
 interface WalletDragItem {
   address: string;
   name: string;
@@ -266,6 +282,8 @@ interface PortfolioProps {
   Wallet?: any;
   activeWalletPrivateKey?: string;
   lastRefGroupFetch: any;
+  positions?: Position[];
+  onSellPosition?: (position: Position, monAmount: string) => void;
 }
 
 type PortfolioTab = 'spot' | 'margin' | 'wallets' | 'trenches';
@@ -334,7 +352,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
   keccak256,
   Wallet,
   activeWalletPrivateKey,
-  lastRefGroupFetch
+  lastRefGroupFetch,
+  positions,
+  onSellPosition
 }) => {
   const [activeTab, setActiveTab] = useState<PortfolioTab>('spot');
   const [activeSection, setActiveSection] = useState<
@@ -806,64 +826,137 @@ const Portfolio: React.FC<PortfolioProps> = ({
     return 0;
   };
 
-  const executeDistribution = async () => {
-    if (sourceWallets.length === 0 || destinationWallets.length === 0 || !distributionAmount) {
-      alert('Please add source wallets, destination wallets, and set an amount');
-      return;
-    }
+const executeDistribution = async () => {
+  if (sourceWallets.length === 0 || destinationWallets.length === 0 || !distributionAmount) {
+    alert('Please add source wallets, destination wallets, and set an amount');
+    return;
+  }
 
-    const amount = parseFloat(distributionAmount);
-    if (amount <= 0) {
-      alert('Please enter a valid amount');
-      return;
-    }
+  const amount = parseFloat(distributionAmount);
+  if (amount <= 0) {
+    alert('Please enter a valid amount');
+    return;
+  }
 
-    try {
-      setIsVaultDepositSigning(true);
-      await handleSetChain();
+  try {
+    setIsVaultDepositSigning(true);
+    await handleSetChain();
 
-      if (distributionMode === 'equal') {
-      }
-      for (const sourceWallet of sourceWallets) {
-        const sourceWalletData = subWallets.find(w => w.address === sourceWallet.address);
-        if (!sourceWalletData) continue;
+    // Calculate all transfers first
+    const plannedTransfers = [];
+    
+    for (const sourceWallet of sourceWallets) {
+      const sourceWalletData = subWallets.find(w => w.address === sourceWallet.address);
+      if (!sourceWalletData) continue;
 
-        const amountPerSource = amount / sourceWallets.length;
+      const amountPerSource = amount / sourceWallets.length;
 
-        for (const destWallet of destinationWallets) {
-          let transferAmount: number;
+      for (const destWallet of destinationWallets) {
+        let transferAmount: number;
 
-          if (distributionMode === 'equal') {
-            transferAmount = amountPerSource / destinationWallets.length;
-          } else {
-            const totalDestValue = destinationWallets.reduce((sum, w) => sum + w.totalValue, 0);
-            const proportion = destWallet.totalValue / (totalDestValue || 1);
-            transferAmount = amountPerSource * proportion;
-          }
+        if (distributionMode === 'equal') {
+          transferAmount = amountPerSource / destinationWallets.length;
+        } else {
+          const totalDestValue = destinationWallets.reduce((sum, w) => sum + w.totalValue, 0);
+          const proportion = destWallet.totalValue / (totalDestValue || 1);
+          transferAmount = amountPerSource * proportion;
+        }
 
-          if (transferAmount > 0) {
-            await handleSubwalletTransfer(
-              sourceWallet.address,
-              destWallet.address,
-              transferAmount.toString(),
-              sourceWalletData.privateKey
-            );
-          }
+        if (transferAmount > 0.000001) {
+          plannedTransfers.push({
+            fromAddress: sourceWallet.address,
+            toAddress: destWallet.address,
+            amount: transferAmount,
+            fromPrivateKey: sourceWalletData.privateKey,
+            fromName: sourceWallet.name,
+            toName: destWallet.name
+          });
         }
       }
-
-      setTimeout(() => terminalRefetch(), 0);
-
-      showDistributionSuccess(distributionAmount, sourceWallets.length, destinationWallets.length);
-      clearAllZones();
-      setDistributionAmount('');
-
-    } catch (error) {
-      alert('Distribution failed. Please try again.');
-    } finally {
-      setIsVaultDepositSigning(false);
     }
-  };
+
+    console.log(`Executing ${plannedTransfers.length} transfers...`);
+    let successfulTransfers = 0;
+
+    // Execute transfers one by one with manual transaction creation
+    for (let i = 0; i < plannedTransfers.length; i++) {
+      const transfer = plannedTransfers[i];
+      
+      try {
+        console.log(`Transfer ${i + 1}/${plannedTransfers.length}: ${transfer.amount.toFixed(6)} MON from ${transfer.fromName} to ${transfer.toName}`);
+        
+        // Wait to avoid rate limits
+        if (i > 0) {
+          console.log(`⏳ Waiting 4 seconds to avoid rate limits...`);
+          await new Promise(resolve => setTimeout(resolve, 4000));
+        }
+
+        // Create wallet instance for this specific transfer
+        const wallet = new Wallet(transfer.fromPrivateKey);
+        
+        // Create transaction manually (no nonce fetching to avoid RPC spam)
+        const amountInWei = BigInt(Math.round(transfer.amount * 10**18));
+        
+        const tx = {
+          to: transfer.toAddress,
+          value: amountInWei,
+          data: '0x',
+          gasLimit: 21000n,
+          maxFeePerGas: 100000000000n + 13000000000n,
+          maxPriorityFeePerGas: 13000000000n,
+          nonce: i, // Simple incremental nonce (this might need adjustment)
+          chainId: activechain
+        };
+
+        // Sign transaction with the specific wallet
+        const signedTx = await wallet.signTransaction(tx);
+
+        // Send to multiple RPC endpoints (fire and forget)
+        const RPC_URLS = [
+          'https://testnet-rpc.monad.xyz/',
+          'https://rpc.monad-testnet.fastlane.xyz/eyJhIjoiMHhlN0QxZjRBQjIyMmQ5NDM4OWI4Mjk4MWY5OUM1ODgyNGZGNDJhN2QwIiwidCI6MTc1MzUwMjEzNiwicyI6IjB4ODE1ODNhMjQ5Yjc5ZTljNjliYzJjNDkzZGZkMDQ0ODdiMWMzZmRhYzE1ZGZlMmVlYjgyOWQ0NTRkZWQ3MTZjMTU4ZmQwMWNmNzlkM2JkNWJlNWRlOTVkZjU1MzE3ODkzNmMyZTBmMGFiYzk1NDlkNTMzYWRmODA4Y2UxODEwNjUxYyJ9',
+          'https://rpc.ankr.com/monad_testnet',
+          'https://monad-testnet.drpc.org',
+          'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
+        ];
+        
+        RPC_URLS.forEach(url => {
+          fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              id: 0,
+              method: 'eth_sendRawTransaction',
+              params: [signedTx]
+            })
+          }).catch(() => {}); // Ignore errors
+        });
+
+        successfulTransfers++;
+        console.log(`✅ Transfer ${i + 1} sent successfully`);
+
+      } catch (error) {
+      }
+    }
+
+    // Refresh balances
+    setTimeout(() => {
+      terminalRefetch();
+      refetch();
+    }, 2000);
+
+    showDistributionSuccess(distributionAmount, sourceWallets.length, destinationWallets.length);
+    clearAllZones();
+    setDistributionAmount('');
+    console.log(`🎉 Distribution completed: ${successfulTransfers}/${plannedTransfers.length} transfers sent`);
+
+  } catch (error) {
+    console.error('Distribution execution error:', error);
+  } finally {
+    setIsVaultDepositSigning(false);
+  }
+};
 
   const [privateKeyRevealed, setPrivateKeyRevealed] = useState(false);
 
@@ -1188,6 +1281,21 @@ const Portfolio: React.FC<PortfolioProps> = ({
     dragOverPosition: null
   });
   const [dropPreviewLine, setDropPreviewLine] = useState<{ top: number; containerKey: string } | null>(null);
+  const getWalletTokenCount = (address: string) => {
+    const balances = walletTokenBalances[address];
+    if (!balances) return 0;
+
+    const ethAddress = settings.chainConfig[activechain]?.eth;
+    let count = 0;
+
+    for (const [tokenAddr, balance] of Object.entries(balances)) {
+      if (tokenAddr !== ethAddress && balance && BigInt(balance.toString()) > 0n) {
+        count++;
+      }
+    }
+
+    return count;
+  };
 
   const startSelection = (e: React.MouseEvent, containerKey: 'main' | 'source' | 'destination') => {
     if (e.button !== 0) return;
@@ -1693,6 +1801,22 @@ const Portfolio: React.FC<PortfolioProps> = ({
           </div>
         </div>
 
+        <div className="wallet-drag-values">
+          <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
+            <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
+            {getWalletBalance(wallet.address).toFixed(2)}
+          </div>
+        </div>
+        <div className="wallet-drag-tokens">
+          <div className="wallet-token-count">
+            <div className="wallet-token-structure-icons">
+              <div className="token1"></div>
+              <div className="token2"></div>
+              <div className="token3"></div>
+            </div>
+            <span className="wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
+          </div>
+        </div>
         <div className="wallet-drag-actions">
           <Tooltip content="Deposit from Main Wallet">
             <button
@@ -1752,73 +1876,81 @@ const Portfolio: React.FC<PortfolioProps> = ({
             </button>
           </Tooltip>
         </div>
+      </div>
+    );
+  };
 
-        <div className="wallet-drag-values">
-          <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
-            <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
-            {getWalletBalance(wallet.address).toFixed(2)}
-          </div>
+const renderWalletContainer = (
+  wallets: any[],
+  containerType: 'main' | 'source' | 'destination',
+  containerKey: string,
+  emptyMessage: string,
+  containerRef: React.RefObject<HTMLDivElement>
+) => {
+  const isThisContainerSelecting = activeSelectionContainer === containerType;
+
+  // Determine which icon to show based on container type
+  const getEmptyStateIcon = () => {
+    if (containerType === 'source') {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="wallets-source-icon"><path d="m18 9-6-6-6 6"/><path d="M12 3v14"/><path d="M5 21h14"/></svg>
+      )
+    } else if (containerType === 'destination') {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="wallets-destination-icon"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>
+      )
+    }
+    return null;
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className={`${containerType === 'main' ? 'drag-wallets-list' : 'drop-zone-wallets'} ${isThisContainerSelecting ? 'selecting' : ''}`}
+      onMouseDown={(e) => startSelection(e, containerType)}
+      onMouseMove={(e) => {
+        if (isThisContainerSelecting && containerRef.current) {
+          updateSelection(e, containerRef.current, containerType);
+        }
+      }}
+      onMouseUp={endSelection}
+      onMouseLeave={endSelection}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOverZone(containerType);
+      }}
+      onDrop={(e) => handleUniversalDrop(e, containerType)}
+      onDragLeave={(e) => {
+        const relatedTarget = e.relatedTarget as Node;
+        if (!e.currentTarget.contains(relatedTarget)) {
+          setDragOverZone(null);
+        }
+      }}
+      style={{ position: 'relative' }}
+    >
+      {isThisContainerSelecting && selectionRect && (
+        <div
+          className="selection-rectangle"
+          style={{
+            left: Math.min(selectionRect.startX, selectionRect.currentX),
+            top: Math.min(selectionRect.startY, selectionRect.currentY),
+            width: Math.abs(selectionRect.currentX - selectionRect.startX),
+            height: Math.abs(selectionRect.currentY - selectionRect.startY),
+          }}
+        />
+      )}
+
+      {wallets.length === 0 ? (
+        <div className="drop-zone-empty">
+          {getEmptyStateIcon()}
+          <div className="drop-zone-text">{emptyMessage}</div>
         </div>
-      </div>
-    );
-  };
-
-  const renderWalletContainer = (
-    wallets: any[],
-    containerType: 'main' | 'source' | 'destination',
-    containerKey: string,
-    emptyMessage: string,
-    containerRef: React.RefObject<HTMLDivElement>
-  ) => {
-    const isThisContainerSelecting = activeSelectionContainer === containerType;
-
-    return (
-      <div
-        ref={containerRef}
-        className={`${containerType === 'main' ? 'drag-wallets-list' : 'drop-zone-wallets'} ${isThisContainerSelecting ? 'selecting' : ''}`}
-        onMouseDown={(e) => startSelection(e, containerType)}
-        onMouseMove={(e) => {
-          if (isThisContainerSelecting && containerRef.current) {
-            updateSelection(e, containerRef.current, containerType);
-          }
-        }}
-        onMouseUp={endSelection}
-        onMouseLeave={endSelection}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOverZone(containerType);
-        }}
-        onDrop={(e) => handleUniversalDrop(e, containerType)}
-        onDragLeave={(e) => {
-          const relatedTarget = e.relatedTarget as Node;
-          if (!e.currentTarget.contains(relatedTarget)) {
-            setDragOverZone(null);
-          }
-        }}
-        style={{ position: 'relative' }}
-      >
-        {isThisContainerSelecting && selectionRect && (
-          <div
-            className="selection-rectangle"
-            style={{
-              left: Math.min(selectionRect.startX, selectionRect.currentX),
-              top: Math.min(selectionRect.startY, selectionRect.currentY),
-              width: Math.abs(selectionRect.currentX - selectionRect.startX),
-              height: Math.abs(selectionRect.currentY - selectionRect.startY),
-            }}
-          />
-        )}
-
-        {wallets.length === 0 ? (
-          <div className="drop-zone-empty">
-            <div className="drop-zone-text">{emptyMessage}</div>
-          </div>
-        ) : (
-          wallets.map((wallet, index) => renderWalletItem(wallet, index, containerType, containerKey))
-        )}
-      </div>
-    );
-  };
+      ) : (
+        wallets.map((wallet, index) => renderWalletItem(wallet, index, containerType, containerKey))
+      )}
+    </div>
+  );
+};
 
   const getTotalWalletValue = (address: string) => {
     return walletTotalValues[address] || 0;
@@ -2242,6 +2374,14 @@ const Portfolio: React.FC<PortfolioProps> = ({
                 </div>
               ) : (
                 <div className="drag-wallets-container">
+                  <div className="wallets-table-header">
+                    <div className="wallet-header-checkbox"></div>
+                    <div className="wallet-header-name">Wallet</div>
+                    <div className="wallet-header-balance">Balance</div>
+                    <div className="wallet-header-holdings">Holdings</div>
+                    <div className="wallet-header-actions">Actions</div>
+                  </div>
+
                   {renderWalletContainer(
                     subWallets.filter(wallet =>
                       !sourceWallets.some(w => w.address === wallet.address) &&
@@ -2274,12 +2414,19 @@ const Portfolio: React.FC<PortfolioProps> = ({
                     </button>
                   )}
                 </div>
+                <div className="wallets-table-header">
+                  <div className="wallet-header-checkbox"></div>
+                  <div className="wallet-header-name">Wallet</div>
+                  <div className="wallet-header-balance">Balance</div>
+                  <div className="wallet-header-holdings">Holdings</div>
+                  <div className="wallet-header-actions">Actions</div>
+                </div>
 
                 {renderWalletContainer(
                   sourceWallets,
                   'source',
                   'source-wallets',
-                  'Drag source wallets here',
+                  'Drag wallets to distribute MON',
                   sourceWalletsRef
                 )}
               </div>
@@ -2343,6 +2490,13 @@ const Portfolio: React.FC<PortfolioProps> = ({
                       Add
                     </button>
                   </div>
+                </div>
+                <div className="wallets-table-header">
+                  <div className="wallet-header-checkbox"></div>
+                  <div className="wallet-header-name">Wallet</div>
+                  <div className="wallet-header-balance">Balance</div>
+                  <div className="wallet-header-holdings">Holdings</div>
+                  <div className="wallet-header-actions">Actions</div>
                 </div>
 
                 {renderWalletContainer(

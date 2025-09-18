@@ -451,100 +451,100 @@ function App() {
     showMarketDropdown: false,
     marketSearchTerm: ''
   });
-  const createSubWallet = async () => {
-    try {
-      const privateKey = keccak256(await signTypedDataAsync({
-        typedData: {
-          types: {
-            createCrystalOneCT: [
-              { name: 'version', type: 'string' },
-              { name: 'account', type: 'uint256' },
-            ],
-          },
-          primaryType: 'createCrystalOneCT',
-          message: {
-            version: 'Crystal v0.0.1 Testnet',
-            account: BigInt(subWallets.length + 1),
+    const createSubWallet = async () => {
+      try {
+        const privateKey = keccak256(await signTypedDataAsync({
+          typedData: {
+            types: {
+              createCrystalOneCT: [
+                { name: 'version', type: 'string' },
+                { name: 'account', type: 'uint256' },
+              ],
+            },
+            primaryType: 'createCrystalOneCT',
+            message: {
+              version: 'Crystal v0.0.1 Testnet',
+              account: BigInt(subWallets.length + 1),
+            }
           }
+        }));
+
+        const tempWallet = new Wallet(privateKey);
+        const walletAddress = tempWallet.address as string;
+
+        const newWallet = {
+          address: walletAddress,
+          privateKey: privateKey
+        };
+
+        const updatedWallets = [...subWallets, newWallet];
+        setSubWallets(updatedWallets);
+        saveSubWalletsToStorage(updatedWallets);
+
+        if (!validOneCT && updatedWallets.length === 1) {
+          setOneCTSigner(privateKey);
+          setpopup(25);
+          refetch();
         }
-      }));
-
-      const tempWallet = new Wallet(privateKey);
-      const walletAddress = tempWallet.address as string;
-
-      const newWallet = {
-        address: walletAddress,
-        privateKey: privateKey
-      };
-
-      const updatedWallets = [...subWallets, newWallet];
-      setSubWallets(updatedWallets);
-      saveSubWalletsToStorage(updatedWallets);
-
-      if (!validOneCT && updatedWallets.length === 1) {
-        setOneCTSigner(privateKey);
-        setpopup(25);
-        refetch();
+      } catch (error) {
+        console.error('Error creating subwallet:', error);
       }
-    } catch (error) {
-      console.error('Error creating subwallet:', error);
-    }
-  };
+    };
 
-  const sendUserOperationAsync = useCallback(
-    async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n) => {
-      let hash: `0x${string}`;
-      if (validOneCT) {
-        const tx = {
-          to: params.uo.target,
-          value: params.uo.value,
-          data: params.uo.data,
-          gasLimit: gasLimit > 0n ? gasLimit : 500000n,
-          maxFeePerGas: 100000000000n + (prioFee > 0n ? prioFee : 13000000000n),
-          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
-          nonce: oneCTNonceRef.current,
-          chainId: activechain
+    const sendUserOperationAsync = useCallback(
+      async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n) => {
+        let hash: `0x${string}`;
+        if (validOneCT) {
+          const tx = {
+            to: params.uo.target,
+            value: params.uo.value,
+            data: params.uo.data,
+            gasLimit: gasLimit > 0n ? gasLimit : 500000n,
+            maxFeePerGas: 100000000000n + (prioFee > 0n ? prioFee : 13000000000n),
+            maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
+            nonce: oneCTNonceRef.current,
+            chainId: activechain
+          }
+          oneCTNonceRef.current += 1;
+          const signedTx = await onectclient.signTransaction(tx);
+          hash = keccak256(signedTx) as `0x${string}`;
+
+          const RPC_URLS = [
+            HTTP_URL,
+            'https://rpc.monad-testnet.fastlane.xyz/eyJhIjoiMHhlN0QxZjRBQjIyMmQ5NDM4OWI4Mjk4MWY5OUM1ODgyNGZGNDJhN2QwIiwidCI6MTc1MzUwMjEzNiwicyI6IjB4ODE1ODNhMjQ5Yjc5ZTljNjliYzJjNDkzZGZkMDQ0ODdiMWMzZmRhYzE1ZGZlMmVlYjgyOWQ0NTRkZWQ3MTZjMTU4ZmQwMWNmNzlkM2JkNWJlNWRlOTVkZjU1MzE3ODkzNmMyZTBmMGFiYzk1NDlkNTMzYWRmODA4Y2UxODEwNjUxYyJ9',
+            'https://rpc.ankr.com/monad_testnet',
+            'https://monad-testnet.drpc.org',
+            'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
+          ];
+          RPC_URLS.forEach(url => {
+            fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: 0,
+                method: 'eth_sendRawTransaction',
+                params: [signedTx]
+              })
+            }).catch();
+          });
         }
-        oneCTNonceRef.current += 1;
-        const signedTx = await onectclient.signTransaction(tx);
-        hash = keccak256(signedTx) as `0x${string}`;
-
-        const RPC_URLS = [
-          HTTP_URL,
-          'https://rpc.monad-testnet.fastlane.xyz/eyJhIjoiMHhlN0QxZjRBQjIyMmQ5NDM4OWI4Mjk4MWY5OUM1ODgyNGZGNDJhN2QwIiwidCI6MTc1MzUwMjEzNiwicyI6IjB4ODE1ODNhMjQ5Yjc5ZTljNjliYzJjNDkzZGZkMDQ0ODdiMWMzZmRhYzE1ZGZlMmVlYjgyOWQ0NTRkZWQ3MTZjMTU4ZmQwMWNmNzlkM2JkNWJlNWRlOTVkZjU1MzE3ODkzNmMyZTBmMGFiYzk1NDlkNTMzYWRmODA4Y2UxODEwNjUxYyJ9',
-          'https://rpc.ankr.com/monad_testnet',
-          'https://monad-testnet.drpc.org',
-          'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
-        ];
-        RPC_URLS.forEach(url => {
-          fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              jsonrpc: '2.0',
-              id: 0,
-              method: 'eth_sendRawTransaction',
-              params: [signedTx]
-            })
-          }).catch();
-        });
-      }
-      else {
-        hash = (await rawSendUserOperationAsync(params))?.hash
-      }
-      await Promise.race([
-        new Promise<void>((resolve) => {
-          txReceiptResolvers.current.set(hash, resolve);
-        }),
-        waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
-          txReceiptResolvers.current.delete(hash);
-          hash = r.transactionHash;
-        }),
-      ]);
-      return hash
-    },
-    [validOneCT]
-  );
+        else {
+          hash = (await rawSendUserOperationAsync(params))?.hash
+        }
+        await Promise.race([
+          new Promise<void>((resolve) => {
+            txReceiptResolvers.current.set(hash, resolve);
+          }),
+          waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
+            txReceiptResolvers.current.delete(hash);
+            hash = r.transactionHash;
+          }),
+        ]);
+        return hash
+      },
+      [validOneCT]
+    );
 
   // state vars
   const [showSendDropdown, setShowSendDropdown] = useState(false);
