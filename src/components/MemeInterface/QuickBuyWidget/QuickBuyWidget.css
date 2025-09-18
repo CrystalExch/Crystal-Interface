@@ -522,7 +522,7 @@
 
 .quickbuy-wallets-panel {
     position: fixed;
-    width: 280px;
+    width: 320px;
     border: 1px solid rgba(179, 184, 249, 0.1);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(20px);
@@ -716,8 +716,9 @@
 .quickbuy-wallet-balance {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: flex-start;
     flex-shrink: 0;
+    width: 90px;
 }
 
 .quickbuy-wallet-balance-amount {
@@ -726,8 +727,11 @@
     gap: 3px;
     font-weight: 400;
     color: #ced0df;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     letter-spacing: -0.2px;
+    border-radius: 20px;
+    border: 1px solid rgba(206, 208, 223, 0.1);
+    padding: 2px 6px;
 }
 
 .quickbuy-wallet-balance-amount.blurred {
@@ -741,6 +745,75 @@
     flex-shrink: 0;
 }
 
+.quickbuy-wallet-tokens {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+    min-width: 60px;
+}
+
+.quickbuy-wallet-token-amount {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-weight: 400;
+    color: #ced0df;
+    font-size: 0.85rem;
+    letter-spacing: -0.2px;
+    border-radius: 20px;
+    border: 1px solid rgba(206, 208, 223, 0.1);
+    padding: 2px 6px;
+}
+
+.quickbuy-wallet-token-amount.blurred {
+    filter: blur(6px);
+    user-select: none;
+}
+
+.quickbuy-wallet-token-icon {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    border-radius: 3px;
+}
+
+.quickbuy-wallet-token-balance {
+    color: #ced0df;
+    font-size: 0.8rem;
+}
+
+.quickbuy-wallet-token-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    border: 1px solid rgba(206, 208, 223, 0.1);
+    padding: 2px 6px;
+    gap: 5px;
+}
+.quickbuy-wallet-token-structure-icons{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quickbuy-wallet-total-tokens {
+    color: #999;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.quickbuy-wallet-no-tokens {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quickbuy-wallet-zero-tokens {
+    color: #666;
+    font-size: 0.8rem;
+}
 .quickbuy-controls-right-side {
     display: flex;
     align-items: center;
@@ -836,3 +909,40 @@
     font-size: 0.7rem;
 }
 
+
+
+
+.token1{
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    background-color: rgba(34, 34, 39, 1);
+    position: relative;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    z-index: 2;
+}
+
+.token2{
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    background-color: rgb(53, 53, 60);
+    position: relative;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-left: -6px;
+    z-index: 1;
+}
+
+.token3{
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    background-color: rgb(82, 82, 88);
+    position: relative;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-left: -6px;
+    z-index: 0;
+}

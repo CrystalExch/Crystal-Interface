@@ -248,7 +248,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     tokenImage
 }) => {
 
-    
+
     const [position, setPosition] = useState(() => {
         try {
             const saved = localStorage.getItem('crystal_quickbuy_widget_position');
@@ -432,6 +432,34 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
     const getWalletName = (address: string, index: number) => {
         return walletNames[address] || `Wallet ${index + 1}`;
+    };
+
+    const getWalletTokenBalance = (address: string) => {
+        const balances = walletTokenBalances[address];
+        if (!balances || !tokenAddress) return 0;
+
+        const balance = balances[tokenAddress];
+        if (!balance || balance <= 0n) return 0;
+
+        const tokenInfo = tokenList.find(t => t.address === tokenAddress);
+        const decimals = tokenInfo?.decimals || 18;
+        return Number(balance) / (10 ** Number(decimals));
+    };
+
+    const getWalletTokenCount = (address: string) => {
+        const balances = walletTokenBalances[address];
+        if (!balances) return 0;
+
+        const ethAddress = settings.chainConfig[activechain]?.eth;
+        let count = 0;
+
+        for (const [tokenAddr, balance] of Object.entries(balances)) {
+            if (tokenAddr !== ethAddress && balance && BigInt(balance.toString()) > 0n) {
+                count++;
+            }
+        }
+
+        return count;
     };
 
     const isWalletActive = (privateKey: string) => {
@@ -1266,10 +1294,66 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                         </div>
 
                                         <div className="quickbuy-wallet-balance">
+                                            <Tooltip content="MON Balance">
                                             <div className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}>
                                                 <img src={monadicon} className="quickbuy-wallet-mon-icon" alt="MON" />
                                                 {formatNumberWithCommas(balance, 2)}
                                             </div>
+                                            </Tooltip>
+                                        </div>
+
+                                        <div className="quickbuy-wallet-tokens">
+                                            {(() => {
+                                                const tokenBalance = getWalletTokenBalance(wallet.address);
+                                                const tokenCount = getWalletTokenCount(wallet.address);
+
+                                                if (tokenBalance > 0) {
+                                                    return (
+                                                        <div className={`quickbuy-wallet-token-amount ${isBlurred ? 'blurred' : ''}`}>
+                                                            {tokenImage && (
+                                                                <img
+                                                                    src={tokenImage}
+                                                                    className="quickbuy-wallet-token-icon"
+                                                                    alt={tokenSymbol}
+                                                                    onError={(e) => {
+                                                                        e.currentTarget.style.display = 'none';
+                                                                    }}
+                                                                />
+                                                            )}
+                                                            <span className="quickbuy-wallet-token-balance">
+                                                                {formatNumberWithCommas(tokenBalance, 2)}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                } else if (tokenCount > 0) {
+                                                    return (
+                                                        <Tooltip content="Tokens">
+                                                            <div className="quickbuy-wallet-token-count">
+                                                                <div className="quickbuy-wallet-token-structure-icons">
+                                                                    <div className="token1"></div>
+                                                                    <div className="token2"></div>
+                                                                    <div className="token3"></div>
+                                                                </div>
+                                                                <span className="quickbuy-wallet-total-tokens">{tokenCount}</span>
+                                                            </div>
+                                                        </Tooltip>
+                                                    );
+                                                } else {
+                                                    return (
+                                                        <Tooltip content="Tokens">
+
+                                                            <div className="quickbuy-wallet-token-count">
+                                                                <div className="quickbuy-wallet-token-structure-icons">
+                                                                    <div className="token1"></div>
+                                                                    <div className="token2"></div>
+                                                                    <div className="token3"></div>
+                                                                </div>
+                                                                <span className="quickbuy-wallet-total-tokens">0</span>
+                                                            </div>
+                                                        </Tooltip>
+                                                    );
+                                                }
+                                            })()}
                                         </div>
                                     </div>
                                 );
