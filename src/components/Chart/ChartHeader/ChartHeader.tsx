@@ -47,6 +47,8 @@ interface ChartHeaderProps {
     discordHandle?: string;
   };
   monUsdPrice: number;
+    showLoadingPopup?: (id: string, config: any) => void;
+  updatePopup?: (id: string, config: any) => void;
 }
 
 const ChartHeader: React.FC<ChartHeaderProps> = ({
@@ -68,7 +70,9 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   tradesByMarket,
   isMemeToken = false,
   memeTokenData,
-  monUsdPrice
+  monUsdPrice,
+    showLoadingPopup,
+  updatePopup
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
@@ -235,7 +239,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   
   return (
     <div className={`chart-header ${!shouldShowFullHeader ? 'simplified' : ''}`}>
-      <TokenInfo
+<TokenInfo
         in_icon={in_icon}
         out_icon={out_icon}
         price={price}
@@ -250,6 +254,8 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         isMemeToken={isMemeToken}
         memeTokenData={memeTokenData}
         monUsdPrice={monUsdPrice}
+        showLoadingPopup={showLoadingPopup}
+        updatePopup={updatePopup}
       />
       {shouldShowFullHeader && (
         <AdditionalMetrics 

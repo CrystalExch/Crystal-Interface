@@ -421,7 +421,7 @@ const handleQuickBuy = useCallback(async (token: any, amt: string) => {
           </div>
         </div>
         <div className="left-header">
-          <ChartHeader
+     <ChartHeader
             in_icon={tokendict[activeMarket.baseAddress].image}
             out_icon={tokendict[activeMarket.quoteAddress].image}
             price={isMemeTokenPage && memeTokenData ?
@@ -455,6 +455,8 @@ const handleQuickBuy = useCallback(async (token: any, amt: string) => {
             isMemeToken={isMemeTokenPage}
             memeTokenData={memeTokenData}
             monUsdPrice={monUsdPrice}
+            showLoadingPopup={showLoadingPopup}
+            updatePopup={updatePopup}
           />
         </div>
         <div className={rightHeaderClass}>

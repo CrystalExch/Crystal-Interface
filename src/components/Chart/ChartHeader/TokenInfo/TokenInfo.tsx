@@ -141,6 +141,8 @@ interface TokenInfoProps {
     discordHandle?: string;
   };
   monUsdPrice: number;
+  showLoadingPopup?: (id: string, config: any) => void;
+  updatePopup?: (id: string, config: any) => void;
 }
 
 const TokenInfo: React.FC<TokenInfoProps> = ({
@@ -158,6 +160,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   isMemeToken = false,
   memeTokenData,
   monUsdPrice,
+  showLoadingPopup,
+  updatePopup,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
@@ -231,11 +235,24 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       </span>
     );
   };
-  const copyToClipboard = async (text: string) => {
+  const copyToClipboard = async (text: string, label = 'Address copied') => {
+    const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
       await navigator.clipboard.writeText(text);
+      if (showLoadingPopup && updatePopup) {
+        showLoadingPopup(txId, { title: label, subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard` });
+        setTimeout(() => {
+          updatePopup(txId, { title: label, subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
+        }, 100);
+      }
     } catch (err) {
       console.error('Failed to copy:', err);
+      if (showLoadingPopup && updatePopup) {
+        showLoadingPopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy to clipboard' });
+        setTimeout(() => {
+          updatePopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy to clipboard', variant: 'error', confirmed: true, isLoading: false });
+        }, 100);
+      }
     }
   };
 
@@ -609,10 +626,16 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               <div className="meme-interface-token-name-row">
                 <h1 className="meme-interface-token-symbol">{memeTokenData.symbol}</h1>
                 <div className="meme-interface-token-name-container">
-                  <span className="meme-interface-token-name">{memeTokenData.name}</span>
-                  <button
+                  <span
+                    className="meme-interface-token-name"
+                    onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
+                    style={{ cursor: 'pointer' }}
+                    title="Click to copy contract address"
+                  >
+                    {memeTokenData.name}
+                  </span>                  <button
                     className="meme-interface-social-btn"
-                    onClick={() => copyToClipboard(memeTokenData.tokenAddress)}
+                    onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
                     title="Copy contract address"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -620,13 +643,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     </svg>
                   </button>
                 </div>
-<button
-  className="meme-interface-share-btn"
-  onClick={() => copyToClipboard(`app.crystal.exchange/meme/${memeTokenData.tokenAddress}`)}
-  title="Copy share link"
->
-  <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" ><path d="M 36.5 5 A 6.5 6.5 0 0 0 30.236328 13.207031 L 30.121094 13.263672 L 16.738281 19.953125 L 16.623047 20.009766 A 6.5 6.5 0 0 0 11.5 17.5 A 6.5 6.5 0 0 0 11.5 30.5 A 6.5 6.5 0 0 0 16.626953 27.990234 L 16.738281 28.046875 L 30.121094 34.736328 L 30.230469 34.791016 A 6.5 6.5 0 0 0 36.5 43 A 6.5 6.5 0 0 0 36.5 30 A 6.5 6.5 0 0 0 31.671875 32.158203 L 31.460938 32.052734 L 18.080078 25.363281 L 17.871094 25.259766 A 6.5 6.5 0 0 0 17.869141 22.742188 L 18.080078 22.636719 L 31.460938 15.947266 L 31.666016 15.84375 A 6.5 6.5 0 0 0 36.5 18 A 6.5 6.5 0 0 0 36.5 5 z" /></svg>
-</button>
+                <button
+                  className="meme-interface-share-btn"
+                  onClick={() => copyToClipboard(`app.crystal.exchange/meme/${memeTokenData.tokenAddress}`)}
+                  title="Copy share link"
+                >
+                  <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" ><path d="M 36.5 5 A 6.5 6.5 0 0 0 30.236328 13.207031 L 30.121094 13.263672 L 16.738281 19.953125 L 16.623047 20.009766 A 6.5 6.5 0 0 0 11.5 17.5 A 6.5 6.5 0 0 0 11.5 30.5 A 6.5 6.5 0 0 0 16.626953 27.990234 L 16.738281 28.046875 L 30.121094 34.736328 L 30.230469 34.791016 A 6.5 6.5 0 0 0 36.5 43 A 6.5 6.5 0 0 0 36.5 30 A 6.5 6.5 0 0 0 31.671875 32.158203 L 31.460938 32.052734 L 18.080078 25.363281 L 17.871094 25.259766 A 6.5 6.5 0 0 0 17.869141 22.742188 L 18.080078 22.636719 L 31.460938 15.947266 L 31.666016 15.84375 A 6.5 6.5 0 0 0 36.5 18 A 6.5 6.5 0 0 0 36.5 5 z" /></svg>
+                </button>
 
                 <button
                   className="meme-interface-share-btn"
@@ -657,7 +680,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   {memeTokenData.twitterHandle && (
                     <TwitterHover url={memeTokenData.twitterHandle}>
                       <a
-                      className="token-info-meme-interface-twitter-btn"
+                        className="token-info-meme-interface-twitter-btn"
                         href={memeTokenData.twitterHandle}
                         target="_blank"
                         rel="noreferrer"
@@ -707,7 +730,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   )}
 
                   <a
-                      className="token-info-meme-interface-social-btn"
+                    className="token-info-meme-interface-social-btn"
                     href={`https://twitter.com/search?q=${memeTokenData.tokenAddress}`}
                     target="_blank"
                     rel="noreferrer"

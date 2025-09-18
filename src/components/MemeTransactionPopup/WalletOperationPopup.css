@@ -252,3 +252,8 @@
   margin-left: 5px;
   margin-bottom: 2px;
 }
+
+
+.clipboard{
+  filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%) opacity(1);
+}

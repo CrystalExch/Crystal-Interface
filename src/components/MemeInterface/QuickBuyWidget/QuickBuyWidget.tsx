@@ -276,7 +276,45 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     }, [position]); const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
+    const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
+const handleCopyAddress = useCallback(async (address: string, e: React.MouseEvent) => {
+  e.stopPropagation();
+  const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  try {
+    await navigator.clipboard.writeText(address);
+    if (showLoadingPopup && updatePopup) {
+      showLoadingPopup(txId, { title: 'Address Copied', subtitle: `${address.slice(0, 6)}...${address.slice(-4)} copied to clipboard` });
+      setTimeout(() => {
+        updatePopup(txId, { title: 'Address Copied', subtitle: `${address.slice(0, 6)}...${address.slice(-4)} copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
+      }, 100);
+    }
+  } catch (err) {
+    console.error('Failed to copy address:', err);
+    const textArea = document.createElement('textarea');
+    textArea.value = address;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      if (showLoadingPopup && updatePopup) {
+        showLoadingPopup(txId, { title: 'Address Copied', subtitle: `${address.slice(0, 6)}...${address.slice(-4)} copied to clipboard` });
+        setTimeout(() => {
+          updatePopup(txId, { title: 'Address Copied', subtitle: `${address.slice(0, 6)}...${address.slice(-4)} copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
+        }, 100);
+      }
+    } catch (fallbackErr) {
+      console.error('Fallback copy failed:', fallbackErr);
+      if (showLoadingPopup && updatePopup) {
+        showLoadingPopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy address to clipboard' });
+        setTimeout(() => {
+          updatePopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy address to clipboard', variant: 'error', confirmed: true, isLoading: false });
+        }, 100);
+      }
+    }
+    document.body.removeChild(textArea);
+  }
+}, [showLoadingPopup, updatePopup]);
     const [selectedBuyAmount, setSelectedBuyAmount] = useState('1');
     const [selectedSellPercent, setSelectedSellPercent] = useState('25%');
     const [isEditMode, setIsEditMode] = useState(false);
@@ -1288,17 +1326,24 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                             <div className="quickbuy-wallet-name">
                                                 {getWalletName(wallet.address, index)}
                                             </div>
-                                            <div className="quickbuy-wallet-address">
-                                                {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                                            <div
+                                                className="quickbuy-wallet-address"
+                                                onClick={(e) => handleCopyAddress(wallet.address, e)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                {wallet.address.slice(0, 4)}...{wallet.address.slice(-4)}
+                                                <svg className="quickbuy-wallet-address-copy-icon" width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                                </svg>
                                             </div>
                                         </div>
 
                                         <div className="quickbuy-wallet-balance">
                                             <Tooltip content="MON Balance">
-                                            <div className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}>
-                                                <img src={monadicon} className="quickbuy-wallet-mon-icon" alt="MON" />
-                                                {formatNumberWithCommas(balance, 2)}
-                                            </div>
+                                                <div className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+                                                    <img src={monadicon} className="quickbuy-wallet-mon-icon" alt="MON" />
+                                                    {formatNumberWithCommas(balance, 2)}
+                                                </div>
                                             </Tooltip>
                                         </div>
 
@@ -1309,24 +1354,24 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
                                                 if (tokenBalance > 0) {
                                                     return (
-                                                                                                                <Tooltip content="Tokens">
+                                                        <Tooltip content="Tokens">
 
-                                                        <div className={`quickbuy-wallet-token-amount ${isBlurred ? 'blurred' : ''}`}>
-                                                            {tokenImage && (
-                                                                <img
-                                                                    src={tokenImage}
-                                                                    className="quickbuy-wallet-token-icon"
-                                                                    alt={tokenSymbol}
-                                                                    onError={(e) => {
-                                                                        e.currentTarget.style.display = 'none';
-                                                                    }}
-                                                                />
-                                                            )}
-                                                            <span className="quickbuy-wallet-token-balance">
-                                                                {formatNumberWithCommas(tokenBalance, 2)}
-                                                            </span>
-                                                        </div>
-                                                </Tooltip>
+                                                            <div className={`quickbuy-wallet-token-amount ${isBlurred ? 'blurred' : ''}`}>
+                                                                {tokenImage && (
+                                                                    <img
+                                                                        src={tokenImage}
+                                                                        className="quickbuy-wallet-token-icon"
+                                                                        alt={tokenSymbol}
+                                                                        onError={(e) => {
+                                                                            e.currentTarget.style.display = 'none';
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                                <span className="quickbuy-wallet-token-balance">
+                                                                    {formatNumberWithCommas(tokenBalance, 2)}
+                                                                </span>
+                                                            </div>
+                                                        </Tooltip>
                                                     );
                                                 } else if (tokenCount > 0) {
                                                     return (
