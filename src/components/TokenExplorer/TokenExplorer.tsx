@@ -1652,6 +1652,8 @@ const TokenRow = React.memo<{
     '--progress-color': getBondingColor(bondingPercentage),
   };
 
+  const [previewPosition, setPreviewPosition] = useState({ top: 0, left: 0 });
+  const [showPreview, setShowPreview] = useState(false);
   const updatePreviewPosition = useCallback(() => {
     if (!imageContainerRef.current) return;
 
@@ -1662,13 +1664,12 @@ const TokenRow = React.memo<{
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    const previewWidth = 120;
-    const previewHeight = 180;
-    const offset = 12;
+    const previewWidth = 316; // 300px + 16px padding
+    const previewHeight = 316;
+    const offset = 15;
 
     let top = 0;
     let left = 0;
-    let placement: 'top' | 'bottom' | 'left' | 'right' = 'bottom';
 
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -1678,33 +1679,40 @@ const TokenRow = React.memo<{
     const spaceRight = viewportWidth - rect.right;
     const spaceLeft = rect.left;
 
+    // Prioritize above/below positioning first
     if (spaceBelow >= previewHeight + offset) {
-      placement = 'bottom';
+      // Show below (preferred)
       top = rect.bottom + scrollY + offset;
       left = centerX + scrollX - previewWidth / 2;
     } else if (spaceAbove >= previewHeight + offset) {
-      placement = 'top';
+      // Show above
       top = rect.top + scrollY - previewHeight - offset;
       left = centerX + scrollX - previewWidth / 2;
     } else if (spaceRight >= previewWidth + offset) {
-      placement = 'right';
-      top = centerY + scrollY - previewHeight / 2;
+      // Show to the right
       left = rect.right + scrollX + offset;
-    } else if (spaceLeft >= previewWidth + offset) {
-      placement = 'left';
       top = centerY + scrollY - previewHeight / 2;
+    } else if (spaceLeft >= previewWidth + offset) {
+      // Show to the left
       left = rect.left + scrollX - previewWidth - offset;
+      top = centerY + scrollY - previewHeight / 2;
     } else {
-      placement = 'bottom';
+      // Default to below if no good space
       top = rect.bottom + scrollY + offset;
       left = centerX + scrollX - previewWidth / 2;
     }
 
-    if (left < scrollX + 10) left = scrollX + 10;
-    else if (left + previewWidth > scrollX + viewportWidth - 10) left = scrollX + viewportWidth - previewWidth - 10;
+    // Keep within viewport bounds
+    const margin = 10;
+    if (left < scrollX + margin) left = scrollX + margin;
+    else if (left + previewWidth > scrollX + viewportWidth - margin)
+      left = scrollX + viewportWidth - previewWidth - margin;
 
-    if (top < scrollY + 10) top = scrollY + 10;
-    else if (top + previewHeight > scrollY + viewportHeight - 10) top = scrollY + viewportHeight - previewHeight - 10;
+    if (top < scrollY + margin) top = scrollY + margin;
+    else if (top + previewHeight > scrollY + viewportHeight - margin)
+      top = scrollY + viewportHeight - previewHeight - margin;
+
+    setPreviewPosition({ top, left });
   }, []);
   const updateBondingPopupPosition = useCallback(() => {
     if (!tokenRowRef.current) return;
@@ -1725,7 +1733,14 @@ const TokenRow = React.memo<{
 
   useEffect(() => {
     if (hoveredImage === token.id) {
-      updatePreviewPosition();
+      // Calculate position immediately when hover starts
+      const calculateAndShow = () => {
+        updatePreviewPosition();
+        // Small delay to ensure position is set before showing
+        setTimeout(() => setShowPreview(true), 10);
+      };
+
+      calculateAndShow();
 
       const handleResize = () => updatePreviewPosition();
       window.addEventListener('scroll', updatePreviewPosition);
@@ -1735,6 +1750,8 @@ const TokenRow = React.memo<{
         window.removeEventListener('scroll', updatePreviewPosition);
         window.removeEventListener('resize', handleResize);
       };
+    } else {
+      setShowPreview(false);
     }
   }, [hoveredImage, token.id, updatePreviewPosition]);
 
@@ -1848,11 +1865,43 @@ const TokenRow = React.memo<{
                   >
                     {token.symbol.charAt(0).toUpperCase()}
                   </div>
-                )}                <div className={`explorer-image-overlay ${!displaySettings.squareImages ? 'circle-mode' : ''}`}>
+                )}
+                <div className={`explorer-image-overlay ${!displaySettings.squareImages ? 'circle-mode' : ''}`}>
                   <img className="camera-icon" src={camera} alt="inspect" />
                 </div>
               </div>
             </div>
+
+            {hoveredImage === token.id && token.image && showPreview && createPortal(
+              <div
+                className="explorer-image-preview show"
+                style={{
+                  position: 'absolute',
+                  top: `${previewPosition.top}px`,
+                  left: `${previewPosition.left}px`,
+                  zIndex: 9999,
+                  pointerEvents: 'none',
+                  opacity: 1,
+                  transition: 'opacity 0.2s ease',
+                }}
+              >
+                <div className="explorer-preview-content">
+                  <img
+                    src={token.image}
+                    alt={token.name}
+                    style={{
+                      width: '220px',
+                      height: '220px',
+                      borderRadius: displaySettings.squareImages ? '6px' : '50%',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                  />
+
+                </div>
+              </div>,
+              document.body
+            )}
           </div>
 
           {!displaySettings.progressBar && token.status !== 'graduated' && (

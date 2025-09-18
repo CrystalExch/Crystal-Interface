@@ -1295,9 +1295,9 @@
   position: absolute;
   top: -6px;
   left: -6px;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(6, 6, 6);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1306,7 +1306,6 @@
   padding: 4px;
   transition: all 0.2s ease;
   z-index: 11;
-  backdrop-filter: blur(4px);
   filter: brightness(0.7);
   width: 26px;
   height: 26px;
@@ -1743,18 +1742,6 @@
   opacity: 1;
   transform: scale(1);
 }
-
-.explorer-preview-content {
-  padding: 8px;
-  background: rgba(6, 6, 6);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
-  position: relative;
-  max-width: 150px;
-}
-
 
 
 .explorer-preview-image {
@@ -2481,9 +2468,9 @@
   position: absolute;
   top: -6px;
   left: 20px;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(6, 6, 6);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -2492,8 +2479,6 @@
   padding: 4px;
   transition: all 0.2s ease;
   z-index: 11;
-  backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
   filter: brightness(0.7);
   width: 26px;
   height: 26px;
@@ -3568,10 +3553,8 @@
   opacity: 0.7;
 }
 
-/* Update hide button for hidden tokens */
 .explorer-token-row.hidden-token .explorer-hide-button {
   opacity: 1;
-  /* Always show on hidden tokens */
   background: rgba(0, 0, 0, 0.9);
   border-color: rgba(255, 255, 255, 0.4);
 }
@@ -4358,4 +4341,34 @@
   border-radius: 50%;
   border: 2px solid rgb(6, 6, 6);
   z-index: 10;
+}
+
+.explorer-image-preview {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  will-change: opacity;
+}
+
+.explorer-image-preview.show {
+  opacity: 1;
+}
+
+.explorer-preview-content {
+  padding: 8px;
+  background: rgba(6, 6, 6);
+  border-radius: 6px;
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  position: relative;
+  max-width: 316px; 
+}
+
+
+
+.explorer-image-preview {
+  z-index: 9999 !important;
+}
+
+.explorer-image-preview * {
+  pointer-events: none;
 }
