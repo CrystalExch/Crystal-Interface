@@ -1309,6 +1309,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
                                                 if (tokenBalance > 0) {
                                                     return (
+                                                                                                                <Tooltip content="Tokens">
+
                                                         <div className={`quickbuy-wallet-token-amount ${isBlurred ? 'blurred' : ''}`}>
                                                             {tokenImage && (
                                                                 <img
@@ -1324,6 +1326,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                                                 {formatNumberWithCommas(tokenBalance, 2)}
                                                             </span>
                                                         </div>
+                                                </Tooltip>
                                                     );
                                                 } else if (tokenCount > 0) {
                                                     return (
