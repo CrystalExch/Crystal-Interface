@@ -1655,65 +1655,58 @@ const TokenRow = React.memo<{
   const [previewPosition, setPreviewPosition] = useState({ top: 0, left: 0 });
   const [showPreview, setShowPreview] = useState(false);
   const updatePreviewPosition = useCallback(() => {
-    if (!imageContainerRef.current) return;
+  if (!imageContainerRef.current) return;
 
-    const rect = imageContainerRef.current.getBoundingClientRect();
-    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+  const rect = imageContainerRef.current.getBoundingClientRect();
+  const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+  const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
 
-    const previewWidth = 316; // 300px + 16px padding
-    const previewHeight = 316;
-    const offset = 15;
+  const previewWidth = 316; 
+  const previewHeight = 316;
+  const offset = 15;
 
-    let top = 0;
-    let left = 0;
+  let top = 0;
+  let left = 0;
 
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+  const leftX = rect.left;
+  const centerY = rect.top + rect.height / 2;
 
-    const spaceBelow = viewportHeight - rect.bottom;
-    const spaceAbove = rect.top;
-    const spaceRight = viewportWidth - rect.right;
-    const spaceLeft = rect.left;
+  const spaceBelow = viewportHeight - rect.bottom;
+  const spaceAbove = rect.top;
+  const spaceRight = viewportWidth - rect.right;
+  const spaceLeft = rect.left;
 
-    // Prioritize above/below positioning first
-    if (spaceBelow >= previewHeight + offset) {
-      // Show below (preferred)
-      top = rect.bottom + scrollY + offset;
-      left = centerX + scrollX - previewWidth / 2;
-    } else if (spaceAbove >= previewHeight + offset) {
-      // Show above
-      top = rect.top + scrollY - previewHeight - offset;
-      left = centerX + scrollX - previewWidth / 2;
-    } else if (spaceRight >= previewWidth + offset) {
-      // Show to the right
-      left = rect.right + scrollX + offset;
-      top = centerY + scrollY - previewHeight / 2;
-    } else if (spaceLeft >= previewWidth + offset) {
-      // Show to the left
-      left = rect.left + scrollX - previewWidth - offset;
-      top = centerY + scrollY - previewHeight / 2;
-    } else {
-      // Default to below if no good space
-      top = rect.bottom + scrollY + offset;
-      left = centerX + scrollX - previewWidth / 2;
-    }
+  if (spaceBelow >= previewHeight + offset) {
+    top = rect.bottom + scrollY + offset;
+    left = leftX + scrollX;
+  } else if (spaceAbove >= previewHeight + offset) {
+    top = rect.top + scrollY - previewHeight - offset;
+    left = leftX + scrollX;
+  } else if (spaceRight >= previewWidth + offset) {
+    left = rect.right + scrollX + offset;
+    top = centerY + scrollY - previewHeight / 2;
+  } else if (spaceLeft >= previewWidth + offset) {
+    left = rect.left + scrollX - previewWidth - offset;
+    top = centerY + scrollY - previewHeight / 2;
+  } else {
+    top = rect.bottom + scrollY + offset;
+    left = leftX + scrollX; 
+  }
 
-    // Keep within viewport bounds
-    const margin = 10;
-    if (left < scrollX + margin) left = scrollX + margin;
-    else if (left + previewWidth > scrollX + viewportWidth - margin)
-      left = scrollX + viewportWidth - previewWidth - margin;
+  const margin = 10;
+  if (left < scrollX + margin) left = scrollX + margin;
+  else if (left + previewWidth > scrollX + viewportWidth - margin)
+    left = scrollX + viewportWidth - previewWidth - margin;
 
-    if (top < scrollY + margin) top = scrollY + margin;
-    else if (top + previewHeight > scrollY + viewportHeight - margin)
-      top = scrollY + viewportHeight - previewHeight - margin;
+  if (top < scrollY + margin) top = scrollY + margin;
+  else if (top + previewHeight > scrollY + viewportHeight - margin)
+    top = scrollY + viewportHeight - previewHeight - margin;
 
-    setPreviewPosition({ top, left });
-  }, []);
+  setPreviewPosition({ top, left });
+}, []);
   const updateBondingPopupPosition = useCallback(() => {
     if (!tokenRowRef.current) return;
 
@@ -1733,10 +1726,8 @@ const TokenRow = React.memo<{
 
   useEffect(() => {
     if (hoveredImage === token.id) {
-      // Calculate position immediately when hover starts
       const calculateAndShow = () => {
         updatePreviewPosition();
-        // Small delay to ensure position is set before showing
         setTimeout(() => setShowPreview(true), 10);
       };
 
