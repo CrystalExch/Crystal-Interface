@@ -723,6 +723,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       }
     }
     catch(e) {
+      setOverlayVisible(false)
     }
   }, [
     normalizeTicker(activeMarket.quoteAsset, activechain),

@@ -20643,6 +20643,7 @@ const handleExplorerFiltersApply = useCallback(() => {
                 terminalRefetch={terminalRefetch}
                 walletTokenBalances={walletTokenBalances}
                 tokenData={tokenData}
+                setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
               />
             }
@@ -20701,10 +20702,6 @@ const handleExplorerFiltersApply = useCallback(() => {
               tokenData={tokenData}
               setTokenData={setTokenData}
               monUsdPrice={monUsdPrice}
-              quickAmounts={quickAmounts}
-              setQuickAmount={setQuickAmount}
-              activePresets={activePresets}
-              setActivePreset={setActivePreset}
               buyPresets={buyPresets}
               sellPresets={sellPresets}
               monPresets={monPresets}

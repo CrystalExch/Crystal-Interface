@@ -289,8 +289,7 @@ body.sidebar-hover-overlay::before {
   flex-direction: column;
   flex-grow: 1;
   width: 100%;
-  padding-top: 8px;
-  margin-top: 8px;
+  padding-top: 14px;
   max-height: calc(100% - 155px);
   overflow-y: auto; 
 }

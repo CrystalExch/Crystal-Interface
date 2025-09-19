@@ -125,18 +125,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
 
   useEffect(() => {
     try {
-      localStorage.setItem('meme_chart_showMarketCap', JSON.stringify(showMarketCap));
-    } catch { }
-  }, [showMarketCap]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('meme_chart_showUSD', JSON.stringify(showUSD));
-    } catch { }
-  }, [showUSD]);
-
-  useEffect(() => {
-    try {
       const prev = tradeHistoryRef.current || [];
       const diff = tradehistory.slice(prev.length);
 
@@ -145,9 +133,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
 
       tradeHistoryRef.current = Array.isArray(tradehistory) ? [...tradehistory] : [];
 
-      const chart = widgetRef.current?.activeChart?.();
-      const canPush = chartReady && typeof marksRef.current === 'function' && !!chart && !!chart.symbol?.();
-
+      const canPush = chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol();
       if (tradehistory.length > 0 && becameVisible) {
         if (canPush) {
           const marks = tradehistory.map((trade: any) => {
@@ -211,7 +197,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       }
 
       if (chartReady) {
-        chart?.clearMarks?.();
+        widgetRef.current?.activeChart?.()?.clearMarks?.();
       }
     } catch (e) {
       console.error('Error updating trade marks:', e);
@@ -220,9 +206,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
 
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
-    if (data && data[0] && data[1]) {
-      dataRef.current[data[1]] = enforceOpenEqualsPrevClose(data[0]);
-    }
     widgetRef.current = new (window as any).TradingView.widget({
       container: chartRef.current,
       library_path: '/charting_library/',
@@ -277,7 +260,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         foregroundColor: 'rgb(209, 209, 250)',
       },
       favorites: {
-        intervals: ['1S', '5S', '15S', '5', '60', '1D'],
+        intervals: ['1S', '5S', '15S', '1', '5', '15', '60', '240', '1D'],
       },
       overrides: memeOverrides,
       studies: ['Volume@tv-basicstudies'],
@@ -334,12 +317,12 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           onHistoryCallback: Function,
           onErrorCallback: Function,
         ) => {
-          const { from, to, isSeconds } = periodParams || {};
+          const { from, to } = periodParams || {};
 
           try {
             setSelectedInterval(
-              isSeconds
-                ? `${resolution}s`
+              resolution.endsWith('S')
+                ? `${resolution.slice(0, -1)}s`
                 : resolution === '1D'
                   ? '1d'
                   : resolution === '240'
@@ -349,31 +332,31 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
                       : resolution + 'm'
             );
 
-            const resKey = isSeconds ? `${resolution}S` : resolution;
-            const key = toResKey(token.symbol, resKey);
+            const key = toResKey(token.symbol, resolution);
 
             await new Promise<void>((resolve) => {
-              const t0 = Date.now();
-              const tick = () => {
-                if (dataRef.current[key] || Date.now() - t0 > 1500) {
-                  clearInterval(iv);
+              const check = () => {
+                if (dataRef.current[key]) {
+                  clearInterval(intervalCheck);
                   resolve();
                 }
               };
-              const iv = setInterval(tick, 50);
-              tick();
+            
+              const intervalCheck = setInterval(check, 50);
+              check();
             });
-
             let bars = enforceOpenEqualsPrevClose(dataRef.current[key]) || [];
+            const nextTime = bars
+            .map((bar: any) => (bar.time / 1000))
+            .filter(t => t < from).pop() || null
             bars = bars.filter(
               (bar: any) => bar.time >= from * 1000 && bar.time <= to * 1000,
             );
-
             setTimeout(() => {
               if (bars && bars.length) {
-                onHistoryCallback(bars, { noData: false });
+                onHistoryCallback(bars, { nextTime, noData: false });
               } else {
-                onHistoryCallback([], { noData: false });
+                onHistoryCallback([], { nextTime, noData: false });
               }
             }, 0);
           } catch (error) {
@@ -461,25 +444,32 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           ? `<span style="color:rgb(209,209,250)">USD</span> / <span>MON</span>`
           : `<span>USD</span> / <span style="color:rgb(209,209,250)">MON</span>`
         monBtn.addEventListener('click', () => {
+          setOverlayVisible(true)
           if (showUSD) {
             setShowUSD(false);
+            localStorage.setItem('meme_chart_showUSD', JSON.stringify(false));
             try {
               widgetRef.current.activeChart().setSymbol(
                 `${token.symbol}/MON`,
-                widgetRef.current.activeChart().resolution()
+                widgetRef.current.activeChart().resolution(),
+                () => setOverlayVisible(false)
               );
             } catch (error) {
+              setOverlayVisible(false)
               console.error('Error changing to MON:', error);
             }
           }
           else {
             setShowUSD(true);
+            localStorage.setItem('meme_chart_showUSD', JSON.stringify(true));
             try {
               widgetRef.current.activeChart().setSymbol(
                 `${token.symbol}/USD`,
-                widgetRef.current.activeChart().resolution()
+                widgetRef.current.activeChart().resolution(),
+                () => setOverlayVisible(false)
               );
             } catch (error) {
+              setOverlayVisible(false)
               console.error('Error changing to USD:', error);
             }
           }
@@ -491,31 +481,36 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           ? `<span style="color:rgb(209,209,250)">Market Cap</span> / <span>Price</span>`
           : `<span>Market Cap</span> / <span style="color:rgb(209,209,250)">Price</span>`
         priceBtn.addEventListener('click', () => {
+          setOverlayVisible(true)
           if (showMarketCap) {
             setShowMarketCap(false);
+            localStorage.setItem('meme_chart_showMarketCap', JSON.stringify(false));
             try {
               const currentSymbol = widgetRef.current.activeChart().symbol();
               const currentResolution = widgetRef.current.activeChart().resolution();
 
               setTimeout(() => {
-                widgetRef.current.activeChart().setSymbol(currentSymbol, currentResolution);
+                widgetRef.current.activeChart().setSymbol(currentSymbol, currentResolution, () => setOverlayVisible(false));
               }, 10);
 
             } catch (error) {
+              setOverlayVisible(false)
               console.error('Error switching to Price:', error);
             }
           }
           else {
             setShowMarketCap(true);
+            localStorage.setItem('meme_chart_showMarketCap', JSON.stringify(true));
             try {
               const currentSymbol = widgetRef.current.activeChart().symbol();
               const currentResolution = widgetRef.current.activeChart().resolution();
 
               setTimeout(() => {
-                widgetRef.current.activeChart().setSymbol(currentSymbol, currentResolution);
+                widgetRef.current.activeChart().setSymbol(currentSymbol, currentResolution, () => setOverlayVisible(false));
               }, 10);
 
             } catch (error) {
+              setOverlayVisible(false)
               console.error('Error switching to MarketCap:', error);
             }
           }
@@ -599,7 +594,9 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
 
       }
     }
-    catch (e) { }
+    catch (e) {
+      setOverlayVisible(false)
+    }
   }, [token.symbol, selectedInterval]);
 
   return (

@@ -111,10 +111,6 @@ interface MemeInterfaceProps {
   tokenData?: any;
   setTokenData: any;
   monUsdPrice: number;
-  quickAmounts?: { [key: string]: string };
-  setQuickAmount?: (category: string, amount: string) => void;
-  activePresets?: { [key: string]: number };
-  setActivePreset?: (category: string, preset: number) => void;
   buyPresets?: { [key: number]: { slippage: string; priority: string; amount: string } };
   sellPresets?: { [key: number]: { slippage: string; priority: string } };
   monPresets?: number[];
@@ -489,10 +485,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   tokenData,
   setTokenData,
   monUsdPrice,
-  // quickAmounts,
-  // setQuickAmount,
-  // activePresets, 
-  // setActivePreset,
   buyPresets,
   sellPresets,
   monPresets = [5, 20, 100, 500],
@@ -514,7 +506,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [hoveredStatsContainer, setHoveredStatsContainer] = useState(false);
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
-
   const [selectedMonPreset, setSelectedMonPreset] = useState<number | null>(null);
   const [isPresetEditMode, setIsPresetEditMode] = useState(false);
   const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
@@ -531,23 +522,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       return false;
     }
   });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('crystal_quickbuy_widget_open', JSON.stringify(isWidgetOpen));
-    } catch (error) {
-    }
-  }, [isWidgetOpen]);
-
-
-
-  useEffect(() => {
-    if (editingPresetIndex !== null && presetInputRef.current) {
-      presetInputRef.current.focus();
-      presetInputRef.current.select();
-    }
-  }, [editingPresetIndex]);
-
   const [tradeAmount, setTradeAmount] = useState("");
   const [limitPrice, setLimitPrice] = useState("");
   const [quoteValue, setQuoteValue] = useState<number | undefined>(undefined);
@@ -580,7 +554,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [activeOrderType, setActiveOrderType] = useState<"market" | "Limit">("market");
   const [live, setLive] = useState<Partial<Token>>({});
   const [trades, setTrades] = useState<Trade[]>([]);
-  const [selectedInterval, setSelectedInterval] = useState(() => localStorage.getItem('meme_chart_timeframe') || '5m');
+  const [selectedInterval, setSelectedInterval] = useState(() => localStorage.getItem('meme_chart_timeframe') || '1m');
   const [chartData, setChartData] = useState<any>(null);
   const realtimeCallbackRef = useRef<any>({});
   const wsRef = useRef<WebSocket | null>(null);
@@ -632,6 +606,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
   const explorer = settings.chainConfig[activechain]?.explorer;
   const userAddr = (address ?? account?.address ?? "");
+
+  useEffect(() => {
+    if (editingPresetIndex !== null && presetInputRef.current) {
+      presetInputRef.current.focus();
+      presetInputRef.current.select();
+    }
+  }, [editingPresetIndex]);
 
   useEffect(() => {
     const storedWalletNames = localStorage.getItem('crystal_wallet_names');
@@ -1092,12 +1073,6 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
   }, [trades]);
 
   useEffect(() => {
-    if (!trades.length) return;
-    const t = trades[0];
-    pushRealtimeTick(t.price, t.nativeAmount);
-  }, [trades, pushRealtimeTick]);
-
-  useEffect(() => {
     trackedAddressesRef.current = trackedAddresses.map(a => a.toLowerCase());
   }, [trackedAddresses]);
 
@@ -1255,9 +1230,9 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
                   amountOut
                 }
                 series: ${'series' + (
-                  selectedInterval === '1Sm' ? '1' :
-                  selectedInterval === '5Sm' ? '5' :
-                  selectedInterval === '15Sm' ? '15' :
+                  selectedInterval === '1s' ? '1' :
+                  selectedInterval === '5s' ? '5' :
+                  selectedInterval === '15s' ? '15' :
                   selectedInterval === '1m' ? '60' :
                   selectedInterval === '5m' ? '300' :
                   selectedInterval === '15m' ? '900' :
@@ -2430,7 +2405,10 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
               document.body.style.userSelect = "";
             }}
             isWidgetOpen={isWidgetOpen}
-            onToggleWidget={() => setIsWidgetOpen(!isWidgetOpen)}
+            onToggleWidget={() => {
+              localStorage.setItem('crystal_quickbuy_widget_open', JSON.stringify(!isWidgetOpen));
+              setIsWidgetOpen(!isWidgetOpen)
+            }}
             holders={holders}
             positions={positions}
             topTraders={topTraders}
@@ -3704,7 +3682,10 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
       </div>
       <QuickBuyWidget
         isOpen={isWidgetOpen}
-        onClose={() => setIsWidgetOpen(false)}
+        onClose={() => {
+          localStorage.setItem('crystal_quickbuy_widget_open', JSON.stringify(false));
+          setIsWidgetOpen(false)
+        }}
         tokenSymbol={token.symbol}
         tokenAddress={tokenAddress}
         tokenPrice={currentPrice}

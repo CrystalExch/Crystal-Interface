@@ -78,12 +78,14 @@ interface TokenDetailProps {
   setTerminalToken: (x: any) => void;
   terminalRefetch: any;
   walletTokenBalances: any;
-  tokenData?: Token;
+  tokenData: Token;
+  setTokenData: any;
   monUsdPrice: any;
 }
 
 const SUBGRAPH_URL =
   'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
+const TOTAL_SUPPLY = 1e9;
 
 const formatPrice = (p: number) => {
   if (p >= 1e12) return `$${(p / 1e12).toFixed(2)}T`;
@@ -180,13 +182,14 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   terminalRefetch,
   walletTokenBalances,
   tokenData,
+  setTokenData,
   monUsdPrice
 }) => {
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const navigate = useNavigate();
   const { activechain } = useSharedContext();
 
-  const [token, setToken] = useState<Token | null>(tokenData || null);
+  const [token, setToken] = useState<any>((tokenData || tokenAddress ? {id: tokenAddress} : null) || null);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [holders, setHolders] = useState<Holder[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -195,7 +198,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [loading, setLoading] = useState(!tokenData);
   const [isSigning, setIsSigning] = useState(false);
-  const [selectedInterval, setSelectedInterval] = useState<'1m' | '5m' | '15m' | '1h' | '4h' | '1d'>('5m');
+  const [selectedInterval, setSelectedInterval] = useState<any>(() => localStorage.getItem('meme_chart_timeframe') || '1m');
   const [chartData, setChartData] = useState<any>(null);
   const realtimeCallbackRef = useRef<any>({});
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
@@ -228,19 +231,17 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     if (!token) return;
 
     try {
-      const seriesKey =
-        'series' +
-        (selectedInterval === '1m'
-          ? '60'
-          : selectedInterval === '5m'
-          ? '300'
-          : selectedInterval === '15m'
-          ? '900'
-          : selectedInterval === '1h'
-          ? '3600'
-          : selectedInterval === '4h'
-          ? '14400'
-          : '86400');
+      const seriesKey = 'series' + (
+        selectedInterval === '1s' ? '1' :
+        selectedInterval === '5s' ? '5' :
+        selectedInterval === '15s' ? '15' :
+        selectedInterval === '1m' ? '60' :
+        selectedInterval === '5m' ? '300' :
+        selectedInterval === '15m' ? '900' :
+        selectedInterval === '1h' ? '3600' :
+        selectedInterval === '4h' ? '14400':
+          '86400'
+      );
 
       const response = await fetch(SUBGRAPH_URL, {
         method: 'POST',
@@ -253,6 +254,13 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                 volumeNative
                 buyTxs
                 sellTxs
+                name
+                symbol
+                metadataCID
+                creator {
+                  id
+                }
+                timestamp
                 trades(first: 50, orderBy: block, orderDirection: desc) {
                   id
                   account { id }
@@ -274,8 +282,42 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       });
 
       const data = (await response.json())?.data;
+      console.log(data)
       const klines = data?.launchpadTokens?.[0]?.series?.klines;
       if (!klines) return;
+
+      if (data.launchpadTokens?.length) {
+        const m = data.launchpadTokens[0];
+
+        let imageUrl = token.image || '';
+        if (m.metadataCID && !imageUrl) {
+          try {
+            const metaRes = await fetch(m.metadataCID);
+            if (metaRes.ok) {
+              const meta = await metaRes.json();
+              imageUrl = meta.image || '';
+            }
+          } catch (e) {
+            console.warn('Failed to load metadata for token:', token.id, e);
+          }
+        }
+
+        const updatedTokenData = {
+          ...token,
+          name: m.name || token.name || "Unknown Token",
+          symbol: m.symbol || token.symbol || "UNKNOWN",
+          image: imageUrl,
+          creator: m.creator.id || "",
+          price: Number(m.lastPriceNativePerTokenWad || 0) / 1e18,
+          marketCap: (Number(m.lastPriceNativePerTokenWad || 0) / 1e18) * TOTAL_SUPPLY,
+          volume24h: Number(m.volumeNative || 0) / 1e18,
+          buyTransactions: Number(m.buyTxs || 0),
+          sellTransactions: Number(m.sellTxs || 0),
+          created: m.timestamp,
+        };
+
+        setTokenData(updatedTokenData);
+      }
 
       const bars = klines
         .slice()
@@ -289,18 +331,14 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           volume: Number(c.baseVolume) / 1e18,
         }));
 
-      const key =
-        token.symbol +
-        'MON' +
-        (selectedInterval === '1d'
-          ? '1D'
-          : selectedInterval === '4h'
-          ? '240'
-          : selectedInterval === '1h'
-          ? '60'
-          : selectedInterval.slice(0, -1));
-
-      setChartData([bars, key, false]);
+      const resForChart =
+        selectedInterval === "1d" ? "1D" :
+        selectedInterval === "4h" ? "240" :
+        selectedInterval === "1h" ? "60"  :
+        selectedInterval.endsWith("s")
+          ? selectedInterval.slice(0, -1).toUpperCase() + "S"
+          : selectedInterval.slice(0, -1);
+      setChartData([bars, resForChart, false]);
     } catch (error) {
       console.error('Failed to fetch token data:', error);
     } finally {
@@ -356,7 +394,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       if (tradeType === 'buy') {
         showLoadingPopup(txId, {
           title: 'Sending transaction...',
-          subtitle: `Buying ${tradeAmount} ${currentCurrency} worth of ${token.symbol}`,
+          subtitle: `Buying ${tradeAmount} ${currentCurrency} worth of ${tokenData.symbol}`,
           amount: tradeAmount,
           amountUnit: currentCurrency,
         });
@@ -368,21 +406,21 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           data: encodeFunctionData({
             abi: CrystalRouterAbi,
             functionName: 'buy',
-            args: [true, token.tokenAddress as `0x${string}`, value, 0n],
+            args: [true, tokenData.tokenAddress as `0x${string}`, value, 0n],
           }),
           value,
         };
 
         updatePopup(txId, {
           title: 'Confirming transaction...',
-          subtitle: `Buying ${tradeAmount} ${currentCurrency} worth of ${token.symbol}`,
+          subtitle: `Buying ${tradeAmount} ${currentCurrency} worth of ${tokenData.symbol}`,
           variant: 'info',
         });
 
         await sendUserOperationAsync({ uo });
 
         updatePopup(txId, {
-          title: `Bought ${token.symbol}`,
+          title: `Bought ${tokenData.symbol}`,
           subtitle: `Spent ${tradeAmount} ${currentCurrency}`,
           variant: 'success',
           isLoading: false,
@@ -390,16 +428,16 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       } else {
         showLoadingPopup(txId, {
           title: 'Sending transaction...',
-          subtitle: `Selling ${tradeAmount} ${token.symbol}`,
+          subtitle: `Selling ${tradeAmount} ${tokenData.symbol}`,
           amount: tradeAmount,
-          amountUnit: token.symbol,
+          amountUnit: tokenData.symbol,
         });
 
         const amountTokenWei = BigInt(Math.round(parsedAmount * 1e18));
 
         updatePopup(txId, {
           title: 'Confirming sell...',
-          subtitle: `Selling ${tradeAmount} ${token.symbol}`,
+          subtitle: `Selling ${tradeAmount} ${tokenData.symbol}`,
           variant: 'info',
         });
 
@@ -416,7 +454,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         await sendUserOperationAsync({ uo: sellUo });
 
         updatePopup(txId, {
-          title: `Sold ${token.symbol}`,
+          title: `Sold ${tokenData.symbol}`,
           subtitle: 'Received MON',
           variant: 'success',
           isLoading: false,
@@ -457,7 +495,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     return (
       <div className="detail-loading">
         <div className="detail-loading-spinner" />
-        <span>Loading token...</span>
+        <span>Loading tokenData...</span>
       </div>
     );
   }
@@ -473,7 +511,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     );
   }
 
-  const bondingProgress = Math.min((token.marketCap / 10000) * 100, 100);
+  const bondingProgress = Math.min((tokenData.marketCap / 10000) * 100, 100);
 
   return (
     <div className="detail-container">
@@ -484,16 +522,16 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
         <div className="detail-header">
           <div className="detail-token-header">
-            <img src={token.image} alt={token.name} className="detail-token-image" />
+            <img src={tokenData.image} alt={tokenData.name} className="detail-token-image" />
             <div className="detail-token-info">
-              <h1 className="detail-token-name">{token.name}</h1>
-              <div className="detail-token-symbol">{token.symbol}</div>
+              <h1 className="detail-token-name">{tokenData.name}</h1>
+              <div className="detail-token-symbol">{tokenData.symbol}</div>
               <div className="detail-token-meta">
-                <CopyableAddress address={token.creator ?? null} className="detail-meta-address" labelPrefix="Created by " />
+                <CopyableAddress address={tokenData.creator ?? null} className="detail-meta-address" labelPrefix="Created by " />
                 <span>•</span>
-                <span>{Math.floor((Date.now() / 1000 - token.created) / 3600)}h ago</span>
+                <span>{Math.floor((Date.now() / 1000 - tokenData.created) / 3600)}h ago</span>
                 <span>•</span>
-                {token.status === 'graduated' ? <span>Coin has graduated!</span> : <span>{bondingProgress.toFixed(1)}% bonded</span>}
+                {tokenData.status === 'graduated' ? <span>Coin has graduated!</span> : <span>{bondingProgress.toFixed(1)}% bonded</span>}
               </div>
             </div>
           </div>
@@ -501,7 +539,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           <div className="detail-quick-stats">
             <div className="detail-stat">
               <div className="detail-stat-label">Market Cap</div>
-              <div className="detail-stat-value">{formatPrice(token.marketCap * monUsdPrice)}</div>
+              <div className="detail-stat-value">{formatPrice(tokenData.marketCap * monUsdPrice)}</div>
             </div>
             <div className="detail-stat">
               <div className="detail-stat-label">ATH</div>
@@ -621,7 +659,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             <div className="detail-stat-row">
               <span>Position</span>
               <span>
-                {formatNumber(walletTokenBalance)} {token.symbol}
+                {formatNumber(walletTokenBalance)} {tokenData.symbol}
               </span>
             </div>
 
@@ -644,7 +682,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             <div className="detail-bonding-bar">
               <div className="detail-bonding-fill" style={{ width: `${bondingProgress}%` }} />
             </div>
-            {token.status === 'graduated' ? (
+            {tokenData.status === 'graduated' ? (
               <div className="detail-bonding-info">
                 <span>Coin has graduated!</span>
               </div>
@@ -662,10 +700,10 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             <div className="detail-chat-header">
               <div className="detail-chat-info">
                 <div className="detail-chat-avatar">
-                  <img src={token.image} alt={token.symbol} className="detail-chat-avatar-image" />
+                  <img src={tokenData.image} alt={tokenData.symbol} className="detail-chat-avatar-image" />
                 </div>
                 <div className="detail-chat-text">
-                  <h4 className="detail-chat-title">{token.name} chat</h4>
+                  <h4 className="detail-chat-title">{tokenData.name} chat</h4>
                   <span className="detail-chat-members">1 member</span>
                 </div>
               </div>
@@ -679,7 +717,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
         <div className="detail-meme-address">
           <span className="detail-meme-address-title">CA:</span>{' '}
-          <CopyableAddress address={token.id} className="detail-meme-address-value" truncate={{ start: 20, end: 10 }} />
+          <CopyableAddress address={tokenData.id} className="detail-meme-address-value" truncate={{ start: 20, end: 10 }} />
         </div>
 
         <div className="detail-info-section">

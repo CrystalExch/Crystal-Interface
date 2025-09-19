@@ -248,73 +248,27 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     tokenImage
 }) => {
 
-
     const [position, setPosition] = useState(() => {
         try {
             const saved = localStorage.getItem('crystal_quickbuy_widget_position');
             if (saved) {
                 const savedPosition = JSON.parse(saved);
-                const maxX = Math.max(0, window.innerWidth - 330);
+                const maxX = Math.max(0, window.innerWidth - 430);
                 const maxY = Math.max(0, window.innerHeight - 480);
                 return {
-                    x: Math.max(0, Math.min(savedPosition.x || 100, maxX)),
-                    y: Math.max(0, Math.min(savedPosition.y || 100, maxY))
+                    x: Math.max(0, Math.min(savedPosition.x || 200, maxX)),
+                    y: Math.max(0, Math.min(savedPosition.y || 200, maxY))
                 };
             }
-            return { x: 100, y: 100 };
+            return { x: 200, y: 200 };
         } catch (error) {
             console.error('Error loading QuickBuy widget position:', error);
-            return { x: 100, y: 100 };
+            return { x: 200, y: 200 };
         }
     });
-    useEffect(() => {
-        try {
-            localStorage.setItem('crystal_quickbuy_widget_position', JSON.stringify(position));
-        } catch (error) {
-            console.error('Error saving QuickBuy widget position:', error);
-        }
-    }, [position]); const [isDragging, setIsDragging] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
-    const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
-
-const handleCopyAddress = useCallback(async (address: string, e: React.MouseEvent) => {
-  e.stopPropagation();
-  const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  try {
-    await navigator.clipboard.writeText(address);
-    if (showLoadingPopup && updatePopup) {
-      showLoadingPopup(txId, { title: 'Address Copied', subtitle: `${address.slice(0, 6)}...${address.slice(-4)} copied to clipboard` });
-      setTimeout(() => {
-        updatePopup(txId, { title: 'Address Copied', subtitle: `${address.slice(0, 6)}...${address.slice(-4)} copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
-      }, 100);
-    }
-  } catch (err) {
-    console.error('Failed to copy address:', err);
-    const textArea = document.createElement('textarea');
-    textArea.value = address;
-    document.body.appendChild(textArea);
-    textArea.select();
-    try {
-      document.execCommand('copy');
-      if (showLoadingPopup && updatePopup) {
-        showLoadingPopup(txId, { title: 'Address Copied', subtitle: `${address.slice(0, 6)}...${address.slice(-4)} copied to clipboard` });
-        setTimeout(() => {
-          updatePopup(txId, { title: 'Address Copied', subtitle: `${address.slice(0, 6)}...${address.slice(-4)} copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
-        }, 100);
-      }
-    } catch (fallbackErr) {
-      console.error('Fallback copy failed:', fallbackErr);
-      if (showLoadingPopup && updatePopup) {
-        showLoadingPopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy address to clipboard' });
-        setTimeout(() => {
-          updatePopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy address to clipboard', variant: 'error', confirmed: true, isLoading: false });
-        }, 100);
-      }
-    }
-    document.body.removeChild(textArea);
-  }
-}, [showLoadingPopup, updatePopup]);
     const [selectedBuyAmount, setSelectedBuyAmount] = useState('1');
     const [selectedSellPercent, setSelectedSellPercent] = useState('25%');
     const [isEditMode, setIsEditMode] = useState(false);
@@ -334,7 +288,6 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
             return 1;
         }
     });
-
     const [keybindsEnabled, setKeybindsEnabled] = useState(() => {
         try {
             const saved = localStorage.getItem('crystal_quickbuy_settings');
@@ -348,7 +301,6 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
             return false;
         }
     });
-
     const [buyAmounts, setBuyAmounts] = useState(() => {
         try {
             const saved = localStorage.getItem('crystal_quickbuy_settings');
@@ -362,7 +314,6 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
             return ['1', '5', '10', '50'];
         }
     });
-
     const [sellPercents, setSellPercents] = useState(() => {
         try {
             const saved = localStorage.getItem('crystal_quickbuy_settings');
@@ -376,7 +327,6 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
             return ['10%', '25%', '50%', '100%'];
         }
     });
-
     const [sellMONAmounts, setSellMONAmounts] = useState(() => {
         try {
             const saved = localStorage.getItem('crystal_quickbuy_settings');
@@ -390,7 +340,6 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
             return ['1', '5', '10', '25'];
         }
     });
-
     const [sellMode, setSellMode] = useState<'percent' | 'mon'>(() => {
         try {
             const saved = localStorage.getItem('crystal_quickbuy_settings');
@@ -404,7 +353,6 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
             return 'percent';
         }
     });
-
     const [isWalletsExpanded, setIsWalletsExpanded] = useState(() => {
         try {
             const saved = localStorage.getItem('crystal_quickbuy_settings');
@@ -418,8 +366,28 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
             return false;
         }
     });
+    const [widgetDimensions, setWidgetDimensions] = useState({ width: 330, height: 480 });
+
     const widgetRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    const currentTokenBalance = walletTokenBalances?.[account?.address || '']?.[tokenAddress || ''] ?? 0n;
+    const currentSellValues = sellMode === 'percent' ? sellPercents : sellMONAmounts;
+    const pendingBuyCount = pendingTransactions.filter(tx => tx.type === 'buy').length;
+    const pendingSellCount = pendingTransactions.filter(tx => tx.type === 'sell').length;
+
+    const walletsPosition = useMemo(() => {
+        const walletsPanelWidth = 320
+        const baseX = position.x + widgetDimensions.width - 4
+        const baseY = position.y
+        const maxWalletsX = window.innerWidth - walletsPanelWidth
+      
+        if (baseX > maxWalletsX) return {x: Math.max(10, position.x - walletsPanelWidth), y: baseY}
+        return {x: baseX, y: baseY}
+      }, [position, widgetDimensions])
+      
+    const isPanelLeft = walletsPosition.x < position.x;
+
     useEffect(() => {
         try {
             const settings = {
@@ -447,6 +415,44 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
             }
         }
     }, []);
+    
+    const handleCopyAddress = useCallback(async (address: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        try {
+          await navigator.clipboard.writeText(address);
+          if (showLoadingPopup && updatePopup) {
+            showLoadingPopup(txId, { title: 'Address Copied', subtitle: `${address.slice(0, 6)}...${address.slice(-4)} copied to clipboard` });
+            setTimeout(() => {
+              updatePopup(txId, { title: 'Address Copied', subtitle: `${address.slice(0, 6)}...${address.slice(-4)} copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
+            }, 100);
+          }
+        } catch (err) {
+          console.error('Failed to copy address:', err);
+          const textArea = document.createElement('textarea');
+          textArea.value = address;
+          document.body.appendChild(textArea);
+          textArea.select();
+          try {
+            document.execCommand('copy');
+            if (showLoadingPopup && updatePopup) {
+              showLoadingPopup(txId, { title: 'Address Copied', subtitle: `${address.slice(0, 6)}...${address.slice(-4)} copied to clipboard` });
+              setTimeout(() => {
+                updatePopup(txId, { title: 'Address Copied', subtitle: `${address.slice(0, 6)}...${address.slice(-4)} copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
+              }, 100);
+            }
+          } catch (fallbackErr) {
+            console.error('Fallback copy failed:', fallbackErr);
+            if (showLoadingPopup && updatePopup) {
+              showLoadingPopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy address to clipboard' });
+              setTimeout(() => {
+                updatePopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy address to clipboard', variant: 'error', confirmed: true, isLoading: false });
+              }, 100);
+            }
+          }
+          document.body.removeChild(textArea);
+        }
+    }, [showLoadingPopup, updatePopup]);
 
     const formatNumberWithCommas = (num: number, decimals = 2) => {
         if (num === 0) return "0";
@@ -521,13 +527,12 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
         }
     };
 
-    const currentTokenBalance = walletTokenBalances?.[account?.address || '']?.[tokenAddress || ''] ?? 0n;
     useEffect(() => {
         if (isOpen && account?.connected) {
             terminalRefetch();
         }
     }, [isOpen, account?.connected]);
-    const [widgetDimensions, setWidgetDimensions] = useState({ width: 330, height: 480 });
+
     useEffect(() => {
         const handleResize = () => {
             if (!widgetRef.current) return;
@@ -562,6 +567,7 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
             return () => window.removeEventListener('resize', handleResize);
         }
     }, [isOpen]);
+
     const handleBuyTrade = async (amount: string) => {
         if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
             if (setpopup) setpopup(4);
@@ -675,7 +681,6 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
         }
     };
 
-
     const handleSellTrade = async (value: string) => {
         if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
             setpopup?.(4);
@@ -786,6 +791,7 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
             }
         }
     };
+
     useEffect(() => {
         if (!keybindsEnabled || !isOpen || isEditMode) return;
 
@@ -821,7 +827,6 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
         document.addEventListener('keydown', handleKeyPress);
         return () => document.removeEventListener('keydown', handleKeyPress);
     }, [keybindsEnabled, isOpen, isEditMode, buyAmounts, sellPercents, sellMONAmounts, sellMode, handleBuyTrade, handleSellTrade]);
-
 
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
         if (!widgetRef.current || isEditMode) return;
@@ -861,21 +866,23 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
         });
     }, [isDragging, dragOffset, widgetDimensions]);
 
-    const handleMouseUp = useCallback(() => {
-        setIsDragging(false);
-    }, []);
-
     useEffect(() => {
         if (isDragging) {
             document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
+            document.addEventListener('mouseup', () => {
+                setIsDragging(false);
+                localStorage.setItem('crystal_quickbuy_widget_position', JSON.stringify(position));
+            });
 
             return () => {
                 document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('mouseup', handleMouseUp);
+                document.removeEventListener('mouseup', () => {
+                    setIsDragging(false);
+                    localStorage.setItem('crystal_quickbuy_widget_position', JSON.stringify(position));
+                });
             };
         }
-    }, [isDragging, handleMouseMove, handleMouseUp]);
+    }, [isDragging, position, handleMouseMove]);
 
     useEffect(() => {
         if (editingIndex !== null && inputRef.current) {
@@ -953,10 +960,6 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
         }
     }, [handleInputSubmit]);
 
-    const currentSellValues = sellMode === 'percent' ? sellPercents : sellMONAmounts;
-    const pendingBuyCount = pendingTransactions.filter(tx => tx.type === 'buy').length;
-    const pendingSellCount = pendingTransactions.filter(tx => tx.type === 'sell').length;
-
     const getSellButtonStatus = (value: string) => {
         if (!account?.connected || currentTokenBalance <= 0n) return true;
 
@@ -968,31 +971,6 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
             return requiredTokens > currentTokenBalance / 1e18;
         }
     };
-
-
-    const walletsPosition = useMemo(() => {
-        const baseX = position.x + widgetDimensions.width - 4;
-        const baseY = position.y;
-        const walletsPanelWidth = 280;
-
-        const maxWalletsX = window.innerWidth - walletsPanelWidth;
-
-        if (baseX > maxWalletsX) {
-            return {
-                x: Math.max(10, position.x - walletsPanelWidth + 4),
-                y: baseY
-            };
-        }
-
-        return { x: baseX, y: baseY };
-    }, [position, widgetDimensions]);
-
-
-    const isPanelLeft = walletsPosition.x < position.x;
-    const maxWalletsX = window.innerWidth - 280;
-    if (walletsPosition.x > maxWalletsX) {
-        walletsPosition.x = position.x - 280 - 10;
-    }
 
     if (!isOpen) return null;
 
@@ -1319,6 +1297,7 @@ const handleCopyAddress = useCallback(async (address: string, e: React.MouseEven
                                                 type="checkbox"
                                                 className="quickbuy-wallet-checkbox"
                                                 checked={isActive}
+                                                readOnly
                                             />
                                         </div>
 
