@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import LanguageSelector from './LanguageSelector/LanguageSelector';
 import SideMenuOverlay from './SideMenuOverlay/SideMenuOverlay';
 import TransactionHistoryMenu from '../TransactionHistoryMenu/TransactionHistoryMenu';
-import ChartHeader from '../Chart/ChartHeader/ChartHeader';
+import ChartHeader from '../Header/ChartHeader/ChartHeader';
 import MemeSearch from '../MemeSearch/MemeSearch';
 import { formatCommas } from '../../utils/numberDisplayFormat';
 import { formatSig } from '../OrderCenter/utils';

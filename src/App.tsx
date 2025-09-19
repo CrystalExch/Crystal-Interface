@@ -122,7 +122,7 @@ import Portfolio from './components/Portfolio/Portfolio.tsx';
 
 // import main app components
 import ChartComponent from './components/Chart/Chart.tsx';
-import TokenInfoPopupContent from './components/Chart/ChartHeader/TokenInfo/TokenInfoPopup/TokenInfoPopupContent.tsx';
+import TokenInfoPopupContent from './components/Header/ChartHeader/TokenInfo/TokenInfoPopup/TokenInfoPopupContent.tsx';
 import ChartOrderbookPanel from './components/ChartOrderbookPanel/ChartOrderbookPanel.tsx';
 import Header from './components/Header/Header.tsx';
 import LoadingOverlay from './components/loading/LoadingComponent.tsx';
@@ -135,7 +135,7 @@ import PortfolioPopupGraph from './components/Portfolio/PortfolioGraph/Portfolio
 import ToggleSwitch from './components/ToggleSwitch/ToggleSwitch.tsx';
 import TooltipLabel from './components/TooltipLabel/TooltipLabel.tsx';
 import TransactionPopupManager from './components/TransactionPopupManager/TransactionPopupManager';
-import MiniChart from './components/Chart/ChartHeader/TokenInfo/MiniChart/MiniChart.tsx';
+import MiniChart from './components/Header/ChartHeader/TokenInfo/MiniChart/MiniChart.tsx';
 import Leaderboard from './components/Leaderboard/Leaderboard.tsx';
 import SimpleOrdersContainer from './components/SimpleOrdersContainer/SimpleOrdersContainer';
 import SidebarNav from './components/SidebarNav/SidebarNav';
@@ -20483,129 +20483,66 @@ const handleExplorerFiltersApply = useCallback(() => {
         <Routes>
           <Route path="/" element={<Navigate to="/market" replace />} />
           <Route path="*" element={<Navigate to="/market" replace />} />
-          <Route
-            path="/leaderboard"
+          <Route path="/spectra"
             element={
-              <Leaderboard
+              <TokenExplorer
                 setpopup={setpopup}
-                orders={orders}
-                address={address}
-                username={username}
-                setIsTransitioning={setIsTransitioning}
-                setTransitionDirection={setTransitionDirection}
+                appliedFilters={appliedExplorerFilters}
+                onOpenFiltersForColumn={handleOpenFiltersForColumn}
+                sendUserOperationAsync={sendUserOperationAsync}
+                terminalQueryData={terminalQueryData}
+                terminalToken={terminalToken}
+                setTerminalToken={setTerminalToken}
+                terminalRefetch={terminalRefetch}
+                setTokenData={setTokenData}
+                monUsdPrice={monUsdPrice}
               />
-            }
-          />
-          <Route path="/lending" element={
-            <EarnVaults
-              setpopup={setpopup}
-              onSelectToken={(token) => {
-                setSelectedToken(token);
-                setTimeout(() => setSelectedToken(null), 100);
-              }}
-              setOnSelectTokenCallback={setOnSelectTokenCallback}
-              selectedToken={selectedToken}
-              tokenBalances={tokenBalances}
-              tokendict={tokendict}
-              address={address}
-              connected={connected}
-              refetch={refetch}
-              tradesByMarket={tradesByMarket}
-              markets={markets}
-              usdc={usdc}
-              wethticker={wethticker}
-              ethticker={ethticker}
-              account={{
-                connected: connected,
-                address: address,
-                chainId: userchain,
-              }}
-              sendUserOperationAsync={sendUserOperationAsync}
-              activechain={activechain}
-              setChain={handleSetChain}
-            />}
-          />
-          <Route path="/earn" element={<Navigate to="/earn/vaults" replace />} />
-          <Route path="/earn/*" element={
-            <Earn
-              setpopup={setpopup}
-              onSelectToken={(token) => {
-                setSelectedToken(token);
-                setTimeout(() => setSelectedToken(null), 100);
-              }}
-              setOnSelectTokenCallback={setOnSelectTokenCallback}
-              selectedToken={selectedToken}
-              tokenBalances={tokenBalances}
-              tokendict={tokendict}
-              address={address}
-              connected={connected}
-              refetch={refetch}
-              tradesByMarket={tradesByMarket}
-              markets={markets}
-              usdc={usdc}
-              wethticker={wethticker}
-              ethticker={ethticker}
-              account={{
-                connected: connected,
-                address: address,
-                chainId: userchain,
-              }}
-              sendUserOperationAsync={sendUserOperationAsync}
-              activechain={activechain}
-              setChain={handleSetChain}
-              setselectedVault={setselectedVault}
-              isVaultDepositSigning={isVaultDepositSigning}
-              setIsVaultDepositSigning={setIsVaultDepositSigning}
-              isVaultWithdrawSigning={isVaultWithdrawSigning}
-              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
-              crystalVaultsAddress={crystalVaults}
-              router={router}
-              formatUSDDisplay={formatUSDDisplay}
-              calculateUSDValue={calculateUSDValue}
-              getMarket={getMarket}
-            />
           } />
-          <Route path="/earn/vaults/:vaultAddress" element={
-            <Earn
-              setpopup={setpopup}
-              onSelectToken={(token) => {
-                setSelectedToken(token);
-                setTimeout(() => setSelectedToken(null), 100);
-              }}
-              setOnSelectTokenCallback={setOnSelectTokenCallback}
-              selectedToken={selectedToken}
-              tokenBalances={tokenBalances}
-              tokendict={tokendict}
-              address={address}
-              connected={connected}
-              refetch={refetch}
-              tradesByMarket={tradesByMarket}
-              markets={markets}
-              usdc={usdc}
-              wethticker={wethticker}
-              ethticker={ethticker}
-              account={{
-                connected: connected,
-                address: address,
-                chainId: userchain,
-              }}
-              sendUserOperationAsync={sendUserOperationAsync}
-              activechain={activechain}
-              setChain={handleSetChain}
-              setselectedVault={setselectedVault}
-              isVaultDepositSigning={isVaultDepositSigning}
-              setIsVaultDepositSigning={setIsVaultDepositSigning}
-              isVaultWithdrawSigning={isVaultWithdrawSigning}
-              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
-              crystalVaultsAddress={crystalVaults}
-              router={router}
-              formatUSDDisplay={formatUSDDisplay}
-              calculateUSDValue={calculateUSDValue}
-              getMarket={getMarket}
-            />
+          <Route path="/meme/:tokenAddress"
+            element={
+              <MemeInterface
+                sliderMode={'spot' === 'spot' ? spotSliderMode : trenchesSliderMode}
+                sliderPresets={'spot' === 'spot' ? spotSliderPresets : trenchesSliderPresets}
+                sliderIncrement={'spot' === 'spot' ? spotSliderIncrement : trenchesSliderIncrement}
+                marketsData={marketsData}
+                onMarketSelect={onMarketSelect}
+                setSendTokenIn={setSendTokenIn}
+                setpopup={setpopup}
+                tokenList={memoizedTokenList}
+                sendUserOperationAsync={sendUserOperationAsync}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: userchain,
+                }}
+                setChain={handleSetChain}
+                address={address}
+                subWallets={subWallets}
+                walletTokenBalances={walletTokenBalances}
+                activeWalletPrivateKey={oneCTSigner}
+                setOneCTSigner={setOneCTSigner}
+                refetch={refetch}
+                isBlurred={isBlurred}
+                tradesByMarket={tradesByMarket}
+                markets={markets}
+                tokendict={tokendict}
+                usdc={usdc}
+                wethticker={wethticker}
+                ethticker={ethticker}
+                terminalQueryData={terminalQueryData}
+                terminalToken={terminalToken}
+                setTerminalToken={setTerminalToken}
+                terminalRefetch={terminalRefetch}
+                tokenData={tokenData}
+                setTokenData={setTokenData}
+                monUsdPrice={monUsdPrice}
+                buyPresets={buyPresets}
+                sellPresets={sellPresets}
+                monPresets={monPresets}
+                setMonPresets={setMonPresets}
+              />
           } />
-          <Route
-            path="/board"
+          <Route path="/board"
             element={
               <TokenBoard
                 sendUserOperationAsync={sendUserOperationAsync}
@@ -20623,10 +20560,8 @@ const handleExplorerFiltersApply = useCallback(() => {
                 setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
               />
-            }
-          />
-          <Route
-            path="/board/:tokenAddress"
+          } />
+          <Route path="/board/:tokenAddress"
             element={
               <TokenDetail
                 sendUserOperationAsync={sendUserOperationAsync}
@@ -20646,95 +20581,89 @@ const handleExplorerFiltersApply = useCallback(() => {
                 setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
               />
-            }
-          />
-          <Route
-            path="/launchpad"
+          } />
+          <Route path="/earn" element={<Navigate to="/earn/vaults" replace />} />
+          <Route path="/earn/*"
             element={
-              <Launchpad
+              <Earn
+                setpopup={setpopup}
+                onSelectToken={(token) => {
+                  setSelectedToken(token);
+                  setTimeout(() => setSelectedToken(null), 100);
+                }}
+                setOnSelectTokenCallback={setOnSelectTokenCallback}
+                selectedToken={selectedToken}
+                tokenBalances={tokenBalances}
+                tokendict={tokendict}
                 address={address}
-                sendUserOperationAsync={sendUserOperationAsync}
+                connected={connected}
+                refetch={refetch}
+                tradesByMarket={tradesByMarket}
+                markets={markets}
+                usdc={usdc}
+                wethticker={wethticker}
+                ethticker={ethticker}
                 account={{
                   connected: connected,
                   address: address,
                   chainId: userchain,
-                  logout: logout,
                 }}
-                setChain={handleSetChain}
-                setpopup={setpopup}
-              />
-            }
-          />
-          <Route path="/meme/:tokenAddress" element={
-            <MemeInterface
-              sliderMode={'spot' === 'spot' ? spotSliderMode : trenchesSliderMode}
-              sliderPresets={'spot' === 'spot' ? spotSliderPresets : trenchesSliderPresets}
-              sliderIncrement={'spot' === 'spot' ? spotSliderIncrement : trenchesSliderIncrement}
-              marketsData={marketsData}
-              onMarketSelect={onMarketSelect}
-              setSendTokenIn={setSendTokenIn}
-              setpopup={setpopup}
-              tokenList={memoizedTokenList}
-              sendUserOperationAsync={sendUserOperationAsync}
-              account={{
-                connected: connected,
-                address: address,
-                chainId: userchain,
-              }}
-              setChain={handleSetChain}
-              address={address}
-              subWallets={subWallets}
-              walletTokenBalances={walletTokenBalances}
-              activeWalletPrivateKey={oneCTSigner}
-              setOneCTSigner={setOneCTSigner}
-              refetch={refetch}
-              isBlurred={isBlurred}
-              tradesByMarket={tradesByMarket}
-              markets={markets}
-              tokendict={tokendict}
-              usdc={usdc}
-              wethticker={wethticker}
-              ethticker={ethticker}
-              terminalQueryData={terminalQueryData}
-              terminalToken={terminalToken}
-              setTerminalToken={setTerminalToken}
-              terminalRefetch={terminalRefetch}
-              tokenData={tokenData}
-              setTokenData={setTokenData}
-              monUsdPrice={monUsdPrice}
-              buyPresets={buyPresets}
-              sellPresets={sellPresets}
-              monPresets={monPresets}
-              setMonPresets={setMonPresets}
-            />
-          } />
-          <Route
-            path="/spectra"
-            element={
-              <TokenExplorer
-                setpopup={setpopup}
-                appliedFilters={appliedExplorerFilters}
-                onOpenFiltersForColumn={handleOpenFiltersForColumn}
                 sendUserOperationAsync={sendUserOperationAsync}
-                terminalQueryData={terminalQueryData}
-                terminalToken={terminalToken}
-                setTerminalToken={setTerminalToken}
-                terminalRefetch={terminalRefetch}
-                setTokenData={setTokenData}
-                monUsdPrice={monUsdPrice}
+                activechain={activechain}
+                setChain={handleSetChain}
+                setselectedVault={setselectedVault}
+                isVaultDepositSigning={isVaultDepositSigning}
+                setIsVaultDepositSigning={setIsVaultDepositSigning}
+                isVaultWithdrawSigning={isVaultWithdrawSigning}
+                setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+                crystalVaultsAddress={crystalVaults}
+                router={router}
+                formatUSDDisplay={formatUSDDisplay}
+                calculateUSDValue={calculateUSDValue}
+                getMarket={getMarket}
               />
-            }
-          />
-          <Route
-            path="/trackers"
+          } />
+          <Route path="/earn/vaults/:vaultAddress"
             element={
-              <Tracker
-                isBlurred={isBlurred}
+              <Earn
+                setpopup={setpopup}
+                onSelectToken={(token) => {
+                  setSelectedToken(token);
+                  setTimeout(() => setSelectedToken(null), 100);
+                }}
+                setOnSelectTokenCallback={setOnSelectTokenCallback}
+                selectedToken={selectedToken}
+                tokenBalances={tokenBalances}
+                tokendict={tokendict}
+                address={address}
+                connected={connected}
+                refetch={refetch}
+                tradesByMarket={tradesByMarket}
+                markets={markets}
+                usdc={usdc}
+                wethticker={wethticker}
+                ethticker={ethticker}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: userchain,
+                }}
+                sendUserOperationAsync={sendUserOperationAsync}
+                activechain={activechain}
+                setChain={handleSetChain}
+                setselectedVault={setselectedVault}
+                isVaultDepositSigning={isVaultDepositSigning}
+                setIsVaultDepositSigning={setIsVaultDepositSigning}
+                isVaultWithdrawSigning={isVaultWithdrawSigning}
+                setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+                crystalVaultsAddress={crystalVaults}
+                router={router}
+                formatUSDDisplay={formatUSDDisplay}
+                calculateUSDValue={calculateUSDValue}
+                getMarket={getMarket}
               />
-            }
-          />
-          <Route
-            path="/portfolio"
+          } />
+          <Route path="/portfolio"
             element={
               <Portfolio
                 orders={orders}
@@ -20809,14 +20738,75 @@ const handleExplorerFiltersApply = useCallback(() => {
                 setShowRefModal={undefined}
                 lastRefGroupFetch={lastRefGroupFetch}
               />
-            }
-          />
+          } />
+          <Route path="/trackers"
+            element={
+              <Tracker
+                isBlurred={isBlurred}
+              />
+          } />
+          <Route path="/perps" element={<></>} />
+          <Route path="/leaderboard"
+            element={
+              <Leaderboard
+                setpopup={setpopup}
+                orders={orders}
+                address={address}
+                username={username}
+                setIsTransitioning={setIsTransitioning}
+                setTransitionDirection={setTransitionDirection}
+              />
+          } />
+          <Route path="/launchpad"
+            element={
+              <Launchpad
+                address={address}
+                sendUserOperationAsync={sendUserOperationAsync}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: userchain,
+                  logout: logout,
+                }}
+                setChain={handleSetChain}
+                setpopup={setpopup}
+              />
+          } />
+          <Route path="/lending"
+            element={
+              <EarnVaults
+                setpopup={setpopup}
+                onSelectToken={(token) => {
+                  setSelectedToken(token);
+                  setTimeout(() => setSelectedToken(null), 100);
+                }}
+                setOnSelectTokenCallback={setOnSelectTokenCallback}
+                selectedToken={selectedToken}
+                tokenBalances={tokenBalances}
+                tokendict={tokendict}
+                address={address}
+                connected={connected}
+                refetch={refetch}
+                tradesByMarket={tradesByMarket}
+                markets={markets}
+                usdc={usdc}
+                wethticker={wethticker}
+                ethticker={ethticker}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: userchain,
+                }}
+                sendUserOperationAsync={sendUserOperationAsync}
+                activechain={activechain}
+                setChain={handleSetChain}
+              />
+          } />
           <Route path="/swap" element={TradeLayout(swap)} />
           <Route path="/market" element={TradeLayout(swap)} />
           <Route path="/limit" element={TradeLayout(limit)} />
           <Route path="/send" element={TradeLayout(send)} />
           <Route path="/scale" element={TradeLayout(scale)} />
-          <Route path="/perp" element={<></>} />
         </Routes>
         <TransactionPopupManager
           transactions={transactions}
