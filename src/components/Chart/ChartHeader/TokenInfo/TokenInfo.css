@@ -771,8 +771,8 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-    height: 53px;
-
+  height: 53px;
+  overflow-x: scroll;
 }
 
 .meme-interface-token-header-info {
