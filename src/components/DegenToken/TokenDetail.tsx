@@ -78,7 +78,7 @@ interface TokenDetailProps {
   setTerminalToken: (x: any) => void;
   terminalRefetch: any;
   walletTokenBalances: any;
-  tokenData: Token;
+  tokenData: any;
   setTokenData: any;
   monUsdPrice: any;
 }

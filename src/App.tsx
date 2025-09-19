@@ -20816,6 +20816,7 @@ const handleExplorerFiltersApply = useCallback(() => {
           <Route path="/limit" element={TradeLayout(limit)} />
           <Route path="/send" element={TradeLayout(send)} />
           <Route path="/scale" element={TradeLayout(scale)} />
+          <Route path="/perp" element={<></>} />
         </Routes>
         <TransactionPopupManager
           transactions={transactions}
