@@ -3,7 +3,7 @@ import ChartOrderbookPanel from '../ChartOrderbookPanel/ChartOrderbookPanel';
 import OrderCenter from '../OrderCenter/OrderCenter';
 import editicon from "../../assets/edit.svg";
 import './Perps.css'
-
+import TooltipLabel from '../TooltipLabel/TooltipLabel';
 interface PerpsProps {
     layoutSettings: string;
     orderbookPosition: string;
@@ -528,6 +528,22 @@ const Perps: React.FC<PerpsProps> = ({
                         </button>
                     </div>
                     <div className="perps-amount-section">
+                                                    <div className="price-impact">
+                                <div className="label-container">
+                                 {t('Available to Trade')}
+                                </div>
+                                <div className="value-container">
+                                    $0.00
+                                </div>
+                            </div>
+                                                        <div className="price-impact">
+                                <div className="label-container">
+                                    {t('Current Position')}
+                                </div>
+                                <div className="value-container">
+                                    $0.00
+                                </div>
+                            </div>
                         {activeOrderType === "Limit" && (
                             <div className="perps-trade-input-wrapper">
                                 Price
@@ -706,21 +722,115 @@ const Perps: React.FC<PerpsProps> = ({
                             </div>
                         )}
                     </div>
-
-                    <button
-                        className={`perps-trade-action-button ${activeTradeType}`}
-                        onClick={() => {
-                            console.log(`Executing ${activeTradeType} trade for ${tradeAmount}`);
-                            if (isTpSlEnabled) {
-                                console.log(`TP Price: ${tpPrice}, SL Price: ${slPrice}`);
+                    <div className="perps-bottom-section">
+                        <button
+                            className={`perps-trade-action-button ${activeTradeType}`}
+                            onClick={() => {
+                                console.log(`Executing ${activeTradeType} trade for ${tradeAmount}`);
+                                if (isTpSlEnabled) {
+                                    console.log(`TP Price: ${tpPrice}, SL Price: ${slPrice}`);
+                                }
+                            }}
+                        >
+                            {activeOrderType === "market"
+                                ? `${activeTradeType === "long" ? "Long" : "Short"} Market`
+                                : `Set ${activeTradeType === "long" ? "Long" : "Short"} Limit`
                             }
-                        }}
-                    >
-                        {activeOrderType === "market"
-                            ? `${activeTradeType === "long" ? "Long" : "Short"} Market`
-                            : `Set ${activeTradeType === "long" ? "Long" : "Short"} Limit`
-                        }
-                    </button>
+                        </button>
+                        <div className="perps-info-rectangle">
+                            <div className="price-impact">
+                                <div className="label-container">
+                                    <TooltipLabel
+                                        label={t('Liquidation Price')}
+                                        tooltipText={
+                                            <div>
+                                                <div className="tooltip-description">
+                                                    {t('priceImpactHelp')}
+                                                </div>
+                                            </div>
+                                        }
+                                        className="impact-label"
+                                    />
+                                </div>
+                                <div className="value-container">
+                                    $0.00
+                                </div>
+                            </div>
+                            <div className="price-impact">
+                                <div className="label-container">
+                                    <TooltipLabel
+                                        label={t('Order Value')}
+                                        tooltipText={
+                                            <div>
+                                                <div className="tooltip-description">
+                                                    {t('priceImpactHelp')}
+                                                </div>
+                                            </div>
+                                        }
+                                        className="impact-label"
+                                    />
+                                </div>
+                                <div className="value-container">
+                                    $0.00
+                                </div>
+                            </div>
+                            <div className="price-impact">
+                                <div className="label-container">
+                                    <TooltipLabel
+                                        label={t('Margin Required')}
+                                        tooltipText={
+                                            <div>
+                                                <div className="tooltip-description">
+                                                    {t('priceImpactHelp')}
+                                                </div>
+                                            </div>
+                                        }
+                                        className="impact-label"
+                                    />
+                                </div>
+                                <div className="value-container">
+                                    $0.00
+                                </div>
+                            </div>
+                            <div className="price-impact">
+                                <div className="label-container">
+                                    <TooltipLabel
+                                        label={t('Slippage')}
+                                        tooltipText={
+                                            <div>
+                                                <div className="tooltip-description">
+                                                    {t('priceImpactHelp')}
+                                                </div>
+                                            </div>
+                                        }
+                                        className="impact-label"
+                                    />
+                                </div>
+                                <div className="value-container">
+                                    0.5%
+                                </div>
+                            </div>
+                            <div className="price-impact">
+                                <div className="label-container">
+                                    <TooltipLabel
+                                        label={t('Fees')}
+                                        tooltipText={
+                                            <div>
+                                                <div className="tooltip-description">
+                                                    {t('priceImpactHelp')}
+                                                </div>
+                                            </div>
+                                        }
+                                        className="impact-label"
+                                    />
+                                </div>
+                                <div className="value-container">
+                                    Taker 0.038% / Maker 0.015%
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
                 <div
                     className="perps-account-details"

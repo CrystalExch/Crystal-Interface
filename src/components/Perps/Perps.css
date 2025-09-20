@@ -577,7 +577,8 @@
     inset 0 1px 1px rgb(255 255 255/35%),
     inset 0 -1px 1px rgb(0 0 0/55%),
     0 2px 8px rgb(170 174 207/10%);
-    color: black
+    color: black;
+    width: calc(100% - 26px);
 }
 
 .perps-trade-action-button.buy .perps-button-spinner {
@@ -618,6 +619,7 @@
 
 .perps-amount-section{
     padding: 0 13px;
+    padding-top: 8px;
 }
 
 .perps-trade-input-wrapper{
@@ -686,4 +688,14 @@
 
 .perps-mid-button{
     color: #aaaecf
+}
+
+.perps-info-rectangle{
+    padding: 13px;
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.perps-bottom-section{
+    width: 100%;
+    margin-top: auto;
 }
