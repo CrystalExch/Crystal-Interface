@@ -140,6 +140,19 @@ interface TokenInfoProps {
     telegramHandle?: string;
     discordHandle?: string;
   };
+  isPerpsToken?: boolean;
+  perpsTokenData?: {
+    symbol: string;
+    baseAsset: string;
+    quoteAsset: string;
+    tokenIcon: string;
+    price: number;
+    change24h: number;
+    volume24h: number;
+    openInterest: number;
+    fundingRate: number;
+    maxLeverage: number;
+  };
   monUsdPrice: number;
   showLoadingPopup?: (id: string, config: any) => void;
   updatePopup?: (id: string, config: any) => void;
@@ -159,6 +172,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   simpleView = false,
   isMemeToken = false,
   memeTokenData,
+  isPerpsToken = false,
+  perpsTokenData,
   monUsdPrice,
   showLoadingPopup,
   updatePopup,
@@ -798,6 +813,86 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   </span>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (isPerpsToken && perpsTokenData) {
+    return (
+      <div className="perps-interface-token-info-container">
+        <div className="perps-interface-token-header-info">
+          <div className="perps-interface-token-header-left">
+            <div className="perps-interface-token-icon-container">
+              <img
+                src={perpsTokenData.tokenIcon}
+                alt={perpsTokenData.baseAsset}
+                className="perps-interface-token-icon"
+              />
+            </div>
+            <div className="perps-interface-token-identity">
+              <div className="perps-interface-token-name-row">
+                <h1 className="perps-interface-token-symbol">{perpsTokenData.baseAsset}-{perpsTokenData.quoteAsset}</h1>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="perps-markets-dropdown-arrow"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+              
+              <div className="perps-interface-token-meta-row">
+              </div>
+            </div>
+          </div>
+
+          <div className="perps-interface-token-header-right">
+            <div className="perps-interface-token-metrics">
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-value perps-price-large">
+                  {perpsTokenData.price.toLocaleString()}
+                </span>
+              </div>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">Oracle</span>
+                <span className="perps-interface-metric-value perps-price-small">
+                  {(perpsTokenData.price * 0.9998).toLocaleString()}
+                </span>
+              </div>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">24h Change</span>
+                <span
+                  className={`perps-interface-metric-value ${perpsTokenData.change24h >= 0 ? 'positive' : 'negative'}`}
+                >
+                  {perpsTokenData.change24h >= 0 ? '+' : ''}{perpsTokenData.change24h.toFixed(2)}%
+                </span>
+              </div>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">24h Volume</span>
+                <span className="perps-interface-metric-value perps-price-small">
+                  ${(perpsTokenData.volume24h / 1e6).toFixed(2)}M
+                </span>
+              </div>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">Open Interest</span>
+                <span className="perps-interface-metric-value perps-price-small">
+                  ${(perpsTokenData.openInterest / 1e6).toFixed(2)}M
+                </span>
+              </div>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">Funding / Next</span>
+                <div className="perps-interface-funding-container">
+                  <span
+                    className={`perps-interface-metric-value ${perpsTokenData.fundingRate >= 0 ? 'positive' : 'negative'}`}
+                  >
+                    {perpsTokenData.fundingRate >= 0 ? '+' : ''}{(perpsTokenData.fundingRate * 100).toFixed(4)}%
+                  </span>
+                  <span className="perps-interface-metric-value perps-price-small">
+                     02:34:12
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

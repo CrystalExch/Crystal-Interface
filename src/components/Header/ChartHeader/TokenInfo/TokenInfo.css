@@ -860,7 +860,6 @@
 .meme-interface-token-name-row {
   display: flex;
   align-items: center;
-  gap: 3px;
   flex-wrap: wrap;
 }
 
@@ -967,7 +966,7 @@
 
 .meme-interface-token-metrics {
   display: flex;
-  align-items: start;
+  align-items: center;
   gap: 15px;
 }
 
@@ -1201,4 +1200,188 @@
 .token-info-meme-interface-social-btn:hover{
     filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%) opacity(1);
 
+}
+
+
+
+.perps-interface-token-info-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 53px;
+  overflow-x: scroll;
+}
+
+.perps-interface-token-header-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 53px;
+  padding-left: 12px;
+  gap: 20px;
+}
+
+@media(max-width: 1020px) {
+  .perps-interface-token-header-info {
+    gap: 15px;
+  }
+}
+
+.perps-interface-token-header-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+@media(max-width: 1020px) {
+  .perps-interface-token-header-left {
+    min-width: 150px
+  }
+}
+
+.perps-interface-token-identity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  margin-top: -4px;
+}
+
+.perps-interface-token-name-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.perps-interface-token-symbol {
+  font-size: 1.2rem;
+  color: #ffffff;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: -0.5px;
+  margin-top: 3px;
+}
+
+.perps-interface-leverage-badge {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.perps-interface-token-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  line-height: 1;
+}
+
+.perps-interface-token-type {
+  font-size: 0.8rem;
+  color: #d8dbf5;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.perps-interface-token-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.perps-interface-token-metrics {
+  display: flex;
+  align-items: start;
+  gap: 15px;
+}
+
+.perps-interface-token-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.perps-interface-metric-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: -0.3px;
+}
+
+.perps-interface-metric-value {
+  font-size: 0.8rem;
+  color: #ffffff;
+  text-align: right;
+}
+
+.perps-interface-metric-value.perps-price-large {
+  font-size: 1.1rem;
+  display: flex;
+  margin-top: 6px;
+  margin-right: 6px;
+}
+
+.perps-interface-metric-value.positive {
+  color: rgb(67, 254, 154);
+}
+
+.perps-interface-metric-value.negative {
+  color: rgb(235, 112, 112);
+}
+
+.perps-interface-token-info-container.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+
+@media (max-width: 768px) {
+  .perps-interface-token-header-info {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+    height: auto;
+    padding: 8px 5px;
+  }
+  
+  .perps-interface-token-metrics {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .perps-interface-token-metric {
+    min-width: calc(50% - 5px);
+  }
+}
+.perps-interface-token-icon-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.perps-interface-token-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 3px;
+}
+
+.perps-interface-funding-container{
+  display: flex;
+  gap: 4px;
+}
+
+.perps-markets-dropdown-arrow{
+  margin-top: 3px;
+  opacity: 0.8;
 }

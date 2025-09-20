@@ -463,8 +463,20 @@ const Header: React.FC<HeaderProps> = ({
       volume24h: liveTokenData.volume24h || token.volume24h,
     };
   })() : undefined;
+  const isPerpsRoute = location.pathname === '/perps';
 
-  // Wallet helper functions
+const perpsTokenData = isPerpsRoute ? {
+  symbol: 'BTC-USDC',
+  baseAsset: 'BTC',
+  quoteAsset: 'USDC',
+  tokenIcon: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
+  price: 43250.50,
+  change24h: 2.35,
+  volume24h: 1250000000,
+  openInterest: 890000000,
+  fundingRate: 0.0001,
+  maxLeverage: 100,
+} : undefined;
   const formatNumberWithCommas = (num: number, decimals = 2) => {
     if (num === 0) return "0";
     if (num >= 1e9) return `${(num / 1e9).toFixed(decimals)}B`;
@@ -567,6 +579,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
+
   const rightHeaderClass = isTradeRoute && !simpleView ? 'right-header-trade' : 'right-header';
   const marketHeader = marketsData?.find(
     (market: any) => market?.address === activeMarket?.address
@@ -618,6 +631,8 @@ const Header: React.FC<HeaderProps> = ({
             tradesByMarket={tradesByMarket}
             isMemeToken={isMemeTokenPage}
             memeTokenData={memeTokenData}
+            isPerpsToken={isPerpsRoute}
+            perpsTokenData={perpsTokenData}
             monUsdPrice={monUsdPrice}
             showLoadingPopup={showLoadingPopup}
             updatePopup={updatePopup}
@@ -787,24 +802,24 @@ const Header: React.FC<HeaderProps> = ({
                             </div>
                           </div>
                           <Tooltip content="MON Balance">
-                          <div className="wallet-dropdown-balance">
-                            <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
-                              <img src={monadicon} className="wallet-dropdown-mon-icon" />
-                              {formatNumberWithCommas(balance, 2)}
-                            </div>
-                          </div>
-                          </Tooltip>
-                        <Tooltip content="Tokens">
-                          <div className="wallet-drag-tokens">
-                            <div className="wallet-token-count">
-                              <div className="wallet-token-structure-icons">
-                                <div className="token1"></div>
-                                <div className="token2"></div>
-                                <div className="token3"></div>
+                            <div className="wallet-dropdown-balance">
+                              <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+                                <img src={monadicon} className="wallet-dropdown-mon-icon" />
+                                {formatNumberWithCommas(balance, 2)}
                               </div>
-                              <span className="wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
                             </div>
-                          </div>
+                          </Tooltip>
+                          <Tooltip content="Tokens">
+                            <div className="wallet-drag-tokens">
+                              <div className="wallet-token-count">
+                                <div className="wallet-token-structure-icons">
+                                  <div className="token1"></div>
+                                  <div className="token2"></div>
+                                  <div className="token3"></div>
+                                </div>
+                                <span className="wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
+                              </div>
+                            </div>
                           </Tooltip>
                         </div>
                       );

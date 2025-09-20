@@ -31,7 +31,7 @@ interface ChartHeaderProps {
   marketsData: any;
   simpleView: boolean;
   tradesByMarket: any;
-  isMemeToken?: boolean;
+ isMemeToken?: boolean;
   memeTokenData?: {
     symbol: string;
     name: string;
@@ -46,6 +46,19 @@ interface ChartHeaderProps {
     telegramHandle?: string;
     discordHandle?: string;
   };
+  isPerpsToken?: boolean;
+perpsTokenData?: {
+  symbol: string;
+  baseAsset: string;
+  quoteAsset: string;
+  tokenIcon: string;
+  price: number;
+  change24h: number;
+  volume24h: number;
+  openInterest: number;
+  fundingRate: number;
+  maxLeverage: number;
+};
   monUsdPrice: number;
     showLoadingPopup?: (id: string, config: any) => void;
   updatePopup?: (id: string, config: any) => void;
@@ -70,6 +83,8 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   tradesByMarket,
   isMemeToken = false,
   memeTokenData,
+  isPerpsToken = false,
+  perpsTokenData,
   monUsdPrice,
     showLoadingPopup,
   updatePopup
@@ -240,23 +255,23 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   return (
     <div className={`chart-header ${!shouldShowFullHeader ? 'simplified' : ''}`}>
 <TokenInfo
-        in_icon={in_icon}
-        out_icon={out_icon}
-        price={price}
-        activeMarket={activeMarket}
-        onMarketSelect={onMarketSelect}
-        tokendict={tokendict}
-        setpopup={setpopup}
-        marketsData={marketsData}
-        isLoading={isLoading}
-        isTradeRoute={isTradeRoute}
-        simpleView={simpleView}
-        isMemeToken={isMemeToken}
-        memeTokenData={memeTokenData}
-        monUsdPrice={monUsdPrice}
-        showLoadingPopup={showLoadingPopup}
-        updatePopup={updatePopup}
-      />
+  in_icon={in_icon}
+  out_icon={out_icon}
+  price={price}
+  activeMarket={activeMarket}
+  onMarketSelect={onMarketSelect}
+  tokendict={tokendict}
+  setpopup={setpopup}
+  marketsData={marketsData}
+  isLoading={isLoading}
+  isTradeRoute={isTradeRoute}
+  simpleView={simpleView}
+  isMemeToken={isMemeToken}
+  memeTokenData={memeTokenData}
+  isPerpsToken={isPerpsToken}
+  perpsTokenData={perpsTokenData}
+  monUsdPrice={monUsdPrice}
+/>
       {shouldShowFullHeader && (
         <AdditionalMetrics 
           metrics={metrics} 

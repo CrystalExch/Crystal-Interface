@@ -46,8 +46,14 @@
 }
 
 .perps-long-button.active {
-    background-color: #326e4051;
-    color: rgb(67 254 154);
+  background: linear-gradient(135deg,
+      #aaaecf 0,
+      #9a9ec7 25%,
+      #8b8eb8 50%,
+      #7f82ac 75%,
+      #7f82a1 100%);
+    color: #000000;
+    border: none;
 }
 
 .perps-long-button.inactive {
@@ -357,7 +363,7 @@
     height: 35px;
     padding: 6px 12px;
     border: none;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -452,12 +458,14 @@
 .perps-account-section-title{
     font-size: 0.8rem;
     letter-spacing: -0.3px;
+        margin-bottom: 5px;
+
 }
 
 .perps-account-title{
     font-size: 0.75rem;
     letter-spacing: -0.2px;
-    color: rgb(155,155,155)
+    color: rgb(155,155,155);
 }
 
 
@@ -471,4 +479,5 @@
     display: flex;
     justify-content: space-between;
     width: 100%;
+    padding: 3px 0;
 }

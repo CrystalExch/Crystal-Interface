@@ -560,7 +560,7 @@ const Perps: React.FC<PerpsProps> = ({
                                     }}
                                     onMouseUp={() => setIsDragging(false)}
                                     style={{
-                                        background: `linear-gradient(to right, ${activeTradeType === 'long' ? 'rgb(67, 254, 154)' : 'rgb(235, 112, 112)'
+                                        background: `linear-gradient(to right, ${activeTradeType === 'long' ? '#aaaecf' : 'rgb(235, 112, 112)'
                                             } ${sliderPercent}%, rgb(28, 28, 31) ${sliderPercent}%)`,
                                     }}
                                 />
