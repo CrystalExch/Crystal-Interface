@@ -1,0 +1,34 @@
+query ($m: Bytes!, $skip: Int!, $first: Int!) {
+  launchpadPositions(
+    where: { token: $m }
+    orderBy: remainingTokens
+    orderDirection: desc
+    skip: $skip
+    first: $first
+  ) {
+    account { id }
+    tokenBought
+    tokenSold
+    nativeSpent
+    nativeReceived
+    remainingTokens
+    remainingPctOfBuys
+    avgEntryNativePerTokenWad
+    realizedPnlNative
+    unrealizedPnlNative
+    lastUpdatedAt
+  }
+
+  launchpadTokens(where: { id: $m }) {
+    lastPriceNativePerTokenWad
+  }
+
+  top10: launchpadPositions(
+    where: { token: $m }
+    orderBy: remainingTokens
+    orderDirection: desc
+    first: 10
+  ) {
+    remainingTokens
+  }
+}
