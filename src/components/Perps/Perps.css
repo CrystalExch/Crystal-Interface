@@ -35,33 +35,43 @@
 .perps-short-button {
     width: 100%;
     padding: 4px;
-    border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: .85rem;
     transition: 0.3s ease;
-    border: 1.5px solid transparent;
     letter-spacing: -0.3px;
-    
+    border: none;
 }
 
 .perps-long-button.active {
-  background-color: #a9aeda3a;
-    color: #aaaecf;
+    background: linear-gradient(135deg,
+      #aaaecf 0,
+      #9a9ec7 25%,
+      #8b8eb8 50%,
+      #7f82ac 75%,
+      #7f82a1 100%);
+    color: black;
+    
 }
 
 .perps-long-button.inactive {
-    background-color: #11111328;
+    background: #11111328;
     color: #666;
 }
 
 .perps-short-button.active {
-    background-color: #6e324051;
-    color: rgb(235, 112, 112);
+     background: linear-gradient(135deg,
+      #aaaecf 0,
+      #9a9ec7 25%,
+      #8b8eb8 50%,
+      #7f82ac 75%,
+      #7f82a1 100%);      
+    color:black;
+
 }
 
 .perps-short-button.inactive {
-    background-color: #11111328;
+    background: #11111328;
     color: #666;
 }
 
@@ -698,4 +708,28 @@
 .perps-bottom-section{
     width: 100%;
     margin-top: auto;
+}
+
+.perps-deposit-withdraw-section{
+    display: flex;
+    padding: 8px 13px;
+    width: 100%;
+    height: 50px;
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
+    gap: 5px;
+
+}
+
+.perps-deposit-button{
+    color: #d8dcff;
+    border: 1px solid #d8dcff;
+    font-size: 0.8rem;
+    width: 100%;
+  padding: 3px 0;
+  letter-spacing: -0.3px;
+  border-radius: 4px;
+}
+
+.perps-withdraw-button{
+    
 }

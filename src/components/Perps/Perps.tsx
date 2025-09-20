@@ -528,22 +528,22 @@ const Perps: React.FC<PerpsProps> = ({
                         </button>
                     </div>
                     <div className="perps-amount-section">
-                                                    <div className="price-impact">
-                                <div className="label-container">
-                                 {t('Available to Trade')}
-                                </div>
-                                <div className="value-container">
-                                    $0.00
-                                </div>
+                        <div className="price-impact">
+                            <div className="label-container">
+                                {t('Available to Trade')}
                             </div>
-                                                        <div className="price-impact">
-                                <div className="label-container">
-                                    {t('Current Position')}
-                                </div>
-                                <div className="value-container">
-                                    $0.00
-                                </div>
+                            <div className="value-container">
+                                $0.00
                             </div>
+                        </div>
+                        <div className="price-impact">
+                            <div className="label-container">
+                                {t('Current Position')}
+                            </div>
+                            <div className="value-container">
+                                $0.00
+                            </div>
+                        </div>
                         {activeOrderType === "Limit" && (
                             <div className="perps-trade-input-wrapper">
                                 Price
@@ -831,6 +831,10 @@ const Perps: React.FC<PerpsProps> = ({
                         </div>
 
                     </div>
+                </div>
+                <div className="perps-deposit-withdraw-section">
+                    <button className="perps-deposit-button">Deposit</button>
+                    <button className="perps-deposit-button">Withdraw</button>
                 </div>
                 <div
                     className="perps-account-details"
