@@ -1380,7 +1380,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       const skip = page * PAGE_SIZE;
       const m = (token.id || '').toLowerCase();
       const d = token.dev ? token.dev.toLowerCase() : '';
-      const since = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
 
       const holdersPromise = (async () => {
         const response = await fetch(SUBGRAPH_URL, {
@@ -1395,30 +1394,29 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         const { data } = await response.json();
 
         const positions: any[] = data?.launchpadPositions ?? [];
-        const lastNative = Number(data?.launchpadTokens?.[0]?.lastPriceNativePerTokenWad ?? 0) / 1e18;
+        const mapped: Holder[] = positions
+          .filter((p: any) => p.account?.id.toLowerCase() !== routerAddress.toLowerCase())
+          .map((p: any) => {
+            const amountBought = Number(p.tokenBought) / 1e18;
+            const amountSold = Number(p.tokenSold) / 1e18;
+            const valueBought = Number(p.nativeSpent) / 1e18;
+            const valueSold = Number(p.nativeReceived) / 1e18;
+            const balance = Number(p.tokens) / 1e18;
+            const realized = valueSold - valueBought;
+            const unrealized = balance * currentPrice;
+            const totalPnl = realized + unrealized;
 
-        const mapped: Holder[] = positions.map((p: any) => {
-          const amountBought = Number(p.tokenBought) / 1e18;
-          const amountSold = Number(p.tokenSold) / 1e18;
-          const valueBought = Number(p.nativeSpent) / 1e18;
-          const valueSold = Number(p.nativeReceived) / 1e18;
-
-          const balance = amountBought - amountSold;
-          const realized = valueSold - valueBought;
-          const unrealized = balance * lastNative;
-          const totalPnl = realized + unrealized;
-
-          return {
-            address: p.account.id,
-            balance,
-            amountBought,
-            amountSold,
-            valueBought,
-            valueSold,
-            tokenNet: balance,
-            valueNet: totalPnl,
-          };
-        });
+            return {
+              address: p.account.id,
+              balance,
+              amountBought,
+              amountSold,
+              valueBought,
+              valueSold,
+              tokenNet: balance,
+              valueNet: totalPnl,
+            };
+          });
 
         const top10Pct = toPct(
           mapped
@@ -1492,7 +1490,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             query: TOP_TRADERS_QUERY,
-            variables: { m, since: String(since), skip, first },
+            variables: { m, skip, first },
           }),
         });
 
@@ -1500,24 +1498,27 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         const rows: any[] = data?.launchpadPositions ?? [];
 
         for (const p of rows) {
-          const amountBought = Number(p.tokenBought) / 1e18;
-          const amountSold = Number(p.tokenSold) / 1e18;
-          const valueBought = Number(p.nativeSpent) / 1e18;
-          const valueSold = Number(p.nativeReceived) / 1e18;
-          const realized = Number(p.realizedPnlNative) / 1e18;
-          const unrealized = Number(p.unrealizedPnlNative) / 1e18;
-          const pnl = realized + unrealized;
+          if (p.account.id.toLowerCase() != routerAddress.toLowerCase()) {
+            const amountBought = Number(p.tokenBought) / 1e18;
+            const amountSold = Number(p.tokenSold) / 1e18;
+            const valueBought = Number(p.nativeSpent) / 1e18;
+            const valueSold = Number(p.nativeReceived) / 1e18;
+            const balance = Number(p.tokens) / 1e18;
+            const realized = valueSold - valueBought;
+            const unrealized = balance * currentPrice;
+            const pnl = realized + unrealized;
 
-          out.push({
-            address: p.account.id,
-            balance: amountBought - amountSold,
-            tokenNet: amountBought - amountSold,
-            valueNet: pnl,
-            amountBought,
-            amountSold,
-            valueBought,
-            valueSold,
-          });
+            out.push({
+              address: p.account.id,
+              balance: amountBought - amountSold,
+              tokenNet: amountBought - amountSold,
+              valueNet: pnl,
+              amountBought,
+              amountSold,
+              valueBought,
+              valueSold,
+            });
+          }
         }
 
         if (!cancelled) {
@@ -1771,21 +1772,19 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           const soldTokens = Number(p.tokenSold) / 1e18;
           const spentNative = Number(p.nativeSpent) / 1e18;
           const receivedNative = Number(p.nativeReceived) / 1e18;
-          const remainingTokens = boughtTokens - soldTokens;
-          const lastPrice = Number(p?.token?.lastPriceNativePerTokenWad ?? 0) / 1e18;
-          const balance = boughtTokens - soldTokens
+          const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e18;
+          const balance = Number(p.tokens) / 1e18;
           const realized = receivedNative - spentNative;
-          const lastNative = lastPrice;
-          const unrealized = balance * lastNative;
+          const unrealized = balance * lastPrice;
           const pnlNative = realized + unrealized;
-          const remainingPct = boughtTokens > 0 ? (remainingTokens / boughtTokens) * 100 : 0;
+          const remainingPct = boughtTokens > 0 ? (balance / boughtTokens) * 100 : 0;
 
           if (p.token.id == tokenAddress) {
             totals.amountBought += boughtTokens;
             totals.amountSold += soldTokens;
             totals.valueBought += spentNative;
             totals.valueSold += receivedNative;
-            totals.balance += remainingTokens;
+            totals.balance += balance;
             totals.lastPriceNative = lastPrice || totals.lastPriceNative;
           }
 
@@ -1812,7 +1811,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             soldTokens,
             spentNative,
             receivedNative,
-            remainingTokens,
+            remainingTokens: balance,
             remainingPct,
             pnlNative,
             lastPrice,
@@ -2417,7 +2416,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               onFilterYou={setTrackedToYou}
               onClearTracked={clearTracked}
               isLoadingTrades={isLoadingTrades}
-
             />
           </div>
         </div>
@@ -2453,6 +2451,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             onSellPosition={handleSellPosition}
             trackedAddresses={trackedAddresses}
             onToggleTrackedAddress={toggleTrackedAddress}
+            token={token}
           />
         </div>
       </div>
@@ -2504,7 +2503,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
             <div className="overlay-controls-grid">
               <div className="timeframe-buttons">
-                {(['5m','1h','6h','24h'] as const).map((v) => (
+                {(['5m', '1h', '6h', '24h'] as const).map((v) => (
                   <button
                     key={v}
                     className={`timeframe-toggle ${selectedStatsTimeframe === v ? 'active' : ''}`}
@@ -2526,7 +2525,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   </button>
                 ))}
               </div>
-              </div>
+            </div>
           </div>
           <div className="indicator-legend">
             <div className="indicator-line green-line" />
@@ -3514,7 +3513,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             Array.isArray(similarTokens) && similarTokens.length > 0 ? (
               <ul className="meme-similar-token-list">
                 {similarTokens.map((t) => {
-                  const price = typeof t.price === "number" ? t.price : Number(t.price || 0);
                   const mcap = typeof t.marketCap === "number" ? t.marketCap : Number(t.marketCap || 0);
                   const vol = typeof t.volume24h === "number" ? t.volume24h : Number(t.volume24h || 0);
                   const img = t.imageUrl && t.imageUrl.length > 0 ? t.imageUrl : "";

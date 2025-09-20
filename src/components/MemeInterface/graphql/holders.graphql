@@ -1,7 +1,7 @@
 query ($m: Bytes!, $skip: Int!, $first: Int!) {
   launchpadPositions(
     where: { token: $m }
-    orderBy: remainingTokens
+    orderBy: tokens
     orderDirection: desc
     skip: $skip
     first: $first
@@ -11,11 +11,7 @@ query ($m: Bytes!, $skip: Int!, $first: Int!) {
     tokenSold
     nativeSpent
     nativeReceived
-    remainingTokens
-    remainingPctOfBuys
-    avgEntryNativePerTokenWad
-    realizedPnlNative
-    unrealizedPnlNative
+    tokens
     lastUpdatedAt
   }
 
@@ -25,10 +21,10 @@ query ($m: Bytes!, $skip: Int!, $first: Int!) {
 
   top10: launchpadPositions(
     where: { token: $m }
-    orderBy: remainingTokens
+    orderBy: tokens
     orderDirection: desc
     first: 10
   ) {
-    remainingTokens
+    tokens
   }
 }

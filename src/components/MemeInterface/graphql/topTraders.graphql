@@ -1,7 +1,7 @@
-query ($m: Bytes!, $since: BigInt!, $skip: Int!, $first: Int!) {
+query ($m: Bytes!, $skip: Int!, $first: Int!) {
   launchpadPositions(
-    where: { token: $m, lastUpdatedAt_gte: $since }
-    orderBy: realizedPnlNative
+    where: { token: $m }
+    orderBy: nativeReceived # remaining
     orderDirection: desc
     skip: $skip
     first: $first
@@ -11,9 +11,7 @@ query ($m: Bytes!, $since: BigInt!, $skip: Int!, $first: Int!) {
     tokenSold
     nativeSpent
     nativeReceived
-    remainingTokens
-    realizedPnlNative
-    unrealizedPnlNative
+    tokens
     lastUpdatedAt
   }
 
