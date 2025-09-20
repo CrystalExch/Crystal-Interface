@@ -149,7 +149,7 @@ import TokenBoard from './components/DegenToken/TokenBoard';
 import TokenDetail from './components/DegenToken/TokenDetail';
 import Tracker from './components/Tracker/Tracker.tsx';
 import Earn from './components/Earn/Earn.tsx';
-
+import Perps from './components/Perps/Perps.tsx'
 
 // import config
 import { ChevronDown, Search, SearchIcon } from 'lucide-react';
@@ -451,100 +451,100 @@ function App() {
     showMarketDropdown: false,
     marketSearchTerm: ''
   });
-    const createSubWallet = async () => {
-      try {
-        const privateKey = keccak256(await signTypedDataAsync({
-          typedData: {
-            types: {
-              createCrystalOneCT: [
-                { name: 'version', type: 'string' },
-                { name: 'account', type: 'uint256' },
-              ],
-            },
-            primaryType: 'createCrystalOneCT',
-            message: {
-              version: 'Crystal v0.0.1 Testnet',
-              account: BigInt(subWallets.length + 1),
-            }
+  const createSubWallet = async () => {
+    try {
+      const privateKey = keccak256(await signTypedDataAsync({
+        typedData: {
+          types: {
+            createCrystalOneCT: [
+              { name: 'version', type: 'string' },
+              { name: 'account', type: 'uint256' },
+            ],
+          },
+          primaryType: 'createCrystalOneCT',
+          message: {
+            version: 'Crystal v0.0.1 Testnet',
+            account: BigInt(subWallets.length + 1),
           }
-        }));
-
-        const tempWallet = new Wallet(privateKey);
-        const walletAddress = tempWallet.address as string;
-
-        const newWallet = {
-          address: walletAddress,
-          privateKey: privateKey
-        };
-
-        const updatedWallets = [...subWallets, newWallet];
-        setSubWallets(updatedWallets);
-        saveSubWalletsToStorage(updatedWallets);
-
-        if (!validOneCT && updatedWallets.length === 1) {
-          setOneCTSigner(privateKey);
-          setpopup(25);
-          refetch();
         }
-      } catch (error) {
-        console.error('Error creating subwallet:', error);
+      }));
+
+      const tempWallet = new Wallet(privateKey);
+      const walletAddress = tempWallet.address as string;
+
+      const newWallet = {
+        address: walletAddress,
+        privateKey: privateKey
+      };
+
+      const updatedWallets = [...subWallets, newWallet];
+      setSubWallets(updatedWallets);
+      saveSubWalletsToStorage(updatedWallets);
+
+      if (!validOneCT && updatedWallets.length === 1) {
+        setOneCTSigner(privateKey);
+        setpopup(25);
+        refetch();
       }
-    };
+    } catch (error) {
+      console.error('Error creating subwallet:', error);
+    }
+  };
 
-    const sendUserOperationAsync = useCallback(
-      async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n) => {
-        let hash: `0x${string}`;
-        if (validOneCT) {
-          const tx = {
-            to: params.uo.target,
-            value: params.uo.value,
-            data: params.uo.data,
-            gasLimit: gasLimit > 0n ? gasLimit : 500000n,
-            maxFeePerGas: 100000000000n + (prioFee > 0n ? prioFee : 13000000000n),
-            maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
-            nonce: oneCTNonceRef.current,
-            chainId: activechain
-          }
-          oneCTNonceRef.current += 1;
-          const signedTx = await onectclient.signTransaction(tx);
-          hash = keccak256(signedTx) as `0x${string}`;
+  const sendUserOperationAsync = useCallback(
+    async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n) => {
+      let hash: `0x${string}`;
+      if (validOneCT) {
+        const tx = {
+          to: params.uo.target,
+          value: params.uo.value,
+          data: params.uo.data,
+          gasLimit: gasLimit > 0n ? gasLimit : 500000n,
+          maxFeePerGas: 100000000000n + (prioFee > 0n ? prioFee : 13000000000n),
+          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
+          nonce: oneCTNonceRef.current,
+          chainId: activechain
+        }
+        oneCTNonceRef.current += 1;
+        const signedTx = await onectclient.signTransaction(tx);
+        hash = keccak256(signedTx) as `0x${string}`;
 
-          const RPC_URLS = [
-            HTTP_URL,
-            'https://rpc.monad-testnet.fastlane.xyz/eyJhIjoiMHhlN0QxZjRBQjIyMmQ5NDM4OWI4Mjk4MWY5OUM1ODgyNGZGNDJhN2QwIiwidCI6MTc1MzUwMjEzNiwicyI6IjB4ODE1ODNhMjQ5Yjc5ZTljNjliYzJjNDkzZGZkMDQ0ODdiMWMzZmRhYzE1ZGZlMmVlYjgyOWQ0NTRkZWQ3MTZjMTU4ZmQwMWNmNzlkM2JkNWJlNWRlOTVkZjU1MzE3ODkzNmMyZTBmMGFiYzk1NDlkNTMzYWRmODA4Y2UxODEwNjUxYyJ9',
-            'https://rpc.ankr.com/monad_testnet',
-            'https://monad-testnet.drpc.org',
-            'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
-          ];
-          RPC_URLS.forEach(url => {
-            fetch(url, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                jsonrpc: '2.0',
-                id: 0,
-                method: 'eth_sendRawTransaction',
-                params: [signedTx]
-              })
-            }).catch();
-          });
-        }
-        else {
-          hash = (await rawSendUserOperationAsync(params))?.hash
-        }
-        await Promise.race([
-          new Promise<void>((resolve) => {
-            txReceiptResolvers.current.set(hash, resolve);
-          }),
-          waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
-            txReceiptResolvers.current.delete(hash);
-            hash = r.transactionHash;
-          }),
-        ]);
-        return hash
-      },
-      [validOneCT]
-    );
+        const RPC_URLS = [
+          HTTP_URL,
+          'https://rpc.monad-testnet.fastlane.xyz/eyJhIjoiMHhlN0QxZjRBQjIyMmQ5NDM4OWI4Mjk4MWY5OUM1ODgyNGZGNDJhN2QwIiwidCI6MTc1MzUwMjEzNiwicyI6IjB4ODE1ODNhMjQ5Yjc5ZTljNjliYzJjNDkzZGZkMDQ0ODdiMWMzZmRhYzE1ZGZlMmVlYjgyOWQ0NTRkZWQ3MTZjMTU4ZmQwMWNmNzlkM2JkNWJlNWRlOTVkZjU1MzE3ODkzNmMyZTBmMGFiYzk1NDlkNTMzYWRmODA4Y2UxODEwNjUxYyJ9',
+          'https://rpc.ankr.com/monad_testnet',
+          'https://monad-testnet.drpc.org',
+          'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
+        ];
+        RPC_URLS.forEach(url => {
+          fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              id: 0,
+              method: 'eth_sendRawTransaction',
+              params: [signedTx]
+            })
+          }).catch();
+        });
+      }
+      else {
+        hash = (await rawSendUserOperationAsync(params))?.hash
+      }
+      await Promise.race([
+        new Promise<void>((resolve) => {
+          txReceiptResolvers.current.set(hash, resolve);
+        }),
+        waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
+          txReceiptResolvers.current.delete(hash);
+          hash = r.transactionHash;
+        }),
+      ]);
+      return hash
+    },
+    [validOneCT]
+  );
 
   // state vars
   const [showSendDropdown, setShowSendDropdown] = useState(false);
@@ -961,26 +961,26 @@ function App() {
     }
   }, [monPresets]);
 
-const setQuickAmount = (category: string, amount: string) => {
-  setQuickAmounts(prev => ({
-    ...prev,
-    [category]: amount
-  }));
-};
+  const setQuickAmount = (category: string, amount: string) => {
+    setQuickAmounts(prev => ({
+      ...prev,
+      [category]: amount
+    }));
+  };
 
-const setActivePreset = (category: string, preset: number) => {
-  setActivePresets(prev => ({
-    ...prev,
-    [category]: preset
-  }));
+  const setActivePreset = (category: string, preset: number) => {
+    setActivePresets(prev => ({
+      ...prev,
+      [category]: preset
+    }));
 
-  const presetAmount = buyPresets[preset as keyof typeof buyPresets]?.amount || '5';
-  setQuickAmount(category, presetAmount);
-};
+    const presetAmount = buyPresets[preset as keyof typeof buyPresets]?.amount || '5';
+    setQuickAmount(category, presetAmount);
+  };
 
 
-const handleInputFocus = () => {
-};
+  const handleInputFocus = () => {
+  };
   const [isComposing, setIsComposing] = useState(false);
   const [sendInputString, setsendInputString] = useState('');
   const [limitPriceString, setlimitPriceString] = useState('');
@@ -2939,6 +2939,9 @@ const handleInputFocus = () => {
       case location.pathname === '/trackers':
         title = 'Trackers | Crystal';
         break;
+      case location.pathname === '/perps':
+        title = 'Perps | Crystal';
+        break;
       case location.pathname.startsWith('/earn/vaults'):
         if (location.pathname === '/earn/vaults') {
           title = 'Vaults | Crystal';
@@ -4669,7 +4672,7 @@ const handleInputFocus = () => {
                 const original = Number(o.originalSize ?? 0);
                 const remaining = Number(o.remainingSize ?? 0);
                 const filled = Math.max(0, original - remaining);
-  
+
                 temporders.push([
                   price,
                   tail,
@@ -8402,20 +8405,20 @@ const handleInputFocus = () => {
     URL.revokeObjectURL(url);
   }, [explorerFilters, explorerFiltersActiveTab]);
 
-const handleExplorerFiltersApply = useCallback(() => {
-  const newAppliedFilters = { ...appliedExplorerFilters };
-  (['new', 'graduating', 'graduated'] as const).forEach(tab => {
-    const tabFilters = explorerFilters[tab];
-    const hasActiveFilters = Object.values(tabFilters).some(value =>
-      value !== '' && value !== false && value !== null && value !== undefined
-    );
-    
-    newAppliedFilters[tab] = hasActiveFilters ? tabFilters : null;
-  });
+  const handleExplorerFiltersApply = useCallback(() => {
+    const newAppliedFilters = { ...appliedExplorerFilters };
+    (['new', 'graduating', 'graduated'] as const).forEach(tab => {
+      const tabFilters = explorerFilters[tab];
+      const hasActiveFilters = Object.values(tabFilters).some(value =>
+        value !== '' && value !== false && value !== null && value !== undefined
+      );
 
-  setAppliedExplorerFilters(newAppliedFilters);
-  setpopup(0);
-}, [explorerFilters, appliedExplorerFilters]);
+      newAppliedFilters[tab] = hasActiveFilters ? tabFilters : null;
+    });
+
+    setAppliedExplorerFilters(newAppliedFilters);
+    setpopup(0);
+  }, [explorerFilters, appliedExplorerFilters]);
   const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(newTab);
   }, []);
@@ -20497,7 +20500,7 @@ const handleExplorerFiltersApply = useCallback(() => {
                 setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
               />
-          } />
+            } />
           <Route path="/meme/:tokenAddress"
             element={
               <MemeInterface
@@ -20541,7 +20544,7 @@ const handleExplorerFiltersApply = useCallback(() => {
                 monPresets={monPresets}
                 setMonPresets={setMonPresets}
               />
-          } />
+            } />
           <Route path="/board"
             element={
               <TokenBoard
@@ -20560,7 +20563,7 @@ const handleExplorerFiltersApply = useCallback(() => {
                 setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
               />
-          } />
+            } />
           <Route path="/board/:tokenAddress"
             element={
               <TokenDetail
@@ -20581,7 +20584,7 @@ const handleExplorerFiltersApply = useCallback(() => {
                 setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
               />
-          } />
+            } />
           <Route path="/earn" element={<Navigate to="/earn/vaults" replace />} />
           <Route path="/earn/*"
             element={
@@ -20622,7 +20625,7 @@ const handleExplorerFiltersApply = useCallback(() => {
                 calculateUSDValue={calculateUSDValue}
                 getMarket={getMarket}
               />
-          } />
+            } />
           <Route path="/earn/vaults/:vaultAddress"
             element={
               <Earn
@@ -20662,7 +20665,7 @@ const handleExplorerFiltersApply = useCallback(() => {
                 calculateUSDValue={calculateUSDValue}
                 getMarket={getMarket}
               />
-          } />
+            } />
           <Route path="/portfolio"
             element={
               <Portfolio
@@ -20738,15 +20741,96 @@ const handleExplorerFiltersApply = useCallback(() => {
                 setShowRefModal={undefined}
                 lastRefGroupFetch={lastRefGroupFetch}
               />
-          } />
+            } />
           <Route path="/trackers"
             element={
               <Tracker
                 isBlurred={isBlurred}
               />
-          } />
-          <Route path="/perps" element={<></>} />
-          <Route path="/leaderboard"
+            } />
+          <Route path="/perps"
+            element={
+              <Perps
+                layoutSettings={layoutSettings}
+                orderbookPosition={orderbookPosition}
+                orderdata={{
+                  roundedBuyOrders: roundedBuyOrders?.orders,
+                  roundedSellOrders: roundedSellOrders?.orders,
+                  spreadData,
+                  priceFactor: Number(markets[roundedBuyOrders?.key]?.priceFactor),
+                  marketType: markets[roundedBuyOrders?.key]?.marketType,
+                  symbolIn: markets[roundedBuyOrders?.key]?.quoteAsset,
+                  symbolOut: markets[roundedBuyOrders?.key]?.baseAsset,
+                }}
+                windowWidth={windowWidth}
+                mobileView={mobileView}
+                isOrderbookVisible={isOrderbookVisible}
+                orderbookWidth={orderbookWidth}
+                setOrderbookWidth={setOrderbookWidth}
+                obInterval={obInterval}
+                amountsQuote={amountsQuote}
+                setAmountsQuote={setAmountsQuote}
+                obtrades={trades}
+                setOBInterval={setOBInterval}
+                baseInterval={baseInterval}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                activeTab={obTab}
+                setActiveTab={setOBTab}
+                updateLimitAmount={updateLimitAmount}
+                renderChartComponent={renderChartComponent}
+                reserveQuote={reserveQuote}
+                reserveBase={reserveBase}
+                orders={orders}
+                tradehistory={tradehistory}
+                canceledorders={canceledorders}
+                router={router}
+                address={address}
+                trades={tradesByMarket}
+                currentMarket={
+                  activeMarketKey.replace(
+                    new RegExp(
+                      `^${wethticker}|${wethticker}$`,
+                      'g'
+                    ),
+                    ethticker
+                  )
+                }
+                orderCenterHeight={orderCenterHeight}
+                hideBalances={true}
+                tokenList={memoizedTokenList}
+                onMarketSelect={onMarketSelect}
+                setSendTokenIn={setSendTokenIn}
+                setpopup={setpopup}
+                sortConfig={memoizedSortConfig}
+                onSort={emptyFunction}
+                tokenBalances={tokenBalances}
+                activeSection={activeSection}
+                setActiveSection={setActiveSection}
+                filter={filter}
+                setFilter={setFilter}
+                onlyThisMarket={onlyThisMarket}
+                setOnlyThisMarket={setOnlyThisMarket}
+                refetch={refetch}
+                sendUserOperationAsync={sendUserOperationAsync}
+                setChain={handleSetChain}
+                isVertDragging={isVertDragging}
+                isOrderCenterVisible={isOrderCenterVisible}
+                onLimitPriceUpdate={setCurrentLimitPrice}
+                openEditOrderPopup={openEditOrderPopup}
+                openEditOrderSizePopup={openEditOrderSizePopup}
+                marketsData={marketsData}
+                activeMarketKey={activeMarketKey}
+                wethticker={wethticker}
+                ethticker={ethticker}
+                memoizedTokenList={memoizedTokenList}
+                memoizedSortConfig={memoizedSortConfig}
+                emptyFunction={emptyFunction}
+                handleSetChain={handleSetChain}
+                setCurrentLimitPrice={setCurrentLimitPrice}
+              />
+            }
+          />     <Route path="/leaderboard"
             element={
               <Leaderboard
                 setpopup={setpopup}
@@ -20756,7 +20840,7 @@ const handleExplorerFiltersApply = useCallback(() => {
                 setIsTransitioning={setIsTransitioning}
                 setTransitionDirection={setTransitionDirection}
               />
-          } />
+            } />
           <Route path="/launchpad"
             element={
               <Launchpad
@@ -20771,7 +20855,7 @@ const handleExplorerFiltersApply = useCallback(() => {
                 setChain={handleSetChain}
                 setpopup={setpopup}
               />
-          } />
+            } />
           <Route path="/lending"
             element={
               <EarnVaults
@@ -20801,7 +20885,7 @@ const handleExplorerFiltersApply = useCallback(() => {
                 activechain={activechain}
                 setChain={handleSetChain}
               />
-          } />
+            } />
           <Route path="/swap" element={TradeLayout(swap)} />
           <Route path="/market" element={TradeLayout(swap)} />
           <Route path="/limit" element={TradeLayout(limit)} />

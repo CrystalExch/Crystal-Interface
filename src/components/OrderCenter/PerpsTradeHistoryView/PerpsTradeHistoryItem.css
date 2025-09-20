@@ -1,0 +1,136 @@
+.perps-trade-history-item {
+  align-items: center;
+  background: transparent;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.05);
+  color: #ffffff;
+  display: grid;
+  font-size: 0.8rem;
+  grid-template-columns: 120px 140px 90px 100px 100px 120px 80px 120px;
+  min-height: 52px;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+.perps-trade-history-item:hover {
+  background: rgba(170, 174, 207, 0.03);
+}
+
+.perps-trade-history-item .oc-cell {
+  align-items: center;
+  display: flex;
+  font-size: 0.8rem;
+  font-weight: 300;
+  padding: 4px 15px;
+  position: relative;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perps-trade-history-item .trade-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.perps-trade-history-item .trade-type {
+  color: #ffffff73;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+}
+
+.perps-trade-history-item .direction-badge {
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 3px 8px;
+}
+
+.perps-trade-history-item .direction-badge.long {
+  background: rgba(101, 237, 146, 0.1);
+  color: #65ed92;
+}
+
+.perps-trade-history-item .direction-badge.short {
+  background: rgba(240, 103, 103, 0.1);
+  color: #f06767;
+}
+
+.perps-trade-history-item .price-value,
+.perps-trade-history-item .size-value {
+  font-size: 0.8rem;
+}
+
+.perps-trade-history-item .trade-value {
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.perps-trade-history-item .fee-value {
+  color: #ffffff73;
+  font-size: 0.75rem;
+}
+
+.perps-trade-history-item .closed-pnl-cell .pnl-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.perps-trade-history-item .pnl-container.profit {
+  color: #65ed92;
+}
+
+.perps-trade-history-item .pnl-container.loss {
+  color: #f06767;
+}
+
+.perps-trade-history-item .pnl-value {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.perps-trade-history-item .pnl-percentage {
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+.perps-trade-history-item .no-pnl {
+  color: #ffffff50;
+  font-size: 0.8rem;
+}
+
+.perps-trade-history-item .oc-view-cell {
+  display: flex;
+  justify-content: center;
+  padding-right: 15px;
+}
+
+@media (max-width: 1400px) {
+  .perps-trade-history-item {
+    grid-template-columns: 110px 130px 80px 90px 90px 110px 70px 110px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .perps-trade-history-item {
+    grid-template-columns: 100px 120px 70px 80px 80px 100px 60px 100px;
+    font-size: 0.75rem;
+  }
+  
+  .perps-trade-history-item .oc-cell {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 1020px) {
+  .perps-trade-history-item {
+    grid-template-columns: minmax(90px, 1fr) minmax(110px, 1fr) minmax(60px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(90px, 1fr) minmax(50px, 1fr) minmax(90px, 1fr);
+    font-size: 0.7rem;
+  }
+  
+  .perps-trade-history-item .oc-cell {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+  }
+}

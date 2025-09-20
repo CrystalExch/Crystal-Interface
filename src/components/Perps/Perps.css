@@ -1,0 +1,474 @@
+.perps-wrapper{
+    max-height: 100%;
+    overflow: hidden;
+}
+
+.perps-trade-modal{
+    display: flex;
+    flex-direction: column;
+    align-items: space-between;
+    height: 100%;
+    width: 300px;
+    background-color: rgb(6,6,6);
+}
+
+
+.perps-top-section{
+     display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 300px;
+}
+
+.perps-buy-sell-container {
+    display: flex;
+    width: 100%;
+    margin: 0px 12px 0 12px;
+    gap: 3px;
+    width: calc(100% - 24px);
+    padding: 3px;
+    border-radius: 6px;
+    border: 1px solid rgba(179, 184, 249, .1);
+}
+
+.perps-long-button,
+.perps-short-button {
+    width: 100%;
+    padding: 4px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: .85rem;
+    transition: 0.3s ease;
+    border: 1.5px solid transparent;
+    letter-spacing: -0.3px;
+    
+}
+
+.perps-long-button.active {
+    background-color: #326e4051;
+    color: rgb(67 254 154);
+}
+
+.perps-long-button.inactive {
+    background-color: #11111328;
+    color: #666;
+}
+
+.perps-short-button.active {
+    background-color: #6e324051;
+    color: rgb(235, 112, 112);
+}
+
+.perps-short-button.inactive {
+    background-color: #11111328;
+    color: #666;
+}
+
+.perps-order-types{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 3px 13px;
+    position: relative;
+}
+
+.perps-order-type-button{
+    width: 100%;
+    font-size: 0.75rem;
+    color: #ffffff96;
+    font-weight: 300;
+    background: transparent;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.perps-order-type-button.active {
+    color: #ffffff;
+}
+
+.perps-order-type-button:hover {
+    color: #ffffffcc;
+}
+
+.perps-sliding-tab-indicator {
+        border: 1px solid #aaaecf30;
+    border-radius: 4px;
+    box-shadow: inset 0 0.5px rgba(230, 227, 250, 0.053), 0 5px 15px rgb(0 0 0 / 20%);
+    height: 24px;
+    position: absolute;
+    transition: transform .2s ease;
+    z-index: 1;
+}
+
+
+.leverage-selector{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    font-size: 0.9rem;
+    border: 1.5px solid #58586e28;
+    padding: 0 10px;
+    border-radius: 10px;
+}
+
+
+.perps-slider-mode-buttons {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.perps-slider-mode-button {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid rgba(179, 184, 249, 0.1);
+    border-radius: 4px;
+    background: transparent;
+    color: rgb(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.perps-slider-mode-button.active {
+    background: rgb(170 174 207 / 8%);
+    border-color: #aaaecf66;
+    box-shadow: 0 0 0 1px rgba(170, 174, 207, 0.6);
+    color: #d8dcff;
+}
+
+.perps-slider-container {
+    position: relative;
+    width: 100%;
+}
+
+.perps-slider-container.perps-presets-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.perps-preset-buttons {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+    margin-top: -3px;
+}
+
+.perps-preset-button {
+    border: 1px solid rgba(179, 184, 249, 0.1);
+    border-radius: 4px;
+    color: rgb(255, 255, 255, 0.7);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0 16px;
+    height: 20px;
+    transition: all 0.2s ease;
+    width: 100%;
+    background: transparent;
+    font-weight: 300;
+}
+
+.perps-preset-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.perps-slider-container.perps-increment-mode {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+    padding-top: 2px;
+}
+
+.perps-increment-button {
+    border: 1px solid rgba(179, 184, 249, 0.1);
+    border-radius: 8px;
+    color: rgb(255, 255, 255, 0.7);
+    cursor: pointer;
+    font-size: 18px;
+    height: 30px;
+    width: 33%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    background: transparent;
+}
+
+.perps-increment-button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.perps-increment-display {
+    border: 1px solid rgba(179, 184, 249, 0.1);
+    border-radius: 8px;
+    color: rgb(255, 255, 255, 0.7);
+    font-size: 1rem;
+    height: 30px;
+    width: 33%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.perps-increment-amount {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.perps-balance-amount-slider {
+    appearance: none;
+    border-radius: 1px;
+    cursor: pointer;
+    height: 4px;
+    margin: 0 4px;
+    outline: 0;
+    position: relative;
+    width: calc(100% - 15px);
+}
+
+.perps-balance-amount-slider::-webkit-slider-thumb {
+    appearance: none;
+    background: #d4d4d4;
+    border-radius: 3px;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    height: 10px;
+    position: relative;
+    top: 4.5px;
+    transform: translate(0%, -50%);
+    transition: all 0.2s ease;
+    width: 10px;
+    z-index: 2;
+}
+
+.perps-balance-amount-slider::-moz-range-thumb {
+    background: #d4d4d4;
+    border: none;
+    border-radius: 3px;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    height: 10px;
+    margin-top: -5.5px;
+    position: relative;
+    top: 4px;
+    transition: all 0.2s ease;
+    width: 10px;
+    z-index: 13;
+}
+
+.perps-slider-percentage-popup {
+    align-items: center;
+    background-color: rgb(9, 9, 9);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgb(0 0 0/20%);
+    color: #ffffffcf;
+    display: flex;
+    font-size: 0.7rem;
+    font-weight: 300;
+    justify-content: center;
+    max-width: 40px;
+    min-width: 30px;
+    opacity: 0;
+    padding: 2px 4px;
+    pointer-events: none;
+    position: absolute;
+    top: -14px;
+    transform: translateX(-50%);
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    visibility: hidden;
+    white-space: nowrap;
+    z-index: 13;
+    left: 0;
+}
+
+.perps-slider-percentage-popup.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.perps-balance-slider-marks {
+    color: #ffffff7b;
+    display: flex;
+    font-size: 0.75rem;
+    justify-content: space-between;
+    padding: 0;
+    position: relative;
+    width: 101%;
+    z-index: 1;
+}
+
+.perps-balance-slider-mark {
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 200;
+    margin: 0 -4px;
+    padding: 0 8px;
+    position: relative;
+    transition: color 0.2s ease;
+}
+
+.perps-balance-slider-mark::before {
+    content: '';
+    height: 4px;
+    left: 50%;
+    position: absolute;
+    top: -10px;
+    transform: translateX(-50%);
+    width: 5px;
+}
+
+.perps-balance-slider-mark[data-percentage='0']::before,
+.perps-balance-slider-mark[data-percentage='100']::before {
+    display: none;
+}
+
+.perps-balance-slider-mark:hover {
+    color: #ffffff93;
+}
+
+.perps-balance-slider-mark[data-active='false']:not(:first-child):not(:last-child)::before {
+    background-color: rgb(6, 6, 6);
+}
+
+
+.perps-balance-slider-mark[data-active='false']:not(:first-child):not(:last-child)::before {
+    background-color: rgb(6, 6, 6);
+}
+
+
+
+.perps-trade-action-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 35px;
+    padding: 6px 12px;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: -0.5px;
+    border: none;
+    border-radius: 20px;
+    margin: 0 12px;
+    margin-top: auto;
+    margin-bottom: 15px;
+      background: linear-gradient(135deg,
+      #aaaecf 0,
+      #9a9ec7 25%,
+      #8b8eb8 50%,
+      #7f82ac 75%,
+      #7f82a1 100%);
+  border: none;
+  border-radius: 20px;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255/35%),
+    inset 0 -1px 1px rgb(0 0 0/55%),
+    0 2px 8px rgb(170 174 207/10%);
+    color: black
+}
+
+.perps-trade-action-button.buy .perps-button-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgb(67 254 154);
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+
+
+.perps-trade-action-button.buy:hover:not(:disabled) {
+    filter: brightness(1.1)
+}
+
+
+
+
+.perps-trade-action-button.sell:hover:not(:disabled) {
+    filter: brightness(1.1)
+}
+
+.perps-trade-action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.perps-trade-input::-webkit-outer-spin-button,
+.perps-trade-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+
+
+.perps-amount-section{
+    padding: 0 13px;
+}
+
+.perps-trade-input{
+    background: none;
+    border: 1.5px solid rgba(92, 98, 132, 0.15);
+    width: 100%;
+    padding: 5px 10px;
+    font-weight: 1rem;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.perps-trade-input:focus{
+    outline: none;
+}
+
+.perps-balance-slider-mark{
+    color:#ffffff7b;
+}
+
+
+.perps-account-details{
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    width: 100%;
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.perps-account-section-title{
+    font-size: 0.8rem;
+    letter-spacing: -0.3px;
+}
+
+.perps-account-title{
+    font-size: 0.75rem;
+    letter-spacing: -0.2px;
+    color: rgb(155,155,155)
+}
+
+
+.perps-account-subtitle{
+    font-size: 0.75rem;
+    letter-spacing: -0.2px;
+    color: rgb(226, 233, 240)
+}
+
+.perps-account-row{
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}

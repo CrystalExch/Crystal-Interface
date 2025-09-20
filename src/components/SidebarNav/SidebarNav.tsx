@@ -9,9 +9,13 @@ import swap from '../../assets/circulararrow.png';
 import twitter from '../../assets/twitter.png';
 import discord from '../../assets/Discord.svg'
 import docs from '../../assets/docs.png';
+import vaults from '../../assets/yeildvaults.png';
+import earn from '../../assets/earn.png';
 import liquidity from '../../assets/liquidity.svg';
 import explorer from '../../assets/prism.png';
 import tracker from '../../assets/tracker.png';
+import earnvaults from '../../assets/vaults.png';
+import perps from '../../assets/infinity.png'
 import fun from '../../assets/fun.png';
 
 interface SidebarNavProps {
@@ -161,7 +165,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={swap} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Swap')}</span>
             </Link>
-            <Link
+              <Link
               to="/spectra"
               className={`page-mode-button ${path === '/spectra' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
               onClick={handleLinkClick}
@@ -170,13 +174,30 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Spectra')}</span>
             </Link>
             <Link
-              to="/board"
-              className={`page-mode-button ${path === '/board' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              to="/perps"
+              className={`page-mode-button ${path === '/perps' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
               onClick={handleLinkClick}
             >
-              <img src={fun} className="sidebar-icon" />
-              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('crystal.fun')}</span>
+              <img src={perps} className="sidebar-icon" />
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Perps')}</span>
             </Link>
+            <Link
+              to="/portfolio"
+              className={`page-mode-button ${path === '/portfolio' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              onClick={handleLinkClick}
+            >
+              <img src={portfolio} className="sidebar-icon" />
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('portfolio')}</span>
+            </Link>
+                        <Link
+              to="/trackers"
+              className={`page-mode-button ${path === '/trackers' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              onClick={handleLinkClick}
+            >
+              <img src={tracker} className="sidebar-icon" />
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Trackers')}</span>
+            </Link>
+
             {/* <Link
               to="/lending"
               className={`page-mode-button ${path === '/lending' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -198,21 +219,13 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 {t('Earn')}
               </span>
             </Link>
-            <Link
-              to="/portfolio"
-              className={`page-mode-button ${path === '/portfolio' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+         <Link
+              to="/board"
+              className={`page-mode-button ${path === '/board' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
               onClick={handleLinkClick}
             >
-              <img src={portfolio} className="sidebar-icon" />
-              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('portfolio')}</span>
-            </Link>
-            <Link
-              to="/trackers"
-              className={`page-mode-button ${path === '/trackers' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
-              onClick={handleLinkClick}
-            >
-              <img src={tracker} className="sidebar-icon" />
-              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Trackers')}</span>
+              <img src={fun} className="sidebar-icon" />
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('crystal.fun')}</span>
             </Link>
             <Link
               to="/leaderboard"
@@ -222,6 +235,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={leaderboard} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('leaderboard')}</span>
             </Link>
+
             {isMobile && (
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
