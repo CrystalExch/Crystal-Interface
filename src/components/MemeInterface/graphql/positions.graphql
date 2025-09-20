@@ -1,0 +1,21 @@
+query ($a: Bytes!, $skip: Int!, $first: Int!) {
+  launchpadPositions(
+    where: { account: $a, remainingTokens_gt: "0" }
+    orderBy: remainingTokens
+    orderDirection: desc
+    skip: $skip
+    first: $first
+  ) {
+    token { id symbol name decimals lastPriceNativePerTokenWad metadataCID }
+    account { id }
+    tokenBought
+    tokenSold
+    nativeSpent
+    nativeReceived
+    remainingTokens
+    avgEntryNativePerTokenWad
+    realizedPnlNative
+    unrealizedPnlNative
+    lastUpdatedAt
+  }
+}

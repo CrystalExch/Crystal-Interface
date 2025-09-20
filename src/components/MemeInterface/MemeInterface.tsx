@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useParams } from "react-router-dom";
 import { encodeFunctionData, decodeEventLog } from "viem";
 import { settings } from "../../settings";
@@ -12,6 +13,17 @@ import { CrystalRouterAbi } from "../../abis/CrystalRouterAbi";
 import { useSharedContext } from "../../contexts/SharedContext";
 import customRound from '../../utils/customRound';
 import { useWalletPopup, setGlobalPopupHandlers } from '../MemeTransactionPopup/useWalletPopup';
+import {
+  HOLDERS_QUERY,
+  POSITIONS_QUERY,
+  DEV_TOKENS_QUERY,
+  TOP_TRADERS_QUERY,
+  FILTERED_TRADES_QUERY,
+  GENERIC_TRADES_QUERY,
+  SIMILAR_TOKENS_BY_NAME_QUERY,
+  SIMILAR_TOKENS_BY_SYMBOL_QUERY,
+} from "./graphql";
+import { formatSig } from "../OrderCenter/utils";
 
 import contract from "../../assets/contract.svg";
 import gas from "../../assets/gas.svg";
@@ -23,7 +35,6 @@ import monadicon from "../../assets/monadlogo.svg";
 import trash from '../../assets/trash.svg';
 
 import "./MemeInterface.css";
-import { createPortal } from "react-dom";
 
 interface Token {
   id: string;
@@ -125,155 +136,6 @@ const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.8';
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const STATS_WS_BASE = 'wss://crystal-backend.up.railway.app';
 const PAGE_SIZE = 100;
-
-const HOLDERS_QUERY = `
-  query ($m: Bytes!, $skip: Int!, $first: Int!) {
-    launchpadPositions(
-      where: { token: $m }
-      orderBy: remainingTokens
-      orderDirection: desc
-      skip: $skip
-      first: $first
-    ) {
-      account { id }
-      tokenBought
-      tokenSold
-      nativeSpent
-      nativeReceived
-      remainingTokens
-      remainingPctOfBuys
-      avgEntryNativePerTokenWad
-      realizedPnlNative
-      unrealizedPnlNative
-      lastUpdatedAt
-    }
-
-    launchpadTokens(where: { id: $m }) {
-      lastPriceNativePerTokenWad
-    }
-
-    top10: launchpadPositions(
-      where: { token: $m }
-      orderBy: remainingTokens
-      orderDirection: desc
-      first: 10
-    ) {
-      remainingTokens
-    }
-  }
-`;
-
-const POSITIONS_QUERY = `
-  query ($a: Bytes!, $skip: Int!, $first: Int!) {
-    launchpadPositions(
-      where: { account: $a, remainingTokens_gt: "0" }
-      orderBy: remainingTokens
-      orderDirection: desc
-      skip: $skip
-      first: $first
-    ) {
-      token { id symbol name decimals lastPriceNativePerTokenWad metadataCID }
-      account { id }
-      tokenBought
-      tokenSold
-      nativeSpent
-      nativeReceived
-      remainingTokens
-      avgEntryNativePerTokenWad
-      realizedPnlNative
-      unrealizedPnlNative
-      lastUpdatedAt
-    }
-  }
-`;
-
-const DEV_TOKENS_QUERY = `
-  query ($d: Bytes!, $skip: Int!, $first: Int!) {
-    launchpadTokens(
-      where: { creator: $d }
-      orderBy: timestamp
-      orderDirection: desc
-      skip: $skip
-      first: $first
-    ) {
-      id
-      name
-      symbol
-      metadataCID
-      lastPriceNativePerTokenWad
-      timestamp
-      migrated
-    }
-  }
-`;
-
-const TOP_TRADERS_QUERY = `
-  query ($m: Bytes!, $since: BigInt!, $skip: Int!, $first: Int!) {
-    launchpadPositions(
-      where: { token: $m, lastUpdatedAt_gte: $since }
-      orderBy: realizedPnlNative
-      orderDirection: desc
-      skip: $skip
-      first: $first
-    ) {
-      account { id }
-      tokenBought
-      tokenSold
-      nativeSpent
-      nativeReceived
-      remainingTokens
-      realizedPnlNative
-      unrealizedPnlNative
-      lastUpdatedAt
-    }
-
-    launchpadTokens(where: { id: $m }) {
-      lastPriceNativePerTokenWad
-    }
-  }
-`;
-
-const FILTERED_TRADES_QUERY = `
-  query ($id: ID!, $accounts: [Bytes!], $first: Int!) {
-    launchpadTokens(where: { id: $id }) {
-      trades(
-        where: { account_in: $accounts }
-        orderBy: block
-        orderDirection: desc
-        first: $first
-      ) {
-        id
-        account { id }
-        block
-        isBuy
-        priceNativePerTokenWad
-        amountIn
-        amountOut
-      }
-    }
-  }
-`;
-
-const GENERIC_TRADES_QUERY = `
-  query ($id: ID!, $first: Int!) {
-    launchpadTokens(where: { id: $id }) {
-      trades(
-        orderBy: block
-        orderDirection: desc
-        first: $first
-      ) {
-        id
-        account { id }
-        block
-        isBuy
-        priceNativePerTokenWad
-        amountIn
-        amountOut
-      }
-    }
-  }
-`;
-
 const RESOLUTION_SECS: Record<string, number> = {
   "1Sm": 1,
   "5Sm": 5,
@@ -506,6 +368,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [hoveredStatsContainer, setHoveredStatsContainer] = useState(false);
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
+  const [similarTokensExpanded, setSimilarTokensExpanded] = useState(true);
   const [selectedMonPreset, setSelectedMonPreset] = useState<number | null>(null);
   const [isPresetEditMode, setIsPresetEditMode] = useState(false);
   const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
@@ -601,6 +464,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
   const trackedAddressesRef = useRef<string[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(false);
+  const [similarTokens, setSimilarTokens] = useState<any[]>([]);
   const { activechain } = useSharedContext();
 
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
@@ -653,7 +517,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       setSellPriorityFee(presetValues.priority);
     }
   }, [sellPresets]);
-
 
   const handleAdvancedOrderAdd = (orderType: 'takeProfit' | 'stopLoss' | 'devSell' | 'migration') => {
     if (advancedOrders.length >= 5) return;
@@ -757,43 +620,43 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     return getMobileWalletBalance(currentWallet.address);
   };
 
-const copyToClipboard = async (text: string, label = 'Address copied') => {
-  const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  try {
-    await navigator.clipboard.writeText(text);
-    if (showLoadingPopup && updatePopup) {
-      showLoadingPopup(txId, { title: label, subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard` });
-      setTimeout(() => {
-        updatePopup(txId, { title: label, subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
-      }, 100);
-    }
-  } catch {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.left = '-9999px';
-    document.body.appendChild(ta);
-    ta.select();
+  const copyToClipboard = async (text: string, label = 'Address copied') => {
+    const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
-      document.execCommand('copy');
+      await navigator.clipboard.writeText(text);
       if (showLoadingPopup && updatePopup) {
         showLoadingPopup(txId, { title: label, subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard` });
         setTimeout(() => {
           updatePopup(txId, { title: label, subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
         }, 100);
       }
-    } catch (fallbackErr) {
-      if (showLoadingPopup && updatePopup) {
-        showLoadingPopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy to clipboard' });
-        setTimeout(() => {
-          updatePopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy to clipboard', variant: 'error', confirmed: true, isLoading: false });
-        }, 100);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        if (showLoadingPopup && updatePopup) {
+          showLoadingPopup(txId, { title: label, subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard` });
+          setTimeout(() => {
+            updatePopup(txId, { title: label, subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
+          }, 100);
+        }
+      } catch (fallbackErr) {
+        if (showLoadingPopup && updatePopup) {
+          showLoadingPopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy to clipboard' });
+          setTimeout(() => {
+            updatePopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy to clipboard', variant: 'error', confirmed: true, isLoading: false });
+          }, 100);
+        }
+      } finally {
+        document.body.removeChild(ta);
       }
-    } finally {
-      document.body.removeChild(ta);
     }
-  }
-};
+  };
 
   const handleSellPosition = async (position: any, monAmount: string) => {
     if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
@@ -1145,222 +1008,6 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
 
     return () => { cancelled = true; };
   }, [token.id, trackedAddresses]);
-
-  // backend ws
-  useEffect(() => {
-    if (!tokenAddress) return;
-    let disposed = false;
-
-    const origin = STATS_WS_BASE.replace(/\/$/, '');
-    const url = `${origin}/ws/stats/${tokenAddress.toLowerCase()}`;
-
-    const open = () => {
-      const ws = new WebSocket(url);
-      statsWsRef.current = ws;
-
-      ws.onopen = () => {
-        reconnectRef.current = 0;
-      };
-
-      ws.onmessage = (evt) => {
-        try {
-          const msg = JSON.parse(String(evt.data));
-          if (msg?.type !== 'stats') return;
-
-          const normalized: Record<string, any> = {};
-          for (const [k, v] of Object.entries(msg)) {
-            normalized[k] =
-              typeof v === 'number' && /volume/i.test(k) ? v / 1e18 : v;
-          }
-          setStatsRaw(normalized);
-        } catch (e) { }
-      };
-
-      ws.onclose = () => {
-        if (disposed) return;
-        const backoff = Math.min(30000, 1000 * 2 ** Math.min(6, reconnectRef.current++));
-        setTimeout(open, backoff);
-      };
-
-      ws.onerror = () => {
-        try { ws.close(); } catch { }
-      };
-    };
-
-    open();
-
-    return () => {
-      disposed = true;
-      try { statsWsRef.current?.close(); } catch { }
-    };
-  }, [tokenAddress]);
-
-  // metadata n klines
-  useEffect(() => {
-    if (!token.id) return;
-    let isCancelled = false;
-
-    const fetchMemeTokenData = async () => {
-      try {
-        const response = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-            query ($id: ID!) {
-              launchpadTokens: launchpadTokens(where: { id: $id }) {
-                lastPriceNativePerTokenWad
-                volumeNative
-                buyTxs
-                sellTxs
-                name
-                symbol
-                metadataCID
-                creator {
-                  id
-                }
-                timestamp
-                trades(first: 50, orderBy: block, orderDirection: desc) {
-                  id
-                  account {id}
-                  block
-                  isBuy
-                  priceNativePerTokenWad
-                  amountIn
-                  amountOut
-                }
-                series: ${'series' + (
-                  selectedInterval === '1s' ? '1' :
-                  selectedInterval === '5s' ? '5' :
-                  selectedInterval === '15s' ? '15' :
-                  selectedInterval === '1m' ? '60' :
-                  selectedInterval === '5m' ? '300' :
-                  selectedInterval === '15m' ? '900' :
-                  selectedInterval === '1h' ? '3600' :
-                  selectedInterval === '4h' ? '14400':
-                    '86400'
-                )} 
-                  {
-                  klines(first: 1000, orderBy: time, orderDirection: desc) {
-                    time open high low close baseVolume
-                  }
-                }
-              }
-            }`,
-            variables: {
-              id: token.id.toLowerCase(),
-            }
-          }),
-        });
-
-        const data = (await response.json())?.data;
-        console.log(data);
-        if (isCancelled || !data) return;
-
-        if (data.launchpadTokens?.length) {
-          const m = data.launchpadTokens[0];
-
-          let imageUrl = token.image || '';
-          if (m.metadataCID && !imageUrl) {
-            try {
-              const metaRes = await fetch(m.metadataCID);
-              if (metaRes.ok) {
-                const meta = await metaRes.json();
-                imageUrl = meta.image || '';
-              }
-            } catch (e) {
-              console.warn('Failed to load metadata for token:', token.id, e);
-            }
-          }
-
-          const updatedTokenData = {
-            ...token,
-            name: m.name || token.name || "Unknown Token",
-            symbol: m.symbol || token.symbol || "UNKNOWN",
-            image: imageUrl,
-            dev: m.creator.id || "",
-            price: Number(m.lastPriceNativePerTokenWad || 0) / 1e18,
-            marketCap: (Number(m.lastPriceNativePerTokenWad || 0) / 1e18) * TOTAL_SUPPLY,
-            volume24h: Number(m.volumeNative || 0) / 1e18,
-            buyTransactions: Number(m.buyTxs || 0),
-            sellTransactions: Number(m.sellTxs || 0),
-            created: m.timestamp,
-          };
-
-          setLive(p => ({
-            ...p,
-            name: updatedTokenData.name,
-            symbol: updatedTokenData.symbol,
-            image: updatedTokenData.image,
-            dev: updatedTokenData.dev,
-            price: updatedTokenData.price,
-            marketCap: updatedTokenData.marketCap,
-            volume24h: updatedTokenData.volume24h,
-            buyTransactions: updatedTokenData.buyTransactions,
-            sellTransactions: updatedTokenData.sellTransactions,
-          }));
-
-          setTokenData(updatedTokenData);
-        }
-
-        if (data.launchpadTokens?.[0]?.trades?.length) {
-          const mapped = data.launchpadTokens[0].trades.map((t: any) => ({
-            id: t.id,
-            timestamp: Number(t.block),
-            isBuy: t.isBuy,
-            price: Number(t.priceNativePerTokenWad) / 1e18,
-            tokenAmount: Number(t.isBuy ? t.amountOut : t.amountIn) / 1e18,
-            nativeAmount: Number(t.isBuy ? t.amountIn : t.amountOut) / 1e18,
-            caller: t.account.id,
-          }));
-
-          setTrades(mapped);
-        } else {
-          setTrades([]);
-        }
-
-        if (data.launchpadTokens?.[0]?.series?.klines) {
-          const bars = data.launchpadTokens[0].series.klines
-            .slice()
-            .reverse()
-            .map((c: any) => ({
-              time: Number(c.time) * 1000,
-              open: Number(c.open) / 1e18,
-              high: Number(c.high) / 1e18,
-              low: Number(c.low) / 1e18,
-              close: Number(c.close) / 1e18,
-              volume: Number(c.baseVolume) / 1e18,
-            }));
-
-            const resForChart =
-              selectedInterval === "1d" ? "1D" :
-              selectedInterval === "4h" ? "240" :
-              selectedInterval === "1h" ? "60"  :
-              selectedInterval.endsWith("s")
-                ? selectedInterval.slice(0, -1).toUpperCase() + "S"
-                : selectedInterval.slice(0, -1);
-
-            setChartData([bars, resForChart, false]);
-        }
-
-      } catch (e) {
-        console.error('Error fetching token data:', e);
-        setLive(p => ({
-          ...p,
-          price: 0,
-          marketCap: 0,
-          volume24h: 0,
-          buyTransactions: 0,
-          sellTransactions: 0
-        }));
-        setTrades([]);
-        setChartData(null);
-      }
-    };
-
-    fetchMemeTokenData();
-    return () => { isCancelled = true; };
-  }, [token.id, selectedInterval]);
 
   const lastInvalidateRef = useRef(0);
 
@@ -1724,97 +1371,89 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
     };
   }, [token.id, tokenAddress, address, terminalRefetch]);
 
-  // holders
+  // by-token oc initial
   useEffect(() => {
     if (!token.id) return;
-
-    (async () => {
-      const response = await fetch(SUBGRAPH_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          query: HOLDERS_QUERY,
-          variables: {
-            m: (token.id || '').toLowerCase(),
-            skip: page * PAGE_SIZE,
-            first: PAGE_SIZE,
-          },
-        }),
-      });
-
-      const { data } = await response.json();
-
-      if (data?.top10) {
-        const top10TotalBalance = data.top10.reduce((sum: number, r: any) => sum + Number(r.remainingTokens) / 1e18, 0);
-        const top10Percentage = (top10TotalBalance / TOTAL_SUPPLY) * 100;
-        setTop10HoldingPercentage(top10Percentage);
-      }
-
-      const positions: any[] = data?.launchpadPositions ?? [];
-      const lastNative = Number(data?.launchpadTokens?.[0]?.lastPriceNativePerTokenWad ?? 0) / 1e18;
-
-      const mapped: Holder[] = positions.map((p: any) => {
-        const amountBought = Number(p.tokenBought) / 1e18;
-        const amountSold = Number(p.tokenSold) / 1e18;
-        const valueBought = Number(p.nativeSpent) / 1e18;
-        const valueSold = Number(p.nativeReceived) / 1e18;
-
-        const balance = amountBought - amountSold;
-        const realized = valueSold - valueBought;
-        const unrealized = balance * lastNative;
-        const totalPnl = realized + unrealized;
-
-        return {
-          address: p.account.id,
-          balance,
-          amountBought,
-          amountSold,
-          valueBought,
-          valueSold,
-          tokenNet: balance,
-          valueNet: totalPnl,
-        };
-      });
-
-      const top10Pct = toPct(
-        mapped
-          .map(h => Math.max(0, h.balance))
-          .sort((a, b) => b - a)
-          .slice(0, 10)
-          .reduce((s, n) => s + n, 0)
-      );
-      setTop10HoldingPercentage(top10Pct);
-
-      const devPct = calcDevHoldingPct(mapped, token.dev);
-      setLive(p => ({ ...p, devHolding: devPct }));
-
-      setHolders(mapped);
-      holdersMapRef.current = new Map(mapped.map((h: Holder, i: number) => [h.address.toLowerCase(), i]));
-    })();
-  }, [token.id, page]);
-
-  // dev tokens
-  useEffect(() => {
-    if (!token.dev) return;
+    setTerminalToken(token.id);
     let cancelled = false;
 
     (async () => {
-      const out: any[] = [];
-      let skip = 0;
+      const first = PAGE_SIZE;
+      const skip = page * PAGE_SIZE;
+      const m = (token.id || '').toLowerCase();
+      const d = token.dev ? token.dev.toLowerCase() : '';
+      const since = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
 
-      while (true) {
+      const holdersPromise = (async () => {
+        const response = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: HOLDERS_QUERY,
+            variables: { m, skip, first },
+          }),
+        });
+
+        const { data } = await response.json();
+
+        const positions: any[] = data?.launchpadPositions ?? [];
+        const lastNative = Number(data?.launchpadTokens?.[0]?.lastPriceNativePerTokenWad ?? 0) / 1e18;
+
+        const mapped: Holder[] = positions.map((p: any) => {
+          const amountBought = Number(p.tokenBought) / 1e18;
+          const amountSold = Number(p.tokenSold) / 1e18;
+          const valueBought = Number(p.nativeSpent) / 1e18;
+          const valueSold = Number(p.nativeReceived) / 1e18;
+
+          const balance = amountBought - amountSold;
+          const realized = valueSold - valueBought;
+          const unrealized = balance * lastNative;
+          const totalPnl = realized + unrealized;
+
+          return {
+            address: p.account.id,
+            balance,
+            amountBought,
+            amountSold,
+            valueBought,
+            valueSold,
+            tokenNet: balance,
+            valueNet: totalPnl,
+          };
+        });
+
+        const top10Pct = toPct(
+          mapped
+            .map(h => Math.max(0, h.balance))
+            .sort((a, b) => b - a)
+            .slice(0, 10)
+            .reduce((s, n) => s + n, 0)
+        );
+
+        if (!cancelled) {
+          setTop10HoldingPercentage(top10Pct);
+          const devPct = calcDevHoldingPct(mapped, token.dev);
+          setLive(p => ({ ...p, devHolding: devPct }));
+          setHolders(mapped);
+          holdersMapRef.current = new Map(mapped.map((h: Holder, i: number) => [h.address.toLowerCase(), i]));
+        }
+      })();
+
+      const devTokensPromise = (async () => {
+        if (!d) return;
+        const out: any[] = [];
+
         const res = await fetch(SUBGRAPH_URL, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             query: DEV_TOKENS_QUERY,
-            variables: { d: token.dev.toLowerCase(), skip, first: PAGE_SIZE },
+            variables: { d, skip, first },
           }),
         });
 
         const { data } = await res.json();
         const rows: any[] = data?.launchpadTokens ?? [];
-        if (!rows.length) break;
 
         for (const t of rows) {
           let imageUrl = '';
@@ -1841,119 +1480,39 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
           });
         }
 
-        if (rows.length < PAGE_SIZE) break;
-        skip += PAGE_SIZE;
-        if (cancelled) return;
-      }
-
-      if (!cancelled) {
-        setDevTokens(out);
-        devTokenIdsRef.current = new Set(out.map((t) => (t.id || '').toLowerCase()));
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [token.dev, token.id]);
-
-  const handlePresetEditToggle = useCallback(() => {
-    setIsPresetEditMode(!isPresetEditMode);
-    setEditingPresetIndex(null);
-    setTempPresetValue('');
-  }, [isPresetEditMode]);
-
-  const handlePresetButtonClick = useCallback((preset: number, index: number) => {
-    if (isPresetEditMode) {
-      setEditingPresetIndex(index);
-      setTempPresetValue(preset.toString());
-    } else {
-      setSelectedMonPreset(preset);
-      if (activeTradeType === "buy") {
-        setTradeAmount(preset.toString());
-        const currentBalance = getCurrentMONBalance();
-        const percentage = currentBalance > 0 ? (preset / currentBalance) * 100 : 0;
-        setSliderPercent(Math.min(100, percentage));
-      } else {
-        if (currentPrice > 0) {
-          const tokenAmount = preset / currentPrice;
-          setTradeAmount(tokenAmount.toString());
-          const currentTokenBalance = getCurrentTokenBalance();
-          const percentage = currentTokenBalance > 0 ? (tokenAmount / currentTokenBalance) * 100 : 0;
-          setSliderPercent(Math.min(100, percentage));
+        if (!cancelled) {
+          setDevTokens(out);
+          devTokenIdsRef.current = new Set(out.map((t) => (t.id || '').toLowerCase()));
         }
-      }
-    }
-  }, [isPresetEditMode, activeTradeType, currentPrice, getCurrentMONBalance, getCurrentTokenBalance]);
+      })();
 
-  const handlePresetInputSubmit = useCallback(() => {
-    if (editingPresetIndex === null || tempPresetValue.trim() === '') return;
-    if (!setMonPresets || !monPresets) return;
+      const topTradersPromise = (async () => {
+        const out: Holder[] = [];
 
-    const newValue = parseFloat(tempPresetValue);
-    if (isNaN(newValue) || newValue <= 0) return;
-
-    const newPresets = [...monPresets];
-    newPresets[editingPresetIndex] = newValue;
-    setMonPresets(newPresets);
-
-    setEditingPresetIndex(null);
-    setTempPresetValue('');
-  }, [editingPresetIndex, tempPresetValue, monPresets, setMonPresets]);
-
-  const handlePresetInputKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handlePresetInputSubmit();
-    } else if (e.key === 'Escape') {
-      setEditingPresetIndex(null);
-      setTempPresetValue('');
-    }
-  }, [handlePresetInputSubmit]);
-
-  // top traders
-  useEffect(() => {
-    if (!token.id) return;
-    setTerminalToken(token.id);
-    let cancelled = false;
-
-    (async () => {
-      const out: Holder[] = [];
-      let skip = 0;
-      const first = PAGE_SIZE;
-      const since = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
-
-      while (true) {
         const res = await fetch(SUBGRAPH_URL, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             query: TOP_TRADERS_QUERY,
-            variables: {
-              m: (token.id || '').toLowerCase(),
-              since: String(since),
-              skip,
-              first,
-            },
+            variables: { m, since: String(since), skip, first },
           }),
         });
 
-
         const { data } = await res.json();
         const rows: any[] = data?.launchpadPositions ?? [];
-        if (!rows.length) break;
 
         for (const p of rows) {
           const amountBought = Number(p.tokenBought) / 1e18;
           const amountSold = Number(p.tokenSold) / 1e18;
           const valueBought = Number(p.nativeSpent) / 1e18;
           const valueSold = Number(p.nativeReceived) / 1e18;
-
-          const balance = amountBought - amountSold;
           const realized = Number(p.realizedPnlNative) / 1e18;
           const unrealized = Number(p.unrealizedPnlNative) / 1e18;
           const pnl = realized + unrealized;
 
           out.push({
             address: p.account.id,
-            balance,
+            balance: amountBought - amountSold,
             tokenNet: amountBought - amountSold,
             valueNet: pnl,
             amountBought,
@@ -1963,21 +1522,215 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
           });
         }
 
-        if (rows.length < first) break;
-        skip += first;
-        if (cancelled) return;
+        if (!cancelled) {
+          out.sort((a, b) => (b.valueNet - a.valueNet));
+          const trimmed = out.slice(0, 100);
+          setTopTraders(trimmed);
+          topTradersMapRef.current = new Map(trimmed.map((t, i) => [t.address.toLowerCase(), i]));
+        }
+      })();
+
+      await Promise.all([holdersPromise, devTokensPromise, topTradersPromise]);
+    })();
+
+    return () => { cancelled = true; };
+  }, [tokenAddress, page]);
+
+  // similar tokens
+  useEffect(() => {
+    if (!token.id) return;
+
+    const baseName = String(token.name || "").trim();
+    const baseSymbol = String(token.symbol || "").trim();
+
+    if (!baseName && !baseSymbol) {
+      setSimilarTokens([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+    const tokenize = (s: string) =>
+      normalize(s)
+        .split(/[^a-z0-9]+/i)
+        .filter(w => w.length >= 3 && !STOPWORDS.has(w))
+        .slice(0, 8);
+    const acronym = (s: string) =>
+      (s.match(/\b([a-zA-Z0-9])/g) || []).join("").toLowerCase();
+    const trigrams = (s: string) => {
+      const t: string[] = [];
+      const x = ` ${normalize(s)} `;
+      for (let i = 0; i < x.length - 2; i++) t.push(x.slice(i, i + 3));
+      return t;
+    };
+    const jaccard = (a: string[], b: string[]) => {
+      const A = new Set(a);
+      const B = new Set(b);
+      let inter = 0;
+      for (const v of A) if (B.has(v)) inter++;
+      const uni = A.size + B.size - inter || 1;
+      return inter / uni;
+    };
+
+    const edit = (a: string, b: string) => {
+      const m = a.length, n = b.length;
+      const dp = Array.from({ length: m + 1 }, (_, _i) => new Array(n + 1).fill(0));
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+        }
+      }
+      return dp[m][n];
+    };
+
+    const scoreSimilarity = (qName: string, qSymbol: string, candName: string, candSymbol: string) => {
+      const qs = normalize(qName);
+      const cs = normalize(candName);
+      const qTok = tokenize(qs);
+      const cTok = tokenize(cs);
+
+      let score = 0;
+
+      score += 400 * jaccard(qTok, cTok);
+      score += 300 * jaccard(trigrams(qs), trigrams(cs));
+
+      if (cs.startsWith(qs) && qs.length >= 3) score += 200;
+      if (qs.startsWith(cs) && cs.length >= 3) score += 120;
+      if (cs.includes(qs) && qs.length >= 3) score += 120;
+
+      const qa = acronym(qName);
+      const ca = acronym(candName);
+      if (qa && ca && qa === ca) score += 180;
+
+      if (qs && cs) {
+        const dist = edit(qs, cs);
+        const norm = 1 - Math.min(1, dist / Math.max(qs.length, cs.length));
+        score += 200 * norm;
       }
 
-      if (!cancelled) {
-        out.sort((a, b) => (b.valueNet - a.valueNet));
-        const trimmed = out.slice(0, 100);
-        setTopTraders(trimmed);
-        topTradersMapRef.current = new Map(trimmed.map((t, i) => [t.address.toLowerCase(), i]));
+      const qSym = qSymbol.toLowerCase();
+      const cSym = (candSymbol || "").toLowerCase();
+      if (qSym && cSym) {
+        if (qSym === cSym) score += 350;
+        if (cSym.startsWith(qSym)) score += 220;
+        else if (qSym.startsWith(cSym)) score += 160;
+        else if (cSym.includes(qSym)) score += 140;
+      }
+
+      return score;
+    };
+
+    const STOPWORDS = new Set([
+      "the", "a", "an", "token", "coin", "inu", "doge", "baby", "new", "of", "and", "for", "with", "club", "project"
+    ]);
+
+    (async () => {
+      try {
+        const exclude = token.id.toLowerCase();
+        const nameTerms = tokenize(baseName);
+        const terms = Array.from(new Set(nameTerms)).slice(0, 4);
+        const sym = baseSymbol.trim();
+        const symTerms = sym.length >= 2 ? [sym, sym.slice(0, 3)].filter(Boolean) : [];
+        const requests: Promise<Response>[] = [];
+
+        for (const q of terms) {
+          requests.push(
+            fetch(SUBGRAPH_URL, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                query: SIMILAR_TOKENS_BY_NAME_QUERY,
+                variables: { q, exclude, first: 100 },
+              }),
+            })
+          );
+        }
+
+        for (const q of symTerms) {
+          requests.push(
+            fetch(SUBGRAPH_URL, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                query: SIMILAR_TOKENS_BY_SYMBOL_QUERY,
+                variables: { q, exclude, first: 50 },
+              }),
+            })
+          );
+        }
+
+        if (requests.length === 0 && baseName) {
+          requests.push(
+            fetch(SUBGRAPH_URL, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                query: SIMILAR_TOKENS_BY_NAME_QUERY,
+                variables: { q: baseName, exclude, first: 100 },
+              }),
+            })
+          );
+        }
+
+        const responses = await Promise.all(requests);
+        const jsons = await Promise.all(responses.map(r => r.json()));
+        const candidates: any[] = [];
+        for (const j of jsons) {
+          const rows = j?.data?.launchpadTokens ?? [];
+          for (const r of rows) candidates.push(r);
+        }
+
+        const mergedMap = new Map<string, any>();
+        for (const r of candidates) mergedMap.set(String(r.id).toLowerCase(), r);
+        const merged = Array.from(mergedMap.values());
+
+        const scored = merged
+          .map((t: any) => ({
+            ...t,
+            _score: scoreSimilarity(baseName, baseSymbol, t.name || "", t.symbol || "")
+          }))
+          .sort((a: any, b: any) => b._score - a._score)
+          .slice(0, 5);
+
+        const finalWithImages = await Promise.all(
+          scored.map(async (t: any) => {
+            let imageUrl = "";
+            if (t.metadataCID) {
+              try {
+                const metaRes = await fetch(t.metadataCID);
+                if (metaRes.ok) {
+                  const meta = await metaRes.json();
+                  imageUrl = meta.image || "";
+                }
+              } catch { }
+            }
+            const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e18;
+            return {
+              id: t.id,
+              name: t.name,
+              symbol: t.symbol,
+              imageUrl,
+              price,
+              marketCap: price * TOTAL_SUPPLY,
+              volume24h: Number(t.volumeNative || 0) / 1e18,
+              timestamp: Number(t.timestamp ?? 0),
+            };
+          })
+        );
+
+        if (!cancelled) setSimilarTokens(finalWithImages);
+      } catch (e) {
+        if (!cancelled) setSimilarTokens([]);
+        console.error("similar tokens fuzzy fetch failed", e);
       }
     })();
 
     return () => { cancelled = true; };
-  }, [token.id]);
+  }, [tokenAddress]);
 
   // positions
   useEffect(() => {
@@ -2094,6 +1847,276 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
 
     return () => { cancelled = true; };
   }, [userAddr]);
+
+  // metadata n klines
+  useEffect(() => {
+    if (!token.id) return;
+    let isCancelled = false;
+
+    const fetchMemeTokenData = async () => {
+      try {
+        const response = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+              query ($id: ID!) {
+                launchpadTokens: launchpadTokens(where: { id: $id }) {
+                  lastPriceNativePerTokenWad
+                  volumeNative
+                  buyTxs
+                  sellTxs
+                  name
+                  symbol
+                  metadataCID
+                  creator {
+                    id
+                  }
+                  timestamp
+                  trades(first: 50, orderBy: block, orderDirection: desc) {
+                    id
+                    account {id}
+                    block
+                    isBuy
+                    priceNativePerTokenWad
+                    amountIn
+                    amountOut
+                  }
+                  series: ${'series' + (
+                selectedInterval === '1s' ? '1' :
+                  selectedInterval === '5s' ? '5' :
+                    selectedInterval === '15s' ? '15' :
+                      selectedInterval === '1m' ? '60' :
+                        selectedInterval === '5m' ? '300' :
+                          selectedInterval === '15m' ? '900' :
+                            selectedInterval === '1h' ? '3600' :
+                              selectedInterval === '4h' ? '14400' :
+                                '86400'
+              )} 
+                    {
+                    klines(first: 1000, orderBy: time, orderDirection: desc) {
+                      time open high low close baseVolume
+                    }
+                  }
+                }
+              }
+            `,
+            variables: {
+              id: token.id.toLowerCase(),
+            }
+          }),
+        });
+
+        const data = (await response.json())?.data;
+        console.log(data);
+        if (isCancelled || !data) return;
+
+        if (data.launchpadTokens?.length) {
+          const m = data.launchpadTokens[0];
+
+          let imageUrl = token.image || '';
+          if (m.metadataCID && !imageUrl) {
+            try {
+              const metaRes = await fetch(m.metadataCID);
+              if (metaRes.ok) {
+                const meta = await metaRes.json();
+                imageUrl = meta.image || '';
+              }
+            } catch (e) {
+              console.warn('Failed to load metadata for token:', token.id, e);
+            }
+          }
+
+          const updatedTokenData = {
+            ...token,
+            name: m.name || token.name || "Unknown Token",
+            symbol: m.symbol || token.symbol || "UNKNOWN",
+            image: imageUrl,
+            dev: m.creator.id || "",
+            price: Number(m.lastPriceNativePerTokenWad || 0) / 1e18,
+            marketCap: (Number(m.lastPriceNativePerTokenWad || 0) / 1e18) * TOTAL_SUPPLY,
+            volume24h: Number(m.volumeNative || 0) / 1e18,
+            buyTransactions: Number(m.buyTxs || 0),
+            sellTransactions: Number(m.sellTxs || 0),
+            created: m.timestamp,
+          };
+
+          setLive(p => ({
+            ...p,
+            name: updatedTokenData.name,
+            symbol: updatedTokenData.symbol,
+            image: updatedTokenData.image,
+            dev: updatedTokenData.dev,
+            price: updatedTokenData.price,
+            marketCap: updatedTokenData.marketCap,
+            volume24h: updatedTokenData.volume24h,
+            buyTransactions: updatedTokenData.buyTransactions,
+            sellTransactions: updatedTokenData.sellTransactions,
+          }));
+
+          setTokenData(updatedTokenData);
+        }
+
+        if (data.launchpadTokens?.[0]?.trades?.length) {
+          const mapped = data.launchpadTokens[0].trades.map((t: any) => ({
+            id: t.id,
+            timestamp: Number(t.block),
+            isBuy: t.isBuy,
+            price: Number(t.priceNativePerTokenWad) / 1e18,
+            tokenAmount: Number(t.isBuy ? t.amountOut : t.amountIn) / 1e18,
+            nativeAmount: Number(t.isBuy ? t.amountIn : t.amountOut) / 1e18,
+            caller: t.account.id,
+          }));
+
+          setTrades(mapped);
+        } else {
+          setTrades([]);
+        }
+
+        if (data.launchpadTokens?.[0]?.series?.klines) {
+          const bars = data.launchpadTokens[0].series.klines
+            .slice()
+            .reverse()
+            .map((c: any) => ({
+              time: Number(c.time) * 1000,
+              open: Number(c.open) / 1e18,
+              high: Number(c.high) / 1e18,
+              low: Number(c.low) / 1e18,
+              close: Number(c.close) / 1e18,
+              volume: Number(c.baseVolume) / 1e18,
+            }));
+
+          const resForChart =
+            selectedInterval === "1d" ? "1D" :
+              selectedInterval === "4h" ? "240" :
+                selectedInterval === "1h" ? "60" :
+                  selectedInterval.endsWith("s")
+                    ? selectedInterval.slice(0, -1).toUpperCase() + "S"
+                    : selectedInterval.slice(0, -1);
+
+          setChartData([bars, resForChart, false]);
+        }
+
+      } catch (e) {
+        console.error('Error fetching token data:', e);
+        setLive(p => ({
+          ...p,
+          price: 0,
+          marketCap: 0,
+          volume24h: 0,
+          buyTransactions: 0,
+          sellTransactions: 0
+        }));
+        setTrades([]);
+        setChartData(null);
+      }
+    };
+
+    fetchMemeTokenData();
+    return () => { isCancelled = true; };
+  }, [tokenAddress, selectedInterval]);
+
+  // backend ws
+  useEffect(() => {
+    if (!tokenAddress) return;
+    let disposed = false;
+
+    const origin = STATS_WS_BASE.replace(/\/$/, '');
+    const url = `${origin}/ws/stats/${tokenAddress.toLowerCase()}`;
+
+    const open = () => {
+      const ws = new WebSocket(url);
+      statsWsRef.current = ws;
+
+      ws.onopen = () => {
+        reconnectRef.current = 0;
+      };
+
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(String(evt.data));
+          if (msg?.type !== 'stats') return;
+
+          const normalized: Record<string, any> = {};
+          for (const [k, v] of Object.entries(msg)) {
+            normalized[k] =
+              typeof v === 'number' && /volume/i.test(k) ? v / 1e18 : v;
+          }
+          setStatsRaw(normalized);
+        } catch (e) { }
+      };
+
+      ws.onclose = () => {
+        if (disposed) return;
+        const backoff = Math.min(30000, 1000 * 2 ** Math.min(6, reconnectRef.current++));
+        setTimeout(open, backoff);
+      };
+
+      ws.onerror = () => {
+        try { ws.close(); } catch { }
+      };
+    };
+
+    open();
+
+    return () => {
+      disposed = true;
+      try { statsWsRef.current?.close(); } catch { }
+    };
+  }, [tokenAddress]);
+
+  const handlePresetEditToggle = useCallback(() => {
+    setIsPresetEditMode(!isPresetEditMode);
+    setEditingPresetIndex(null);
+    setTempPresetValue('');
+  }, [isPresetEditMode]);
+
+  const handlePresetButtonClick = useCallback((preset: number, index: number) => {
+    if (isPresetEditMode) {
+      setEditingPresetIndex(index);
+      setTempPresetValue(preset.toString());
+    } else {
+      setSelectedMonPreset(preset);
+      if (activeTradeType === "buy") {
+        setTradeAmount(preset.toString());
+        const currentBalance = getCurrentMONBalance();
+        const percentage = currentBalance > 0 ? (preset / currentBalance) * 100 : 0;
+        setSliderPercent(Math.min(100, percentage));
+      } else {
+        if (currentPrice > 0) {
+          const tokenAmount = preset / currentPrice;
+          setTradeAmount(tokenAmount.toString());
+          const currentTokenBalance = getCurrentTokenBalance();
+          const percentage = currentTokenBalance > 0 ? (tokenAmount / currentTokenBalance) * 100 : 0;
+          setSliderPercent(Math.min(100, percentage));
+        }
+      }
+    }
+  }, [isPresetEditMode, activeTradeType, currentPrice, getCurrentMONBalance, getCurrentTokenBalance]);
+
+  const handlePresetInputSubmit = useCallback(() => {
+    if (editingPresetIndex === null || tempPresetValue.trim() === '') return;
+    if (!setMonPresets || !monPresets) return;
+
+    const newValue = parseFloat(tempPresetValue);
+    if (isNaN(newValue) || newValue <= 0) return;
+
+    const newPresets = [...monPresets];
+    newPresets[editingPresetIndex] = newValue;
+    setMonPresets(newPresets);
+
+    setEditingPresetIndex(null);
+    setTempPresetValue('');
+  }, [editingPresetIndex, tempPresetValue, monPresets, setMonPresets]);
+
+  const handlePresetInputKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handlePresetInputSubmit();
+    } else if (e.key === 'Escape') {
+      setEditingPresetIndex(null);
+      setTempPresetValue('');
+    }
+  }, [handlePresetInputSubmit]);
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -2307,6 +2330,19 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
     (selectedStatsTimeframe as '5m' | '1h' | '6h' | '24h') ?? '24h'
   );
 
+  const pctForTf = useCallback((tf: '5m' | '1h' | '6h' | '24h') => {
+    const g = (statsRaw as any)?.[tf];
+    if (!g) return '—';
+    let pct: number | null =
+      typeof g.change_pct === 'number' ? g.change_pct :
+        (g.start_price_native != null && g.last_price_native != null && g.start_price_native !== 0)
+          ? ((g.last_price_native - g.start_price_native) / g.start_price_native) * 100
+          : null;
+    if (pct == null || !isFinite(pct)) return '—';
+    const sign = pct > 0 ? '+' : '';
+    return `${sign}${pct.toFixed(2)}%`;
+  }, [statsRaw]);
+
   return (
     <div className="meme-interface-container">
       {notif && (
@@ -2471,23 +2507,29 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
 
             <div className="overlay-controls-grid">
               <div className="timeframe-buttons">
-                {[
-                  { label: '5m', value: '5m', percentage: '0%' },
-                  { label: '1h', value: '1h', percentage: '0%' },
-                  { label: '6h', value: '6h', percentage: '0%' },
-                  { label: '24h', value: '24h', percentage: '0%' }
-                ].map((tf) => (
+                {(['5m','1h','6h','24h'] as const).map((v) => (
                   <button
-                    key={tf.value}
-                    className={`timeframe-toggle ${selectedStatsTimeframe === tf.value ? 'active' : ''}`}
-                    onClick={() => setSelectedStatsTimeframe(tf.value)}
+                    key={v}
+                    className={`timeframe-toggle ${selectedStatsTimeframe === v ? 'active' : ''}`}
+                    onClick={() => setSelectedStatsTimeframe(v)}
                   >
-                    <span className="tf-label">{tf.label}</span>
-                    <span className="tf-percentage">{tf.percentage}</span>
+                    <span className="tf-label">{v}</span>
+                    <span
+                      className="tf-percentage"
+                      style={{
+                        color: (() => {
+                          const s = pctForTf(v);
+                          if (s === '—') return 'var(--muted, #9a9ba4)';
+                          return s.startsWith('+') ? 'rgb(67 254 154)' : 'rgb(235 112 112)';
+                        })()
+                      }}
+                    >
+                      {pctForTf(v)}
+                    </span>
                   </button>
                 ))}
               </div>
-            </div>
+              </div>
           </div>
           <div className="indicator-legend">
             <div className="indicator-line green-line" />
@@ -3453,9 +3495,10 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
             <h3 className="meme-token-info-title">Similar Tokens</h3>
             <button
               className="meme-token-info-collapse-button"
+              onClick={() => setSimilarTokensExpanded(v => !v)}
             >
               <svg
-                className={`meme-token-info-arrow ${tokenInfoExpanded ? "expanded" : ""}`}
+                className={`meme-token-info-arrow ${similarTokensExpanded ? "expanded" : ""}`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 width="16"
@@ -3470,10 +3513,68 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
               </svg>
             </button>
           </div>
-          {tokenInfoExpanded && (
-            <div>
+          {similarTokensExpanded && (
+            Array.isArray(similarTokens) && similarTokens.length > 0 ? (
+              <ul className="meme-similar-token-list">
+                {similarTokens.map((t) => {
+                  const price = typeof t.price === "number" ? t.price : Number(t.price || 0);
+                  const mcap = typeof t.marketCap === "number" ? t.marketCap : Number(t.marketCap || 0);
+                  const vol = typeof t.volume24h === "number" ? t.volume24h : Number(t.volume24h || 0);
+                  const img = t.imageUrl && t.imageUrl.length > 0 ? t.imageUrl : "";
 
-            </div>
+                  return (
+                    <li
+                      key={String(t.id)}
+                      className="meme-similar-token-row"
+                      onClick={() => window.location.href = `/meme/${t.id}`}
+                    >
+                      <div className="meme-similar-token-left">
+                        <div className="meme-similar-token-avatar">
+                          {img ? (
+                            <img src={img} alt={`${t.symbol || t.name} logo`} />
+                          ) : (
+                            <div className="meme-similar-token-avatar-fallback">
+                              {(t.symbol || t.name || "?").slice(0, 3).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="meme-similar-token-meta">
+                          <div className="meme-similar-token-title">
+                            <span className="meme-similar-token-name">{t.name || "Unknown"}</span>
+                            <span className="meme-similar-token-symbol">
+                              {t.symbol ? ` (${t.symbol})` : ""}
+                            </span>
+                          </div>
+                          <div className="meme-similar-token-id">{String(t.id)}</div>
+                        </div>
+                      </div>
+
+                      <div className="meme-similar-token-right">
+                        <div className="meme-similar-token-stat">
+                          <span className="label">Price</span>
+                          <span className="value">{formatSig(price)}</span>
+                        </div>
+                        <div className="meme-similar-token-stat">
+                          <span className="label">MC</span>
+                          <span className="value">
+                            {fmt(mcap)}
+                          </span>
+                        </div>
+                        <div className="meme-similar-token-stat">
+                          <span className="label">24h Vol.</span>
+                          <span className="value">
+                            {fmt(vol)}
+                          </span>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <div className="meme-similar-token-empty">No similar tokens</div>
+            )
           )}
         </div>
       </div>
