@@ -832,9 +832,19 @@ const Perps: React.FC<PerpsProps> = ({
 
                     </div>
                 </div>
-                <div className="perps-deposit-withdraw-section">
-                    <button className="perps-deposit-button">Deposit</button>
-                    <button className="perps-deposit-button">Withdraw</button>
+         <div className="perps-deposit-withdraw-section">
+                    <button 
+                        className="perps-deposit-button"
+                        onClick={() => setpopup(30)}
+                    >
+                        Deposit
+                    </button>
+                    <button 
+                        className="perps-withdraw-button"
+                        onClick={() => setpopup(31)}
+                    >
+                        Withdraw
+                    </button>
                 </div>
                 <div
                     className="perps-account-details"

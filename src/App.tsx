@@ -112,7 +112,8 @@ import firstPlacePfp from './assets/leaderboard_first.png';
 import secondPlacePfp from './assets/leaderboard_second.png';
 import thirdPlacePfp from './assets/leaderboard_third.png';
 import defaultPfp from './assets/leaderboard_default.png';
-
+import iconusdc from './assets/iconusdc.png';
+import edgeX from './assets/edgeX.svg'
 //audio
 import stepaudio from './assets/step_audio.mp3';
 import backaudio from './assets/back_audio.mp3';
@@ -527,7 +528,7 @@ function App() {
               params: [signedTx]
             })
           }).catch();
-        });        
+        });
       }
       else if (validOneCT && !mainWallet) {
         const tx = {
@@ -12077,6 +12078,7 @@ function App() {
                           <span>{tokendict[selectedVault?.quoteAsset]?.ticker}</span>
                         </div>
                       </div>
+                      
                       <div className="lp-deposit-balance-wrapper">
                         <div className={`lp-deposit-usd-value ${vaultQuoteExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
                           {vaultDepositAmounts.quote == 0n
@@ -12140,6 +12142,7 @@ function App() {
                           <span>{tokendict[selectedVault?.baseAsset]?.ticker}</span>
                         </div>
                       </div>
+                      
                       <div className="lp-deposit-balance-wrapper">
                         <div className={`lp-deposit-usd-value ${vaultBaseExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
                           {vaultDepositAmounts.base == 0n
@@ -13747,6 +13750,153 @@ function App() {
                   ) : (
                     'Create Vault'
                   )}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {popup === 30 ? ( // perps-deposit-popup
+          <div className="modal-overlay">
+            <div className="modal-content" ref={popupref}>
+              <div className="modal-header">
+                <h2>Deposit</h2>
+                <button
+                  className="modal-close"
+                  onClick={() => setpopup(0)}
+                >
+                  <img src={closebutton} className="close-button-icon" />
+                </button>
+              </div>
+
+              <div className="modal-body">
+                <div className="perps-deposit-form">
+                  <div className="form-group">
+                    <label>Exchange Native USDC for USDC on EdgeX</label>
+                    <div className="perps-deposit-input-wrapper">
+                      <div className="perps-deposit-balance">
+                        Converting
+                        <div className="">
+                        <span>Balance: </span>
+                        <span>$0.00</span>
+                        <button className="perps-max-button">Max</button>
+                        </div>
+                      </div>
+                      <div className="perps-input-bottom-row">
+                        <input
+                          type="text"
+                          placeholder="0.0"
+                          className="perps-deposit-input"
+                        />
+                        <div className="perps-deposit-token-badge">
+                          <img className="perps-deposit-icon" src={iconusdc}/>
+                          <span>USDC</span>
+                        </div>
+                      </div>
+                    </div>
+                                        <div className="perps-deposit-input-wrapper">
+                      <div className="perps-deposit-balance">
+                        Receiving
+                        <div className="">
+                        <span>Balance:</span>
+                        <span> $0.00</span>
+                        </div>
+                      </div>
+                      <div className="perps-input-bottom-row">
+                        <input
+                          type="text"
+                          placeholder="0.0"
+                          className="perps-deposit-input"
+                        />
+                        <div className="perps-deposit-token-badge">
+                          <img className="perps-deposit-icon" src={iconusdc}/>
+                          <img className="edgeX-icon" src={edgeX}/>
+                          <span>USDC</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button className="perps-confirm-button">
+                  Deposit
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {popup === 31 ? ( // perps-withdraw-popup
+          <div className="modal-overlay">
+            <div className="modal-content" ref={popupref}>
+              <div className="modal-header">
+                <h2>Withdraw</h2>
+                <button
+                  className="modal-close"
+                  onClick={() => setpopup(0)}
+                >
+                  <img src={closebutton} className="close-button-icon" />
+                </button>
+              </div>
+
+              <div className="modal-body">
+                <div className="perps-deposit-form">
+                  <div className="form-group">
+                    <label>Exchange  USDC on EdgeX for native USDC on Monad</label>
+                                        <div className="perps-deposit-input-wrapper">
+                      <div className="perps-deposit-balance">
+                        Withdrawing
+                        <div className="">
+                        <span>Balance:</span>
+                        <span> $0.00</span>
+                         <button className="perps-max-button">Max</button>
+                        </div>
+                      </div>
+                      <div className="perps-input-bottom-row">
+                        <input
+                          type="text"
+                          placeholder="0.0"
+                          className="perps-deposit-input"
+                        />
+                        <div className="perps-deposit-token-badge">
+                          <img className="perps-deposit-icon" src={iconusdc}/>
+                          <img className="edgeX-icon" src={edgeX}/>
+                          <span>USDC</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="perps-deposit-input-wrapper">
+                      <div className="perps-deposit-balance">
+                        Receiving
+                        <div className="">
+                        <span>Balance: </span>
+                        <span>$0.00</span>
+                        </div>
+                      </div>
+                      <div className="perps-input-bottom-row">
+                        <input
+                          type="text"
+                          placeholder="0.0"
+                          className="perps-deposit-input"
+                        />
+                        <div className="perps-deposit-token-badge">
+                          <img className="perps-deposit-icon" src={iconusdc}/>
+                          <span>USDC</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    
+
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button className="perps-confirm-button">
+                  Deposit
                 </button>
               </div>
             </div>

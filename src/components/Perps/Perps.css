@@ -731,5 +731,221 @@
 }
 
 .perps-withdraw-button{
-    
+    color: #d8dcff;
+    border: 1px solid #d8dcff;
+    font-size: 0.8rem;
+    width: 100%;
+    padding: 3px 0;
+    letter-spacing: -0.3px;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+}
+
+
+.perps-deposit-form,
+.perps-withdraw-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.perps-deposit-input-wrapper,
+.perps-withdraw-input-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius:4px;
+  background: transparent;
+}
+
+.perps-deposit-input,
+.perps-withdraw-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0 12px;
+  color: #ededf5;
+  font-size: 1.1rem;
+  font-weight: 400;
+  outline: none;
+  height: 100%;
+}
+
+.perps-deposit-input::placeholder,
+.perps-withdraw-input::placeholder {
+  color: #ededf571;
+  font-weight: 300;
+}
+
+.perps-deposit-token-badge,
+.perps-withdraw-token-badge {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 12px;
+  color: #ffffff8b;
+  font-size: 0.8rem;
+  background: transparent;
+  border-radius: 0;
+  font-weight: 400;
+}
+
+.perps-deposit-balance,
+.perps-withdraw-balance {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: #ffffff79;
+  width: 100%;
+  padding-left: 13px;
+  padding-right: 5px;
+}
+
+.perps-input-bottom-row{
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding-bottom: 5px;
+    margin-top: -5px;
+}
+
+.edgeX-icon{
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 20px;
+    margin-top: 8px;
+    margin-left: 8px;
+}
+
+.perps-max-button {
+  background: none;
+  border: none;
+  color: #afb7f5;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+}
+
+
+.perps-deposit-info,
+.perps-withdraw-info {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-row span:first-child {
+  color: #ffffff7b;
+}
+
+.info-row span:last-child {
+  color: #ffffffcf;
+  font-weight: 400;
+}
+
+.perps-confirm-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg,
+      #aaaecf 0,
+      #9a9ec7 25%,
+      #8b8eb8 50%,
+      #7f82ac 75%,
+      #7f82a1 100%);
+  border: none;
+  border-radius: 20px;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255/35%),
+    inset 0 -1px 1px rgb(0 0 0/55%),
+    0 2px 8px rgb(170 174 207/10%);
+  color: #0f0f12;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  height: 32px;
+  letter-spacing: -0.3px;
+  min-height: 32px;
+  overflow: hidden;
+  transition:
+    filter.3s ease,
+    box-shadow.3s ease,
+    color.3s ease,
+    opacity.3s ease;
+  width: 100%;
+}
+
+.perps-confirm-button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.perps-confirm-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.perps-confirm-button.withdraw {
+  background: linear-gradient(135deg,
+      #cf6b6b 0,
+      #c75a5a 25%,
+      #b84d4d 50%,
+      #ac4040 75%,
+      #a13434 100%);
+}
+
+.perps-confirm-button.withdraw:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  color: #ffffff7b;
+  font-weight: 300;
+}
+
+.perps-deposit-input-wrapper:focus-within,
+.perps-withdraw-input-wrapper:focus-within {
+  background-color: rgba(170, 174, 207, 0.025);
+}
+
+
+
+
+
+.perps-deposit-icon{
+    width: 18px;
+    height: 18px;
+}
+
+.perps-deposit-token-badge span{
+    color: white;
+    font-size: 1rem;
 }
