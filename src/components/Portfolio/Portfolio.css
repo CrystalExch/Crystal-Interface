@@ -2122,6 +2122,7 @@
   font-size: 0.8rem;
   letter-spacing: -0.3px;
   margin-bottom: 3px;
+  margin-left: 4px;
 }
 
 .pk-input-container {
@@ -3093,7 +3094,7 @@
 .main-wallet-balance-value {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
 }
 
 .main-wallet-balance-icon {
@@ -3155,7 +3156,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-right: 8px;
   flex-shrink: 0;
 }
 
@@ -3188,12 +3188,12 @@
 .wallet-active-checkbox:checked::after {
   content: '';
   position: absolute;
-  left: 5.5px;
-  top: 1.5px;
-  width: 6px;
-  height: 10px;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 8px;
   border: solid #0f0f12;
-  border-width: 0 2px 2px 0;
+  border-width: 0 1.5px 1.5px 0;
   transform: rotate(45deg);
 }
 
@@ -3981,7 +3981,7 @@
 
 
 
-.portfolio-tab-title.margin{
+.portfolio-tab-title.perpetuals{
   cursor: not-allowed;
   user-select: none;
   color: rgb(145,145,155);
@@ -4015,8 +4015,8 @@
 
 .wallets-table-header {
   display: grid;
-  grid-template-columns: 30px 180px 80px 1fr 2fr;
-  gap: 16px;
+  grid-template-columns: 16px 180px 80px 1fr 2fr;
+  gap: 10px;
   padding: 4px 20px;
   border-bottom: 1px solid rgba(179,184,249,0.1);
   align-items: center;
@@ -4038,8 +4038,8 @@
 
 .draggable-wallet-item {
   display: grid;
-  grid-template-columns: 30px 180px 80px 1fr 2fr;
-  gap: 16px;
+  grid-template-columns: 16px 180px 80px 1fr 2fr;
+  gap: 10px;
   padding: 6px 20px;
   cursor: grab;
   transition: all 0.2s ease;

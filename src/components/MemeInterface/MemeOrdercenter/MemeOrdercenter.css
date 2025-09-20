@@ -878,21 +878,6 @@
   height: 100%;
 }
 
-.meme-oc-quickbuy-button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 1px 12px;
-  border-radius: 20px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  color: #d8dcff;
-  background-color: rgba(201, 194, 243, .05);
-  border: 1px solid#aaaecf;
-  letter-spacing: -0.5px;
-}
 
 .meme-oc-quickbuy-button.active {
   background-color: #b6b3f41f;
@@ -908,7 +893,7 @@
 .meme-oc-quickbuy-button {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   padding: 1px 12px;
   border-radius: 20px;
   font-size: 13px;
@@ -919,6 +904,7 @@
   background-color: rgba(201, 194, 243, .05);
   border: 1px solid#aaaecf;
   letter-spacing: -0.5px;
+  padding-left: 8px;
 }
 
 .meme-oc-section-content[data-section="holders"] .meme-trade-info,
@@ -1408,4 +1394,10 @@
 
 .wallet-address-link {
   cursor: pointer;
+}
+
+.memeordercenter-lightning{
+  width: 14px;
+  height: 14px;
+filter: brightness(0) saturate(100%) invert(81%) sepia(4%) saturate(1856%) hue-rotate(198deg) brightness(105%) contrast(105%);
 }

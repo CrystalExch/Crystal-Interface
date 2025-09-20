@@ -1,0 +1,186 @@
+.perps-open-order-item {
+  align-items: center;
+  background: transparent;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.05);
+  color: #ffffff;
+  display: grid;
+  font-size: 0.8rem;
+  grid-template-columns: 100px 80px 120px 80px 90px 100px 100px 90px 80px 100px 100px 120px;
+  min-height: 52px;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+.perps-open-order-item:hover {
+  background: rgba(170, 174, 207, 0.03);
+}
+
+.perps-open-order-item .oc-cell {
+  align-items: center;
+  display: flex;
+  font-size: 0.8rem;
+  font-weight: 300;
+  padding: 4px 15px;
+  position: relative;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perps-open-order-item .order-type-badge {
+  background: rgba(170, 174, 207, 0.1);
+  border-radius: 3px;
+  color: #aaaecf;
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 3px 6px;
+  text-transform: uppercase;
+}
+
+.perps-open-order-item .direction-badge {
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 3px 8px;
+}
+
+.perps-open-order-item .direction-badge.long {
+  background: rgba(101, 237, 146, 0.1);
+  color: #65ed92;
+}
+
+.perps-open-order-item .direction-badge.short {
+  background: rgba(240, 103, 103, 0.1);
+  color: #f06767;
+}
+
+.perps-open-order-item .size-value {
+  font-size: 0.8rem;
+}
+
+.perps-open-order-item .original-size-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.perps-open-order-item .original-size-value {
+  font-size: 0.8rem;
+}
+
+.perps-open-order-item .fill-percentage {
+  color: #ffffff73;
+  font-size: 0.65rem;
+}
+
+.perps-open-order-item .reduce-only-badge {
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 2px 6px;
+}
+
+.perps-open-order-item .reduce-only-badge.active {
+  background: rgba(240, 103, 103, 0.1);
+  color: #f06767;
+}
+
+.perps-open-order-item .reduce-only-badge.inactive {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff50;
+}
+
+.perps-open-order-item .trigger-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.perps-open-order-item .trigger-type {
+  color: #aaaecf;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+}
+
+.perps-open-order-item .trigger-price {
+  font-size: 0.75rem;
+}
+
+.perps-open-order-item .no-trigger,
+.perps-open-order-item .no-tpsl {
+  color: #ffffff50;
+  font-size: 0.8rem;
+}
+
+.perps-open-order-item .tpsl-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.perps-open-order-item .tp-value {
+  color: #65ed92;
+  font-size: 0.7rem;
+}
+
+.perps-open-order-item .sl-value {
+  color: #f06767;
+  font-size: 0.7rem;
+}
+
+.perps-open-order-item .actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.perps-open-order-item .order-action-btn {
+  background: rgba(170, 174, 207, 0.1);
+  border: 1px solid rgba(170, 174, 207, 0.2);
+  border-radius: 4px;
+  color: #aaaecf;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 400;
+  padding: 4px 10px;
+  transition: all 0.15s ease;
+}
+
+.perps-open-order-item .order-action-btn:hover {
+  background: rgba(170, 174, 207, 0.2);
+  border-color: rgba(170, 174, 207, 0.3);
+}
+
+.perps-open-order-item .order-action-btn.cancel-btn:hover {
+  background: rgba(240, 103, 103, 0.15);
+  border-color: rgba(240, 103, 103, 0.3);
+  color: #f06767;
+}
+
+@media (max-width: 1400px) {
+  .perps-open-order-item {
+    grid-template-columns: 90px 70px 110px 70px 80px 90px 90px 80px 70px 90px 90px 100px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .perps-open-order-item {
+    grid-template-columns: 80px 60px 100px 60px 70px 80px 80px 70px 60px 80px 80px 90px;
+    font-size: 0.75rem;
+  }
+  
+  .perps-open-order-item .oc-cell {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 1020px) {
+  .perps-open-order-item {
+    grid-template-columns: minmax(70px, 1fr) minmax(50px, 1fr) minmax(90px, 1fr) minmax(50px, 1fr) minmax(60px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(60px, 1fr) minmax(50px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) 80px;
+    font-size: 0.7rem;
+  }
+  
+  .perps-open-order-item .oc-cell {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+  }
+}

@@ -4,6 +4,8 @@ import camera from '../../../../assets/camera.svg'
 import CopyButton from '../../../CopyButton/CopyButton';
 import TokenInfoPopup from './TokenInfoPopup/TokenInfoPopup';
 import MiniChart from './MiniChart/MiniChart';
+import PNLComponent from '../../../PNLComponent/PNLComponent.tsx';
+import '../../../Portfolio/Portfolio.css';
 
 import SortArrow from '../../../OrderCenter/SortArrow/SortArrow';
 import PriceDisplay from '../PriceDisplay/PriceDisplay';
@@ -50,6 +52,7 @@ const calculateBondingPercentage = (marketCap: number) => {
   const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
   return bondingPercentage;
 };
+
 
 const MemeTokenSkeleton = () => {
   return (
@@ -140,9 +143,25 @@ interface TokenInfoProps {
     telegramHandle?: string;
     discordHandle?: string;
   };
+  isPerpsToken?: boolean;
+  perpsTokenData?: {
+    symbol: string;
+    baseAsset: string;
+    quoteAsset: string;
+    tokenIcon: string;
+    price: number;
+    change24h: number;
+    volume24h: number;
+    openInterest: number;
+    fundingRate: number;
+    maxLeverage: number;
+  };
   monUsdPrice: number;
   showLoadingPopup?: (id: string, config: any) => void;
   updatePopup?: (id: string, config: any) => void;
+  userPNL?: {
+    totalPnl: number;
+  };
 }
 
 const TokenInfo: React.FC<TokenInfoProps> = ({
@@ -159,9 +178,12 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   simpleView = false,
   isMemeToken = false,
   memeTokenData,
+  isPerpsToken = false,
+  perpsTokenData,
   monUsdPrice,
   showLoadingPopup,
   updatePopup,
+  userPnl,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
@@ -381,6 +403,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   const shouldShowFullHeader = isTradeRoute && !simpleView;
   const shouldShowTokenInfo = isTradeRoute && !simpleView ? "token-info-container" : "token-info-container-simple";
+  const [showPNLModal, setShowPNLModal] = useState(false);
 
   const handleSymbolInfoClick = (e: React.MouseEvent) => {
     if (
@@ -797,7 +820,109 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     {bondingPercentage.toFixed(1)}%
                   </span>
                 </div>
+
               )}
+
+              <div className="meme-interface-token-metric">
+                <span className="meme-interface-metric-label">Your PNL</span>
+                <div className="meme-interface-pnl-value-container">
+                  {userPnl && userPnl.totalPnl !== 0 && (
+                    <span 
+                      className={`meme-interface-metric-value ${userPnl.totalPnl >= 0 ? 'positive' : 'negative'}`}
+                    >
+                      {userPnl.totalPnl >= 0 ? '+' : ''}${Math.abs(userPnl.totalPnl).toFixed(2)}
+                    </span>
+                  )}
+                  <button
+                    className="trenches-pnl-button"
+                    onClick={() => setShowPNLModal(true)}
+                  >
+                    <svg fill="#cfcfdfff" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
+                      <path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (isPerpsToken && perpsTokenData) {
+    return (
+      <div className="perps-interface-token-info-container">
+        <div className="perps-interface-token-header-info">
+          <div className="perps-interface-token-header-left">
+            <div className="perps-interface-token-icon-container">
+              <img
+                src={perpsTokenData.tokenIcon}
+                alt={perpsTokenData.baseAsset}
+                className="perps-interface-token-icon"
+              />
+            </div>
+            <div className="perps-interface-token-identity">
+              <div className="perps-interface-token-name-row">
+                <h1 className="perps-interface-token-symbol">{perpsTokenData.baseAsset}-{perpsTokenData.quoteAsset}</h1>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="perps-markets-dropdown-arrow"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+              
+              <div className="perps-interface-token-meta-row">
+              </div>
+            </div>
+          </div>
+
+          <div className="perps-interface-token-header-right">
+            <div className="perps-interface-token-metrics">
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-value perps-price-large">
+                  {perpsTokenData.price.toLocaleString()}
+                </span>
+              </div>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">Oracle</span>
+                <span className="perps-interface-metric-value perps-price-small">
+                  {(perpsTokenData.price * 0.9998).toLocaleString()}
+                </span>
+              </div>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">24h Change</span>
+                <span
+                  className={`perps-interface-metric-value ${perpsTokenData.change24h >= 0 ? 'positive' : 'negative'}`}
+                >
+                  {perpsTokenData.change24h >= 0 ? '+' : ''}{perpsTokenData.change24h.toFixed(2)}%
+                </span>
+              </div>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">24h Volume</span>
+                <span className="perps-interface-metric-value perps-price-small">
+                  ${(perpsTokenData.volume24h / 1e6).toFixed(2)}M
+                </span>
+              </div>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">Open Interest</span>
+                <span className="perps-interface-metric-value perps-price-small">
+                  ${(perpsTokenData.openInterest / 1e6).toFixed(2)}M
+                </span>
+              </div>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">Funding / Next</span>
+                <div className="perps-interface-funding-container">
+                  <span
+                    className={`perps-interface-metric-value ${perpsTokenData.fundingRate >= 0 ? 'positive' : 'negative'}`}
+                  >
+                    {perpsTokenData.fundingRate >= 0 ? '+' : ''}{(perpsTokenData.fundingRate * 100).toFixed(4)}%
+                  </span>
+                  <span className="perps-interface-metric-value perps-price-small">
+                     02:34:12
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -877,6 +1002,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             )}
           </div>
         )}
+
 
         <div className="token-details">
           <div className={isLoading && shouldShowFullHeader ? 'symbol-skeleton' : 'trading-pair'}>
@@ -1110,6 +1236,12 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           </div>
         </>
       )}
+
+      <PNLComponent
+        isVisible={showPNLModal}
+        onClose={() => setShowPNLModal(false)}
+        windowWidth={window.innerWidth}
+      />
     </div>
   );
 };

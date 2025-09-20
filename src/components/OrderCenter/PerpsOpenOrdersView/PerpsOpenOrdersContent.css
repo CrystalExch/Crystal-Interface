@@ -1,0 +1,64 @@
+.perps-open-orders-header {
+  align-items: center;
+  display: grid;
+  font-size: 0.75rem;
+  font-weight: 300;
+  grid-template-columns: 100px 80px 120px 80px 90px 100px 100px 90px 80px 100px 100px 120px;
+  min-height: 38px;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  user-select: none;
+  background-color: rgb(6, 6, 6);
+  z-index: 1;
+}
+
+.perps-open-orders-header .oc-cell {
+  color: #ffffff73;
+  padding: 8px 15px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.perps-open-orders-header .oc-cell:hover {
+  color: #ffffff95;
+}
+
+.perps-open-orders-header .oc-cell.actions {
+  cursor: default;
+  justify-content: center;
+}
+
+.original-size-label,
+.reduce-only-label,
+.tpsl-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+@media (max-width: 1400px) {
+  .perps-open-orders-header {
+    grid-template-columns: 90px 70px 110px 70px 80px 90px 90px 80px 70px 90px 90px 100px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .perps-open-orders-header {
+    grid-template-columns: 80px 60px 100px 60px 70px 80px 80px 70px 60px 80px 80px 90px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 1020px) {
+  .perps-open-orders-header {
+    grid-template-columns: minmax(70px, 1fr) minmax(50px, 1fr) minmax(90px, 1fr) minmax(50px, 1fr) minmax(60px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(60px, 1fr) minmax(50px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) 80px;
+    font-size: 0.65rem;
+    overflow-x: auto;
+  }
+}

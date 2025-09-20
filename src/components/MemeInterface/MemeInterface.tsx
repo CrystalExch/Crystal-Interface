@@ -137,9 +137,9 @@ const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a
 const STATS_WS_BASE = 'wss://crystal-backend.up.railway.app';
 const PAGE_SIZE = 100;
 const RESOLUTION_SECS: Record<string, number> = {
-  "1Sm": 1,
-  "5Sm": 5,
-  "15Sm": 15,
+  "1s": 1,
+  "5s": 5,
+  "15s": 15,
   "1m": 60,
   "5m": 300,
   "15m": 900,
@@ -149,7 +149,7 @@ const RESOLUTION_SECS: Record<string, number> = {
 };
 
 const toSeriesKey = (sym: string, interval: string) =>
-  sym + "MON" + (interval === "1d" ? "1D" : interval === "4h" ? "240" : interval === "1h" ? "60" : interval.slice(0, -1));
+  sym + "MON" + (interval === "1d" ? "1D" : interval === "4h" ? "240" : interval === "1h" ? "60" : interval.endsWith('s') ? interval.slice(0, -1).toUpperCase() + 'S' : interval.slice(0, -1));
 
 const fmt = (v: number, d = 6) => {
   if (v === 0) return "0";
@@ -848,7 +848,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const pushRealtimeTick = useCallback(
     (lastPrice: number, volNative: number) => {
       if (!lastPrice || lastPrice <= 0) return;
-
       const resSecs = RESOLUTION_SECS[selectedInterval] ?? 60;
       const now = Date.now();
       const bucketMs = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
@@ -3542,7 +3541,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                           <div className="meme-similar-token-title">
                             <span className="meme-similar-token-name">{t.name || "Unknown"}</span>
                             <span className="meme-similar-token-symbol">
-                              {t.symbol ? ` (${t.symbol})` : ""}
+                              {t.symbol ? ` ${t.symbol}` : ""}
                             </span>
                           </div>
                           <div className="meme-similar-token-id">{String(t.id)}</div>
@@ -3550,10 +3549,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       </div>
 
                       <div className="meme-similar-token-right">
-                        <div className="meme-similar-token-stat">
-                          <span className="label">Price</span>
-                          <span className="value">{formatSig(price)}</span>
-                        </div>
                         <div className="meme-similar-token-stat">
                           <span className="label">MC</span>
                           <span className="value">

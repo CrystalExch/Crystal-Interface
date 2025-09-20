@@ -1,0 +1,59 @@
+.perps-order-history-header {
+  align-items: center;
+  display: grid;
+  font-size: 0.75rem;
+  font-weight: 300;
+  grid-template-columns: 100px 70px 110px 70px 80px 90px 90px 80px 70px 80px 90px 80px;
+  min-height: 38px;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  user-select: none;
+  background-color: rgb(6, 6, 6);
+  z-index: 1;
+}
+
+.perps-order-history-header .oc-cell {
+  color: #ffffff73;
+  padding: 8px 15px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.perps-order-history-header .oc-cell:hover {
+  color: #ffffff95;
+}
+
+.filled-size-label,
+.reduce-only-label,
+.tpsl-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+@media (max-width: 1400px) {
+  .perps-order-history-header {
+    grid-template-columns: 90px 60px 100px 60px 70px 80px 80px 70px 60px 70px 80px 70px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .perps-order-history-header {
+    grid-template-columns: 80px 50px 90px 50px 60px 70px 70px 60px 50px 60px 70px 60px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 1020px) {
+  .perps-order-history-header {
+    grid-template-columns: minmax(70px, 1fr) minmax(45px, 1fr) minmax(80px, 1fr) minmax(45px, 1fr) minmax(55px, 1fr) minmax(65px, 1fr) minmax(65px, 1fr) minmax(55px, 1fr) minmax(45px, 1fr) minmax(55px, 1fr) minmax(65px, 1fr) minmax(55px, 1fr);
+    font-size: 0.65rem;
+    overflow-x: auto;
+  }
+}

@@ -35,8 +35,8 @@ export const settings: any = {
       },
       blockExplorers: {
         default: {
-          name: 'MonadExplorer',
-          url: 'https://testnet.monadexplorer.com',
+          name: 'MonadScan',
+          url: 'https://testnet.monadscan.com',
         },
       },
       contracts: {

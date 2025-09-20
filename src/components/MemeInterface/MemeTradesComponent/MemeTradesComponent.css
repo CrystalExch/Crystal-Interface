@@ -491,6 +491,7 @@
   border-radius: 6px;
   margin: 0 8px 8px 8px;
   font-size: 0.75rem;
+  max-width: 300px;
 }
 
 .filter-status-text {

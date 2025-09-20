@@ -6,6 +6,7 @@ import closebutton from '../../assets/close_button.png'
 import monadicon from '../../assets/monadlogo.svg';
 import key from '../../assets/key.svg';
 import trash from '../../assets/trash.svg';
+import { settings } from '../../settings';
 import './Tracker.css';
 
 const Tooltip: React.FC<{
@@ -354,7 +355,7 @@ const Tracker: React.FC<TrackerProps> = ({ isBlurred }) => {
             <div className="tracker-wallet-actions">
                 <Tooltip content="View on Explorer">
                     <a
-                        href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
+                        href={`${settings.chainConfig[activechain].explorer}/address/${wallet.address}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="tracker-action-button"

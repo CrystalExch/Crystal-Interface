@@ -8,7 +8,7 @@ import filledcup from "../../../assets/filledcup.svg";
 import switchicon from "../../../assets/switch.svg";
 import closebutton from "../../../assets/close_button.png";
 import walleticon from '../../../assets/wallet_icon.png';
-
+import lightning from '../../../assets/flash.png'
 import './MemeOrderCenter.css';
 
 interface LiveHolder {
@@ -1054,7 +1054,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               className={`meme-oc-quickbuy-button ${isWidgetOpen ? 'active' : ''}`}
               title={isWidgetOpen ? 'Close QuickBuy Widget' : 'Open QuickBuy Widget'}
             >
-              {windowWidth > 768 && <span>{isWidgetOpen ? 'Quick Buy' : 'Quick Buy'}</span>}
+                                    <img className="memeordercenter-lightning" src={lightning} />
+              
+              {windowWidth > 768 && <span>{isWidgetOpen ? 'Instant Trade' : 'Instant Trade'}</span>}
             </button>
             <button
               onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}

@@ -633,7 +633,8 @@
 .meme-telegram-btn,
 .meme-discord-btn,
 .meme-website-btn {
-filter: brightness(0) saturate(100%) invert(74%) sepia(14%) saturate(326%) hue-rotate(185deg) brightness(85%) contrast(84%);}
+filter: brightness(0) saturate(100%) invert(74%) sepia(14%) saturate(326%) hue-rotate(185deg) brightness(85%) contrast(84%);
+}
 
 .meme-telegram-btn:hover,
 .meme-avatar-btn:hover,
