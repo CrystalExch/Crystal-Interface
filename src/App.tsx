@@ -13872,7 +13872,8 @@ function App() {
                       </div>
                     </div>
                     <div className="perps-switch-icon" onClick={() => setpopup(30)}
-                    ></div>
+                    >                      <img  className="perps-switch-img"src={switchicon} />
+</div>
                     <div className="perps-deposit-input-wrapper">
                       <div className="perps-deposit-balance">
                         Receiving
