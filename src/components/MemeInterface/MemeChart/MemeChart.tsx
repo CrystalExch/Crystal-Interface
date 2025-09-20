@@ -125,8 +125,8 @@ const MemeChart: React.FC<MemeChartProps> = ({
           </div>
         </>
       )}
-      
-      <Overlay isVisible={overlayVisible} bgcolor={'rgb(6,6,6)'} height={15} maxLogoHeight={100}/>
+
+      <Overlay isVisible={overlayVisible} bgcolor={'rgb(6,6,6)'} height={15} maxLogoHeight={100} />
     </div>
   );
 };

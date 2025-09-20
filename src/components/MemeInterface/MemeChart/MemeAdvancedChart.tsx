@@ -341,14 +341,14 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
                   resolve();
                 }
               };
-            
+
               const intervalCheck = setInterval(check, 50);
               check();
             });
             let bars = enforceOpenEqualsPrevClose(dataRef.current[key]) || [];
             const nextTime = bars
-            .map((bar: any) => (bar.time / 1000))
-            .filter(t => t < from).pop() || null
+              .map((bar: any) => (bar.time / 1000))
+              .filter(t => t < from).pop() || null
             bars = bars.filter(
               (bar: any) => bar.time >= from * 1000 && bar.time <= to * 1000,
             );
