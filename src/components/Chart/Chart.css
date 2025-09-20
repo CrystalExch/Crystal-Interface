@@ -13,10 +13,10 @@
   display: flex;
   height: 25px;
   justify-content: space-between;
-  padding: 0px 10px;
   margin-top: 5px;
-  z-index: 1;
+  padding: 0px 10px;
   position: relative;
+  z-index: 1;
 }
 
 body:has(.markets-dropdown-content.visible) .advanced-chart-container {

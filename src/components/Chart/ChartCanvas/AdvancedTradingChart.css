@@ -99,18 +99,6 @@ html.theme-dark .brand-D4RPB3ZC.secondary-D4RPB3ZC {
   ) !important;
   --ui-lib-button-default-color-bg: var(
     --themed-color-btn-brand-secondary-default-bg,
-    #0000
-  ) !important;
-  --ui-lib-button-default-color-content: var(
-    --themed-color-btn-brand-secondary-default-content,
-    rgb(209, 209, 250)
-  ) !important;
-  --ui-lib-button-default-color-border: var(
-    --themed-color-btn-brand-secondary-default-border,
-    rgb(209, 209, 250)
-  ) !important;
-  --ui-lib-button-default-color-bg: var(
-    --themed-color-btn-brand-secondary-default-bg,
     rgb(6,6,6)
   ) !important;
   --ui-lib-button-default-color-content: var(
@@ -122,14 +110,6 @@ html.theme-dark .brand-D4RPB3ZC.secondary-D4RPB3ZC {
 html.theme-dark .brand-D4RPB3ZC.secondary-D4RPB3ZC:hover {
   --ui-lib-button-default-color-border: var(
     --themed-color-btn-brand-secondary-hover-border,
-    #bbbddb
-  ) !important;
-  --ui-lib-button-default-color-bg: var(
-    --themed-color-btn-brand-secondary-hover-bg,
-    rgb(170 174 207 / 10%)
-  ) !important;
-  --ui-lib-button-default-color-border: var(
-    --themed-color-btn-brand-secondary-hover-border,
     rgb(209, 209, 250)
   ) !important;
   --ui-lib-button-default-color-bg: var(
@@ -139,14 +119,6 @@ html.theme-dark .brand-D4RPB3ZC.secondary-D4RPB3ZC:hover {
 }
 
 html.theme-dark .brand-D4RPB3ZC.secondary-D4RPB3ZC:active {
-  --ui-lib-button-default-color-border: var(
-    --themed-color-btn-brand-secondary-active-border,
-    #9194b3
-  ) !important;
-  --ui-lib-button-default-color-bg: var(
-    --themed-color-btn-brand-secondary-active-bg,
-    rgb(170 174 207 / 20%)
-  ) !important;
   --ui-lib-button-default-color-border: var(
     --themed-color-btn-brand-secondary-active-border,
     rgb(209, 209, 250)

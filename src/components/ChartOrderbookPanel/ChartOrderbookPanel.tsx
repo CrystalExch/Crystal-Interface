@@ -79,7 +79,7 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
       );
 
       setOrderbookWidth(newWidth);
-      localStorage.setItem('orderbookWidth', newWidth.toString())
+      localStorage.setItem('orderbookWidth', newWidth.toString());
     };
 
     const handleMouseUp = (e: MouseEvent) => {
@@ -142,22 +142,43 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
     width: isOrderbookVisible ? `${orderbookWidth}px` : '0px',
     minWidth: isOrderbookVisible ? `${orderbookWidth}px` : '0px',
     transition: isDragging ? 'none' : 'width 0.3s ease, min-width 0.3s ease',
-    overflow: 'hidden', 
+    overflow: 'hidden',
   };
 
   return (
     <div
-      className={windowWidth > 1020 ? `chart-orderbook-panel ${isDragging ? 'isDragging' : ''}` : "trade-mobile-view-container"}
+      className={
+        windowWidth > 1020
+          ? `chart-orderbook-panel ${isDragging ? 'isDragging' : ''}`
+          : 'trade-mobile-view-container'
+      }
       ref={widthRef}
-      style={windowWidth > 1020 ? {
-        flexDirection: orderbookPosition == 'left' ? 'row-reverse' : 'row',
-      } : {}}
+      style={
+        windowWidth > 1020
+          ? {
+              flexDirection:
+                orderbookPosition == 'left' ? 'row-reverse' : 'row',
+            }
+          : {}
+      }
     >
-      <div className={(windowWidth > 1020 || mobileView === 'chart') ? 'chart-container' : 'hidden'}>
+      <div
+        className={
+          windowWidth > 1020 || mobileView === 'chart'
+            ? 'chart-container'
+            : 'hidden'
+        }
+      >
         {renderChartComponent}
       </div>
 
-      <div className={windowWidth > 1020 ? `spacer ${!isOrderbookVisible ? 'collapsed' : ''}` : 'hidden'}>
+      <div
+        className={
+          windowWidth > 1020
+            ? `spacer ${!isOrderbookVisible ? 'collapsed' : ''}`
+            : 'hidden'
+        }
+      >
         <div
           className="drag-handle"
           onMouseDown={handleMouseDown}
@@ -168,7 +189,13 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
       </div>
 
       <div
-        className={(windowWidth > 1020 || (mobileView === 'orderbook' || mobileView === 'trades')) ? 'orderbook-container' : 'hidden'}
+        className={
+          windowWidth > 1020 ||
+          mobileView === 'orderbook' ||
+          mobileView === 'trades'
+            ? 'orderbook-container'
+            : 'hidden'
+        }
         style={windowWidth > 1020 ? orderBookStyle : {}}
       >
         <OrderBook

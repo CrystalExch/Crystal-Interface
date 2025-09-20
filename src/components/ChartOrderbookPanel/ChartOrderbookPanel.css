@@ -7,8 +7,8 @@
 }
 
 .orderbook-container {
-  overflow: hidden;
   height: 100%;
+  overflow: hidden;
 }
 
 .chart-container {
@@ -32,18 +32,18 @@
   background-color: transparent;
   cursor: col-resize;
   height: calc(100%);
+  margin-left: -2px;
   position: absolute;
   width: 2px;
   z-index: 3;
-  margin-left: -2px;
 }
 .drag-handle::after{
-  content: '';
-  position: absolute;
   border-left: 1px solid rgba(179, 184, 249, 0.1);
-  width: 1px;
+  content: '';
   height: 100%;
   margin-left: 2.5px;
+  position: absolute;
+  width: 1px;
   z-index: 0;
 }
 

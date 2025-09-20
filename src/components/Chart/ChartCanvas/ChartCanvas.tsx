@@ -16,7 +16,12 @@ interface ChartCanvasProps {
   setOverlayVisible: any;
 }
 
-const ChartCanvas: React.FC<ChartCanvasProps> = ({ data, activeMarket, selectedInterval, setOverlayVisible }) => {
+const ChartCanvas: React.FC<ChartCanvasProps> = ({
+  data,
+  activeMarket,
+  selectedInterval,
+  setOverlayVisible,
+}) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
@@ -88,13 +93,17 @@ const ChartCanvas: React.FC<ChartCanvasProps> = ({ data, activeMarket, selectedI
 
   useEffect(() => {
     const series = seriesRef.current;
-    if (series && data?.[0] && (selectedInterval === '1d'
-    ? '1D'
-    : selectedInterval === '4h'
-    ? '240'
-    : selectedInterval === '1h'
-    ? '60'
-    : selectedInterval.slice(0, -1)) == data?.[1]?.match(/\d.*/)?.[0]) {
+    if (
+      series &&
+      data?.[0] &&
+      (selectedInterval === '1d'
+        ? '1D'
+        : selectedInterval === '4h'
+          ? '240'
+          : selectedInterval === '1h'
+            ? '60'
+            : selectedInterval.slice(0, -1)) == data?.[1]?.match(/\d.*/)?.[0]
+    ) {
       const formattedData = data[0].map((item: any) => ({
         ...item,
         time: (item.time / 1000) as Time,
@@ -107,7 +116,10 @@ const ChartCanvas: React.FC<ChartCanvasProps> = ({ data, activeMarket, selectedI
       series.applyOptions({
         priceFormat: {
           precision: Math.floor(Math.log10(Number(activeMarket.priceFactor))),
-          minMove: Math.pow(10, -Math.floor(Math.log10(Number(activeMarket.priceFactor)))),
+          minMove: Math.pow(
+            10,
+            -Math.floor(Math.log10(Number(activeMarket.priceFactor))),
+          ),
         },
       });
       series.setData(formattedData);
@@ -118,7 +130,7 @@ const ChartCanvas: React.FC<ChartCanvasProps> = ({ data, activeMarket, selectedI
           },
         });
       }, 1);
-      setOverlayVisible(false)
+      setOverlayVisible(false);
     }
   }, [data]);
 

@@ -108,7 +108,9 @@ export function generateChartDataFromTrades(
 const computePrice = (trade: any, market: any): number => {
   const priceFactor = Number(market.priceFactor);
 
-  const price = (trade[3] / priceFactor || 0).toFixed(Math.floor(Math.log10(priceFactor)));
+  const price = (trade[3] / priceFactor || 0).toFixed(
+    Math.floor(Math.log10(priceFactor)),
+  );
 
   return parseFloat(price);
 };
