@@ -46,14 +46,8 @@
 }
 
 .perps-long-button.active {
-  background: linear-gradient(135deg,
-      #aaaecf 0,
-      #9a9ec7 25%,
-      #8b8eb8 50%,
-      #7f82ac 75%,
-      #7f82a1 100%);
-    color: #000000;
-    border: none;
+  background-color: #a9aeda3a;
+    color: #aaaecf;
 }
 
 .perps-long-button.inactive {

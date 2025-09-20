@@ -334,13 +334,13 @@ const Perps: React.FC<PerpsProps> = ({
         document.body.style.cursor = 'col-resize';
         document.body.style.userSelect = 'none';
     };
-
-    const orderBookStyle = {
-        width: isOrderbookVisible ? `${orderbookWidth}px` : '0px',
-        minWidth: isOrderbookVisible ? `${orderbookWidth}px` : '0px',
-        transition: isDragging2 ? 'none' : 'width 0.3s ease, min-width 0.3s ease',
-        overflow: 'hidden',
-    };
+    const [perpsActiveSection, setPerpsActiveSection] = useState<'positions' | 'openOrders' | 'tradeHistory' | 'orderHistory'>(() => {
+        const stored = localStorage.getItem('crystal_perps_oc_tab');
+        if (['positions', 'openOrders', 'tradeHistory', 'orderHistory'].includes(stored ?? '')) {
+            return stored as 'positions' | 'openOrders' | 'tradeHistory' | 'orderHistory';
+        }
+        return 'positions';
+    });
 
     // Vertical drag functionality
     const [_isVertDragging, setIsVertDragging] = useState(false);
@@ -461,8 +461,8 @@ const Perps: React.FC<PerpsProps> = ({
                     sortConfig={memoizedSortConfig}
                     onSort={emptyFunction}
                     tokenBalances={tokenBalances}
-                    activeSection={activeSection}
-                    setActiveSection={setActiveSection}
+                    activeSection={perpsActiveSection}
+                    setActiveSection={setPerpsActiveSection}
                     filter={filter}
                     setFilter={setFilter}
                     onlyThisMarket={onlyThisMarket}
@@ -528,9 +528,9 @@ const Perps: React.FC<PerpsProps> = ({
                         </button>
                     </div>
                     <div className="perps-amount-section">
-                          {activeOrderType === "Limit" && (
+                        {activeOrderType === "Limit" && (
                             <div className="perps-trade-input-wrapper">
-                                Price 
+                                Price
                                 <input
                                     type="number"
                                     placeholder="0"
@@ -539,7 +539,7 @@ const Perps: React.FC<PerpsProps> = ({
                                     className="perps-trade-input"
                                 />
                                 <span className="perps-mid-button">
-                                Mid
+                                    Mid
                                 </span>
                             </div>
                         )}
@@ -555,7 +555,7 @@ const Perps: React.FC<PerpsProps> = ({
                             USD
                         </div>
 
-                      
+
 
                         <div className="perps-balance-slider-wrapper">
                             <div className="perps-slider-container perps-slider-mode">
