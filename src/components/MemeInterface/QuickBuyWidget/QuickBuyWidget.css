@@ -1,36 +1,40 @@
 .quickbuy-widget {
-    position: fixed;
-    width: 340px;
     background: rgba(8, 8, 8);
     border: 1px solid rgba(179, 184, 249, 0.15);
     border-radius: 4px;
-    font-size: 14px;
-    color: #fff;
-    z-index: 10;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    user-select: none;
+    color: #fff;
+    font-size: 14px;
+    position: fixed;
+    -webkit-user-select: none;
+       -moz-user-select: none;
+            user-select: none;
+    width: 340px;
+    z-index: 10;
+    transition: opacity 0.2s ease;
 }
 
 .quickbuy-widget.dragging {
     cursor: grabbing;
+    filter: blur(0.5px);
     opacity: 0.8;
     transform: scale(1.02);
-    filter: blur(0.5px);
+    transition: none;
 }
 
 .quickbuy-widget.dragging ~ .quickbuy-wallets-panel {
-    opacity: 0.8;
     filter: blur(0.5px);
+    opacity: 0.8;
 }
 
 .quickbuy-header {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
     border-bottom: 1px solid rgba(207, 210, 252, 0.15);
     border-radius: 8px 8px 0 0;
     cursor: grab;
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
 }
 
 .quickbuy-header:active {
@@ -38,16 +42,16 @@
 }
 
 .quickbuy-tabs {
-    display: flex;
     align-items: center;
+    display: flex;
     gap: 8px;
 }
 
 .tab {
-    padding: 4px 8px;
     border-radius: 4px;
-    font-size: 12px;
     cursor: pointer;
+    font-size: 12px;
+    padding: 4px 8px;
     transition: background-color 0.2s;
 }
 
@@ -60,18 +64,18 @@
 
 
 .quickbuy-controls {
-    display: flex;
     align-items: center;
+    display: flex;
     justify-content: space-between;
     width: 100%;
 }
 
 .settings-icon,
 .minimize-icon {
+    border-radius: 4px;
     cursor: pointer;
     opacity: 0.7;
     padding: 4px;
-    border-radius: 4px;
     transition: background-color 0.2s;
 }
 
@@ -84,17 +88,19 @@
 .close-btn {
     background: none;
     border: none;
+    border-radius: 4px;
     color: #999;
     cursor: pointer;
-    padding: 4px 6px;
-    border-radius: 4px;
     font-size: 12px;
+    padding: 4px 6px;
     transition: all 0.2s;
 }
 
 
 .quickbuy-content {
     padding: 6px 16px;
+    max-height: calc(100% - 60px);
+    overflow-y: auto;
 }
 
 .token-info {
@@ -103,55 +109,55 @@
 }
 
 .token-info h3 {
-    margin: 0;
     color: #fff;
     font-size: 16px;
     font-weight: 600;
+    margin: 0;
 }
 
 .section-header {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom:4px;
+    display: flex;
     font-weight: 600;
+    justify-content: space-between;
+    margin-bottom:4px;
 }
 .section-header span{
-    font-weight: 400;
-    color: #ced0df  
+    color: #ced0df;
+    font-weight: 400  
 }
 
 
 
 .risk-info {
-    font-size: 12px;
     color: #999;
+    font-size: 12px;
 }
 
 .amount-buttons,
 .percent-buttons {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
     gap: 8px;
+    grid-template-columns: repeat(4, 1fr);
     margin-bottom: 12px;
 }
 
 .amount-btn,
 .percent-btn {
-    display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 3px 12px;
-    width: 100%;
     border-radius: 20px;
     color: #fff;
     cursor: pointer;
-    transition: all 0.2s;
+    display: flex;
     font-size: 0.85rem;
+    height: 30px;
+    justify-content: center;
+    letter-spacing: -0.3px;
+    padding: 3px 12px;
     position: relative;
     transform: scaleX(1.05);
-    letter-spacing: -0.3px;
-    height: 30px;
+    transition: all 0.2s;
+    width: 100%;
 
 }
 
@@ -161,15 +167,15 @@
 }
 
 .amount-btn{
-    color:rgb(67 254 154);
     border: 1px solid rgba(67, 254, 154, 0.5);
     box-shadow: inset 0 0 6px 4px rgba(67, 254, 154, 0.2);
+    color:rgb(67 254 154);
 }
 
 .percent-btn {
-   color: rgb(235, 112, 112);
     border: 1px solid rgb(235, 112, 112, 0.5);
     box-shadow: inset 0 0 4px 4px rgb(235, 112, 112, 0.2);
+   color: rgb(235, 112, 112);
 }
 
 .percent-btn:hover {
@@ -178,34 +184,34 @@
 
 
 .quickbuy-keybind-key {
-    position: absolute;
-    bottom: 3px;
-    right: 5px;
-    font-size: 0.6rem;
-    opacity: 0.6;
-    font-weight: 600;
-    color: currentColor;
     background: rgba(0, 0, 0, 0.2);
-    padding: 1px 3px;
     border-radius: 2px;
+    bottom: 3px;
+    color: currentColor;
+    font-size: 0.6rem;
+    font-weight: 600;
     line-height: 1;
+    opacity: 0.6;
+    padding: 1px 3px;
+    position: absolute;
+    right: 5px;
 }
 
 .quickbuy-keybind-hint {
-    font-size: 0.7rem;
-    opacity: 0.5;
-    margin-left: 4px;
     color: #9fa5d9;
+    font-size: 0.7rem;
     font-weight: 500;
+    margin-left: 4px;
+    opacity: 0.5;
 }
 
 .trading-options {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    display: flex;
     flex-wrap: wrap;
     gap: 8px;
+    justify-content: space-between;
+    margin-bottom: 16px;
 }
 
 
@@ -224,15 +230,15 @@
 }
 
 .quickbuy-portfolio-section {
+    border-top: 1px solid rgba(207, 210, 252, 0.15);
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     padding-top: 6px;
-    border-top: 1px solid rgba(207, 210, 252, 0.15);
 }
 
 .quickbuy-portfolio-item {
-    text-align: center;
     border-right: 1px solid transparent;
+    text-align: center;
 }
 
 .quickbuy-portfolio-item:not(:last-child) {
@@ -249,92 +255,82 @@
     color: rgb(67 254 154);
 }
 
-
-.quickbuy-widget {
-    transition: opacity 0.2s ease;
-}
-
-.quickbuy-widget.dragging {
-    transition: none;
-}
-
 .quickbuy-monad-icon {
-    width: 13px;
     height: 13px;
     margin-right: 4px;
+    width: 13px;
 }
 
 .quickbuy-order-indicator{
-    display: flex;
     align-items: center;
-    font-weight: 400;
-    color: #ced0df
+    color: #ced0df;
+    display: flex;
+    font-weight: 400
 }
 
 .quickbuy-percent{
-    font-size: 12px;
     color: #999;
+    font-size: 12px;
     font-weight: 500;
 }
 
 .quickbuy-close-icon {
-    width: 20px;
     height: 20px;
     opacity: 0.5;
+    width: 20px;
 }
 
 
 .quickbuy-settings-icon-slippage {
-    width: 15px;
     height: 15px;
     opacity: 0.6;
+    width: 15px;
 }
 
 
 .quickbuy-settings-icon-priority {
-    width: 12px;
     height: 12px;
     opacity: 0.6;
+    width: 12px;
 }
 
 .quickbuy-settings-icon-bribe {
-    width: 13px;
     height: 13px;
     opacity: 0.6;
+    width: 13px;
 }
 
 .quickbuy-squares-icon{
-    pointer-events: none;
-    user-select: none;
-    width: 12px;
+    filter: brightness(0) saturate(100%) invert(28%) sepia(5%) saturate(643%) hue-rotate(188deg) brightness(92%) contrast(90%);
     height: 12px;
     margin-left: -2px;
-    filter: brightness(0) saturate(100%) invert(28%) sepia(5%) saturate(643%) hue-rotate(188deg) brightness(92%) contrast(90%);
+    pointer-events: none;
+    -webkit-user-select: none;
+       -moz-user-select: none;
+            user-select: none;
+    width: 12px;
 }
 
 .quickbuy-drag-handle {
+    align-items: center;
+    cursor: grab;
+    display: flex;
+    justify-content: center;
+    position: absolute;
     right: calc(50% - 8px);
     top: 8px;
-    position: absolute;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: grab;
     width: 12px;
 }
 
 .quickbuy-edit-icon {
-    display: flex;
     align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
     border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    height: 20px;
+    justify-content: center;
     padding: 2px;
-}
-
-.quickbuy-edit-icon {
+    width: 20px;
     transition: all 0.2s;
 }
 
@@ -343,8 +339,8 @@
 }
 
 .quickbuy-edit-icon.active {
-    opacity: 1;
     filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%);
+    opacity: 1;
 }
 
 .quickbuy-edit-icon.active:hover {
@@ -352,15 +348,16 @@
 }
 
 .quickbuy-controls-right-side{
-    display: flex;
     align-items: center;
+    display: flex;
+    gap: 6px;
 }
 .amount-btn.edit-mode,
 .percent-btn.edit-mode {
     background-color: #b0c4de1c;
     border: 1px solid #aaaecf;
-    color: #b0c4de;
     box-shadow: inset 0 0 6px 4px rgba(176, 196, 222, 0.2);
+    color: #b0c4de;
 }
 
 .button-container {
@@ -368,16 +365,16 @@
 }
 
 .edit-input {
-    width: 100%;
-    padding: 4px 12px;
-    border-radius: 5px;
     background: #b0c4de3e;
     border: 1.5px solid #b0c4de;
+    border-radius: 5px;
     color: #d8dcff;
     font-size: 0.85rem;
-    text-align: center;
-    outline: none;
     height: 30px;
+    outline: none;
+    padding: 4px 12px;
+    text-align: center;
+    width: 100%;
 }
 
 .edit-input:focus {
@@ -386,18 +383,18 @@
 }
 
 .sell-header-left {
-    display: flex;
     align-items: center;
+    display: flex;
     gap: 4px;
 }
 
 .sell-mode-toggle {
     background: none;
     border: none;
+    border-radius: 3px;
     color: #999;
     cursor: pointer;
     font-size: 14px;
-    border-radius: 3px;
     transition: all 0.2s;
 }
 
@@ -406,23 +403,15 @@
 
 
 .quickbuy-switch-icon {
-    width: 16px;
-    height: 16px;
     cursor: pointer;
+    height: 16px;
     transform: rotate(-45deg);
-}
-
-
-.quickbuy-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
+    width: 16px;
 }
 
 .quickbuy-controls-left {
-    display: flex;
     align-items: center;
+    display: flex;
     justify-content: center;
     margin-bottom: 2px;
 }
@@ -435,17 +424,17 @@
 }
 
 .quickbuy-preset-pill {
-    padding: 0 4px;
-    font-size: 0.9rem;
-    color: #7f808d;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: 20px;
-    height: 18px;
-    display: flex;
     align-items: center;
+    border-radius: 4px;
+    color: #7f808d;
+    cursor: pointer;
+    display: flex;
+    font-size: 0.9rem;
+    height: 18px;
     justify-content: center;
+    min-width: 20px;
+    padding: 0 4px;
+    transition: all 0.2s ease;
 }
 
 .quickbuy-preset-pill:hover {
@@ -460,15 +449,15 @@
 
 
 .quickbuy-settings-display {
-    display: flex;
-    justify-content: flex-start;
     align-items: center;
+    display: flex;
     gap: 8px;
+    justify-content: flex-start;
 }
 
 .quickbuy-settings-item {
-    display: flex;
     align-items: center;
+    display: flex;
     gap: 4px;
     height: 12px;
 }
@@ -479,36 +468,30 @@
     padding-right: 8px;
 }
 .quickbuy-settings-icon {
-    width: 12px;
+    filter: brightness(0.9);
     height: 12px;
     opacity: 0.7;
-    filter: brightness(0.9);
+    width: 12px;
 }
 
 .quickbuy-settings-value {
-    font-size: 0.8rem;
     color: #a1a2ab;
+    font-size: 0.8rem;
+    letter-spacing: -0.2px;
     min-width: 0;
-    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     transform: scaleX(1.05);
-    letter-spacing: -0.2px;
+    white-space: nowrap;
 }
 
 .quickbuy-settings-item:hover .quickbuy-settings-icon {
-    opacity: 1;
     filter: brightness(1.1);
+    opacity: 1;
 }
 
 .quickbuy-settings-item:hover .quickbuy-settings-value {
     color: #c0c0c0;
-}
-
-
-.quickbuy-content {
-    max-height: calc(100% - 60px);
-    overflow-y: auto;
 }
 
 
@@ -525,20 +508,20 @@
 }
 
 .quickbuy-wallets-panel {
-    position: fixed;
-    width: 320px;
+    animation: slideInFromRight 0.3s ease;
+    backdrop-filter: blur(5px);
+    background: rgba(8, 8, 8, 0.5);
     border: 1px solid rgba(179, 184, 249, 0.15);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    background: rgba(8, 8, 8, 0.5);
-    z-index: 9;
+    color: #fff;
     display: flex;
     flex-direction: column;
-    animation: slideInFromRight 0.3s ease;
-    color: #fff;
     height: 250px;
-    margin-top: 5px;
     margin-left: 3px;
-    backdrop-filter: blur(5px);
+    margin-top: 5px;
+    position: fixed;
+    width: 320px;
+    z-index: 9;
 }
 
 @keyframes slideInFromRight {
@@ -555,21 +538,21 @@
 
 
 .quickbuy-wallets-panel.right {
-  border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
+  border-top-right-radius: 8px;
 }
 
 .quickbuy-wallets-panel.left {
-  border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
+  border-top-left-radius: 8px;
 }
 .quickbuy-wallets-header {
-    display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 6px 16px;
     border-bottom: 1px solid rgba(179, 184, 249, 0.1);
     border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 16px;
 }
 
 .quickbuy-wallets-title {
@@ -585,10 +568,10 @@
 
 .quickbuy-wallets-list {
     flex: 1;
-    overflow-y: auto;
     max-height: 400px;
-    scrollbar-width: thin;
+    overflow-y: auto;
     scrollbar-color: rgba(179, 184, 249, 0.1) transparent;
+    scrollbar-width: thin;
 }
 
 .quickbuy-wallets-list::-webkit-scrollbar {
@@ -606,9 +589,9 @@
 }
 
 .quickbuy-wallets-empty {
+    align-items: center;
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
     padding: 40px 20px;
     text-align: center;
@@ -618,8 +601,8 @@
     color: rgba(255, 255, 255, 0.6);
     font-size: 0.9rem;
     font-weight: 500;
-    margin-bottom: 4px;
     letter-spacing: -0.3px;
+    margin-bottom: 4px;
 }
 
 .quickbuy-wallets-empty-subtitle {
@@ -629,16 +612,16 @@
 }
 
 .quickbuy-wallet-item {
-    display: flex;
     align-items: center;
+    border: 1px solid transparent;
+    border-bottom: 1px solid rgba(179, 184, 249, 0.05);
+    cursor: pointer;
+    display: flex;
     gap: 8px;
+    margin-bottom: 4px;
     padding: 8px 12px;
     padding-bottom: 11px;
     transition: all 0.2s ease;
-    cursor: pointer;
-    border: 1px solid transparent;
-    margin-bottom: 4px;
-    border-bottom: 1px solid rgba(179, 184, 249, 0.05);
 }
 
 .quickbuy-wallet-item:hover {
@@ -646,33 +629,33 @@
 }
 
 .quickbuy-wallet-checkbox-container {
-    display: flex;
     align-items: center;
-    justify-content: center;
+    display: flex;
     flex-shrink: 0;
-    width: 20px;
+    justify-content: center;
     margin-right: 8px;
+    width: 20px;
 }
 
 .quickbuy-wallet-checkbox {
-    width: 15px;
-    height: 15px;
-    cursor: pointer;
-    appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
+    appearance: none;
+    background: transparent;
     border: 1px solid rgba(170, 174, 207, 0.3);
     border-radius: 3px;
-    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    height: 15px;
+    margin-top: 2px;
     position: relative;
     transition: all 0.2s ease;
-    flex-shrink: 0;
-    margin-top: 2px;
+    width: 15px;
 }
 
 .quickbuy-wallet-checkbox:hover {
-    border-color: rgba(170, 174, 207, 0.6);
     background: rgba(170, 174, 207, 0.05);
+    border-color: rgba(170, 174, 207, 0.6);
 }
 
 .quickbuy-wallet-checkbox:checked {
@@ -682,24 +665,24 @@
 }
 
 .quickbuy-wallet-checkbox:checked::after {
-    content: '';
-    position: absolute;
-    left: 5px;
-    top: 2px;
-    width: 5px;
-    height: 8px;
     border: solid #0f0f12;
     border-width: 0 1.5px 1.5px 0;
+    content: '';
+    height: 8px;
+    left: 5px;
+    position: absolute;
+    top: 2px;
     transform: rotate(45deg);
+    width: 5px;
 }
 
 .quickbuy-wallet-info {
     display: flex;
-    flex-direction: column;
     flex: 1;
-    min-width: 0;
-    margin-top: -3px;
+    flex-direction: column;
     margin-right: 8px;
+    margin-top: -3px;
+    min-width: 0;
 }
 
 
@@ -707,9 +690,9 @@
     color: #fff;
     font-size: 0.9rem;
     letter-spacing: -0.3px;
-    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .quickbuy-wallet-item.active .quickbuy-wallet-name {
@@ -717,12 +700,12 @@
 }
 
 .quickbuy-wallet-address {
-    display: flex;
     color: rgba(255, 255, 255, 0.5);
+    display: flex;
     font-size: 0.75rem;
+    gap: 3px;
     letter-spacing: -0.2px;
     line-height: 1;
-    gap: 3px;
 }
 .quickbuy-wallet-address:hover {
     color: #c3c5d3;
@@ -735,70 +718,74 @@
     flex-shrink: 0;
 }
 .quickbuy-wallet-balance {
+    align-items: flex-end;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
     flex-shrink: 0;
-    width: 85px;
     margin-right: 8px;
+    width: 85px;
 }
 
 .quickbuy-wallet-balance-amount {
-    display: flex;
     align-items: center;
-    gap: 3px;
-    font-weight: 400;
-    color: #ced0df;
-    font-size: 0.8rem;
-    letter-spacing: -0.2px;
-    border-radius: 20px;
     border: 1px solid rgba(206, 208, 223, 0.1);
+    border-radius: 20px;
+    color: #ced0df;
+    display: flex;
+    font-size: 0.8rem;
+    font-weight: 400;
+    gap: 3px;
+    letter-spacing: -0.2px;
     padding: 2px 6px;
 }
 
 .quickbuy-wallet-balance-amount.blurred {
     filter: blur(6px);
-    user-select: none;
+    -webkit-user-select: none;
+       -moz-user-select: none;
+            user-select: none;
 }
 
 .quickbuy-wallet-mon-icon {
-    width: 12px;
-    height: 12px;
     flex-shrink: 0;
+    height: 12px;
+    width: 12px;
 }
 
 
 .quickbuy-wallet-tokens {
+    align-items: flex-end;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
     flex-shrink: 0;
     width: 65px;
 }
 
 .quickbuy-wallet-token-amount {
-    display: flex;
     align-items: center;
-    gap: 3px;
-    font-weight: 400;
-    color: #ced0df;
-    font-size: 0.85rem;
-    letter-spacing: -0.2px;
-    border-radius: 20px;
     border: 1px solid rgba(206, 208, 223, 0.1);
+    border-radius: 20px;
+    color: #ced0df;
+    display: flex;
+    font-size: 0.85rem;
+    font-weight: 400;
+    gap: 3px;
+    letter-spacing: -0.2px;
     padding: 2px 6px;
 }
 
 .quickbuy-wallet-token-amount.blurred {
     filter: blur(6px);
-    user-select: none;
+    -webkit-user-select: none;
+       -moz-user-select: none;
+            user-select: none;
 }
 
 .quickbuy-wallet-token-icon {
-    width: 12px;
-    height: 12px;
-    flex-shrink: 0;
     border-radius: 3px;
+    flex-shrink: 0;
+    height: 12px;
+    width: 12px;
 }
 
 .quickbuy-wallet-token-balance {
@@ -807,17 +794,17 @@
 }
 
 .quickbuy-wallet-token-count {
-    display: flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 20px;
     border: 1px solid rgba(206, 208, 223, 0.1);
-    padding: 2px 6px;
+    border-radius: 20px;
+    display: flex;
     gap: 5px;
+    justify-content: center;
+    padding: 2px 6px;
 }
 .quickbuy-wallet-token-structure-icons{
-    display: flex;
     align-items: center;
+    display: flex;
     justify-content: center;
 }
 
@@ -828,8 +815,8 @@
 }
 
 .quickbuy-wallet-no-tokens {
-    display: flex;
     align-items: center;
+    display: flex;
     justify-content: center;
 }
 
@@ -837,25 +824,20 @@
     color: #666;
     font-size: 0.8rem;
 }
-.quickbuy-controls-right-side {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
 
 .quickbuy-wallets-button {
+    align-items: center;
     border: 1px solid rgba(207, 210, 252, 0.15);
     border-radius: 12px;
     color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
-    padding: 4px 8px;
-    transition: all 0.2s ease;
     display: flex;
-    align-items: center;
+    gap: 5px;
+    height: 24px;
     justify-content: center;
     min-width: 24px;
-    height: 24px;
-    gap: 5px;
+    padding: 4px 8px;
+    transition: all 0.2s ease;
 }
 
 .quickbuy-wallets-button:hover {
@@ -869,25 +851,25 @@
 }
 
 .quickbuy-wallets-button svg {
-    width: 14px;
     height: 14px;
+    width: 14px;
 }
 
 
 
 .quickbuy-wallets-icon{
-    width: 14px;
     height: 14px;
+    width: 14px;
 }
 
 
 .quickbuy-portfolio-value{
-    display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    margin-bottom: 3px;
     border-right: 1.5px solid rgba(193, 193, 244, 0.1);
+    display: flex;
+    font-size: 0.75rem;
+    justify-content: center;
+    margin-bottom: 3px;
     transform: scaleX(1.03);
 }
 
@@ -905,9 +887,9 @@
     color: #ced0df;
 }
 .quickbuy-portfolio-value.pnl {
-    min-width: 110px;
     border-right:none;
     font-weight: 500;
+    min-width: 110px;
 }
 .quickbuy-token-balance {
     display: flex;
@@ -916,8 +898,8 @@
 
 
 .quickbuy-mon-value {
-    display: flex;
     align-items: center;
+    display: flex;
     justify-content: center;
 }
 
@@ -926,47 +908,47 @@
 
 
 .keybind-indicator{
-    position: absolute;
-    right: 10px;
     bottom: 1px;
     font-size: 0.7rem;
+    position: absolute;
+    right: 10px;
 }
 
 
 
 
 .token1{
-    width: 12px;
-    height: 12px;
-    border-radius: 3px;
     background-color: rgba(34, 34, 39, 1);
+    border-radius: 3px;
+    flex-shrink: 0;
+    height: 12px;
     position: relative;
     transition: all 0.2s ease;
-    flex-shrink: 0;
+    width: 12px;
     z-index: 2;
 }
 
 .token2{
-    width: 12px;
-    height: 12px;
-    border-radius: 3px;
     background-color: rgb(53, 53, 60);
+    border-radius: 3px;
+    flex-shrink: 0;
+    height: 12px;
+    margin-left: -6px;
     position: relative;
     transition: all 0.2s ease;
-    flex-shrink: 0;
-    margin-left: -6px;
+    width: 12px;
     z-index: 1;
 }
 
 .token3{
-    width: 12px;
-    height: 12px;
-    border-radius: 3px;
     background-color: rgb(82, 82, 88);
+    border-radius: 3px;
+    flex-shrink: 0;
+    height: 12px;
+    margin-left: -6px;
     position: relative;
     transition: all 0.2s ease;
-    flex-shrink: 0;
-    margin-left: -6px;
+    width: 12px;
     z-index: 0;
 }
 

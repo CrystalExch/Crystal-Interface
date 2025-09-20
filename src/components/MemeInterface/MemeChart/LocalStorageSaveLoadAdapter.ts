@@ -260,7 +260,7 @@ export class LocalStorageSaveLoadAdapter {
     const marketId = (chartData.symbol || 'UnnamedSymbol').replace('/', '_');
     const finalId = `layout_${marketId}`;
 
-    await this.removeChart(finalId).catch(() => { });
+    await this.removeChart(finalId).catch(() => {});
 
     const savedChartData: any = {
       ...chartData,

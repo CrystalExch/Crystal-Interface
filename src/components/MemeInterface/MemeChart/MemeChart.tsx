@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import MemeAdvancedChart from './MemeAdvancedChart';
-import Overlay from '../../loading/LoadingComponent';
 import { settings } from '../../../settings';
+import Overlay from '../../loading/LoadingComponent';
+import MemeAdvancedChart from './MemeAdvancedChart';
 
 import './MemeChart.css';
 
@@ -126,7 +126,12 @@ const MemeChart: React.FC<MemeChartProps> = ({
         </>
       )}
 
-      <Overlay isVisible={overlayVisible} bgcolor={'rgb(6,6,6)'} height={15} maxLogoHeight={100} />
+      <Overlay
+        isVisible={overlayVisible}
+        bgcolor={'rgb(6,6,6)'}
+        height={15}
+        maxLogoHeight={100}
+      />
     </div>
   );
 };

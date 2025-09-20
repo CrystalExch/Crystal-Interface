@@ -1,31 +1,31 @@
 /* TraderPortfolioPopup.css */
 
 .trader-popup-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
   align-items: center;
+  background-color: rgba(0, 0, 0, 0.7);
+  bottom: 0;
+  display: flex;
   justify-content: center;
-  z-index: 1000;
+  left: 0;
   padding: 20px;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 1000;
 }
 
 .trader-popup-container {
+  animation: popupSlideIn 0.3s ease-out;
   background: rgb(9,9,9);
   border: 1px solid  rgba(43, 43, 43, 0.6);
   border-radius: 4px;
-  width: 100%;
-  max-width: 1100px;
-  max-height: 90vh;
-  overflow: hidden;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
-  animation: popupSlideIn 0.3s ease-out;
+  max-height: 90vh;
+  max-width: 1100px;
+  overflow: hidden;
+  width: 100%;
 }
 
 @keyframes popupSlideIn {
@@ -38,11 +38,11 @@
 }
 
 .trader-popup-header {
+  align-items: center;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 3px 12px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);}
+  padding: 3px 12px;}
 
 .trader-popup-title {
   display: flex;
@@ -51,15 +51,15 @@
 }
 
 .trader-popup-title h3 {
-  margin: 0;
   color: #ffffff;
   font-size: 1.25rem;
   font-weight: 600;
+  margin: 0;
 }
 
 .trader-address-container {
-  display: flex;
   align-items: center;
+  display: flex;
   gap: 0px;
 }
 
@@ -69,14 +69,14 @@
 }
 
 .trader-action-btn {
+  align-items: center;
   border-radius: 6px;
   color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
+  display: flex;
+  justify-content: center;
   padding: 2px;
   transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .trader-action-btn:hover {
@@ -85,22 +85,22 @@
 }
 
 .trader-popup-close {
+  align-items: center;
   border-radius: 8px;
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
+  display: flex;
+  justify-content: center;
   padding: 8px;
   transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .trader-popup-content {
-  flex: 1;
-  padding: 24px;
-  overflow-y: auto;
   display: flex;
+  flex: 1;
   flex-direction: column;
+  overflow-y: auto;
+  padding: 24px;
 }
 
 .trader-popup-content::-webkit-scrollbar {
@@ -125,20 +125,20 @@
 .trader-account-summary {
   background: rgba(179, 184, 249, 0.05);
   border: 1px solid rgba(179, 184, 249, 0.1);
+  border-top-left-radius: 5px;
   padding: 20px;
   transition: all 0.3s ease;
   width: 300px;
-  border-top-left-radius: 5px;
 }
 
 .trader-account-summary.positive {
-  border-color: rgba(0, 184, 148, 0.3);
   background: rgba(0, 184, 148, 0.05);
+  border-color: rgba(0, 184, 148, 0.3);
 }
 
 .trader-account-summary.negative {
-  border-color: rgba(214, 48, 49, 0.3);
   background: rgba(214, 48, 49, 0.05);
+  border-color: rgba(214, 48, 49, 0.3);
 }
 
 .trader-total-value {
@@ -149,8 +149,8 @@
 }
 
 .trader-value {
-  font-size: 1.2rem;
   color: #ffffff;
+  font-size: 1.2rem;
   transition: filter 0.3s ease;
 }
 
@@ -160,6 +160,7 @@
 
 /* Loading Skeletons */
 .trader-skeleton {
+  animation: shimmer 1.8s ease-in-out infinite;
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.08) 25%,
@@ -167,35 +168,34 @@
     rgba(255, 255, 255, 0.08) 75%
   );
   background-size: 200% 100%;
-  animation: shimmer 1.8s ease-in-out infinite;
   border-radius: 4px;
   overflow: hidden;
   position: relative;
 }
 
 .trader-skeleton-value {
-  width: 120px;
   height: 20px;
+  width: 120px;
 }
 
 .trader-skeleton-percentage {
-  width: 80px;
   height: 18px;
+  width: 80px;
 }
 
 .trader-skeleton-text {
-  width: 180px;
   height: 16px;
+  width: 180px;
 }
 
 .trader-skeleton-performance {
-  width: 60px;
   height: 12px;
+  width: 60px;
 }
 
 .trader-percentage-container {
-  display: flex;
   align-items: center;
+  display: flex;
   gap: 4px;
 }
 
@@ -222,12 +222,12 @@
 }
 
 .trader-loading {
-  width: 60px;
-  height: 20px;
+  animation: loading 1.5s infinite;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%);
   background-size: 200% 100%;
-  animation: loading 1.5s infinite;
   border-radius: 4px;
+  height: 20px;
+  width: 60px;
 }
 
 @keyframes loading {
@@ -242,16 +242,16 @@
 
 .trader-graph-container {
   border: 1px solid rgba(179, 184, 249, 0.1);
-  padding-top: 20px;
   padding-left: 20px;
+  padding-top: 20px;
   width: 100%;
 }
 
 .trader-graph-label {
   color: rgba(255, 255, 255, 0.8);
+  display: block;
   font-size: 0.8rem;
   margin-bottom: 16px;
-  display: block;
 }
 
 .trader-graph-wrapper {
@@ -261,25 +261,25 @@
 
 .trader-assets-container {
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-top: none;
-  overflow: hidden;
-  max-height: 210px;
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
+  border-top: none;
+  max-height: 210px;
+  overflow: hidden;
 }
 
 .trader-assets-header {
+  align-items: center;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   display: flex;
   justify-content: space-between;
-  align-items: center;
   padding: 8px 20px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .trader-assets-header h4 {
-  margin: 0;
   color: #ffffff;
   font-size: 0.9rem;
+  margin: 0;
 }
 
 .trader-controls {
@@ -293,8 +293,8 @@
   border-radius: 6px;
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
-  padding: 6px 12px;
   font-size: 0.875rem;
+  padding: 6px 12px;
   transition: all 0.2s ease;
 }
 
@@ -331,38 +331,38 @@
 }
 
 .trader-loading-asset-row {
-  display: flex;
   align-items: center;
+  display: flex;
   gap: 12px;
   padding: 8px 0;
 }
 
 .trader-loading-asset-icon {
-  width: 32px;
-  height: 32px;
   border-radius: 50%;
+  height: 32px;
+  width: 32px;
 }
 
 .trader-loading-asset-info {
-  flex: 1;
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 6px;
 }
 
 .trader-loading-asset-name {
-  width: 80px;
   height: 14px;
+  width: 80px;
 }
 
 .trader-loading-asset-symbol {
-  width: 50px;
   height: 12px;
+  width: 50px;
 }
 
 .trader-loading-asset-balance {
-  width: 90px;
   height: 14px;
+  width: 90px;
 }
 
 /* Debug Info */
@@ -370,8 +370,8 @@
   background: rgba(255, 193, 7, 0.1);
   border: 1px solid rgba(255, 193, 7, 0.2);
   border-radius: 8px;
-  padding: 12px;
   margin-top: 8px;
+  padding: 12px;
 }
 
 .trader-debug-info small {
@@ -380,8 +380,8 @@
 }
 
 .meme-trade-trader.clickable:hover {
-  text-decoration: underline;
   cursor: pointer;
+  text-decoration: underline;
 }
 
 .trader-account-summary-container{
@@ -389,11 +389,11 @@
 }
 
 .trader-performance-container {
-  min-width: 250px;
   border: 1px solid rgba(179, 184, 249, 0.1);
   border-left: none;
-  padding: 20px;
   border-top-right-radius: 5px;
+  min-width: 250px;
+  padding: 20px;
 }
 
 .trader-performance-row{
