@@ -1625,7 +1625,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     };
 
     const STOPWORDS = new Set([
-      "the","a","an","token","coin","inu","doge","baby","new","of","and","for","with","club","project"
+      "the", "a", "an", "token", "coin", "inu", "doge", "baby", "new", "of", "and", "for", "with", "club", "project"
     ]);
 
     (async () => {
@@ -1706,7 +1706,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   const meta = await metaRes.json();
                   imageUrl = meta.image || "";
                 }
-              } catch {}
+              } catch { }
             }
             const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e18;
             return {
@@ -2330,6 +2330,19 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     (selectedStatsTimeframe as '5m' | '1h' | '6h' | '24h') ?? '24h'
   );
 
+  const pctForTf = useCallback((tf: '5m' | '1h' | '6h' | '24h') => {
+    const g = (statsRaw as any)?.[tf];
+    if (!g) return '—';
+    let pct: number | null =
+      typeof g.change_pct === 'number' ? g.change_pct :
+        (g.start_price_native != null && g.last_price_native != null && g.start_price_native !== 0)
+          ? ((g.last_price_native - g.start_price_native) / g.start_price_native) * 100
+          : null;
+    if (pct == null || !isFinite(pct)) return '—';
+    const sign = pct > 0 ? '+' : '';
+    return `${sign}${pct.toFixed(2)}%`;
+  }, [statsRaw]);
+
   return (
     <div className="meme-interface-container">
       {notif && (
@@ -2494,23 +2507,29 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
             <div className="overlay-controls-grid">
               <div className="timeframe-buttons">
-                {[
-                  { label: '5m', value: '5m', percentage: '0%' },
-                  { label: '1h', value: '1h', percentage: '0%' },
-                  { label: '6h', value: '6h', percentage: '0%' },
-                  { label: '24h', value: '24h', percentage: '0%' }
-                ].map((tf) => (
+                {(['5m','1h','6h','24h'] as const).map((v) => (
                   <button
-                    key={tf.value}
-                    className={`timeframe-toggle ${selectedStatsTimeframe === tf.value ? 'active' : ''}`}
-                    onClick={() => setSelectedStatsTimeframe(tf.value)}
+                    key={v}
+                    className={`timeframe-toggle ${selectedStatsTimeframe === v ? 'active' : ''}`}
+                    onClick={() => setSelectedStatsTimeframe(v)}
                   >
-                    <span className="tf-label">{tf.label}</span>
-                    <span className="tf-percentage">{tf.percentage}</span>
+                    <span className="tf-label">{v}</span>
+                    <span
+                      className="tf-percentage"
+                      style={{
+                        color: (() => {
+                          const s = pctForTf(v);
+                          if (s === '—') return 'var(--muted, #9a9ba4)';
+                          return s.startsWith('+') ? 'rgb(67 254 154)' : 'rgb(235 112 112)';
+                        })()
+                      }}
+                    >
+                      {pctForTf(v)}
+                    </span>
                   </button>
                 ))}
               </div>
-            </div>
+              </div>
           </div>
           <div className="indicator-legend">
             <div className="indicator-line green-line" />
