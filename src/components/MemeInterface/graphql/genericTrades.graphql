@@ -1,0 +1,17 @@
+query ($id: ID!, $first: Int!) {
+  launchpadTokens(where: { id: $id }) {
+    trades(
+      orderBy: block
+      orderDirection: desc
+      first: $first
+    ) {
+      id
+      account { id }
+      block
+      isBuy
+      priceNativePerTokenWad
+      amountIn
+      amountOut
+    }
+  }
+}

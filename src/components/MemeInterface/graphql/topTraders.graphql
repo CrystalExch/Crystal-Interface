@@ -1,0 +1,23 @@
+query ($m: Bytes!, $since: BigInt!, $skip: Int!, $first: Int!) {
+  launchpadPositions(
+    where: { token: $m, lastUpdatedAt_gte: $since }
+    orderBy: realizedPnlNative
+    orderDirection: desc
+    skip: $skip
+    first: $first
+  ) {
+    account { id }
+    tokenBought
+    tokenSold
+    nativeSpent
+    nativeReceived
+    remainingTokens
+    realizedPnlNative
+    unrealizedPnlNative
+    lastUpdatedAt
+  }
+
+  launchpadTokens(where: { id: $m }) {
+    lastPriceNativePerTokenWad
+  }
+}
