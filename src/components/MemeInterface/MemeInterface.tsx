@@ -3542,7 +3542,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                           <div className="meme-similar-token-title">
                             <span className="meme-similar-token-name">{t.name || "Unknown"}</span>
                             <span className="meme-similar-token-symbol">
-                              {t.symbol ? ` (${t.symbol})` : ""}
+                              {t.symbol ? ` ${t.symbol}` : ""}
                             </span>
                           </div>
                           <div className="meme-similar-token-id">{String(t.id)}</div>
@@ -3550,10 +3550,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       </div>
 
                       <div className="meme-similar-token-right">
-                        <div className="meme-similar-token-stat">
-                          <span className="label">Price</span>
-                          <span className="value">{formatSig(price)}</span>
-                        </div>
                         <div className="meme-similar-token-stat">
                           <span className="label">MC</span>
                           <span className="value">

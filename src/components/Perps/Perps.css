@@ -389,7 +389,7 @@
 
 .perps-tpsl-label {
     font-size: 0.8rem;
-    color: #ffffff;
+    color: #ffffffbb;
     font-weight: 400;
     letter-spacing: -0.2px;
 }
@@ -687,4 +687,9 @@
     justify-content: space-between;
     width: 100%;
     padding: 3px 0;
+}
+
+
+.perps-mid-button{
+    color: #aaaecf
 }

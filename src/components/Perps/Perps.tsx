@@ -538,7 +538,9 @@ const Perps: React.FC<PerpsProps> = ({
                                     onChange={(e) => setLimitPrice(e.target.value)}
                                     className="perps-trade-input"
                                 />
+                                <span className="perps-mid-button">
                                 Mid
+                                </span>
                             </div>
                         )}
                         <div className="perps-trade-input-wrapper">
