@@ -922,13 +922,15 @@
 .form-group {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 6px;
 }
 
 .form-group label {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #ffffff7b;
   font-weight: 300;
+  width: 100%;
 }
 
 .perps-deposit-input-wrapper:focus-within,
@@ -948,4 +950,23 @@
 .perps-deposit-token-badge span{
     color: white;
     font-size: 1rem;
+}
+
+.perps-switch-icon{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 20px;
+    border: 1px solid rgba(179, 184, 249, 0.1);
+    padding: 5px;
+    cursor: pointer;
+}
+
+
+.perps-switch-img{
+    transform: rotate(45deg);
+    width: 18px;
+    height: 18px;
 }

@@ -113,7 +113,8 @@ import secondPlacePfp from './assets/leaderboard_second.png';
 import thirdPlacePfp from './assets/leaderboard_third.png';
 import defaultPfp from './assets/leaderboard_default.png';
 import iconusdc from './assets/iconusdc.png';
-import edgeX from './assets/edgeX.svg'
+import edgeX from './assets/edgeX.svg';
+import switchicon from './assets/switch.svg';
 //audio
 import stepaudio from './assets/step_audio.mp3';
 import backaudio from './assets/back_audio.mp3';
@@ -12078,7 +12079,7 @@ function App() {
                           <span>{tokendict[selectedVault?.quoteAsset]?.ticker}</span>
                         </div>
                       </div>
-                      
+
                       <div className="lp-deposit-balance-wrapper">
                         <div className={`lp-deposit-usd-value ${vaultQuoteExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
                           {vaultDepositAmounts.quote == 0n
@@ -12142,7 +12143,7 @@ function App() {
                           <span>{tokendict[selectedVault?.baseAsset]?.ticker}</span>
                         </div>
                       </div>
-                      
+
                       <div className="lp-deposit-balance-wrapper">
                         <div className={`lp-deposit-usd-value ${vaultBaseExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
                           {vaultDepositAmounts.base == 0n
@@ -13776,9 +13777,9 @@ function App() {
                       <div className="perps-deposit-balance">
                         Converting
                         <div className="">
-                        <span>Balance: </span>
-                        <span>$0.00</span>
-                        <button className="perps-max-button">Max</button>
+                          <span>Balance: </span>
+                          <span>$0.00</span>
+                          <button className="perps-max-button">Max</button>
                         </div>
                       </div>
                       <div className="perps-input-bottom-row">
@@ -13788,17 +13789,20 @@ function App() {
                           className="perps-deposit-input"
                         />
                         <div className="perps-deposit-token-badge">
-                          <img className="perps-deposit-icon" src={iconusdc}/>
+                          <img className="perps-deposit-icon" src={iconusdc} />
                           <span>USDC</span>
                         </div>
                       </div>
                     </div>
-                                        <div className="perps-deposit-input-wrapper">
+                    <div className="perps-switch-icon" onClick={() => setpopup(31)}> 
+                      <img  className="perps-switch-img"src={switchicon} />
+                    </div>
+                    <div className="perps-deposit-input-wrapper">
                       <div className="perps-deposit-balance">
                         Receiving
                         <div className="">
-                        <span>Balance:</span>
-                        <span> $0.00</span>
+                          <span>Balance:</span>
+                          <span> $0.00</span>
                         </div>
                       </div>
                       <div className="perps-input-bottom-row">
@@ -13808,13 +13812,13 @@ function App() {
                           className="perps-deposit-input"
                         />
                         <div className="perps-deposit-token-badge">
-                          <img className="perps-deposit-icon" src={iconusdc}/>
-                          <img className="edgeX-icon" src={edgeX}/>
+                          <img className="perps-deposit-icon" src={iconusdc} />
+                          <img className="edgeX-icon" src={edgeX} />
                           <span>USDC</span>
                         </div>
                       </div>
                     </div>
-                    
+
 
                   </div>
                 </div>
@@ -13845,13 +13849,13 @@ function App() {
                 <div className="perps-deposit-form">
                   <div className="form-group">
                     <label>Exchange  USDC on EdgeX for native USDC on Monad</label>
-                                        <div className="perps-deposit-input-wrapper">
+                    <div className="perps-deposit-input-wrapper">
                       <div className="perps-deposit-balance">
                         Withdrawing
                         <div className="">
-                        <span>Balance:</span>
-                        <span> $0.00</span>
-                         <button className="perps-max-button">Max</button>
+                          <span>Balance:</span>
+                          <span> $0.00</span>
+                          <button className="perps-max-button">Max</button>
                         </div>
                       </div>
                       <div className="perps-input-bottom-row">
@@ -13861,18 +13865,20 @@ function App() {
                           className="perps-deposit-input"
                         />
                         <div className="perps-deposit-token-badge">
-                          <img className="perps-deposit-icon" src={iconusdc}/>
-                          <img className="edgeX-icon" src={edgeX}/>
+                          <img className="perps-deposit-icon" src={iconusdc} />
+                          <img className="edgeX-icon" src={edgeX} />
                           <span>USDC</span>
                         </div>
                       </div>
                     </div>
+                    <div className="perps-switch-icon" onClick={() => setpopup(30)}
+                    ></div>
                     <div className="perps-deposit-input-wrapper">
                       <div className="perps-deposit-balance">
                         Receiving
                         <div className="">
-                        <span>Balance: </span>
-                        <span>$0.00</span>
+                          <span>Balance: </span>
+                          <span>$0.00</span>
                         </div>
                       </div>
                       <div className="perps-input-bottom-row">
@@ -13882,13 +13888,13 @@ function App() {
                           className="perps-deposit-input"
                         />
                         <div className="perps-deposit-token-badge">
-                          <img className="perps-deposit-icon" src={iconusdc}/>
+                          <img className="perps-deposit-icon" src={iconusdc} />
                           <span>USDC</span>
                         </div>
                       </div>
                     </div>
 
-                    
+
 
                   </div>
                 </div>
