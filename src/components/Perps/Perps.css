@@ -354,7 +354,197 @@
     background-color: rgb(6, 6, 6);
 }
 
+.perps-tpsl-section {
+    margin: 12px 12px 0 12px;
+}
 
+.perps-tpsl-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.perps-tpsl-checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.perps-tpsl-checkbox {
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
+    accent-color: #aaaecf;
+    cursor: pointer;
+}
+
+.perps-tpsl-label {
+    font-size: 0.8rem;
+    color: #ffffff;
+    font-weight: 400;
+    letter-spacing: -0.2px;
+}
+
+.perps-est-liq-price {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: -0.1px;
+}
+
+.perps-tif-dropdown {
+    position: relative;
+}
+
+.perps-tif-button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.7rem;
+}
+
+.perps-tif-button:hover {
+    border-color: rgba(179, 184, 249, 0.3);
+}
+
+.perps-tif-label {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 300;
+}
+
+.perps-tif-value {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 400;
+    min-width: 25px;
+}
+
+.perps-tif-arrow {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.6rem;
+    transform: rotate(180deg);
+    transition: transform 0.2s ease;
+}
+
+.perps-tif-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: rgb(15, 15, 15);
+    border: 1px solid rgba(179, 184, 249, 0.2);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    min-width: 60px;
+    margin-top: 2px;
+}
+
+.perps-tif-option {
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.8);
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.perps-tif-option:last-child {
+    border-bottom: none;
+}
+
+.perps-tif-option:hover {
+    background: rgba(179, 184, 249, 0.1);
+    color: rgba(255, 255, 255, 1);
+}
+
+.perps-tpsl-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.perps-tpsl-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.perps-tpsl-label-section {
+    min-width: 60px;
+}
+
+.perps-tpsl-row-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 300;
+    letter-spacing: -0.2px;
+}
+
+.perps-tpsl-input-section {
+    display: flex;
+    flex: 1;
+    gap: 6px;
+    align-items: center;
+}
+
+.perps-tpsl-price-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(179, 184, 249, 0.15);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.9);
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.perps-tpsl-price-input:focus {
+    border-color: rgba(179, 184, 249, 0.4);
+}
+
+.perps-tpsl-price-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.7rem;
+}
+
+.perps-tpsl-percentage {
+    min-width: 40px;
+}
+
+.perps-tpsl-percent-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(179, 184, 249, 0.15);
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.9);
+    outline: none;
+    text-align: center;
+    transition: border-color 0.2s ease;
+}
+
+.perps-tpsl-percent-input:focus {
+    border-color: rgba(179, 184, 249, 0.4);
+}
+
+/* Remove number input spinners for TP/SL inputs */
+.perps-tpsl-price-input::-webkit-outer-spin-button,
+.perps-tpsl-price-input::-webkit-inner-spin-button,
+.perps-tpsl-percent-input::-webkit-outer-spin-button,
+.perps-tpsl-percent-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.perps-tpsl-price-input[type=number],
+.perps-tpsl-percent-input[type=number] {
+    -moz-appearance: textfield;
+}
 
 .perps-trade-action-button {
     display: flex;
@@ -428,16 +618,24 @@
     padding: 0 13px;
 }
 
-.perps-trade-input{
-    background: none;
+.perps-trade-input-wrapper{
+    display: flex;
     border: 1.5px solid rgba(92, 98, 132, 0.15);
     width: 100%;
     padding: 5px 10px;
     font-weight: 1rem;
     border-radius: 4px;
     margin-top: 10px;
+    font-size: 0.9rem;
+    color: grey;
 }
-
+.perps-trade-input{
+    background:none;
+    color: white;
+    direction: rtl;
+    width: 100%;
+    padding-right: 5px;
+}
 .perps-trade-input:focus{
     outline: none;
 }

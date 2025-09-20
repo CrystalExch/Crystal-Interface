@@ -155,6 +155,17 @@ const Perps: React.FC<PerpsProps> = ({
     const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
     const [tempPresetValue, setTempPresetValue] = useState('');
 
+    // TP/SL state
+    const [isTpSlEnabled, setIsTpSlEnabled] = useState(false);
+    const [tpPrice, setTpPrice] = useState("");
+    const [slPrice, setSlPrice] = useState("");
+    const [tpPercent, setTpPercent] = useState("0.0");
+    const [slPercent, setSlPercent] = useState("0.0");
+
+    // Time in Force dropdown state
+    const [timeInForce, setTimeInForce] = useState("GTC");
+    const [isTifDropdownOpen, setIsTifDropdownOpen] = useState(false);
+
     // Sliding indicator state
     const [indicatorStyle, setIndicatorStyle] = useState<{
         width: number;
@@ -517,7 +528,21 @@ const Perps: React.FC<PerpsProps> = ({
                         </button>
                     </div>
                     <div className="perps-amount-section">
+                          {activeOrderType === "Limit" && (
+                            <div className="perps-trade-input-wrapper">
+                                Price 
+                                <input
+                                    type="number"
+                                    placeholder="0"
+                                    value={limitPrice}
+                                    onChange={(e) => setLimitPrice(e.target.value)}
+                                    className="perps-trade-input"
+                                />
+                                Mid
+                            </div>
+                        )}
                         <div className="perps-trade-input-wrapper">
+                            Size
                             <input
                                 type="number"
                                 placeholder="0"
@@ -525,22 +550,12 @@ const Perps: React.FC<PerpsProps> = ({
                                 onChange={(e) => setTradeAmount(e.target.value)}
                                 className="perps-trade-input"
                             />
+                            USD
                         </div>
 
-                        {activeOrderType === "Limit" && (
-                            <div className="perps-trade-input-wrapper">
-                                <input
-                                    type="number"
-                                    placeholder="Limit Price"
-                                    value={limitPrice}
-                                    onChange={(e) => setLimitPrice(e.target.value)}
-                                    className="perps-trade-input"
-                                />
-                            </div>
-                        )}
+                      
 
                         <div className="perps-balance-slider-wrapper">
-
                             <div className="perps-slider-container perps-slider-mode">
                                 <input
                                     ref={sliderRef}
@@ -585,13 +600,118 @@ const Perps: React.FC<PerpsProps> = ({
                                     ))}
                                 </div>
                             </div>
-
                         </div>
                     </div>
+
+                    <div className="perps-tpsl-section">
+                        <div className="perps-tpsl-header">
+                            <div className="">
+                                <label className="perps-tpsl-checkbox-wrapper">
+                                    <input
+                                        type="checkbox"
+                                        checked={isTpSlEnabled}
+                                        onChange={(e) => setIsTpSlEnabled(e.target.checked)}
+                                        className="perps-tpsl-checkbox"
+                                    />
+                                    <span className="perps-tpsl-label">Reduce Only</span>
+                                </label>
+                                <label className="perps-tpsl-checkbox-wrapper">
+                                    <input
+                                        type="checkbox"
+                                        checked={isTpSlEnabled}
+                                        onChange={(e) => setIsTpSlEnabled(e.target.checked)}
+                                        className="perps-tpsl-checkbox"
+                                    />
+                                    <span className="perps-tpsl-label">TP/SL</span>
+                                </label>
+                            </div>
+                            <div className="perps-tif-dropdown">
+                                <button
+                                    className="perps-tif-button"
+                                    onClick={() => setIsTifDropdownOpen(!isTifDropdownOpen)}
+                                >
+                                    <span className="perps-tif-label">TIF</span>
+                                    <span className="perps-tif-value">{timeInForce}</span>
+                                    <span className="perps-tif-arrow">^</span>
+                                </button>
+
+                                {isTifDropdownOpen && (
+                                    <div className="perps-tif-dropdown-menu">
+                                        {['GTC', 'IOC', 'ALO', '%'].map((option) => (
+                                            <div
+                                                key={option}
+                                                className="perps-tif-option"
+                                                onClick={() => {
+                                                    setTimeInForce(option);
+                                                    setIsTifDropdownOpen(false);
+                                                }}
+                                            >
+                                                {option}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {isTpSlEnabled && (
+                            <div className="perps-tpsl-content">
+                                <div className="perps-tpsl-row">
+                                    <div className="perps-tpsl-label-section">
+                                        <span className="perps-tpsl-row-label">TP Price</span>
+                                    </div>
+                                    <div className="perps-tpsl-input-section">
+                                        <input
+                                            type="number"
+                                            placeholder="Enter TP price"
+                                            value={tpPrice}
+                                            onChange={(e) => setTpPrice(e.target.value)}
+                                            className="perps-tpsl-price-input"
+                                        />
+                                        <div className="perps-tpsl-percentage">
+                                            <input
+                                                type="number"
+                                                value={tpPercent}
+                                                onChange={(e) => setTpPercent(e.target.value)}
+                                                className="perps-tpsl-percent-input"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="perps-tpsl-row">
+                                    <div className="perps-tpsl-label-section">
+                                        <span className="perps-tpsl-row-label">SL Price</span>
+                                    </div>
+                                    <div className="perps-tpsl-input-section">
+                                        <input
+                                            type="number"
+                                            placeholder="Enter SL price"
+                                            value={slPrice}
+                                            onChange={(e) => setSlPrice(e.target.value)}
+                                            className="perps-tpsl-price-input"
+                                        />
+                                        <div className="perps-tpsl-percentage">
+                                            <input
+                                                type="number"
+                                                value={slPercent}
+                                                onChange={(e) => setSlPercent(e.target.value)}
+                                                className="perps-tpsl-percent-input"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     <button
                         className={`perps-trade-action-button ${activeTradeType}`}
                         onClick={() => {
                             console.log(`Executing ${activeTradeType} trade for ${tradeAmount}`);
+                            if (isTpSlEnabled) {
+                                console.log(`TP Price: ${tpPrice}, SL Price: ${slPrice}`);
+                            }
                         }}
                     >
                         {activeOrderType === "market"
@@ -610,7 +730,7 @@ const Perps: React.FC<PerpsProps> = ({
                             Balance
                         </span>
                         <span className="perps-account-subtitle">
-                          $0.00
+                            $0.00
                         </span>
                     </div>
                     <div className="perps-account-row">
@@ -626,7 +746,7 @@ const Perps: React.FC<PerpsProps> = ({
                             Cross Margin Ratio
                         </span>
                         <span className="perps-account-subtitle">
-                            $0.00 
+                            $0.00
                         </span>
                     </div>
                     <div className="perps-account-row">
