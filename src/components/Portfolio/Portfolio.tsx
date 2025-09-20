@@ -172,7 +172,6 @@ const Tooltip: React.FC<{
   );
 };
 type SortDirection = 'asc' | 'desc';
-
 interface SortConfig {
   column: string;
   direction: SortDirection;
@@ -2319,10 +2318,7 @@ const renderWalletContainer = (
                     <span className="summary-label">Total Wallets</span>
                     <span className="summary-value">{subWallets.length}</span>
                   </div>
-                  <div className="summary-item">
-                    <span className="summary-label">Enabled Wallets</span>
-                    <span className="summary-value">{enabledWallets.size}</span>
-                  </div>
+
                   <div className="summary-item">
                     <span className="summary-label">Combined Value</span>
                     <span className={`summary-value ${isBlurred ? 'blurred' : ''}`}>
