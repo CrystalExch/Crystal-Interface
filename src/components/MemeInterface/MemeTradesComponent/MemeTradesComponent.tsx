@@ -834,7 +834,7 @@ export default function MemeTradesComponent({
 
                   <div className="meme-trade-mc">
                     {mcMode === "MC" ? (
-                      <span className="meme-trade-mc">${(t.mcUSD / 1000).toFixed(1)}K</span>
+                      <span className="meme-trade-mc">${(t.mcUSD / 1000).toFixed(2)}K</span>
                     ) : (
                       <span>
                         $

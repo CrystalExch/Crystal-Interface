@@ -593,9 +593,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       }
     }
   };
-
-  console.log(token);
-
+  
   const renderContent = () => {
     switch (activeSection) {
       case 'positions':
