@@ -8,7 +8,6 @@
   width: 55px;
   align-items: flex-start;
   padding-top: 17px;
-  z-index: 8;
   overflow: hidden;
   background-color: rgb(6,6,6);
   border-right: 1px solid rgba(179, 184, 249, 0.1);

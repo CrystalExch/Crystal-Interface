@@ -6,6 +6,7 @@ import { usePortfolioData } from '../../../Portfolio/PortfolioGraph/usePortfolio
 import { formatCommas } from '../../../../utils/numberDisplayFormat';
 import { useSharedContext } from '../../../../contexts/SharedContext';
 import './TraderPortfolioPopup.css';
+import { settings } from '../../../../settings';
 
 interface TraderPortfolioPopupProps {
     traderAddress: string;
@@ -115,7 +116,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
     };
 
     const openEtherscan = () => {
-        window.open(`https://testnet.monadexplorer.com/address/${traderAddress}`, '_blank');
+        window.open(`${settings.chainConfig[activechain].explorer}/address/${traderAddress}`, '_blank');
     };
 
     const handleBackdropClick = (e: React.MouseEvent) => {

@@ -169,7 +169,7 @@ function App() {
     }
   }, []);
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
-  const { client, address: scaAddress } = useSmartAccountClient({});
+  const { client, address: scaAddress } = useSmartAccountClient({}) as { client: any; address: any };
   const { sendUserOperationAsync: rawSendUserOperationAsync } = useSendUserOperation({
     client,
     waitForTxn: false,
@@ -378,7 +378,7 @@ function App() {
   // };
 
   const [oneCTSigner, setOneCTSigner] = useState('');
-  const validOneCT = oneCTSigner
+  const validOneCT = !!oneCTSigner
   const oneCTNonceRef = useRef<number>(0);
   const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
     address: '0x0000000000000000000000000000000000000000' as `0x${string}`,
@@ -434,6 +434,7 @@ function App() {
       setCurrentWalletIcon(walleticon);
     }
   }, [connected, alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.name]);
+
   const saveSubWalletsToStorage = (wallets: Array<{ address: string, privateKey: string }>) => {
     localStorage.setItem('crystal_sub_wallets', JSON.stringify(wallets));
   };
@@ -451,100 +452,134 @@ function App() {
     showMarketDropdown: false,
     marketSearchTerm: ''
   });
-    const createSubWallet = async () => {
-      try {
-        const privateKey = keccak256(await signTypedDataAsync({
-          typedData: {
-            types: {
-              createCrystalOneCT: [
-                { name: 'version', type: 'string' },
-                { name: 'account', type: 'uint256' },
-              ],
-            },
-            primaryType: 'createCrystalOneCT',
-            message: {
-              version: 'Crystal v0.0.1 Testnet',
-              account: BigInt(subWallets.length + 1),
-            }
+
+  const createSubWallet = async () => {
+    try {
+      const privateKey = keccak256(await signTypedDataAsync({
+        typedData: {
+          types: {
+            createCrystalOneCT: [
+              { name: 'version', type: 'string' },
+              { name: 'account', type: 'uint256' },
+            ],
+          },
+          primaryType: 'createCrystalOneCT',
+          message: {
+            version: 'Crystal v0.0.1 Testnet',
+            account: BigInt(subWallets.length + 1),
           }
-        }));
-
-        const tempWallet = new Wallet(privateKey);
-        const walletAddress = tempWallet.address as string;
-
-        const newWallet = {
-          address: walletAddress,
-          privateKey: privateKey
-        };
-
-        const updatedWallets = [...subWallets, newWallet];
-        setSubWallets(updatedWallets);
-        saveSubWalletsToStorage(updatedWallets);
-
-        if (!validOneCT && updatedWallets.length === 1) {
-          setOneCTSigner(privateKey);
-          setpopup(25);
-          refetch();
         }
-      } catch (error) {
-        console.error('Error creating subwallet:', error);
+      }));
+
+      const tempWallet = new Wallet(privateKey);
+      const walletAddress = tempWallet.address as string;
+
+      const newWallet = {
+        address: walletAddress,
+        privateKey: privateKey
+      };
+
+      const updatedWallets = [...subWallets, newWallet];
+      setSubWallets(updatedWallets);
+      saveSubWalletsToStorage(updatedWallets);
+
+      if (!validOneCT && updatedWallets.length === 1) {
+        setOneCTSigner(privateKey);
+        refetch();
       }
-    };
+    } catch (error) {
+      console.error('Error creating subwallet:', error);
+    }
+  };
 
-    const sendUserOperationAsync = useCallback(
-      async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n) => {
-        let hash: `0x${string}`;
-        if (validOneCT) {
-          const tx = {
-            to: params.uo.target,
-            value: params.uo.value,
-            data: params.uo.data,
-            gasLimit: gasLimit > 0n ? gasLimit : 500000n,
-            maxFeePerGas: 100000000000n + (prioFee > 0n ? prioFee : 13000000000n),
-            maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
-            nonce: oneCTNonceRef.current,
-            chainId: activechain
-          }
-          oneCTNonceRef.current += 1;
-          const signedTx = await onectclient.signTransaction(tx);
-          hash = keccak256(signedTx) as `0x${string}`;
+  const sendUserOperationAsync = useCallback(
+    async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n, mainWallet: boolean = false, pk: string = '', nonce: number = 0) => {
+      let hash: `0x${string}`;
+      if (!!pk) {
+        const tx = {
+          to: params.uo.target,
+          value: params.uo.value,
+          data: params.uo.data,
+          gasLimit: gasLimit > 0n ? gasLimit : 500000n,
+          maxFeePerGas: 100000000000n + (prioFee > 0n ? prioFee : 13000000000n),
+          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
+          nonce: nonce,
+          chainId: activechain
+        }
+        const signedTx = await (new Wallet(pk)).signTransaction(tx);
+        hash = keccak256(signedTx) as `0x${string}`;
 
-          const RPC_URLS = [
-            HTTP_URL,
-            'https://rpc.monad-testnet.fastlane.xyz/eyJhIjoiMHhlN0QxZjRBQjIyMmQ5NDM4OWI4Mjk4MWY5OUM1ODgyNGZGNDJhN2QwIiwidCI6MTc1MzUwMjEzNiwicyI6IjB4ODE1ODNhMjQ5Yjc5ZTljNjliYzJjNDkzZGZkMDQ0ODdiMWMzZmRhYzE1ZGZlMmVlYjgyOWQ0NTRkZWQ3MTZjMTU4ZmQwMWNmNzlkM2JkNWJlNWRlOTVkZjU1MzE3ODkzNmMyZTBmMGFiYzk1NDlkNTMzYWRmODA4Y2UxODEwNjUxYyJ9',
-            'https://rpc.ankr.com/monad_testnet',
-            'https://monad-testnet.drpc.org',
-            'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
-          ];
-          RPC_URLS.forEach(url => {
-            fetch(url, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                jsonrpc: '2.0',
-                id: 0,
-                method: 'eth_sendRawTransaction',
-                params: [signedTx]
-              })
-            }).catch();
-          });
+        const RPC_URLS = [
+          HTTP_URL,
+          'https://rpc.monad-testnet.fastlane.xyz/eyJhIjoiMHhlN0QxZjRBQjIyMmQ5NDM4OWI4Mjk4MWY5OUM1ODgyNGZGNDJhN2QwIiwidCI6MTc1MzUwMjEzNiwicyI6IjB4ODE1ODNhMjQ5Yjc5ZTljNjliYzJjNDkzZGZkMDQ0ODdiMWMzZmRhYzE1ZGZlMmVlYjgyOWQ0NTRkZWQ3MTZjMTU4ZmQwMWNmNzlkM2JkNWJlNWRlOTVkZjU1MzE3ODkzNmMyZTBmMGFiYzk1NDlkNTMzYWRmODA4Y2UxODEwNjUxYyJ9',
+          'https://rpc.ankr.com/monad_testnet',
+          'https://monad-testnet.drpc.org',
+          'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
+        ];
+        RPC_URLS.forEach(url => {
+          fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              id: 0,
+              method: 'eth_sendRawTransaction',
+              params: [signedTx]
+            })
+          }).catch();
+        });        
+      }
+      else if (validOneCT && !mainWallet) {
+        const tx = {
+          to: params.uo.target,
+          value: params.uo.value,
+          data: params.uo.data,
+          gasLimit: gasLimit > 0n ? gasLimit : 500000n,
+          maxFeePerGas: 100000000000n + (prioFee > 0n ? prioFee : 13000000000n),
+          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
+          nonce: oneCTNonceRef.current,
+          chainId: activechain
         }
-        else {
-          hash = (await rawSendUserOperationAsync(params))?.hash
-        }
-        await Promise.race([
-          new Promise<void>((resolve) => {
-            txReceiptResolvers.current.set(hash, resolve);
-          }),
-          waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
-            txReceiptResolvers.current.delete(hash);
-            hash = r.transactionHash;
-          }),
-        ]);
-        return hash
-      },
-      [validOneCT]
-    );
+        oneCTNonceRef.current += 1;
+        const signedTx = await onectclient.signTransaction(tx);
+        hash = keccak256(signedTx) as `0x${string}`;
+
+        const RPC_URLS = [
+          HTTP_URL,
+          'https://rpc.monad-testnet.fastlane.xyz/eyJhIjoiMHhlN0QxZjRBQjIyMmQ5NDM4OWI4Mjk4MWY5OUM1ODgyNGZGNDJhN2QwIiwidCI6MTc1MzUwMjEzNiwicyI6IjB4ODE1ODNhMjQ5Yjc5ZTljNjliYzJjNDkzZGZkMDQ0ODdiMWMzZmRhYzE1ZGZlMmVlYjgyOWQ0NTRkZWQ3MTZjMTU4ZmQwMWNmNzlkM2JkNWJlNWRlOTVkZjU1MzE3ODkzNmMyZTBmMGFiYzk1NDlkNTMzYWRmODA4Y2UxODEwNjUxYyJ9',
+          'https://rpc.ankr.com/monad_testnet',
+          'https://monad-testnet.drpc.org',
+          'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
+        ];
+        RPC_URLS.forEach(url => {
+          fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              id: 0,
+              method: 'eth_sendRawTransaction',
+              params: [signedTx]
+            })
+          }).catch();
+        });
+      }
+      else {
+        hash = (await rawSendUserOperationAsync(params))?.hash
+      }
+      await Promise.race([
+        new Promise<void>((resolve) => {
+          txReceiptResolvers.current.set(hash, resolve);
+        }),
+        waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
+          txReceiptResolvers.current.delete(hash);
+          hash = r.transactionHash;
+        }),
+      ]);
+      return hash
+    },
+    [validOneCT]
+  );
 
   // state vars
   const [showSendDropdown, setShowSendDropdown] = useState(false);
@@ -961,26 +996,25 @@ function App() {
     }
   }, [monPresets]);
 
-const setQuickAmount = (category: string, amount: string) => {
-  setQuickAmounts(prev => ({
-    ...prev,
-    [category]: amount
-  }));
-};
+  const setQuickAmount = (category: string, amount: string) => {
+    setQuickAmounts(prev => ({
+      ...prev,
+      [category]: amount
+    }));
+  };
 
-const setActivePreset = (category: string, preset: number) => {
-  setActivePresets(prev => ({
-    ...prev,
-    [category]: preset
-  }));
+  const setActivePreset = (category: string, preset: number) => {
+    setActivePresets(prev => ({
+      ...prev,
+      [category]: preset
+    }));
 
-  const presetAmount = buyPresets[preset as keyof typeof buyPresets]?.amount || '5';
-  setQuickAmount(category, presetAmount);
-};
+    const presetAmount = buyPresets[preset as keyof typeof buyPresets]?.amount || '5';
+    setQuickAmount(category, presetAmount);
+  };
 
-
-const handleInputFocus = () => {
-};
+  const handleInputFocus = () => {
+  };
   const [isComposing, setIsComposing] = useState(false);
   const [sendInputString, setsendInputString] = useState('');
   const [limitPriceString, setlimitPriceString] = useState('');
@@ -1890,26 +1924,19 @@ const handleInputFocus = () => {
     return null;
   }, [markets, tradesByMarket]);
 
-  const handleSubwalletTransfer = useCallback(async (fromAddress: string, toAddress: string, amount: string, fromPrivateKey: string) => {
+  const handleSubwalletTransfer = useCallback(async (nonce: number, toAddress: string, amount: bigint, fromPrivateKey: string) => {
     try {
       setIsVaultDepositSigning(true);
-      const originalSigner = oneCTSigner;
-      setOneCTSigner(fromPrivateKey);
-
-      const ethAmount = BigInt(Math.round(parseFloat(amount) * 1e18));
 
       const hash = await sendUserOperationAsync({
         uo: {
           target: toAddress as `0x${string}`,
-          value: ethAmount,
+          value: amount,
           data: '0x'
         }
-      });
+      }, 0n, 0n, false, fromPrivateKey, nonce);
 
       console.log('Subwallet transfer successful:', hash);
-
-      // Restore original signer
-      setOneCTSigner(originalSigner);
 
     } catch (error) {
       console.error('Subwallet transfer failed:', error);
@@ -1917,7 +1944,7 @@ const handleInputFocus = () => {
     } finally {
       setIsVaultDepositSigning(false);
     }
-  }, [sendUserOperationAsync, oneCTSigner, setOneCTSigner]);
+  }, [sendUserOperationAsync]);
 
   const saveSubWallets = useCallback((wallets: { address: string; privateKey: string; }[] | ((prevState: { address: string; privateKey: string; }[]) => { address: string; privateKey: string; }[])) => {
     setSubWallets((prevWallets) => {
@@ -8511,17 +8538,17 @@ const handleExplorerFiltersApply = useCallback(() => {
 
       setSubwalletBalanceLoading(prev => ({
         ...prev,
-        [address]: true,
+        [scaAddress]: true,
         ...Object.fromEntries(subWallets.map(w => [w.address, true]))
       }))
       const mainGroup: any = [
         {
-          disabled: !address,
+          disabled: !scaAddress,
           to: balancegetter,
           abi: CrystalDataHelperAbi,
           functionName: 'batchBalanceOf',
           args: [
-            address as `0x${string}`,
+            scaAddress as `0x${string}`,
             tokenAddresses
           ]
         },
@@ -8692,7 +8719,7 @@ const handleExplorerFiltersApply = useCallback(() => {
         gasEstimate = BigInt(json[1].result)
       }
 
-      [{ address: address }].concat(subWallets as any).forEach((wallet, walletIndex) => {
+      [{ address: scaAddress }].concat(subWallets as any).forEach((wallet, walletIndex) => {
         const balanceMap: { [key: string]: bigint } = {};
         let totalValue = 0;
         tokenAddresses.forEach((tokenAddress, index) => {
@@ -13145,7 +13172,7 @@ const handleExplorerFiltersApply = useCallback(() => {
             </div>
           </div>
         ) : null}
-        {popup === 25 ? ( // send popup
+        {popup === 25 ? ( // deposit popup
           <div ref={popupref} className="send-popup-container">
             <div className="send-popup-background">
               <div className={`sendbg ${connected && sendAmountIn > mainWalletBalances[sendTokenIn] ? 'exceed-balance' : ''}`}>
@@ -20737,6 +20764,7 @@ const handleExplorerFiltersApply = useCallback(() => {
                 activeWalletPrivateKey={oneCTSigner}
                 setShowRefModal={undefined}
                 lastRefGroupFetch={lastRefGroupFetch}
+                scaAddress={scaAddress}
               />
           } />
           <Route path="/trackers"
