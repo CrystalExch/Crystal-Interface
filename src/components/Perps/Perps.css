@@ -372,11 +372,19 @@
 }
 
 .perps-tpsl-checkbox {
-    width: 12px;
-    height: 12px;
-    margin-right: 6px;
-    accent-color: #aaaecf;
-    cursor: pointer;
+    width: 14px;
+  height: 14px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 1px solid rgba(170, 174, 207, 0.3);
+  border-radius: 3px;
+  background: transparent;
+  position: relative;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  margin-right: 8px;
 }
 
 .perps-tpsl-label {
@@ -626,7 +634,7 @@
     font-weight: 1rem;
     border-radius: 4px;
     margin-top: 10px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: grey;
 }
 .perps-trade-input{
@@ -635,6 +643,7 @@
     direction: rtl;
     width: 100%;
     padding-right: 5px;
+    font-size: 0.85rem;
 }
 .perps-trade-input:focus{
     outline: none;
