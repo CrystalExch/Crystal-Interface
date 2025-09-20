@@ -271,7 +271,6 @@ export default function MemeTradesComponent({
   const [mcMode, setMcMode] = useState<MCMode>("MC");
   const [hover, setHover] = useState(false);
   const [popupAddr, setPopupAddr] = useState<string | null>(null);
-  const [_currentTime, setCurrentTime] = useState(() => Date.now() / 1000);
   const [displayTrades, setDisplayTrades] = useState<RawTrade[]>([]);
   const [showFiltersPopup, setShowFiltersPopup] = useState(false);
   const [transactionFilters, setTransactionFilters] = useState<TransactionFilters>({
@@ -311,11 +310,6 @@ export default function MemeTradesComponent({
   const hasActiveFilters = transactionFilters.makerAddress.trim() !== '' || 
                           transactionFilters.minUSD.trim() !== '' || 
                           transactionFilters.maxUSD.trim() !== '';
-
-  useEffect(() => {
-    const interval = setInterval(() => setCurrentTime(Date.now() / 1000), 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     const newTrades = trades.slice(0, 100);

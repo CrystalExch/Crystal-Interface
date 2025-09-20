@@ -2967,7 +2967,7 @@ function App() {
         title = 'Trackers | Crystal';
         break;
       case location.pathname === '/perps':
-        title = 'Perps | Crystal';
+        title = 'Perpetuals | Crystal';
         break;
       case location.pathname.startsWith('/earn/vaults'):
         if (location.pathname === '/earn/vaults') {
@@ -8217,57 +8217,6 @@ function App() {
       </ul>
     </div>
   );
-  const [marketDropdownOpen, setMarketDropdownOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    name: '',
-    description: '',
-    depositAmount: '',
-    type: 'Spot' as 'Spot' | 'Margin',
-    tradableTokens: [] as string[],
-    selectedMarket: '',
-    website: '',
-    telegram: '',
-    discord: '',
-    twitter: ''
-  });
-
-  const usdcBalance = tokenBalances[usdc] || BigInt(0);
-  const usdcDecimals = Number(tokendict[usdc]?.decimals || 18);
-  const userUSDCBalance = Number(usdcBalance) / (10 ** usdcDecimals);
-
-  const minDeposit = 900;
-  const creationFee = 100;
-
-  const isCreateFormValid = () => {
-    const depositValid = parseFloat(createForm.depositAmount) >= minDeposit;
-    const balanceValid = parseFloat(createForm.depositAmount) <= (userUSDCBalance - creationFee);
-    const marketValid = createForm.type === 'Margin' || (createForm.type === 'Spot' && createForm.selectedMarket !== '');
-
-    return createForm.name.trim() !== '' &&
-      createForm.description.trim() !== '' &&
-      depositValid &&
-      balanceValid &&
-      marketValid;
-  };
-
-  const handleCreateVault = () => {
-    if (isCreateFormValid()) {
-      console.log('Creating vault:', createForm);
-      setpopup(0);
-      setCreateForm({
-        name: '',
-        description: '',
-        depositAmount: '',
-        type: 'Spot',
-        tradableTokens: [],
-        selectedMarket: '',
-        website: '',
-        telegram: '',
-        discord: '',
-        twitter: ''
-      });
-    }
-  };
 
   const [explorerFiltersActiveTab, setExplorerFiltersActiveTab] = useState<'new' | 'graduating' | 'graduated'>(() => {
     const saved = localStorage.getItem('crystal_explorer_active_tab');
@@ -8278,6 +8227,7 @@ function App() {
     const saved = localStorage.getItem('crystal_explorer_active_section');
     return (saved as 'audit' | 'metrics' | 'socials') || 'audit';
   });
+
   const handleOpenFiltersForColumn = useCallback((columnType: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(columnType);
     setpopup(24);
@@ -8368,6 +8318,7 @@ function App() {
       localStorage.removeItem('crystal_applied_explorer_filters');
     }
   }, [appliedExplorerFilters]);
+
   const handleExplorerFilterInputChange = useCallback((field: string, value: string | boolean) => {
     setExplorerFilters((prev: any) => ({
       ...prev,
@@ -8421,6 +8372,7 @@ function App() {
     };
     input.click();
   }, [explorerFiltersActiveTab]);
+
   const handleExplorerFiltersExport = useCallback(() => {
     const dataStr = JSON.stringify(explorerFilters[explorerFiltersActiveTab], null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -8446,6 +8398,7 @@ function App() {
     setAppliedExplorerFilters(newAppliedFilters);
     setpopup(0);
   }, [explorerFilters, appliedExplorerFilters]);
+
   const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(newTab);
   }, []);
@@ -12081,258 +12034,7 @@ function App() {
             </div>
           </div>
         ) : null}
-        {popup === 21 ? (
-          <div className="modal-overlay">
-            <div className="modal-content" ref={popupref}>
-              <div className="modal-header">
-                <h2>Create New Vault</h2>
-                <button
-                  className="modal-close"
-                  onClick={() => {
-                    setpopup(0);
-                    setMarketDropdownOpen(false);
-                    setCreateForm({
-                      name: '',
-                      description: '',
-                      depositAmount: '',
-                      type: 'Spot',
-                      tradableTokens: [],
-                      selectedMarket: '',
-                      website: '',
-                      telegram: '',
-                      discord: '',
-                      twitter: ''
-                    });
-                  }}
-                >
-                  <img src={closebutton} className="close-button-icon" />
-                </button>
-              </div>
-
-              <div className="modal-body">
-                <div className="form-group">
-                  <label>Vault Name</label>
-                  <input
-                    type="text"
-                    value={createForm.name}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Enter vault name"
-                    className="form-input"
-                  />
-                  <small>Name is permanent and cannot be changed later</small>
-                </div>
-
-                <div className="form-group">
-                  <label>Vault Description</label>
-                  <textarea
-                    value={createForm.description}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Describe your vault strategy..."
-                    className="form-textarea"
-                    rows={3}
-                  />
-                  <small>Description can be edited later</small>
-                </div>
-
-                <div className="form-group">
-                  <label>Vault Type</label>
-                  <div className="vault-type-selector">
-                    <button
-                      className={`type-option ${createForm.type === 'Spot' ? 'active' : ''}`}
-                      onClick={() => setCreateForm(prev => ({ ...prev, type: 'Spot', selectedMarket: '' }))}
-                    >
-                      <div className="type-title">Spot Vault</div>
-                      <div className="type-desc">Trade on exactly one market</div>
-                    </button>
-                    <button
-                      className={`type-option ${createForm.type === 'Margin' ? 'active' : ''}`}
-                      onClick={() => setCreateForm(prev => ({ ...prev, type: 'Margin', selectedMarket: '' }))}
-                    >
-                      <div className="type-title">Cross-Margin Vault</div>
-                      <div className="type-desc">Trade across multiple markets</div>
-                    </button>
-                  </div>
-                </div>
-
-                {createForm.type === 'Spot' ? (
-                  <div className="form-group">
-                    <label>Select Trading Market</label>
-                    <div className={`vault-market-dropdown-container ${marketDropdownOpen ? 'open' : ''}`}>
-                      <div
-                        className="vault-market-selected-display"
-                        onClick={() => setMarketDropdownOpen(!marketDropdownOpen)}
-                      >
-                        <div className="vault-market-selected-info">
-                          {createForm.selectedMarket ? (
-                            <>
-                              <img
-                                className="vault-market-icon"
-                                src={markets[createForm.selectedMarket]?.image || tokendict[markets[createForm.selectedMarket]?.baseAddress]?.image}
-                              />
-                              <span className="vault-market-name">{createForm.selectedMarket.replace(/(.+)(.{4})$/, '$1/$2')}</span>
-                            </>
-                          ) : (
-                            <span className="vault-market-placeholder">Choose a market...</span>
-                          )}
-                        </div>
-                        <svg
-                          className="vault-market-arrow"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          width="20"
-                          height="20"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </div>
-
-                      {marketDropdownOpen && (
-                        <div className="vault-market-dropdown-list">
-                          {Object.values(markets).map((market) => {
-                            const marketKey = market.baseAsset + market.quoteAsset;
-                            return (
-                              <div
-                                key={marketKey}
-                                className={`vault-market-dropdown-item ${createForm.selectedMarket === marketKey ? 'selected' : ''}`}
-                                onClick={() => {
-                                  setCreateForm(prev => ({ ...prev, selectedMarket: marketKey }));
-                                  setMarketDropdownOpen(false);
-                                }}
-                              >
-                                <div className="vault-market-item-info">
-                                  <img
-                                    className="vault-market-icon"
-                                    src={market.image || tokendict[market.baseAddress]?.image}
-                                  />
-                                  <span className="vault-market-name">{market.baseAsset}/{market.quoteAsset}</span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                    <small>Your vault will only trade on this selected market</small>
-                  </div>
-                ) : (
-                  <div className="form-group">
-                    <label>Trading Markets</label>
-                    <div className="vault-market-info-text">
-                      <p>This vault is allowed to trade on all listed markets with USDC as the quote token.</p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="form-group">
-                  <label>Socials <span className="optional-text">[Optional]</span></label>
-                  <div className="vault-socials-grid">
-                    <div className="vault-social-field">
-                      <label className="vault-social-label">Website</label>
-                      <input
-                        type="text"
-                        value={createForm.website}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, website: e.target.value }))}
-                        className="form-input"
-                        placeholder="https://..."
-                      />
-                    </div>
-                    <div className="vault-social-field">
-                      <label className="vault-social-label">Telegram</label>
-                      <input
-                        type="text"
-                        value={createForm.telegram}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, telegram: e.target.value }))}
-                        className="form-input"
-                        placeholder="https://t.me/..."
-                      />
-                    </div>
-                    <div className="vault-social-field">
-                      <label className="vault-social-label">Discord</label>
-                      <input
-                        type="text"
-                        value={createForm.discord}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, discord: e.target.value }))}
-                        className="form-input"
-                        placeholder="https://discord.gg/..."
-                      />
-                    </div>
-                    <div className="vault-social-field">
-                      <label className="vault-social-label">X/Twitter</label>
-                      <input
-                        type="text"
-                        value={createForm.twitter}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, twitter: e.target.value }))}
-                        className="form-input"
-                        placeholder="https://x.com/..."
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Initial Deposit (USDC)</label>
-                  <input
-                    type="number"
-                    value={createForm.depositAmount}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, depositAmount: e.target.value }))}
-                    placeholder="100"
-                    min="100"
-                    className="form-input"
-                  />
-                  <div className="vault-deposit-info">
-                    <small>              <img src={walleticon} className="balance-wallet-icon" />{' '}
-                      {formatDisplayValue(usdcBalance, usdcDecimals)} USDC</small>
-                    <small>Minimum: {minDeposit} USDC + {creationFee} USDC creation fee</small>
-                  </div>
-                </div>
-
-                <div className="vault-requirements">
-                  <ul>
-                    <li>Vault creator must maintain {'>'}5% of total liquidity</li>
-                    <li>1000 USDC creation fee (non-refundable)</li>
-                    <li>Name is permanent, description can be edited later</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button
-                  className="vault-cancel-button"
-                  onClick={() => {
-                    setpopup(0);
-                    setMarketDropdownOpen(false);
-                    setCreateForm({
-                      name: '',
-                      description: '',
-                      depositAmount: '',
-                      type: 'Spot',
-                      tradableTokens: [],
-                      selectedMarket: '',
-                      website: '',
-                      telegram: '',
-                      discord: '',
-                      twitter: ''
-                    });
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className={`create-button ${isCreateFormValid() ? 'enabled' : ''}`}
-                  onClick={handleCreateVault}
-                  disabled={!isCreateFormValid()}
-                >
-                  Create Vault
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
+        {popup === 21 ? (<></>) : null}
         {popup === 22 ? (
           <div className="modal-overlay">
             <div className="modal-content vault-action-modal" ref={popupref}>
@@ -20391,123 +20093,118 @@ function App() {
 
       {Modals}
       <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} />
-      {windowWidth <= 1020 &&
-        !simpleView &&
-        ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1)) && (
-          <>
-            <div
-              className={`right-column ${showTrade ? 'show' : ''} ${isMobileDragging ? 'dragging' : ''}`}
-              style={{
-                transform: showTrade && isMobileDragging
-                  ? `translateY(${mobileDragY}px)`
-                  : showTrade
-                    ? 'translateY(0)'
-                    : 'translateY(calc(100% - 91px))'
-              }}
-              onTouchStart={(e: React.TouchEvent) => {
-                if (windowWidth <= 1020 && showTrade) {
-                  setMobileStartY(e.touches[0].clientY);
-                  setIsMobileDragging(true);
-                }
-              }}
-              onTouchMove={(e: React.TouchEvent) => {
-                if (!isMobileDragging || windowWidth > 1020 || !showTrade) return;
-
-                const currentY = e.touches[0].clientY;
-                const deltaY = currentY - mobileStartY;
-
-                if (deltaY > 0) {
-                  setMobileDragY(deltaY);
-                }
-              }}
-              onTouchEnd={() => {
-                if (!isMobileDragging || windowWidth > 1020) return;
-
-                setIsMobileDragging(false);
-
-                if (mobileDragY > 100) {
-                  setShowTrade(false);
-                  document.body.style.overflow = 'auto';
-                  document.querySelector('.right-column')?.classList.add('hide');
-                  document.querySelector('.right-column')?.classList.remove('show');
-                  document.querySelector('.trade-mobile-switch')?.classList.remove('open');
-                }
-                setMobileDragY(0);
-              }}
-            >
-              <div className="mobile-drag-handle">
-                <div className="drag-indicator"></div>
-              </div>
-
-              {location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market' ? swap : location.pathname.slice(1) == 'limit' ? limit : location.pathname.slice(1) == 'send' ? send : scale}
-            </div>
-          </>
-        )}
-      {
+      {windowWidth <= 1020 && !simpleView && ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1)) && (
         <>
           <div
-          // style={getAppContainerStyle()} 
+            className={`right-column ${showTrade ? 'show' : ''} ${isMobileDragging ? 'dragging' : ''}`}
+            style={{
+              transform: showTrade && isMobileDragging
+                ? `translateY(${mobileDragY}px)`
+                : showTrade
+                  ? 'translateY(0)'
+                  : 'translateY(calc(100% - 91px))'
+            }}
+            onTouchStart={(e: React.TouchEvent) => {
+              if (windowWidth <= 1020 && showTrade) {
+                setMobileStartY(e.touches[0].clientY);
+                setIsMobileDragging(true);
+              }
+            }}
+            onTouchMove={(e: React.TouchEvent) => {
+              if (!isMobileDragging || windowWidth > 1020 || !showTrade) return;
+
+              const currentY = e.touches[0].clientY;
+              const deltaY = currentY - mobileStartY;
+
+              if (deltaY > 0) {
+                setMobileDragY(deltaY);
+              }
+            }}
+            onTouchEnd={() => {
+              if (!isMobileDragging || windowWidth > 1020) return;
+
+              setIsMobileDragging(false);
+
+              if (mobileDragY > 100) {
+                setShowTrade(false);
+                document.body.style.overflow = 'auto';
+                document.querySelector('.right-column')?.classList.add('hide');
+                document.querySelector('.right-column')?.classList.remove('show');
+                document.querySelector('.trade-mobile-switch')?.classList.remove('open');
+              }
+              setMobileDragY(0);
+            }}
           >
-            <Header
-              setTokenIn={setTokenIn}
-              setTokenOut={setTokenOut}
-              setorders={setorders}
-              settradehistory={settradehistory}
-              settradesByMarket={settradesByMarket}
-              setcanceledorders={setcanceledorders}
-              setpopup={setpopup}
-              setChain={handleSetChain}
-              account={{
-                connected: connected,
-                address: address,
-                chainId: userchain,
-              }}
-              activechain={activechain}
-              tokenIn={tokenIn}
-              setShowTrade={setShowTrade}
-              simpleView={simpleView}
-              setSimpleView={setSimpleView}
-              tokendict={tokendict}
-              transactions={transactions}
-              activeMarket={activeMarket}
-              orderdata={{
-                liquidityBuyOrders,
-                liquiditySellOrders,
-                reserveQuote,
-                reserveBase
-              }}
-              onMarketSelect={onMarketSelect}
-              marketsData={sortedMarkets}
-              tradesloading={tradesloading}
-              tradesByMarket={tradesByMarket}
-              currentWalletIcon={currentWalletIcon}
-              subWallets={subWallets}
-              walletTokenBalances={walletTokenBalances}
-              activeWalletPrivateKey={oneCTSigner}
-              setOneCTSigner={setOneCTSigner}
-              refetch={refetch}
-              isBlurred={isBlurred}
-              terminalRefetch={terminalRefetch}
-              tokenList={memoizedTokenList}
-              logout={logout}
-              tokenBalances={tokenBalances}
-              lastRefGroupFetch={lastRefGroupFetch}
-              tokenData={tokenData}
-              monUsdPrice={monUsdPrice}
-              sendUserOperationAsync={sendUserOperationAsync}
-              setTerminalToken={setTerminalToken}
-              setTokenData={setTokenData}
-              quickAmounts={quickAmounts}
-              setQuickAmount={setQuickAmount}
-              activePresets={activePresets}
-              setActivePreset={setActivePreset}
-              handleInputFocus={handleInputFocus}
-              buyPresets={buyPresets}
-              sellPresets={sellPresets}
-            />
+            <div className="mobile-drag-handle">
+              <div className="drag-indicator"></div>
+            </div>
+
+            {location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market' ? swap : location.pathname.slice(1) == 'limit' ? limit : location.pathname.slice(1) == 'send' ? send : scale}
           </div>
-          <div className="headerfiller"></div>
         </>
+      )}
+      {
+        <div
+        // style={getAppContainerStyle()} 
+        >
+          <Header
+            setTokenIn={setTokenIn}
+            setTokenOut={setTokenOut}
+            setorders={setorders}
+            settradehistory={settradehistory}
+            settradesByMarket={settradesByMarket}
+            setcanceledorders={setcanceledorders}
+            setpopup={setpopup}
+            setChain={handleSetChain}
+            account={{
+              connected: connected,
+              address: address,
+              chainId: userchain,
+            }}
+            activechain={activechain}
+            tokenIn={tokenIn}
+            setShowTrade={setShowTrade}
+            simpleView={simpleView}
+            setSimpleView={setSimpleView}
+            tokendict={tokendict}
+            transactions={transactions}
+            activeMarket={activeMarket}
+            orderdata={{
+              liquidityBuyOrders,
+              liquiditySellOrders,
+              reserveQuote,
+              reserveBase
+            }}
+            onMarketSelect={onMarketSelect}
+            marketsData={sortedMarkets}
+            tradesloading={tradesloading}
+            tradesByMarket={tradesByMarket}
+            currentWalletIcon={currentWalletIcon}
+            subWallets={subWallets}
+            walletTokenBalances={walletTokenBalances}
+            activeWalletPrivateKey={oneCTSigner}
+            setOneCTSigner={setOneCTSigner}
+            refetch={refetch}
+            isBlurred={isBlurred}
+            terminalRefetch={terminalRefetch}
+            tokenList={memoizedTokenList}
+            logout={logout}
+            tokenBalances={tokenBalances}
+            lastRefGroupFetch={lastRefGroupFetch}
+            tokenData={tokenData}
+            monUsdPrice={monUsdPrice}
+            sendUserOperationAsync={sendUserOperationAsync}
+            setTerminalToken={setTerminalToken}
+            setTokenData={setTokenData}
+            quickAmounts={quickAmounts}
+            setQuickAmount={setQuickAmount}
+            activePresets={activePresets}
+            setActivePreset={setActivePreset}
+            handleInputFocus={handleInputFocus}
+            buyPresets={buyPresets}
+            sellPresets={sellPresets}
+          />
+        </div>
       }
       <div className="app-container">
         <Routes>
@@ -20814,7 +20511,7 @@ function App() {
                 canceledorders={canceledorders}
                 router={router}
                 address={address}
-                trades={tradesByMarket}
+                tradesByMarket={tradesByMarket}
                 currentMarket={
                   activeMarketKey.replace(
                     new RegExp(
@@ -20857,8 +20554,8 @@ function App() {
                 handleSetChain={handleSetChain}
                 setCurrentLimitPrice={setCurrentLimitPrice}
               />
-            }
-          />     <Route path="/leaderboard"
+            } />
+          <Route path="/leaderboard"
             element={
               <Leaderboard
                 setpopup={setpopup}

@@ -32,7 +32,6 @@ interface PerpsProps {
     canceledorders: any[];
     router: any;
     address: any;
-    trades: any;
     currentMarket: string;
     orderCenterHeight: number;
     hideBalances?: boolean;

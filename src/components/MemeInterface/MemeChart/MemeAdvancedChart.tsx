@@ -89,7 +89,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       return false;
     }
   });
-  const toResKey = (sym: string, res: string) => sym + 'MON' + (res === '1D' ? '1D' : res);
+  const toResKey = (sym: string, res: string) => sym + 'MON' + res;
 
   function enforceOpenEqualsPrevClose(bars: any[] = []) {
     if (!Array.isArray(bars) || bars.length === 0) return bars;
@@ -413,9 +413,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           subscriberUID: string,
           onResetCacheNeeded: () => void,
         ) => {
-          const isSec = selectedInterval.endsWith('s');
-          const resKey = isSec ? `${resolution}S` : resolution;
-          const key = toResKey(token.symbol, resKey);
+          const key = toResKey(token.symbol, resolution);
 
           realtimeCallbackRef.current[key] = onRealtimeCallback;
           subsRef.current[subscriberUID] = key;
