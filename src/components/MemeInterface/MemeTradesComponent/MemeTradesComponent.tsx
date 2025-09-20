@@ -483,7 +483,7 @@ export default function MemeTradesComponent({
         amountUSD,
         amountMON,
         mcUSD: r.price * monUsdPrice * 1_000_000_000,
-        priceUSD: r.price * quoteUsd,
+        priceUSD: r.price * quoteUsd * monUsdPrice,
         trader: short,
         fullAddress: r.caller,
         tags,

@@ -1908,7 +1908,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         });
 
         const data = (await response.json())?.data;
-        console.log(data);
         if (isCancelled || !data) return;
 
         if (data.launchpadTokens?.length) {
