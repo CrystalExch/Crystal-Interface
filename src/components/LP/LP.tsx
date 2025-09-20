@@ -1242,6 +1242,8 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
                     <div className="lp-borrow-apy-value">{26.7}%</div>
                   </div>
                 </div>
+
+                
               </div>
             ))) : (
             <div className="no-vaults-message">

@@ -18,6 +18,7 @@
     font-weight:300;
     min-width: 780px;
     gap: 1rem;
+    
 }
 .earn-card{
     transition:background-color .2s ease;

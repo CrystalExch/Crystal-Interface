@@ -114,10 +114,6 @@
     font-size: 2rem;
   }
   
-  .earn-subtitle {
-    font-size: 0.9rem;
-    padding: 0 1rem;
-  }
   
   .earn-toggle {
     width: 100%;
@@ -134,10 +130,8 @@
 @media (max-width: 480px) {
   .earn-main-title {
     font-size: 1.8rem;
+    align-items: center;
   }
   
-  .earn-subtitle {
-    font-size: 0.85rem;
-  }
 }
 
