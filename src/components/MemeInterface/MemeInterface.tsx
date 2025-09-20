@@ -2685,7 +2685,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 g.start_price_native) *
               100
             : null;
-      if (pct == null || !isFinite(pct)) return '—';
+      if (pct == null || !isFinite(pct)) return '0%';
       const sign = pct > 0 ? '+' : '';
       return `${sign}${pct.toFixed(2)}%`;
     },
@@ -2883,22 +2883,16 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 className="stat-value"
                 style={{
                   color:
-                    currentStats.buyVolume - currentStats.sellVolume >= 0
+                    currentStats.buyVolume - currentStats.sellVolume > 0
                       ? 'rgb(67 254 154)'
-                      : 'rgb(235 112 112)',
+                      : currentStats.buyVolume - currentStats.sellVolume < 0
+                      ? 'rgb(235 112 112)'
+                      : 'white',
                 }}
               >
-                {currentStats.buyVolume - currentStats.sellVolume >= 0
-                  ? '+'
-                  : ''}
+                {currentStats.buyVolume - currentStats.sellVolume < 0 ? '-' : ''}
                 $
-                {fmt(
-                  Math.abs(
-                    (currentStats.buyVolume - currentStats.sellVolume) *
-                      monUsdPrice,
-                  ),
-                  1,
-                )}
+                {fmt(Math.abs((currentStats.buyVolume - currentStats.sellVolume) * monUsdPrice), 1)}
               </span>
             </div>
           </div>
@@ -2923,9 +2917,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         color: (() => {
                           const s = pctForTf(v);
                           if (s === '—') return 'var(--muted, #9a9ba4)';
-                          return s.startsWith('+')
-                            ? 'rgb(67 254 154)'
-                            : 'rgb(235 112 112)';
+
+                          const num = parseFloat(
+                            s.trim()
+                              .replace('−', '-')
+                              .replace(/[+%]/g, '')
+                          );
+
+                          if (!isFinite(num)) return 'var(--muted, #9a9ba4)';
+                          if (num === 0) return 'white';
+
+                          return num > 0 ? 'rgb(67 254 154)' : 'rgb(235 112 112)';
                         })(),
                       }}
                     >
