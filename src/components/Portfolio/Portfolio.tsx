@@ -64,19 +64,19 @@ const Tooltip: React.FC<{
         break;
     }
 
-    const margin = 10;
+    const Perpetuals = 10;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
     if (position === 'top' || position === 'bottom') {
       left = Math.min(
-        Math.max(left, margin + tooltipRect.width / 2),
-        viewportWidth - margin - tooltipRect.width / 2,
+        Math.max(left, Perpetuals + tooltipRect.width / 2),
+        viewportWidth - Perpetuals - tooltipRect.width / 2,
       );
     } else {
       top = Math.min(
-        Math.max(top, margin),
-        viewportHeight - margin - tooltipRect.height,
+        Math.max(top, Perpetuals),
+        viewportHeight - Perpetuals - tooltipRect.height,
       );
     }
 
@@ -286,7 +286,7 @@ interface PortfolioProps {
   scaAddress: any;
 }
 
-type PortfolioTab = 'spot' | 'margin' | 'wallets' | 'trenches';
+type PortfolioTab = 'spot' | 'Perpetuals' | 'wallets' | 'trenches';
 
 const Portfolio: React.FC<PortfolioProps> = ({
   orders,
@@ -2172,7 +2172,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   <div style={{
                     fontSize: '12px',
                     color: '#888',
-                    marginBottom: '8px',
+                    PerpetualsBottom: '8px',
                     wordBreak: 'break-all'
                   }}>
                     {spectatedAddress.slice(0, 6)}...{spectatedAddress.slice(-4)}
@@ -2296,7 +2296,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   <div className="no-wallets-message">
                     <h4>No Sub Wallets Found</h4>
                     <p>Create sub wallets to manage multiple wallets from one interface and trade with 1CT.</p>
-                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '16px' }}>
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', PerpetualsTop: '16px' }}>
                       <button
                         className="create-wallet-cta-button"
                         onClick={createSubWallet}
@@ -2393,7 +2393,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                         className="clear-zone-button"
                         onClick={handleSendBackToMain}
                         disabled={isVaultDepositSigning || destinationWallets.length === 0}
-                        style={{ marginLeft: '8px' }}
+                        style={{ PerpetualsLeft: '8px' }}
                       >
                         {isVaultDepositSigning ? 'Sending...' : 'Send Back to Main'}
                       </button>
@@ -2416,7 +2416,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                         <div style={{
                           color: '#ff6b6b',
                           fontSize: '0.7rem',
-                          marginTop: '2px'
+                          PerpetualsTop: '2px'
                         }}>
                           {customAddressError}
                         </div>
@@ -3013,9 +3013,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
               Spot
             </span>
             <span
-              className="portfolio-tab-title margin"
+              className="portfolio-tab-title perpetuals"
             >
-              Margin
+              Perpetuals
             </span>
             <span
               className={`portfolio-tab-title ${activeTab === 'wallets' ? 'active' : 'nonactive'}`}
@@ -3073,9 +3073,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
               Spot
             </span>
             <span
-              className="portfolio-tab-title margin"
+              className="portfolio-tab-title perpetuals"
             >
-              Margin
+              Perpetuals
             </span>
             <span
               className={`portfolio-tab-title ${activeTab === 'wallets' ? 'active' : 'nonactive'}`}
