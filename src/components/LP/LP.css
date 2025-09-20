@@ -15,6 +15,7 @@
     letter-spacing: -.3px;
     font-weight: 300;
     min-width: 780px;
+    flex:1;
 }
 
 .lp-card {
@@ -179,6 +180,7 @@
     display: flex;
     gap: .5rem;
     align-items: center;
+    
 }
 
 .lp-filter-button {
@@ -291,6 +293,7 @@
     transition: all .2s ease;
     min-width: 280px;
     gap: .3rem;
+    max-width: 300px;
 }
 
 .lp-search-input:active {
@@ -600,6 +603,8 @@
     justify-content: space-between;
     align-items: center;
     width: 100%;
+    flex-wrap:wrap;
+    row-gap:.5rem;
     margin-bottom: .75rem;
 }
 
@@ -623,8 +628,7 @@
     white-space: nowrap;
     flex-shrink: 0;
     right:0;
-    top: -100px;
-    height: ;
+    top: -70px;
 }
 
 .add-liquidity-button:hover {
@@ -1376,12 +1380,15 @@
     .token-pair-selection {
         flex-direction: column;
     }
+    .add-liquidity-content {
+        padding-bottom: 2.5rem;
+    }
+
 }
 
 @media (max-width: 768px) {
     .add-liquidity-container {
-        padding-top: 3.5rem;
-        padding-bottom: 2rem;
+        height: 80px;
     }
     
     .lp-detail-top {
@@ -1471,12 +1478,13 @@
         flex-direction: column;
         gap: 1rem;
         align-items: center;
+        width:100%;
     }
     
     .lp-filter-buttons {
         justify-content: center;
         flex-wrap: wrap;
-        width: 100%;
+        max-width: 100%;
     }
     
     .add-liquidity-button {
@@ -1539,7 +1547,8 @@
     font-weight: 400;
 }.lp-filter-search-container{
     display: flex;
-    gap: 0.65rem
+    flex-wrap:wrap;
+    gap: 0.2rem;
 }
 
 .lp-filters{

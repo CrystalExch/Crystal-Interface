@@ -4,6 +4,8 @@ import camera from '../../../../assets/camera.svg'
 import CopyButton from '../../../CopyButton/CopyButton';
 import TokenInfoPopup from './TokenInfoPopup/TokenInfoPopup';
 import MiniChart from './MiniChart/MiniChart';
+import PNLComponent from '../../../PNLComponent/PNLComponent.tsx';
+import '../../../Portfolio/Portfolio.css';
 
 import SortArrow from '../../../OrderCenter/SortArrow/SortArrow';
 import PriceDisplay from '../PriceDisplay/PriceDisplay';
@@ -50,6 +52,7 @@ const calculateBondingPercentage = (marketCap: number) => {
   const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
   return bondingPercentage;
 };
+
 
 const MemeTokenSkeleton = () => {
   return (
@@ -143,6 +146,9 @@ interface TokenInfoProps {
   monUsdPrice: number;
   showLoadingPopup?: (id: string, config: any) => void;
   updatePopup?: (id: string, config: any) => void;
+  userPNL?: {
+    totalPnl: number;
+  };
 }
 
 const TokenInfo: React.FC<TokenInfoProps> = ({
@@ -162,6 +168,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   monUsdPrice,
   showLoadingPopup,
   updatePopup,
+  userPnl,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
@@ -381,6 +388,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   const shouldShowFullHeader = isTradeRoute && !simpleView;
   const shouldShowTokenInfo = isTradeRoute && !simpleView ? "token-info-container" : "token-info-container-simple";
+  const [showPNLModal, setShowPNLModal] = useState(false);
 
   const handleSymbolInfoClick = (e: React.MouseEvent) => {
     if (
@@ -797,7 +805,29 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     {bondingPercentage.toFixed(1)}%
                   </span>
                 </div>
+
               )}
+
+              <div className="meme-interface-token-metric">
+                <span className="meme-interface-metric-label">Your PNL</span>
+                <div className="meme-interface-pnl-value-container">
+                  {userPnl && userPnl.totalPnl !== 0 && (
+                    <span 
+                      className={`meme-interface-metric-value ${userPnl.totalPnl >= 0 ? 'positive' : 'negative'}`}
+                    >
+                      {userPnl.totalPnl >= 0 ? '+' : ''}${Math.abs(userPnl.totalPnl).toFixed(2)}
+                    </span>
+                  )}
+                  <button
+                    className="trenches-pnl-button"
+                    onClick={() => setShowPNLModal(true)}
+                  >
+                    <svg fill="#cfcfdfff" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
+                      <path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -877,6 +907,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             )}
           </div>
         )}
+
 
         <div className="token-details">
           <div className={isLoading && shouldShowFullHeader ? 'symbol-skeleton' : 'trading-pair'}>
@@ -1110,6 +1141,12 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           </div>
         </>
       )}
+
+      <PNLComponent
+        isVisible={showPNLModal}
+        onClose={() => setShowPNLModal(false)}
+        windowWidth={window.innerWidth}
+      />
     </div>
   );
 };
