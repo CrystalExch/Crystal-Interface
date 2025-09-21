@@ -463,20 +463,21 @@ const Header: React.FC<HeaderProps> = ({
       volume24h: liveTokenData.volume24h || token.volume24h,
     };
   })() : undefined;
-  const isPerpsRoute = location.pathname === '/perps';
+  const isPerpsRoute = location.pathname.startsWith('/perps')
 
-const perpsTokenData = isPerpsRoute ? {
-  symbol: 'BTC-USDC',
-  baseAsset: 'BTC',
-  quoteAsset: 'USDC',
-  tokenIcon: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-  price: 43250.50,
-  change24h: 2.35,
-  volume24h: 1250000000,
-  openInterest: 890000000,
-  fundingRate: 0.0001,
-  maxLeverage: 100,
-} : undefined;
+  const perpsTokenData = isPerpsRoute ? {
+    symbol: 'BTC-USDC',
+    baseAsset: 'BTC',
+    quoteAsset: 'USDC',
+    tokenIcon: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
+    price: 43250.50,
+    change24h: 2.35,
+    volume24h: 1250000000,
+    openInterest: 890000000,
+    fundingRate: 0.0001,
+    maxLeverage: 100,
+  } : undefined;
+  
   const formatNumberWithCommas = (num: number, decimals = 2) => {
     if (num === 0) return "0";
     if (num >= 1e9) return `${(num / 1e9).toFixed(decimals)}B`;

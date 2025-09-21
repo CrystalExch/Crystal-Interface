@@ -26,9 +26,6 @@ interface ChartCanvasProps {
   refetch: any;
   sendUserOperationAsync: any;
   setChain: any;
-  address: any;
-  client: any;
-  newTxPopup: any;
   usedRefAddress: any;
   realtimeCallbackRef: any;
   limitPrice?: bigint;

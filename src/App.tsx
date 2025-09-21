@@ -1073,7 +1073,7 @@ function App() {
   const [addressinfoloading, setaddressinfoloading] = useState(true);
   const [chartDays, setChartDays] = useState<number>(1);
   const [marketsData, setMarketsData] = useState<any[]>([]);
-  const [advChartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', showChartOutliers]);
+  const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', showChartOutliers]);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [isEditingSigning, setIsEditingSigning] = useState(false);
   const openEditOrderPopup = (order: any) => {
@@ -1216,7 +1216,7 @@ function App() {
       setIsEditingSizeSigning(false);
     }
   };
-  const { chartData, portChartLoading } = usePortfolioData(
+  const { chartData: portGraph, portChartLoading } = usePortfolioData(
     address,
     Object.values(tokendict),
     chartDays,
@@ -8363,7 +8363,7 @@ function App() {
         reader.onload = (e) => {
           try {
             const importedFilters = JSON.parse(e.target?.result as string);
-            setExplorerFilters(prev => ({
+            setExplorerFilters((prev: any) => ({
               ...prev,
               [explorerFiltersActiveTab]: importedFilters
             }));
@@ -9384,12 +9384,12 @@ function App() {
                       setColorValue={setPortfolioColorValue}
                       isPopup={true}
                       chartData={typeof totalAccountValue === 'number' ? [
-                        ...chartData.slice(0, -1),
+                        ...portGraph.slice(0, -1),
                         {
-                          ...chartData[chartData.length - 1],
+                          ...portGraph[portGraph.length - 1],
                           value: totalAccountValue,
                         },
-                      ] : chartData}
+                      ] : portGraph}
                       portChartLoading={portChartLoading}
                       chartDays={chartDays}
                       setChartDays={setChartDays}
@@ -13716,10 +13716,7 @@ function App() {
                         value: ethValue,
                       };
 
-                      console.log('Sending deploy transaction...');
-                      const deployOp = await sendUserOperationAsync({ uo: deployUo });
-                      console.log('Deploy transaction sent, waiting for receipt...');
-                      console.log('Vault deployed successfully!');
+                      await sendUserOperationAsync({ uo: deployUo });
                       setCreateVaultForm({
                         name: '',
                         description: '',
@@ -20066,11 +20063,8 @@ function App() {
       refetch={refetch}
       sendUserOperationAsync={sendUserOperationAsync}
       setChain={handleSetChain}
-      address={address}
-      client={client}
-      newTxPopup={newTxPopup}
       usedRefAddress={usedRefAddress}
-      data={advChartData}
+      data={chartData}
       setData={setChartData}
       realtimeCallbackRef={realtimeCallbackRef}
       limitPrice={limitPrice}
@@ -20089,15 +20083,11 @@ function App() {
     router,
     refetch,
     handleSetChain,
-    address,
-    client,
-    newTxPopup,
     usedRefAddress,
-    advChartData,
+    chartData,
     realtimeCallbackRef,
     limitPrice,
-    setlimitPrice,
-    setlimitPriceString,
+    updateLimitAmount,
     tokenIn,
     amountIn,
     location.pathname,
@@ -20568,12 +20558,12 @@ function App() {
                 setTotalVolume={setTotalVolume}
                 totalVolume={totalVolume}
                 chartData={typeof totalAccountValue === 'number' ? [
-                  ...chartData.slice(0, -1),
+                  ...portGraph.slice(0, -1),
                   {
-                    ...chartData[chartData.length - 1],
+                    ...portGraph[portGraph.length - 1],
                     value: totalAccountValue,
                   },
-                ] : chartData}
+                ] : portGraph}
                 portChartLoading={portChartLoading}
                 chartDays={chartDays}
                 setChartDays={setChartDays}
@@ -20631,7 +20621,8 @@ function App() {
                 isBlurred={isBlurred}
               />
             } />
-          <Route path="/perps"
+          <Route path="/perps" element={<Navigate to="/perps/BTCUSD" replace />} />
+          <Route path="/perps/:marketKey"
             element={
               <Perps
                 layoutSettings={layoutSettings}
@@ -20661,7 +20652,6 @@ function App() {
                 activeTab={obTab}
                 setActiveTab={setOBTab}
                 updateLimitAmount={updateLimitAmount}
-                renderChartComponent={renderChartComponent}
                 reserveQuote={reserveQuote}
                 reserveBase={reserveBase}
                 orders={orders}
@@ -20703,7 +20693,6 @@ function App() {
                 openEditOrderPopup={openEditOrderPopup}
                 openEditOrderSizePopup={openEditOrderSizePopup}
                 marketsData={marketsData}
-                activeMarketKey={activeMarketKey}
                 wethticker={wethticker}
                 ethticker={ethticker}
                 memoizedTokenList={memoizedTokenList}
