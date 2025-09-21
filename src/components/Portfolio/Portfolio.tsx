@@ -2171,7 +2171,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   <div style={{
                     fontSize: '12px',
                     color: '#888',
-                    PerpetualsBottom: '8px',
+                    marginBottom: '8px',
                     wordBreak: 'break-all'
                   }}>
                     {spectatedAddress.slice(0, 6)}...{spectatedAddress.slice(-4)}
@@ -2295,7 +2295,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   <div className="no-wallets-message">
                     <h4>No Sub Wallets Found</h4>
                     <p>Create sub wallets to manage multiple wallets from one interface and trade with 1CT.</p>
-                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', PerpetualsTop: '16px' }}>
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '16px' }}>
                       <button
                         className="create-wallet-cta-button"
                         onClick={createSubWallet}
@@ -2392,7 +2392,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                         className="clear-zone-button"
                         onClick={handleSendBackToMain}
                         disabled={isVaultDepositSigning || destinationWallets.length === 0}
-                        style={{ PerpetualsLeft: '8px' }}
+                        style={{ marginLeft: '8px' }}
                       >
                         {isVaultDepositSigning ? 'Sending...' : 'Send Back to Main'}
                       </button>
@@ -2415,7 +2415,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                         <div style={{
                           color: '#ff6b6b',
                           fontSize: '0.7rem',
-                          PerpetualsTop: '2px'
+                          marginTop: '2px'
                         }}>
                           {customAddressError}
                         </div>
@@ -3053,11 +3053,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
         <div className="portfolio-content-container">
           {renderTabContent()}
         </div>
-        <PNLComponent
-          isVisible={showPNLModal}
-          onClose={() => setShowPNLModal(false)}
-          windowWidth={window.innerWidth}
-        />
       </div>
     );
   } else {
