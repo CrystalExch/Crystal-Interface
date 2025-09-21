@@ -24,9 +24,8 @@
     display: flex;
     width: 100%;
     margin: 0px 12px 0 12px;
-    gap: 3px;
+    margin-top: 4px;
     width: calc(100% - 24px);
-    padding: 3px;
     border-radius: 6px;
     border: 1px solid rgba(179, 184, 249, .1);
 }
@@ -40,23 +39,12 @@
     font-size: .85rem;
     transition: 0.3s ease;
     letter-spacing: -0.3px;
-    border: none;
+    border: 1px solid transparent;
 }
 
 .perps-long-button.active {
-      background: linear-gradient(135deg,
-      #aaaecf 0,
-      #9a9ec7 25%,
-      #8b8eb8 50%,
-      #7f82ac 75%,
-      #7f82a1 100%);
-  border: none;
-  box-shadow:
-    inset 0 1px 1px rgb(255 255 255/25%),
-    inset 0 -1px 1px rgb(0 0 0/25%),
-    0 2px 8px rgb(170 174 207/10%);  
-    color: black;
-    
+    border: 1px solid #20b26c;
+    color: #20b26c;
 }
 
 .perps-long-button.inactive {
@@ -65,19 +53,8 @@
 }
 
 .perps-short-button.active {
-      background: linear-gradient(135deg,
-      #aaaecf 0,
-      #9a9ec7 25%,
-      #8b8eb8 50%,
-      #7f82ac 75%,
-      #7f82a1 100%);
-  border: none;
-  box-shadow:
-    inset 0 1px 1px rgb(255 255 255/25%),
-    inset 0 -1px 1px rgb(0 0 0/25%),
-    0 2px 8px rgb(170 174 207/10%);    
-    color: black;
-
+    border: 1px solid #d63031;
+    color: #d63031;
 }
 
 .perps-short-button.inactive {
@@ -426,12 +403,18 @@
 .perps-tif-button {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    cursor: pointer;
+    gap: 6px;
+    padding: 0px 8px 4px 8px;
     transition: all 0.2s ease;
     color: rgba(255, 255, 255, 0.9);
     font-size: 0.7rem;
+}
+
+.perps-tif-inner {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
 .perps-tif-button:hover {
@@ -546,6 +529,15 @@
     min-width: 40px;
 }
 
+.perps-available-to-trade {
+    align-items: center;
+    display: flex;
+    font-size: 0.75rem;
+    justify-content: space-between;
+    margin-bottom: 2px;
+    width: 100%;
+}
+
 .perps-tpsl-percent-input {
     width: 60px;
     background: rgba(0, 0, 0, 0.3);
@@ -644,11 +636,20 @@
     margin: 0;
 }
 
+.perps-tif-button-arrow {
+    height: 13px;
+    opacity: 0.8;
+    transition: transform.3s cubic-bezier(0.2, 0, 0.1, 1);
+    width: 13px;
+}
 
+.perps-tif-button-arrow.open {
+    transform: rotate(180deg);
+}
 
 .perps-amount-section{
     padding: 0 13px;
-    padding-top: 8px;
+    padding-top: 12px;
 }
 
 .perps-trade-input-wrapper{
@@ -658,7 +659,7 @@
     padding: 5px 10px;
     font-weight: 1rem;
     border-radius: 4px;
-    margin-top: 10px;
+    margin-top: 6px;
     font-size: 0.85rem;
     color: grey;
 }
@@ -682,16 +683,13 @@
 .perps-account-details{
     display: flex;
     flex-direction: column;
-    padding: 15px;
     width: 100%;
-    border-top: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .perps-account-section-title{
     font-size: 0.8rem;
     letter-spacing: -0.3px;
-        margin-bottom: 5px;
-
+    margin-top: 8px;
 }
 
 .perps-account-title{
@@ -724,19 +722,20 @@
     border-top: 1px solid rgba(179, 184, 249, 0.1);
 }
 
-.perps-bottom-section{
+.perps-trade-details-section {
     width: 100%;
     margin-top: auto;
 }
 
+.perps-bottom-section{
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
+    padding: 10px 15px 15px 15px;
+}
+
 .perps-deposit-withdraw-section{
     display: flex;
-    padding: 8px 13px;
     width: 100%;
-    height: 50px;
-    border-top: 1px solid rgba(179, 184, 249, 0.1);
     gap: 5px;
-
 }
 
 .perps-deposit-button{
