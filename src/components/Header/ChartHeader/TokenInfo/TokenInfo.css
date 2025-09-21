@@ -772,8 +772,8 @@
   flex-direction: column;
   width: 100%;
   height: 53px;
-  overflow-x: scroll;
 }
+
 
 .meme-interface-token-header-info {
   display: flex;
@@ -957,10 +957,10 @@
 
 .meme-interface-token-header-right {
   display: flex;
-  flex-direction: column;
   align-items: flex-end;
   gap: 16px;
-  flex-shrink: 0;
+  overflow-x: scroll;
+
 }
 
 
@@ -968,6 +968,46 @@
   display: flex;
   align-items: center;
   gap: 15px;
+  position: relative;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex-shrink: 0;
+}
+
+.meme-interface-token-metrics::-webkit-scrollbar {
+  display: none;
+}
+
+/* Horizontal scroll gradients for meme metrics */
+.meme-interface-token-metrics::before,
+.meme-interface-token-metrics::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.meme-interface-token-metrics::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.meme-interface-token-metrics::after {
+  right: 0;
+  background: linear-gradient(270deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.meme-interface-token-metrics.show-left-gradient::before {
+  opacity: 1;
+}
+
+.meme-interface-token-metrics.show-right-gradient::after {
+  opacity: 1;
 }
 
 .meme-interface-token-metric {
@@ -1209,8 +1249,8 @@
   flex-direction: column;
   width: 100%;
   height: 53px;
-  overflow-x: scroll;
 }
+
 
 .perps-interface-token-header-info {
   display: flex;
@@ -1294,16 +1334,57 @@
 
 .perps-interface-token-header-right {
   display: flex;
-  flex-direction: column;
   align-items: flex-end;
   gap: 16px;
-  flex-shrink: 0;
+  overflow-x: scroll;
 }
 
 .perps-interface-token-metrics {
   display: flex;
   align-items: start;
   gap: 15px;
+  overflow-x: auto;
+  position: relative;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.perps-interface-token-metrics::-webkit-scrollbar {
+  display: none;
+}
+
+/* Horizontal scroll gradients for perps metrics */
+.perps-interface-token-metrics::before,
+.perps-interface-token-metrics::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.perps-interface-token-metrics::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.perps-interface-token-metrics::after {
+  right: 0;
+  background: linear-gradient(270deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.perps-interface-token-metrics.show-left-gradient::before {
+  opacity: 1;
+}
+
+.perps-interface-token-metrics.show-right-gradient::after {
+  opacity: 1;
 }
 
 .perps-interface-token-metric {
