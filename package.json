@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "lint": "biome check .",
     "preview": "vite preview",
-    "format": "prettier --write \"src/components/Referrals/**/*.{js,jsx,ts,tsx}\" && stylelint --fix \"src/components/Referrals/**/*.{css,scss}\" && postcss \"src/components/Referrals/**/*.{css,scss}\" --replace",
+    "format": "prettier --write \"src/components/TokenExplorer/**/*.{js,jsx,ts,tsx}\" && stylelint --fix \"src/components/TokenExplorer/**/*.{css,scss}\" && postcss \"src/components/TokenExplorer/**/*.{css,scss}\" --replace",
     "format-all": "prettier --write \"src/**/*.{tsx,ts,css,scss}\" \"!src/adv/**/*\" \"!src/contexts/LanguageContext.tsx\" && stylelint \"src/**/*.{css,scss}\" --fix && postcss \"src/**/*.css\" --replace"
   },
   "dependencies": {

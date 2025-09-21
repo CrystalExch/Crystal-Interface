@@ -3,11 +3,11 @@ import { LocalStorageSaveLoadAdapter } from './LocalStorageSaveLoadAdapter';
 
 import cancelOrder from '../../../scripts/cancelOrder';
 import replaceOrder from '../../../scripts/replaceOrder';
-import normalizeTicker from '../../../utils/normalizeTicker';
-import { overrides } from './overrides';
-import customRound from '../../../utils/customRound';
-import { formatDisplay } from '../../OrderCenter/utils';
 import { settings } from '../../../settings';
+import customRound from '../../../utils/customRound';
+import normalizeTicker from '../../../utils/normalizeTicker';
+import { formatDisplay } from '../../OrderCenter/utils';
+import { overrides } from './overrides';
 
 import './AdvancedTradingChart.css';
 
@@ -71,7 +71,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   const isMarksVisibleRef = useRef<boolean>(isMarksVisible);
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
-  
+
   const previewOrderLineRef = useRef<any>(null);
 
   const updatePreviewOrderLine = () => {
@@ -82,8 +82,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     if (previewOrderLineRef.current) {
       try {
         previewOrderLineRef.current.remove();
-      } catch (e) {
-      }
+      } catch (e) {}
       previewOrderLineRef.current = null;
     }
 
@@ -92,36 +91,39 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     }
 
     try {
-      const priceInDisplayUnits = Number(limitPrice) / Number(activeMarket.priceFactor);
+      const priceInDisplayUnits =
+        Number(limitPrice) / Number(activeMarket.priceFactor);
       const isBuyOrder = tokenIn === activeMarket.quoteAddress;
 
       let quantityDisplay;
-      
+
       if (tokenIn === activeMarket.baseAddress) {
         quantityDisplay = customRound(
-          Number(amountIn) / (10 ** Number(activeMarket.baseDecimals)), 
-          3
+          Number(amountIn) / 10 ** Number(activeMarket.baseDecimals),
+          3,
         ).toString();
       } else {
-        const baseAmount = (amountIn * (activeMarket.scaleFactor || BigInt(1))) / limitPrice;
+        const baseAmount =
+          (amountIn * (activeMarket.scaleFactor || BigInt(1))) / limitPrice;
         quantityDisplay = customRound(
-          Number(baseAmount) / (10 ** Number(activeMarket.baseDecimals)), 
-          3
+          Number(baseAmount) / 10 ** Number(activeMarket.baseDecimals),
+          3,
         ).toString();
       }
-      
+
       const formattedPrice = priceInDisplayUnits.toFixed(3);
-      
-      const orderTypeText = isBuyOrder ? "Place limit buy" : "Place limit sell";
-      
+
+      const orderTypeText = isBuyOrder ? 'Place limit buy' : 'Place limit sell';
+
       const divider = ' \u2502 ';
 
-      const previewLine = widgetRef.current.activeChart()
+      const previewLine = widgetRef.current
+        .activeChart()
         .createOrderLine()
         .setPrice(priceInDisplayUnits)
-      .setText(`${orderTypeText}${divider}${formattedPrice}`)
-        .setQuantity('\u200B')          
-        .setQuantityBackgroundColor('rgba(0,0,0,0)') 
+        .setText(`${orderTypeText}${divider}${formattedPrice}`)
+        .setQuantity('\u200B')
+        .setQuantityBackgroundColor('rgba(0,0,0,0)')
         .setQuantityBorderColor('rgba(0,0,0,0)')
         .setQuantityTextColor('rgba(0,0,0,0)')
         .setLineColor('rgb(209, 209, 250)')
@@ -130,16 +132,22 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         .setBodyBorderColor('#D8DCFF')
         .setBodyFont('10px Funnel Display')
         .setLineStyle(1)
-        .setCancellable(false)            
-      .onMove(() => {
+        .setCancellable(false)
+        .onMove(() => {
           const newPrice = previewLine.getPrice();
-          updateLimitAmount(newPrice, Number(activeMarket.priceFactor), activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1) : Number(activeMarket.priceFactor));
+          updateLimitAmount(
+            newPrice,
+            Number(activeMarket.priceFactor),
+            activeMarket?.marketType != 0
+              ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1)
+              : Number(activeMarket.priceFactor),
+          );
           const formatted = newPrice.toFixed(3);
-      const side = tokenIn === activeMarket.quoteAddress
-        ? 'Place limit buy'
-        : 'Place limit sell';
-      previewLine.setText(`${side}${divider}${formatted}`);
-      ;
+          const side =
+            tokenIn === activeMarket.quoteAddress
+              ? 'Place limit buy'
+              : 'Place limit sell';
+          previewLine.setText(`${side}${divider}${formatted}`);
         });
       previewOrderLineRef.current = previewLine;
     } catch (error) {
@@ -152,11 +160,15 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       if (chartReady) {
         updatePreviewOrderLine();
       }
-    }
-    catch (e) {
-
-    }
-  }, [chartReady, limitPrice, amountIn, tokenIn, isLimitOrderMode, activeMarket]);
+    } catch (e) {}
+  }, [
+    chartReady,
+    limitPrice,
+    amountIn,
+    tokenIn,
+    isLimitOrderMode,
+    activeMarket,
+  ]);
 
   useEffect(() => {
     if (data[2] != showChartOutliers) {
@@ -172,175 +184,275 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       isMarksVisibleRef.current = isMarksVisible;
       tradeHistoryRef.current = [...tradehistory];
       if (tradehistory.length > 0 && becameVisible) {
-        if (chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol()) {
-          const marketKey = widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
-          const marks = tradehistory.filter(
-            (trade: any) => trade[4]?.toLowerCase() == marketKey.toLowerCase()
-          ).map((trade: any) => ({
-            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            time: trade[6],
-            hoveredBorderWidth: 0,
-            borderWidth: 0,
-            color: trade[2] == 0 ? {background: 'rgb(210, 82, 82)', border: ''} : {background: 'rgb(131, 251, 155)', border: ''},
-            text: (trade[2] == 0 ? `${t('sold')} ${formatDisplay(customRound(trade[0] / (10**Number(markets[trade[4]].baseDecimals)), 3))} ` : `${t('bought')} ${formatDisplay(customRound(trade[1] / (10**Number(markets[trade[4]].baseDecimals)), 3))} `) + `${markets[trade[4]].baseAsset} on ` + new Date(trade[6]*1000).toLocaleString('en-US', {
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-              hourCycle: 'h23',
-            })
-            .replace(/, \d{2}$/, ''),
-            label: trade[2] == 0 ? 'S' : 'B',
-            labelFontColor: 'black',
-            minSize: 17,
-          }));
+        if (
+          chartReady &&
+          typeof marksRef.current === 'function' &&
+          widgetRef.current?.activeChart()?.symbol()
+        ) {
+          const marketKey =
+            widgetRef.current.activeChart().symbol().split('/')[0] +
+            widgetRef.current.activeChart().symbol().split('/')[1];
+          const marks = tradehistory
+            .filter(
+              (trade: any) =>
+                trade[4]?.toLowerCase() == marketKey.toLowerCase(),
+            )
+            .map((trade: any) => ({
+              id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              time: trade[6],
+              hoveredBorderWidth: 0,
+              borderWidth: 0,
+              color:
+                trade[2] == 0
+                  ? { background: 'rgb(210, 82, 82)', border: '' }
+                  : { background: 'rgb(131, 251, 155)', border: '' },
+              text:
+                (trade[2] == 0
+                  ? `${t('sold')} ${formatDisplay(customRound(trade[0] / 10 ** Number(markets[trade[4]].baseDecimals), 3))} `
+                  : `${t('bought')} ${formatDisplay(customRound(trade[1] / 10 ** Number(markets[trade[4]].baseDecimals), 3))} `) +
+                `${markets[trade[4]].baseAsset} on ` +
+                new Date(trade[6] * 1000)
+                  .toLocaleString('en-US', {
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hourCycle: 'h23',
+                  })
+                  .replace(/, \d{2}$/, ''),
+              label: trade[2] == 0 ? 'S' : 'B',
+              labelFontColor: 'black',
+              minSize: 17,
+            }));
           marksRef.current(marks);
         }
-      }
-      else if (tradehistory.length > 0 && isMarksVisible) {
-        if (chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol()) {
-          const marketKey = widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
-          const marks = diff.filter(
-            (trade: any) => trade[4]?.toLowerCase() == marketKey.toLowerCase()
-          ).map((trade: any) => ({
-            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            time: trade[6],
-            hoveredBorderWidth: 0,
-            borderWidth: 0,
-            color: trade[2] == 0 ? {background: 'rgb(210, 82, 82)', border: ''} : {background: 'rgb(131, 251, 155)', border: ''},
-            text: (trade[2] == 0 ? `${t('sold')} ${formatDisplay(customRound(trade[0] / (10**Number(markets[trade[4]].baseDecimals)), 3))} ` : `${t('bought')} ${formatDisplay(customRound(trade[1] / (10**Number(markets[trade[4]].baseDecimals)), 3))} `) + `${markets[trade[4]].baseAsset} on ` + new Date(trade[6]*1000).toLocaleString('en-US', {
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-              hourCycle: 'h23',
-            })
-            .replace(/, \d{2}$/, ''),
-            label: trade[2] == 0 ? 'S' : 'B',
-            labelFontColor: 'black',
-            minSize: 17,
-          }));
+      } else if (tradehistory.length > 0 && isMarksVisible) {
+        if (
+          chartReady &&
+          typeof marksRef.current === 'function' &&
+          widgetRef.current?.activeChart()?.symbol()
+        ) {
+          const marketKey =
+            widgetRef.current.activeChart().symbol().split('/')[0] +
+            widgetRef.current.activeChart().symbol().split('/')[1];
+          const marks = diff
+            .filter(
+              (trade: any) =>
+                trade[4]?.toLowerCase() == marketKey.toLowerCase(),
+            )
+            .map((trade: any) => ({
+              id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              time: trade[6],
+              hoveredBorderWidth: 0,
+              borderWidth: 0,
+              color:
+                trade[2] == 0
+                  ? { background: 'rgb(210, 82, 82)', border: '' }
+                  : { background: 'rgb(131, 251, 155)', border: '' },
+              text:
+                (trade[2] == 0
+                  ? `${t('sold')} ${formatDisplay(customRound(trade[0] / 10 ** Number(markets[trade[4]].baseDecimals), 3))} `
+                  : `${t('bought')} ${formatDisplay(customRound(trade[1] / 10 ** Number(markets[trade[4]].baseDecimals), 3))} `) +
+                `${markets[trade[4]].baseAsset} on ` +
+                new Date(trade[6] * 1000)
+                  .toLocaleString('en-US', {
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hourCycle: 'h23',
+                  })
+                  .replace(/, \d{2}$/, ''),
+              label: trade[2] == 0 ? 'S' : 'B',
+              labelFontColor: 'black',
+              minSize: 17,
+            }));
           marksRef.current(marks);
         }
-      }
-      else {
+      } else {
         if (chartReady) {
           widgetRef.current?.activeChart()?.clearMarks();
         }
       }
-    }
-    catch(e) {
-    }
+    } catch (e) {}
   }, [tradehistory.length, isMarksVisible]);
-  
+
   useEffect(() => {
     try {
       if (chartReady) {
         if (orders.length > 0 && isOrdersVisible) {
           if (widgetRef.current?.activeChart()?.symbol()) {
-            const marketKey = widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
+            const marketKey =
+              widgetRef.current.activeChart().symbol().split('/')[0] +
+              widgetRef.current.activeChart().symbol().split('/')[1];
             orders.forEach((order: any) => {
-              if (order[4]?.toLowerCase() != marketKey.toLowerCase() || order?.[10]) return;
-              const orderLine = widgetRef.current.activeChart().createOrderLine().setPrice(order[0] / Number(markets[order[4]].priceFactor))
-              .setQuantity(formatDisplay(customRound((order[2]-order[7]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
-              .setText(`Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(order[0] / Number(markets[order[4]].priceFactor))) - 1))))}`)
-              .setLineColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-              .setQuantityBackgroundColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-              .setQuantityTextColor('rgb(6,6,6)')
-              .setCancelButtonIconColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-              .setCancelButtonBackgroundColor('rgb(6,6,6)')
-              .setBodyBackgroundColor('rgb(6,6,6)')
-              .setBodyTextColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-              .setBodyBorderColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-              .setQuantityBorderColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-              .setCancelButtonBorderColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-              .setBodyFont("10px Funnel Display")
-              .setQuantityFont("bold 10px Funnel Display")
-              .setLineStyle(2)
-              .onMove(async () => {
-                orderLine.setCancellable(false)
-                orderLine.setText(`Limit: ${orderLine.getPrice().toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(orderLine.getPrice() ?? 1)) - 1))))}`)
-                if (order[3] == 1) {
-                  orderLine.setQuantity(formatDisplay(customRound((order[2]-order[7]) * (order[0]) / orderLine.getPrice() / Number(markets[order[4]].priceFactor) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
-                }
-                try {
-                  await setChain();
-                  await sendUserOperationAsync({uo: replaceOrder(
-                    router,
-                    BigInt(0),
-                    (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
-                    (order[3] == 1 ? markets[order[4]].baseAsset : markets[order[4]].quoteAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].baseAddress : markets[order[4]].quoteAddress,
-                    false,
-                    false,
-                    BigInt(order[0]),
-                    BigInt(order[1]),
-                    BigInt(orderLine.getPrice().toPrecision(5) * Number(markets[order[4]].priceFactor)),
-                    BigInt(0),
-                    BigInt(Math.floor(Date.now() / 1000) + 900),
-                    usedRefAddress
-                  )})
-                  refetch()
-                } catch (error) {
-                  orderLine.setCancellable(true)
-                  orderLine.setPrice(order[0] / Number(markets[order[4]].priceFactor))
-                  orderLine.setText(`Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(order[0] / Number(markets[order[4]].priceFactor))) - 1))))}`)
-                  if (order[3] == 1) {
-                    orderLine.setQuantity(formatDisplay(customRound((order[2]-order[7]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
-                  }
-                }
-              })
-              .onCancel(async () => {
-                orderLine.setCancellable(false)
-                try {
-                  await setChain();
-                  await cancelOrder(
-                    sendUserOperationAsync,
-                    router,
-                    order[3] == 1
-                      ? markets[order[4]].quoteAddress
-                      : markets[order[4]].baseAddress,
-                    order[3] == 1
-                      ? markets[order[4]].baseAddress
-                      : markets[order[4]].quoteAddress,
-                    BigInt(order[0]),
-                    BigInt(order[1]),
-                    BigInt(Math.floor(Date.now() / 1000) + 900)
+              if (
+                order[4]?.toLowerCase() != marketKey.toLowerCase() ||
+                order?.[10]
+              )
+                return;
+              const orderLine = widgetRef.current
+                .activeChart()
+                .createOrderLine()
+                .setPrice(order[0] / Number(markets[order[4]].priceFactor))
+                .setQuantity(
+                  formatDisplay(
+                    customRound(
+                      (order[2] - order[7]) /
+                        10 ** Number(markets[order[4]].baseDecimals),
+                      3,
+                    ),
+                  ),
+                )
+                .setText(
+                  `Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(order[0] / Number(markets[order[4]].priceFactor))) - 1))))}`,
+                )
+                .setLineColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
+                .setQuantityBackgroundColor(
+                  order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)',
+                )
+                .setQuantityTextColor('rgb(6,6,6)')
+                .setCancelButtonIconColor(
+                  order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)',
+                )
+                .setCancelButtonBackgroundColor('rgb(6,6,6)')
+                .setBodyBackgroundColor('rgb(6,6,6)')
+                .setBodyTextColor(
+                  order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)',
+                )
+                .setBodyBorderColor(
+                  order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)',
+                )
+                .setQuantityBorderColor(
+                  order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)',
+                )
+                .setCancelButtonBorderColor(
+                  order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)',
+                )
+                .setBodyFont('10px Funnel Display')
+                .setQuantityFont('bold 10px Funnel Display')
+                .setLineStyle(2)
+                .onMove(async () => {
+                  orderLine.setCancellable(false);
+                  orderLine.setText(
+                    `Limit: ${orderLine.getPrice().toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(orderLine.getPrice() ?? 1)) - 1))))}`,
                   );
-                  refetch()
-                  try {
-                    orderLine.remove()
+                  if (order[3] == 1) {
+                    orderLine.setQuantity(
+                      formatDisplay(
+                        customRound(
+                          ((order[2] - order[7]) * order[0]) /
+                            orderLine.getPrice() /
+                            Number(markets[order[4]].priceFactor) /
+                            10 ** Number(markets[order[4]].baseDecimals),
+                          3,
+                        ),
+                      ),
+                    );
                   }
-                  catch {}
-                } catch (error) {
-                  orderLine.setCancellable(true)
-                }
-              })
+                  try {
+                    await setChain();
+                    await sendUserOperationAsync({
+                      uo: replaceOrder(
+                        router,
+                        BigInt(0),
+                        (order[3] == 1
+                          ? markets[order[4]].quoteAsset
+                          : markets[order[4]].baseAsset) ==
+                          settings.chainConfig[activechain].ethticker
+                          ? settings.chainConfig[activechain].weth
+                          : order[3] == 1
+                            ? markets[order[4]].quoteAddress
+                            : markets[order[4]].baseAddress,
+                        (order[3] == 1
+                          ? markets[order[4]].baseAsset
+                          : markets[order[4]].quoteAsset) ==
+                          settings.chainConfig[activechain].ethticker
+                          ? settings.chainConfig[activechain].weth
+                          : order[3] == 1
+                            ? markets[order[4]].baseAddress
+                            : markets[order[4]].quoteAddress,
+                        false,
+                        false,
+                        BigInt(order[0]),
+                        BigInt(order[1]),
+                        BigInt(
+                          orderLine.getPrice().toPrecision(5) *
+                            Number(markets[order[4]].priceFactor),
+                        ),
+                        BigInt(0),
+                        BigInt(Math.floor(Date.now() / 1000) + 900),
+                        usedRefAddress,
+                      ),
+                    });
+                    refetch();
+                  } catch (error) {
+                    orderLine.setCancellable(true);
+                    orderLine.setPrice(
+                      order[0] / Number(markets[order[4]].priceFactor),
+                    );
+                    orderLine.setText(
+                      `Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(order[0] / Number(markets[order[4]].priceFactor))) - 1))))}`,
+                    );
+                    if (order[3] == 1) {
+                      orderLine.setQuantity(
+                        formatDisplay(
+                          customRound(
+                            (order[2] - order[7]) /
+                              10 ** Number(markets[order[4]].baseDecimals),
+                            3,
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                })
+                .onCancel(async () => {
+                  orderLine.setCancellable(false);
+                  try {
+                    await setChain();
+                    await cancelOrder(
+                      sendUserOperationAsync,
+                      router,
+                      order[3] == 1
+                        ? markets[order[4]].quoteAddress
+                        : markets[order[4]].baseAddress,
+                      order[3] == 1
+                        ? markets[order[4]].baseAddress
+                        : markets[order[4]].quoteAddress,
+                      BigInt(order[0]),
+                      BigInt(order[1]),
+                      BigInt(Math.floor(Date.now() / 1000) + 900),
+                    );
+                    refetch();
+                    try {
+                      orderLine.remove();
+                    } catch {}
+                  } catch (error) {
+                    orderLine.setCancellable(true);
+                  }
+                });
               orderLine.getOrder = () => order;
               order.push(orderLine);
-            })
+            });
           }
-        }
-        else {
+        } else {
           ordersRef.current.forEach((order: any) => {
             try {
               if (order?.[10] && typeof order[10].remove === 'function') {
                 try {
                   order[10].remove();
-                }
-                catch {}
-                order.splice(10, 1)
+                } catch {}
+                order.splice(10, 1);
               }
-            } catch (error) {
-            }
+            } catch (error) {}
           });
         }
         ordersRef.current = [...orders];
       }
-    }
-    catch(e) {
-    }
+    } catch (e) {}
   }, [orders, isOrdersVisible, chartReady]);
 
   useEffect(() => {
@@ -418,7 +530,18 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               timezone: 'Etc/UTC',
               exchange: 'crystal.exchange',
               minmov: 1,
-              pricescale: activeMarketRef.current?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(activeMarketRef.current?.latestPrice ?? 1)) - 1) : Number(activeMarketRef.current.priceFactor),
+              pricescale:
+                activeMarketRef.current?.marketType != 0
+                  ? 10 **
+                    Math.max(
+                      0,
+                      5 -
+                        Math.floor(
+                          Math.log10(activeMarketRef.current?.latestPrice ?? 1),
+                        ) -
+                        1,
+                    )
+                  : Number(activeMarketRef.current.priceFactor),
               has_intraday: true,
               has_volume: true,
               supported_resolutions: ['1', '5', '15', '60', '240', '1D'],
@@ -447,7 +570,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                     : resolution + 'm',
             );
 
-            const key = symbolInfo.name.split('/')[0] + symbolInfo.name.split('/')[1] + resolution;
+            const key =
+              symbolInfo.name.split('/')[0] +
+              symbolInfo.name.split('/')[1] +
+              resolution;
 
             await new Promise<void>((resolve) => {
               const check = () => {
@@ -456,17 +582,17 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   resolve();
                 }
               };
-            
+
               const intervalCheck = setInterval(check, 50);
               check();
             });
 
-            let bars = dataRef.current[key]
+            let bars = dataRef.current[key];
 
             bars = bars.filter(
               (bar: any) => bar.time >= from * 1000 && bar.time <= to * 1000,
             );
-            
+
             setTimeout(() => {
               if (bars && bars.length) {
                 onHistoryCallback(bars, { noData: false });
@@ -486,27 +612,46 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           to: number,
           onDataCallback: (marks: any[]) => void,
         ) => {
-          const marks = isMarksVisibleRef.current == false ? [] : tradeHistoryRef.current.filter(
-            (trade: any) => trade[6] >= from && trade[6] <= to && (trade[4] == symbolInfo.name.split('/')[0] + symbolInfo.name.split('/')[1])
-          ).map((trade: any) => ({
-            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            time: trade[6],
-            hoveredBorderWidth: 0,
-            borderWidth: 0,
-            color: trade[2] == 0 ? {background: 'rgb(210, 82, 82)', border: ''} : {background: 'rgb(131, 251, 155)', border: ''},
-            text: (trade[2] == 0 ? `${t('sold')} ${formatDisplay(customRound(trade[0] / (10**Number(markets[trade[4]].baseDecimals)), 3))} ` : `${t('bought')} ${formatDisplay(customRound(trade[1] / (10**Number(markets[trade[4]].baseDecimals)), 3))} `) + `${markets[trade[4]].baseAsset} on ` + new Date(trade[6]*1000).toLocaleString('en-US', {
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-              hourCycle: 'h23',
-            })
-            .replace(/, \d{2}$/, ''),
-            label: trade[2] == 0 ? 'S' : 'B',
-            labelFontColor: 'black',
-            minSize: 17,
-          }));
+          const marks =
+            isMarksVisibleRef.current == false
+              ? []
+              : tradeHistoryRef.current
+                  .filter(
+                    (trade: any) =>
+                      trade[6] >= from &&
+                      trade[6] <= to &&
+                      trade[4] ==
+                        symbolInfo.name.split('/')[0] +
+                          symbolInfo.name.split('/')[1],
+                  )
+                  .map((trade: any) => ({
+                    id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    time: trade[6],
+                    hoveredBorderWidth: 0,
+                    borderWidth: 0,
+                    color:
+                      trade[2] == 0
+                        ? { background: 'rgb(210, 82, 82)', border: '' }
+                        : { background: 'rgb(131, 251, 155)', border: '' },
+                    text:
+                      (trade[2] == 0
+                        ? `${t('sold')} ${formatDisplay(customRound(trade[0] / 10 ** Number(markets[trade[4]].baseDecimals), 3))} `
+                        : `${t('bought')} ${formatDisplay(customRound(trade[1] / 10 ** Number(markets[trade[4]].baseDecimals), 3))} `) +
+                      `${markets[trade[4]].baseAsset} on ` +
+                      new Date(trade[6] * 1000)
+                        .toLocaleString('en-US', {
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                          hourCycle: 'h23',
+                        })
+                        .replace(/, \d{2}$/, ''),
+                    label: trade[2] == 0 ? 'S' : 'B',
+                    labelFontColor: 'black',
+                    minSize: 17,
+                  }));
           marksRef.current = onDataCallback;
           setTimeout(() => {
             onDataCallback(marks);
@@ -519,7 +664,9 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           onRealtimeCallback: any,
         ) => {
           realtimeCallbackRef.current[
-            symbolInfo.name.split('/')[0] + symbolInfo.name.split('/')[1] + resolution
+            symbolInfo.name.split('/')[0] +
+              symbolInfo.name.split('/')[1] +
+              resolution
           ] = onRealtimeCallback;
         },
 
@@ -528,7 +675,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     });
 
     widgetRef.current.onChartReady(() => {
-      setChartReady(true)
+      setChartReady(true);
       const marketId = `${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}_${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`;
       const chartId = `layout_${marketId}`;
       localAdapterRef.current
@@ -581,8 +728,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         if (previewOrderLineRef.current) {
           try {
             previewOrderLineRef.current.remove();
-          } catch (e) {
-          }
+          } catch (e) {}
           previewOrderLineRef.current = null;
         }
 
@@ -591,19 +737,16 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
             if (order?.[10] && typeof order[10].remove === 'function') {
               try {
                 order[10].remove();
-              }
-              catch {}
-              order.splice(10, 1)
+              } catch {}
+              order.splice(10, 1);
             }
           } catch (error) {
             console.error('Failed to remove order line', error);
           }
         });
-      }
-      catch(e) {
-      }
-      setChartReady(false)
-      dataRef.current = {}
+      } catch (e) {}
+      setChartReady(false);
+      dataRef.current = {};
       widgetRef.current.remove();
     };
   }, [showChartOutliers]);
@@ -613,13 +756,16 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       activeMarketRef.current = activeMarket;
       if (chartReady) {
         setOverlayVisible(true);
-        localStorage.setItem('crystal_chart_timeframe', selectedInterval === '1d'
-        ? '1D'
-        : selectedInterval === '4h'
-          ? '240'
-          : selectedInterval === '1h'
-            ? '60'
-            : selectedInterval.slice(0, -1))
+        localStorage.setItem(
+          'crystal_chart_timeframe',
+          selectedInterval === '1d'
+            ? '1D'
+            : selectedInterval === '4h'
+              ? '240'
+              : selectedInterval === '1h'
+                ? '60'
+                : selectedInterval.slice(0, -1),
+        );
         widgetRef.current.setSymbol(
           `${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}/${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`,
           selectedInterval === '1d'
@@ -633,97 +779,171 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           () => {
             setOverlayVisible(false);
             updatePreviewOrderLine();
-            
+
             if (orders.length > 0 && isOrdersVisible) {
               if (widgetRef.current?.activeChart()?.symbol()) {
-                const marketKey = widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
+                const marketKey =
+                  widgetRef.current.activeChart().symbol().split('/')[0] +
+                  widgetRef.current.activeChart().symbol().split('/')[1];
                 orders.forEach((order: any) => {
-                  if (order[4]?.toLowerCase() != marketKey.toLowerCase() || order?.[10]) return;
-                  const orderLine = widgetRef.current.activeChart().createOrderLine().setPrice(order[0] / Number(markets[order[4]].priceFactor))
-                  .setQuantity(formatDisplay(customRound((order[2]-order[7]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
-                  .setText(`Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10((order[0] / Number(markets[order[4]].priceFactor)))) - 1))))}`)
-                  .setLineColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-                  .setQuantityBackgroundColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-                  .setQuantityTextColor('rgb(6,6,6)')
-                  .setCancelButtonIconColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-                  .setCancelButtonBackgroundColor('rgb(6,6,6)')
-                  .setBodyBackgroundColor('rgb(6,6,6)')
-                  .setBodyTextColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-                  .setBodyBorderColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-                  .setQuantityBorderColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-                  .setCancelButtonBorderColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-                  .setBodyFont("10px Funnel Display")
-                  .setQuantityFont("bold 10px Funnel Display")
-                  .setLineStyle(2)
-                  .onMove(async () => {
-                    orderLine.setCancellable(false)
-                    orderLine.setText(`Limit: ${orderLine.getPrice().toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(orderLine.getPrice() ?? 1)) - 1))))}`)
-                    if (order[3] == 1) {
-                      orderLine.setQuantity(formatDisplay(customRound((order[2]-order[7]) * (order[0]) / orderLine.getPrice() / Number(markets[order[4]].priceFactor) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
-                    }
-                    try {
-                      await setChain();
-                      await sendUserOperationAsync({uo: replaceOrder(
-                        router,
-                        BigInt(0),
-                        (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
-                        (order[3] == 1 ? markets[order[4]].baseAsset : markets[order[4]].quoteAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].baseAddress : markets[order[4]].quoteAddress,
-                        false,
-                        false,
-                        BigInt(order[0]),
-                        BigInt(order[1]),
-                        BigInt(orderLine.getPrice().toPrecision(5) * Number(markets[order[4]].priceFactor)),
-                        BigInt(0),
-                        BigInt(Math.floor(Date.now() / 1000) + 900),
-                        usedRefAddress
-                      )})
-                      refetch()
-                    } catch (error) {
-                      orderLine.setCancellable(true)
-                      orderLine.setPrice(order[0] / Number(markets[order[4]].priceFactor))
-                      orderLine.setText(`Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(order[0] / Number(markets[order[4]].priceFactor))) - 1))))}`)
-                      if (order[3] == 1) {
-                        orderLine.setQuantity(formatDisplay(customRound((order[2]-order[7]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
-                      }
-                    }
-                  })
-                  .onCancel(async () => {
-                    orderLine.setCancellable(false)
-                    try {
-                      await setChain();
-                      await cancelOrder(
-                        sendUserOperationAsync,
-                        router,
-                        order[3] == 1
-                          ? markets[order[4]].quoteAddress
-                          : markets[order[4]].baseAddress,
-                        order[3] == 1
-                          ? markets[order[4]].baseAddress
-                          : markets[order[4]].quoteAddress,
-                        BigInt(order[0]),
-                        BigInt(order[1]),
-                        BigInt(Math.floor(Date.now() / 1000) + 900)
+                  if (
+                    order[4]?.toLowerCase() != marketKey.toLowerCase() ||
+                    order?.[10]
+                  )
+                    return;
+                  const orderLine = widgetRef.current
+                    .activeChart()
+                    .createOrderLine()
+                    .setPrice(order[0] / Number(markets[order[4]].priceFactor))
+                    .setQuantity(
+                      formatDisplay(
+                        customRound(
+                          (order[2] - order[7]) /
+                            10 ** Number(markets[order[4]].baseDecimals),
+                          3,
+                        ),
+                      ),
+                    )
+                    .setText(
+                      `Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(order[0] / Number(markets[order[4]].priceFactor))) - 1))))}`,
+                    )
+                    .setLineColor(
+                      order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)',
+                    )
+                    .setQuantityBackgroundColor(
+                      order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)',
+                    )
+                    .setQuantityTextColor('rgb(6,6,6)')
+                    .setCancelButtonIconColor(
+                      order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)',
+                    )
+                    .setCancelButtonBackgroundColor('rgb(6,6,6)')
+                    .setBodyBackgroundColor('rgb(6,6,6)')
+                    .setBodyTextColor(
+                      order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)',
+                    )
+                    .setBodyBorderColor(
+                      order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)',
+                    )
+                    .setQuantityBorderColor(
+                      order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)',
+                    )
+                    .setCancelButtonBorderColor(
+                      order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)',
+                    )
+                    .setBodyFont('10px Funnel Display')
+                    .setQuantityFont('bold 10px Funnel Display')
+                    .setLineStyle(2)
+                    .onMove(async () => {
+                      orderLine.setCancellable(false);
+                      orderLine.setText(
+                        `Limit: ${orderLine.getPrice().toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(orderLine.getPrice() ?? 1)) - 1))))}`,
                       );
-                      refetch()
-                      try {
-                        orderLine.remove()
+                      if (order[3] == 1) {
+                        orderLine.setQuantity(
+                          formatDisplay(
+                            customRound(
+                              ((order[2] - order[7]) * order[0]) /
+                                orderLine.getPrice() /
+                                Number(markets[order[4]].priceFactor) /
+                                10 ** Number(markets[order[4]].baseDecimals),
+                              3,
+                            ),
+                          ),
+                        );
                       }
-                      catch {}
-                    } catch (error) {
-                      orderLine.setCancellable(true)
-                    }
-                  })
+                      try {
+                        await setChain();
+                        await sendUserOperationAsync({
+                          uo: replaceOrder(
+                            router,
+                            BigInt(0),
+                            (order[3] == 1
+                              ? markets[order[4]].quoteAsset
+                              : markets[order[4]].baseAsset) ==
+                              settings.chainConfig[activechain].ethticker
+                              ? settings.chainConfig[activechain].weth
+                              : order[3] == 1
+                                ? markets[order[4]].quoteAddress
+                                : markets[order[4]].baseAddress,
+                            (order[3] == 1
+                              ? markets[order[4]].baseAsset
+                              : markets[order[4]].quoteAsset) ==
+                              settings.chainConfig[activechain].ethticker
+                              ? settings.chainConfig[activechain].weth
+                              : order[3] == 1
+                                ? markets[order[4]].baseAddress
+                                : markets[order[4]].quoteAddress,
+                            false,
+                            false,
+                            BigInt(order[0]),
+                            BigInt(order[1]),
+                            BigInt(
+                              orderLine.getPrice().toPrecision(5) *
+                                Number(markets[order[4]].priceFactor),
+                            ),
+                            BigInt(0),
+                            BigInt(Math.floor(Date.now() / 1000) + 900),
+                            usedRefAddress,
+                          ),
+                        });
+                        refetch();
+                      } catch (error) {
+                        orderLine.setCancellable(true);
+                        orderLine.setPrice(
+                          order[0] / Number(markets[order[4]].priceFactor),
+                        );
+                        orderLine.setText(
+                          `Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(order[0] / Number(markets[order[4]].priceFactor))) - 1))))}`,
+                        );
+                        if (order[3] == 1) {
+                          orderLine.setQuantity(
+                            formatDisplay(
+                              customRound(
+                                (order[2] - order[7]) /
+                                  10 ** Number(markets[order[4]].baseDecimals),
+                                3,
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    })
+                    .onCancel(async () => {
+                      orderLine.setCancellable(false);
+                      try {
+                        await setChain();
+                        await cancelOrder(
+                          sendUserOperationAsync,
+                          router,
+                          order[3] == 1
+                            ? markets[order[4]].quoteAddress
+                            : markets[order[4]].baseAddress,
+                          order[3] == 1
+                            ? markets[order[4]].baseAddress
+                            : markets[order[4]].quoteAddress,
+                          BigInt(order[0]),
+                          BigInt(order[1]),
+                          BigInt(Math.floor(Date.now() / 1000) + 900),
+                        );
+                        refetch();
+                        try {
+                          orderLine.remove();
+                        } catch {}
+                      } catch (error) {
+                        orderLine.setCancellable(true);
+                      }
+                    });
                   orderLine.getOrder = () => order;
                   order.push(orderLine);
-                })
+                });
               }
             }
           },
         );
       }
-    }
-    catch(e) {
-      setOverlayVisible(false)
+    } catch (e) {
+      setOverlayVisible(false);
     }
   }, [
     normalizeTicker(activeMarket.quoteAsset, activechain),

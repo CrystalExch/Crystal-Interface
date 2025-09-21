@@ -80,16 +80,12 @@ interface DevToken {
   migrated: boolean;
 }
 
-export const mockPositions: Position[] = [
-];
+export const mockPositions: Position[] = [];
 
-export const mockOrders: Order[] = [
+export const mockOrders: Order[] = [];
 
-];
+export const mockHolders: Holder[] = [];
 
-export const mockHolders: Holder[] = [
-];
+export const mockTopTraders: Holder[] = [];
 
-export const mockTopTraders: Holder[] = []
-
-export const mockDevTokens: DevToken[] = []
+export const mockDevTokens: DevToken[] = [];

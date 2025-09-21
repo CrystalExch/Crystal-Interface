@@ -16,5 +16,5 @@ export const defaultMetrics = {
   progress: 0,
   status: 'new' as const,
   created: '0h ago',
-  bondingAmount: 0
+  bondingAmount: 0,
 };
