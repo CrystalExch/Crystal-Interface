@@ -7,6 +7,8 @@ import editicon from "../../assets/edit.svg";
 import { DataPoint } from '../Chart/utils/chartDataGenerator';
 import './Perps.css'
 import TooltipLabel from '../TooltipLabel/TooltipLabel';
+import { formatTime } from '../../utils/formatTime.ts'
+import { formatCommas } from '../../utils/numberDisplayFormat';
 
 interface PerpsProps {
   layoutSettings: string;
@@ -18,22 +20,13 @@ interface PerpsProps {
   setOrderbookWidth: any;
   amountsQuote: any;
   setAmountsQuote: any;
-  obtrades: any;
   viewMode: 'both' | 'buy' | 'sell';
   setViewMode: any;
   activeTab: 'orderbook' | 'trades';
   setActiveTab: any;
-  updateLimitAmount: any;
-  reserveQuote: any;
-  reserveBase: any;
-  orders: any[];
-  tradehistory: any[];
-  canceledorders: any[];
   router: any;
   address: any;
-  currentMarket: string;
   orderCenterHeight: number;
-  hideBalances?: boolean;
   tokenList: any[];
   onMarketSelect: (token: any) => void;
   setSendTokenIn: any;
@@ -55,17 +48,14 @@ interface PerpsProps {
   isBlurred?: boolean;
   isVertDragging?: boolean;
   isOrderCenterVisible?: boolean;
-  onLimitPriceUpdate?: (price: number) => void;
   openEditOrderPopup: (order: any) => void;
   openEditOrderSizePopup: (order: any) => void;
-  tradesByMarket: any;
   wethticker: any;
   ethticker: any;
   memoizedTokenList: any;
   memoizedSortConfig: any;
   emptyFunction: any;
   handleSetChain: any;
-  setCurrentLimitPrice: any;
   sliderIncrement?: number;
 }
 
@@ -79,22 +69,13 @@ const Perps: React.FC<PerpsProps> = ({
   setOrderbookWidth,
   amountsQuote,
   setAmountsQuote,
-  obtrades,
   viewMode,
   setViewMode,
   activeTab,
   setActiveTab,
-  updateLimitAmount,
-  reserveQuote,
-  reserveBase,
-  orders,
-  tradehistory,
-  canceledorders,
   router,
   address,
-  currentMarket,
   orderCenterHeight,
-  hideBalances = false,
   hideMarketFilter = false,
   tokenList,
   onMarketSelect,
@@ -116,17 +97,14 @@ const Perps: React.FC<PerpsProps> = ({
   isBlurred,
   isVertDragging,
   isOrderCenterVisible,
-  onLimitPriceUpdate,
   openEditOrderPopup,
   openEditOrderSizePopup,
-  tradesByMarket,
   wethticker,
   ethticker,
   memoizedTokenList,
   memoizedSortConfig,
   emptyFunction,
   handleSetChain,
-  setCurrentLimitPrice,
   sliderIncrement = 10,
 }) => {
 
@@ -144,7 +122,6 @@ const Perps: React.FC<PerpsProps> = ({
   const [activeTradeType, setActiveTradeType] = useState<"long" | "short">("long");
   const [activeOrderType, setActiveOrderType] = useState<"market" | "Limit" | "Pro">("market");
 
-  // Slider-related state
   const [inputString, setInputString] = useState('');
   const [limitPriceString, setlimitPriceString] = useState('');
   const [amountIn, setAmountIn] = useState(BigInt(0));
@@ -156,18 +133,24 @@ const Perps: React.FC<PerpsProps> = ({
   const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
   const [tempPresetValue, setTempPresetValue] = useState('');
 
-  // TP/SL state
   const [isTpSlEnabled, setIsTpSlEnabled] = useState(false);
   const [tpPrice, setTpPrice] = useState("");
   const [slPrice, setSlPrice] = useState("");
   const [tpPercent, setTpPercent] = useState("0.0");
   const [slPercent, setSlPercent] = useState("0.0");
 
-  // Time in Force dropdown state
+  const [slippage, setSlippage] = useState(() => {
+    const saved = localStorage.getItem('crystal_perps_slippage');
+    return saved !== null ? BigInt(saved) : BigInt(9900);
+  });
+  const [slippageString, setSlippageString] = useState(() => {
+    const saved = localStorage.getItem('crystal_perps_slippage_string');
+    return saved !== null ? saved : '1';
+  });
+
   const [timeInForce, setTimeInForce] = useState("GTC");
   const [isTifDropdownOpen, setIsTifDropdownOpen] = useState(false);
 
-  // Sliding indicator state
   const [indicatorStyle, setIndicatorStyle] = useState<{
     width: number;
     left: number;
@@ -195,7 +178,6 @@ const Perps: React.FC<PerpsProps> = ({
   });
   const [isDragging2, setIsDragging2] = useState(false);
 
-  // Refs
   const initialMousePosRef = useRef(0);
   const initialWidthRef = useRef(0);
   const widthRef = useRef<HTMLDivElement>(null);
@@ -203,7 +185,6 @@ const Perps: React.FC<PerpsProps> = ({
   const popupRef = useRef<HTMLDivElement>(null);
   const presetInputRef = useRef<HTMLInputElement>(null);
 
-  // Order type button refs
   const marketButtonRef = useRef<HTMLButtonElement>(null);
   const limitButtonRef = useRef<HTMLButtonElement>(null);
   const proButtonRef = useRef<HTMLButtonElement>(null);
@@ -213,7 +194,6 @@ const Perps: React.FC<PerpsProps> = ({
   const pingIntervalRef = useRef<any>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Update sliding indicator position
   const updateIndicatorPosition = useCallback(() => {
     const container = orderTypesContainerRef.current;
     if (!container) return;
@@ -260,7 +240,6 @@ const Perps: React.FC<PerpsProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, [updateIndicatorPosition]);
 
-  // Focus preset input when editing
   useEffect(() => {
     if (editingPresetIndex !== null && presetInputRef.current) {
       presetInputRef.current.focus();
@@ -268,7 +247,6 @@ const Perps: React.FC<PerpsProps> = ({
     }
   }, [editingPresetIndex]);
 
-  // Horizontal drag functionality for orderbook
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging2) return;
@@ -354,7 +332,6 @@ const Perps: React.FC<PerpsProps> = ({
     return 'positions';
   });
 
-  // Vertical drag functionality
   const [_isVertDragging, setIsVertDragging] = useState(false);
   const initialHeightRef = useRef(0);
   const handleVertMouseDown = (e: React.MouseEvent) => {
@@ -369,7 +346,6 @@ const Perps: React.FC<PerpsProps> = ({
     document.body.style.userSelect = 'none';
   };
 
-  // Slider functionality
   const positionPopup = useCallback((percent: number) => {
     const input = sliderRef.current;
     const popup = popupRef.current;
@@ -403,6 +379,15 @@ const Perps: React.FC<PerpsProps> = ({
     positionPopup(percent);
   }, [positionPopup]);
 
+  const [orders, setorders] = useState<any[]>([]);
+  const [canceledorders, setcanceledorders] = useState<any[]>([]);
+  const [tradehistory, settradehistory] = useState<any[]>([]);
+  const [tradesByMarket, settradesByMarket] = useState<any>({});
+  const [currentLimitPrice, setCurrentLimitPrice] = useState<number>(0);
+
+  const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
+  }, []);
+      
   useEffect(() => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
     if (!activeMarket?.contractId) return
@@ -421,38 +406,6 @@ const Perps: React.FC<PerpsProps> = ({
       wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }))
     });
 
-    (async () => {
-        const params = new URLSearchParams({
-            contractId: activeMarket?.contractId,
-            klineType: 'MINUTE_5',
-            priceType: 'LAST_PRICE'
-          })
-
-          const params1 = new URLSearchParams({
-            contractId: activeMarket?.contractId,
-            klineType: 'MINUTE_5',
-            priceType: 'LAST_PRICE',
-          })
-          
-          const [kline0] = await Promise.all([
-            fetch(`/api/v1/public/quote/getKline?${params}`, {
-              method: 'GET',
-              headers: { 'Content-Type': 'application/json' }
-            }).then(r => r.json()),
-          ])
-
-          if (!kline0?.data) return;
-          const mapKlines = (klines: any[]) =>
-            klines.map(candle => ({
-              time: Number(candle.klineTime),
-              open: Number(candle.open),
-              high: Number(candle.high),
-              low: Number(candle.low),
-              close: Number(candle.close),
-              volume: Number(candle.makerBuyValue),
-            }))
-        setChartData([mapKlines(kline0.data.dataList.concat([])), 'BTCUSD5', true])
-    })()
   }, [activeMarket?.contractId])
 
   useEffect(() => {
@@ -665,6 +618,31 @@ const Perps: React.FC<PerpsProps> = ({
               })
             }
           }
+          else if (message.content.channel.startsWith('trades')) {
+            if (message.content.dataType == 'SNAPSHOT') {
+                const trades = msg.map((t: any) => {
+                    const isBuy = !t.isBuyerMaker
+                    const priceFormatted = formatCommas(t.price)
+                    const tradeValue = Number(t.value)
+                    const time = formatTime(Number(t.time))
+                    const hash = t.ticketId
+                  
+                    return [isBuy, priceFormatted, tradeValue, time, hash]
+                  })
+                setTrades(trades)
+            }
+            else {
+                const trades = msg.map((t: any) => {
+                    const isBuy = t.isBuyerMaker
+                    const priceFormatted = formatCommas(t.price)
+                    const tradeValue = Number(t.value)
+                    const time = formatTime(Number(t.time) / 1000)
+                    return [isBuy, priceFormatted, tradeValue, time]
+                  })
+                
+                  setTrades(prev => [...trades, ...prev].slice(0, 100))
+            }
+          }
           /* let ordersChanged = false;
           let canceledOrdersChanged = false;
           let tradesByMarketChanged = false;
@@ -750,6 +728,7 @@ const Perps: React.FC<PerpsProps> = ({
       tokenIn={'0x0000000000000000000000000000000000000000'}
       amountIn={amountIn}
       isLimitOrderMode={location.pathname.slice(1) === 'limit'}
+      perps={true}
     />
   ), [
     activeMarket,
@@ -1190,15 +1169,69 @@ const Perps: React.FC<PerpsProps> = ({
                                         tooltipText={
                                             <div>
                                                 <div className="tooltip-description">
-                                                    {t('priceImpactHelp')}
+                                                    {t('slippageHelp')}
                                                 </div>
                                             </div>
                                         }
                                         className="impact-label"
                                     />
                                 </div>
-                                <div className="value-container">
-                                    0.5%
+                                <div className="slippage-input-container">
+                                <input
+                                    inputMode="decimal"
+                                    className={`slippage-inline-input ${parseFloat(slippageString) > 5 ? 'red' : ''
+                                    }`}
+                                    type="text"
+                                    value={slippageString}
+                                    onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        (e.target as HTMLInputElement).blur()
+                                        e.stopPropagation()
+                                    };
+                                    }}
+                                    onChange={(e) => {
+                                    const value = e.target.value;
+
+                                    if (
+                                        /^(?!0{2})\d*\.?\d{0,2}$/.test(value) &&
+                                        !/^\d{2}\.\d{2}$/.test(value)
+                                    ) {
+                                        if (value === '') {
+                                        setSlippageString('');
+                                        setSlippage(BigInt(9900));
+                                        localStorage.setItem('crystal_slippage_string', '1');
+                                        localStorage.setItem('crystal_slippage', '9900');
+                                        } else if (parseFloat(value) <= 50) {
+                                        setSlippageString(value);
+                                        localStorage.setItem('crystal_slippage_string', value);
+
+                                        const newSlippage = BigInt(
+                                            10000 - parseFloat(value) * 100,
+                                        );
+                                        setSlippage(newSlippage);
+                                        localStorage.setItem(
+                                            'crystal_slippage',
+                                            newSlippage.toString(),
+                                        );
+                                        }
+                                    }
+                                    }}
+                                    onBlur={() => {
+                                    if (slippageString === '') {
+                                        setSlippageString('1');
+                                        localStorage.setItem('crystal_slippage_string', '1');
+
+                                        setSlippage(BigInt(9900));
+                                        localStorage.setItem('crystal_slippage', '9900');
+                                    }
+                                    }}
+                                />
+                                <span
+                                    className={`slippage-symbol ${parseFloat(slippageString) > 5 ? 'red' : ''
+                                    }`}
+                                >
+                                    %
+                                </span>
                                 </div>
                             </div>
                             <div className="price-impact">
@@ -1208,7 +1241,7 @@ const Perps: React.FC<PerpsProps> = ({
                                         tooltipText={
                                             <div>
                                                 <div className="tooltip-description">
-                                                    {t('priceImpactHelp')}
+                                                    {t('takerfeeexplanation')}
                                                 </div>
                                             </div>
                                         }
@@ -1216,7 +1249,7 @@ const Perps: React.FC<PerpsProps> = ({
                                     />
                                 </div>
                                 <div className="value-container">
-                                    Taker 0.038% / Maker 0.015%
+                                    0.038% / 0.015%
                                 </div>
                             </div>
                         </div>

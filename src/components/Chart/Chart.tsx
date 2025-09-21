@@ -30,6 +30,7 @@ interface ChartComponentProps {
   tokenIn?: string;
   amountIn?: bigint;
   isLimitOrderMode?: boolean;
+  perps?: boolean;
 }
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -52,6 +53,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   tokenIn,
   amountIn,
   isLimitOrderMode = false,
+  perps = false,
 }) => {
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [_lastPair, setLastPair] = useState('');
@@ -237,6 +239,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           tokenIn={tokenIn}
           amountIn={amountIn}
           isLimitOrderMode={isLimitOrderMode}
+          perps={perps}
         />
       ) : (
         <>

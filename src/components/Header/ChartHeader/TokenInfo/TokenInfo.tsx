@@ -147,7 +147,6 @@ interface TokenInfoProps {
     symbol: string;
     baseAsset: string;
     quoteAsset: string;
-    tokenIcon: string;
     price: number;
     icon?: string;
     change24h: number;
@@ -971,7 +970,7 @@ if (isPerpsToken && perpsTokenData) {
         <div className="perps-interface-token-header-left" onClick={togglePerpsDropdown}>
           <div className="perps-interface-token-icon-container">
             <img
-              src={perpsTokenData.tokenIcon}
+              src={perpsTokenData?.icon}
               className="perps-interface-token-icon"
             />
           </div>

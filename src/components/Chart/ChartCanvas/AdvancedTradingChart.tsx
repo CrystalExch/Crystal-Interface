@@ -33,6 +33,7 @@ interface ChartCanvasProps {
   tokenIn?: string;
   amountIn?: bigint;
   isLimitOrderMode?: boolean;
+  perps: boolean;
 }
 
 const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
@@ -57,6 +58,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   tokenIn,
   amountIn = BigInt(0),
   isLimitOrderMode = false,
+  perps,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
@@ -454,7 +456,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
-
+    if (Object.keys(activeMarketRef.current).length == 0) return;
     widgetRef.current = new (window as any).TradingView.widget({
       container: chartRef.current,
       library_path: '/charting_library/',
@@ -528,7 +530,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               exchange: 'crystal.exchange',
               minmov: 1,
               pricescale:
-                activeMarketRef.current?.marketType != 0
+                activeMarketRef.current?.marketType != null && activeMarketRef.current?.marketType != 0
                   ? 10 **
                     Math.max(
                       0,
@@ -538,7 +540,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                         ) -
                         1,
                     )
-                  : Number(activeMarketRef.current.priceFactor),
+                  : perps ? 1 / Number(activeMarketRef.current?.tickSize || 1) : Number(activeMarketRef.current.priceFactor),
               has_intraday: true,
               has_volume: true,
               supported_resolutions: ['1', '5', '15', '60', '240', '1D'],
@@ -571,21 +573,67 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               symbolInfo.name.split('/')[0] +
               symbolInfo.name.split('/')[1] +
               resolution;
+            if (perps) {
+              await new Promise<void>((resolve) => {
+                const check = () => {
+                  if (activeMarketRef.current?.contractId) {
+                    clearInterval(intervalCheck);
+                    resolve();
+                  }
+                };
+  
+                const intervalCheck = setInterval(check, 50);
+                check();
+              });
+              await (async () => {
+                const params = new URLSearchParams({
+                    contractId: activeMarketRef.current?.contractId,
+                    klineType: resolution === '1D'
+                    ? 'DAY_1'
+                    : resolution === '240'
+                      ? 'HOUR_4'
+                      : resolution === '60'
+                        ? 'HOUR_1'
+                        : 'MINUTE_' + resolution,
+                    priceType: 'LAST_PRICE',
+                    filterBeginKlineTimeInclusive: (from * 1000).toString(),
+                    filterEndKlineTimeExclusive: (to * 1000).toString(),
+                  })
 
-            await new Promise<void>((resolve) => {
-              const check = () => {
-                if (dataRef.current[key]) {
-                  clearInterval(intervalCheck);
-                  resolve();
-                }
-              };
-
-              const intervalCheck = setInterval(check, 50);
-              check();
-            });
-
+                  const [kline0] = await Promise.all([
+                    fetch(`/api/v1/public/quote/getKline?${params}`, {
+                      method: 'GET',
+                      headers: { 'Content-Type': 'application/json' }
+                    }).then(r => r.json()),
+                  ])
+        
+                  if (!kline0?.data) return;
+                  const mapKlines = (klines: any[]) =>
+                    klines.map(candle => ({
+                      time: Number(candle.klineTime),
+                      open: Number(candle.open),
+                      high: Number(candle.high),
+                      low: Number(candle.low),
+                      close: Number(candle.close),
+                      volume: Number(candle.makerBuyValue),
+                    }))
+                    dataRef.current[key] = mapKlines(kline0.data.dataList.reverse().concat([]))
+            })()
+            }
+            else {
+              await new Promise<void>((resolve) => {
+                const check = () => {
+                  if (dataRef.current[key]) {
+                    clearInterval(intervalCheck);
+                    resolve();
+                  }
+                };
+  
+                const intervalCheck = setInterval(check, 50);
+                check();
+              });
+            }
             let bars = dataRef.current[key];
-
             bars = bars.filter(
               (bar: any) => bar.time >= from * 1000 && bar.time <= to * 1000,
             );
@@ -746,7 +794,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       dataRef.current = {};
       widgetRef.current.remove();
     };
-  }, [showChartOutliers]);
+  }, [Object.keys(activeMarketRef.current).length > 0, showChartOutliers]);
 
   useEffect(() => {
     try {

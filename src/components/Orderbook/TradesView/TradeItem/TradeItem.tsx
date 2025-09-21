@@ -36,6 +36,7 @@ const TradeItem = ({ trade }: TradeItemProps) => {
       <div className="trade-item-center">{trade[2].toFixed(2)}</div>
       <div className="trade-item-right">
         <span>{trade[3]}</span>
+        {!!trade?.[4] ?
         <a
           href={`${settings.chainConfig[activechain].explorer}/tx/${trade[4]}`}
           target="_blank"
@@ -55,6 +56,7 @@ const TradeItem = ({ trade }: TradeItemProps) => {
             <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
           </svg>
         </a>
+        : <span>&nbsp;</span>}
       </div>
     </div>
   );
