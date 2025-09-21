@@ -4,7 +4,6 @@ import camera from '../../../../assets/camera.svg'
 import CopyButton from '../../../CopyButton/CopyButton';
 import TokenInfoPopup from './TokenInfoPopup/TokenInfoPopup';
 import MiniChart from './MiniChart/MiniChart';
-import PNLComponent from '../../../PNLComponent/PNLComponent.tsx';
 import '../../../Portfolio/Portfolio.css';
 
 import SortArrow from '../../../OrderCenter/SortArrow/SortArrow';

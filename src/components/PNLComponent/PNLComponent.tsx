@@ -61,7 +61,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     rectangleTextColor: '#020307',
     showPNLRectangle: true,
   };
-
+  const [backgroundZoom, setBackgroundZoom] = useState(100);
   const [uploadedBg, setUploadedBg] = useState<string | null>(null);
   const [uploadedImageDimensions, setUploadedImageDimensions] = useState<ImageDimensions | null>(null);
   const [backgroundPosition, setBackgroundPosition] = useState({ x: 50, y: 50 }); // percentage values
@@ -303,6 +303,14 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     const cardHeight = cardRect.height;
     
     const { width: imgWidth, height: imgHeight } = uploadedImageDimensions;
+
+    const scaleX = cardWidth / imgWidth;
+    const scaleY = cardHeight / imgHeight;
+    const baseScale = Math.max(scaleX, scaleY);
+    const zoomScale = baseScale * (backgroundZoom / 100);
+    
+    const scaledWidth = imgWidth * zoomScale;
+    const scaledHeight = imgHeight * zoomScale;
     
     // Calculate if image is larger than card in either dimension
     const needsHorizontal = imgWidth > cardWidth;
@@ -364,6 +372,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     setSelectedBg(bg);
     setCustomizationSettings(defaultCustomizationSettings);
     setHasInteracted(false); // Reset interaction state when changing background
+    setBackgroundZoom(100);
     // Reset background position when selecting a different background
     if (bg !== uploadedBg) {
       setBackgroundPosition({ x: 50, y: 50 });
@@ -393,14 +402,16 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
             setUploadedImageDimensions(dimensions);
             setUploadedBg(result);
             setSelectedBg(result);
-            setBackgroundPosition({ x: 50, y: 50 }); // Reset to center
-            setHasInteracted(false); // Reset interaction state for new upload
+            setBackgroundPosition({ x: 50, y: 50 });
+            setBackgroundZoom(100);
+            setHasInteracted(false); 
           } catch (error) {
             console.error('Error getting image dimensions:', error);
             setUploadedBg(result);
             setSelectedBg(result);
             setUploadedImageDimensions(null);
-            setHasInteracted(false); // Reset interaction state for new upload
+            setBackgroundZoom(100);
+            setHasInteracted(false); 
           }
         }
       };
@@ -483,10 +494,11 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     const scaleX = cardWidth / imgWidth;
     const scaleY = cardHeight / imgHeight;
 
-    const scale = Math.max(scaleX, scaleY);
+    const baseScale = Math.max(scaleX, scaleY);
+    const zoomScale = baseScale * (backgroundZoom / 100);
     
-    const scaledWidth = imgWidth * scale;
-    const scaledHeight = imgHeight * scale;
+    const scaledWidth = imgWidth * zoomScale;
+    const scaledHeight = imgHeight * zoomScale;
 
     return `${scaledWidth}px ${scaledHeight}px`;
   };
@@ -559,7 +571,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
   const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
-  // Only show hint if user hasn't interacted yet, during capture, and when scrolling is possible
+  // drag hint
   const showScrollHint = isUploadedImageSelected && (needsHorizontal || needsVertical) && !hasInteracted && !isCapturing;
 
   return (
@@ -691,6 +703,40 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                   onChange={handleFileUpload}
                 />
               </label>
+
+              {isUploadedImageSelected && (
+                <div className="pnl-zoom-controls">
+                  <label className="zoom-label">Zoom: {backgroundZoom}%</label>
+                  <input
+                    type="range"
+                    min="50"
+                    max="200"
+                    value={backgroundZoom}
+                    onChange={(e) => setBackgroundZoom(Number(e.target.value))}
+                    className="zoom-slider"
+                  />
+                  <div className="zoom-buttons">
+                    <button 
+                      className="zoom-btn"
+                      onClick={() => setBackgroundZoom(Math.max(50, backgroundZoom - 10))}
+                    >
+                      -
+                    </button>
+                    <button 
+                      className="zoom-btn"
+                      onClick={() => setBackgroundZoom(100)}
+                    >
+                      Reset
+                    </button>
+                    <button 
+                      className="zoom-btn"
+                      onClick={() => setBackgroundZoom(Math.min(200, backgroundZoom + 10))}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
