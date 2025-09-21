@@ -13316,9 +13316,11 @@ function App() {
           </div>
         ) : null}
         {popup === 27 ? ( // PNL popup
+        <div ref={popupref}>
           <PNLComponent
               windowWidth={window.innerWidth}
             />
+            </div>
           
         ) : null}
         {popup === 28 ? (

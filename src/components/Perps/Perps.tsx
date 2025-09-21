@@ -677,8 +677,6 @@ const Perps: React.FC<PerpsProps> = ({
                                 <div className="perps-tpsl-row">
                                     <div className="perps-tpsl-label-section">
                                         <span className="perps-tpsl-row-label">TP Price</span>
-                                    </div>
-                                    <div className="perps-tpsl-input-section">
                                         <input
                                             type="number"
                                             placeholder="Enter TP price"
@@ -686,7 +684,10 @@ const Perps: React.FC<PerpsProps> = ({
                                             onChange={(e) => setTpPrice(e.target.value)}
                                             className="perps-tpsl-price-input"
                                         />
+                                    </div>
+                                    <div className="perps-tpsl-input-section">
                                         <div className="perps-tpsl-percentage">
+                                            <span className="perps-tpsl-row-label">TP%</span>
                                             <input
                                                 type="number"
                                                 value={tpPercent}
@@ -700,25 +701,27 @@ const Perps: React.FC<PerpsProps> = ({
                                 <div className="perps-tpsl-row">
                                     <div className="perps-tpsl-label-section">
                                         <span className="perps-tpsl-row-label">SL Price</span>
-                                    </div>
-                                    <div className="perps-tpsl-input-section">
                                         <input
                                             type="number"
                                             placeholder="Enter SL price"
-                                            value={slPrice}
+                                            value={tpPrice}
                                             onChange={(e) => setSlPrice(e.target.value)}
                                             className="perps-tpsl-price-input"
                                         />
+                                    </div>
+                                    <div className="perps-tpsl-input-section">
                                         <div className="perps-tpsl-percentage">
+                                            <span className="perps-tpsl-row-label">SL%</span>
                                             <input
                                                 type="number"
-                                                value={slPercent}
+                                                value={tpPercent}
                                                 onChange={(e) => setSlPercent(e.target.value)}
                                                 className="perps-tpsl-percent-input"
                                             />
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                         )}
                     </div>
@@ -832,14 +835,14 @@ const Perps: React.FC<PerpsProps> = ({
 
                     </div>
                 </div>
-         <div className="perps-deposit-withdraw-section">
-                    <button 
+                <div className="perps-deposit-withdraw-section">
+                    <button
                         className="perps-deposit-button"
                         onClick={() => setpopup(30)}
                     >
                         Deposit
                     </button>
-                    <button 
+                    <button
                         className="perps-withdraw-button"
                         onClick={() => setpopup(31)}
                     >

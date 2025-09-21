@@ -1050,12 +1050,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             onMouseEnter={() => setHoveredToken(true)}
             onMouseLeave={() => setHoveredToken(false)}
           >
-            <div
-              className={`bonding-amount-display ${hoveredToken && bondingPercentage > 0 && isMemeToken ? 'visible' : ''}`}
-              style={{ color: getBondingColor(bondingPercentage) }}
-            >
-              BONDING: {bondingPercentage.toFixed(1)}%
-            </div>
+
             {bondingPercentage > 0 && isMemeToken ? (
               <div
                 className="token-icons-with-bonding"
