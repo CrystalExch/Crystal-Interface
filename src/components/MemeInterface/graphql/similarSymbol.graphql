@@ -15,5 +15,6 @@ query ($q: String!, $exclude: Bytes!, $first: Int!) {
     lastPriceNativePerTokenWad
     volumeNative
     timestamp
+    lastUpdatedAt
   }
 }
