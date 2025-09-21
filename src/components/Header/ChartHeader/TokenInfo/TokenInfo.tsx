@@ -1273,7 +1273,6 @@ if (isPerpsToken && perpsTokenData) {
             onMouseEnter={() => setHoveredToken(true)}
             onMouseLeave={() => setHoveredToken(false)}
           >
-
             {bondingPercentage > 0 && isMemeToken ? (
               <div
                 className="token-icons-with-bonding"

@@ -98,6 +98,7 @@
   pointer-events: none;
   letter-spacing: -0.3px;
   z-index: 1000;
+  visibility: hidden;
 }
 
 .token-icons-container:hover .bonding-amount-display {
