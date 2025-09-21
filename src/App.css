@@ -6678,7 +6678,7 @@ input[type="email"] {
 
 
 .edit-limit-price-popup-bg {
-  border-radius: 8px;
+  border-radius: 6px;
   box-shadow: 0 4px 24px rgb(0 0 0/10%);
   display: flex;
   flex-direction: column;
@@ -6727,8 +6727,8 @@ input[type="email"] {
   background: none;
   width: 100%;
   height: 35px;
-  border-radius: 8px;
-  border: 1.5px solid #0f0f12;
+  border-radius: 4px;
+  border: 1px solid rgba(179, 184, 249, 0.15);
   padding-left: 10px;
   font-size: 0.9rem;
 }
@@ -6760,8 +6760,8 @@ input::-webkit-inner-spin-button {
   justify-content: center;
   width: 25%;
   height: 100%;
-  border-radius: 8px;
-  border: 1.5px dashed #0f0f12;
+  border-radius: 4px;
+  border: 1px solid rgba(179, 184, 249, 0.15);
   font-size: 0.8rem;
   color: grey;
 }
@@ -6777,17 +6777,17 @@ input::-webkit-inner-spin-button {
       #7f82ac 75%,
       #7f82a1 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 20px;
   box-shadow:
     inset 0 1px 1px rgb(255 255 255/35%),
     inset 0 -1px 1px rgb(0 0 0/55%),
     0 2px 8px rgb(170 174 207/10%);
   color: #0f0f12;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 500;
   height: 32px;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.5px;
   min-height: 32px;
   overflow: hidden;
   transition:
@@ -7366,8 +7366,8 @@ input::-webkit-inner-spin-button {
   top: 50%;
   left: 50%;
   width: min(380px, 90vw);
-  border: 1.5px solid rgba(43, 43, 43, 0.8);
-  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 6px;
   box-shadow: 0 4px 24px rgb(0 0 0/10%);
   padding: 0;
   display: flex;
@@ -7435,7 +7435,6 @@ input::-webkit-inner-spin-button {
   position: absolute;
   display: flex;
   align-items: center;
-  font-size: 0.8rem;
   color: #ffffff79;
   right: 80px;
   margin-top: 10px
@@ -7448,6 +7447,7 @@ input::-webkit-inner-spin-button {
 .edit-order-size-balance-display .balance-value {
   color: #ffffffcf;
   opacity: 0.6;
+  font-size: 0.9rem;
 }
 
 .edit-order-size-input-container {
@@ -7547,7 +7547,7 @@ input::-webkit-inner-spin-button {
       #7f82ac 75%,
       #7f82a1 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 20px;
   box-shadow:
     inset 0 1px 1px rgb(255 255 255/35%),
     inset 0 -1px 1px rgb(0 0 0/55%),
@@ -7557,7 +7557,7 @@ input::-webkit-inner-spin-button {
   font-size: 0.8rem;
   font-weight: 500;
   height: 32px;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.5px;
   min-height: 32px;
   overflow: hidden;
   transition:
