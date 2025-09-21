@@ -21,9 +21,6 @@ interface ChartComponentProps {
   refetch: any;
   sendUserOperationAsync: any;
   setChain: any;
-  address: any;
-  client: any;
-  newTxPopup: any;
   usedRefAddress: any;
   data: any;
   setData: any;
@@ -46,9 +43,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   refetch,
   sendUserOperationAsync,
   setChain,
-  address,
-  client,
-  newTxPopup,
   usedRefAddress,
   data,
   setData,
@@ -236,9 +230,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           refetch={refetch}
           sendUserOperationAsync={sendUserOperationAsync}
           setChain={setChain}
-          address={address}
-          client={client}
-          newTxPopup={newTxPopup}
           usedRefAddress={usedRefAddress}
           realtimeCallbackRef={realtimeCallbackRef}
           limitPrice={limitPrice}

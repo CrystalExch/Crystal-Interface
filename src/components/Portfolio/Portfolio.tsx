@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import Overlay from '../loading/LoadingComponent';
 import PortfolioGraph from './PortfolioGraph/PortfolioGraph';
-import PNLComponent from '../PNLComponent/PNLComponent';
 
 import OrderCenter from '../OrderCenter/OrderCenter';
 import ReferralSidebar from './ReferralSidebar/ReferralSidebar';
@@ -2792,7 +2791,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   <h3 className="trenches-performance-title">PERFORMANCE</h3>
                   <button
                     className="trenches-pnl-button"
-                    onClick={() => setShowPNLModal(true)}
+                    onClick={() => setpopup(27)}
                   >
                     <svg fill="#cfcfdfff" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16"><path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z" /></svg>                  </button>
                 </div>
@@ -3117,11 +3116,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
         <div className="portfolio-content-container">
           {renderTabContent()}
         </div>
-        <PNLComponent
-          isVisible={showPNLModal}
-          onClose={() => setShowPNLModal(false)}
-          windowWidth={window.innerWidth}
-        />
       </div>
     );
 

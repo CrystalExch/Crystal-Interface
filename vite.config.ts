@@ -12,6 +12,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/ws/, ''),
         secure: true
+      },
+      '/api': {
+        target: 'https://pro.edgex.exchange',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/api/, '/api'),
+        secure: true
       }
     },
   },

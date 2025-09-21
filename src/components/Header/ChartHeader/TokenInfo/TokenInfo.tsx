@@ -942,7 +942,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             <div className="perps-interface-token-identity">
               <div className="perps-interface-token-name-row">
                 <h1 className="perps-interface-token-symbol">{perpsTokenData.baseAsset}-{perpsTokenData.quoteAsset}</h1>
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="perps-markets-dropdown-arrow"><path d="m6 9 6 6 6-6"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="perps-markets-dropdown-arrow"><path d="m6 9 6 6 6-6"/></svg>
               </div>
               
               <div className="perps-interface-token-meta-row">
@@ -1049,12 +1049,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             onMouseEnter={() => setHoveredToken(true)}
             onMouseLeave={() => setHoveredToken(false)}
           >
-            <div
-              className={`bonding-amount-display ${hoveredToken && bondingPercentage > 0 && isMemeToken ? 'visible' : ''}`}
-              style={{ color: getBondingColor(bondingPercentage) }}
-            >
-              BONDING: {bondingPercentage.toFixed(1)}%
-            </div>
             {bondingPercentage > 0 && isMemeToken ? (
               <div
                 className="token-icons-with-bonding"
