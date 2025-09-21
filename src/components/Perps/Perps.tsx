@@ -419,7 +419,40 @@ const Perps: React.FC<PerpsProps> = ({
 
     subs.forEach(channel => {
       wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }))
-    })
+    });
+
+    (async () => {
+        const params = new URLSearchParams({
+            contractId: activeMarket?.contractId,
+            klineType: 'MINUTE_5',
+            priceType: 'LAST_PRICE'
+          })
+
+          const params1 = new URLSearchParams({
+            contractId: activeMarket?.contractId,
+            klineType: 'MINUTE_5',
+            priceType: 'LAST_PRICE',
+          })
+          
+          const [kline0] = await Promise.all([
+            fetch(`/api/v1/public/quote/getKline?${params}`, {
+              method: 'GET',
+              headers: { 'Content-Type': 'application/json' }
+            }).then(r => r.json()),
+          ])
+
+          if (!kline0?.data) return;
+          const mapKlines = (klines: any[]) =>
+            klines.map(candle => ({
+              time: Number(candle.klineTime),
+              open: Number(candle.open),
+              high: Number(candle.high),
+              low: Number(candle.low),
+              close: Number(candle.close),
+              volume: Number(candle.makerBuyValue),
+            }))
+        setChartData([mapKlines(kline0.data.dataList.concat([])), 'BTCUSD5', true])
+    })()
   }, [activeMarket?.contractId])
 
   useEffect(() => {
@@ -504,7 +537,6 @@ const Perps: React.FC<PerpsProps> = ({
       console.error(e)
     }
   }, [orderdata, activeMarketKey])
-
 
   useEffect(() => {
     let liveStreamCancelled = false;
@@ -871,7 +903,7 @@ const Perps: React.FC<PerpsProps> = ({
             </button>
           </div>
           <div className="perps-amount-section">
-            <div className="price-impact">
+            <div className="perps-available-to-trade">
               <div className="label-container">
                 {t('Available to Trade')}
               </div>
@@ -879,7 +911,7 @@ const Perps: React.FC<PerpsProps> = ({
                 $0.00
               </div>
             </div>
-            <div className="price-impact">
+            <div className="perps-available-to-trade">
               <div className="label-container">
                 {t('Current Position')}
               </div>
@@ -966,7 +998,7 @@ const Perps: React.FC<PerpsProps> = ({
 
           <div className="perps-tpsl-section">
             <div className="perps-tpsl-header">
-              <div className="">
+              <div>
                 <label className="perps-tpsl-checkbox-wrapper">
                   <input
                     type="checkbox"
@@ -987,18 +1019,32 @@ const Perps: React.FC<PerpsProps> = ({
                 </label>
               </div>
               <div className="perps-tif-dropdown">
-                <button
+                <div
                   className="perps-tif-button"
-                  onClick={() => setIsTifDropdownOpen(!isTifDropdownOpen)}
                 >
                   <span className="perps-tif-label">TIF</span>
+                  <div className="perps-tif-inner" onClick={() => setIsTifDropdownOpen(!isTifDropdownOpen)}>
                   <span className="perps-tif-value">{timeInForce}</span>
-                  <span className="perps-tif-arrow">^</span>
-                </button>
+                  <svg
+                    className={`perps-tif-button-arrow ${isTifDropdownOpen ? 'open' : ''}`}
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+                </div>
+                </div>
 
                 {isTifDropdownOpen && (
                   <div className="perps-tif-dropdown-menu">
-                    {['GTC', 'IOC', 'ALO', '%'].map((option) => (
+                    {['GTC', 'IOC', 'ALO'].map((option) => (
                       <div
                         key={option}
                         className="perps-tif-option"
@@ -1068,7 +1114,7 @@ const Perps: React.FC<PerpsProps> = ({
                             </div>
                         )}
                     </div>
-                    <div className="perps-bottom-section">
+                    <div className="perps-trade-details-section">
                         <button
                             className={`perps-trade-action-button ${activeTradeType}`}
                             onClick={() => {
@@ -1177,6 +1223,7 @@ const Perps: React.FC<PerpsProps> = ({
 
                     </div>
                 </div>
+                <div className="perps-bottom-section" style={{ minHeight: `${orderCenterHeight}px` }}>
                 <div className="perps-deposit-withdraw-section">
                     <button
                         className="perps-deposit-button"
@@ -1193,7 +1240,6 @@ const Perps: React.FC<PerpsProps> = ({
                 </div>
                 <div
                     className="perps-account-details"
-                    style={{ height: `${orderCenterHeight + 100}px` }}
                 >
                     <span className="perps-account-section-title" >Account Overview</span>
                     <div className="perps-account-row">
@@ -1236,7 +1282,7 @@ const Perps: React.FC<PerpsProps> = ({
                             $0.00
                         </span>
                     </div>
-
+                </div>
         </div>
       </div>
     </div>

@@ -469,7 +469,6 @@ const Header: React.FC<HeaderProps> = ({
     symbol: 'BTC-USDC',
     baseAsset: 'BTC',
     quoteAsset: 'USDC',
-    tokenIcon: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
     price: 43250.50,
     change24h: 2.35,
     volume24h: 1250000000,

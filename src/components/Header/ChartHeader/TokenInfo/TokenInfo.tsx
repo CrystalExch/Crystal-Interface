@@ -149,6 +149,7 @@ interface TokenInfoProps {
     quoteAsset: string;
     tokenIcon: string;
     price: number;
+    icon?: string;
     change24h: number;
     volume24h: number;
     openInterest: number;
@@ -305,33 +306,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         }, 100);
       }
     }
-  };
-
-  const handleWebsiteOpen = (url: string) => {
-    if (!url) return;
-    const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-    window.open(fullUrl, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleTwitterOpen = (handle: string) => {
-    const cleanHandle = handle.replace('@', '');
-    window.open(`https://twitter.com/${cleanHandle}`, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleTelegramOpen = (handle: string) => {
-    window.open(`https://${handle}`, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleDiscordOpen = (handle: string) => {
-    window.open(`https://${handle}`, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleImageSearch = (imageUrl: string) => {
-    window.open(
-      `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(imageUrl)}`,
-      '_blank',
-      'noopener,noreferrer'
-    );
   };
 
   useEffect(() => {
@@ -748,7 +722,11 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     } as React.CSSProperties
                     : {}
                 }
-                onClick={() => handleImageSearch(memeTokenData.image || '')}
+                onClick={() => window.open(
+                  `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(memeTokenData.image)}`,
+                  '_blank',
+                  'noopener,noreferrer'
+                )}
               >
                 <div className="meme-interface-image-container">
                   {memeTokenData.image ? (
@@ -994,7 +972,6 @@ if (isPerpsToken && perpsTokenData) {
           <div className="perps-interface-token-icon-container">
             <img
               src={perpsTokenData.tokenIcon}
-              alt={perpsTokenData.baseAsset}
               className="perps-interface-token-icon"
             />
           </div>
@@ -1063,7 +1040,6 @@ if (isPerpsToken && perpsTokenData) {
         </div>
       </div>
 
-      {/* Perps Markets Dropdown */}
       <div className="perps-markets-dropdown" ref={perpsDropdownRef}>
         {isPerpsDropdownOpen && (
           <div
@@ -1122,7 +1098,6 @@ if (isPerpsToken && perpsTokenData) {
                 {
                   pair: 'BTC-USD',
                   baseAsset: 'BTC',
-                  icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png',
                   price: '43,250.00',
                   change24h: '+2.45%',
                   volume: '1.2B',
@@ -1133,7 +1108,6 @@ if (isPerpsToken && perpsTokenData) {
                 {
                   pair: 'ETH-USD',
                   baseAsset: 'ETH',
-                  icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.png',
                   price: '2,580.00',
                   change24h: '-1.23%',
                   volume: '890M',
@@ -1144,7 +1118,6 @@ if (isPerpsToken && perpsTokenData) {
                 {
                   pair: 'SOL-USD',
                   baseAsset: 'SOL',
-                  icon: 'https://cryptologos.cc/logos/solana-sol-logo.png',
                   price: '98.50',
                   change24h: '+5.67%',
                   volume: '340M',
@@ -1191,7 +1164,7 @@ if (isPerpsToken && perpsTokenData) {
                     </button>
 
                     <div className="market-pair-section">
-                      <img src={market.icon} className="market-icon" />
+                      <img src={market?.icon} className="market-icon" />
                       <div className="market-info">
                         <div className="market-pair-container">
                           <span className="market-pair">{market.pair}</span>

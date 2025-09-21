@@ -51,7 +51,6 @@ interface ChartHeaderProps {
     symbol: string;
     baseAsset: string;
     quoteAsset: string;
-    tokenIcon: string;
     price: number;
     change24h: number;
     volume24h: number;
