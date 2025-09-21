@@ -1466,3 +1466,165 @@
   margin-top: 3px;
   opacity: 0.8;
 }
+
+.perps-interface-token-header-left {
+  cursor: pointer;
+  position: relative;
+}
+
+.perps-interface-token-header-left:hover {
+  opacity: 0.8;
+}
+
+.perps-markets-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+}
+
+.perps-markets-dropdown-content {
+  background-color: rgb(6, 6, 6);
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-left: none;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  transform: translateY(-20px);
+  transition:
+    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  visibility: hidden;
+  width: 550px;
+  z-index: 10;
+  border-bottom-right-radius: 8px;
+}
+
+.perps-markets-dropdown-content.visible {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+.perps-markets-dropdown-content:not(.visible) {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-20px);
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease,
+    transform 0.3s ease-in;
+}
+
+.perps-markets-list-header {
+  color: #7e8186;
+  display: grid;
+  font-size: 0.75rem;
+  grid-template-columns: 23px 1fr 0.8fr 0.6fr 0.6fr 0.6fr;
+  margin-bottom: -3px;
+  padding: 5px 14px 3px 16px;
+}
+
+.perps-markets-list-header > div {
+  align-items: center;
+  color: #828282;
+  cursor: pointer;
+  display: flex;
+  user-select: none;
+}
+
+.perps-markets-list-header > div:hover {
+  color: #9b9da0;
+}
+
+.perps-markets-list-header > div:first-child {
+  cursor: default;
+}
+
+.perps-markets-list-header > div:first-child:hover {
+  color: #7e8186;
+}
+
+.perps-funding-header,
+.perps-oi-header {
+  text-align: right;
+  justify-content: flex-end;
+}
+
+.perps-markets-list {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 2px 4px 6px 4px;
+  max-height: calc(100vh - 147px);
+}
+
+.perps-market-item-container {
+  border: 1px solid transparent;
+}
+
+.perps-market-item-container.selected {
+  background-color: rgba(170, 174, 207, 0.05);
+  border: 1px solid rgba(170, 174, 207, 0.15);
+  border-radius: 8px;
+  position: relative;
+}
+
+.perps-market-item {
+  border-radius: 5px;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 15px 0.8fr 0.8fr 0.6fr 0.6fr 0.6fr;
+  padding: 4px 16px;
+  padding-left: 20px;
+  transition: background-color 0.2s;
+}
+
+.perps-funding-section,
+.perps-oi-section {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.perps-funding-rate {
+  color: #e5e7eb;
+  font-size: 0.75rem;
+}
+
+.perps-funding-rate.positive {
+  color: rgb(67, 254, 154);
+}
+
+.perps-funding-rate.negative {
+  color: rgb(235, 112, 112);
+}
+
+.perps-open-interest {
+  color: #e5e7eb;
+  font-size: 0.75rem;
+}
+
+.perps-mini-chart-placeholder {
+  color: #9499a3;
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .perps-markets-dropdown-content {
+    width: 100vw;
+    left: -12px;
+  }
+  
+  .perps-markets-list-header {
+    grid-template-columns: 20px 1fr 0.7fr 0.5fr 0.5fr 0.5fr;
+    font-size: 0.7rem;
+  }
+  
+  .perps-market-item {
+    grid-template-columns: 15px 1fr 0.7fr 0.5fr 0.5fr 0.5fr;
+  }
+}
