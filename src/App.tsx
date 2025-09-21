@@ -20636,26 +20636,14 @@ function App() {
               <Perps
                 layoutSettings={layoutSettings}
                 orderbookPosition={orderbookPosition}
-                orderdata={{
-                  roundedBuyOrders: roundedBuyOrders?.orders,
-                  roundedSellOrders: roundedSellOrders?.orders,
-                  spreadData,
-                  priceFactor: Number(markets[roundedBuyOrders?.key]?.priceFactor),
-                  marketType: markets[roundedBuyOrders?.key]?.marketType,
-                  symbolIn: markets[roundedBuyOrders?.key]?.quoteAsset,
-                  symbolOut: markets[roundedBuyOrders?.key]?.baseAsset,
-                }}
                 windowWidth={windowWidth}
                 mobileView={mobileView}
                 isOrderbookVisible={isOrderbookVisible}
                 orderbookWidth={orderbookWidth}
                 setOrderbookWidth={setOrderbookWidth}
-                obInterval={obInterval}
                 amountsQuote={amountsQuote}
                 setAmountsQuote={setAmountsQuote}
                 obtrades={trades}
-                setOBInterval={setOBInterval}
-                baseInterval={baseInterval}
                 viewMode={viewMode}
                 setViewMode={setViewMode}
                 activeTab={obTab}
@@ -20701,7 +20689,6 @@ function App() {
                 onLimitPriceUpdate={setCurrentLimitPrice}
                 openEditOrderPopup={openEditOrderPopup}
                 openEditOrderSizePopup={openEditOrderSizePopup}
-                marketsData={marketsData}
                 wethticker={wethticker}
                 ethticker={ethticker}
                 memoizedTokenList={memoizedTokenList}

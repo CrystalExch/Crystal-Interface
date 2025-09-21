@@ -11,18 +11,14 @@ import TooltipLabel from '../TooltipLabel/TooltipLabel';
 interface PerpsProps {
   layoutSettings: string;
   orderbookPosition: string;
-  orderdata: any;
   windowWidth: any;
   mobileView: any;
   isOrderbookVisible: boolean;
   orderbookWidth: number;
   setOrderbookWidth: any;
-  obInterval: number;
   amountsQuote: any;
   setAmountsQuote: any;
   obtrades: any;
-  baseInterval: number;
-  setOBInterval: any;
   viewMode: 'both' | 'buy' | 'sell';
   setViewMode: any;
   activeTab: 'orderbook' | 'trades';
@@ -62,7 +58,6 @@ interface PerpsProps {
   onLimitPriceUpdate?: (price: number) => void;
   openEditOrderPopup: (order: any) => void;
   openEditOrderSizePopup: (order: any) => void;
-  marketsData: any;
   tradesByMarket: any;
   wethticker: any;
   ethticker: any;
@@ -77,18 +72,14 @@ interface PerpsProps {
 const Perps: React.FC<PerpsProps> = ({
   layoutSettings,
   orderbookPosition,
-  orderdata,
   windowWidth,
   mobileView,
   isOrderbookVisible,
   orderbookWidth,
   setOrderbookWidth,
-  obInterval,
   amountsQuote,
   setAmountsQuote,
   obtrades,
-  baseInterval,
-  setOBInterval,
   viewMode,
   setViewMode,
   activeTab,
@@ -128,7 +119,6 @@ const Perps: React.FC<PerpsProps> = ({
   onLimitPriceUpdate,
   openEditOrderPopup,
   openEditOrderSizePopup,
-  marketsData,
   tradesByMarket,
   wethticker,
   ethticker,
@@ -140,8 +130,17 @@ const Perps: React.FC<PerpsProps> = ({
   sliderIncrement = 10,
 }) => {
 
+  const { marketKey } = useParams<{ marketKey: string }>()
+  const [exchangeConfig, setExchangeConfig] = useState();
+  const [markets, setMarkets] = useState<{ [key: string]: any }>({});
+  const [contractLabels, setContractLabels] = useState();
+  const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
+  const [activeMarketKey, setActiveMarketKey] = useState(marketKey || 'BTCUSD');
   const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string }>({ orders: [], key: '' });
   const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string }>({ orders: [], key: '' });
+  const [orderdata, setorderdata] = useState<any>([]);
+  const activeMarket = markets[activeMarketKey] || {};
+
   const [activeTradeType, setActiveTradeType] = useState<"long" | "short">("long");
   const [activeOrderType, setActiveOrderType] = useState<"market" | "Limit" | "Pro">("market");
 
@@ -179,13 +178,20 @@ const Perps: React.FC<PerpsProps> = ({
   >([]);
   const [spreadData, setSpreadData] = useState<any>({});
   const [obTab, setOBTab] = useState<'orderbook' | 'trades'>(() => {
-    const stored = localStorage.getItem('ob_active_tab');
+    const stored = localStorage.getItem('perps_ob_active_tab');
 
     if (['orderbook', 'trades'].includes(stored ?? '')) {
       return stored as 'orderbook' | 'trades';
     }
 
     return mobileView === 'trades' ? 'trades' : 'orderbook';
+  });
+  const [baseInterval, setBaseInterval] = useState<number>(0.1);
+  const [obInterval, setOBInterval] = useState<number>(() => {
+    const stored = localStorage.getItem(
+      `${activeMarket.baseAsset}_perps_ob_interval`,
+    );
+    return stored !== null ? JSON.parse(stored) : 0.1;
   });
   const [isDragging2, setIsDragging2] = useState(false);
 
@@ -397,13 +403,108 @@ const Perps: React.FC<PerpsProps> = ({
     positionPopup(percent);
   }, [positionPopup]);
 
-  const { marketKey } = useParams<{ marketKey: string }>()
-  const [exchangeConfig, setExchangeConfig] = useState();
-  const [markets, setMarkets] = useState<{ [key: string]: any }>({});
-  const [contractLabels, setContractLabels] = useState();
-  const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
-  const [activeMarketKey, setActiveMarketKey] = useState(marketKey || 'BTCUSD');
-  const activeMarket = markets[activeMarketKey] || {};
+  useEffect(() => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
+    if (!activeMarket?.contractId) return
+
+    wsRef.current.send(JSON.stringify({ type: 'unsubscribe', channel: `fundingRate.*` }))
+    wsRef.current.send(JSON.stringify({ type: 'unsubscribe', channel: `depth.*.200` }))
+    wsRef.current.send(JSON.stringify({ type: 'unsubscribe', channel: `trades.*` }))
+
+    const subs = [
+      `fundingRate.${activeMarket.contractId}`,
+      `depth.${activeMarket.contractId}.200`,
+      `trades.${activeMarket.contractId}`
+    ]
+
+    subs.forEach(channel => {
+      wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }))
+    })
+  }, [activeMarket?.contractId])
+
+  useEffect(() => {
+    if (!orderdata || !Array.isArray(orderdata) || orderdata.length < 2) return
+
+    try {
+      const [bids, asks] = orderdata
+
+      const sortedBids = [...bids].sort((a, b) => b.price - a.price)
+      const sortedAsks = [...asks].sort((a, b) => a.price - b.price)
+
+      let runningBid = 0
+      const processedBids = sortedBids.map(o => {
+        runningBid += o.size
+        return { ...o, totalSize: runningBid, shouldFlash: false }
+      })
+
+      let runningAsk = 0
+      const processedAsks = sortedAsks.map(o => {
+        runningAsk += o.size
+        return { ...o, totalSize: runningAsk, shouldFlash: false }
+      })
+
+      const highestBid = processedBids[0]?.price
+      const lowestAsk = processedAsks[0]?.price
+      const spread = {
+        spread:
+          highestBid !== undefined && lowestAsk !== undefined
+            ? lowestAsk - highestBid
+            : NaN,
+        averagePrice:
+          highestBid !== undefined && lowestAsk !== undefined
+            ? (highestBid + lowestAsk) / 2
+            : NaN,
+      }
+
+      const prevBuyMap = new Map(
+        roundedBuyOrders?.orders?.map((o: any, i: number) => [
+          `${o.price}_${o.size}`,
+          i,
+        ])
+      )
+      const prevSellMap = new Map(
+        roundedSellOrders?.orders?.map((o: any, i: number) => [
+          `${o.price}_${o.size}`,
+          i,
+        ])
+      )
+
+      for (let i = 0; i < processedBids.length; i++) {
+        const prevIndex = prevBuyMap.get(
+          `${processedBids[i].price}_${processedBids[i].size}`
+        )
+        if (prevIndex === undefined || (i === 0 && prevIndex !== 0)) {
+          processedBids[i].shouldFlash = true
+        }
+      }
+
+      for (let i = 0; i < processedAsks.length; i++) {
+        const prevIndex = prevSellMap.get(
+          `${processedAsks[i].price}_${processedAsks[i].size}`
+        )
+        if (prevIndex === undefined || (i === 0 && prevIndex !== 0)) {
+          processedAsks[i].shouldFlash = true
+        }
+      }
+
+      setSpreadData(spread)
+      setRoundedBuyOrders({ orders: processedBids, key: activeMarketKey })
+      setRoundedSellOrders({ orders: processedAsks, key: activeMarketKey })
+      setBaseInterval(1 / Number(activeMarket.tickSize));
+      setOBInterval(
+        localStorage.getItem(`${activeMarket.baseAsset}_perps_ob_interval`)
+          ? Number(
+            localStorage.getItem(
+              `${activeMarket.baseAsset}_perps_ob_interval`,
+            ),
+          )
+          : Number(activeMarket.tickSize)
+      );
+    } catch (e) {
+      console.error(e)
+    }
+  }, [orderdata, activeMarketKey])
+
 
   useEffect(() => {
     let liveStreamCancelled = false;
@@ -466,24 +567,13 @@ const Perps: React.FC<PerpsProps> = ({
           JSON.stringify({
             type: 'subscribe',
             channel: 'ticker.all.1s',
-          }), JSON.stringify({
-            type: 'subscribe',
-            channel: `fundingRate.${activeMarket?.contractId}]`,
-          }),
-          JSON.stringify({
-            type: 'subscribe',
-            channel: `depth.${activeMarket?.contractId}.200]`,
-          }),
-          JSON.stringify({
-            type: 'subscribe',
-            channel: `trades.${activeMarket?.contractId}]`,
           })
         ];
 
         pingIntervalRef.current = setInterval(() => {
           if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({
-              type: 'ping',
+              type: 'pong',
               time: Date.now().toString()
             }));
           }
@@ -500,7 +590,49 @@ const Perps: React.FC<PerpsProps> = ({
         const message = JSON.parse(event.data);
         if (message?.content?.data) {
           const msg = message?.content?.data;
-          console.log(msg)
+          if (message.content.channel.startsWith('depth')) {
+            if (msg[0].depthType == 'SNAPSHOT') {
+              setorderdata([
+                msg[0].bids.map((i: any) => ({ ...i, price: Number(i.price), size: Number(i.size) })),
+                msg[0].asks.map((i: any) => ({ ...i, price: Number(i.price), size: Number(i.size) }))
+              ])
+            }
+            else {
+              setorderdata((prev: any) => {
+                const temporders = [[...prev[0]], [...prev[1]]]
+
+                msg[0].bids.forEach((i: any) => {
+                  const price = Number(i.price)
+                  const size = Number(i.size)
+                  const idx = temporders[0].findIndex(o => o.price === price)
+
+                  if (size === 0 && idx !== -1) {
+                    temporders[0].splice(idx, 1)
+                  } else if (idx !== -1) {
+                    temporders[0][idx].size = size
+                  } else if (size > 0) {
+                    temporders[0].push({ ...i, price, size })
+                  }
+                })
+
+                msg[0].asks.forEach((i: any) => {
+                  const price = Number(i.price)
+                  const size = Number(i.size)
+                  const idx = temporders[1].findIndex(o => o.price === price)
+
+                  if (size === 0 && idx !== -1) {
+                    temporders[1].splice(idx, 1)
+                  } else if (idx !== -1) {
+                    temporders[1][idx].size = size
+                  } else if (size > 0) {
+                    temporders[1].push({ ...i, price, size })
+                  }
+                })
+
+                return temporders
+              })
+            }
+          }
           /* let ordersChanged = false;
           let canceledOrdersChanged = false;
           let tradesByMarketChanged = false;
@@ -601,7 +733,7 @@ const Perps: React.FC<PerpsProps> = ({
     amountIn,
     location.pathname,
   ]);
-  
+
   return (
     <div className="main-content-wrapper">
       <div className="chartandorderbookandordercenter">
@@ -613,10 +745,10 @@ const Perps: React.FC<PerpsProps> = ({
               roundedBuyOrders: roundedBuyOrders?.orders,
               roundedSellOrders: roundedSellOrders?.orders,
               spreadData,
-              priceFactor: Number(marketsData[roundedBuyOrders?.key]?.priceFactor),
-              marketType: marketsData[roundedBuyOrders?.key]?.marketType,
-              symbolIn: marketsData[roundedBuyOrders?.key]?.quoteAsset,
-              symbolOut: marketsData[roundedBuyOrders?.key]?.baseAsset,
+              priceFactor: Number(1 / activeMarket?.tickSize),
+              marketType: 0,
+              symbolIn: activeMarket.quoteAsset,
+              symbolOut: activeMarket.baseAsset,
             }}
             windowWidth={windowWidth}
             mobileView={mobileView}
@@ -686,7 +818,7 @@ const Perps: React.FC<PerpsProps> = ({
           onLimitPriceUpdate={setCurrentLimitPrice}
           openEditOrderPopup={openEditOrderPopup}
           openEditOrderSizePopup={openEditOrderSizePopup}
-          marketsData={marketsData}
+          marketsData={{}}
           isPerps={true}
         />
       </div>
