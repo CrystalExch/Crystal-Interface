@@ -825,7 +825,6 @@ const Perps: React.FC<PerpsProps> = ({
       <div className="perps-trade-modal">
         <div className="perps-top-section">
           <div className="perps-order-types-wrapper">
-            <div className="leverage-selector">Leverage: 20x</div>
             <div className="perps-order-types" ref={orderTypesContainerRef}>
               <button
                 ref={marketButtonRef}
