@@ -3,7 +3,9 @@
 }
 
 .meme-oc-rectangle {
+  background-color: rgb(6, 6, 6);
   border-right: none;
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
   display: flex;
   flex-direction: column;
   font-size: 0.8rem;
@@ -13,8 +15,6 @@
   pointer-events: auto;
   position: relative;
   width: 100%;
-  border-top: 1px solid rgba(179, 184, 249, 0.1);
-  background-color: rgb(6, 6, 6);
 }
 
 @media(max-width: 1020px) {
@@ -29,9 +29,9 @@
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   display: flex;
   justify-content: space-between;
-  padding-right: 5px;
   min-height: 35px;
   overflow-x: scroll;
+  padding-right: 5px;
 }
 
 @media(max-width: 1020px) {
@@ -47,16 +47,16 @@
   color: #ffffff73;
   cursor: pointer;
   flex: 1;
+  font-family: inherit;
   font-size: 0.9rem;
+  font-weight: 300;
+  letter-spacing: -0.1px;
+  outline: none;
   padding: 8px 20px;
   text-align: flex-start;
   text-decoration: none;
   transition: opacity 0.2s, color 0.3s, text-shadow 0.3s;
   white-space: nowrap;
-  outline: none;
-  font-family: inherit;
-  letter-spacing: -0.1px;
-  font-weight: 300;
 }
 
 .meme-oc-type:hover {
@@ -70,19 +70,19 @@
 }
 
 .meme-oc-content {
+  background-color: rgb(6, 6, 6);
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   height: calc(100% - 35px);
   left: 0;
+  max-width: 100vw;
   min-height: 0;
+  overflow-x: auto;
   overflow-y: auto;
   position: relative;
   right: 0;
   width: 100%;
-  background-color: rgb(6, 6, 6);
-  max-width: 100vw;
-  overflow-x: auto;
 
 }
 
@@ -128,91 +128,93 @@
 }
 
 .meme-oc-types-rectangle {
-  user-select: none;
-  width: 100%;
   max-width: 100vw;
   overflow-x: auto;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  width: 100%;
 }
 
 .meme-oc-section-content {
   display: flex;
   flex-direction: column;
   height: 100%;
-  width: 100%;
-  overflow: hidden;
   max-width: 100vw !important;
+  overflow: hidden;
   overflow-x: auto;
+  width: 100%;
 
 }
 
 .meme-oc-header {
-  display: grid;
   align-items: flex-start;
-  padding: 6px 15px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   background-color: rgba(6, 6, 6, 0.95);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  display: grid;
+  min-height: 30px;
+  padding: 6px 15px;
   position: sticky;
   top: 0;
-  min-height: 30px;
   width: 100%;
 }
 
 .meme-oc-items {
   flex: 1;
-  overflow-y: auto;
   min-height: 0;
-  width: 100%;
-  scrollbar-width: thin;
+  overflow-y: auto;
   scrollbar-color: rgba(170, 174, 207, 0.15) transparent;
+  scrollbar-width: thin;
+  width: 100%;
 }
 
 .meme-oc-item {
-  display: grid;
   align-items: center;
+  display: grid;
+  height: 40px;
   padding: 4px 15px;
   transition: background-color 0.2s ease;
   width: 100%;
-  height: 40px;
 }
 
 
 .meme-oc-section-content[data-section="positions"] .meme-oc-header,
 .meme-oc-section-content[data-section="positions"] .meme-oc-item {
-  grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr 100px;
   gap: 15px;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr 100px;
 }
 
 .meme-oc-section-content[data-section="orders"] .meme-oc-header,
 .meme-oc-section-content[data-section="orders"] .meme-oc-item {
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   gap: 15px;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
 }
 
 .meme-oc-section-content[data-section="holders"] .meme-oc-header,
 .meme-oc-section-content[data-section="holders"] .meme-oc-item {
-  grid-template-columns: 1.4fr 1fr 1.2fr 1.2fr 1fr 1fr 80px;
   gap: 15px;
+  grid-template-columns: 1.4fr 1fr 1.2fr 1.2fr 1fr 1fr 80px;
 }
 
 .meme-oc-section-content[data-section="topTraders"] .meme-oc-header,
 .meme-oc-section-content[data-section="topTraders"] .meme-oc-item {
-  grid-template-columns: 1.4fr 1fr 1.2fr 1.2fr 1fr 1fr 80px;
   gap: 15px;
+  grid-template-columns: 1.4fr 1fr 1.2fr 1.2fr 1fr 1fr 80px;
 }
 
 .meme-oc-section-content[data-section="devTokens"] .meme-oc-header,
 .meme-oc-section-content[data-section="devTokens"] .meme-oc-item {
-  grid-template-columns: 1.2fr 1fr 1fr 1fr;
   gap: 15px;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr;
 }
 
 .meme-oc-header-cell {
   color: #e0e3f473;
   font-size: 0.75rem;
-  letter-spacing: -0.3px;
   font-weight: 300;
-  text-align: left;
+  letter-spacing: -0.3px;
   overflow: hidden;
+  text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -222,11 +224,11 @@
 }
 
 .meme-oc-cell {
+  align-items: center;
   color: #ffffff89;
+  display: flex;
   font-size: 0.8rem;
   font-weight: 300;
-  display: flex;
-  align-items: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -239,8 +241,8 @@
 
 .meme-wallet-info,
 .meme-token-info {
-  display: flex;
   align-items: center;
+  display: flex;
   gap: 8px;
   min-width: 0;
   width: 100%;
@@ -248,39 +250,39 @@
 
 .meme-wallet-index,
 .meme-token-index {
-  display: flex;
   align-items: center;
   color: #ffffff73;
+  display: flex;
+  flex-shrink: 0;
   font-size: 0.8rem;
   min-width: 20px;
-  flex-shrink: 0;
 }
 
 .meme-wallet-address,
 .meme-token-name {
-  color: rgb(221, 221, 224);
-  font-size: 0.85rem;
-  white-space: nowrap;
-  display: flex;
   align-items: center;
+  color: rgb(221, 221, 224);
+  display: flex;
+  font-size: 0.85rem;
   gap: 8px;
+  white-space: nowrap;
 }
 
 .meme-wallet-address-span {
-  color: rgba(221, 221, 224, 0.533);
-  font-size: 0.75rem;
-  white-space: nowrap;
-  display: flex;
   align-items: center;
+  color: rgba(221, 221, 224, 0.533);
+  display: flex;
+  font-size: 0.75rem;
   gap: 8px;
   letter-spacing: -0.3px;
+  white-space: nowrap;
 }
 
 .meme-wallet-tags,
 .meme-token-tags {
   display: flex;
-  gap: 4px;
   flex-wrap: wrap;
+  gap: 4px;
   width: 100%;
 }
 
@@ -306,23 +308,23 @@
 }
 
 .meme-mon-balance {
-  display: flex;
   align-items: center;
   color: rgb(214, 214, 219);
+  display: flex;
   font-size: 0.8rem;
 }
 
 .meme-oc-monad-icon {
-  width: 13px;
   height: 13px;
   margin-right: 4px;
+  width: 13px;
 }
 
 /* Trade info styling */
 .meme-trade-info {
+  align-items: flex-start;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   text-align: center;
 }
 
@@ -358,32 +360,32 @@
 }
 
 .meme-remaining {
-  display: flex;
   align-items: center;
   color: #ffffffe8;
+  display: flex;
   font-size: 0.75rem;
   text-align: center;
 }
 
 .meme-remaining-percentage {
-  display: flex;
   align-items: center;
-  color: #ffffff73 !important;
-  font-size: 0.75rem;
-  margin-left: 4px;
   background-color: #3a3a4b2f;
-  padding: 0px 4px;
   border-radius: 4px;
+  color: #ffffff73 !important;
+  display: flex;
+  font-size: 0.75rem;
   height: 15px;
+  margin-left: 4px;
+  padding: 0px 4px;
 }
 
 
 .meme-remaining-info {
+  align-items: flex-start;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  width: 100%;
   gap: 4px;
+  width: 100%;
 }
 
 .meme-migrated {
@@ -402,37 +404,35 @@
 
 /* Order type styling */
 .meme-order-type {
-  padding: 2px 8px;
   border-radius: 3px;
-  font-size: 0.7rem;
 
   display: inline-block;
+  font-size: 0.7rem;
+  padding: 2px 8px;
 }
 
 .meme-order-type.buy {
   background: rgba(101, 237, 146, 0.1);
-  color: rgb(67 254 154);
   border: 1px solid rgba(101, 237, 146, 0.3);
+  color: rgb(67 254 154);
 }
 
 .meme-order-type.sell {
   background: rgba(240, 103, 103, 0.1);
-  color: rgb(240, 103, 103);
   border: 1px solid rgba(240, 103, 103, 0.3);
+  color: rgb(240, 103, 103);
 }
 
 .meme-action-btn {
-  color: #ffffff73 !important;
-  font-size: 0.75rem;
-  margin-left: 4px;
   border-radius: 4px;
   color: #ef7878;
   cursor: pointer;
+  font-family: inherit;
   font-size: 0.85rem;
+  margin-left: 4px;
+  outline: none;
   padding: 4px 8px;
   transition: all 0.2s ease;
-  outline: none;
-  font-family: inherit;
 }
 
 .meme-action-btn:active {
@@ -440,18 +440,18 @@
 }
 
 .meme-oc-mobile-tabs {
-  width: 100%;
   padding: 0 10px;
+  width: 100%;
 }
 
 .meme-oc-mobile-select {
-  width: 100%;
   background: none;
-  color: #ffffff73;
   border-radius: 4px;
+  color: #ffffff73;
+  font-family: inherit;
   font-size: 0.75rem;
   outline: none;
-  font-family: inherit;
+  width: 100%;
 }
 
 .meme-oc-mobile-select:focus {
@@ -485,16 +485,16 @@
 
   .meme-oc-section-content[data-section="positions"] .meme-oc-header,
   .meme-oc-section-content[data-section="positions"] .meme-oc-item {
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 60px;
     gap: 10px;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 60px;
   }
 
   .meme-oc-section-content[data-section="holders"] .meme-oc-header,
   .meme-oc-section-content[data-section="holders"] .meme-oc-item,
   .meme-oc-section-content[data-section="topTraders"] .meme-oc-header,
   .meme-oc-section-content[data-section="topTraders"] .meme-oc-item {
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 60px;
     gap: 8px;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 60px;
   }
 }
 
@@ -502,28 +502,28 @@
 
   .meme-oc-section-content[data-section="positions"] .meme-oc-header,
   .meme-oc-section-content[data-section="positions"] .meme-oc-item {
-    grid-template-columns: 2fr 1fr 1fr;
     gap: 10px;
+    grid-template-columns: 2fr 1fr 1fr;
   }
 
   .meme-oc-section-content[data-section="orders"] .meme-oc-header,
   .meme-oc-section-content[data-section="orders"] .meme-oc-item {
-    grid-template-columns: 2fr 1fr 1fr;
     gap: 10px;
+    grid-template-columns: 2fr 1fr 1fr;
   }
 
   .meme-oc-section-content[data-section="holders"] .meme-oc-header,
   .meme-oc-section-content[data-section="holders"] .meme-oc-item,
   .meme-oc-section-content[data-section="topTraders"] .meme-oc-header,
   .meme-oc-section-content[data-section="topTraders"] .meme-oc-item {
-    grid-template-columns: 2fr 1fr 1fr;
     gap: 10px;
+    grid-template-columns: 2fr 1fr 1fr;
   }
 
   .meme-oc-section-content[data-section="devTokens"] .meme-oc-header,
   .meme-oc-section-content[data-section="devTokens"] .meme-oc-item {
-    grid-template-columns: 2fr 1fr 1fr;
     gap: 10px;
+    grid-template-columns: 2fr 1fr 1fr;
   }
 
   .meme-wallet-tags,
@@ -543,84 +543,84 @@
 }
 
 .meme-ordercenter-tooltip-container {
-  position: relative;
   display: inline-block;
+  position: relative;
 }
 
 .meme-ordercenter-tooltip {
-  position: absolute;
-  z-index: 1000;
-  pointer-events: none;
   opacity: 0;
-  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
   transition: opacity 0.2s ease, visibility 0.2s ease;
+  visibility: hidden;
+  z-index: 1000;
 }
 
 /* Tooltip positioning */
 .meme-ordercenter-tooltip-top {
   bottom: 100%;
   left: 50%;
-  transform: translateX(-50%);
   margin-bottom: 0.25rem;
+  transform: translateX(-50%);
 }
 
 .meme-ordercenter-tooltip-bottom {
-  top: 100%;
   left: 50%;
-  transform: translateX(-50%);
   margin-top: 0.25rem;
+  top: 100%;
+  transform: translateX(-50%);
 }
 
 .meme-ordercenter-tooltip-left {
+  margin-right: 0.25rem;
   right: 100%;
   top: 50%;
   transform: translateY(-50%);
-  margin-right: 0.25rem;
 }
 
 .meme-ordercenter-tooltip-right {
   left: 100%;
+  margin-left: 0.25rem;
   top: 50%;
   transform: translateY(-50%);
-  margin-left: 0.25rem;
 }
 
 /* Fade popup animation */
 .meme-ordercenter-fade-popup {
   opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
   pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  visibility: hidden;
 }
 
 /* Visible state - this is the key piece */
 .meme-ordercenter-tooltip.meme-ordercenter-visible,
 .meme-ordercenter-fade-popup.meme-ordercenter-visible {
   opacity: 1;
-  visibility: visible;
   pointer-events: auto;
+  visibility: visible;
 }
 
 /* Tooltip content styling */
 .meme-ordercenter-tooltip-content {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   background: rgb(6, 6, 6);
   border: 1px solid #b5bcf81f;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   color: #e6e7f6;
   font-size: 0.75rem;
-  border-radius: 0.375rem;
-  padding: 0.25rem 0.5rem;
-  white-space: nowrap;
-  position: relative;
   max-width: 200px;
+  padding: 0.25rem 0.5rem;
+  position: relative;
+  white-space: nowrap;
 }
 
 /* Ensure tag containers work with tooltips */
 .meme-tag {
-  position: relative;
-  display: inline-flex;
   align-items: center;
   cursor: pointer;
+  display: inline-flex;
+  position: relative;
 }
 
 .meme-tag-icon {
@@ -629,71 +629,66 @@
 
 /* Tooltip arrows */
 .meme-ordercenter-tooltip-arrow {
+  height: 0;
   position: absolute;
   width: 0;
-  height: 0;
 }
 
 .meme-ordercenter-tooltip-arrow-top {
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
   border-top: 4px solid rgb(6, 6, 6);
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
 }
 
 .meme-ordercenter-tooltip-arrow-bottom {
+  border-bottom: 4px solid rgb(6, 6, 6);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-bottom: 4px solid rgb(6, 6, 6);
 }
 
 .meme-ordercenter-tooltip-arrow-left {
-  top: 50%;
-  left: 100%;
-  transform: translateY(-50%);
-  border-top: 4px solid transparent;
   border-bottom: 4px solid transparent;
   border-left: 4px solid rgb(6, 6, 6);
+  border-top: 4px solid transparent;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .meme-ordercenter-tooltip-arrow-right {
-  top: 50%;
-  right: 100%;
-  transform: translateY(-50%);
-  border-top: 4px solid transparent;
   border-bottom: 4px solid transparent;
   border-right: 4px solid rgb(6, 6, 6);
+  border-top: 4px solid transparent;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 
 
 .meme-remaining-bar {
-  width: 100px;
-  height: 4px;
   background-color: rgba(170, 174, 207, 0.1);
   border-radius: 2px;
+  height: 4px;
   overflow: hidden;
+  width: 100px;
 }
 
 .meme-remaining-bar-fill {
-  height: 100%;
   background-color: #aaaecf;
-  transition: width 0.3s ease;
   box-shadow:
     inset 0 1px 1px rgb(255 255 255/35%),
     inset 0 -1px 1px rgb(0 0 0/55%),
     0 2px 8px rgb(170 174 207/10%);
-}
-
-
-.meme-remaining-bar-fill {
-  width: 0;
+  height: 100%;
   transition: width 0.3s ease;
+  width: 0;
 }
 
 
@@ -708,9 +703,11 @@
 }
 
 .meme-oc-drag-spacer {
-  min-width: 100%;
   height: 0px;
-  user-select: none;
+  min-width: 100%;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
 }
 
 .meme-oc-drag-spacer.meme-oc-collapsed {
@@ -718,13 +715,13 @@
 }
 
 .meme-oc-drag-handle {
-  display: flex;
   align-items: center;
-  justify-content: center;
   cursor: row-resize;
-  width: 100%;
-  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
   position: relative;
+  transition: all 0.2s ease;
+  width: 100%;
 }
 
 .meme-oc-drag-handle:hover {
@@ -748,26 +745,28 @@
 } */
 
 .meme-oc-height-presets {
+  align-items: center;
   display: flex;
   gap: 6px;
-  align-items: center;
 }
 
 .meme-oc-preset-btn {
-  width: 28px;
-  height: 28px;
+  align-items: center;
+  background: transparent;
   border: 1px solid rgba(179, 184, 249, 0.15);
   border-radius: 6px;
-  background: transparent;
   color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
+  display: flex;
   font-size: 0.75rem;
   font-weight: 500;
-  display: flex;
-  align-items: center;
+  height: 28px;
   justify-content: center;
   transition: all 0.2s ease;
-  user-select: none;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  width: 28px;
 }
 
 .meme-oc-preset-btn:hover {
@@ -779,8 +778,8 @@
 .meme-oc-preset-btn.active {
   background-color: rgba(170, 174, 207, 0.15);
   border-color: #aaaecf;
-  color: #aaaecf;
   box-shadow: 0 0 0 1px rgba(170, 174, 207, 0.3);
+  color: #aaaecf;
 }
 
 .meme-oc-preset-btn:active {
@@ -809,9 +808,9 @@
   }
 
   .meme-oc-preset-btn {
-    width: 24px;
-    height: 24px;
     font-size: 0.7rem;
+    height: 24px;
+    width: 24px;
   }
 
   .meme-oc-drag-handle {
@@ -825,14 +824,14 @@
   }
 
   .meme-oc-preset-btn {
-    width: 20px;
-    height: 20px;
     font-size: 0.65rem;
+    height: 20px;
+    width: 20px;
   }
 
   .meme-oc-drag-dot {
-    width: 3px;
     height: 3px;
+    width: 3px;
   }
 }
 
@@ -853,8 +852,10 @@
 /* Disable text selection during drag */
 .meme-oc-dragging,
 .meme-oc-dragging * {
-  user-select: none !important;
   pointer-events: none;
+  -webkit-user-select: none !important;
+     -moz-user-select: none !important;
+          user-select: none !important;
 }
 
 .meme-oc-dragging .meme-oc-drag-handle {
@@ -871,11 +872,11 @@
 
 
 .meme-oc-right-controls {
-  display: flex;
   align-items: center;
+  display: flex;
   gap: 8px;
-  margin-left: 16px;
   height: 100%;
+  margin-left: 16px;
 }
 
 
@@ -891,20 +892,20 @@
 }
 
 .meme-oc-quickbuy-button {
-  display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 1px 12px;
-  border-radius: 20px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  color: #d8dcff;
   background-color: rgba(201, 194, 243, .05);
   border: 1px solid#aaaecf;
+  border-radius: 20px;
+  color: #d8dcff;
+  cursor: pointer;
+  display: flex;
+  font-size: 13px;
+  gap: 4px;
   letter-spacing: -0.5px;
+  padding: 1px 12px;
   padding-left: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .meme-oc-section-content[data-section="holders"] .meme-trade-info,
@@ -917,8 +918,8 @@
 
 
 .meme-avg-price {
-  font-size: 0.7rem;
   color: #9ca3af;
+  font-size: 0.7rem;
   padding-left: 5px;
 }
 
@@ -927,8 +928,8 @@
 }
 
 .meme-oc-section-content[data-section="holders"] .meme-oc-cell {
-  padding-top: 4px;
   padding-bottom: 4px;
+  padding-top: 4px;
 }
 
 @media (max-width: 1020px) {
@@ -943,54 +944,54 @@
 
 
 .oc-filter-cup {
-  width: 16px;
   height: 16px;
   opacity: 0.6;
+  width: 16px;
 }
 
 .meme-token-icon {
-  width: 28px;
-  height: 28px;
   border-radius: 4px;
-  object-fit: cover;
-  margin-right: 4px;
-  object-fit: cover;
   flex-shrink: 0;
+  height: 28px;
+  margin-right: 4px;
+  -o-object-fit: cover;
+     object-fit: cover;
+  width: 28px;
 }
 
 .meme-ordercenter-info {
-  display: flex;
   align-items: center;
+  display: flex;
 }
 
 .meme-ordercenter-monad-icon {
-  width: 12px;
   height: 12px;
   margin-right: 4px;
+  width: 12px;
 }
 
 /* Sell popup styles */
 .alerts-popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
   align-items: center;
+  background: rgba(0, 0, 0, 0.7);
+  bottom: 0;
+  display: flex;
   justify-content: center;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
   z-index: 10000;
 }
 
 .alerts-popup {
-  width: 400px;
+  animation: modalSlideIn 0.2s ease-out;
   background: rgb(6, 6, 6);
   border: 1px solid rgba(179, 184, 249, 0.15);
   border-radius: 6px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   overflow: hidden;
-  animation: modalSlideIn 0.2s ease-out;
+  width: 400px;
 }
 
 @keyframes modalSlideIn {
@@ -1006,34 +1007,34 @@
 }
 
 .alerts-popup-header {
+  align-items: center;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   display: flex;
   justify-content: space-between;
-  align-items: center;
   padding: 8px 15px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .alerts-popup-title {
-  font-size: 1rem;
   color: #ffffff;
-  margin: 0;
+  font-size: 1rem;
   letter-spacing: -0.3px;
+  margin: 0;
 }
 
 .alerts-close-button {
   background: transparent;
   border: none;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   padding: 4px;
-  border-radius: 4px;
   transition: all 0.2s ease;
-  color: rgba(255, 255, 255, 0.6);
 }
 
 .alerts-content {
-  padding: 20px;
   max-height: 500px;
   overflow-y: auto;
+  padding: 20px;
 }
 
 .alerts-section {
@@ -1041,27 +1042,27 @@
 }
 
 .explorer-close-button {
-  width: 16px;
   height: 16px;
   opacity: 0.6;
+  width: 16px;
 }
 
 .alerts-popup .meme-amount-header {
-  display: flex;
   align-items: center;
+  display: flex;
   justify-content: space-between;
   margin-bottom: 2px;
   padding: 0;
 }
 
 .alerts-popup .meme-amount-header-left {
-  display: flex;
   align-items: center;
+  display: flex;
 }
 
 .alerts-popup .meme-amount-label {
-  font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
 }
 
 .alerts-popup .meme-balance-right {
@@ -1070,46 +1071,50 @@
 }
 
 .alerts-popup .meme-balance-display {
-  display: flex;
   align-items: center;
-  font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  font-size: 0.8rem;
 }
 
 .alerts-popup .meme-wallet-icon {
   height: 15px;
-  width: 15px;
-  opacity: 0.5;
   margin-right: 2px;
+  opacity: 0.5;
+  width: 15px;
 }
 
 .alerts-popup .meme-balance-max {
   background-color: #6e324051;
+  border: none;
+  border-radius: 3px;
   color: rgb(235, 112, 112);
+  cursor: pointer;
   font-size: 0.7rem;
   padding: 0 .25rem;
-  border-radius: 3px;
-  border: none;
-  cursor: pointer;
 }
 
 .alerts-popup .meme-trade-input-wrapper {
-  position: relative;
   margin-bottom: 12px;
   padding: 0;
+  position: relative;
 }
 
 .alerts-popup .meme-trade-input {
-  width: 100%;
-  padding: 6px 80px 6px 12px;
   background: transparent;
   border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 6px;
+  box-sizing: border-box;
   color: #fff;
   font-size: 1.1rem;
   outline: none;
+  padding: 6px 80px 6px 12px;
   transition: all 0.2s ease;
-  box-sizing: border-box;
+  width: 100%;
+}
+
+.alerts-popup .meme-trade-input::-moz-placeholder {
+  color: rgba(255, 255, 255, 1) !important;
 }
 
 .alerts-popup .meme-trade-input::placeholder {
@@ -1117,20 +1122,20 @@
 }
 
 .alerts-popup .meme-trade-currency {
-  position: relative;
-  margin-top: -19.5px;
-  margin-left: 4px;
-  right: 20px;
-  transform: translateY(-50%);
   color: rgba(255, 255, 255, 0.5);
   font-size: .95rem;
+  margin-left: 4px;
+  margin-top: -19.5px;
   pointer-events: none;
+  position: relative;
+  right: 20px;
+  transform: translateY(-50%);
 }
 
 .alerts-popup .meme-balance-slider-wrapper {
   margin: 0 0 20px;
-  position: relative;
   padding: 0;
+  position: relative;
 }
 
 .alerts-popup .meme-slider-container {
@@ -1139,7 +1144,9 @@
 }
 
 .alerts-popup .meme-balance-amount-slider {
-  appearance: none;
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
   border-radius: 1px;
   cursor: pointer;
   height: 4px;
@@ -1150,7 +1157,8 @@
 }
 
 .alerts-popup .meme-balance-amount-slider::-webkit-slider-thumb {
-  appearance: none;
+  -webkit-appearance: none;
+          appearance: none;
   background: #d4d4d4;
   border-radius: 3px;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
@@ -1159,6 +1167,7 @@
   position: relative;
   top: 4.5px;
   transform: translate(0%, -50%);
+  -webkit-transition: all 0.2s ease;
   transition: all 0.2s ease;
   width: 10px;
   z-index: 2;
@@ -1174,6 +1183,7 @@
   margin-top: -5.5px;
   position: relative;
   top: 4px;
+  -moz-transition: all 0.2s ease;
   transition: all 0.2s ease;
   width: 10px;
   z-index: 13;
@@ -1221,6 +1231,7 @@
 }
 
 .alerts-popup .meme-balance-slider-mark {
+  background-color: black;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.72rem;
@@ -1229,11 +1240,11 @@
   padding: 0 8px;
   position: relative;
   transition: color 0.2s ease;
-  background-color: black;
 
 }
 
 .alerts-popup .meme-balance-slider-mark::before {
+  background-color: black;
   content: '';
   height: 4px;
   left: 50%;
@@ -1241,7 +1252,6 @@
   top: -9px;
   transform: translateX(-50%);
   width: 5px;
-  background-color: black;
 }
 
 .alerts-popup .meme-balance-slider-mark[data-percentage='0']::before,
@@ -1262,21 +1272,20 @@
 }
 
 .alerts-popup .meme-trade-action-button {
-  display: flex;
   align-items: center;
-  justify-content: center;
-  height: 35px;
-  padding: 6px 12px;
-  border: none;
-  font-size: 0.9rem;
-  font-weight: 400;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  letter-spacing: -0.3px;
   border: none;
   border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.9rem;
+  font-weight: 400;
+  height: 35px;
+  justify-content: center;
+  letter-spacing: -0.3px;
   margin: 0;
   margin-top: 10px;
+  padding: 6px 12px;
+  transition: all 0.2s ease;
   width: 100%;
 }
 
@@ -1290,8 +1299,8 @@
 }
 
 .alerts-popup .meme-trade-action-button:disabled {
-  opacity: 0.5;
   cursor: not-allowed;
+  opacity: 0.5;
   transform: none;
 }
 
@@ -1299,17 +1308,13 @@
   padding: 15px
 }
 
-.alerts-popup .meme-trade-action-button.sell:hover:not(:disabled) {
-  filter: brightness(1.1);
-}
-
 .alerts-popup .meme-trade-action-button.sell .meme-button-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgb(235, 112, 112);
-  border-top: 2px solid transparent;
-  border-radius: 50%;
   animation: spin 1s linear infinite;
+  border: 2px solid rgb(235, 112, 112);
+  border-radius: 50%;
+  border-top: 2px solid transparent;
+  height: 16px;
+  width: 16px;
 }
 
 @keyframes spin {
@@ -1320,12 +1325,6 @@
   100% {
     transform: rotate(360deg);
   }
-}
-
-.alerts-popup .meme-trade-action-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
 }
 
 .meme-clickable-token {
@@ -1346,10 +1345,10 @@
 
 
 .meme-oc-currency-toggle {
-  display: flex;
   align-items: center;
-  font-size: .8rem;
   color: rgb(255, 255, 255, 0.7);
+  display: flex;
+  font-size: .8rem;
   width: 65px;
 }
 
@@ -1358,30 +1357,30 @@
 }
 
 .meme-remaining-container {
-  display: flex;
   align-items: center;
+  display: flex;
 }
 
 .meme-avg-buy-info {
-  display: flex;
   align-items: center;
+  display: flex;
 }
 
 .meme-avg-sell-info {
-  display: flex;
   align-items: center;
+  display: flex;
 }
 
 
 .meme-oc-empty {
-  display: flex;
   align-items: center;
-  justify-content: center;
   color: #e1def473;
+  display: flex;
   font-size: 0.9rem;
-  text-align: center;
-  height: 100%;
   font-weight: 300;
+  height: 100%;
+  justify-content: center;
+  text-align: center;
 }
 
 .meme-avg-price.buy {
@@ -1397,7 +1396,7 @@
 }
 
 .memeordercenter-lightning{
-  width: 14px;
-  height: 14px;
 filter: brightness(0) saturate(100%) invert(81%) sepia(4%) saturate(1856%) hue-rotate(198deg) brightness(105%) contrast(105%);
+  height: 14px;
+  width: 14px;
 }

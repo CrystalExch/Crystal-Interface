@@ -476,6 +476,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    margin-bottom: 12px;
 }
 
 .perps-tpsl-row {
@@ -485,7 +486,10 @@
 }
 
 .perps-tpsl-label-section {
+    display: flex;
+    flex-direction: column;
     min-width: 60px;
+    width: 100%;
 }
 
 .perps-tpsl-row-label {
@@ -512,11 +516,9 @@
     color: rgba(255, 255, 255, 0.9);
     outline: none;
     transition: border-color 0.2s ease;
+    width: 100%;
 }
 
-.perps-tpsl-price-input:focus {
-    border-color: rgba(179, 184, 249, 0.4);
-}
 
 .perps-tpsl-price-input::placeholder {
     color: rgba(255, 255, 255, 0.4);
@@ -524,11 +526,13 @@
 }
 
 .perps-tpsl-percentage {
+    display: flex;
+    flex-direction: column;
     min-width: 40px;
 }
 
 .perps-tpsl-percent-input {
-    width: 100%;
+    width: 60px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(179, 184, 249, 0.15);
     border-radius: 4px;

@@ -159,7 +159,7 @@ interface TokenInfoProps {
   monUsdPrice: number;
   showLoadingPopup?: (id: string, config: any) => void;
   updatePopup?: (id: string, config: any) => void;
-  userPNL?: {
+  userPnl?: {
     totalPnl: number;
   };
 }
@@ -195,6 +195,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [currentTime, setCurrentTime] = useState(Date.now());
   const filterTabsRef = useRef<HTMLDivElement>(null);
   const marketsListRef = useRef<HTMLDivElement>(null);
+  const memeMetricsRef = useRef<HTMLDivElement>(null);
+  const perpsMetricsRef = useRef<HTMLDivElement>(null);
 
   const isAdvancedView = isTradeRoute && !simpleView;
 
@@ -304,6 +306,79 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       'noopener,noreferrer'
     );
   };
+
+  // Scroll gradient handler for meme token metrics
+  useEffect(() => {
+    const handleMemeScroll = () => {
+      const container = memeMetricsRef.current;
+      if (container) {
+        const scrollLeft = container.scrollLeft;
+        const scrollWidth = container.scrollWidth;
+        const clientWidth = container.clientWidth;
+
+        if (scrollLeft > 0) {
+          container.classList.add('show-left-gradient');
+        } else {
+          container.classList.remove('show-left-gradient');
+        }
+
+        if (scrollLeft + clientWidth < scrollWidth - 2) {
+          container.classList.add('show-right-gradient');
+        } else {
+          container.classList.remove('show-right-gradient');
+        }
+      }
+    };
+
+    const container = memeMetricsRef.current;
+    if (container && isMemeToken) {
+      container.addEventListener('scroll', handleMemeScroll);
+      handleMemeScroll(); // Initial check
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', handleMemeScroll);
+      }
+    };
+  }, [isMemeToken]);
+
+  // Scroll gradient handler for perps token metrics
+  useEffect(() => {
+    const handlePerpsScroll = () => {
+      const container = perpsMetricsRef.current;
+      if (container) {
+        const scrollLeft = container.scrollLeft;
+        const scrollWidth = container.scrollWidth;
+        const clientWidth = container.clientWidth;
+
+        if (scrollLeft > 0) {
+          container.classList.add('show-left-gradient');
+        } else {
+          container.classList.remove('show-left-gradient');
+        }
+
+        if (scrollLeft + clientWidth < scrollWidth - 2) {
+          container.classList.add('show-right-gradient');
+        } else {
+          container.classList.remove('show-right-gradient');
+        }
+      }
+    };
+
+    const container = perpsMetricsRef.current;
+    if (container && isPerpsToken) {
+      container.addEventListener('scroll', handlePerpsScroll);
+      handlePerpsScroll(); // Initial check
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', handlePerpsScroll);
+      }
+    };
+  }, [isPerpsToken]);
+
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent): void => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -597,7 +672,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   if (isMemeToken && memeTokenData) {
     return (
-      <div className="meme-interface-token-info-container-meme">
+      <div 
+        className="meme-interface-token-info-container-meme"
+      >
         <div className="meme-interface-token-header-info">
           <div className="meme-interface-token-header-left">
             <div className="meme-interface-token-icon-container">
@@ -767,7 +844,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           </div>
 
           <div className="meme-interface-token-header-right">
-            <div className="meme-interface-token-metrics">
+            <div className="meme-interface-token-metrics" ref={memeMetricsRef}>
               <span className="meme-interface-market-cap">
                 {formatPrice((memeTokenData.marketCap || 1000) * monUsdPrice)}
               </span>
@@ -835,7 +912,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   )}
                   <button
                     className="trenches-pnl-button"
-                    onClick={() => setShowPNLModal(true)}
+                    onClick={() => setpopup(27)}
                   >
                     <svg fill="#cfcfdfff" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
                       <path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z" />
@@ -851,7 +928,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   }
   if (isPerpsToken && perpsTokenData) {
     return (
-      <div className="perps-interface-token-info-container">
+      <div 
+        className="perps-interface-token-info-container"
+      >
         <div className="perps-interface-token-header-info">
           <div className="perps-interface-token-header-left">
             <div className="perps-interface-token-icon-container">
@@ -873,7 +952,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           </div>
 
           <div className="perps-interface-token-header-right">
-            <div className="perps-interface-token-metrics">
+            <div className="perps-interface-token-metrics" ref={perpsMetricsRef}>
               <div className="perps-interface-token-metric">
                 <span className="perps-interface-metric-value perps-price-large">
                   {perpsTokenData.price.toLocaleString()}
@@ -1230,12 +1309,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           </div>
         </>
       )}
-
-      <PNLComponent
-        isVisible={showPNLModal}
-        onClose={() => setShowPNLModal(false)}
-        windowWidth={window.innerWidth}
-      />
     </div>
   );
 };

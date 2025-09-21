@@ -911,225 +911,228 @@ const Perps: React.FC<PerpsProps> = ({
               </div>
             </div>
 
-            {isTpSlEnabled && (
-              <div className="perps-tpsl-content">
-                <div className="perps-tpsl-row">
-                  <div className="perps-tpsl-label-section">
-                    <span className="perps-tpsl-row-label">TP Price</span>
-                  </div>
-                  <div className="perps-tpsl-input-section">
-                    <input
-                      type="number"
-                      placeholder="Enter TP price"
-                      value={tpPrice}
-                      onChange={(e) => setTpPrice(e.target.value)}
-                      className="perps-tpsl-price-input"
-                    />
-                    <div className="perps-tpsl-percentage">
-                      <input
-                        type="number"
-                        value={tpPercent}
-                        onChange={(e) => setTpPercent(e.target.value)}
-                        className="perps-tpsl-percent-input"
-                      />
-                    </div>
-                  </div>
-                </div>
+                        {isTpSlEnabled && (
+                            <div className="perps-tpsl-content">
+                                <div className="perps-tpsl-row">
+                                    <div className="perps-tpsl-label-section">
+                                        <span className="perps-tpsl-row-label">TP Price</span>
+                                        <input
+                                            type="number"
+                                            placeholder="Enter TP price"
+                                            value={tpPrice}
+                                            onChange={(e) => setTpPrice(e.target.value)}
+                                            className="perps-tpsl-price-input"
+                                        />
+                                    </div>
+                                    <div className="perps-tpsl-input-section">
+                                        <div className="perps-tpsl-percentage">
+                                            <span className="perps-tpsl-row-label">TP%</span>
+                                            <input
+                                                type="number"
+                                                value={tpPercent}
+                                                onChange={(e) => setTpPercent(e.target.value)}
+                                                className="perps-tpsl-percent-input"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
 
-                <div className="perps-tpsl-row">
-                  <div className="perps-tpsl-label-section">
-                    <span className="perps-tpsl-row-label">SL Price</span>
-                  </div>
-                  <div className="perps-tpsl-input-section">
-                    <input
-                      type="number"
-                      placeholder="Enter SL price"
-                      value={slPrice}
-                      onChange={(e) => setSlPrice(e.target.value)}
-                      className="perps-tpsl-price-input"
-                    />
-                    <div className="perps-tpsl-percentage">
-                      <input
-                        type="number"
-                        value={slPercent}
-                        onChange={(e) => setSlPercent(e.target.value)}
-                        className="perps-tpsl-percent-input"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="perps-bottom-section">
-            <button
-              className={`perps-trade-action-button ${activeTradeType}`}
-              onClick={() => {
-                console.log(`Executing ${activeTradeType} trade for ${amountIn}`);
-                if (isTpSlEnabled) {
-                  console.log(`TP Price: ${tpPrice}, SL Price: ${slPrice}`);
-                }
-              }}
-            >
-              {activeOrderType === "market"
-                ? `${activeTradeType === "long" ? "Long" : "Short"} Market`
-                : `Set ${activeTradeType === "long" ? "Long" : "Short"} Limit`
-              }
-            </button>
-            <div className="perps-info-rectangle">
-              <div className="price-impact">
-                <div className="label-container">
-                  <TooltipLabel
-                    label={t('Liquidation Price')}
-                    tooltipText={
-                      <div>
-                        <div className="tooltip-description">
-                          {t('priceImpactHelp')}
-                        </div>
-                      </div>
-                    }
-                    className="impact-label"
-                  />
-                </div>
-                <div className="value-container">
-                  $0.00
-                </div>
-              </div>
-              <div className="price-impact">
-                <div className="label-container">
-                  <TooltipLabel
-                    label={t('Order Value')}
-                    tooltipText={
-                      <div>
-                        <div className="tooltip-description">
-                          {t('priceImpactHelp')}
-                        </div>
-                      </div>
-                    }
-                    className="impact-label"
-                  />
-                </div>
-                <div className="value-container">
-                  $0.00
-                </div>
-              </div>
-              <div className="price-impact">
-                <div className="label-container">
-                  <TooltipLabel
-                    label={t('Margin Required')}
-                    tooltipText={
-                      <div>
-                        <div className="tooltip-description">
-                          {t('priceImpactHelp')}
-                        </div>
-                      </div>
-                    }
-                    className="impact-label"
-                  />
-                </div>
-                <div className="value-container">
-                  $0.00
-                </div>
-              </div>
-              <div className="price-impact">
-                <div className="label-container">
-                  <TooltipLabel
-                    label={t('Slippage')}
-                    tooltipText={
-                      <div>
-                        <div className="tooltip-description">
-                          {t('priceImpactHelp')}
-                        </div>
-                      </div>
-                    }
-                    className="impact-label"
-                  />
-                </div>
-                <div className="value-container">
-                  0.5%
-                </div>
-              </div>
-              <div className="price-impact">
-                <div className="label-container">
-                  <TooltipLabel
-                    label={t('Fees')}
-                    tooltipText={
-                      <div>
-                        <div className="tooltip-description">
-                          {t('priceImpactHelp')}
-                        </div>
-                      </div>
-                    }
-                    className="impact-label"
-                  />
-                </div>
-                <div className="value-container">
-                  Taker 0.038% / Maker 0.015%
-                </div>
-              </div>
-            </div>
+                                <div className="perps-tpsl-row">
+                                    <div className="perps-tpsl-label-section">
+                                        <span className="perps-tpsl-row-label">SL Price</span>
+                                        <input
+                                            type="number"
+                                            placeholder="Enter SL price"
+                                            value={tpPrice}
+                                            onChange={(e) => setSlPrice(e.target.value)}
+                                            className="perps-tpsl-price-input"
+                                        />
+                                    </div>
+                                    <div className="perps-tpsl-input-section">
+                                        <div className="perps-tpsl-percentage">
+                                            <span className="perps-tpsl-row-label">SL%</span>
+                                            <input
+                                                type="number"
+                                                value={tpPercent}
+                                                onChange={(e) => setSlPercent(e.target.value)}
+                                                className="perps-tpsl-percent-input"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
 
-          </div>
-        </div>
-        <div className="perps-deposit-withdraw-section">
-          <button
-            className="perps-deposit-button"
-            onClick={() => setpopup(30)}
-          >
-            Deposit
-          </button>
-          <button
-            className="perps-withdraw-button"
-            onClick={() => setpopup(31)}
-          >
-            Withdraw
-          </button>
-        </div>
-        <div
-          className="perps-account-details"
-          style={{ height: `${orderCenterHeight + 100}px` }}
-        >
-          <span className="perps-account-section-title" >Account Overview</span>
-          <div className="perps-account-row">
-            <span className="perps-account-title">
-              Balance
-            </span>
-            <span className="perps-account-subtitle">
-              $0.00
-            </span>
-          </div>
-          <div className="perps-account-row">
-            <span className="perps-account-title">
-              Unrealized PNL
-            </span>
-            <span className="perps-account-subtitle">
-              $0.00
-            </span>
-          </div>
-          <div className="perps-account-row">
-            <span className="perps-account-title">
-              Cross Margin Ratio
-            </span>
-            <span className="perps-account-subtitle">
-              $0.00
-            </span>
-          </div>
-          <div className="perps-account-row">
-            <span className="perps-account-title">
-              Maintenance Margin
-            </span>
-            <span className="perps-account-subtitle">
-              $0.00
-            </span>
-          </div>
-          <div className="perps-account-row">
-            <span className="perps-account-title">
-              Cross Account Leverage
-            </span>
-            <span className="perps-account-subtitle">
-              $0.00
-            </span>
-          </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="perps-bottom-section">
+                        <button
+                            className={`perps-trade-action-button ${activeTradeType}`}
+                            onClick={() => {
+                                console.log(`Executing ${activeTradeType} trade for ${tradeAmount}`);
+                                if (isTpSlEnabled) {
+                                    console.log(`TP Price: ${tpPrice}, SL Price: ${slPrice}`);
+                                }
+                            }}
+                        >
+                            {activeOrderType === "market"
+                                ? `${activeTradeType === "long" ? "Long" : "Short"} Market`
+                                : `Set ${activeTradeType === "long" ? "Long" : "Short"} Limit`
+                            }
+                        </button>
+                        <div className="perps-info-rectangle">
+                            <div className="price-impact">
+                                <div className="label-container">
+                                    <TooltipLabel
+                                        label={t('Liquidation Price')}
+                                        tooltipText={
+                                            <div>
+                                                <div className="tooltip-description">
+                                                    {t('priceImpactHelp')}
+                                                </div>
+                                            </div>
+                                        }
+                                        className="impact-label"
+                                    />
+                                </div>
+                                <div className="value-container">
+                                    $0.00
+                                </div>
+                            </div>
+                            <div className="price-impact">
+                                <div className="label-container">
+                                    <TooltipLabel
+                                        label={t('Order Value')}
+                                        tooltipText={
+                                            <div>
+                                                <div className="tooltip-description">
+                                                    {t('priceImpactHelp')}
+                                                </div>
+                                            </div>
+                                        }
+                                        className="impact-label"
+                                    />
+                                </div>
+                                <div className="value-container">
+                                    $0.00
+                                </div>
+                            </div>
+                            <div className="price-impact">
+                                <div className="label-container">
+                                    <TooltipLabel
+                                        label={t('Margin Required')}
+                                        tooltipText={
+                                            <div>
+                                                <div className="tooltip-description">
+                                                    {t('priceImpactHelp')}
+                                                </div>
+                                            </div>
+                                        }
+                                        className="impact-label"
+                                    />
+                                </div>
+                                <div className="value-container">
+                                    $0.00
+                                </div>
+                            </div>
+                            <div className="price-impact">
+                                <div className="label-container">
+                                    <TooltipLabel
+                                        label={t('Slippage')}
+                                        tooltipText={
+                                            <div>
+                                                <div className="tooltip-description">
+                                                    {t('priceImpactHelp')}
+                                                </div>
+                                            </div>
+                                        }
+                                        className="impact-label"
+                                    />
+                                </div>
+                                <div className="value-container">
+                                    0.5%
+                                </div>
+                            </div>
+                            <div className="price-impact">
+                                <div className="label-container">
+                                    <TooltipLabel
+                                        label={t('Fees')}
+                                        tooltipText={
+                                            <div>
+                                                <div className="tooltip-description">
+                                                    {t('priceImpactHelp')}
+                                                </div>
+                                            </div>
+                                        }
+                                        className="impact-label"
+                                    />
+                                </div>
+                                <div className="value-container">
+                                    Taker 0.038% / Maker 0.015%
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div className="perps-deposit-withdraw-section">
+                    <button
+                        className="perps-deposit-button"
+                        onClick={() => setpopup(30)}
+                    >
+                        Deposit
+                    </button>
+                    <button
+                        className="perps-withdraw-button"
+                        onClick={() => setpopup(31)}
+                    >
+                        Withdraw
+                    </button>
+                </div>
+                <div
+                    className="perps-account-details"
+                    style={{ height: `${orderCenterHeight + 100}px` }}
+                >
+                    <span className="perps-account-section-title" >Account Overview</span>
+                    <div className="perps-account-row">
+                        <span className="perps-account-title">
+                            Balance
+                        </span>
+                        <span className="perps-account-subtitle">
+                            $0.00
+                        </span>
+                    </div>
+                    <div className="perps-account-row">
+                        <span className="perps-account-title">
+                            Unrealized PNL
+                        </span>
+                        <span className="perps-account-subtitle">
+                            $0.00
+                        </span>
+                    </div>
+                    <div className="perps-account-row">
+                        <span className="perps-account-title">
+                            Cross Margin Ratio
+                        </span>
+                        <span className="perps-account-subtitle">
+                            $0.00
+                        </span>
+                    </div>
+                    <div className="perps-account-row">
+                        <span className="perps-account-title">
+                            Maintenance Margin
+                        </span>
+                        <span className="perps-account-subtitle">
+                            $0.00
+                        </span>
+                    </div>
+                    <div className="perps-account-row">
+                        <span className="perps-account-title">
+                            Cross Account Leverage
+                        </span>
+                        <span className="perps-account-subtitle">
+                            $0.00
+                        </span>
+                    </div>
 
         </div>
       </div>

@@ -31,7 +31,7 @@ interface ChartHeaderProps {
   marketsData: any;
   simpleView: boolean;
   tradesByMarket: any;
- isMemeToken?: boolean;
+  isMemeToken?: boolean;
   memeTokenData?: {
     symbol: string;
     name: string;
@@ -47,20 +47,20 @@ interface ChartHeaderProps {
     discordHandle?: string;
   };
   isPerpsToken?: boolean;
-perpsTokenData?: {
-  symbol: string;
-  baseAsset: string;
-  quoteAsset: string;
-  tokenIcon: string;
-  price: number;
-  change24h: number;
-  volume24h: number;
-  openInterest: number;
-  fundingRate: number;
-  maxLeverage: number;
-};
+  perpsTokenData?: {
+    symbol: string;
+    baseAsset: string;
+    quoteAsset: string;
+    tokenIcon: string;
+    price: number;
+    change24h: number;
+    volume24h: number;
+    openInterest: number;
+    fundingRate: number;
+    maxLeverage: number;
+  };
   monUsdPrice: number;
-    showLoadingPopup?: (id: string, config: any) => void;
+  showLoadingPopup?: (id: string, config: any) => void;
   updatePopup?: (id: string, config: any) => void;
 }
 
@@ -86,7 +86,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   isPerpsToken = false,
   perpsTokenData,
   monUsdPrice,
-    showLoadingPopup,
+  showLoadingPopup,
   updatePopup
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
@@ -103,7 +103,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
     buyLiquidity: '0',
     sellLiquidity: '0'
   });
-  
+
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const delayedLoadingClearRef = useRef<NodeJS.Timeout | null>(null);
   const location = useLocation();
@@ -113,7 +113,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   useEffect(() => {
     if (activeMarket !== prevMarketId) {
       setPrevMarketId(activeMarket || '');
-      
+
       prevMetricsRef.current = {
         price,
         priceChangeAmount,
@@ -124,16 +124,16 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         buyLiquidity,
         sellLiquidity
       };
-      
+
       if (loadingTimeoutRef.current) {
         clearTimeout(loadingTimeoutRef.current);
       }
-      
+
       if (delayedLoadingClearRef.current) {
         clearTimeout(delayedLoadingClearRef.current);
         delayedLoadingClearRef.current = null;
       }
-            
+
       return () => {
         if (loadingTimeoutRef.current) {
           clearTimeout(loadingTimeoutRef.current);
@@ -144,29 +144,29 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       };
     }
   }, [activeMarket]);
-  
-  useEffect(() => {
-      const prevMetrics = prevMetricsRef.current;
-      
-      const hasMetricsChanged = 
-        price !== prevMetrics.price ||
-        priceChangeAmount !== prevMetrics.priceChangeAmount ||
-        high24h !== prevMetrics.high24h ||
-        low24h !== prevMetrics.low24h ||
-        volume !== prevMetrics.volume ||
-        buyLiquidity !== prevMetrics.buyLiquidity ||
-        sellLiquidity !== prevMetrics.sellLiquidity;
-      
-      if (hasMetricsChanged) {
-        if (delayedLoadingClearRef.current) {
-          clearTimeout(delayedLoadingClearRef.current);
-        }
 
-        if (loadingTimeoutRef.current) {
-          clearTimeout(loadingTimeoutRef.current);
-          loadingTimeoutRef.current = null;
-        }
+  useEffect(() => {
+    const prevMetrics = prevMetricsRef.current;
+
+    const hasMetricsChanged =
+      price !== prevMetrics.price ||
+      priceChangeAmount !== prevMetrics.priceChangeAmount ||
+      high24h !== prevMetrics.high24h ||
+      low24h !== prevMetrics.low24h ||
+      volume !== prevMetrics.volume ||
+      buyLiquidity !== prevMetrics.buyLiquidity ||
+      sellLiquidity !== prevMetrics.sellLiquidity;
+
+    if (hasMetricsChanged) {
+      if (delayedLoadingClearRef.current) {
+        clearTimeout(delayedLoadingClearRef.current);
       }
+
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+    }
   }, [
     price,
     priceChangeAmount,
@@ -188,12 +188,12 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         orderdata.liquiditySellOrders?.orders.length !== 0
           ? orderdata.liquiditySellOrders?.orders
           : [];
-      
+
       const activechain = Object.keys(settings.chainConfig)[0];
-      const quotePrice = activeMarket.quoteAsset == 'USDC' ? 1 : 
-        tradesByMarket[(activeMarket.quoteAsset == settings.chainConfig[activechain]?.wethticker ? 
+      const quotePrice = activeMarket.quoteAsset == 'USDC' ? 1 :
+        tradesByMarket[(activeMarket.quoteAsset == settings.chainConfig[activechain]?.wethticker ?
           settings.chainConfig[activechain]?.ethticker : activeMarket.quoteAsset) + 'USDC']?.[0]?.[3];
-      
+
       if ((roundedBuys.length !== 0 || orderdata?.reserveQuote != 0) && quotePrice) {
         const ammBuyLiquidity = Number(orderdata?.reserveQuote) / Number(10n ** activeMarket.quoteDecimals) * quotePrice || 0
         const buyLiquidity = (roundedBuys[roundedBuys.length - 1]?.totalSize * quotePrice || 0) + ammBuyLiquidity;
@@ -211,8 +211,6 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       setIsLoading(orderdata.liquidityBuyOrders?.market != activeMarket.address)
     }
   }, [orderdata]);
-
-
 
   const metrics = [
     {
@@ -251,30 +249,30 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       value: low24h,
     },
   ];
-  
+
   return (
     <div className={`chart-header ${!shouldShowFullHeader ? 'simplified' : ''}`}>
-<TokenInfo
-  in_icon={in_icon}
-  out_icon={out_icon}
-  price={price}
-  activeMarket={activeMarket}
-  onMarketSelect={onMarketSelect}
-  tokendict={tokendict}
-  setpopup={setpopup}
-  marketsData={marketsData}
-  isLoading={isLoading}
-  isTradeRoute={isTradeRoute}
-  simpleView={simpleView}
-  isMemeToken={isMemeToken}
-  memeTokenData={memeTokenData}
-  isPerpsToken={isPerpsToken}
-  perpsTokenData={perpsTokenData}
-  monUsdPrice={monUsdPrice}
-/>
+      <TokenInfo
+        in_icon={in_icon}
+        out_icon={out_icon}
+        price={price}
+        activeMarket={activeMarket}
+        onMarketSelect={onMarketSelect}
+        tokendict={tokendict}
+        setpopup={setpopup}
+        marketsData={marketsData}
+        isLoading={isLoading}
+        isTradeRoute={isTradeRoute}
+        simpleView={simpleView}
+        isMemeToken={isMemeToken}
+        memeTokenData={memeTokenData}
+        isPerpsToken={isPerpsToken}
+        perpsTokenData={perpsTokenData}
+        monUsdPrice={monUsdPrice}
+      />
       {shouldShowFullHeader && (
-        <AdditionalMetrics 
-          metrics={metrics} 
+        <AdditionalMetrics
+          metrics={metrics}
           isLoading={isLoading}
         />
       )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import closebutton from '../../../assets/close_button.png';
 import reset from '../../../assets/reset.svg';
 interface TransactionFilters {
@@ -18,7 +18,7 @@ const TransactionFiltersPopup: React.FC<TransactionFiltersPopupProps> = ({
   isOpen,
   onClose,
   onApplyFilters,
-  currentFilters
+  currentFilters,
 }) => {
   const [filters, setFilters] = useState<TransactionFilters>(currentFilters);
 
@@ -30,7 +30,7 @@ const TransactionFiltersPopup: React.FC<TransactionFiltersPopupProps> = ({
     const resetFilters: TransactionFilters = {
       makerAddress: '',
       minUSD: '',
-      maxUSD: ''
+      maxUSD: '',
     };
     setFilters(resetFilters);
   };
@@ -40,10 +40,13 @@ const TransactionFiltersPopup: React.FC<TransactionFiltersPopupProps> = ({
     onClose();
   };
 
-  const handleInputChange = (field: keyof TransactionFilters, value: string) => {
-    setFilters(prev => ({
+  const handleInputChange = (
+    field: keyof TransactionFilters,
+    value: string,
+  ) => {
+    setFilters((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -51,11 +54,18 @@ const TransactionFiltersPopup: React.FC<TransactionFiltersPopupProps> = ({
 
   return (
     <div className="trades-filters-popup-overlay" onClick={onClose}>
-      <div className="trades-filters-popup" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="trades-filters-popup"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="explorer-filters-header">
           <h3 className="filters-title">Transactions Filter</h3>
           <button className="filters-close-button" onClick={onClose}>
-            <img src={closebutton} className="explorer-close-button" alt="Close" />
+            <img
+              src={closebutton}
+              className="explorer-close-button"
+              alt="Close"
+            />
           </button>
         </div>
 
@@ -68,7 +78,9 @@ const TransactionFiltersPopup: React.FC<TransactionFiltersPopupProps> = ({
                 className="filter-input"
                 placeholder="Enter Maker Address"
                 value={filters.makerAddress}
-                onChange={(e) => handleInputChange('makerAddress', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange('makerAddress', e.target.value)
+                }
               />
             </div>
           </div>

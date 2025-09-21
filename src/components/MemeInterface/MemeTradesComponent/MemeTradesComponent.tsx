@@ -1,20 +1,20 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
-import switchicon from "../../../assets/switch.svg";
-import monadlogo from "../../../assets/monadlogo.svg";
-import TraderPortfolioPopup from "./TraderPortfolioPopup/TraderPortfolioPopup";
-import TransactionFiltersPopup from "./TransactionFiltersPopup";
-import filtercup from "../../../assets/filtercup.svg";
-import filledcup from "../../../assets/filledcup.svg";
-import filter from "../../../assets/filter.svg";
+import filledcup from '../../../assets/filledcup.svg';
+import filter from '../../../assets/filter.svg';
+import filtercup from '../../../assets/filtercup.svg';
+import monadlogo from '../../../assets/monadlogo.svg';
+import switchicon from '../../../assets/switch.svg';
+import TraderPortfolioPopup from './TraderPortfolioPopup/TraderPortfolioPopup';
+import TransactionFiltersPopup from './TransactionFiltersPopup';
 
 import {
   formatSubscript,
   FormattedNumber,
-} from "../../../utils/memeFormatSubscript";
+} from '../../../utils/memeFormatSubscript';
 
-import "./MemeTradesComponent.css";
+import './MemeTradesComponent.css';
 
 const Tooltip: React.FC<{
   content: string;
@@ -137,32 +137,34 @@ const Tooltip: React.FC<{
       onMouseLeave={handleMouseLeave}
     >
       {children}
-      {shouldRender && createPortal(
-        <div
-          ref={tooltipRef}
-          className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
-          style={{
-            position: 'absolute',
-            top: `${tooltipPosition.top - 20}px`,
-            left: `${tooltipPosition.left}px`,
-            transform: `${position === 'top' || position === 'bottom'
-              ? 'translateX(-50%)'
-              : position === 'left' || position === 'right'
-                ? 'translateY(-50%)'
-                : 'none'} scale(${isVisible ? 1 : 0})`,
-            opacity: isVisible ? 1 : 0,
-            zIndex: 9999,
-            pointerEvents: 'none',
-            transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-            willChange: 'transform, opacity'
-          }}
-        >
-          <div className="tooltip-content">
-            {content}
-          </div>
-        </div>,
-        document.body
-      )}
+      {shouldRender &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+            style={{
+              position: 'absolute',
+              top: `${tooltipPosition.top - 20}px`,
+              left: `${tooltipPosition.left}px`,
+              transform: `${
+                position === 'top' || position === 'bottom'
+                  ? 'translateX(-50%)'
+                  : position === 'left' || position === 'right'
+                    ? 'translateY(-50%)'
+                    : 'none'
+              } scale(${isVisible ? 1 : 0})`,
+              opacity: isVisible ? 1 : 0,
+              zIndex: 9999,
+              pointerEvents: 'none',
+              transition:
+                'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+              willChange: 'transform, opacity',
+            }}
+          >
+            <div className="tooltip-content">{content}</div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
@@ -187,7 +189,7 @@ interface ViewTrade {
   priceUSD: number;
   trader: string;
   fullAddress: string;
-  tags: ("sniper" | "dev" | "kol" | "bundler" | "insider" | "topHolder")[];
+  tags: ('sniper' | 'dev' | 'kol' | 'bundler' | 'insider' | 'topHolder')[];
   isTopHolder: boolean;
   isCurrentUser: boolean;
   isDev: boolean;
@@ -210,19 +212,19 @@ interface TransactionFilters {
   maxUSD: string;
 }
 
-type AmountMode = "USDC" | "MON";
-type MCMode = "MC" | "Price";
+type AmountMode = 'USDC' | 'MON';
+type MCMode = 'MC' | 'Price';
 
 interface Props {
   trades: RawTrade[];
   tokenList?: any[];
   market?:
-  | {
-    baseAsset?: string;
-    quoteAsset?: string;
-    quoteAddress?: string;
-  }
-  | any;
+    | {
+        baseAsset?: string;
+        quoteAsset?: string;
+        quoteAddress?: string;
+      }
+    | any;
   tradesByMarket?: any;
   markets?: any;
   tokendict?: any;
@@ -267,31 +269,33 @@ export default function MemeTradesComponent({
   onClearTracked,
   isLoadingTrades = false,
 }: Props) {
-  const [amountMode, setAmountMode] = useState<AmountMode>("MON");
-  const [mcMode, setMcMode] = useState<MCMode>("MC");
+  const [amountMode, setAmountMode] = useState<AmountMode>('MON');
+  const [mcMode, setMcMode] = useState<MCMode>('MC');
   const [hover, setHover] = useState(false);
   const [popupAddr, setPopupAddr] = useState<string | null>(null);
   const [displayTrades, setDisplayTrades] = useState<RawTrade[]>([]);
   const [showFiltersPopup, setShowFiltersPopup] = useState(false);
-  const [transactionFilters, setTransactionFilters] = useState<TransactionFilters>({
-    makerAddress: '',
-    minUSD: '',
-    maxUSD: ''
-  });
+  const [transactionFilters, setTransactionFilters] =
+    useState<TransactionFilters>({
+      makerAddress: '',
+      minUSD: '',
+      maxUSD: '',
+    });
   const tradesBacklogRef = useRef<RawTrade[]>([]);
   const lastProcessedTradesRef = useRef<RawTrade[]>([]);
 
-  const norm = (s?: string) => (s || "").toLowerCase();
+  const norm = (s?: string) => (s || '').toLowerCase();
   const trackedSet = new Set((trackedAddresses || []).map(norm));
   const dev = norm(devAddress);
   const you = norm(currentUserAddress);
-  const devEqualsYou = dev !== "" && dev === you;
+  const devEqualsYou = dev !== '' && dev === you;
 
   let devActive = false;
   let youActive = false;
   let trackedActive = false;
 
-  if (trackedSet.size === 0) { } else if (trackedSet.size === 1) {
+  if (trackedSet.size === 0) {
+  } else if (trackedSet.size === 1) {
     const [only] = Array.from(trackedSet);
     if (devEqualsYou && only === dev) {
       youActive = true;
@@ -307,9 +311,10 @@ export default function MemeTradesComponent({
   }
 
   // Check if transaction filters are active
-  const hasActiveFilters = transactionFilters.makerAddress.trim() !== '' || 
-                          transactionFilters.minUSD.trim() !== '' || 
-                          transactionFilters.maxUSD.trim() !== '';
+  const hasActiveFilters =
+    transactionFilters.makerAddress.trim() !== '' ||
+    transactionFilters.minUSD.trim() !== '' ||
+    transactionFilters.maxUSD.trim() !== '';
 
   useEffect(() => {
     const newTrades = trades.slice(0, 100);
@@ -317,18 +322,25 @@ export default function MemeTradesComponent({
     if (hover) {
       const previousTrades = lastProcessedTradesRef.current;
       const reallyNewTrades = newTrades.filter(
-        newTrade => !previousTrades.some(oldTrade => oldTrade.id === newTrade.id)
+        (newTrade) =>
+          !previousTrades.some((oldTrade) => oldTrade.id === newTrade.id),
       );
 
       if (reallyNewTrades.length > 0) {
-        tradesBacklogRef.current = [...reallyNewTrades, ...tradesBacklogRef.current].slice(0, 50);
+        tradesBacklogRef.current = [
+          ...reallyNewTrades,
+          ...tradesBacklogRef.current,
+        ].slice(0, 50);
       }
     } else {
       if (tradesBacklogRef.current.length > 0) {
         const combined = [...tradesBacklogRef.current, ...newTrades];
-        const uniqueTrades = combined.filter((trade, index, arr) =>
-          arr.findIndex(t => t.id === trade.id) === index
-        ).slice(0, 40);
+        const uniqueTrades = combined
+          .filter(
+            (trade, index, arr) =>
+              arr.findIndex((t) => t.id === trade.id) === index,
+          )
+          .slice(0, 40);
 
         setDisplayTrades(uniqueTrades);
         tradesBacklogRef.current = [];
@@ -347,7 +359,7 @@ export default function MemeTradesComponent({
 
   const resolveNative = useCallback(
     (symbol: string | undefined) => {
-      if (!symbol) return "";
+      if (!symbol) return '';
       if (symbol === wethticker) return ethticker ?? symbol;
       return symbol;
     },
@@ -358,7 +370,7 @@ export default function MemeTradesComponent({
     (symbol?: string): number => {
       if (!symbol || !tradesByMarket || !markets) return 0;
       const sym = resolveNative(symbol);
-      if (usdc && sym === "USDC") return 1;
+      if (usdc && sym === 'USDC') return 1;
       const pair = `${sym}USDC`;
       const top = tradesByMarket[pair]?.[0]?.[3];
       const pf = Number(markets[pair]?.priceFactor) || 1;
@@ -379,7 +391,8 @@ export default function MemeTradesComponent({
 
     const latestQuotePerBase = fetchLatestPriceInQuote(trades) ?? 0;
     const quoteUsd = usdPer(market?.quoteAsset);
-    const monUsd = (usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker));
+    const monUsd =
+      usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker);
 
     let filteredTrades = displayTrades;
 
@@ -388,7 +401,9 @@ export default function MemeTradesComponent({
       filteredTrades = displayTrades.filter((r) => {
         // Filter by maker address
         if (transactionFilters.makerAddress.trim() !== '') {
-          const filterAddress = transactionFilters.makerAddress.toLowerCase().trim();
+          const filterAddress = transactionFilters.makerAddress
+            .toLowerCase()
+            .trim();
           const callerAddress = r.caller.toLowerCase();
           if (!callerAddress.includes(filterAddress)) {
             return false;
@@ -402,11 +417,16 @@ export default function MemeTradesComponent({
 
         if (!amountMON) {
           const priceInQuote = r.price ?? latestQuotePerBase;
-          if (market?.quoteAsset && (market.quoteAsset === wethticker || market.quoteAsset === ethticker)) {
+          if (
+            market?.quoteAsset &&
+            (market.quoteAsset === wethticker ||
+              market.quoteAsset === ethticker)
+          ) {
             amountMON = sign * (r.tokenAmount ?? 0) * priceInQuote;
           } else {
             if (monUsd > 0 && quoteUsd > 0) {
-              const amountUSDfromToken = sign * (r.tokenAmount ?? 0) * priceInQuote * quoteUsd;
+              const amountUSDfromToken =
+                sign * (r.tokenAmount ?? 0) * priceInQuote * quoteUsd;
               amountMON = amountUSDfromToken / monUsd;
             } else {
               amountMON = 0;
@@ -449,11 +469,15 @@ export default function MemeTradesComponent({
 
       if (!amountMON) {
         const priceInQuote = r.price ?? latestQuotePerBase;
-        if (market?.quoteAsset && (market.quoteAsset === wethticker || market.quoteAsset === ethticker)) {
+        if (
+          market?.quoteAsset &&
+          (market.quoteAsset === wethticker || market.quoteAsset === ethticker)
+        ) {
           amountMON = sign * (r.tokenAmount ?? 0) * priceInQuote;
         } else {
           if (monUsd > 0 && quoteUsd > 0) {
-            const amountUSDfromToken = sign * (r.tokenAmount ?? 0) * priceInQuote * quoteUsd;
+            const amountUSDfromToken =
+              sign * (r.tokenAmount ?? 0) * priceInQuote * quoteUsd;
             amountMON = amountUSDfromToken / monUsd;
           } else {
             amountMON = 0;
@@ -462,13 +486,20 @@ export default function MemeTradesComponent({
       }
 
       const amountUSD = monUsd > 0 ? amountMON * monUsd : 0;
-      const short = isCurrentUser ? "YOU" : r.caller.slice(2, 6);
-      const tags: ("sniper" | "dev" | "kol" | "bundler" | "insider" | "topHolder")[] = [];
+      const short = isCurrentUser ? 'YOU' : r.caller.slice(2, 6);
+      const tags: (
+        | 'sniper'
+        | 'dev'
+        | 'kol'
+        | 'bundler'
+        | 'insider'
+        | 'topHolder'
+      )[] = [];
       if (isDev) {
-        tags.push("dev");
+        tags.push('dev');
       }
       if (isTopHolder) {
-        tags.push("topHolder");
+        tags.push('topHolder');
       }
 
       return {
@@ -501,7 +532,7 @@ export default function MemeTradesComponent({
 
   const maxForMode = useMemo(() => {
     if (viewTrades.length === 0) return 0;
-    if (amountMode === "USDC") {
+    if (amountMode === 'USDC') {
       return Math.max(...viewTrades.map((t) => Math.abs(t.amountUSD)));
     }
     return Math.max(...viewTrades.map((t) => Math.abs(t.amountMON)));
@@ -517,7 +548,7 @@ export default function MemeTradesComponent({
   }: {
     formatted: FormattedNumber;
   }) => {
-    if (formatted.type === "simple") {
+    if (formatted.type === 'simple') {
       return <span>{formatted.text}</span>;
     }
     return (
@@ -530,7 +561,7 @@ export default function MemeTradesComponent({
   };
 
   const fmtAmount = (v: number) =>
-    amountMode === "USDC"
+    amountMode === 'USDC'
       ? `$${Math.abs(v).toFixed(3)}`
       : `${Math.abs(v).toFixed(3)}`;
 
@@ -663,15 +694,15 @@ export default function MemeTradesComponent({
   };
 
   const renderTraderTags = (
-    tags: ("sniper" | "dev" | "kol" | "bundler" | "insider" | "topHolder")[],
+    tags: ('sniper' | 'dev' | 'kol' | 'bundler' | 'insider' | 'topHolder')[],
   ) => {
     const tagComponents = {
-      sniper: { icon: SniperIcon, tooltip: "Sniper Trader" },
-      dev: { icon: DevIcon, tooltip: "Developer" },
-      kol: { icon: KolIcon, tooltip: "Key Opinion Leader" },
-      bundler: { icon: BundlerIcon, tooltip: "Bundler" },
-      insider: { icon: InsiderIcon, tooltip: "Insider" },
-      topHolder: { icon: TopHolderIcon, tooltip: "Top 10 Holder" },
+      sniper: { icon: SniperIcon, tooltip: 'Sniper Trader' },
+      dev: { icon: DevIcon, tooltip: 'Developer' },
+      kol: { icon: KolIcon, tooltip: 'Key Opinion Leader' },
+      bundler: { icon: BundlerIcon, tooltip: 'Bundler' },
+      insider: { icon: InsiderIcon, tooltip: 'Insider' },
+      topHolder: { icon: TopHolderIcon, tooltip: 'Top 10 Holder' },
     };
 
     return tags.map((tag) => {
@@ -691,28 +722,40 @@ export default function MemeTradesComponent({
           <div className="meme-trades-filters">
             <div className="meme-trade-filter-container">
               <button
-                className={`meme-trade-filter-btn ${devActive ? "active" : ""}`}
+                className={`meme-trade-filter-btn ${devActive ? 'active' : ''}`}
                 onClick={() => handleFilterClick('dev')}
               >
-                <img src={devActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
+                <img
+                  src={devActive ? filledcup : filtercup}
+                  alt="Filter"
+                  className="filter-cup"
+                />
                 DEV
               </button>
             </div>
             <div className="meme-trade-filter-container">
               <button
-                className={`meme-trade-filter-btn ${trackedActive ? "active" : ""}`}
+                className={`meme-trade-filter-btn ${trackedActive ? 'active' : ''}`}
                 onClick={() => handleFilterClick('tracked')}
               >
-                <img src={trackedActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
+                <img
+                  src={trackedActive ? filledcup : filtercup}
+                  alt="Filter"
+                  className="filter-cup"
+                />
                 TRACKED
               </button>
             </div>
             <div className="meme-trade-filter-container">
               <button
-                className={`meme-trade-filter-btn ${youActive ? "active" : ""}`}
+                className={`meme-trade-filter-btn ${youActive ? 'active' : ''}`}
                 onClick={() => handleFilterClick('you')}
               >
-                <img src={youActive ? filledcup : filtercup} alt="Filter" className="filter-cup" />
+                <img
+                  src={youActive ? filledcup : filtercup}
+                  alt="Filter"
+                  className="filter-cup"
+                />
                 YOU
               </button>
             </div>
@@ -722,12 +765,14 @@ export default function MemeTradesComponent({
             onClick={() => setShowFiltersPopup(true)}
             title="Advanced Filters"
           >
-            <img 
-              className="filter-icon" 
-              src={filter} 
+            <img
+              className="filter-icon"
+              src={filter}
               alt="Advanced Filters"
               style={{
-                filter: hasActiveFilters ? 'brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%)' : undefined
+                filter: hasActiveFilters
+                  ? 'brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%)'
+                  : undefined,
               }}
             />
             {hasActiveFilters && <span className="trades-filter-active-dot" />}
@@ -737,7 +782,8 @@ export default function MemeTradesComponent({
         {devActive && (
           <div className="meme-filter-status">
             <div className="filter-status-text">
-              Showing {viewTrades.length} transactions of maker {devAddress?.slice(0, 6)}...{devAddress?.slice(-4)}
+              Showing {viewTrades.length} transactions of maker{' '}
+              {devAddress?.slice(0, 6)}...{devAddress?.slice(-4)}
             </div>
             <button
               className="filter-reset-btn"
@@ -767,7 +813,13 @@ export default function MemeTradesComponent({
             </div>
             <button
               className="filter-reset-btn"
-              onClick={() => setTransactionFilters({ makerAddress: '', minUSD: '', maxUSD: '' })}
+              onClick={() =>
+                setTransactionFilters({
+                  makerAddress: '',
+                  minUSD: '',
+                  maxUSD: '',
+                })
+              }
             >
               RESET
             </button>
@@ -778,14 +830,14 @@ export default function MemeTradesComponent({
           <div
             className="meme-trades-header-item meme-trades-header-amount"
             onClick={() =>
-              setAmountMode((p) => (p === "USDC" ? "MON" : "USDC"))
+              setAmountMode((p) => (p === 'USDC' ? 'MON' : 'USDC'))
             }
           >
             Amount
           </div>
           <div
             className="meme-trades-header-item meme-trades-header-mc"
-            onClick={() => setMcMode((p) => (p === "MC" ? "Price" : "MC"))}
+            onClick={() => setMcMode((p) => (p === 'MC' ? 'Price' : 'MC'))}
           >
             {mcMode}
             <img src={switchicon} className="meme-header-switch-icon" alt="" />
@@ -808,21 +860,21 @@ export default function MemeTradesComponent({
           ) : (
             viewTrades.map((t) => {
               const shownAmount =
-                amountMode === "USDC" ? t.amountUSD : t.amountMON;
+                amountMode === 'USDC' ? t.amountUSD : t.amountMON;
               const barWidth = getBarWidth(shownAmount);
               const positive = shownAmount >= 0;
 
               return (
                 <div key={t.id} className="meme-trade-row">
                   <div
-                    className={`meme-trade-volume-bar ${positive ? "positive" : "negative"}`}
+                    className={`meme-trade-volume-bar ${positive ? 'positive' : 'negative'}`}
                     style={{ width: `${barWidth}%` }}
                   />
 
                   <div
-                    className={`meme-trade-amount ${positive ? "positive" : "negative"}`}
+                    className={`meme-trade-amount ${positive ? 'positive' : 'negative'}`}
                   >
-                    {amountMode === "MON" && (
+                    {amountMode === 'MON' && (
                       <img
                         src={monadlogo}
                         alt=""
@@ -833,8 +885,10 @@ export default function MemeTradesComponent({
                   </div>
 
                   <div className="meme-trade-mc">
-                    {mcMode === "MC" ? (
-                      <span className="meme-trade-mc">${(t.mcUSD / 1000).toFixed(1)}K</span>
+                    {mcMode === 'MC' ? (
+                      <span className="meme-trade-mc">
+                        ${(t.mcUSD / 1000).toFixed(2)}K
+                      </span>
                     ) : (
                       <span>
                         $
@@ -846,7 +900,7 @@ export default function MemeTradesComponent({
                   </div>
 
                   <div
-                    className={`meme-trade-trader ${t.isCurrentUser ? "current-user" : "clickable"}`}
+                    className={`meme-trade-trader ${t.isCurrentUser ? 'current-user' : 'clickable'}`}
                     onClick={() =>
                       !t.isCurrentUser && setPopupAddr(t.fullAddress)
                     }
@@ -868,16 +922,20 @@ export default function MemeTradesComponent({
           )}
         </div>
 
-        <div className={`pause-indicator ${hover ? "visible" : ""}`}>
+        <div className={`pause-indicator ${hover ? 'visible' : ''}`}>
           <div className="pause-content">
             <div className="pause-icon">
-              <svg className="pause-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <svg
+                className="pause-icon-svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
                 <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
               </svg>
             </div>
-            <span className="pause-text">
-              Paused
-            </span>
+            <span className="pause-text">Paused</span>
           </div>
         </div>
       </div>

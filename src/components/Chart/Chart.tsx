@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 
+import { settings } from '../../settings.ts';
+import normalizeTicker from '../../utils/normalizeTicker.ts';
 import Overlay from '../loading/LoadingComponent';
 import AdvancedTradingChart from './ChartCanvas/AdvancedTradingChart';
 import ChartCanvas from './ChartCanvas/ChartCanvas';
 import TimeFrameSelector from './TimeFrameSelector/TimeFrameSelector';
 import UTCClock from './UTCClock/UTCClock';
-import normalizeTicker from '../../utils/normalizeTicker.ts';
-import { settings } from '../../settings.ts';
 
 import './Chart.css';
 
@@ -61,24 +61,41 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     let isFetching = true;
     (async () => {
       setLastPair((lastPair) => {
-        if (normalizeTicker(activeMarket.baseAsset, activechain) + normalizeTicker(activeMarket.quoteAsset, activechain) + selectedInterval !== lastPair && !settings.useAdv) {
+        if (
+          normalizeTicker(activeMarket.baseAsset, activechain) +
+            normalizeTicker(activeMarket.quoteAsset, activechain) +
+            selectedInterval !==
+            lastPair &&
+          !settings.useAdv
+        ) {
           setOverlayVisible(true);
         }
-        return normalizeTicker(activeMarket.baseAsset, activechain) + normalizeTicker(activeMarket.quoteAsset, activechain) + selectedInterval;
+        return (
+          normalizeTicker(activeMarket.baseAsset, activechain) +
+          normalizeTicker(activeMarket.quoteAsset, activechain) +
+          selectedInterval
+        );
       });
       try {
         if (showChartOutliers != data[2]) {
           setOverlayVisible(true);
         }
-        const seriesId = `${activeMarket.address}-${selectedInterval === '1m' ? 60 :
-          selectedInterval === '5m' ? 300 :
-            selectedInterval === '15m' ? 900 :
-              selectedInterval === '1h' ? 3600 :
-                selectedInterval === '4h' ? 14400 :
-                  86400
-          }`.toLowerCase();
+        const seriesId = `${activeMarket.address}-${
+          selectedInterval === '1m'
+            ? 60
+            : selectedInterval === '5m'
+              ? 300
+              : selectedInterval === '15m'
+                ? 900
+                : selectedInterval === '1h'
+                  ? 3600
+                  : selectedInterval === '4h'
+                    ? 14400
+                    : 86400
+        }`.toLowerCase();
         // const endpoint = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
-        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
+        const endpoint =
+          'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
         let allCandles: any[] = [];
         const query = `
           query {
@@ -121,10 +138,10 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             body: JSON.stringify({ query }),
           });
           const json = await res1.json();
-          allCandles=allCandles
-            .concat(json.data.series_collection?.[0]?.series1||[])
-            .concat(json.data.series_collection?.[0]?.series2||[])
-            .concat(json.data.series_collection?.[0]?.series3||[])
+          allCandles = allCandles
+            .concat(json.data.series_collection?.[0]?.series1 || [])
+            .concat(json.data.series_collection?.[0]?.series2 || [])
+            .concat(json.data.series_collection?.[0]?.series3 || []);
         } catch (err) {
           console.error('Error fetching from subgraph:', err);
         }
@@ -132,20 +149,30 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
 
         allCandles.reverse();
         let lastClose: number | null = null;
-        const outlierFactor = selectedInterval == '1d' ? 0.5 : selectedInterval == '4h' ? 0.25 : selectedInterval == '1h' ? 0.1 : selectedInterval == '15m' ? 0.05 : 0.01
+        const outlierFactor =
+          selectedInterval == '1d'
+            ? 0.5
+            : selectedInterval == '4h'
+              ? 0.25
+              : selectedInterval == '1h'
+                ? 0.1
+                : selectedInterval == '15m'
+                  ? 0.05
+                  : 0.01;
         const subgraphData = allCandles.map((candle: any) => {
           const priceFactor = Number(activeMarket.priceFactor);
-          const open = lastClose !== null ? lastClose : candle.open / priceFactor;
-          const close = candle.close / priceFactor
-    
+          const open =
+            lastClose !== null ? lastClose : candle.open / priceFactor;
+          const close = candle.close / priceFactor;
+
           let high = candle.high / priceFactor;
           let low = candle.low / priceFactor;
           if (!showChartOutliers) {
             high = Math.min(high, Math.max(open, close) * (1 + outlierFactor));
             low = Math.max(low, Math.min(open, close) * (1 - outlierFactor));
           }
-          
-          lastClose = close
+
+          lastClose = close;
 
           return {
             time: candle.time * 1000,
@@ -153,30 +180,37 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             high,
             low,
             close,
-            volume: Number(candle.baseVolume) / (10 ** Number(activeMarket.baseDecimals)),
+            volume:
+              Number(candle.baseVolume) /
+              10 ** Number(activeMarket.baseDecimals),
           };
         });
         setData([
           subgraphData,
           normalizeTicker(activeMarket.baseAsset, activechain) +
-          normalizeTicker(activeMarket.quoteAsset, activechain) +
-          (selectedInterval === '1d'
-            ? '1D'
-            : selectedInterval === '4h'
-              ? '240'
-              : selectedInterval === '1h'
-                ? '60'
-                : selectedInterval.slice(0, -1)),
-          showChartOutliers
+            normalizeTicker(activeMarket.quoteAsset, activechain) +
+            (selectedInterval === '1d'
+              ? '1D'
+              : selectedInterval === '4h'
+                ? '240'
+                : selectedInterval === '1h'
+                  ? '60'
+                  : selectedInterval.slice(0, -1)),
+          showChartOutliers,
         ]);
       } catch (err) {
         console.error('Error fetching subgraph candles:', err);
       }
-    })()
+    })();
     return () => {
       isFetching = false;
     };
-  }, [selectedInterval, normalizeTicker(activeMarket.baseAsset, activechain) + normalizeTicker(activeMarket.quoteAsset, activechain), showChartOutliers]);
+  }, [
+    selectedInterval,
+    normalizeTicker(activeMarket.baseAsset, activechain) +
+      normalizeTicker(activeMarket.quoteAsset, activechain),
+    showChartOutliers,
+  ]);
 
   return (
     <div className="chartwrapper">
@@ -213,10 +247,20 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
               handleTimeChange={setSelectedInterval}
             />
           </div>
-          <ChartCanvas data={data} activeMarket={activeMarket} selectedInterval={selectedInterval} setOverlayVisible={setOverlayVisible} />
+          <ChartCanvas
+            data={data}
+            activeMarket={activeMarket}
+            selectedInterval={selectedInterval}
+            setOverlayVisible={setOverlayVisible}
+          />
         </>
       )}
-      <Overlay isVisible={overlayVisible} bgcolor={'rgb(6,6,6)'} height={15} maxLogoHeight={100} />
+      <Overlay
+        isVisible={overlayVisible}
+        bgcolor={'rgb(6,6,6)'}
+        height={15}
+        maxLogoHeight={100}
+      />
     </div>
   );
 };

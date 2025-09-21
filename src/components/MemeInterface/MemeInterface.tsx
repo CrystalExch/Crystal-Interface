@@ -1,39 +1,45 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { useParams } from "react-router-dom";
-import { encodeFunctionData, decodeEventLog } from "viem";
-import { settings } from "../../settings";
-import QuickBuyWidget from "./QuickBuyWidget/QuickBuyWidget";
-import MemeOrderCenter from "./MemeOrderCenter/MemeOrderCenter";
-import MemeTradesComponent from "./MemeTradesComponent/MemeTradesComponent";
-import MemeChart from "./MemeChart/MemeChart";
-import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
-import ToggleSwitch from "../ToggleSwitch/ToggleSwitch";
-import { CrystalRouterAbi } from "../../abis/CrystalRouterAbi";
-import { useSharedContext } from "../../contexts/SharedContext";
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useParams } from 'react-router-dom';
+import { decodeEventLog, encodeFunctionData } from 'viem';
+import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
+import { useSharedContext } from '../../contexts/SharedContext';
+import { settings } from '../../settings';
 import customRound from '../../utils/customRound';
-import { useWalletPopup, setGlobalPopupHandlers } from '../MemeTransactionPopup/useWalletPopup';
 import {
-  HOLDERS_QUERY,
-  POSITIONS_QUERY,
+  showLoadingPopup,
+  updatePopup,
+} from '../MemeTransactionPopup/MemeTransactionPopupManager';
+import {
+  setGlobalPopupHandlers,
+  useWalletPopup,
+} from '../MemeTransactionPopup/useWalletPopup';
+import ToggleSwitch from '../ToggleSwitch/ToggleSwitch';
+import {
   DEV_TOKENS_QUERY,
-  TOP_TRADERS_QUERY,
   FILTERED_TRADES_QUERY,
   GENERIC_TRADES_QUERY,
+  HOLDERS_QUERY,
+  POSITIONS_QUERY,
   SIMILAR_TOKENS_BY_NAME_QUERY,
   SIMILAR_TOKENS_BY_SYMBOL_QUERY,
-} from "./graphql";
+  TOP_TRADERS_QUERY,
+} from './graphql';
+import MemeChart from './MemeChart/MemeChart';
+import MemeOrderCenter from './MemeOrderCenter/MemeOrderCenter';
+import MemeTradesComponent from './MemeTradesComponent/MemeTradesComponent';
+import QuickBuyWidget from './QuickBuyWidget/QuickBuyWidget';
 
-import contract from "../../assets/contract.svg";
-import gas from "../../assets/gas.svg";
-import slippage from "../../assets/slippage.svg";
-import editicon from "../../assets/edit.svg";
-import walleticon from "../../assets/wallet_icon.png"
-import closebutton from "../../assets/close_button.png";
-import monadicon from "../../assets/monadlogo.svg";
+import closebutton from '../../assets/close_button.png';
+import contract from '../../assets/contract.svg';
+import editicon from '../../assets/edit.svg';
+import gas from '../../assets/gas.svg';
+import monadicon from '../../assets/monadlogo.svg';
+import slippage from '../../assets/slippage.svg';
 import trash from '../../assets/trash.svg';
+import walleticon from '../../assets/wallet_icon.png';
 
-import "./MemeInterface.css";
+import './MemeInterface.css';
 
 interface Token {
   id: string;
@@ -59,7 +65,7 @@ interface Token {
   website: string;
   twitterHandle: string;
   progress: number;
-  status: "new" | "graduating" | "graduated";
+  status: 'new' | 'graduating' | 'graduated';
   description: string;
   created: number;
   bondingAmount: number;
@@ -108,7 +114,7 @@ interface MemeInterfaceProps {
   wethticker?: string;
   ethticker?: string;
   address: any;
-  subWallets?: Array<{ address: string, privateKey: string }>;
+  subWallets?: Array<{ address: string; privateKey: string }>;
   walletTokenBalances?: { [address: string]: any };
   activeWalletPrivateKey?: string;
   setOneCTSigner: (privateKey: string) => void;
@@ -121,46 +127,62 @@ interface MemeInterfaceProps {
   tokenData?: any;
   setTokenData: any;
   monUsdPrice: number;
-  buyPresets?: { [key: number]: { slippage: string; priority: string; amount: string } };
+  buyPresets?: {
+    [key: number]: { slippage: string; priority: string; amount: string };
+  };
   sellPresets?: { [key: number]: { slippage: string; priority: string } };
   monPresets?: number[];
   setMonPresets?: (presets: number[]) => void;
 }
 
-const MARKET_UPDATE_EVENT = "0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e";
-const MARKET_CREATED_EVENT = "0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540";
+const MARKET_UPDATE_EVENT =
+  '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
+const MARKET_CREATED_EVENT =
+  '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
 const TOTAL_SUPPLY = 1e9;
 // const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
-const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+const SUBGRAPH_URL =
+  'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
+const TRANSFER_TOPIC =
+  '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const STATS_WS_BASE = 'wss://crystal-backend.up.railway.app';
 const PAGE_SIZE = 100;
 const RESOLUTION_SECS: Record<string, number> = {
-  "1s": 1,
-  "5s": 5,
-  "15s": 15,
-  "1m": 60,
-  "5m": 300,
-  "15m": 900,
-  "1h": 3600,
-  "4h": 14400,
-  "1d": 86400,
+  '1s': 1,
+  '5s': 5,
+  '15s': 15,
+  '1m': 60,
+  '5m': 300,
+  '15m': 900,
+  '1h': 3600,
+  '4h': 14400,
+  '1d': 86400,
 };
 
 const toSeriesKey = (sym: string, interval: string) =>
-  sym + "MON" + (interval === "1d" ? "1D" : interval === "4h" ? "240" : interval === "1h" ? "60" : interval.endsWith('s') ? interval.slice(0, -1).toUpperCase() + 'S' : interval.slice(0, -1));
+  sym +
+  'MON' +
+  (interval === '1d'
+    ? '1D'
+    : interval === '4h'
+      ? '240'
+      : interval === '1h'
+        ? '60'
+        : interval.endsWith('s')
+          ? interval.slice(0, -1).toUpperCase() + 'S'
+          : interval.slice(0, -1));
 
 const fmt = (v: number, d = 6) => {
-  if (v === 0) return "0";
+  if (v === 0) return '0';
   if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
   if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
   if (v >= 1e3) return `${(v / 1e3).toFixed(2)}K`;
-  if (v >= 1) return v.toLocaleString("en-US", { maximumFractionDigits: d });
+  if (v >= 1) return v.toLocaleString('en-US', { maximumFractionDigits: d });
   return v.toFixed(Math.min(d, 8));
 };
 
 const formatTradeAmount = (value: number): string => {
-  if (value === 0) return "0";
+  if (value === 0) return '0';
   if (value > 0 && value < 0.01) {
     return value.toFixed(6);
   }
@@ -288,32 +310,34 @@ const Tooltip: React.FC<{
       onMouseLeave={handleMouseLeave}
     >
       {children}
-      {shouldRender && createPortal(
-        <div
-          ref={tooltipRef}
-          className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
-          style={{
-            position: 'absolute',
-            top: `${tooltipPosition.top - 20}px`,
-            left: `${tooltipPosition.left}px`,
-            transform: `${position === 'top' || position === 'bottom'
-              ? 'translateX(-50%)'
-              : position === 'left' || position === 'right'
-                ? 'translateY(-50%)'
-                : 'none'} scale(${isVisible ? 1 : 0})`,
-            opacity: isVisible ? 1 : 0,
-            zIndex: 9999,
-            pointerEvents: 'none',
-            transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-            willChange: 'transform, opacity'
-          }}
-        >
-          <div className="tooltip-content">
-            {content}
-          </div>
-        </div>,
-        document.body
-      )}
+      {shouldRender &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+            style={{
+              position: 'absolute',
+              top: `${tooltipPosition.top - 20}px`,
+              left: `${tooltipPosition.left}px`,
+              transform: `${
+                position === 'top' || position === 'bottom'
+                  ? 'translateX(-50%)'
+                  : position === 'left' || position === 'right'
+                    ? 'translateY(-50%)'
+                    : 'none'
+              } scale(${isVisible ? 1 : 0})`,
+              opacity: isVisible ? 1 : 0,
+              zIndex: 9999,
+              pointerEvents: 'none',
+              transition:
+                'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+              willChange: 'transform, opacity',
+            }}
+          >
+            <div className="tooltip-content">{content}</div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
@@ -351,12 +375,18 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   monPresets = [5, 20, 100, 500],
   setMonPresets,
 }) => {
-  const getSliderPosition = (activeView: 'chart' | 'trades' | 'ordercenter') => {
+  const getSliderPosition = (
+    activeView: 'chart' | 'trades' | 'ordercenter',
+  ) => {
     switch (activeView) {
-      case 'chart': return 0;
-      case 'trades': return 1;
-      case 'ordercenter': return 2;
-      default: return 0;
+      case 'chart':
+        return 0;
+      case 'trades':
+        return 1;
+      case 'ordercenter':
+        return 2;
+      default:
+        return 0;
     }
   };
   const walletPopup = useWalletPopup();
@@ -368,9 +398,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
   const [similarTokensExpanded, setSimilarTokensExpanded] = useState(true);
-  const [selectedMonPreset, setSelectedMonPreset] = useState<number | null>(null);
+  const [selectedMonPreset, setSelectedMonPreset] = useState<number | null>(
+    null,
+  );
   const [isPresetEditMode, setIsPresetEditMode] = useState(false);
-  const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
+  const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(
+    null,
+  );
   const [tempPresetValue, setTempPresetValue] = useState('');
   const [statsRaw, setStatsRaw] = useState<Record<string, any> | null>(null);
   const presetInputRef = useRef<HTMLInputElement>(null);
@@ -384,17 +418,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       return false;
     }
   });
-  const [tradeAmount, setTradeAmount] = useState("");
-  const [limitPrice, setLimitPrice] = useState("");
+  const [tradeAmount, setTradeAmount] = useState('');
+  const [limitPrice, setLimitPrice] = useState('');
   const [quoteValue, setQuoteValue] = useState<number | undefined>(undefined);
-  const [inputCurrency, setInputCurrency] = useState<"MON" | "TOKEN">("MON");
+  const [inputCurrency, setInputCurrency] = useState<'MON' | 'TOKEN'>('MON');
   const [sliderPercent, setSliderPercent] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [settingsExpanded, setSettingsExpanded] = useState(false);
   const sliderRef = useRef<HTMLInputElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
-  const [slippageValue, _setSlippageValue] = useState("20");
-  const [priorityFee, _setPriorityFee] = useState("0.01");
+  const [slippageValue, _setSlippageValue] = useState('20');
+  const [priorityFee, _setPriorityFee] = useState('0.01');
   const [orderCenterHeight, setOrderCenterHeight] = useState<number>(() => {
     const savedHeight = localStorage.getItem('orderCenterHeight');
     if (savedHeight !== null) {
@@ -412,11 +446,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   });
   const [isVertDragging, setIsVertDragging] = useState<boolean>(false);
   const [isSigning, setIsSigning] = useState(false);
-  const [activeTradeType, setActiveTradeType] = useState<"buy" | "sell">("buy");
-  const [activeOrderType, setActiveOrderType] = useState<"market" | "Limit">("market");
+  const [activeTradeType, setActiveTradeType] = useState<'buy' | 'sell'>('buy');
+  const [activeOrderType, setActiveOrderType] = useState<'market' | 'Limit'>(
+    'market',
+  );
   const [live, setLive] = useState<Partial<Token>>({});
   const [trades, setTrades] = useState<Trade[]>([]);
-  const [selectedInterval, setSelectedInterval] = useState(() => localStorage.getItem('meme_chart_timeframe') || '1m');
+  const [selectedInterval, setSelectedInterval] = useState(
+    () => localStorage.getItem('meme_chart_timeframe') || '1m',
+  );
   const [chartData, setChartData] = useState<any>(null);
   const realtimeCallbackRef = useRef<any>({});
   const wsRef = useRef<WebSocket | null>(null);
@@ -430,12 +468,21 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [selectedSellPreset, setSelectedSellPreset] = useState(1);
   const [sellSlippageValue, setSellSlippageValue] = useState('15');
   const [sellPriorityFee, setSellPriorityFee] = useState('0.005');
-  const [notif, setNotif] = useState<({ title: string; subtitle?: string; variant?: 'success' | 'error' | 'info'; visible?: boolean }) | null>(null);
+  const [notif, setNotif] = useState<{
+    title: string;
+    subtitle?: string;
+    variant?: 'success' | 'error' | 'info';
+    visible?: boolean;
+  } | null>(null);
   const [holders, setHolders] = useState<Holder[]>([]);
   const [page, _setPage] = useState(0);
   const [userStats, setUserStats] = useState({
-    balance: 0, amountBought: 0, amountSold: 0,
-    valueBought: 0, valueSold: 0, valueNet: 0,
+    balance: 0,
+    amountBought: 0,
+    amountSold: 0,
+    valueBought: 0,
+    valueSold: 0,
+    valueNet: 0,
   });
   const [positions, setPositions] = useState<any[]>([]);
   const [devTokens, setDevTokens] = useState<any[]>([]);
@@ -443,21 +490,38 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const topTradersMapRef = useRef<Map<string, number>>(new Map());
   const [advancedTradingEnabled, setAdvancedTradingEnabled] = useState(false);
   const [showAdvancedDropdown, setShowAdvancedDropdown] = useState(false);
-  const [advancedOrders, setAdvancedOrders] = useState<Array<{
-    id: string;
-    type: 'takeProfit' | 'stopLoss' | 'devSell' | 'migration';
-    percentage?: string;
-    amount?: string;
-  }>>([]);
-  const [mobileActiveView, setMobileActiveView] = useState<'chart' | 'trades' | 'ordercenter'>('chart');
-  const [mobileBuyAmounts, _setMobileBuyAmounts] = useState(['1', '5', '10', '50']);
-  const [mobileSellPercents, _setMobileSellPercents] = useState(['10%', '25%', '50%', '100%']);
+  const [advancedOrders, setAdvancedOrders] = useState<
+    Array<{
+      id: string;
+      type: 'takeProfit' | 'stopLoss' | 'devSell' | 'migration';
+      percentage?: string;
+      amount?: string;
+    }>
+  >([]);
+  const [mobileActiveView, setMobileActiveView] = useState<
+    'chart' | 'trades' | 'ordercenter'
+  >('chart');
+  const [mobileBuyAmounts, _setMobileBuyAmounts] = useState([
+    '1',
+    '5',
+    '10',
+    '50',
+  ]);
+  const [mobileSellPercents, _setMobileSellPercents] = useState([
+    '10%',
+    '25%',
+    '50%',
+    '100%',
+  ]);
   const [mobileSelectedBuyAmount, setMobileSelectedBuyAmount] = useState('1');
-  const [mobileSelectedSellPercent, setMobileSelectedSellPercent] = useState('25%');
+  const [mobileSelectedSellPercent, setMobileSelectedSellPercent] =
+    useState('25%');
   const [mobileQuickBuyPreset, setMobileQuickBuyPreset] = useState(1);
   const [mobileTradeType, setMobileTradeType] = useState<'buy' | 'sell'>('buy');
   const [mobileWalletsExpanded, setMobileWalletsExpanded] = useState(false);
-  const [mobileWalletNames, setMobileWalletNames] = useState<{ [address: string]: string }>({});
+  const [mobileWalletNames, setMobileWalletNames] = useState<{
+    [address: string]: string;
+  }>({});
   const [showUSD, setShowUSD] = useState(false);
   const [top10HoldingPercentage, setTop10HoldingPercentage] = useState(0);
   const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
@@ -468,7 +532,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
   const explorer = settings.chainConfig[activechain]?.explorer;
-  const userAddr = (address ?? account?.address ?? "");
+  const userAddr = address ?? account?.address ?? '';
 
   useEffect(() => {
     if (editingPresetIndex !== null && presetInputRef.current) {
@@ -488,36 +552,47 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     }
   }, []);
 
-  const openInExplorer = (addr: string) => window.open(`${explorer}/address/${addr}`, '_blank');
+  const openInExplorer = (addr: string) =>
+    window.open(`${explorer}/address/${addr}`, '_blank');
 
   const toPct = (balance: number) => (balance / TOTAL_SUPPLY) * 100;
 
   const calcDevHoldingPct = (list: Holder[], dev?: string) => {
     if (!dev) return 0;
-    const row = list.find(h => (h.address || '').toLowerCase() === dev.toLowerCase());
+    const row = list.find(
+      (h) => (h.address || '').toLowerCase() === dev.toLowerCase(),
+    );
     return row ? toPct(Math.max(0, row.balance)) : 0;
   };
 
-  const handleBuyPresetSelect = useCallback((preset: number) => {
-    setSelectedBuyPreset(preset);
-    setMobileQuickBuyPreset(preset);
-    if (buyPresets && buyPresets[preset]) {
-      const presetValues = buyPresets[preset];
-      setBuySlippageValue(presetValues.slippage);
-      setBuyPriorityFee(presetValues.priority);
-    }
-  }, [buyPresets]);
+  const handleBuyPresetSelect = useCallback(
+    (preset: number) => {
+      setSelectedBuyPreset(preset);
+      setMobileQuickBuyPreset(preset);
+      if (buyPresets && buyPresets[preset]) {
+        const presetValues = buyPresets[preset];
+        setBuySlippageValue(presetValues.slippage);
+        setBuyPriorityFee(presetValues.priority);
+      }
+    },
+    [buyPresets],
+  );
 
-  const handleSellPresetSelect = useCallback((preset: number) => {
-    setSelectedSellPreset(preset);
-    if (sellPresets && sellPresets[preset]) {
-      const presetValues = sellPresets[preset];
-      setSellSlippageValue(presetValues.slippage);
-      setSellPriorityFee(presetValues.priority);
-    }
-  }, [sellPresets]);
+  const handleSellPresetSelect = useCallback(
+    (preset: number) => {
+      setSelectedSellPreset(preset);
+      if (sellPresets && sellPresets[preset]) {
+        const presetValues = sellPresets[preset];
+        setSellSlippageValue(presetValues.slippage);
+        setSellPriorityFee(presetValues.priority);
+      }
+    },
+    [sellPresets],
+  );
 
-  const handleAdvancedOrderAdd = (orderType: 'takeProfit' | 'stopLoss' | 'devSell' | 'migration') => {
+  const handleAdvancedOrderAdd = (
+    orderType: 'takeProfit' | 'stopLoss' | 'devSell' | 'migration',
+  ) => {
     if (advancedOrders.length >= 5) return;
 
     const newOrder = {
@@ -527,16 +602,18 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         ? {}
         : orderType === 'devSell'
           ? { percentage: '0' }
-          : { percentage: orderType === 'takeProfit' ? '+0' : '-0', amount: '0' }
-      )
+          : {
+              percentage: orderType === 'takeProfit' ? '+0' : '-0',
+              amount: '0',
+            }),
     };
 
-    setAdvancedOrders(prev => [...prev, newOrder]);
+    setAdvancedOrders((prev) => [...prev, newOrder]);
     setShowAdvancedDropdown(false);
   };
 
   const handleAdvancedOrderRemove = (orderId: string) => {
-    setAdvancedOrders(prev => prev.filter(order => order.id !== orderId));
+    setAdvancedOrders((prev) => prev.filter((order) => order.id !== orderId));
   };
 
   const handleToggleCurrency = () => {
@@ -556,18 +633,23 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     const inputLeft = inputRect.left - containerRect.left;
 
     const thumbW = 10;
-    const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
+    const x =
+      inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
 
     popup.style.left = `${x}px`;
     popup.style.transform = 'translateX(-50%)';
   }, []);
 
-  const handleAdvancedOrderUpdate = (orderId: string, field: string, value: string) => {
-    setAdvancedOrders(prev => prev.map(order =>
-      order.id === orderId
-        ? { ...order, [field]: value }
-        : order
-    ));
+  const handleAdvancedOrderUpdate = (
+    orderId: string,
+    field: string,
+    value: string,
+  ) => {
+    setAdvancedOrders((prev) =>
+      prev.map((order) =>
+        order.id === orderId ? { ...order, [field]: value } : order,
+      ),
+    );
   };
 
   const handlePresetSelect = (preset: number) => {
@@ -583,7 +665,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     if (!balances) return 0;
 
     if (balances[settings.chainConfig[activechain || '']?.eth]) {
-      return Number(balances[settings.chainConfig[activechain || '']?.eth]) / 10 ** Number(18);
+      return (
+        Number(balances[settings.chainConfig[activechain || '']?.eth]) /
+        10 ** Number(18)
+      );
     }
     return 0;
   };
@@ -613,7 +698,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const getCurrentMobileWalletMONBalance = () => {
     if (!activeWalletPrivateKey) return 0;
 
-    const currentWallet = subWallets.find(w => w.privateKey === activeWalletPrivateKey);
+    const currentWallet = subWallets.find(
+      (w) => w.privateKey === activeWalletPrivateKey,
+    );
     if (!currentWallet) return 0;
 
     return getMobileWalletBalance(currentWallet.address);
@@ -624,9 +711,18 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     try {
       await navigator.clipboard.writeText(text);
       if (showLoadingPopup && updatePopup) {
-        showLoadingPopup(txId, { title: label, subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard` });
+        showLoadingPopup(txId, {
+          title: label,
+          subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+        });
         setTimeout(() => {
-          updatePopup(txId, { title: label, subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
+          updatePopup(txId, {
+            title: label,
+            subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+            variant: 'success',
+            confirmed: true,
+            isLoading: false,
+          });
         }, 100);
       }
     } catch {
@@ -639,16 +735,34 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       try {
         document.execCommand('copy');
         if (showLoadingPopup && updatePopup) {
-          showLoadingPopup(txId, { title: label, subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard` });
+          showLoadingPopup(txId, {
+            title: label,
+            subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+          });
           setTimeout(() => {
-            updatePopup(txId, { title: label, subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
+            updatePopup(txId, {
+              title: label,
+              subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+              variant: 'success',
+              confirmed: true,
+              isLoading: false,
+            });
           }, 100);
         }
       } catch (fallbackErr) {
         if (showLoadingPopup && updatePopup) {
-          showLoadingPopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy to clipboard' });
+          showLoadingPopup(txId, {
+            title: 'Copy Failed',
+            subtitle: 'Unable to copy to clipboard',
+          });
           setTimeout(() => {
-            updatePopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy to clipboard', variant: 'error', confirmed: true, isLoading: false });
+            updatePopup(txId, {
+              title: 'Copy Failed',
+              subtitle: 'Unable to copy to clipboard',
+              variant: 'error',
+              confirmed: true,
+              isLoading: false,
+            });
           }, 100);
         }
       } finally {
@@ -663,9 +777,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       return;
     }
 
-    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    const targetChainId =
+      settings.chainConfig[activechain]?.chainId || activechain;
     if (account.chainId !== targetChainId) {
-      walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
+      walletPopup.showChainSwitchRequired(
+        settings.chainConfig[activechain]?.name || 'Monad',
+      );
       setChain?.();
       return;
     }
@@ -684,15 +801,22 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
       const tokenAmountToSell = monAmountNum / tokenPrice;
       const decimals = tokendict?.[position.tokenId]?.decimals || 18;
-      const amountTokenWei = BigInt(Math.round(tokenAmountToSell * (10 ** Number(decimals))));
+      const amountTokenWei = BigInt(
+        Math.round(tokenAmountToSell * 10 ** Number(decimals)),
+      );
 
-      walletPopup.updateTransactionConfirming(txId, tokenAmountToSell.toFixed(4), position.symbol, position.symbol);
+      walletPopup.updateTransactionConfirming(
+        txId,
+        tokenAmountToSell.toFixed(4),
+        position.symbol,
+        position.symbol,
+      );
 
       const sellUo = {
         target: routerAddress as `0x${string}`,
         data: encodeFunctionData({
           abi: CrystalRouterAbi,
-          functionName: "sell",
+          functionName: 'sell',
           args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
         }),
         value: 0n,
@@ -704,26 +828,39 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         tokenAmount: tokenAmountToSell,
         receivedAmount: monAmountNum,
         tokenSymbol: position.symbol,
-        currencyUnit: 'MON'
+        currencyUnit: 'MON',
       });
-
     } catch (e: any) {
       console.error(e);
       if (txId) {
-        walletPopup.updateTransactionError(txId, e?.message || walletPopup.texts.TRANSACTION_REJECTED);
+        walletPopup.updateTransactionError(
+          txId,
+          e?.message || walletPopup.texts.TRANSACTION_REJECTED,
+        );
       }
     }
   };
 
-  const handleMobileTrade = async (amount: string, tradeType: 'buy' | 'sell') => {
-    if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
+  const handleMobileTrade = async (
+    amount: string,
+    tradeType: 'buy' | 'sell',
+  ) => {
+    if (
+      !account?.connected ||
+      !sendUserOperationAsync ||
+      !tokenAddress ||
+      !routerAddress
+    ) {
       walletPopup.showConnectionError();
       return;
     }
 
-    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    const targetChainId =
+      settings.chainConfig[activechain]?.chainId || activechain;
     if (account.chainId !== targetChainId) {
-      walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
+      walletPopup.showChainSwitchRequired(
+        settings.chainConfig[activechain]?.name || 'Monad',
+      );
       setChain();
       return;
     }
@@ -736,7 +873,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         walletPopup.showInsufficientBalance(
           amount,
           currentMONBalance.toFixed(4),
-          'MON'
+          'MON',
         );
         return;
       }
@@ -753,12 +890,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         return;
       }
 
-      const amountTokenWei = pct === 100n
-        ? (currentBalance > 1n ? currentBalance - 1n : 0n)
-        : (currentBalance * pct) / 100n;
+      const amountTokenWei =
+        pct === 100n
+          ? currentBalance > 1n
+            ? currentBalance - 1n
+            : 0n
+          : (currentBalance * pct) / 100n;
 
       const decimals = tokendict?.[token.id]?.decimals || 18;
-      const tokenAmount = Number(amountTokenWei) / (10 ** Number(decimals));
+      const tokenAmount = Number(amountTokenWei) / 10 ** Number(decimals);
 
       setTradeAmount(tokenAmount.toString());
       setActiveTradeType('sell');
@@ -768,11 +908,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   };
 
   const baseDefaults: Token = {
-    id: tokenAddress || "",
-    tokenAddress: tokenAddress || "",
-    name: "Unknown Token",
-    symbol: "UNKNOWN",
-    image: "",
+    id: tokenAddress || '',
+    tokenAddress: tokenAddress || '',
+    name: 'Unknown Token',
+    symbol: 'UNKNOWN',
+    image: '',
     price: 0,
     marketCap: 0,
     change24h: 0,
@@ -788,28 +928,30 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     buyTransactions: 0,
     sellTransactions: 0,
     globalFeesPaid: 0,
-    website: "",
-    twitterHandle: "",
+    website: '',
+    twitterHandle: '',
     progress: 0,
-    status: "new",
-    description: "",
+    status: 'new',
+    description: '',
     created: Math.floor(Date.now() / 1000),
     bondingAmount: 0,
     volumeDelta: 0,
-    dev: "",
+    dev: '',
   };
 
   const baseToken: Token = (() => {
     const fromState = (tokenData ?? {}) as Partial<Token>;
     const t = tokenList.find(
-      x => x.contractAddress === tokenAddress || x.tokenAddress === tokenAddress
+      (x) =>
+        x.contractAddress === tokenAddress || x.tokenAddress === tokenAddress,
     );
 
     if (t) {
       return {
         ...baseDefaults,
         id: (t.id || t.contractAddress) ?? baseDefaults.id,
-        tokenAddress: (t.contractAddress || t.tokenAddress) ?? baseDefaults.tokenAddress,
+        tokenAddress:
+          (t.contractAddress || t.tokenAddress) ?? baseDefaults.tokenAddress,
         name: t.name,
         symbol: t.symbol,
         image: t.image,
@@ -841,7 +983,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     if (!balance || balance <= 0n) return 0;
 
     const decimals = tokendict?.[token.id]?.decimals || 18;
-    return Number(balance) / (10 ** Number(decimals));
+    return Number(balance) / 10 ** Number(decimals);
   }, [account?.address, walletTokenBalances, token.id, tokendict]);
 
   const pushRealtimeTick = useCallback(
@@ -863,7 +1005,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         const prevBar = updated[updated.length - 2];
         const prevClose = prevBar?.close ?? last?.close ?? lastPrice;
 
-        if (!last || typeof last.time !== "number" || last.time < bucketMs) {
+        if (!last || typeof last.time !== 'number' || last.time < bucketMs) {
           const open = prevClose;
           const high = Math.max(open, lastPrice);
           const low = Math.min(open, lastPrice);
@@ -878,7 +1020,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           };
 
           updated.push(newBar);
-          if (typeof cb === "function") cb(newBar);
+          if (typeof cb === 'function') cb(newBar);
         } else {
           const cur = { ...last };
 
@@ -892,20 +1034,20 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           cur.volume = (cur.volume || 0) + (volNative || 0);
 
           updated[updated.length - 1] = cur;
-          if (typeof cb === "function") cb(cur);
+          if (typeof cb === 'function') cb(cur);
         }
 
         if (updated.length > 1200) updated.splice(0, updated.length - 1200);
         return [updated, key, flag];
       });
     },
-    [selectedInterval, token.symbol]
+    [selectedInterval, token.symbol],
   );
 
   const toggleTrackedAddress = useCallback((addr: string) => {
     const a = (addr || '').toLowerCase();
-    setTrackedAddresses(prev =>
-      prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]
+    setTrackedAddresses((prev) =>
+      prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a],
     );
   }, []);
 
@@ -934,7 +1076,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   }, [trades]);
 
   useEffect(() => {
-    trackedAddressesRef.current = trackedAddresses.map(a => a.toLowerCase());
+    trackedAddressesRef.current = trackedAddresses.map((a) => a.toLowerCase());
   }, [trackedAddresses]);
 
   useEffect(() => {
@@ -968,7 +1110,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           console.error('generic trades fetch failed', e);
         }
       })();
-      return () => { cancelled = true; };
+      return () => {
+        cancelled = true;
+      };
     }
 
     let cancelled = false;
@@ -982,7 +1126,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             query: FILTERED_TRADES_QUERY,
             variables: {
               id: token.id.toLowerCase(),
-              accounts: trackedAddresses.map(a => a.toLowerCase()),
+              accounts: trackedAddresses.map((a) => a.toLowerCase()),
               first: 1000,
             },
           }),
@@ -1004,70 +1148,79 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [token.id, trackedAddresses]);
 
   const lastInvalidateRef = useRef(0);
+  const currentPriceRef = useRef(0);
 
   const closeNotif = useCallback(() => {
     setNotif((prev) => (prev ? { ...prev, visible: false } : prev));
     setTimeout(() => setNotif(null), 300);
   }, []);
 
-  const addDevTokenFromEvent = useCallback(async (log: any) => {
-    let args: any;
-    try {
-      const decoded = decodeEventLog({
-        abi: CrystalRouterAbi,
-        data: log.data,
-        topics: log.topics,
-      }) as any;
-      args = decoded.args || {};
-    } catch (e) {
-      console.error("failed to decode MARKET_CREATED_EVENT", e);
-      return;
-    }
-
-    const tokenId = String(args.token || "").toLowerCase();
-    const creator = String(args.creator || "").toLowerCase();
-
-    if (!token.dev || creator !== String(token.dev).toLowerCase()) return;
-
-    if (devTokenIdsRef.current.has(tokenId)) return;
-
-    let imageUrl = "";
-    try {
-      if (args.metadataCID) {
-        const r = await fetch(args.metadataCID);
-        if (r.ok) {
-          const meta = await r.json();
-          imageUrl = meta?.image || "";
-        }
+  const addDevTokenFromEvent = useCallback(
+    async (log: any) => {
+      let args: any;
+      try {
+        const decoded = decodeEventLog({
+          abi: CrystalRouterAbi,
+          data: log.data,
+          topics: log.topics,
+        }) as any;
+        args = decoded.args || {};
+      } catch (e) {
+        console.error('failed to decode MARKET_CREATED_EVENT', e);
+        return;
       }
-    } catch { }
 
-    const symbol = String(args.symbol || "").toUpperCase();
-    const name = String(args.name || symbol || tokenId.slice(0, 6));
+      const tokenId = String(args.token || '').toLowerCase();
+      const creator = String(args.creator || '').toLowerCase();
 
-    const initialPrice = 0;
-    const newDev: any = {
-      id: tokenId,
-      symbol,
-      name,
-      imageUrl,
-      price: initialPrice,
-      marketCap: initialPrice * TOTAL_SUPPLY,
-      timestamp: Math.floor(Date.now() / 1000),
-      migrated: false,
-    };
+      if (!token.dev || creator !== String(token.dev).toLowerCase()) return;
 
-    setDevTokens(prev => {
-      if (prev.some(t => String(t.id).toLowerCase() === tokenId)) return prev;
-      const updated = [newDev, ...prev];
-      devTokenIdsRef.current = new Set(updated.map(t => String(t.id || "").toLowerCase()));
-      return updated;
-    });
-  }, [setDevTokens, token.dev]);
+      if (devTokenIdsRef.current.has(tokenId)) return;
+
+      let imageUrl = '';
+      try {
+        if (args.metadataCID) {
+          const r = await fetch(args.metadataCID);
+          if (r.ok) {
+            const meta = await r.json();
+            imageUrl = meta?.image || '';
+          }
+        }
+      } catch {}
+
+      const symbol = String(args.symbol || '').toUpperCase();
+      const name = String(args.name || symbol || tokenId.slice(0, 6));
+
+      const initialPrice = 0;
+      const newDev: any = {
+        id: tokenId,
+        symbol,
+        name,
+        imageUrl,
+        price: initialPrice,
+        marketCap: initialPrice * TOTAL_SUPPLY,
+        timestamp: Math.floor(Date.now() / 1000),
+        migrated: false,
+      };
+
+      setDevTokens((prev) => {
+        if (prev.some((t) => String(t.id).toLowerCase() === tokenId))
+          return prev;
+        const updated = [newDev, ...prev];
+        devTokenIdsRef.current = new Set(
+          updated.map((t) => String(t.id || '').toLowerCase()),
+        );
+        return updated;
+      });
+    },
+    [setDevTokens, token.dev],
+  );
 
   // ws manager
   useEffect(() => {
@@ -1076,26 +1229,37 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     wsRef.current = ws;
 
     const sendSub = (params: any) => {
-      ws.send(JSON.stringify({
-        id: Date.now(),
-        jsonrpc: "2.0",
-        method: "eth_subscribe",
-        params
-      }));
+      ws.send(
+        JSON.stringify({
+          id: Date.now(),
+          jsonrpc: '2.0',
+          method: 'eth_subscribe',
+          params,
+        }),
+      );
     };
 
     ws.onopen = () => {
-      sendSub(["logs", { address: token.id }]);
-      sendSub(["logs", { address: settings.chainConfig[activechain].router, topics: [[MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT]] }]);
+      sendSub(['logs', { address: token.id }]);
+      sendSub([
+        'logs',
+        {
+          address: settings.chainConfig[activechain].router,
+          topics: [[MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT]],
+        },
+      ]);
 
       if (tokenAddress) {
-        sendSub(["logs", { address: tokenAddress, topics: [[TRANSFER_TOPIC]] }]);
+        sendSub([
+          'logs',
+          { address: tokenAddress, topics: [[TRANSFER_TOPIC]] },
+        ]);
       }
     };
 
     ws.onmessage = ({ data }) => {
       const msg = JSON.parse(data);
-      if (msg?.method !== "eth_subscription") return;
+      if (msg?.method !== 'eth_subscription') return;
       const log = msg.params?.result;
       if (!log?.topics?.length) return;
 
@@ -1104,7 +1268,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
 
         const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
-        const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
+        const word = (i: number) =>
+          BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
 
         const isBuy = word(0) !== 0n;
         const inputAmountWei = word(1);
@@ -1119,8 +1284,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         const vNative = Number(vNativeWei);
         const vToken = Number(vTokenWei);
 
-        const price = vToken === 0 ? 0 : (vNative / vToken);
-        const tradePrice = (isBuy ? amountIn / amountOut : amountOut / amountIn) || 0;
+        const price = vToken === 0 ? 0 : vNative / vToken;
+        const tradePrice =
+          (isBuy ? amountIn / amountOut : amountOut / amountIn) || 0;
 
         if (tokenAddress && tokenAddr === tokenAddress.toLowerCase()) {
           setLive((p) => ({
@@ -1132,7 +1298,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             volume24h: (p.volume24h || 0) + (isBuy ? amountIn : amountOut),
           }));
 
-          const passesFilter = trackedAddressesRef.current.length === 0 || trackedAddressesRef.current.includes(callerAddr);
+          const passesFilter =
+            trackedAddressesRef.current.length === 0 ||
+            trackedAddressesRef.current.includes(callerAddr);
 
           if (passesFilter) {
             setTrades((prev) => [
@@ -1157,52 +1325,38 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           pushRealtimeTick(tradePrice, isBuy ? amountIn : amountOut);
 
           setHolders((prev) => {
-            const copy = [...prev];
-            let idx = holdersMapRef.current.get(callerAddr) ?? -1;
+            const arr = prev.slice();
 
-            if (idx === -1) {
-              const newRow: Holder = {
-                address: `0x${log.topics[2].slice(26)}`,
-                balance: 0,
-                tokenNet: 0,
-                valueNet: 0,
-                amountBought: 0,
-                amountSold: 0,
-                valueBought: 0,
-                valueSold: 0,
-              };
-              copy.push(newRow);
-              idx = copy.length - 1;
-              holdersMapRef.current.set(callerAddr, idx);
+            const hIdx = holdersMapRef.current?.get?.(callerAddr);
+            if (hIdx !== undefined) {
+              const h = { ...arr[hIdx] };
+              if (isBuy) {
+                h.amountBought = (h.amountBought || 0) + amountOut;
+                h.valueBought = (h.valueBought || 0) + amountIn;
+                h.balance = (h.balance || 0) + amountOut;
+              } else {
+                h.amountSold = (h.amountSold || 0) + amountIn;
+                h.valueSold = (h.valueSold || 0) + amountOut;
+                h.balance = Math.max(0, (h.balance || 0) - amountIn);
+              }
+              arr[hIdx] = h;
             }
 
-            const row = { ...copy[idx] };
-            if (isBuy) {
-              row.amountBought += amountOut;
-              row.valueBought += amountIn;
-              row.balance += amountOut;
-            } else {
-              row.amountSold += amountIn;
-              row.valueSold += amountOut;
-              row.balance = Math.max(0, row.balance - amountIn);
+            for (let i = 0; i < arr.length; i++) {
+              const h = arr[i];
+              const realized = (h.valueSold || 0) - (h.valueBought || 0);
+              const bal = Math.max(0, h.balance || 0);
+              arr[i] = { ...h, valueNet: realized + bal * price };
             }
-            row.tokenNet = row.amountBought - row.amountSold;
-            row.valueNet = (row.valueSold - row.valueBought) + (row.balance * price);
 
-            copy[idx] = row;
-
-            const topSum = copy
-              .map(h => Math.max(0, h.balance))
+            const topSum = arr
+              .map((h) => Math.max(0, h.balance || 0))
               .sort((a, b) => b - a)
               .slice(0, 10)
               .reduce((s, n) => s + n, 0);
-            const pct = toPct(topSum);
-            setTop10HoldingPercentage(pct);
+            setTop10HoldingPercentage(toPct(topSum));
 
-            const devPctNow = calcDevHoldingPct(copy, token.dev);
-            setLive(p => ({ ...p, devHolding: devPctNow }));
-
-            return copy;
+            return arr;
           });
 
           setTopTraders((prev) => {
@@ -1226,66 +1380,97 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               topTradersMapRef.current.set(key, idx);
             }
 
-            const row = { ...copy[idx] };
+            {
+              const row = { ...copy[idx] };
+              const curBal = Math.max(
+                0,
+                (row.balance ?? row.amountBought - row.amountSold) || 0,
+              );
 
-            if (isBuy) {
-              row.amountBought += amountOut;
-              row.valueBought += amountIn;
-              row.balance += amountOut;
-            } else {
-              row.amountSold += amountIn;
-              row.valueSold += amountOut;
-              row.balance = Math.max(0, row.balance - amountIn);
+              if (isBuy) {
+                row.amountBought = (row.amountBought || 0) + amountOut;
+                row.valueBought = (row.valueBought || 0) + amountIn;
+                row.balance = curBal + amountOut;
+              } else {
+                row.amountSold = (row.amountSold || 0) + amountIn;
+                row.valueSold = (row.valueSold || 0) + amountOut;
+                row.balance = Math.max(0, curBal - amountIn);
+              }
+              row.tokenNet = (row.amountBought || 0) - (row.amountSold || 0);
+              copy[idx] = row;
             }
 
-            row.tokenNet = row.amountBought - row.amountSold;
-            row.valueNet = (row.valueSold - row.valueBought) + (row.balance * (price || 0));
+            for (let i = 0; i < copy.length; i++) {
+              const r = copy[i];
+              const bal = Math.max(
+                0,
+                (r.balance ?? r.amountBought - r.amountSold) || 0,
+              );
+              const realized = (r.valueSold || 0) - (r.valueBought || 0);
+              copy[i] = { ...r, valueNet: realized + bal * price };
+            }
 
-            copy[idx] = row;
-
-            copy.sort((a, b) => (b.valueNet - a.valueNet));
+            copy.sort((a, b) => b.valueNet - a.valueNet);
             if (copy.length > 300) {
               const removed = copy.splice(300);
-              for (const r of removed) topTradersMapRef.current.delete((r.address || '').toLowerCase());
+              for (const r of removed)
+                topTradersMapRef.current.delete(
+                  (r.address || '').toLowerCase(),
+                );
             }
-            copy.forEach((r, i) => topTradersMapRef.current.set((r.address || '').toLowerCase(), i));
+            copy.forEach((r, i) =>
+              topTradersMapRef.current.set((r.address || '').toLowerCase(), i),
+            );
 
             return copy;
           });
         }
 
-        if (callerAddr == userAddr.toLowerCase()) {
-          setPositions((prev) => {
-            const copy = Array.isArray(prev) ? [...prev] : [];
-            let idx = positionsMapRef.current.get(tokenAddr);
+        setPositions((prev) => {
+          const copy = Array.isArray(prev) ? [...prev] : [];
+          let idx = positionsMapRef.current.get(tokenAddr);
 
-            if (idx === undefined) {
-              const isCurrent = tokenAddress && tokenAddr === tokenAddress.toLowerCase();
+          const isUserTrade = callerAddr === userAddr.toLowerCase();
 
-              const newPos = {
-                tokenId: isCurrent ? token.id : tokenAddr,
-                symbol: isCurrent ? token.symbol : (copy.find(p => (p.tokenId || '').toLowerCase() === tokenAddr)?.symbol || ''),
-                name: isCurrent ? token.name : (copy.find(p => (p.tokenId || '').toLowerCase() === tokenAddr)?.name || ''),
-                imageUrl: isCurrent ? (token.image || '') : '',
-                metadataCID: '',
-                boughtTokens: 0,
-                soldTokens: 0,
-                spentNative: 0,
-                receivedNative: 0,
-                remainingTokens: 0,
-                remainingPct: 0,
-                pnlNative: 0,
-                lastPrice: price,
-              };
+          if (idx === undefined && isUserTrade) {
+            const isCurrent =
+              tokenAddress && tokenAddr === tokenAddress.toLowerCase();
 
-              copy.push(newPos);
-              idx = copy.length - 1;
-              positionsMapRef.current.set(tokenAddr, idx);
-            }
+            const newPos = {
+              tokenId: isCurrent ? token.id : tokenAddr,
+              symbol: isCurrent
+                ? token.symbol
+                : copy.find(
+                    (p) => (p.tokenId || '').toLowerCase() === tokenAddr,
+                  )?.symbol || '',
+              name: isCurrent
+                ? token.name
+                : copy.find(
+                    (p) => (p.tokenId || '').toLowerCase() === tokenAddr,
+                  )?.name || '',
+              imageUrl: isCurrent ? token.image || '' : '',
+              metadataCID: '',
+              boughtTokens: 0,
+              soldTokens: 0,
+              spentNative: 0,
+              receivedNative: 0,
+              remainingTokens: 0,
+              remainingPct: 0,
+              pnlNative: 0,
+              lastPrice: price,
+            };
 
-            const pos = { ...copy[idx!] };
-            pos.lastPrice = price;
+            copy.push(newPos);
+            idx = copy.length - 1;
+            positionsMapRef.current.set(tokenAddr, idx);
+          }
 
+          if (idx === undefined) return prev;
+
+          const pos = { ...copy[idx] };
+          pos.lastPrice = price;
+
+          if (isUserTrade) {
             if (isBuy) {
               pos.boughtTokens += amountOut;
               pos.spentNative += amountIn;
@@ -1295,33 +1480,37 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               pos.receivedNative += amountOut;
               pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
             }
+          }
 
-            pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
+          pos.remainingPct =
+            pos.boughtTokens > 0
+              ? (pos.remainingTokens / pos.boughtTokens) * 100
+              : 0;
 
-            const balance = pos.remainingTokens;
-            const realized = pos.receivedNative - pos.spentNative;
-            const unrealized = balance * (pos.lastPrice || 0);
-            pos.pnlNative = realized + unrealized;
+          const balance = Math.max(0, pos.remainingTokens);
+          const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
+          const unrealized = balance * (pos.lastPrice || 0);
+          pos.pnlNative = realized + unrealized;
 
-            copy[idx!] = pos;
+          copy[idx] = pos;
 
-            if (tokenAddress && tokenAddr === tokenAddress.toLowerCase()) {
-              const markToMarket = balance * (pos.lastPrice || 0);
-              const totalPnL = (pos.receivedNative + markToMarket) - pos.spentNative;
+          if (tokenAddress && tokenAddr === tokenAddress.toLowerCase()) {
+            const markToMarket = balance * (pos.lastPrice || 0);
+            const totalPnL =
+              (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
 
-              setUserStats({
-                balance,
-                amountBought: pos.boughtTokens,
-                amountSold: pos.soldTokens,
-                valueBought: pos.spentNative,
-                valueSold: pos.receivedNative,
-                valueNet: totalPnL,
-              });
-            }
+            setUserStats({
+              balance,
+              amountBought: pos.boughtTokens || 0,
+              amountSold: pos.soldTokens || 0,
+              valueBought: pos.spentNative || 0,
+              valueSold: pos.receivedNative || 0,
+              valueNet: totalPnL,
+            });
+          }
 
-            return copy;
-          });
-        }
+          return copy;
+        });
 
         if (devTokenIdsRef.current.has(tokenAddr)) {
           setDevTokens((prev) => {
@@ -1333,7 +1522,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               next.timestamp = Date.now() / 1000;
               return next;
             });
-            devTokenIdsRef.current = new Set(updated.map((t) => (t.id || '').toLowerCase()));
+            devTokenIdsRef.current = new Set(
+              updated.map((t) => (t.id || '').toLowerCase()),
+            );
             return updated;
           });
         }
@@ -1352,8 +1543,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         log.topics[0] === TRANSFER_TOPIC &&
         address
       ) {
-        const walletTopic = "0x" + address.slice(2).padStart(64, "0");
-        const involvesWallet = log.topics[1] === walletTopic || log.topics[2] === walletTopic;
+        const walletTopic = '0x' + address.slice(2).padStart(64, '0');
+        const involvesWallet =
+          log.topics[1] === walletTopic || log.topics[2] === walletTopic;
         if (involvesWallet) {
           const now = Date.now();
           if (now - lastInvalidateRef.current > 800) {
@@ -1365,13 +1557,200 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     };
 
     return () => {
-      try { ws.close(); } catch { }
+      try {
+        ws.close();
+      } catch {}
     };
   }, [token.id, tokenAddress, address, terminalRefetch]);
+
+  // metadata n klines
+  useEffect(() => {
+    if (!token.id) return;
+    let isCancelled = false;
+
+    const fetchMemeTokenData = async () => {
+      try {
+        const response = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+              query ($id: ID!) {
+                launchpadTokens: launchpadTokens(where: { id: $id }) {
+                  lastPriceNativePerTokenWad
+                  volumeNative
+                  buyTxs
+                  sellTxs
+                  name
+                  symbol
+                  metadataCID
+                  creator {
+                    id
+                  }
+                  timestamp
+                  trades(first: 50, orderBy: block, orderDirection: desc) {
+                    id
+                    account {id}
+                    block
+                    isBuy
+                    priceNativePerTokenWad
+                    amountIn
+                    amountOut
+                  }
+                  series: ${
+                    'series' +
+                    (selectedInterval === '1s'
+                      ? '1'
+                      : selectedInterval === '5s'
+                        ? '5'
+                        : selectedInterval === '15s'
+                          ? '15'
+                          : selectedInterval === '1m'
+                            ? '60'
+                            : selectedInterval === '5m'
+                              ? '300'
+                              : selectedInterval === '15m'
+                                ? '900'
+                                : selectedInterval === '1h'
+                                  ? '3600'
+                                  : selectedInterval === '4h'
+                                    ? '14400'
+                                    : '86400')
+                  } 
+                    {
+                    klines(first: 1000, orderBy: time, orderDirection: desc) {
+                      time open high low close baseVolume
+                    }
+                  }
+                }
+              }
+            `,
+            variables: {
+              id: token.id.toLowerCase(),
+            },
+          }),
+        });
+
+        const data = (await response.json())?.data;
+        if (isCancelled || !data) return;
+
+        if (data.launchpadTokens?.length) {
+          const m = data.launchpadTokens[0];
+
+          let imageUrl = token.image || '';
+          if (m.metadataCID && !imageUrl) {
+            try {
+              const metaRes = await fetch(m.metadataCID);
+              if (metaRes.ok) {
+                const meta = await metaRes.json();
+                imageUrl = meta.image || '';
+              }
+            } catch (e) {
+              console.warn('Failed to load metadata for token:', token.id, e);
+            }
+          }
+
+          const updatedTokenData = {
+            ...token,
+            name: m.name || token.name || 'Unknown Token',
+            symbol: m.symbol || token.symbol || 'UNKNOWN',
+            image: imageUrl,
+            dev: m.creator.id || '',
+            price: Number(m.lastPriceNativePerTokenWad || 0) / 1e18,
+            marketCap:
+              (Number(m.lastPriceNativePerTokenWad || 0) / 1e18) * TOTAL_SUPPLY,
+            volume24h: Number(m.volumeNative || 0) / 1e18,
+            buyTransactions: Number(m.buyTxs || 0),
+            sellTransactions: Number(m.sellTxs || 0),
+            created: m.timestamp,
+          };
+
+          currentPriceRef.current = updatedTokenData.price;
+
+          setLive((p) => ({
+            ...p,
+            name: updatedTokenData.name,
+            symbol: updatedTokenData.symbol,
+            image: updatedTokenData.image,
+            dev: updatedTokenData.dev,
+            price: updatedTokenData.price,
+            marketCap: updatedTokenData.marketCap,
+            volume24h: updatedTokenData.volume24h,
+            buyTransactions: updatedTokenData.buyTransactions,
+            sellTransactions: updatedTokenData.sellTransactions,
+          }));
+
+          setTokenData(updatedTokenData);
+        }
+
+        if (data.launchpadTokens?.[0]?.trades?.length) {
+          const mapped = data.launchpadTokens[0].trades.map((t: any) => ({
+            id: t.id,
+            timestamp: Number(t.block),
+            isBuy: t.isBuy,
+            price: Number(t.priceNativePerTokenWad) / 1e18,
+            tokenAmount: Number(t.isBuy ? t.amountOut : t.amountIn) / 1e18,
+            nativeAmount: Number(t.isBuy ? t.amountIn : t.amountOut) / 1e18,
+            caller: t.account.id,
+          }));
+
+          setTrades(mapped);
+        } else {
+          setTrades([]);
+        }
+
+        if (data.launchpadTokens?.[0]?.series?.klines) {
+          const bars = data.launchpadTokens[0].series.klines
+            .slice()
+            .reverse()
+            .map((c: any) => ({
+              time: Number(c.time) * 1000,
+              open: Number(c.open) / 1e18,
+              high: Number(c.high) / 1e18,
+              low: Number(c.low) / 1e18,
+              close: Number(c.close) / 1e18,
+              volume: Number(c.baseVolume) / 1e18,
+            }));
+
+          const resForChart =
+            selectedInterval === '1d'
+              ? '1D'
+              : selectedInterval === '4h'
+                ? '240'
+                : selectedInterval === '1h'
+                  ? '60'
+                  : selectedInterval.endsWith('s')
+                    ? selectedInterval.slice(0, -1).toUpperCase() + 'S'
+                    : selectedInterval.slice(0, -1);
+
+          setChartData([bars, resForChart, false]);
+        }
+      } catch (e) {
+        console.error('Error fetching token data:', e);
+        setLive((p) => ({
+          ...p,
+          price: 0,
+          marketCap: 0,
+          volume24h: 0,
+          buyTransactions: 0,
+          sellTransactions: 0,
+        }));
+        setTrades([]);
+        setChartData(null);
+      }
+    };
+
+    fetchMemeTokenData();
+    return () => {
+      isCancelled = true;
+    };
+  }, [tokenAddress, selectedInterval]);
 
   // by-token oc initial
   useEffect(() => {
     if (!token.id) return;
+    const price = Number(currentPriceRef.current);
+    if (!price) return;
     setTerminalToken(token.id);
     let cancelled = false;
 
@@ -1379,7 +1758,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       const first = PAGE_SIZE;
       const skip = page * PAGE_SIZE;
       const m = (token.id || '').toLowerCase();
-      const d = token.dev ? token.dev.toLowerCase() : '';
 
       const holdersPromise = (async () => {
         const response = await fetch(SUBGRAPH_URL, {
@@ -1395,7 +1773,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
         const positions: any[] = data?.launchpadPositions ?? [];
         const mapped: Holder[] = positions
-          .filter((p: any) => p.account?.id.toLowerCase() !== routerAddress.toLowerCase())
+          .filter(
+            (p: any) =>
+              p.account?.id.toLowerCase() !== routerAddress.toLowerCase(),
+          )
           .map((p: any) => {
             const amountBought = Number(p.tokenBought) / 1e18;
             const amountSold = Number(p.tokenSold) / 1e18;
@@ -1403,7 +1784,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             const valueSold = Number(p.nativeReceived) / 1e18;
             const balance = Number(p.tokens) / 1e18;
             const realized = valueSold - valueBought;
-            const unrealized = balance * currentPrice;
+            const unrealized = balance * price;
             const totalPnl = realized + unrealized;
 
             return {
@@ -1420,65 +1801,20 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
         const top10Pct = toPct(
           mapped
-            .map(h => Math.max(0, h.balance))
+            .map((h) => Math.max(0, h.balance))
             .sort((a, b) => b - a)
             .slice(0, 10)
-            .reduce((s, n) => s + n, 0)
+            .reduce((s, n) => s + n, 0),
         );
 
         if (!cancelled) {
           setTop10HoldingPercentage(top10Pct);
           const devPct = calcDevHoldingPct(mapped, token.dev);
-          setLive(p => ({ ...p, devHolding: devPct }));
+          setLive((p) => ({ ...p, devHolding: devPct }));
           setHolders(mapped);
-          holdersMapRef.current = new Map(mapped.map((h: Holder, i: number) => [h.address.toLowerCase(), i]));
-        }
-      })();
-
-      const devTokensPromise = (async () => {
-        if (!d) return;
-        const out: any[] = [];
-
-        const res = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: DEV_TOKENS_QUERY,
-            variables: { d, skip, first },
-          }),
-        });
-
-        const { data } = await res.json();
-        const rows: any[] = data?.launchpadTokens ?? [];
-
-        for (const t of rows) {
-          let imageUrl = '';
-          if (t.metadataCID) {
-            try {
-              const metaRes = await fetch(t.metadataCID);
-              if (metaRes.ok) {
-                const meta = await metaRes.json();
-                imageUrl = meta.image || '';
-              }
-            } catch { }
-          }
-
-          const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e18;
-          out.push({
-            id: t.id,
-            symbol: t.symbol,
-            name: t.name,
-            imageUrl,
-            price,
-            marketCap: price * TOTAL_SUPPLY,
-            timestamp: Number(t.timestamp ?? 0),
-            status: t.migrated,
-          });
-        }
-
-        if (!cancelled) {
-          setDevTokens(out);
-          devTokenIdsRef.current = new Set(out.map((t) => (t.id || '').toLowerCase()));
+          holdersMapRef.current = new Map(
+            mapped.map((h: Holder, i: number) => [h.address.toLowerCase(), i]),
+          );
         }
       })();
 
@@ -1522,25 +1858,101 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         }
 
         if (!cancelled) {
-          out.sort((a, b) => (b.valueNet - a.valueNet));
+          out.sort((a, b) => b.valueNet - a.valueNet);
           const trimmed = out.slice(0, 100);
           setTopTraders(trimmed);
-          topTradersMapRef.current = new Map(trimmed.map((t, i) => [t.address.toLowerCase(), i]));
+          topTradersMapRef.current = new Map(
+            trimmed.map((t, i) => [t.address.toLowerCase(), i]),
+          );
         }
       })();
 
-      await Promise.all([holdersPromise, devTokensPromise, topTradersPromise]);
+      await Promise.all([holdersPromise, topTradersPromise]);
     })();
 
-    return () => { cancelled = true; };
-  }, [tokenAddress, page]);
+    return () => {
+      cancelled = true;
+    };
+  }, [tokenAddress, page, currentPriceRef.current]);
+
+  // dev
+  useEffect(() => {
+    const d = token.dev ? token.dev.toLowerCase() : '';
+    if (!d) {
+      setDevTokens([]);
+      devTokenIdsRef.current = new Set();
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const first = PAGE_SIZE;
+        const skip = page * PAGE_SIZE;
+
+        const res = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: DEV_TOKENS_QUERY,
+            variables: { d, skip, first },
+          }),
+        });
+
+        const { data } = await res.json();
+        const rows: any[] = data?.launchpadTokens ?? [];
+
+        const out = [];
+        for (const t of rows) {
+          let imageUrl = '';
+          if (t.metadataCID) {
+            try {
+              const metaRes = await fetch(t.metadataCID);
+              if (metaRes.ok) {
+                const meta = await metaRes.json();
+                imageUrl = meta.image || '';
+              }
+            } catch {}
+          }
+          const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e18;
+          out.push({
+            id: t.id,
+            symbol: t.symbol,
+            name: t.name,
+            imageUrl,
+            price,
+            marketCap: price * TOTAL_SUPPLY,
+            timestamp: Number(t.timestamp ?? 0),
+            status: t.migrated,
+          });
+        }
+
+        if (!cancelled) {
+          setDevTokens(out);
+          devTokenIdsRef.current = new Set(
+            out.map((t) => String(t.id || '').toLowerCase()),
+          );
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setDevTokens([]);
+          devTokenIdsRef.current = new Set();
+        }
+        console.error('dev tokens fetch failed', e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token.dev, page]);
 
   // similar tokens
   useEffect(() => {
     if (!token.id) return;
 
-    const baseName = String(token.name || "").trim();
-    const baseSymbol = String(token.symbol || "").trim();
+    const baseName = String(token.name || '').trim();
+    const baseSymbol = String(token.symbol || '').trim();
 
     if (!baseName && !baseSymbol) {
       setSimilarTokens([]);
@@ -1549,14 +1961,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     let cancelled = false;
 
-    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+    const normalize = (s: string) =>
+      s.toLowerCase().replace(/\s+/g, ' ').trim();
     const tokenize = (s: string) =>
       normalize(s)
         .split(/[^a-z0-9]+/i)
-        .filter(w => w.length >= 3 && !STOPWORDS.has(w))
+        .filter((w) => w.length >= 3 && !STOPWORDS.has(w))
         .slice(0, 8);
     const acronym = (s: string) =>
-      (s.match(/\b([a-zA-Z0-9])/g) || []).join("").toLowerCase();
+      (s.match(/\b([a-zA-Z0-9])/g) || []).join('').toLowerCase();
     const trigrams = (s: string) => {
       const t: string[] = [];
       const x = ` ${normalize(s)} `;
@@ -1573,20 +1986,32 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     };
 
     const edit = (a: string, b: string) => {
-      const m = a.length, n = b.length;
-      const dp = Array.from({ length: m + 1 }, (_, _i) => new Array(n + 1).fill(0));
+      const m = a.length,
+        n = b.length;
+      const dp = Array.from({ length: m + 1 }, (_, _i) =>
+        new Array(n + 1).fill(0),
+      );
       for (let i = 0; i <= m; i++) dp[i][0] = i;
       for (let j = 0; j <= n; j++) dp[0][j] = j;
       for (let i = 1; i <= m; i++) {
         for (let j = 1; j <= n; j++) {
           const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-          dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+          dp[i][j] = Math.min(
+            dp[i - 1][j] + 1,
+            dp[i][j - 1] + 1,
+            dp[i - 1][j - 1] + cost,
+          );
         }
       }
       return dp[m][n];
     };
 
-    const scoreSimilarity = (qName: string, qSymbol: string, candName: string, candSymbol: string) => {
+    const scoreSimilarity = (
+      qName: string,
+      qSymbol: string,
+      candName: string,
+      candSymbol: string,
+    ) => {
       const qs = normalize(qName);
       const cs = normalize(candName);
       const qTok = tokenize(qs);
@@ -1612,7 +2037,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       }
 
       const qSym = qSymbol.toLowerCase();
-      const cSym = (candSymbol || "").toLowerCase();
+      const cSym = (candSymbol || '').toLowerCase();
       if (qSym && cSym) {
         if (qSym === cSym) score += 350;
         if (cSym.startsWith(qSym)) score += 220;
@@ -1624,7 +2049,21 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     };
 
     const STOPWORDS = new Set([
-      "the", "a", "an", "token", "coin", "inu", "doge", "baby", "new", "of", "and", "for", "with", "club", "project"
+      'the',
+      'a',
+      'an',
+      'token',
+      'coin',
+      'inu',
+      'doge',
+      'baby',
+      'new',
+      'of',
+      'and',
+      'for',
+      'with',
+      'club',
+      'project',
     ]);
 
     (async () => {
@@ -1633,50 +2072,51 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         const nameTerms = tokenize(baseName);
         const terms = Array.from(new Set(nameTerms)).slice(0, 4);
         const sym = baseSymbol.trim();
-        const symTerms = sym.length >= 2 ? [sym, sym.slice(0, 3)].filter(Boolean) : [];
+        const symTerms =
+          sym.length >= 2 ? [sym, sym.slice(0, 3)].filter(Boolean) : [];
         const requests: Promise<Response>[] = [];
 
         for (const q of terms) {
           requests.push(
             fetch(SUBGRAPH_URL, {
-              method: "POST",
-              headers: { "content-type": "application/json" },
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
               body: JSON.stringify({
                 query: SIMILAR_TOKENS_BY_NAME_QUERY,
                 variables: { q, exclude, first: 100 },
               }),
-            })
+            }),
           );
         }
 
         for (const q of symTerms) {
           requests.push(
             fetch(SUBGRAPH_URL, {
-              method: "POST",
-              headers: { "content-type": "application/json" },
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
               body: JSON.stringify({
                 query: SIMILAR_TOKENS_BY_SYMBOL_QUERY,
                 variables: { q, exclude, first: 50 },
               }),
-            })
+            }),
           );
         }
 
         if (requests.length === 0 && baseName) {
           requests.push(
             fetch(SUBGRAPH_URL, {
-              method: "POST",
-              headers: { "content-type": "application/json" },
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
               body: JSON.stringify({
                 query: SIMILAR_TOKENS_BY_NAME_QUERY,
                 variables: { q: baseName, exclude, first: 100 },
               }),
-            })
+            }),
           );
         }
 
         const responses = await Promise.all(requests);
-        const jsons = await Promise.all(responses.map(r => r.json()));
+        const jsons = await Promise.all(responses.map((r) => r.json()));
         const candidates: any[] = [];
         for (const j of jsons) {
           const rows = j?.data?.launchpadTokens ?? [];
@@ -1684,28 +2124,34 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         }
 
         const mergedMap = new Map<string, any>();
-        for (const r of candidates) mergedMap.set(String(r.id).toLowerCase(), r);
+        for (const r of candidates)
+          mergedMap.set(String(r.id).toLowerCase(), r);
         const merged = Array.from(mergedMap.values());
 
         const scored = merged
           .map((t: any) => ({
             ...t,
-            _score: scoreSimilarity(baseName, baseSymbol, t.name || "", t.symbol || "")
+            _score: scoreSimilarity(
+              baseName,
+              baseSymbol,
+              t.name || '',
+              t.symbol || '',
+            ),
           }))
           .sort((a: any, b: any) => b._score - a._score)
           .slice(0, 5);
 
         const finalWithImages = await Promise.all(
           scored.map(async (t: any) => {
-            let imageUrl = "";
+            let imageUrl = '';
             if (t.metadataCID) {
               try {
                 const metaRes = await fetch(t.metadataCID);
                 if (metaRes.ok) {
                   const meta = await metaRes.json();
-                  imageUrl = meta.image || "";
+                  imageUrl = meta.image || '';
                 }
-              } catch { }
+              } catch {}
             }
             const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e18;
             return {
@@ -1718,17 +2164,75 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               volume24h: Number(t.volumeNative || 0) / 1e18,
               timestamp: Number(t.timestamp ?? 0),
             };
-          })
+          }),
         );
 
         if (!cancelled) setSimilarTokens(finalWithImages);
       } catch (e) {
         if (!cancelled) setSimilarTokens([]);
-        console.error("similar tokens fuzzy fetch failed", e);
+        console.error('similar tokens fuzzy fetch failed', e);
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
+  }, [tokenAddress]);
+
+  // backend ws
+  useEffect(() => {
+    if (!tokenAddress) return;
+    let disposed = false;
+
+    const origin = STATS_WS_BASE.replace(/\/$/, '');
+    const url = `${origin}/ws/stats/${tokenAddress.toLowerCase()}`;
+
+    const open = () => {
+      const ws = new WebSocket(url);
+      statsWsRef.current = ws;
+
+      ws.onopen = () => {
+        reconnectRef.current = 0;
+      };
+
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(String(evt.data));
+          if (msg?.type !== 'stats') return;
+
+          const normalized: Record<string, any> = {};
+          for (const [k, v] of Object.entries(msg)) {
+            normalized[k] =
+              typeof v === 'number' && /volume/i.test(k) ? v / 1e18 : v;
+          }
+          setStatsRaw(normalized);
+        } catch (e) {}
+      };
+
+      ws.onclose = () => {
+        if (disposed) return;
+        const backoff = Math.min(
+          30000,
+          1000 * 2 ** Math.min(6, reconnectRef.current++),
+        );
+        setTimeout(open, backoff);
+      };
+
+      ws.onerror = () => {
+        try {
+          ws.close();
+        } catch {}
+      };
+    };
+
+    open();
+
+    return () => {
+      disposed = true;
+      try {
+        statsWsRef.current?.close();
+      } catch {}
+    };
   }, [tokenAddress]);
 
   // positions
@@ -1777,7 +2281,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           const realized = receivedNative - spentNative;
           const unrealized = balance * lastPrice;
           const pnlNative = realized + unrealized;
-          const remainingPct = boughtTokens > 0 ? (balance / boughtTokens) * 100 : 0;
+          const remainingPct =
+            boughtTokens > 0 ? (balance / boughtTokens) * 100 : 0;
 
           if (p.token.id == tokenAddress) {
             totals.amountBought += boughtTokens;
@@ -1826,11 +2331,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       if (cancelled) return;
 
       const markToMarket = totals.balance * (totals.lastPriceNative || 0);
-      const totalPnL = (totals.valueSold + markToMarket) - totals.valueBought;
+      const totalPnL = totals.valueSold + markToMarket - totals.valueBought;
 
       const sorted = all.sort((a, b) => b.remainingTokens - a.remainingTokens);
       setPositions(sorted);
-      positionsMapRef.current = new Map(sorted.map((p, i) => [String(p.tokenId).toLowerCase(), i]));
+      positionsMapRef.current = new Map(
+        sorted.map((p, i) => [String(p.tokenId).toLowerCase(), i]),
+      );
 
       setUserStats({
         balance: totals.balance,
@@ -1842,224 +2349,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       });
     })();
 
-    return () => { cancelled = true; };
-  }, [userAddr]);
-
-  // metadata n klines
-  useEffect(() => {
-    if (!token.id) return;
-    let isCancelled = false;
-
-    const fetchMemeTokenData = async () => {
-      try {
-        const response = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-              query ($id: ID!) {
-                launchpadTokens: launchpadTokens(where: { id: $id }) {
-                  lastPriceNativePerTokenWad
-                  volumeNative
-                  buyTxs
-                  sellTxs
-                  name
-                  symbol
-                  metadataCID
-                  creator {
-                    id
-                  }
-                  timestamp
-                  trades(first: 50, orderBy: block, orderDirection: desc) {
-                    id
-                    account {id}
-                    block
-                    isBuy
-                    priceNativePerTokenWad
-                    amountIn
-                    amountOut
-                  }
-                  series: ${'series' + (
-                selectedInterval === '1s' ? '1' :
-                  selectedInterval === '5s' ? '5' :
-                    selectedInterval === '15s' ? '15' :
-                      selectedInterval === '1m' ? '60' :
-                        selectedInterval === '5m' ? '300' :
-                          selectedInterval === '15m' ? '900' :
-                            selectedInterval === '1h' ? '3600' :
-                              selectedInterval === '4h' ? '14400' :
-                                '86400'
-              )} 
-                    {
-                    klines(first: 1000, orderBy: time, orderDirection: desc) {
-                      time open high low close baseVolume
-                    }
-                  }
-                }
-              }
-            `,
-            variables: {
-              id: token.id.toLowerCase(),
-            }
-          }),
-        });
-
-        const data = (await response.json())?.data;
-        if (isCancelled || !data) return;
-
-        if (data.launchpadTokens?.length) {
-          const m = data.launchpadTokens[0];
-
-          let imageUrl = token.image || '';
-          if (m.metadataCID && !imageUrl) {
-            try {
-              const metaRes = await fetch(m.metadataCID);
-              if (metaRes.ok) {
-                const meta = await metaRes.json();
-                imageUrl = meta.image || '';
-              }
-            } catch (e) {
-              console.warn('Failed to load metadata for token:', token.id, e);
-            }
-          }
-
-          const updatedTokenData = {
-            ...token,
-            name: m.name || token.name || "Unknown Token",
-            symbol: m.symbol || token.symbol || "UNKNOWN",
-            image: imageUrl,
-            dev: m.creator.id || "",
-            price: Number(m.lastPriceNativePerTokenWad || 0) / 1e18,
-            marketCap: (Number(m.lastPriceNativePerTokenWad || 0) / 1e18) * TOTAL_SUPPLY,
-            volume24h: Number(m.volumeNative || 0) / 1e18,
-            buyTransactions: Number(m.buyTxs || 0),
-            sellTransactions: Number(m.sellTxs || 0),
-            created: m.timestamp,
-          };
-
-          setLive(p => ({
-            ...p,
-            name: updatedTokenData.name,
-            symbol: updatedTokenData.symbol,
-            image: updatedTokenData.image,
-            dev: updatedTokenData.dev,
-            price: updatedTokenData.price,
-            marketCap: updatedTokenData.marketCap,
-            volume24h: updatedTokenData.volume24h,
-            buyTransactions: updatedTokenData.buyTransactions,
-            sellTransactions: updatedTokenData.sellTransactions,
-          }));
-
-          setTokenData(updatedTokenData);
-        }
-
-        if (data.launchpadTokens?.[0]?.trades?.length) {
-          const mapped = data.launchpadTokens[0].trades.map((t: any) => ({
-            id: t.id,
-            timestamp: Number(t.block),
-            isBuy: t.isBuy,
-            price: Number(t.priceNativePerTokenWad) / 1e18,
-            tokenAmount: Number(t.isBuy ? t.amountOut : t.amountIn) / 1e18,
-            nativeAmount: Number(t.isBuy ? t.amountIn : t.amountOut) / 1e18,
-            caller: t.account.id,
-          }));
-
-          setTrades(mapped);
-        } else {
-          setTrades([]);
-        }
-
-        if (data.launchpadTokens?.[0]?.series?.klines) {
-          const bars = data.launchpadTokens[0].series.klines
-            .slice()
-            .reverse()
-            .map((c: any) => ({
-              time: Number(c.time) * 1000,
-              open: Number(c.open) / 1e18,
-              high: Number(c.high) / 1e18,
-              low: Number(c.low) / 1e18,
-              close: Number(c.close) / 1e18,
-              volume: Number(c.baseVolume) / 1e18,
-            }));
-
-          const resForChart =
-            selectedInterval === "1d" ? "1D" :
-              selectedInterval === "4h" ? "240" :
-                selectedInterval === "1h" ? "60" :
-                  selectedInterval.endsWith("s")
-                    ? selectedInterval.slice(0, -1).toUpperCase() + "S"
-                    : selectedInterval.slice(0, -1);
-
-          setChartData([bars, resForChart, false]);
-        }
-
-      } catch (e) {
-        console.error('Error fetching token data:', e);
-        setLive(p => ({
-          ...p,
-          price: 0,
-          marketCap: 0,
-          volume24h: 0,
-          buyTransactions: 0,
-          sellTransactions: 0
-        }));
-        setTrades([]);
-        setChartData(null);
-      }
-    };
-
-    fetchMemeTokenData();
-    return () => { isCancelled = true; };
-  }, [tokenAddress, selectedInterval]);
-
-  // backend ws
-  useEffect(() => {
-    if (!tokenAddress) return;
-    let disposed = false;
-
-    const origin = STATS_WS_BASE.replace(/\/$/, '');
-    const url = `${origin}/ws/stats/${tokenAddress.toLowerCase()}`;
-
-    const open = () => {
-      const ws = new WebSocket(url);
-      statsWsRef.current = ws;
-
-      ws.onopen = () => {
-        reconnectRef.current = 0;
-      };
-
-      ws.onmessage = (evt) => {
-        try {
-          const msg = JSON.parse(String(evt.data));
-          if (msg?.type !== 'stats') return;
-
-          const normalized: Record<string, any> = {};
-          for (const [k, v] of Object.entries(msg)) {
-            normalized[k] =
-              typeof v === 'number' && /volume/i.test(k) ? v / 1e18 : v;
-          }
-          setStatsRaw(normalized);
-        } catch (e) { }
-      };
-
-      ws.onclose = () => {
-        if (disposed) return;
-        const backoff = Math.min(30000, 1000 * 2 ** Math.min(6, reconnectRef.current++));
-        setTimeout(open, backoff);
-      };
-
-      ws.onerror = () => {
-        try { ws.close(); } catch { }
-      };
-    };
-
-    open();
-
     return () => {
-      disposed = true;
-      try { statsWsRef.current?.close(); } catch { }
+      cancelled = true;
     };
-  }, [tokenAddress]);
+  }, [userAddr]);
 
   const handlePresetEditToggle = useCallback(() => {
     setIsPresetEditMode(!isPresetEditMode);
@@ -2067,28 +2360,41 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setTempPresetValue('');
   }, [isPresetEditMode]);
 
-  const handlePresetButtonClick = useCallback((preset: number, index: number) => {
-    if (isPresetEditMode) {
-      setEditingPresetIndex(index);
-      setTempPresetValue(preset.toString());
-    } else {
-      setSelectedMonPreset(preset);
-      if (activeTradeType === "buy") {
-        setTradeAmount(preset.toString());
-        const currentBalance = getCurrentMONBalance();
-        const percentage = currentBalance > 0 ? (preset / currentBalance) * 100 : 0;
-        setSliderPercent(Math.min(100, percentage));
+  const handlePresetButtonClick = useCallback(
+    (preset: number, index: number) => {
+      if (isPresetEditMode) {
+        setEditingPresetIndex(index);
+        setTempPresetValue(preset.toString());
       } else {
-        if (currentPrice > 0) {
-          const tokenAmount = preset / currentPrice;
-          setTradeAmount(tokenAmount.toString());
-          const currentTokenBalance = getCurrentTokenBalance();
-          const percentage = currentTokenBalance > 0 ? (tokenAmount / currentTokenBalance) * 100 : 0;
+        setSelectedMonPreset(preset);
+        if (activeTradeType === 'buy') {
+          setTradeAmount(preset.toString());
+          const currentBalance = getCurrentMONBalance();
+          const percentage =
+            currentBalance > 0 ? (preset / currentBalance) * 100 : 0;
           setSliderPercent(Math.min(100, percentage));
+        } else {
+          if (currentPrice > 0) {
+            const tokenAmount = preset / currentPrice;
+            setTradeAmount(tokenAmount.toString());
+            const currentTokenBalance = getCurrentTokenBalance();
+            const percentage =
+              currentTokenBalance > 0
+                ? (tokenAmount / currentTokenBalance) * 100
+                : 0;
+            setSliderPercent(Math.min(100, percentage));
+          }
         }
       }
-    }
-  }, [isPresetEditMode, activeTradeType, currentPrice, getCurrentMONBalance, getCurrentTokenBalance]);
+    },
+    [
+      isPresetEditMode,
+      activeTradeType,
+      currentPrice,
+      getCurrentMONBalance,
+      getCurrentTokenBalance,
+    ],
+  );
 
   const handlePresetInputSubmit = useCallback(() => {
     if (editingPresetIndex === null || tempPresetValue.trim() === '') return;
@@ -2105,18 +2411,26 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setTempPresetValue('');
   }, [editingPresetIndex, tempPresetValue, monPresets, setMonPresets]);
 
-  const handlePresetInputKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handlePresetInputSubmit();
-    } else if (e.key === 'Escape') {
-      setEditingPresetIndex(null);
-      setTempPresetValue('');
-    }
-  }, [handlePresetInputSubmit]);
+  const handlePresetInputKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        handlePresetInputSubmit();
+      } else if (e.key === 'Escape') {
+        setEditingPresetIndex(null);
+        setTempPresetValue('');
+      }
+    },
+    [handlePresetInputSubmit],
+  );
 
   useEffect(() => {
     const id = setTimeout(() => {
-      if (!tradeAmount || tradeAmount === "" || !currentPrice || currentPrice === 0) {
+      if (
+        !tradeAmount ||
+        tradeAmount === '' ||
+        !currentPrice ||
+        currentPrice === 0
+      ) {
         setQuoteValue(undefined);
         return;
       }
@@ -2130,10 +2444,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
       let converted = 0;
 
-      if (activeTradeType === "buy") {
+      if (activeTradeType === 'buy') {
         converted = amt / currentPrice;
       } else {
-        if (inputCurrency === "TOKEN") {
+        if (inputCurrency === 'TOKEN') {
           converted = amt * currentPrice;
         } else {
           converted = amt / currentPrice;
@@ -2148,21 +2462,24 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   useEffect(() => {
     if (activeTradeType === 'sell') {
-      setInputCurrency('TOKEN')
+      setInputCurrency('TOKEN');
     } else if (activeTradeType === 'buy') {
-      setInputCurrency('MON')
+      setInputCurrency('MON');
     }
-  }, [activeTradeType])
+  }, [activeTradeType]);
 
   const formatNumberWithCommas = fmt;
 
   const handleTrade = async () => {
     if (!tradeAmount || !account.connected) return;
-    if (activeOrderType === "Limit" && !limitPrice) return;
+    if (activeOrderType === 'Limit' && !limitPrice) return;
 
-    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    const targetChainId =
+      settings.chainConfig[activechain]?.chainId || activechain;
     if (account.chainId !== targetChainId) {
-      walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
+      walletPopup.showChainSwitchRequired(
+        settings.chainConfig[activechain]?.name || 'Monad',
+      );
       setChain();
       return;
     }
@@ -2172,8 +2489,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     try {
       setIsSigning(true);
 
-      if (activeTradeType === "buy") {
-        txId = walletPopup.showBuyTransaction(tradeAmount, inputCurrency, token.symbol, token.image);
+      if (activeTradeType === 'buy') {
+        txId = walletPopup.showBuyTransaction(
+          tradeAmount,
+          inputCurrency,
+          token.symbol,
+          token.image,
+        );
 
         const valNum = parseFloat(tradeAmount);
         const value = BigInt(Math.round(valNum * 1e18));
@@ -2182,13 +2504,18 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           target: routerAddress,
           data: encodeFunctionData({
             abi: CrystalRouterAbi,
-            functionName: "buy",
+            functionName: 'buy',
             args: [true, token.tokenAddress as `0x${string}`, value, 0n],
           }),
           value,
         };
 
-        walletPopup.updateTransactionConfirming(txId, tradeAmount, inputCurrency, token.symbol);
+        walletPopup.updateTransactionConfirming(
+          txId,
+          tradeAmount,
+          inputCurrency,
+          token.symbol,
+        );
 
         await sendUserOperationAsync({ uo });
 
@@ -2196,16 +2523,16 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           tokenAmount: Number(quoteValue ?? 0),
           spentAmount: Number(tradeAmount),
           tokenSymbol: token.symbol,
-          currencyUnit: inputCurrency
+          currencyUnit: inputCurrency,
         });
 
-        terminalRefetch()
+        terminalRefetch();
       } else {
         txId = walletPopup.showSellTransaction(
           tradeAmount,
-          inputCurrency === "TOKEN" ? token.symbol : "MON",
+          inputCurrency === 'TOKEN' ? token.symbol : 'MON',
           token.symbol,
-          token.image
+          token.image,
         );
 
         let amountTokenWei: bigint;
@@ -2214,19 +2541,24 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
         const decimals = tokendict?.[token.id]?.decimals || 18;
 
-        if (inputCurrency === "TOKEN") {
-          amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * (10 ** Number(decimals))));
+        if (inputCurrency === 'TOKEN') {
+          amountTokenWei = BigInt(
+            Math.round(parseFloat(tradeAmount) * 10 ** Number(decimals)),
+          );
           isExactInput = true;
           monAmountWei = 0n;
         } else {
           monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
           // const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
           const tokensToSell = parseFloat(tradeAmount) / currentPrice;
-          amountTokenWei = BigInt(Math.round(tokensToSell * (10 ** Number(decimals))));
+          amountTokenWei = BigInt(
+            Math.round(tokensToSell * 10 ** Number(decimals)),
+          );
           isExactInput = false;
         }
 
-        const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
+        const currentBalance =
+          walletTokenBalances?.[userAddr]?.[token.id] || 0n;
         if (amountTokenWei > currentBalance) {
           amountTokenWei = currentBalance > 1n ? currentBalance - 1n : 0n;
         }
@@ -2235,14 +2567,24 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           throw new Error(walletPopup.texts.INSUFFICIENT_TOKEN_BALANCE);
         }
 
-        walletPopup.updateTransactionConfirming(txId, tradeAmount, inputCurrency === "TOKEN" ? token.symbol : "MON", token.symbol);
+        walletPopup.updateTransactionConfirming(
+          txId,
+          tradeAmount,
+          inputCurrency === 'TOKEN' ? token.symbol : 'MON',
+          token.symbol,
+        );
 
         const sellUo = {
           target: routerAddress as `0x${string}`,
           data: encodeFunctionData({
             abi: CrystalRouterAbi,
-            functionName: "sell",
-            args: [isExactInput, tokenAddress as `0x${string}`, amountTokenWei, monAmountWei],
+            functionName: 'sell',
+            args: [
+              isExactInput,
+              tokenAddress as `0x${string}`,
+              amountTokenWei,
+              monAmountWei,
+            ],
           }),
           value: 0n,
         };
@@ -2253,18 +2595,21 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           tokenAmount: Number(tradeAmount),
           receivedAmount: Number(quoteValue ?? 0),
           tokenSymbol: token.symbol,
-          currencyUnit: 'MON'
+          currencyUnit: 'MON',
         });
 
-        terminalRefetch()
+        terminalRefetch();
       }
 
-      setTradeAmount("");
-      setLimitPrice("");
+      setTradeAmount('');
+      setLimitPrice('');
       setSliderPercent(0);
     } catch (e: any) {
       console.error(e);
-      walletPopup.updateTransactionError(txId!, e?.message || walletPopup.texts.PLEASE_TRY_AGAIN);
+      walletPopup.updateTransactionError(
+        txId!,
+        e?.message || walletPopup.texts.PLEASE_TRY_AGAIN,
+      );
     } finally {
       setIsSigning(false);
     }
@@ -2275,10 +2620,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     const targetChainId =
       settings.chainConfig[activechain]?.chainId || activechain;
     if (account.chainId !== targetChainId)
-      return `${walletPopup.texts.SWITCH_CHAIN} to ${settings.chainConfig[activechain]?.name || "Monad"}`;
-    if (activeOrderType === "market")
-      return `${activeTradeType === "buy" ? "Buy" : "Sell"} ${token.symbol}`;
-    return `Set ${activeTradeType === "buy" ? "Buy" : "Sell"} Limit`;
+      return `${walletPopup.texts.SWITCH_CHAIN} to ${settings.chainConfig[activechain]?.name || 'Monad'}`;
+    if (activeOrderType === 'market')
+      return `${activeTradeType === 'buy' ? 'Buy' : 'Sell'} ${token.symbol}`;
+    return `Set ${activeTradeType === 'buy' ? 'Buy' : 'Sell'} Limit`;
   };
 
   const isTradeDisabled = () => {
@@ -2288,7 +2633,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     if (account.chainId !== targetChainId) return false;
     if (isSigning) return true;
     if (!tradeAmount) return true;
-    if (activeOrderType === "Limit" && !limitPrice) return true;
+    if (activeOrderType === 'Limit' && !limitPrice) return true;
     return false;
   };
 
@@ -2303,8 +2648,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         sellTransactions: 0,
         buyVolume: 0,
         sellVolume: 0,
-      }
-    };
+      };
+    }
 
     const volume = (g.buy_vol_native + g.sell_vol_native) / 1e18;
     const buyTransactions = g.buy_cnt;
@@ -2323,32 +2668,65 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   };
 
   const currentStats = readTf(
-    (selectedStatsTimeframe as '5m' | '1h' | '6h' | '24h') ?? '24h'
+    (selectedStatsTimeframe as '5m' | '1h' | '6h' | '24h') ?? '24h',
   );
 
-  const pctForTf = useCallback((tf: '5m' | '1h' | '6h' | '24h') => {
-    const g = (statsRaw as any)?.[tf];
-    if (!g) return '—';
-    let pct: number | null =
-      typeof g.change_pct === 'number' ? g.change_pct :
-        (g.start_price_native != null && g.last_price_native != null && g.start_price_native !== 0)
-          ? ((g.last_price_native - g.start_price_native) / g.start_price_native) * 100
-          : null;
-    if (pct == null || !isFinite(pct)) return '—';
-    const sign = pct > 0 ? '+' : '';
-    return `${sign}${pct.toFixed(2)}%`;
-  }, [statsRaw]);
+  const pctForTf = useCallback(
+    (tf: '5m' | '1h' | '6h' | '24h') => {
+      const g = (statsRaw as any)?.[tf];
+      if (!g) return '—';
+      let pct: number | null =
+        typeof g.change_pct === 'number'
+          ? g.change_pct
+          : g.start_price_native != null &&
+              g.last_price_native != null &&
+              g.start_price_native !== 0
+            ? ((g.last_price_native - g.start_price_native) /
+                g.start_price_native) *
+              100
+            : null;
+      if (pct == null || !isFinite(pct)) return '0%';
+      const sign = pct > 0 ? '+' : '';
+      return `${sign}${pct.toFixed(2)}%`;
+    },
+    [statsRaw],
+  );
 
   return (
     <div className="meme-interface-container">
       {notif && (
-        <div className={`meme-notif-popup ${notif.variant || 'info'}${notif.visible === false ? ' hide' : ''}`}
-          style={{ position: 'fixed', top: 24, right: 24, zIndex: 9999, minWidth: 260 }}>
+        <div
+          className={`meme-notif-popup ${notif.variant || 'info'}${notif.visible === false ? ' hide' : ''}`}
+          style={{
+            position: 'fixed',
+            top: 24,
+            right: 24,
+            zIndex: 9999,
+            minWidth: 260,
+          }}
+        >
           <div className="meme-notif-content">
             <div className="meme-notif-title">{notif.title}</div>
-            {notif.subtitle && <div className="meme-notif-subtitle">{notif.subtitle}</div>}
+            {notif.subtitle && (
+              <div className="meme-notif-subtitle">{notif.subtitle}</div>
+            )}
           </div>
-          <button className="meme-notif-close" onClick={closeNotif} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', position: 'absolute', top: 8, right: 8 }}>&times;</button>
+          <button
+            className="meme-notif-close"
+            onClick={closeNotif}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#fff',
+              fontSize: 18,
+              cursor: 'pointer',
+              position: 'absolute',
+              top: 8,
+              right: 8,
+            }}
+          >
+            &times;
+          </button>
         </div>
       )}
 
@@ -2356,7 +2734,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         <div
           className="meme-mobile-toggle-slider"
           style={{
-            transform: `translateX(${getSliderPosition(mobileActiveView) * 100}%)`
+            transform: `translateX(${getSliderPosition(mobileActiveView) * 100}%)`,
           }}
         />
         <button
@@ -2381,7 +2759,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
       <div className="memechartandtradesandordercenter">
         <div className="memecharttradespanel">
-          <div className={`meme-chart-container ${mobileActiveView !== 'chart' ? 'mobile-hidden' : ''}`}>
+          <div
+            className={`meme-chart-container ${mobileActiveView !== 'chart' ? 'mobile-hidden' : ''}`}
+          >
             <MemeChart
               token={token}
               data={chartData}
@@ -2393,11 +2773,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               isMarksVisible={trackedAddresses.length > 0}
             />
           </div>
-          <div className={`meme-trades-container ${mobileActiveView !== 'trades' ? 'mobile-hidden' : ''}`}>
+          <div
+            className={`meme-trades-container ${mobileActiveView !== 'trades' ? 'mobile-hidden' : ''}`}
+          >
             <MemeTradesComponent
               tokenList={tokenList}
               trades={trades}
-              market={{ id: token.id, quoteAddress: 'YOUR_QUOTE_ADDRESS', quoteAsset: 'USDC' }}
+              market={{
+                id: token.id,
+                quoteAddress: 'YOUR_QUOTE_ADDRESS',
+                quoteAsset: 'USDC',
+              }}
               tradesByMarket={tradesByMarket}
               markets={markets}
               tokendict={tokendict}
@@ -2419,7 +2805,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             />
           </div>
         </div>
-        <div className={`meme-ordercenter ${mobileActiveView !== 'ordercenter' ? 'mobile-hidden' : ''}`}>
+        <div
+          className={`meme-ordercenter ${mobileActiveView !== 'ordercenter' ? 'mobile-hidden' : ''}`}
+        >
           <MemeOrderCenter
             orderCenterHeight={orderCenterHeight}
             isVertDragging={isVertDragging}
@@ -2427,18 +2815,21 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             onHeightChange={(h) => setOrderCenterHeight(h)}
             onDragStart={() => {
               setIsVertDragging(true);
-              document.body.style.cursor = "row-resize";
-              document.body.style.userSelect = "none";
+              document.body.style.cursor = 'row-resize';
+              document.body.style.userSelect = 'none';
             }}
             onDragEnd={() => {
               setIsVertDragging(false);
-              document.body.style.cursor = "";
-              document.body.style.userSelect = "";
+              document.body.style.cursor = '';
+              document.body.style.userSelect = '';
             }}
             isWidgetOpen={isWidgetOpen}
             onToggleWidget={() => {
-              localStorage.setItem('crystal_quickbuy_widget_open', JSON.stringify(!isWidgetOpen));
-              setIsWidgetOpen(!isWidgetOpen)
+              localStorage.setItem(
+                'crystal_quickbuy_widget_open',
+                JSON.stringify(!isWidgetOpen),
+              );
+              setIsWidgetOpen(!isWidgetOpen);
             }}
             holders={holders}
             positions={positions}
@@ -2473,14 +2864,16 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             <div className="stat-group buys">
               <span className="stat-label">Buys</span>
               <span className="stat-value green">
-                {fmt(currentStats.buyTransactions, 0)} / ${fmt(currentStats.buyVolume * monUsdPrice, 1)}
+                {fmt(currentStats.buyTransactions, 0)} / $
+                {fmt(currentStats.buyVolume * monUsdPrice, 1)}
               </span>
             </div>
 
             <div className="stat-group sells">
               <span className="stat-label">Sells</span>
               <span className="stat-value red">
-                {fmt(currentStats.sellTransactions, 0)} / ${fmt(currentStats.sellVolume * monUsdPrice, 1)}
+                {fmt(currentStats.sellTransactions, 0)} / $
+                {fmt(currentStats.sellVolume * monUsdPrice, 1)}
               </span>
             </div>
 
@@ -2489,16 +2882,24 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               <span
                 className="stat-value"
                 style={{
-                  color: (currentStats.buyVolume - currentStats.sellVolume) >= 0 ? 'rgb(67 254 154)' : 'rgb(235 112 112)'
+                  color:
+                    currentStats.buyVolume - currentStats.sellVolume > 0
+                      ? 'rgb(67 254 154)'
+                      : currentStats.buyVolume - currentStats.sellVolume < 0
+                      ? 'rgb(235 112 112)'
+                      : 'white',
                 }}
               >
-                {(currentStats.buyVolume - currentStats.sellVolume) >= 0 ? '+' : ''}
-                ${fmt(Math.abs((currentStats.buyVolume - currentStats.sellVolume) * monUsdPrice), 1)}
+                {currentStats.buyVolume - currentStats.sellVolume < 0 ? '-' : ''}
+                $
+                {fmt(Math.abs((currentStats.buyVolume - currentStats.sellVolume) * monUsdPrice), 1)}
               </span>
             </div>
           </div>
 
-          <div className={`stats-hover-overlay ${hoveredStatsContainer ? 'visible' : ''}`}>
+          <div
+            className={`stats-hover-overlay ${hoveredStatsContainer ? 'visible' : ''}`}
+          >
             <div className="stats-blur-backdrop" />
 
             <div className="overlay-controls-grid">
@@ -2516,8 +2917,18 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         color: (() => {
                           const s = pctForTf(v);
                           if (s === '—') return 'var(--muted, #9a9ba4)';
-                          return s.startsWith('+') ? 'rgb(67 254 154)' : 'rgb(235 112 112)';
-                        })()
+
+                          const num = parseFloat(
+                            s.trim()
+                              .replace('−', '-')
+                              .replace(/[+%]/g, '')
+                          );
+
+                          if (!isFinite(num)) return 'var(--muted, #9a9ba4)';
+                          if (num === 0) return 'white';
+
+                          return num > 0 ? 'rgb(67 254 154)' : 'rgb(235 112 112)';
+                        })(),
                       }}
                     >
                       {pctForTf(v)}
@@ -2534,14 +2945,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         </div>
         <div className="meme-buy-sell-container">
           <button
-            className={`meme-buy-button ${activeTradeType === "buy" ? "active" : "inactive"}`}
-            onClick={() => setActiveTradeType("buy")}
+            className={`meme-buy-button ${activeTradeType === 'buy' ? 'active' : 'inactive'}`}
+            onClick={() => setActiveTradeType('buy')}
           >
             Buy
           </button>
           <button
-            className={`meme-sell-button ${activeTradeType === "sell" ? "active" : "inactive"}`}
-            onClick={() => setActiveTradeType("sell")}
+            className={`meme-sell-button ${activeTradeType === 'sell' ? 'active' : 'inactive'}`}
+            onClick={() => setActiveTradeType('sell')}
           >
             Sell
           </button>
@@ -2549,14 +2960,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         <div className="meme-trade-panel-content">
           <div className="meme-order-types">
             <button
-              className={`meme-order-type-button ${activeOrderType === "market" ? "active" : "inactive"}`}
-              onClick={() => setActiveOrderType("market")}
+              className={`meme-order-type-button ${activeOrderType === 'market' ? 'active' : 'inactive'}`}
+              onClick={() => setActiveOrderType('market')}
             >
               Market
             </button>
             <button
-              className={`meme-order-type-button ${activeOrderType === "Limit" ? "active" : "inactive"}`}
-              onClick={() => setActiveOrderType("Limit")}
+              className={`meme-order-type-button ${activeOrderType === 'Limit' ? 'active' : 'inactive'}`}
+              onClick={() => setActiveOrderType('Limit')}
             >
               Limit
             </button>
@@ -2574,7 +2985,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   </div>
                   <button
                     className="meme-balance-max-buy"
-                    onClick={() => setTradeAmount(formatTradeAmount(getCurrentMONBalance()))}
+                    onClick={() =>
+                      setTradeAmount(formatTradeAmount(getCurrentMONBalance()))
+                    }
                   >
                     MAX
                   </button>
@@ -2584,14 +2997,16 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 <>
                   <div className="meme-balance-display">
                     <img src={walleticon} className="meme-wallet-icon" />
-                    {formatNumberWithCommas(getCurrentTokenBalance(), 3)} {token.symbol}
+                    {formatNumberWithCommas(getCurrentTokenBalance(), 3)}{' '}
+                    {token.symbol}
                   </div>
                   <button
                     className="meme-balance-max-sell"
                     onClick={() => {
                       if (!account?.address || !token.id) return;
 
-                      const balance = walletTokenBalances[account.address]?.[token.id];
+                      const balance =
+                        walletTokenBalances[account.address]?.[token.id];
                       if (!balance || balance <= 0n) return;
 
                       const decimals = tokendict?.[token.id]?.decimals || 18;
@@ -2602,8 +3017,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       }
 
                       const maxAmountFormatted = customRound(
-                        Number(maxAmount) / (10 ** Number(decimals)),
-                        3
+                        Number(maxAmount) / 10 ** Number(decimals),
+                        3,
                       );
                       setTradeAmount(maxAmountFormatted);
                       setSliderPercent(100);
@@ -2614,7 +3029,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 </>
               )}
             </div>
-
           </div>
           <div className="meme-trade-input-wrapper">
             <input
@@ -2626,10 +3040,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             />
 
             <div className="meme-trade-currency">
-              <img className="meme-currency-monad-icon" src={monadicon} alt="MON" />
+              <img
+                className="meme-currency-monad-icon"
+                src={monadicon}
+                alt="MON"
+              />
             </div>
           </div>
-          {activeOrderType === "Limit" && (
+          {activeOrderType === 'Limit' && (
             <div className="meme-trade-input-wrapper">
               <input
                 type="number"
@@ -2641,7 +3059,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             </div>
           )}
           <div className="meme-balance-slider-wrapper">
-            {sliderMode === "presets" && (
+            {sliderMode === 'presets' && (
               <div className="meme-slider-container meme-presets-mode">
                 <div className="meme-preset-buttons">
                   {monPresets.map((preset: number, index: number) => (
@@ -2660,7 +3078,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         />
                       ) : (
                         <button
-                          className={`meme-preset-button ${isPresetEditMode ? 'edit-mode' : ''} ${selectedMonPreset === preset ? `active ${activeTradeType}` : ""}`}
+                          className={`meme-preset-button ${isPresetEditMode ? 'edit-mode' : ''} ${selectedMonPreset === preset ? `active ${activeTradeType}` : ''}`}
                           onClick={() => handlePresetButtonClick(preset, index)}
                         >
                           {preset}
@@ -2672,7 +3090,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     <button
                       className={`meme-preset-edit-button ${isPresetEditMode ? 'active' : ''}`}
                       onClick={handlePresetEditToggle}
-                      title={isPresetEditMode ? 'Exit Edit Mode' : 'Edit Presets'}
+                      title={
+                        isPresetEditMode ? 'Exit Edit Mode' : 'Edit Presets'
+                      }
                     >
                       <img
                         src={editicon}
@@ -2684,14 +3104,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 </div>
               </div>
             )}
-            {sliderMode === "increment" && (
+            {sliderMode === 'increment' && (
               <div className="meme-slider-container meme-increment-mode">
                 <button
                   className="meme-increment-button meme-minus"
                   onClick={() => {
-                    const newPercent = Math.max(0, sliderPercent - sliderIncrement);
+                    const newPercent = Math.max(
+                      0,
+                      sliderPercent - sliderIncrement,
+                    );
                     setSliderPercent(newPercent);
-                    if (activeTradeType === "buy") {
+                    if (activeTradeType === 'buy') {
                       const currentBalance = getCurrentMONBalance();
                       const newAmount = (currentBalance * newPercent) / 100;
                       setTradeAmount(newAmount.toString());
@@ -2706,14 +3129,19 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   −
                 </button>
                 <div className="meme-increment-display">
-                  <div className="meme-increment-amount">{sliderIncrement}%</div>
+                  <div className="meme-increment-amount">
+                    {sliderIncrement}%
+                  </div>
                 </div>
                 <button
                   className="meme-increment-button meme-plus"
                   onClick={() => {
-                    const newPercent = Math.min(100, sliderPercent + sliderIncrement);
+                    const newPercent = Math.min(
+                      100,
+                      sliderPercent + sliderIncrement,
+                    );
                     setSliderPercent(newPercent);
-                    if (activeTradeType === "buy") {
+                    if (activeTradeType === 'buy') {
                       const currentBalance = getCurrentMONBalance();
                       const newAmount = (currentBalance * newPercent) / 100;
                       setTradeAmount(newAmount.toString());
@@ -2729,12 +3157,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 </button>
               </div>
             )}
-            {sliderMode === "slider" && (
+            {sliderMode === 'slider' && (
               <div className="meme-slider-container meme-slider-mode">
                 <input
                   ref={sliderRef}
                   type="range"
-                  className={`meme-balance-amount-slider ${isDragging ? "dragging" : ""}`}
+                  className={`meme-balance-amount-slider ${isDragging ? 'dragging' : ''}`}
                   min="0"
                   max="100"
                   step="1"
@@ -2742,7 +3170,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   onChange={(e) => {
                     const percent = parseInt(e.target.value);
                     setSliderPercent(percent);
-                    if (activeTradeType === "buy") {
+                    if (activeTradeType === 'buy') {
                       const currentBalance = getCurrentMONBalance();
                       const newAmount = (currentBalance * percent) / 100;
                       setTradeAmount(formatTradeAmount(newAmount));
@@ -2759,13 +3187,16 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   }}
                   onMouseUp={() => setIsDragging(false)}
                   style={{
-                    background: `linear-gradient(to right, ${activeTradeType === 'buy' ? 'rgb(67, 254, 154)' : 'rgb(235, 112, 112)'
-                      } ${sliderPercent}%, rgb(28, 28, 31) ${sliderPercent}%)`,
+                    background: `linear-gradient(to right, ${
+                      activeTradeType === 'buy'
+                        ? 'rgb(67, 254, 154)'
+                        : 'rgb(235, 112, 112)'
+                    } ${sliderPercent}%, rgb(28, 28, 31) ${sliderPercent}%)`,
                   }}
                 />
                 <div
                   ref={popupRef}
-                  className={`meme-slider-percentage-popup ${isDragging ? "visible" : ""}`}
+                  className={`meme-slider-percentage-popup ${isDragging ? 'visible' : ''}`}
                 >
                   {sliderPercent}%
                 </div>
@@ -2779,13 +3210,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       data-percentage={markPercent}
                       onClick={() => {
                         setSliderPercent(markPercent);
-                        if (activeTradeType === "buy") {
+                        if (activeTradeType === 'buy') {
                           const currentBalance = getCurrentMONBalance();
-                          const newAmount = (currentBalance * markPercent) / 100;
+                          const newAmount =
+                            (currentBalance * markPercent) / 100;
                           setTradeAmount(newAmount.toString());
                         } else {
                           const currentBalance = getCurrentTokenBalance();
-                          const newAmount = (currentBalance * markPercent) / 100;
+                          const newAmount =
+                            (currentBalance * markPercent) / 100;
                           setTradeAmount(newAmount.toString());
                         }
                         positionPopup(markPercent);
@@ -2814,16 +3247,20 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               </Tooltip>
             </div>
           </div>
-          {activeTradeType === "buy" && (
+          {activeTradeType === 'buy' && (
             <div className="meme-advanced-trading-section">
               <div className="meme-advanced-trading-toggle">
                 <div className="meme-advanced-trading-header">
                   <div className="meme-advanced-trading-icon-label">
-                    <span className="meme-advanced-trading-label">Advanced Trading Strategy</span>
+                    <span className="meme-advanced-trading-label">
+                      Advanced Trading Strategy
+                    </span>
                   </div>
                   <ToggleSwitch
                     checked={advancedTradingEnabled}
-                    onChange={() => setAdvancedTradingEnabled(!advancedTradingEnabled)}
+                    onChange={() =>
+                      setAdvancedTradingEnabled(!advancedTradingEnabled)
+                    }
                   />
                 </div>
 
@@ -2832,7 +3269,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     {advancedOrders.map((order) => (
                       <div key={order.id} className="meme-advanced-order-item">
                         <div className="meme-advanced-order-inputs">
-                          {(order.type === 'takeProfit' || order.type === 'stopLoss') && (
+                          {(order.type === 'takeProfit' ||
+                            order.type === 'stopLoss') && (
                             <>
                               <div className="meme-advanced-order-input-group">
                                 <svg
@@ -2845,11 +3283,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
                                   style={{
-                                    transform: order.type === 'stopLoss' ? 'rotate(180deg)' : 'none',
+                                    transform:
+                                      order.type === 'stopLoss'
+                                        ? 'rotate(180deg)'
+                                        : 'none',
                                     paddingRight: '2px',
                                   }}
                                 >
-                                  <path d="m5 12 7-7 7 7" /><path d="M12 19V5" />
+                                  <path d="m5 12 7-7 7 7" />
+                                  <path d="M12 19V5" />
                                 </svg>
                                 <span className="meme-advanced-order-input-label">
                                   {order.type === 'takeProfit' ? 'TP' : 'SL'}
@@ -2858,75 +3300,160 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                                   type="text"
                                   className="meme-advanced-order-input"
                                   value={order.percentage || ''}
-                                  onChange={(e) => handleAdvancedOrderUpdate(order.id, 'percentage', e.target.value)}
-                                  placeholder={order.type === 'takeProfit' ? '+0' : '-0'}
+                                  onChange={(e) =>
+                                    handleAdvancedOrderUpdate(
+                                      order.id,
+                                      'percentage',
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder={
+                                    order.type === 'takeProfit' ? '+0' : '-0'
+                                  }
                                 />
-                                <span className="meme-advanced-order-unit">%</span>
+                                <span className="meme-advanced-order-unit">
+                                  %
+                                </span>
                               </div>
                               <div className="meme-advanced-order-input-group">
-                                <span className="meme-advanced-order-input-label">Amount</span>
+                                <span className="meme-advanced-order-input-label">
+                                  Amount
+                                </span>
                                 <input
                                   type="number"
                                   className="meme-advanced-order-input"
                                   value={order.amount || ''}
-                                  onChange={(e) => handleAdvancedOrderUpdate(order.id, 'amount', e.target.value)}
+                                  onChange={(e) =>
+                                    handleAdvancedOrderUpdate(
+                                      order.id,
+                                      'amount',
+                                      e.target.value,
+                                    )
+                                  }
                                   placeholder="0"
                                 />
-                                <span className="meme-advanced-order-unit">%</span>
+                                <span className="meme-advanced-order-unit">
+                                  %
+                                </span>
                               </div>
                               <button
                                 className="meme-advanced-order-remove"
-                                onClick={() => handleAdvancedOrderRemove(order.id)}
+                                onClick={() =>
+                                  handleAdvancedOrderRemove(order.id)
+                                }
                               >
-                                <img src={trash} className="meme-advanced-order-remove-icon" alt="Remove" width="14" height="14" />
+                                <img
+                                  src={trash}
+                                  className="meme-advanced-order-remove-icon"
+                                  alt="Remove"
+                                  width="14"
+                                  height="14"
+                                />
                               </button>
                             </>
                           )}
                           {order.type === 'devSell' && (
                             <>
                               <div className="meme-advanced-order-input-group">
-                                <svg className="advanced-order-type-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="rgb(154 155 164)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M12 17V3" /><path d="m6 11 6 6 6-6" /><path d="M19 21H5" />
+                                <svg
+                                  className="advanced-order-type-icon"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="rgb(154 155 164)"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M12 17V3" />
+                                  <path d="m6 11 6 6 6-6" />
+                                  <path d="M19 21H5" />
                                 </svg>
-                                <span className="meme-advanced-order-input-label">Sell Amount on Dev Sell</span>
+                                <span className="meme-advanced-order-input-label">
+                                  Sell Amount on Dev Sell
+                                </span>
                                 <input
                                   type="number"
                                   className="meme-advanced-order-input"
                                   value={order.percentage || ''}
-                                  onChange={(e) => handleAdvancedOrderUpdate(order.id, 'percentage', e.target.value)}
+                                  onChange={(e) =>
+                                    handleAdvancedOrderUpdate(
+                                      order.id,
+                                      'percentage',
+                                      e.target.value,
+                                    )
+                                  }
                                   placeholder="0"
                                 />
-                                <span className="meme-advanced-order-unit">%</span>
+                                <span className="meme-advanced-order-unit">
+                                  %
+                                </span>
                               </div>
                               <button
                                 className="meme-advanced-order-remove"
-                                onClick={() => handleAdvancedOrderRemove(order.id)}
+                                onClick={() =>
+                                  handleAdvancedOrderRemove(order.id)
+                                }
                               >
-                                <img src={trash} className="meme-advanced-order-remove-icon" alt="Remove" width="14" height="14" />
+                                <img
+                                  src={trash}
+                                  className="meme-advanced-order-remove-icon"
+                                  alt="Remove"
+                                  width="14"
+                                  height="14"
+                                />
                               </button>
                             </>
                           )}
                           {order.type === 'migration' && (
                             <>
                               <div className="meme-advanced-order-input-group">
-                                <svg className="advanced-order-type-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="rgb(154 155 164)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="m6 17 5-5-5-5" /><path d="m13 17 5-5-5-5" />
+                                <svg
+                                  className="advanced-order-type-icon"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="rgb(154 155 164)"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="m6 17 5-5-5-5" />
+                                  <path d="m13 17 5-5-5-5" />
                                 </svg>
-                                <span className="meme-advanced-order-input-label">Sell Amount on Migration</span>
+                                <span className="meme-advanced-order-input-label">
+                                  Sell Amount on Migration
+                                </span>
                                 <input
                                   type="number"
                                   className="meme-advanced-order-input"
                                   value={order.percentage || ''}
-                                  onChange={(e) => handleAdvancedOrderUpdate(order.id, 'percentage', e.target.value)}
+                                  onChange={(e) =>
+                                    handleAdvancedOrderUpdate(
+                                      order.id,
+                                      'percentage',
+                                      e.target.value,
+                                    )
+                                  }
                                   placeholder="0"
                                 />
-                                <span className="meme-advanced-order-unit">%</span>
+                                <span className="meme-advanced-order-unit">
+                                  %
+                                </span>
                               </div>
                               <button
                                 className="meme-advanced-order-remove"
-                                onClick={() => handleAdvancedOrderRemove(order.id)}
+                                onClick={() =>
+                                  handleAdvancedOrderRemove(order.id)
+                                }
                               >
-                                <img src={trash} className="meme-advanced-order-remove-icon" alt="Remove" width="14" height="14" />
+                                <img
+                                  src={trash}
+                                  className="meme-advanced-order-remove-icon"
+                                  alt="Remove"
+                                  width="14"
+                                  height="14"
+                                />
                               </button>
                             </>
                           )}
@@ -2938,11 +3465,24 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       <div className="meme-advanced-add-container">
                         <button
                           className="meme-advanced-add-button"
-                          onClick={() => setShowAdvancedDropdown(!showAdvancedDropdown)}
+                          onClick={() =>
+                            setShowAdvancedDropdown(!showAdvancedDropdown)
+                          }
                         >
                           <span>Add</span>
-                          <svg className="meme-advanced-add-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                          <svg
+                            className="meme-advanced-add-icon"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="currentColor"
+                          >
+                            <path
+                              d="M8 3v10M3 8h10"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                            />
                           </svg>
                         </button>
 
@@ -2950,10 +3490,23 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                           <div className="meme-advanced-dropdown">
                             <button
                               className="meme-advanced-dropdown-item"
-                              onClick={() => handleAdvancedOrderAdd('takeProfit')}
+                              onClick={() =>
+                                handleAdvancedOrderAdd('takeProfit')
+                              }
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(154 155 164)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="m5 12 7-7 7 7" /><path d="M12 19V5" />
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="rgb(154 155 164)"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="m5 12 7-7 7 7" />
+                                <path d="M12 19V5" />
                               </svg>
                               Take Profit
                             </button>
@@ -2961,8 +3514,19 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                               className="meme-advanced-dropdown-item"
                               onClick={() => handleAdvancedOrderAdd('stopLoss')}
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(154 155 164)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 5v14" /><path d="m19 12-7 7-7-7" />
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="rgb(154 155 164)"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M12 5v14" />
+                                <path d="m19 12-7 7-7-7" />
                               </svg>
                               Stop Loss
                             </button>
@@ -2970,17 +3534,42 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                               className="meme-advanced-dropdown-item"
                               onClick={() => handleAdvancedOrderAdd('devSell')}
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(154 155 164)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 17V3" /><path d="m6 11 6 6 6-6" /><path d="M19 21H5" />
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="rgb(154 155 164)"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M12 17V3" />
+                                <path d="m6 11 6 6 6-6" />
+                                <path d="M19 21H5" />
                               </svg>
                               Sell on Dev Sell
                             </button>
                             <button
                               className="meme-advanced-dropdown-item"
-                              onClick={() => handleAdvancedOrderAdd('migration')}
+                              onClick={() =>
+                                handleAdvancedOrderAdd('migration')
+                              }
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(154 155 164)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="m6 17 5-5-5-5" /><path d="m13 17 5-5-5-5" />
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="rgb(154 155 164)"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="m6 17 5-5-5-5" />
+                                <path d="m13 17 5-5-5-5" />
                               </svg>
                               Migration
                             </button>
@@ -3002,7 +3591,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 const targetChainId =
                   settings.chainConfig[activechain]?.chainId || activechain;
                 if (account.chainId !== targetChainId) {
-                  walletPopup.showChainSwitchRequired(settings.chainConfig[activechain]?.name || "Monad");
+                  walletPopup.showChainSwitchRequired(
+                    settings.chainConfig[activechain]?.name || 'Monad',
+                  );
                   setChain();
                 } else {
                   handleTrade();
@@ -3012,25 +3603,35 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             className={`meme-trade-action-button ${activeTradeType}`}
             disabled={isTradeDisabled()}
           >
-
             {isSigning ? (
               <div className="meme-button-spinner"></div>
             ) : (
               getButtonText()
             )}
           </button>
-          <div className="meme-portfolio-stats" onClick={handleToggleCurrency} style={{ cursor: 'pointer' }}>
+          <div
+            className="meme-portfolio-stats"
+            onClick={handleToggleCurrency}
+            style={{ cursor: 'pointer' }}
+          >
             <div className="meme-portfolio-stat">
               <div className="meme-portfolio-label">Bought</div>
               <div className="meme-portfolio-value bought">
                 {showUSD ? (
                   <>
                     <span>$</span>
-                    {formatNumberWithCommas(userStats.valueBought * monUsdPrice, 1)}
+                    {formatNumberWithCommas(
+                      userStats.valueBought * monUsdPrice,
+                      1,
+                    )}
                   </>
                 ) : (
                   <>
-                    <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
+                    <img
+                      className="meme-mobile-monad-icon"
+                      src={monadicon}
+                      alt="MON"
+                    />
                     {formatNumberWithCommas(userStats.valueBought, 1)}
                   </>
                 )}
@@ -3042,11 +3643,18 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 {showUSD ? (
                   <>
                     <span>$</span>
-                    {formatNumberWithCommas(userStats.valueSold * monUsdPrice, 1)}
+                    {formatNumberWithCommas(
+                      userStats.valueSold * monUsdPrice,
+                      1,
+                    )}
                   </>
                 ) : (
                   <>
-                    <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
+                    <img
+                      className="meme-mobile-monad-icon"
+                      src={monadicon}
+                      alt="MON"
+                    />
                     {formatNumberWithCommas(userStats.valueSold, 1)}
                   </>
                 )}
@@ -3057,31 +3665,56 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               <div className="meme-portfolio-value holding">
                 {showUSD ? (
                   <>
-                    <span >$</span>
-                    {formatNumberWithCommas(userStats.balance * currentPrice * monUsdPrice, 3)}
+                    <span>$</span>
+                    {formatNumberWithCommas(
+                      userStats.balance * currentPrice * monUsdPrice,
+                      3,
+                    )}
                   </>
                 ) : (
                   <>
-                    <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
-                    {formatNumberWithCommas(userStats.balance * currentPrice, 3)}
+                    <img
+                      className="meme-mobile-monad-icon"
+                      src={monadicon}
+                      alt="MON"
+                    />
+                    {formatNumberWithCommas(
+                      userStats.balance * currentPrice,
+                      3,
+                    )}
                   </>
                 )}
               </div>
             </div>
             <div className="meme-portfolio-stat pnl">
               <div className="meme-portfolio-label">PnL</div>
-              <div className={`meme-portfolio-value pnl ${userStats.valueNet >= 0 ? 'positive' : 'negative'}`}>
+              <div
+                className={`meme-portfolio-value pnl ${userStats.valueNet >= 0 ? 'positive' : 'negative'}`}
+              >
                 {showUSD ? (
                   <>
                     <span>$</span>
-                    {userStats.valueNet >= 0 ? '+' : ''}{formatNumberWithCommas(userStats.valueNet * monUsdPrice, 1)}
-                    {userStats.valueBought > 0 ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)` : ' (0%)'}
+                    {userStats.valueNet >= 0 ? '+' : ''}
+                    {formatNumberWithCommas(
+                      userStats.valueNet * monUsdPrice,
+                      1,
+                    )}
+                    {userStats.valueBought > 0
+                      ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)`
+                      : ' (0%)'}
                   </>
                 ) : (
                   <>
-                    <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
-                    {userStats.valueNet >= 0 ? '+' : ''}{formatNumberWithCommas(userStats.valueNet, 1)}
-                    {userStats.valueBought > 0 ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)` : ' (0%)'}
+                    <img
+                      className="meme-mobile-monad-icon"
+                      src={monadicon}
+                      alt="MON"
+                    />
+                    {userStats.valueNet >= 0 ? '+' : ''}
+                    {formatNumberWithCommas(userStats.valueNet, 1)}
+                    {userStats.valueBought > 0
+                      ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)`
+                      : ' (0%)'}
                   </>
                 )}
               </div>
@@ -3092,7 +3725,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               <button
                 className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1 ? 'active' : ''}`}
                 onClick={() => {
-                  if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1) {
+                  if (
+                    settingsExpanded &&
+                    (settingsMode === 'buy'
+                      ? selectedBuyPreset
+                      : selectedSellPreset) === 1
+                  ) {
                     setSettingsExpanded(false);
                   } else {
                     handlePresetSelect(1);
@@ -3105,7 +3743,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               <button
                 className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2 ? 'active' : ''}`}
                 onClick={() => {
-                  if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2) {
+                  if (
+                    settingsExpanded &&
+                    (settingsMode === 'buy'
+                      ? selectedBuyPreset
+                      : selectedSellPreset) === 2
+                  ) {
                     setSettingsExpanded(false);
                   } else {
                     handlePresetSelect(2);
@@ -3118,7 +3761,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               <button
                 className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3 ? 'active' : ''}`}
                 onClick={() => {
-                  if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3) {
+                  if (
+                    settingsExpanded &&
+                    (settingsMode === 'buy'
+                      ? selectedBuyPreset
+                      : selectedSellPreset) === 3
+                  ) {
                     setSettingsExpanded(false);
                   } else {
                     handlePresetSelect(3);
@@ -3149,15 +3797,27 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 <div className="meme-settings-grid">
                   <div className="meme-setting-item">
                     <label className="meme-setting-label">
-                      <img src={slippage} alt="Slippage" className="meme-setting-label-icon-slippage" />
+                      <img
+                        src={slippage}
+                        alt="Slippage"
+                        className="meme-setting-label-icon-slippage"
+                      />
                       Slippage
                     </label>
                     <div className="meme-setting-input-wrapper">
                       <input
                         type="number"
                         className="meme-setting-input"
-                        value={settingsMode === 'buy' ? buySlippageValue : sellSlippageValue}
-                        onChange={(e) => settingsMode === 'buy' ? setBuySlippageValue(e.target.value) : setSellSlippageValue(e.target.value)}
+                        value={
+                          settingsMode === 'buy'
+                            ? buySlippageValue
+                            : sellSlippageValue
+                        }
+                        onChange={(e) =>
+                          settingsMode === 'buy'
+                            ? setBuySlippageValue(e.target.value)
+                            : setSellSlippageValue(e.target.value)
+                        }
                         step="0.1"
                         min="0"
                         max="100"
@@ -3168,15 +3828,27 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
                   <div className="meme-setting-item">
                     <label className="meme-setting-label">
-                      <img src={gas} alt="Priority Fee" className="meme-setting-label-icon" />
+                      <img
+                        src={gas}
+                        alt="Priority Fee"
+                        className="meme-setting-label-icon"
+                      />
                       Priority
                     </label>
                     <div className="meme-setting-input-wrapper">
                       <input
                         type="number"
                         className="meme-setting-input"
-                        value={settingsMode === 'buy' ? buyPriorityFee : sellPriorityFee}
-                        onChange={(e) => settingsMode === 'buy' ? setBuyPriorityFee(e.target.value) : setSellPriorityFee(e.target.value)}
+                        value={
+                          settingsMode === 'buy'
+                            ? buyPriorityFee
+                            : sellPriorityFee
+                        }
+                        onChange={(e) =>
+                          settingsMode === 'buy'
+                            ? setBuyPriorityFee(e.target.value)
+                            : setSellPriorityFee(e.target.value)
+                        }
                         step="0.001"
                         min="0"
                       />
@@ -3189,7 +3861,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           </div>
         </div>
 
-
         <div className="meme-token-info-container">
           <div className="meme-token-info-header">
             <h3 className="meme-token-info-title">Token Info</h3>
@@ -3198,7 +3869,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               onClick={() => setTokenInfoExpanded(!tokenInfoExpanded)}
             >
               <svg
-                className={`meme-token-info-arrow ${tokenInfoExpanded ? "expanded" : ""}`}
+                className={`meme-token-info-arrow ${tokenInfoExpanded ? 'expanded' : ''}`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 width="16"
@@ -3225,10 +3896,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       viewBox="0 0 32 32"
                       fill={
                         top10HoldingPercentage > 50
-                          ? "#eb7070ff"
+                          ? '#eb7070ff'
                           : top10HoldingPercentage > 30
-                            ? "#fbbf24"
-                            : "rgb(67 254 154)"
+                            ? '#fbbf24'
+                            : 'rgb(67 254 154)'
                       }
                       xmlns="http://www.w3.org/2000/svg"
                     >
@@ -3239,10 +3910,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       style={{
                         color:
                           top10HoldingPercentage > 50
-                            ? "#eb7070ff"
+                            ? '#eb7070ff'
                             : top10HoldingPercentage > 30
-                              ? "#fbbf24"
-                              : "rgb(67 254 154)",
+                              ? '#fbbf24'
+                              : 'rgb(67 254 154)',
                       }}
                     >
                       {top10HoldingPercentage.toFixed(2)}%
@@ -3259,10 +3930,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       viewBox="0 0 32 32"
                       fill={
                         token.devHolding > 50
-                          ? "#eb7070ff"
+                          ? '#eb7070ff'
                           : token.devHolding > 30
-                            ? "#fbbf24"
-                            : "rgb(67 254 154)"
+                            ? '#fbbf24'
+                            : 'rgb(67 254 154)'
                       }
                       xmlns="http://www.w3.org/2000/svg"
                     >
@@ -3273,10 +3944,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       style={{
                         color:
                           token.devHolding > 50
-                            ? "#eb7070ff"
+                            ? '#eb7070ff'
                             : token.devHolding > 30
-                              ? "#fbbf24"
-                              : "rgb(67 254 154)",
+                              ? '#fbbf24'
+                              : 'rgb(67 254 154)',
                       }}
                     >
                       {token.devHolding.toFixed(2)}%
@@ -3291,7 +3962,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       width="16"
                       height="16"
                       viewBox="0 0 24 24"
-                      fill={token.sniperHolding > 5 ? "#eb7070ff" : "rgb(67, 254, 154)"}
+                      fill={
+                        token.sniperHolding > 5
+                          ? '#eb7070ff'
+                          : 'rgb(67, 254, 154)'
+                      }
                       xmlns="http://www.w3.org/2000/svg"
                     >
                       <path d="M 11.244141 2.0019531 L 11.244141 2.7519531 L 11.244141 3.1542969 C 6.9115518 3.5321749 3.524065 6.919829 3.1445312 11.251953 L 2.7421875 11.251953 L 1.9921875 11.251953 L 1.9921875 12.751953 L 2.7421875 12.751953 L 3.1445312 12.751953 C 3.5225907 17.085781 6.9110367 20.473593 11.244141 20.851562 L 11.244141 21.253906 L 11.244141 22.003906 L 12.744141 22.003906 L 12.744141 21.253906 L 12.744141 20.851562 C 17.076343 20.47195 20.463928 17.083895 20.841797 12.751953 L 21.244141 12.751953 L 21.994141 12.751953 L 21.994141 11.251953 L 21.244141 11.251953 L 20.841797 11.251953 C 20.462285 6.9209126 17.074458 3.5337191 12.744141 3.1542969 L 12.744141 2.7519531 L 12.744141 2.0019531 L 11.244141 2.0019531 z M 11.244141 4.6523438 L 11.244141 8.0742188 C 9.6430468 8.3817751 8.3759724 9.6507475 8.0683594 11.251953 L 4.6425781 11.251953 C 5.0091295 7.7343248 7.7260437 5.0173387 11.244141 4.6523438 z M 12.744141 4.6523438 C 16.25959 5.0189905 18.975147 7.7358303 19.341797 11.251953 L 15.917969 11.251953 C 15.610766 9.6510551 14.344012 8.3831177 12.744141 8.0742188 L 12.744141 4.6523438 z M 11.992188 9.4980469 C 13.371637 9.4980469 14.481489 10.6041 14.492188 11.982422 L 14.492188 12.021484 C 14.481501 13.40006 13.372858 14.503906 11.992188 14.503906 C 10.606048 14.503906 9.4921875 13.389599 9.4921875 12.001953 C 9.4921875 10.614029 10.60482 9.4980469 11.992188 9.4980469 z M 4.6425781 12.751953 L 8.0683594 12.751953 C 8.3760866 14.352973 9.6433875 15.620527 11.244141 15.927734 L 11.244141 19.353516 C 7.7258668 18.988181 5.0077831 16.270941 4.6425781 12.751953 z M 15.917969 12.751953 L 19.34375 12.751953 C 18.97855 16.26893 16.261295 18.986659 12.744141 19.353516 L 12.744141 15.927734 C 14.344596 15.619809 15.610176 14.35218 15.917969 12.751953 z" />
@@ -3301,10 +3976,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       style={{
                         color:
                           token.sniperHolding > 50
-                            ? "#eb7070ff"
+                            ? '#eb7070ff'
                             : token.sniperHolding > 30
-                              ? "#fbbf24"
-                              : "rgb(67 254 154)",
+                              ? '#fbbf24'
+                              : 'rgb(67 254 154)',
                       }}
                     >
                       {token.sniperHolding.toFixed(2)}%
@@ -3321,10 +3996,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       viewBox="0 0 32 32"
                       fill={
                         token.insiderHolding > 50
-                          ? "#eb7070ff"
+                          ? '#eb7070ff'
                           : token.insiderHolding > 30
-                            ? "#fbbf24"
-                            : "rgb(67 254 154)"
+                            ? '#fbbf24'
+                            : 'rgb(67 254 154)'
                       }
                       xmlns="http://www.w3.org/2000/svg"
                     >
@@ -3335,10 +4010,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       style={{
                         color:
                           token.insiderHolding > 50
-                            ? "#eb7070ff"
+                            ? '#eb7070ff'
                             : token.insiderHolding > 30
-                              ? "#fbbf24"
-                              : "rgb(67 254 154)",
+                              ? '#fbbf24'
+                              : 'rgb(67 254 154)',
                       }}
                     >
                       {token.insiderHolding.toFixed(2)}%
@@ -3361,8 +4036,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     <span
                       className="meme-token-info-value"
                       style={{
-                        color:
-                          "#ced0df"
+                        color: '#ced0df',
                       }}
                     >
                       {holders.length}
@@ -3385,8 +4059,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     <span
                       className="meme-token-info-value"
                       style={{
-                        color:
-                          "#ced0df"
+                        color: '#ced0df',
                       }}
                     >
                       {token.proTraders}
@@ -3400,11 +4073,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   <div className="address-top">
                     <div className="meme-address-content">
                       <img className="meme-contract-icon" src={contract} />
-                      <span className="meme-address-title">CA:</span>{" "}
+                      <span className="meme-address-title">CA:</span>{' '}
                       <Tooltip content="Copy contract address">
                         <span
                           className="meme-explorer-link"
-                          onClick={() => copyToClipboard(token.id, 'Contract address copied')}
+                          onClick={() =>
+                            copyToClipboard(token.id, 'Contract address copied')
+                          }
                         >
                           {token.id.slice(0, 15)}...{token.id.slice(-4)}
                         </span>
@@ -3430,11 +4105,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   <div className="address-top">
                     <div className="meme-address-content">
                       <img className="meme-contract-icon" src={contract} />
-                      <span className="meme-address-title">DA:</span>{" "}
+                      <span className="meme-address-title">DA:</span>{' '}
                       <Tooltip content="Copy developer address">
                         <span
                           className="meme-explorer-link"
-                          onClick={() => copyToClipboard(token.dev, 'Dev address copied')}
+                          onClick={() =>
+                            copyToClipboard(token.dev, 'Dev address copied')
+                          }
                         >
                           {token.dev.slice(0, 15)}...{token.dev.slice(-4)}
                         </span>
@@ -3460,10 +4137,26 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       <Tooltip content="View funding wallet on MonadScan">
                         <div
                           className="funding-location"
-                          onClick={() => window.open(`https://testnet.monadscan.com/address/${token.dev}`, '_blank')}
+                          onClick={() =>
+                            window.open(
+                              `https://testnet.monadscan.com/address/${token.dev}`,
+                              '_blank',
+                            )
+                          }
                           style={{ cursor: 'pointer' }}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="funding-by-wallet-icon">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="funding-by-wallet-icon"
+                          >
                             <path d="m5 12 7-7 7 7" />
                             <path d="M12 19V5" />
                           </svg>
@@ -3472,12 +4165,30 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       </Tooltip>
                       <Tooltip content={`$${(4.0 * monUsdPrice).toFixed(2)}`}>
                         <div className="funding-amount">
-                          <img src={monadicon} className="meme-mobile-monad-icon" /> 4.00
+                          <img
+                            src={monadicon}
+                            className="meme-mobile-monad-icon"
+                          />{' '}
+                          4.00
                         </div>
                       </Tooltip>
                     </div>
                     <div className="funding-time-ago">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="funding-time-ago-icon"><path d="M12 6v6l4 2" /><circle cx="12" cy="12" r="10" /></svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="funding-time-ago-icon"
+                      >
+                        <path d="M12 6v6l4 2" />
+                        <circle cx="12" cy="12" r="10" />
+                      </svg>
                       <span>3 mo</span>
                     </div>
                   </div>
@@ -3491,10 +4202,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             <h3 className="meme-token-info-title">Similar Tokens</h3>
             <button
               className="meme-token-info-collapse-button"
-              onClick={() => setSimilarTokensExpanded(v => !v)}
+              onClick={() => setSimilarTokensExpanded((v) => !v)}
             >
               <svg
-                className={`meme-token-info-arrow ${similarTokensExpanded ? "expanded" : ""}`}
+                className={`meme-token-info-arrow ${similarTokensExpanded ? 'expanded' : ''}`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 width="16"
@@ -3509,19 +4220,26 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               </svg>
             </button>
           </div>
-          {similarTokensExpanded && (
-            Array.isArray(similarTokens) && similarTokens.length > 0 ? (
+          {similarTokensExpanded &&
+            (Array.isArray(similarTokens) && similarTokens.length > 0 ? (
               <ul className="meme-similar-token-list">
                 {similarTokens.map((t) => {
-                  const mcap = typeof t.marketCap === "number" ? t.marketCap : Number(t.marketCap || 0);
-                  const vol = typeof t.volume24h === "number" ? t.volume24h : Number(t.volume24h || 0);
-                  const img = t.imageUrl && t.imageUrl.length > 0 ? t.imageUrl : "";
+                  const mcap =
+                    typeof t.marketCap === 'number'
+                      ? t.marketCap
+                      : Number(t.marketCap || 0);
+                  const vol =
+                    typeof t.volume24h === 'number'
+                      ? t.volume24h
+                      : Number(t.volume24h || 0);
+                  const img =
+                    t.imageUrl && t.imageUrl.length > 0 ? t.imageUrl : '';
 
                   return (
                     <li
                       key={String(t.id)}
                       className="meme-similar-token-row"
-                      onClick={() => window.location.href = `/meme/${t.id}`}
+                      onClick={() => (window.location.href = `/meme/${t.id}`)}
                     >
                       <div className="meme-similar-token-left">
                         <div className="meme-similar-token-avatar">
@@ -3529,34 +4247,36 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                             <img src={img} alt={`${t.symbol || t.name} logo`} />
                           ) : (
                             <div className="meme-similar-token-avatar-fallback">
-                              {(t.symbol || t.name || "?").slice(0, 3).toUpperCase()}
+                              {(t.symbol || t.name || '?')
+                                .slice(0, 3)
+                                .toUpperCase()}
                             </div>
                           )}
                         </div>
 
                         <div className="meme-similar-token-meta">
                           <div className="meme-similar-token-title">
-                            <span className="meme-similar-token-name">{t.name || "Unknown"}</span>
+                            <span className="meme-similar-token-name">
+                              {t.name || 'Unknown'}
+                            </span>
                             <span className="meme-similar-token-symbol">
-                              {t.symbol ? ` ${t.symbol}` : ""}
+                              {t.symbol ? ` ${t.symbol}` : ''}
                             </span>
                           </div>
-                          <div className="meme-similar-token-id">{String(t.id)}</div>
+                          <div className="meme-similar-token-id">
+                            {String(t.id)}
+                          </div>
                         </div>
                       </div>
 
                       <div className="meme-similar-token-right">
                         <div className="meme-similar-token-stat">
                           <span className="label">MC</span>
-                          <span className="value">
-                            {fmt(mcap)}
-                          </span>
+                          <span className="value">{fmt(mcap)}</span>
                         </div>
                         <div className="meme-similar-token-stat">
                           <span className="label">24h Vol.</span>
-                          <span className="value">
-                            {fmt(vol)}
-                          </span>
+                          <span className="value">{fmt(vol)}</span>
                         </div>
                       </div>
                     </li>
@@ -3565,8 +4285,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               </ul>
             ) : (
               <div className="meme-similar-token-empty">No similar tokens</div>
-            )
-          )}
+            ))}
         </div>
       </div>
 
@@ -3594,8 +4313,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 onClick={() => setMobileWalletsExpanded(!mobileWalletsExpanded)}
                 title="Toggle Wallets"
               >
-                <img src={walleticon} alt="Wallet" className="meme-mobile-wallets-icon" />
-                <span className="meme-mobile-wallets-count">{subWallets.length}</span>
+                <img
+                  src={walleticon}
+                  alt="Wallet"
+                  className="meme-mobile-wallets-icon"
+                />
+                <span className="meme-mobile-wallets-count">
+                  {subWallets.length}
+                </span>
               </button>
             )}
           </div>
@@ -3625,7 +4350,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 </button>
               </div>
               <div className="meme-mobile-order-indicator">
-                <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
+                <img
+                  className="meme-mobile-monad-icon"
+                  src={monadicon}
+                  alt="MON"
+                />
                 0
               </div>
             </div>
@@ -3644,7 +4373,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   {amount}
                 </button>
               ))}
-
             </div>
           </div>
         ) : (
@@ -3671,7 +4399,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 </button>
               </div>
               <div className="meme-mobile-order-indicator">
-                <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
+                <img
+                  className="meme-mobile-monad-icon"
+                  src={monadicon}
+                  alt="MON"
+                />
                 0
               </div>
             </div>
@@ -3685,25 +4417,36 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     setMobileSelectedSellPercent(percent);
                     handleMobileTrade(percent, 'sell');
                   }}
-                  disabled={!account?.connected || walletTokenBalances?.[userAddr]?.[token.id] <= 0}
+                  disabled={
+                    !account?.connected ||
+                    walletTokenBalances?.[userAddr]?.[token.id] <= 0
+                  }
                 >
                   {percent}
                 </button>
               ))}
-
             </div>
           </div>
         )}
 
         <div className="meme-mobile-settings-display">
           <div className="meme-mobile-settings-item">
-            <img src={slippage} alt="Slippage" className="meme-mobile-settings-icon" />
+            <img
+              src={slippage}
+              alt="Slippage"
+              className="meme-mobile-settings-icon"
+            />
             <span className="meme-mobile-settings-value">
-              {mobileTradeType === 'buy' ? buySlippageValue : sellSlippageValue}%
+              {mobileTradeType === 'buy' ? buySlippageValue : sellSlippageValue}
+              %
             </span>
           </div>
           <div className="meme-mobile-settings-item">
-            <img src={gas} alt="Priority Fee" className="meme-mobile-settings-icon" />
+            <img
+              src={gas}
+              alt="Priority Fee"
+              className="meme-mobile-settings-icon"
+            />
             <span className="meme-mobile-settings-value">
               {mobileTradeType === 'buy' ? buyPriorityFee : sellPriorityFee}
             </span>
@@ -3713,20 +4456,30 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         {mobileWalletsExpanded && (
           <div className="meme-mobile-wallets-panel">
             <div className="meme-mobile-wallets-header">
-              <span className="meme-mobile-wallets-title">Wallets ({subWallets.length})</span>
+              <span className="meme-mobile-wallets-title">
+                Wallets ({subWallets.length})
+              </span>
               <button
                 className="meme-mobile-wallets-close"
                 onClick={() => setMobileWalletsExpanded(false)}
               >
-                <img src={closebutton} alt="Close" className="meme-mobile-wallets-close-icon" />
+                <img
+                  src={closebutton}
+                  alt="Close"
+                  className="meme-mobile-wallets-close-icon"
+                />
               </button>
             </div>
 
             <div className="meme-mobile-wallets-list">
               {subWallets.length === 0 ? (
                 <div className="meme-mobile-wallets-empty">
-                  <div className="meme-mobile-wallets-empty-text">No wallets available</div>
-                  <div className="meme-mobile-wallets-empty-subtitle">Create wallets in Portfolio section</div>
+                  <div className="meme-mobile-wallets-empty-text">
+                    No wallets available
+                  </div>
+                  <div className="meme-mobile-wallets-empty-subtitle">
+                    Create wallets in Portfolio section
+                  </div>
                 </div>
               ) : (
                 subWallets.map((wallet, index) => {
@@ -3737,14 +4490,18 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     <div
                       key={wallet.address}
                       className={`meme-mobile-wallet-item ${isActive ? 'active' : ''}`}
-                      onClick={() => handleMobileSetActiveWallet(wallet.privateKey)}
+                      onClick={() =>
+                        handleMobileSetActiveWallet(wallet.privateKey)
+                      }
                     >
                       <div className="meme-mobile-wallet-checkbox-container">
                         <input
                           type="checkbox"
                           className="meme-mobile-wallet-checkbox"
                           checked={isActive}
-                          onChange={() => handleMobileSetActiveWallet(wallet.privateKey)}
+                          onChange={() =>
+                            handleMobileSetActiveWallet(wallet.privateKey)
+                          }
                           onClick={(e) => e.stopPropagation()}
                         />
                       </div>
@@ -3754,13 +4511,20 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                           {getMobileWalletName(wallet.address, index)}
                         </div>
                         <div className="meme-mobile-wallet-address">
-                          {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                          {wallet.address.slice(0, 6)}...
+                          {wallet.address.slice(-4)}
                         </div>
                       </div>
 
                       <div className="meme-mobile-wallet-balance">
-                        <div className={`meme-mobile-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}>
-                          <img src={monadicon} className="meme-mobile-wallet-mon-icon" alt="MON" />
+                        <div
+                          className={`meme-mobile-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}
+                        >
+                          <img
+                            src={monadicon}
+                            className="meme-mobile-wallet-mon-icon"
+                            alt="MON"
+                          />
                           {formatNumberWithCommas(balance, 2)}
                         </div>
                       </div>
@@ -3775,8 +4539,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       <QuickBuyWidget
         isOpen={isWidgetOpen}
         onClose={() => {
-          localStorage.setItem('crystal_quickbuy_widget_open', JSON.stringify(false));
-          setIsWidgetOpen(false)
+          localStorage.setItem(
+            'crystal_quickbuy_widget_open',
+            JSON.stringify(false),
+          );
+          setIsWidgetOpen(false);
         }}
         tokenSymbol={token.symbol}
         tokenAddress={tokenAddress}

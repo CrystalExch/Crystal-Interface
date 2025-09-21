@@ -4,9 +4,9 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  position: relative;
   width: 100%;
   z-index: 1;
-  position: relative;
 }
 
 .meme-chart-options {
@@ -14,19 +14,19 @@
   display: flex;
   height: 25px;
   justify-content: space-between;
-  padding: 0px 10px;
   margin-top: 5px;
-  z-index: 1;
+  padding: 0px 10px;
   position: relative;
+  z-index: 1;
 }
 
 .meme-utc-clock {
-  display: flex;
   align-items: center;
-  gap: 5px;
+  color: rgb(209, 209, 250);
+  display: flex;
   font-family: 'Funnel Display', sans-serif;
   font-size: 12px;
-  color: rgb(209, 209, 250);
+  gap: 5px;
 }
 
 .meme-utc-label {
@@ -35,31 +35,31 @@
 }
 
 .meme-utc-time {
-  font-weight: 600;
   font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 
 .meme-timeframe-selector {
-  display: flex;
-  gap: 2px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 6px;
+  display: flex;
+  gap: 2px;
   padding: 2px;
 }
 
 .meme-timeframe-button {
   background: transparent;
   border: none;
+  border-radius: 4px;
   color: rgb(209, 209, 250);
   cursor: pointer;
   font-family: 'Funnel Display', sans-serif;
   font-size: 11px;
   font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: all 0.15s ease;
   min-width: 28px;
+  padding: 4px 8px;
   text-align: center;
+  transition: all 0.15s ease;
 }
 
 .meme-timeframe-button:hover {
@@ -92,12 +92,12 @@
 }
 
 .meme-basic-chart-container {
-  background-color: rgb(6, 6, 6);
-  flex-grow: 1;
-  position: relative;
-  display: flex;
   align-items: center;
+  background-color: rgb(6, 6, 6);
+  display: flex;
+  flex-grow: 1;
   justify-content: center;
+  position: relative;
 }
 
 .meme-chart-placeholder {
@@ -125,8 +125,8 @@ body:has(.markets-dropdown-content.visible) .meme-chartwrapper .advanced-chart-c
 
   .meme-timeframe-button {
     font-size: 10px;
-    padding: 3px 6px;
     min-width: 24px;
+    padding: 3px 6px;
   }
 
   .meme-utc-clock {

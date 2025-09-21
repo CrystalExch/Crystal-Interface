@@ -10,8 +10,6 @@ import monadicon from '../../assets/monadlogo.svg'
 
 
 interface PNLComponentProps {
-  isVisible: boolean;
-  onClose: () => void;
   windowWidth?: number;
 }
 
@@ -46,8 +44,6 @@ const ToggleSwitch: React.FC<{
 );
 
 const PNLComponent: React.FC<PNLComponentProps> = ({ 
-  isVisible, 
-  onClose, 
   windowWidth = window.innerWidth 
 }) => {
   const tokenIconUrl = './monad.svg';
@@ -562,14 +558,12 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
-  if (!isVisible) return null;
-
   const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
   // Only show hint if user hasn't interacted yet, during capture, and when scrolling is possible
   const showScrollHint = isUploadedImageSelected && (needsHorizontal || needsVertical) && !hasInteracted && !isCapturing;
 
   return (
-    <div className="pnl-modal-overlay" onClick={onClose}>
+    <div>
       <div
         className={`pnl-modal-container ${showRightPanel ? 'with-right-panel' : ''} ${windowWidth <= 768 ? 'mobile' : ''}`}
         onClick={e => e.stopPropagation()}

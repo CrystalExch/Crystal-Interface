@@ -151,7 +151,8 @@ import TokenBoard from './components/DegenToken/TokenBoard';
 import TokenDetail from './components/DegenToken/TokenDetail';
 import Tracker from './components/Tracker/Tracker.tsx';
 import Earn from './components/Earn/Earn.tsx';
-import Perps from './components/Perps/Perps.tsx'
+import Perps from './components/Perps/Perps.tsx';
+import PNLComponent from './components/PNLComponent/PNLComponent.tsx';
 
 // import config
 import { ChevronDown, Search, SearchIcon } from 'lucide-react';
@@ -176,6 +177,8 @@ function App() {
     client,
     waitForTxn: false,
   });
+  //PNL
+  const [showPNLModal, setShowPNLModal] = useState(false);
   const { signTypedDataAsync } = useSignTypedData({ client })
   const user = useUser();
   const { logout } = useLogout();
@@ -13313,7 +13316,12 @@ function App() {
           </div>
         ) : null}
         {popup === 27 ? ( // PNL popup
-          <></>
+        <div ref={popupref}>
+          <PNLComponent
+              windowWidth={window.innerWidth}
+            />
+            </div>
+          
         ) : null}
         {popup === 28 ? (
           <div className="onect-trading-selection-bg">
@@ -13869,7 +13877,8 @@ function App() {
                       </div>
                     </div>
                     <div className="perps-switch-icon" onClick={() => setpopup(30)}
-                    ></div>
+                    >                      <img  className="perps-switch-img"src={switchicon} />
+</div>
                     <div className="perps-deposit-input-wrapper">
                       <div className="perps-deposit-balance">
                         Receiving

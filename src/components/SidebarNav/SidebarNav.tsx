@@ -160,8 +160,11 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             </Link>
             <Link
               to="/perps"
-              className={`page-mode-button ${path === '/perps' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
-              onClick={handleLinkClick}
+              className={`page-mode-button ${path.startsWith('/perps') 
+                  ? 'active'
+                  : ''
+                } ${isResizing ? 'no-transition' : ''}`}              
+                onClick={handleLinkClick}
             >
               <img src={perps} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Perpetuals')}</span>
