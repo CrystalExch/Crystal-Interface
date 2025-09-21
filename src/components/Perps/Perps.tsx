@@ -721,6 +721,7 @@ const Perps: React.FC<PerpsProps> = ({
       <div className="perps-trade-modal">
         <div className="perps-top-section">
           <div className="perps-order-types-wrapper">
+            <div className="leverage-selector">Leverage: 20x</div>
             <div className="perps-order-types" ref={orderTypesContainerRef}>
               <button
                 ref={marketButtonRef}
@@ -967,12 +968,6 @@ const Perps: React.FC<PerpsProps> = ({
                     <div className="perps-bottom-section">
                         <button
                             className={`perps-trade-action-button ${activeTradeType}`}
-                            onClick={() => {
-                                console.log(`Executing ${activeTradeType} trade for ${tradeAmount}`);
-                                if (isTpSlEnabled) {
-                                    console.log(`TP Price: ${tpPrice}, SL Price: ${slPrice}`);
-                                }
-                            }}
                         >
                             {activeOrderType === "market"
                                 ? `${activeTradeType === "long" ? "Long" : "Short"} Market`

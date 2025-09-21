@@ -192,10 +192,20 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [hoveredToken, setHoveredToken] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [isPerpsDropdownOpen, setIsPerpsDropdownOpen] = useState(false);
+  const [isPerpsDropdownVisible, setIsPerpsDropdownVisible] = useState(false);
+  const [perpsSearchQuery, setPerpsSearchQuery] = useState('');
+  const [perpsActiveFilter, setPerpsActiveFilter] = useState('All');
+  const [perpsSelectedIndex, setPerpsSelectedIndex] = useState(0);
+  const [perpsShouldFocus, setPerpsShouldFocus] = useState(false);
   const filterTabsRef = useRef<HTMLDivElement>(null);
   const marketsListRef = useRef<HTMLDivElement>(null);
   const memeMetricsRef = useRef<HTMLDivElement>(null);
   const perpsMetricsRef = useRef<HTMLDivElement>(null);
+  const perpsFilterTabsRef = useRef<HTMLDivElement>(null);
+  const perpsMarketsListRef = useRef<HTMLDivElement>(null);
+  const perpsDropdownRef = useRef<HTMLDivElement>(null);
+  const perpsSearchInputRef = useRef<HTMLInputElement>(null);
 
   const isAdvancedView = isTradeRoute && !simpleView;
 
@@ -206,7 +216,25 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
     return () => clearInterval(interval);
   }, []);
-
+  const togglePerpsDropdown = () => {
+    if (!isPerpsDropdownOpen) {
+      setPerpsSearchQuery('');
+      setPerpsSelectedIndex(0);
+      setIsPerpsDropdownOpen(true);
+      setPerpsShouldFocus(true);
+      requestAnimationFrame(() => {
+        setIsPerpsDropdownVisible(true);
+      });
+    } else {
+      setIsPerpsDropdownVisible(false);
+      setPerpsShouldFocus(false);
+      setTimeout(() => {
+        setIsPerpsDropdownOpen(false);
+        setPerpsSearchQuery('');
+        setPerpsSelectedIndex(0);
+      }, 200);
+    }
+  };
   const bondingPercentage = useMemo(() => {
     if (!isMemeToken || !activeMarket) return 0;
     const TOTAL_SUPPLY = 1e9;
@@ -306,7 +334,25 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     );
   };
 
-  // Scroll gradient handler for meme token metrics
+  useEffect(() => {
+    if (isPerpsDropdownVisible && perpsShouldFocus) {
+      const focusInput = () => {
+        if (perpsSearchInputRef.current) {
+          perpsSearchInputRef.current.focus();
+
+          setTimeout(() => {
+            if (document.activeElement !== perpsSearchInputRef.current) {
+              perpsSearchInputRef.current?.focus();
+            }
+          }, 50);
+        }
+      };
+
+      focusInput();
+      requestAnimationFrame(focusInput);
+      setTimeout(focusInput, 100);
+    }
+  }, [isPerpsDropdownVisible, perpsShouldFocus]);
   useEffect(() => {
     const handleMemeScroll = () => {
       const container = memeMetricsRef.current;
@@ -525,6 +571,11 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       const dropdownContent =
         event.target instanceof Element &&
         event.target.closest('.markets-dropdown-content');
+      const perpsHeaderElement =
+        event.target instanceof Element && event.target.closest('.perps-interface-token-header-left');
+      const perpsDropdownContent =
+        event.target instanceof Element &&
+        event.target.closest('.perps-markets-dropdown-content');
 
       if (!symbolInfoElement && !dropdownContent) {
         setIsDropdownVisible(false);
@@ -535,15 +586,25 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           setSelectedIndex(0);
         }, 200);
       }
+
+      if (!perpsHeaderElement && !perpsDropdownContent) {
+        setIsPerpsDropdownVisible(false);
+        setPerpsShouldFocus(false);
+        setTimeout(() => {
+          setIsPerpsDropdownOpen(false);
+          setPerpsSearchQuery('');
+          setPerpsSelectedIndex(0);
+        }, 200);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       setShouldFocus(false);
+      setPerpsShouldFocus(false);
     };
   }, []);
-
   const handleSort = (field: 'volume' | 'price' | 'change' | 'favorites') => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
@@ -671,7 +732,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   if (isMemeToken && memeTokenData) {
     return (
-      <div 
+      <div
         className="meme-interface-token-info-container-meme"
       >
         <div className="meme-interface-token-header-info">
@@ -903,7 +964,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 <span className="meme-interface-metric-label">Your PNL</span>
                 <div className="meme-interface-pnl-value-container">
                   {userPnl && userPnl.totalPnl !== 0 && (
-                    <span 
+                    <span
                       className={`meme-interface-metric-value ${userPnl.totalPnl >= 0 ? 'positive' : 'negative'}`}
                     >
                       {userPnl.totalPnl >= 0 ? '+' : ''}${Math.abs(userPnl.totalPnl).toFixed(2)}
@@ -925,88 +986,250 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       </div>
     );
   }
-  if (isPerpsToken && perpsTokenData) {
-    return (
-      <div 
-        className="perps-interface-token-info-container"
-      >
-        <div className="perps-interface-token-header-info">
-          <div className="perps-interface-token-header-left">
-            <div className="perps-interface-token-icon-container">
-              <img
-                src={perpsTokenData.tokenIcon}
-                alt={perpsTokenData.baseAsset}
-                className="perps-interface-token-icon"
-              />
+if (isPerpsToken && perpsTokenData) {
+  return (
+    <div className="perps-interface-token-info-container">
+      <div className="perps-interface-token-header-info">
+        <div className="perps-interface-token-header-left" onClick={togglePerpsDropdown}>
+          <div className="perps-interface-token-icon-container">
+            <img
+              src={perpsTokenData.tokenIcon}
+              alt={perpsTokenData.baseAsset}
+              className="perps-interface-token-icon"
+            />
+          </div>
+          <div className="perps-interface-token-identity">
+            <div className="perps-interface-token-name-row">
+              <h1 className="perps-interface-token-symbol">{perpsTokenData.baseAsset}-{perpsTokenData.quoteAsset}</h1>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="perps-markets-dropdown-arrow"><path d="m6 9 6 6 6-6" /></svg>
             </div>
-            <div className="perps-interface-token-identity">
-              <div className="perps-interface-token-name-row">
-                <h1 className="perps-interface-token-symbol">{perpsTokenData.baseAsset}-{perpsTokenData.quoteAsset}</h1>
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="perps-markets-dropdown-arrow"><path d="m6 9 6 6 6-6"/></svg>
-              </div>
-              
-              <div className="perps-interface-token-meta-row">
-              </div>
+            <div className="perps-interface-token-meta-row">
             </div>
           </div>
+        </div>
 
-          <div className="perps-interface-token-header-right">
-            <div className="perps-interface-token-metrics" ref={perpsMetricsRef}>
-              <div className="perps-interface-token-metric">
-                <span className="perps-interface-metric-value perps-price-large">
-                  {perpsTokenData.price.toLocaleString()}
-                </span>
-              </div>
+        <div className="perps-interface-token-header-right">
+          <div className="perps-interface-token-metrics" ref={perpsMetricsRef}>
+            <div className="perps-interface-token-metric">
+              <span className="perps-interface-metric-value perps-price-large">
+                {perpsTokenData.price.toLocaleString()}
+              </span>
+            </div>
 
-              <div className="perps-interface-token-metric">
-                <span className="perps-interface-metric-label">Oracle</span>
-                <span className="perps-interface-metric-value perps-price-small">
-                  {(perpsTokenData.price * 0.9998).toLocaleString()}
-                </span>
-              </div>
+            <div className="perps-interface-token-metric">
+              <span className="perps-interface-metric-label">Oracle</span>
+              <span className="perps-interface-metric-value perps-price-small">
+                {(perpsTokenData.price * 0.9998).toLocaleString()}
+              </span>
+            </div>
 
-              <div className="perps-interface-token-metric">
-                <span className="perps-interface-metric-label">24h Change</span>
+            <div className="perps-interface-token-metric">
+              <span className="perps-interface-metric-label">24h Change</span>
+              <span
+                className={`perps-interface-metric-value ${perpsTokenData.change24h >= 0 ? 'positive' : 'negative'}`}
+              >
+                {perpsTokenData.change24h >= 0 ? '+' : ''}{perpsTokenData.change24h.toFixed(2)}%
+              </span>
+            </div>
+
+            <div className="perps-interface-token-metric">
+              <span className="perps-interface-metric-label">24h Volume</span>
+              <span className="perps-interface-metric-value perps-price-small">
+                ${(perpsTokenData.volume24h / 1e6).toFixed(2)}M
+              </span>
+            </div>
+
+            <div className="perps-interface-token-metric">
+              <span className="perps-interface-metric-label">Open Interest</span>
+              <span className="perps-interface-metric-value perps-price-small">
+                ${(perpsTokenData.openInterest / 1e6).toFixed(2)}M
+              </span>
+            </div>
+
+            <div className="perps-interface-token-metric">
+              <span className="perps-interface-metric-label">Funding / Next</span>
+              <div className="perps-interface-funding-container">
                 <span
-                  className={`perps-interface-metric-value ${perpsTokenData.change24h >= 0 ? 'positive' : 'negative'}`}
+                  className={`perps-interface-metric-value ${perpsTokenData.fundingRate >= 0 ? 'positive' : 'negative'}`}
                 >
-                  {perpsTokenData.change24h >= 0 ? '+' : ''}{perpsTokenData.change24h.toFixed(2)}%
+                  {perpsTokenData.fundingRate >= 0 ? '+' : ''}{(perpsTokenData.fundingRate * 100).toFixed(4)}%
                 </span>
-              </div>
-
-              <div className="perps-interface-token-metric">
-                <span className="perps-interface-metric-label">24h Volume</span>
                 <span className="perps-interface-metric-value perps-price-small">
-                  ${(perpsTokenData.volume24h / 1e6).toFixed(2)}M
+                  02:34:12
                 </span>
-              </div>
-
-              <div className="perps-interface-token-metric">
-                <span className="perps-interface-metric-label">Open Interest</span>
-                <span className="perps-interface-metric-value perps-price-small">
-                  ${(perpsTokenData.openInterest / 1e6).toFixed(2)}M
-                </span>
-              </div>
-
-              <div className="perps-interface-token-metric">
-                <span className="perps-interface-metric-label">Funding / Next</span>
-                <div className="perps-interface-funding-container">
-                  <span
-                    className={`perps-interface-metric-value ${perpsTokenData.fundingRate >= 0 ? 'positive' : 'negative'}`}
-                  >
-                    {perpsTokenData.fundingRate >= 0 ? '+' : ''}{(perpsTokenData.fundingRate * 100).toFixed(4)}%
-                  </span>
-                  <span className="perps-interface-metric-value perps-price-small">
-                     02:34:12
-                  </span>
-                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    );
-  }
+
+      {/* Perps Markets Dropdown */}
+      <div className="perps-markets-dropdown" ref={perpsDropdownRef}>
+        {isPerpsDropdownOpen && (
+          <div
+            className={`perps-markets-dropdown-content ${isPerpsDropdownVisible ? 'visible' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="markets-dropdown-header">
+              <div className="search-container">
+                <div className="search-wrapper">
+                  <Search className="search-icon" size={12} />
+                  <input
+                    ref={perpsSearchInputRef}
+                    type="text"
+                    placeholder="Search perps markets"
+                    className="search-input"
+                    value={perpsSearchQuery}
+                    onChange={(e) => setPerpsSearchQuery(e.target.value)}
+                    tabIndex={isPerpsDropdownVisible ? 0 : -1}
+                    autoComplete="off"
+                  />
+                  {perpsSearchQuery && (
+                    <button
+                      className="cancel-search"
+                      onClick={() => setPerpsSearchQuery('')}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="market-filter-tabs" ref={perpsFilterTabsRef}>
+              {['all', 'favorites', 'trending', 'altcoins', 'defi' ,'memes', 'layer 1', 'layer 2'].map((filter) => (
+                <button
+                  key={filter}
+                  className={`filter-tab ${perpsActiveFilter === filter ? 'active' : ''}`}
+                  onClick={() => setPerpsActiveFilter(filter)}
+                >
+                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            <div className="perps-markets-list-header">
+              <div className="favorites-header" />
+              <div>Market / Volume</div>
+              <div className="markets-dropdown-chart-container">Last Day</div>
+              <div className="markets-dropdown-price-container">Price</div>
+              <div className="perps-funding-header">8hr Funding</div>
+              <div className="perps-oi-header">Open Interest</div>
+            </div>
+
+            <div className="perps-markets-list" ref={perpsMarketsListRef}>
+              {[
+                {
+                  pair: 'BTC-USD',
+                  baseAsset: 'BTC',
+                  icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png',
+                  price: '43,250.00',
+                  change24h: '+2.45%',
+                  volume: '1.2B',
+                  funding8h: '+0.0125%',
+                  openInterest: '89.2M',
+                  change: 2.45
+                },
+                {
+                  pair: 'ETH-USD',
+                  baseAsset: 'ETH',
+                  icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.png',
+                  price: '2,580.00',
+                  change24h: '-1.23%',
+                  volume: '890M',
+                  funding8h: '-0.0089%',
+                  openInterest: '45.7M',
+                  change: -1.23
+                },
+                {
+                  pair: 'SOL-USD',
+                  baseAsset: 'SOL',
+                  icon: 'https://cryptologos.cc/logos/solana-sol-logo.png',
+                  price: '98.50',
+                  change24h: '+5.67%',
+                  volume: '340M',
+                  funding8h: '+0.0234%',
+                  openInterest: '12.3M',
+                  change: 5.67
+                }
+              ].filter(market =>
+                market.pair.toLowerCase().includes(perpsSearchQuery.toLowerCase())
+              ).map((market, index) => (
+                <div
+                  key={market.pair}
+                  className={`perps-market-item-container ${index === perpsSelectedIndex ? 'selected' : ''}`}
+                  onMouseEnter={() => setPerpsSelectedIndex(index)}
+                >
+                  <div
+                    className="perps-market-item"
+                    onClick={() => {
+                      setPerpsSearchQuery('');
+                      setIsPerpsDropdownVisible(false);
+                      setTimeout(() => {
+                        setIsPerpsDropdownOpen(false);
+                      }, 200);
+                    }}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                      className="dropdown-market-favorite-button"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                      </svg>
+                    </button>
+
+                    <div className="market-pair-section">
+                      <img src={market.icon} className="market-icon" />
+                      <div className="market-info">
+                        <div className="market-pair-container">
+                          <span className="market-pair">{market.pair}</span>
+                        </div>
+                        <span className="market-volume">${market.volume}</span>
+                      </div>
+                    </div>
+
+                    <div className="minichart-section">
+                      <div className="perps-mini-chart-placeholder">Chart</div>
+                    </div>
+
+
+                    <div className="perps-funding-section">
+                      <div className={`perps-funding-rate ${market.funding8h.startsWith('-') ? 'negative' : 'positive'}`}>
+                        {market.funding8h}
+                      </div>
+                    </div>
+
+                    <div className="perps-oi-section">
+                      <div className="perps-open-interest">${market.openInterest}</div>
+                    </div>
+                                        <div className="market-price-section">
+                      <div className="market-price">{market.price}</div>
+                      <div className={`market-change ${market.change < 0 ? 'negative' : 'positive'}`}>
+                        {market.change24h}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
   return (
     <div className={shouldShowTokenInfo}>
