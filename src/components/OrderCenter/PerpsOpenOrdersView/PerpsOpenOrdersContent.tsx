@@ -1,7 +1,7 @@
 import React from 'react';
 import TooltipLabel from '../../../components/TooltipLabel/TooltipLabel.tsx';
 import SortableHeaderCell from '../SortableHeaderCell/SortableHeaderCell';
-import PerpsOpenOrderItem from './PerpsOpenOrdersItem';
+import PerpsOpenOrdersItem from './PerpsOpenOrdersItem';
 import { useSortableData } from '../utils';
 import './PerpsOpenOrdersContent.css';
 
@@ -175,7 +175,7 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
 
       {currentItems.length > 0 ? (
         currentItems.map((item, index) => (
-          <PerpsOpenOrderItem
+          <PerpsOpenOrdersItem
             key={`order-${item.id || index}`}
             order={item}
             onMarketSelect={onMarketSelect}

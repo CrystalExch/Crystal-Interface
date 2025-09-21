@@ -3,14 +3,28 @@
   display: grid;
   font-size: 0.75rem;
   font-weight: 300;
-  grid-template-columns: 100px 70px 110px 70px 80px 90px 90px 80px 70px 80px 90px 80px;
-  min-height: 38px;
+  grid-template-columns: 
+    minmax(80px, 1fr) 
+    minmax(60px, 0.7fr) 
+    minmax(100px, 1.8fr) 
+    minmax(65px, 0.8fr) 
+    minmax(70px, 1fr) 
+    minmax(80px, 1.1fr) 
+    minmax(85px, 1.2fr) 
+    minmax(75px, 1fr) 
+    minmax(65px, 0.8fr) 
+    minmax(75px, 1fr) 
+    minmax(80px, 1.1fr) 
+    minmax(70px, 0.9fr);
+  min-height: 32px;
+  height: 32px;
   padding: 0;
   position: sticky;
   top: 0;
   user-select: none;
   background-color: rgb(6, 6, 6);
   z-index: 1;
+  width: 100%;
 }
 
 .perps-order-history-header .oc-cell {
@@ -22,6 +36,9 @@
   cursor: pointer;
   transition: color 0.2s ease;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .perps-order-history-header .oc-cell:hover {
@@ -37,23 +54,54 @@
   cursor: pointer;
 }
 
-@media (max-width: 1400px) {
-  .perps-order-history-header {
-    grid-template-columns: 90px 60px 100px 60px 70px 80px 80px 70px 60px 70px 80px 70px;
-  }
+/* Sortable header cell styling */
+.perps-order-history-header .sortable-header-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 8px 15px;
+  color: #ffffff73;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
-@media (max-width: 1200px) {
-  .perps-order-history-header {
-    grid-template-columns: 80px 50px 90px 50px 60px 70px 70px 60px 50px 60px 70px 60px;
-    font-size: 0.7rem;
-  }
+.perps-order-history-header .sortable-header-cell:hover {
+  color: #ffffff95;
 }
 
-@media (max-width: 1020px) {
-  .perps-order-history-header {
-    grid-template-columns: minmax(70px, 1fr) minmax(45px, 1fr) minmax(80px, 1fr) minmax(45px, 1fr) minmax(55px, 1fr) minmax(65px, 1fr) minmax(65px, 1fr) minmax(55px, 1fr) minmax(45px, 1fr) minmax(55px, 1fr) minmax(65px, 1fr) minmax(55px, 1fr);
-    font-size: 0.65rem;
-    overflow-x: auto;
-  }
+.perps-order-history-header .sortable-header-cell.active {
+  color: #ffffff;
+}
+
+.perps-order-history-header .sort-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.perps-order-history-header .sortable-header-cell:hover .sort-indicator {
+  opacity: 1;
+}
+
+.perps-order-history-header .sortable-header-cell.active .sort-indicator {
+  opacity: 1;
+}
+
+
+.perps-order-history-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.perps-order-history-table {
+  width: 100%;
+  min-width: 100%;
 }

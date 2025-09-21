@@ -3,14 +3,24 @@
   display: grid;
   font-size: 0.75rem;
   font-weight: 300;
-  grid-template-columns: 120px 140px 90px 100px 100px 120px 80px 120px;
-  min-height: 38px;
+  grid-template-columns: 
+    minmax(100px, 1.2fr) 
+    minmax(130px, 2.5fr) 
+    minmax(80px, 1fr) 
+    minmax(90px, 1.2fr) 
+    minmax(90px, 1.2fr) 
+    minmax(110px, 1.5fr) 
+    minmax(70px, 1fr) 
+    minmax(110px, 1.5fr);
+  min-height: 32px;
+  height: 32px;
   padding: 0;
   position: sticky;
   top: 0;
   user-select: none;
   background-color: rgb(6, 6, 6);
   z-index: 1;
+  width: 100%;
 }
 
 .perps-trade-history-header .oc-cell {
@@ -22,6 +32,9 @@
   cursor: pointer;
   transition: color 0.2s ease;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .perps-trade-history-header .oc-cell:hover {
@@ -36,23 +49,53 @@
   cursor: pointer;
 }
 
-@media (max-width: 1400px) {
-  .perps-trade-history-header {
-    grid-template-columns: 110px 130px 80px 90px 90px 110px 70px 110px;
-  }
+/* Sortable header cell styling */
+.perps-trade-history-header .sortable-header-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 8px 15px;
+  color: #ffffff73;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
-@media (max-width: 1200px) {
-  .perps-trade-history-header {
-    grid-template-columns: 100px 120px 70px 80px 80px 100px 60px 100px;
-    font-size: 0.7rem;
-  }
+.perps-trade-history-header .sortable-header-cell:hover {
+  color: #ffffff95;
 }
 
-@media (max-width: 1020px) {
-  .perps-trade-history-header {
-    grid-template-columns: minmax(90px, 1fr) minmax(110px, 1fr) minmax(60px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(90px, 1fr) minmax(50px, 1fr) minmax(90px, 1fr);
-    font-size: 0.65rem;
-    overflow-x: auto;
-  }
+.perps-trade-history-header .sortable-header-cell.active {
+  color: #ffffff;
+}
+
+.perps-trade-history-header .sort-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.perps-trade-history-header .sortable-header-cell:hover .sort-indicator {
+  opacity: 1;
+}
+
+.perps-trade-history-header .sortable-header-cell.active .sort-indicator {
+  opacity: 1;
+}
+
+.perps-trade-history-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.perps-trade-history-table {
+  width: 100%;
+  min-width: 100%;
 }

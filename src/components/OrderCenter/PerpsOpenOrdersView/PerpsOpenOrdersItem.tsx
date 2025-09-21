@@ -4,7 +4,7 @@ import { formatBalance } from '../../../utils/numberDisplayFormat';
 import { formatDisplay, formatSig, formatDateAndTime } from '../utils';
 import './PerpsOpenOrdersItem.css';
 
-interface PerpsOpenOrderItemProps {
+interface PerpsOpenOrdersItemProps {
   order: any;
   onMarketSelect: any;
   onCancelOrder?: (order: any) => void;
@@ -12,7 +12,7 @@ interface PerpsOpenOrderItemProps {
   isBlurred?: boolean;
 }
 
-const PerpsOpenOrderItem: React.FC<PerpsOpenOrderItemProps> = ({
+const PerpsOpenOrdersItem: React.FC<PerpsOpenOrdersItemProps> = ({
   order,
   onMarketSelect,
   onCancelOrder,
@@ -137,4 +137,4 @@ const PerpsOpenOrderItem: React.FC<PerpsOpenOrderItemProps> = ({
   );
 };
 
-export default React.memo(PerpsOpenOrderItem);
+export default React.memo(PerpsOpenOrdersItem);

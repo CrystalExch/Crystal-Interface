@@ -5,10 +5,23 @@
   color: #ffffff;
   display: grid;
   font-size: 0.8rem;
-  grid-template-columns: 100px 80px 120px 80px 90px 100px 100px 90px 80px 100px 100px 120px;
+  grid-template-columns: 
+    minmax(80px, 1fr) 
+    minmax(60px, 0.8fr) 
+    minmax(120px, 2fr) 
+    minmax(70px, 0.8fr) 
+    minmax(80px, 1fr) 
+    minmax(90px, 1.1fr) 
+    minmax(90px, 1.2fr) 
+    minmax(80px, 1fr) 
+    minmax(70px, 0.8fr) 
+    minmax(85px, 1fr) 
+    minmax(85px, 1fr) 
+    minmax(110px, 1.3fr);
   min-height: 52px;
   position: relative;
   transition: background-color 0.15s ease;
+  width: 100%;
 }
 
 .perps-open-order-item:hover {
@@ -24,6 +37,17 @@
   position: relative;
   text-overflow: ellipsis;
   white-space: nowrap;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.perps-open-order-item .oc-time {
+  font-size: 0.75rem;
+  color: #ffffff89;
+}
+
+.perps-open-order-item .order-type-cell {
+  justify-content: center;
 }
 
 .perps-open-order-item .order-type-badge {
@@ -34,6 +58,39 @@
   font-weight: 500;
   padding: 3px 6px;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.perps-open-order-item .market-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  cursor: pointer;
+}
+
+.perps-open-order-item .ordercenter-token-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.perps-open-order-item .market-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+
+.perps-open-order-item .market-name {
+  font-weight: 500;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .perps-open-order-item .direction-badge {
@@ -41,6 +98,7 @@
   font-size: 0.7rem;
   font-weight: 500;
   padding: 3px 8px;
+  white-space: nowrap;
 }
 
 .perps-open-order-item .direction-badge.long {
@@ -72,11 +130,28 @@
   font-size: 0.65rem;
 }
 
+.perps-open-order-item .value-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.perps-open-order-item .order-value {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.perps-open-order-item .price-value {
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
 .perps-open-order-item .reduce-only-badge {
   border-radius: 3px;
   font-size: 0.65rem;
   font-weight: 500;
   padding: 2px 6px;
+  white-space: nowrap;
 }
 
 .perps-open-order-item .reduce-only-badge.active {
@@ -131,6 +206,7 @@
   display: flex;
   gap: 6px;
   justify-content: center;
+  padding: 4px 8px;
 }
 
 .perps-open-order-item .order-action-btn {
@@ -143,6 +219,8 @@
   font-weight: 400;
   padding: 4px 10px;
   transition: all 0.15s ease;
+  white-space: nowrap;
+  min-width: 45px;
 }
 
 .perps-open-order-item .order-action-btn:hover {
@@ -156,31 +234,7 @@
   color: #f06767;
 }
 
-@media (max-width: 1400px) {
-  .perps-open-order-item {
-    grid-template-columns: 90px 70px 110px 70px 80px 90px 90px 80px 70px 90px 90px 100px;
-  }
-}
-
-@media (max-width: 1200px) {
-  .perps-open-order-item {
-    grid-template-columns: 80px 60px 100px 60px 70px 80px 80px 70px 60px 80px 80px 90px;
-    font-size: 0.75rem;
-  }
-  
-  .perps-open-order-item .oc-cell {
-    font-size: 0.75rem;
-  }
-}
-
-@media (max-width: 1020px) {
-  .perps-open-order-item {
-    grid-template-columns: minmax(70px, 1fr) minmax(50px, 1fr) minmax(90px, 1fr) minmax(50px, 1fr) minmax(60px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(60px, 1fr) minmax(50px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) 80px;
-    font-size: 0.7rem;
-  }
-  
-  .perps-open-order-item .oc-cell {
-    font-size: 0.7rem;
-    padding: 4px 10px;
-  }
+.perps-open-order-item .blurred {
+  filter: blur(4px);
+  pointer-events: none;
 }

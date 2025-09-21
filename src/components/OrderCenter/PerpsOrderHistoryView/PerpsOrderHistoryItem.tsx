@@ -49,7 +49,7 @@ const PerpsOrderHistoryItem: React.FC<PerpsOrderHistoryItemProps> = ({
         {formatDateAndTime(order.time)}
       </div>
 
-      <div className="oc-cell">
+      <div className="oc-cell order-type-cell">
         <span className="order-type-badge">
           {order.type || 'LIMIT'}
         </span>

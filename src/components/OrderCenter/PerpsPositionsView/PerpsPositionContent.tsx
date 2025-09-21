@@ -1,7 +1,7 @@
 import React from 'react';
 import TooltipLabel from '../../../components/TooltipLabel/TooltipLabel.tsx';
 import SortableHeaderCell from '../SortableHeaderCell/SortableHeaderCell';
-import PerpsPositionItem from './PerpsPositionsItem';
+import PerpsPositionItem from './PerpsPositionItem';
 import { useSortableData } from '../utils';
 import './PerpsPositionContent.css';
 
@@ -149,6 +149,7 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
             className="funding-label"
           />
         </SortableHeaderCell>
+        <div className="oc-cell actions">Actions</div>
       </div>
 
       {currentItems.length > 0 ? (

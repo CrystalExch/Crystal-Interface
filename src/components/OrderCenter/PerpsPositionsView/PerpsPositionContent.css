@@ -3,14 +3,27 @@
   display: grid;
   font-size: 0.75rem;
   font-weight: 300;
-  grid-template-columns: 35px 180px 100px 120px 100px 100px 120px 100px 100px 100px 140px;
-  min-height: 38px;
-  padding: 0;
+  grid-template-columns: 
+    35px 
+    minmax(140px, 2fr) 
+    minmax(80px, 1fr) 
+    minmax(100px, 1.2fr) 
+    minmax(90px, 1fr) 
+    minmax(90px, 1fr) 
+    minmax(100px, 1.2fr) 
+    minmax(90px, 1fr) 
+    minmax(80px, 1fr) 
+    minmax(80px, 1fr) 
+    minmax(120px, 1.4fr);
+  height: 32px;
+  min-height: 32px;   
+ padding: 0;
   position: sticky;
   top: 0;
   user-select: none;
   background-color: rgb(6, 6, 6);
   z-index: 1;
+  width: 100%;
 }
 
 .perps-positions-header .ghost {
@@ -27,6 +40,9 @@
   cursor: pointer;
   transition: color 0.2s ease;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .perps-positions-header .oc-cell:hover {
@@ -36,10 +52,12 @@
 .perps-positions-header .oc-cell.actions {
   cursor: default;
   justify-content: center;
+  color: #ffffff73;
+  font-weight: 400;
 }
 
-.position-value-label,
-.pnl-label,
+.position-value-label, 
+.pnl-label, 
 .funding-label {
   display: inline-flex;
   align-items: center;
@@ -47,23 +65,54 @@
   cursor: pointer;
 }
 
-@media (max-width: 1400px) {
-  .perps-positions-header {
-    grid-template-columns: 35px 160px 90px 100px 90px 90px 100px 90px 90px 90px 120px;
-  }
+/* Sortable header cell styling */
+.perps-positions-header .sortable-header-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 8px 15px;
+  color: #ffffff73;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
-@media (max-width: 1200px) {
-  .perps-positions-header {
-    grid-template-columns: 35px 150px 80px 90px 80px 80px 90px 80px 80px 80px 100px;
-    font-size: 0.7rem;
-  }
+.perps-positions-header .sortable-header-cell:hover {
+  color: #ffffff95;
 }
 
-@media (max-width: 1020px) {
-  .perps-positions-header {
-    grid-template-columns: 35px 140px minmax(70px, 1fr) minmax(80px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(80px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) 90px;
-    font-size: 0.65rem;
-    overflow-x: auto;
-  }
+.perps-positions-header .sortable-header-cell.active {
+  color: #ffffff;
+}
+
+.perps-positions-header .sort-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.perps-positions-header .sortable-header-cell:hover .sort-indicator {
+  opacity: 1;
+}
+
+.perps-positions-header .sortable-header-cell.active .sort-indicator {
+  opacity: 1;
+}
+
+/* Container wrapper to ensure full width */
+.perps-positions-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.perps-positions-table {
+  width: 100%;
+  min-width: 100%;
 }

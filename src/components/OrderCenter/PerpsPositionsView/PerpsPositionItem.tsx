@@ -75,7 +75,6 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
         </div>
       </div>
 
-      {/* Entry Price */}
       <div className="oc-cell">
         <span className="price-value">
           {formatSig(position.entryPrice)}

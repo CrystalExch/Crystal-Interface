@@ -5,10 +5,23 @@
   color: #ffffff;
   display: grid;
   font-size: 0.8rem;
-  grid-template-columns: 100px 70px 110px 70px 80px 90px 90px 80px 70px 80px 90px 80px;
+  grid-template-columns: 
+    minmax(80px, 1fr) 
+    minmax(60px, 0.7fr) 
+    minmax(100px, 1.8fr) 
+    minmax(65px, 0.8fr) 
+    minmax(70px, 1fr) 
+    minmax(80px, 1.1fr) 
+    minmax(85px, 1.2fr) 
+    minmax(75px, 1fr) 
+    minmax(65px, 0.8fr) 
+    minmax(75px, 1fr) 
+    minmax(80px, 1.1fr) 
+    minmax(70px, 0.9fr);
   min-height: 52px;
   position: relative;
   transition: background-color 0.15s ease;
+  width: 100%;
 }
 
 .perps-order-history-item:hover {
@@ -24,6 +37,17 @@
   position: relative;
   text-overflow: ellipsis;
   white-space: nowrap;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.perps-order-history-item .oc-time {
+  font-size: 0.75rem;
+  color: #ffffff89;
+}
+
+.perps-order-history-item .order-type-cell {
+  justify-content: center;
 }
 
 .perps-order-history-item .order-type-badge {
@@ -34,6 +58,39 @@
   font-weight: 500;
   padding: 3px 6px;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.perps-order-history-item .market-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  cursor: pointer;
+}
+
+.perps-order-history-item .ordercenter-token-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.perps-order-history-item .market-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+
+.perps-order-history-item .market-name {
+  font-weight: 500;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .perps-order-history-item .direction-badge {
@@ -41,6 +98,7 @@
   font-size: 0.7rem;
   font-weight: 500;
   padding: 3px 8px;
+  white-space: nowrap;
 }
 
 .perps-order-history-item .direction-badge.long {
@@ -73,11 +131,23 @@
   font-size: 0.65rem;
 }
 
+.perps-order-history-item .value-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.perps-order-history-item .order-value {
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
 .perps-order-history-item .reduce-only-badge {
   border-radius: 3px;
   font-size: 0.65rem;
   font-weight: 500;
   padding: 2px 6px;
+  white-space: nowrap;
 }
 
 .perps-order-history-item .reduce-only-badge.active {
@@ -134,6 +204,7 @@
   font-weight: 500;
   padding: 3px 8px;
   text-transform: capitalize;
+  white-space: nowrap;
 }
 
 .perps-order-history-item .status-badge.success {
@@ -172,31 +243,8 @@
   padding-right: 15px;
 }
 
-@media (max-width: 1400px) {
-  .perps-order-history-item {
-    grid-template-columns: 90px 60px 100px 60px 70px 80px 80px 70px 60px 70px 80px 70px;
-  }
+.perps-order-history-item .blurred {
+  filter: blur(4px);
+  pointer-events: none;
 }
 
-@media (max-width: 1200px) {
-  .perps-order-history-item {
-    grid-template-columns: 80px 50px 90px 50px 60px 70px 70px 60px 50px 60px 70px 60px;
-    font-size: 0.75rem;
-  }
-  
-  .perps-order-history-item .oc-cell {
-    font-size: 0.75rem;
-  }
-}
-
-@media (max-width: 1020px) {
-  .perps-order-history-item {
-    grid-template-columns: minmax(70px, 1fr) minmax(45px, 1fr) minmax(80px, 1fr) minmax(45px, 1fr) minmax(55px, 1fr) minmax(65px, 1fr) minmax(65px, 1fr) minmax(55px, 1fr) minmax(45px, 1fr) minmax(55px, 1fr) minmax(65px, 1fr) minmax(55px, 1fr);
-    font-size: 0.7rem;
-  }
-  
-  .perps-order-history-item .oc-cell {
-    font-size: 0.7rem;
-    padding: 4px 10px;
-  }
-}

@@ -5,10 +5,22 @@
   color: #ffffff;
   display: grid;
   font-size: 0.8rem;
-  grid-template-columns: 35px 180px 100px 120px 100px 100px 120px 100px 100px 100px 140px;
+  grid-template-columns: 
+    35px 
+    minmax(140px, 2fr) 
+    minmax(80px, 1fr) 
+    minmax(100px, 1.2fr) 
+    minmax(90px, 1fr) 
+    minmax(90px, 1fr) 
+    minmax(100px, 1.2fr) 
+    minmax(90px, 1fr) 
+    minmax(80px, 1fr) 
+    minmax(80px, 1fr) 
+    minmax(120px, 1.4fr);
   min-height: 52px;
   position: relative;
   transition: background-color 0.15s ease;
+  width: 100%;
 }
 
 .perps-position-item:hover {
@@ -24,6 +36,61 @@
   position: relative;
   text-overflow: ellipsis;
   white-space: nowrap;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.perps-position-item .order-favorite-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.perps-position-item .market-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.perps-position-item .ordercenter-token-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.perps-position-item .market-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.perps-position-item .market-name {
+  font-weight: 500;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perps-position-item .order-type {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  margin-top: 2px;
+}
+
+.perps-position-item .order-type.buy {
+  color: #65ed92;
+}
+
+.perps-position-item .order-type.sell {
+  color: #f06767;
 }
 
 .perps-position-item .position-size {
@@ -37,8 +104,29 @@
   color: #aaaecf;
   font-size: 0.65rem;
   font-weight: 500;
-  margin-left: 4px;
   padding: 2px 4px;
+  white-space: nowrap;
+}
+
+.perps-position-item .value-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.perps-position-item .order-value {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.perps-position-item .amount {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.perps-position-item .price-value {
+  font-size: 0.8rem;
+  font-weight: 400;
 }
 
 .perps-position-item .pnl-container {
@@ -98,6 +186,7 @@
   display: flex;
   gap: 6px;
   justify-content: center;
+  padding: 4px 8px;
 }
 
 .perps-position-item .position-action-btn {
@@ -110,6 +199,8 @@
   font-weight: 400;
   padding: 4px 10px;
   transition: all 0.15s ease;
+  white-space: nowrap;
+  min-width: 45px;
 }
 
 .perps-position-item .position-action-btn:hover {
@@ -123,31 +214,8 @@
   color: #f06767;
 }
 
-@media (max-width: 1400px) {
-  .perps-position-item {
-    grid-template-columns: 35px 160px 90px 100px 90px 90px 100px 90px 90px 90px 120px;
-  }
+.perps-position-item .blurred {
+  filter: blur(4px);
+  pointer-events: none;
 }
 
-@media (max-width: 1200px) {
-  .perps-position-item {
-    grid-template-columns: 35px 150px 80px 90px 80px 80px 90px 80px 80px 80px 100px;
-    font-size: 0.75rem;
-  }
-  
-  .perps-position-item .oc-cell {
-    font-size: 0.75rem;
-  }
-}
-
-@media (max-width: 1020px) {
-  .perps-position-item {
-    grid-template-columns: 35px 140px minmax(70px, 1fr) minmax(80px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(80px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) 90px;
-    font-size: 0.7rem;
-  }
-  
-  .perps-position-item .oc-cell {
-    font-size: 0.7rem;
-    padding: 4px 10px;
-  }
-}
