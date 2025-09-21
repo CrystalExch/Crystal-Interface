@@ -399,30 +399,32 @@ const Perps: React.FC<PerpsProps> = ({
 
   const { marketKey } = useParams<{ marketKey: string }>()
   const [exchangeConfig, setExchangeConfig] = useState();
+  const [markets, setMarkets] = useState<{ [key: string]: any }>({});
   const [contractLabels, setContractLabels] = useState();
   const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
-  const activeMarket = {};
   const [activeMarketKey, setActiveMarketKey] = useState(marketKey || 'BTCUSD');
+  const activeMarket = markets[activeMarketKey] || {};
 
   useEffect(() => {
     let liveStreamCancelled = false;
     let isAddressInfoFetching = false;
-    let startBlockNumber = '';
-    let endBlockNumber = '';
-
+    
     const fetchData = async () => {
       try {
-        const req = await fetch('/api/v1/public/meta/getMetaData', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        const result = await req.json();
+        const [metaRes, labelsRes] = await Promise.all([
+          fetch('/api/v1/public/meta/getMetaData', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json()),
+          fetch('/api/v1/public/contract-labels', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
+        ])
         if (liveStreamCancelled) return;
-        if (result?.data) {
-          setExchangeConfig(result.data)
-        }
+        if (metaRes?.data) setExchangeConfig(metaRes.data)
+        if (metaRes?.data) setMarkets(Object.fromEntries(metaRes.data.contractList.map((c: any) => {
+          const name = c.contractName.toUpperCase()
+          const quote = name.endsWith('USD') ? 'USD' : ''
+          const base = quote ? name.replace(quote, '') : name
+          return [c.contractName, { ...c, baseAsset: base, quoteAsset: quote }]
+        })))
+        if (labelsRes?.data) setContractLabels(labelsRes.data)
+
         /* const tradelogs = result[1].result;
         const orderlogs = result?.[2]?.result;
         const filllogs = result?.[3]?.result;
@@ -462,50 +464,20 @@ const Perps: React.FC<PerpsProps> = ({
       wsRef.current.onopen = async () => {
         const subscriptionMessages = [
           JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'sub1',
-            method: 'eth_subscribe',
-            params: [
-              'monadLogs',
-              {
-                address: router,
-                topics: [
-                  '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982',
-                ],
-              },
-            ],
-          }), ...(address?.slice(2) ? [JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'sub2',
-            method: 'eth_subscribe',
-            params: [
-              'monadLogs',
-              {
-                address: router,
-                topics: [
-                  '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c',
-                  null,
-                  '0x000000000000000000000000' + address?.slice(2),
-                ],
-              },
-            ],
-          })] : []),
-          ...(address?.slice(2) ? [JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'sub2',
-            method: 'eth_subscribe',
-            params: [
-              'monadLogs',
-              {
-                address: router,
-                topics: [
-                  '0xa195980963150be5fcca4acd6a80bf5a9de7f9c862258501b7c705e7d2c2d2f4',
-                  null,
-                  '0x000000000000000000000000' + address?.slice(2),
-                ],
-              },
-            ],
-          })] : [])
+            type: 'subscribe',
+            channel: 'ticker.all.1s',
+          }), JSON.stringify({
+            type: 'subscribe',
+            channel: `fundingRate.${activeMarket?.contractId}]`,
+          }),
+          JSON.stringify({
+            type: 'subscribe',
+            channel: `depth.${activeMarket?.contractId}.200]`,
+          }),
+          JSON.stringify({
+            type: 'subscribe',
+            channel: `trades.${activeMarket?.contractId}]`,
+          })
         ];
 
         pingIntervalRef.current = setInterval(() => {
@@ -526,8 +498,8 @@ const Perps: React.FC<PerpsProps> = ({
 
       wsRef.current.onmessage = (event) => {
         const message = JSON.parse(event.data);
-        if (message?.params?.result) {
-          const msg = message?.params?.result;
+        if (message?.content?.data) {
+          const msg = message?.content?.data;
           console.log(msg)
           /* let ordersChanged = false;
           let canceledOrdersChanged = false;
@@ -968,7 +940,6 @@ const Perps: React.FC<PerpsProps> = ({
                         <button
                             className={`perps-trade-action-button ${activeTradeType}`}
                             onClick={() => {
-                                console.log(`Executing ${activeTradeType} trade for ${tradeAmount}`);
                                 if (isTpSlEnabled) {
                                     console.log(`TP Price: ${tpPrice}, SL Price: ${slPrice}`);
                                 }
