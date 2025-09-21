@@ -2163,6 +2163,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               marketCap: price * TOTAL_SUPPLY,
               volume24h: Number(t.volumeNative || 0) / 1e18,
               timestamp: Number(t.timestamp ?? 0),
+              lastUpdatedAt: Number(t.lastUpdatedAt),
             };
           }),
         );
@@ -4265,6 +4266,26 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                           </div>
                           <div className="meme-similar-token-id">
                             {String(t.id)}
+                          </div>
+                          <div className="meme-similar-token-id">
+                            {
+                              (() => {
+                                const tsSec = Number(t.lastUpdatedAt);
+                                const nowSec = Math.floor(Date.now() / 1000);
+                                const diffSec = Math.max(0, nowSec - Math.floor(tsSec));
+
+                                if (diffSec < 60) return `${diffSec}s`;
+
+                                const m = Math.floor(diffSec / 60);
+                                if (m < 60) return `${m}m`;
+
+                                const h = Math.floor(m / 60);
+                                if (h < 24) return `${h}h`;
+
+                                const d = Math.floor(h / 24);
+                                return `${d}d`;
+                              })()
+                            }
                           </div>
                         </div>
                       </div>
