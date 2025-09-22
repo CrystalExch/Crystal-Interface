@@ -6393,13 +6393,13 @@ const [perpsMarketsData, setPerpsMarketsData] = useState([
 
           const variants: Array<{ baseAddr: string; quoteAddr: string }> = [];
           if (baseIsEthish) {
-            variants.push({ baseAddr: ETH_ADDR, quoteAddr: quoteAddr0 });   // ...MON
-            variants.push({ baseAddr: WETH_ADDR, quoteAddr: quoteAddr0 });  // ...WMON
+            variants.push({ baseAddr: ETH_ADDR, quoteAddr: quoteAddr0 });
+            variants.push({ baseAddr: WETH_ADDR, quoteAddr: quoteAddr0 });
           } else if (quoteIsEthish) {
-            variants.push({ baseAddr: baseAddr0, quoteAddr: ETH_ADDR });    // ...MON
-            variants.push({ baseAddr: baseAddr0, quoteAddr: WETH_ADDR });   // ...WMON
+            variants.push({ baseAddr: baseAddr0, quoteAddr: ETH_ADDR });
+            variants.push({ baseAddr: baseAddr0, quoteAddr: WETH_ADDR });
           } else {
-            variants.push({ baseAddr: baseAddr0, quoteAddr: quoteAddr0 });  // neither side is MON/WMON
+            variants.push({ baseAddr: baseAddr0, quoteAddr: quoteAddr0 });
           }
 
           for (const v of variants) {
@@ -6407,7 +6407,7 @@ const [perpsMarketsData, setPerpsMarketsData] = useState([
             const qTok = tokenDictLC[v.quoteAddr];
             if (!bTok || !qTok) continue;
 
-            const marketKey = `${bTok.ticker}${qTok.ticker}`; // keep WMON distinct
+            const marketKey = `${bTok.ticker}${qTok.ticker}`;
             const image = (bTok.image ?? settings.chainConfig[activechain].image ?? null);
             const website = (bTok.website ?? qTok.website ?? '');
 
