@@ -43,39 +43,54 @@ const OrderHighlightPopup: React.FC<OrderHighlightPopupProps> = ({
 
   const isLeft = orderbookPosition === 'left';
 
-const formatNumber = (num: number, decimals: number) => {
-  const safeDecimals = Math.max(0, Math.min(100, Math.floor(decimals)));
-  
-  return num.toLocaleString(undefined, {
-    minimumFractionDigits: safeDecimals,
-    maximumFractionDigits: safeDecimals,
-  });
-};
-
-const priceDecimals = (() => {
-  if (!priceFactor || priceFactor <= 0 || !isFinite(priceFactor)) {
-    return 2; 
-  }
-  
-  if (!highlightData.averagePrice || highlightData.averagePrice <= 0 || !isFinite(highlightData.averagePrice)) {
-    return 2; 
-  }
-  
-  try {
-    const calculation = Math.max(
-      0,
-      Math.floor(Math.log10(priceFactor)) +
-        Math.floor(
-          Math.log10(highlightData.averagePrice / 10 ** Math.log10(priceFactor)),
-        ),
-    );
+  const formatNumber = (num: number, decimals: number) => {
+    const safeDecimals = Math.max(0, Math.min(100, Math.floor(decimals)));
     
-    return isFinite(calculation) ? Math.max(0, Math.min(20, calculation)) : 2;
-  } catch (error) {
-    console.warn('Error calculating priceDecimals:', error);
-    return 2; 
-  }
-})();
+    return num.toLocaleString(undefined, {
+      minimumFractionDigits: safeDecimals,
+      maximumFractionDigits: safeDecimals,
+    });
+  };
+
+  const getDecimalPlaces = (num: number): number => {
+    const numStr = num.toString();
+    if (numStr.includes('.')) {
+      return numStr.split('.')[1].length;
+    }
+    return 0;
+  };
+
+  const priceDecimals = (() => {
+    if (!priceFactor || priceFactor <= 0 || !isFinite(priceFactor)) {
+      return 2; 
+    }
+    
+    if (!highlightData.averagePrice || highlightData.averagePrice <= 0 || !isFinite(highlightData.averagePrice)) {
+      return 2; 
+    }
+  
+    try {
+      const calculation = Math.max(
+        0,
+        Math.floor(Math.log10(priceFactor)) +
+          Math.floor(
+            Math.log10(highlightData.averagePrice / 10 ** Math.log10(priceFactor)),
+          ),
+      );
+      
+      return isFinite(calculation) ? Math.max(0, Math.min(20, calculation)) : 2;
+    } catch (error) {
+      console.warn('Error calculating priceDecimals:', error);
+      return 2; 
+    }
+  })();
+
+  const baseDecimals = (() => {
+    const sizeDecimals = getDecimalPlaces(highlightData.otherTotalAmount);
+    const totalSizeDecimals = getDecimalPlaces(highlightData.otherTotalAmount);
+    return Math.max(sizeDecimals, totalSizeDecimals);
+  })()
+
   return createPortal(
     <div
       ref={popupRef}
@@ -104,9 +119,8 @@ const priceDecimals = (() => {
         <span style={{color: '#ffffffef'}}>
           {t('total')} ({highlightData.otherUnit}):{' '}
         </span>
-        {formatNumber(
-          Number(highlightData.otherTotalAmount),
-          Math.max(2, priceDecimals + 1),
+        {formatCommas(
+          highlightData.otherTotalAmount.toFixed(baseDecimals)
         )}
       </div>
     </div>,

@@ -65,16 +65,16 @@ const OrderList: React.FC<OrderListProps> = ({
   };
 
   const maxDecimals = useMemo(() => {
+    if (amountsQuote === 'Quote') {
+      return 2;
+    }
+    
     let max = 0;
     roundedOrders.forEach((order) => {
       const sizeDecimals = getDecimalPlaces(order.size);
       const totalSizeDecimals = getDecimalPlaces(order.totalSize || 0);
       max = Math.max(max, sizeDecimals, totalSizeDecimals);
     });
-
-    if (amountsQuote === 'Quote') {
-      return 2;
-    }
 
     return max;
   }, [roundedOrders, amountsQuote]);
