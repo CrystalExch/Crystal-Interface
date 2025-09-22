@@ -133,10 +133,8 @@ const OrderList: React.FC<OrderListProps> = ({
   }, [
     selectedIndex,
     roundedOrders,
-    isBuyOrderList,
     amountsQuote,
     symbolQuote + symbolBase,
-    spreadPrice,
   ]);
 
   return (
@@ -188,6 +186,7 @@ const OrderList: React.FC<OrderListProps> = ({
             containerRef={containerRef}
             priceFactor={priceFactor}
             marketType={marketType}
+            maxDecimals={maxDecimals}
           />
         )}
       </ul>

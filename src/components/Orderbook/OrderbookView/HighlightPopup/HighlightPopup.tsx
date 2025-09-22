@@ -17,6 +17,7 @@ interface OrderHighlightPopupProps {
   containerRef: React.RefObject<HTMLElement>;
   priceFactor: number;
   marketType: any;
+  maxDecimals: any;
 }
 
 const OrderHighlightPopup: React.FC<OrderHighlightPopupProps> = ({
@@ -26,6 +27,7 @@ const OrderHighlightPopup: React.FC<OrderHighlightPopupProps> = ({
   containerRef,
   priceFactor,
   marketType,
+  maxDecimals
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = React.useState({ x: 0, y: 0 });
@@ -42,54 +44,6 @@ const OrderHighlightPopup: React.FC<OrderHighlightPopupProps> = ({
   if (!highlightData) return null;
 
   const isLeft = orderbookPosition === 'left';
-
-  const formatNumber = (num: number, decimals: number) => {
-    const safeDecimals = Math.max(0, Math.min(100, Math.floor(decimals)));
-    
-    return num.toLocaleString(undefined, {
-      minimumFractionDigits: safeDecimals,
-      maximumFractionDigits: safeDecimals,
-    });
-  };
-
-  const getDecimalPlaces = (num: number): number => {
-    const numStr = num.toString();
-    if (numStr.includes('.')) {
-      return numStr.split('.')[1].length;
-    }
-    return 0;
-  };
-
-  const priceDecimals = (() => {
-    if (!priceFactor || priceFactor <= 0 || !isFinite(priceFactor)) {
-      return 2; 
-    }
-    
-    if (!highlightData.averagePrice || highlightData.averagePrice <= 0 || !isFinite(highlightData.averagePrice)) {
-      return 2; 
-    }
-  
-    try {
-      const calculation = Math.max(
-        0,
-        Math.floor(Math.log10(priceFactor)) +
-          Math.floor(
-            Math.log10(highlightData.averagePrice / 10 ** Math.log10(priceFactor)),
-          ),
-      );
-      
-      return isFinite(calculation) ? Math.max(0, Math.min(20, calculation)) : 2;
-    } catch (error) {
-      console.warn('Error calculating priceDecimals:', error);
-      return 2; 
-    }
-  })();
-
-  const baseDecimals = (() => {
-    const sizeDecimals = getDecimalPlaces(highlightData.otherTotalAmount);
-    const totalSizeDecimals = getDecimalPlaces(highlightData.otherTotalAmount);
-    return Math.max(sizeDecimals, totalSizeDecimals);
-  })()
 
   return createPortal(
     <div
@@ -120,7 +74,7 @@ const OrderHighlightPopup: React.FC<OrderHighlightPopupProps> = ({
           {t('total')} ({highlightData.otherUnit}):{' '}
         </span>
         {formatCommas(
-          highlightData.otherTotalAmount.toFixed(baseDecimals)
+          highlightData.otherTotalAmount.toFixed(maxDecimals)
         )}
       </div>
     </div>,
