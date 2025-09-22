@@ -218,7 +218,7 @@ const OrderCenter: React.FC<OrderCenterProps> = ({
 
   if (isPerps) {
     availableTabs.push(
-      { key: 'positions', label: `${t('positions')} (${perpsPositions.length})` },
+      { key: 'positions', label: `${t('Positions')} (${perpsPositions.length})` },
       { key: 'openOrders', label: `${t('openOrders')} (${perpsOpenOrders.length})` },
       { key: 'tradeHistory', label: t('tradeHistory') },
       { key: 'orderHistory', label: t('orderHistory') }
@@ -492,7 +492,7 @@ const OrderCenter: React.FC<OrderCenterProps> = ({
         </div>
         
         <div className="oc-filters">
-          {activeSection !== 'balances' && activeSection !== 'positions' && (
+          {activeSection !== 'balances' && (
             <>
               {showTypeOutside && filter !== undefined && setFilter && (
                 <div className="oc-filter-item type-filter">
