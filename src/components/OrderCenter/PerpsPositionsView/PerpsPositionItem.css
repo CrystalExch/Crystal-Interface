@@ -6,15 +6,14 @@
   display: grid;
   font-size: 0.8rem;
   grid-template-columns: 
-    35px 
-    minmax(140px, 2fr) 
-    minmax(80px, 1fr) 
+    105px 
+    minmax(80px, 2fr) 
+    minmax(120px, 1fr) 
     minmax(100px, 1.2fr) 
     minmax(90px, 1fr) 
     minmax(90px, 1fr) 
     minmax(100px, 1.2fr) 
     minmax(90px, 1fr) 
-    minmax(80px, 1fr) 
     minmax(80px, 1fr) 
     minmax(120px, 1.4fr);
   min-height: 52px;
