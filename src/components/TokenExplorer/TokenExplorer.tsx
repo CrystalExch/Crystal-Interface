@@ -174,7 +174,7 @@ const MARKET_UPDATE_EVENT =
   '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
 // const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 const SUBGRAPH_URL =
-  'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
+  'https://api.studio.thegraph.com/query/104695/test/v0.3.15';
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
   quickBuySize: 'small',
@@ -451,13 +451,12 @@ const Tooltip: React.FC<{
               position: 'absolute',
               top: `${tooltipPosition.top}px`,
               left: `${tooltipPosition.left}px`,
-              transform: `${
-                position === 'top' || position === 'bottom'
-                  ? 'translateX(-50%)'
-                  : position === 'left' || position === 'right'
-                    ? 'translateY(-50%)'
-                    : 'none'
-              } scale(${isVisible ? 1 : 0})`,
+              transform: `${position === 'top' || position === 'bottom'
+                ? 'translateX(-50%)'
+                : position === 'left' || position === 'right'
+                  ? 'translateY(-50%)'
+                  : 'none'
+                } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
               pointerEvents: 'none',
@@ -1435,26 +1434,26 @@ const DisplayDropdown: React.FC<{
             {(settings.quickBuySize === 'small' ||
               settings.quickBuySize === 'large' ||
               settings.quickBuySize === 'mega') && (
-              <div className="quickbuy-style-toggles">
-                <div className="style-toggle-row">
-                  <span className="style-toggle-label">Style</span>
-                  <div className="style-toggle-buttons">
-                    <button
-                      className={`style-toggle-btn ${settings.quickBuyStyle === 'color' ? 'active' : ''}`}
-                      onClick={() => updateSetting('quickBuyStyle', 'color')}
-                    >
-                      Color
-                    </button>
-                    <button
-                      className={`style-toggle-btn ${settings.quickBuyStyle === 'grey' ? 'active' : ''}`}
-                      onClick={() => updateSetting('quickBuyStyle', 'grey')}
-                    >
-                      Grey
-                    </button>
+                <div className="quickbuy-style-toggles">
+                  <div className="style-toggle-row">
+                    <span className="style-toggle-label">Style</span>
+                    <div className="style-toggle-buttons">
+                      <button
+                        className={`style-toggle-btn ${settings.quickBuyStyle === 'color' ? 'active' : ''}`}
+                        onClick={() => updateSetting('quickBuyStyle', 'color')}
+                      >
+                        Color
+                      </button>
+                      <button
+                        className={`style-toggle-btn ${settings.quickBuyStyle === 'grey' ? 'active' : ''}`}
+                        onClick={() => updateSetting('quickBuyStyle', 'grey')}
+                      >
+                        Grey
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {settings.quickBuySize === 'ultra' && (
               <div className="ultra-style-controls">
@@ -1672,7 +1671,7 @@ const DisplayDropdown: React.FC<{
                                   style={{
                                     backgroundColor:
                                       (settings.metricColors as any)?.[
-                                        metric
+                                      metric
                                       ]?.[range] || '#ffffff',
                                   }}
                                   onClick={() =>
@@ -1737,7 +1736,7 @@ const DisplayDropdown: React.FC<{
                   <ColorPicker
                     color={
                       (settings.metricColors as any)?.[
-                        colorPickerOpen.metric
+                      colorPickerOpen.metric
                       ]?.[colorPickerOpen.range] || '#ffffff'
                     }
                     onChange={(color) =>
@@ -2189,11 +2188,10 @@ const TokenRow = React.memo<{
     <>
       <div
         ref={tokenRowRef}
-        className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${
-          displaySettings.colorRows && token.status !== 'graduated'
-            ? `colored-row ${getBondingColorClass(bondingPercentage)}`
-            : ''
-        } ${metricInfo ? `metric-colored ${metricInfo.class}` : ''} ${token.status === 'graduated' ? 'graduated' : ''}`}
+        className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${displaySettings.colorRows && token.status !== 'graduated'
+          ? `colored-row ${getBondingColorClass(bondingPercentage)}`
+          : ''
+          } ${metricInfo ? `metric-colored ${metricInfo.class}` : ''} ${token.status === 'graduated' ? 'graduated' : ''}`}
         style={cssVariables}
         onMouseEnter={() => onTokenHover(token.id)}
         onMouseLeave={onTokenLeave}
@@ -2674,9 +2672,9 @@ const TokenRow = React.memo<{
           onClick={
             displaySettings.quickBuySize === 'ultra'
               ? (e) => {
-                  e.stopPropagation();
-                  onQuickBuy(token, quickbuyAmount);
-                }
+                e.stopPropagation();
+                onQuickBuy(token, quickbuyAmount);
+              }
               : undefined
           }
         >
@@ -3867,7 +3865,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const renderOrder: Array<ColumnKey> =
     Array.isArray(displaySettings?.columnOrder) &&
-    displaySettings.columnOrder.length
+      displaySettings.columnOrder.length
       ? displaySettings.columnOrder
       : (['new', 'graduating', 'graduated'] as Array<ColumnKey>);
 
