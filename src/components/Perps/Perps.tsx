@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import ChartOrderbookPanel from '../ChartOrderbookPanel/ChartOrderbookPanel';
 import OrderCenter from '../OrderCenter/OrderCenter';
 import ChartComponent from '../Chart/Chart';
@@ -57,6 +56,12 @@ interface PerpsProps {
   sliderIncrement?: number;
   selectedInterval: string;
   setSelectedInterval: any;
+  perpsActiveMarketKey: any;
+  setperpsActiveMarketKey: any;
+  perpsMarketsData: any;
+  setPerpsMarketsData: any;
+  perpsFilterOptions: any;
+  setPerpsFilterOptions: any;
 }
 
 const Perps: React.FC<PerpsProps> = ({
@@ -105,17 +110,19 @@ const Perps: React.FC<PerpsProps> = ({
   handleSetChain,
   sliderIncrement = 10,
   selectedInterval,
-  setSelectedInterval
+  setSelectedInterval,
+  perpsActiveMarketKey,
+  setperpsActiveMarketKey,
+  perpsMarketsData,
+  setPerpsMarketsData,
+  perpsFilterOptions,
+  setPerpsFilterOptions,
 }) => {
 
-  const { marketKey } = useParams<{ marketKey: string }>()
   const [exchangeConfig, setExchangeConfig] = useState();
-  const [markets, setMarkets] = useState<{ [key: string]: any }>({});
-  const [contractLabels, setContractLabels] = useState();
   const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
-  const [activeMarketKey, setActiveMarketKey] = useState(marketKey || 'BTCUSD');
   const [orderdata, setorderdata] = useState<any>([]);
-  const activeMarket = markets[activeMarketKey] || {};
+  const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};
 
   const [activeTradeType, setActiveTradeType] = useState<"long" | "short">("long");
   const [activeOrderType, setActiveOrderType] = useState<"market" | "Limit" | "Pro">("market");
@@ -398,11 +405,18 @@ const Perps: React.FC<PerpsProps> = ({
   }, []);
 
   useEffect(() => {
+    return () => {
+      console.log("bye")
+      setPerpsMarketsData({})
+      setPerpsFilterOptions({})
+    }
+  }, [])
+
+  useEffect(() => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
     if (!activeMarket?.contractId) return
 
     const subs = [
-      `fundingRate.${activeMarket.contractId}`,
       `depth.${activeMarket.contractId}.200`,
       `trades.${activeMarket.contractId}`,
       `kline.LAST_PRICE.${activeMarket.contractId}.${selectedInterval === '1d'
@@ -508,13 +522,13 @@ const Perps: React.FC<PerpsProps> = ({
             : Number(activeMarket.tickSize)
         );
       }
-      setRoundedBuyOrders({ orders: processedBids, key: activeMarketKey, amountsQuote })
-      setRoundedSellOrders({ orders: processedAsks, key: activeMarketKey, amountsQuote })
+      setRoundedBuyOrders({ orders: processedBids, key: perpsActiveMarketKey, amountsQuote })
+      setRoundedSellOrders({ orders: processedAsks, key: perpsActiveMarketKey, amountsQuote })
       prevAmountsQuote.current = amountsQuote
     } catch (e) {
       console.error(e)
     }
-  }, [orderdata, amountsQuote, activeMarketKey])
+  }, [orderdata, amountsQuote, perpsActiveMarketKey])
 
   useEffect(() => {
     let liveStreamCancelled = false;
@@ -528,13 +542,21 @@ const Perps: React.FC<PerpsProps> = ({
         ])
         if (liveStreamCancelled) return;
         if (metaRes?.data) setExchangeConfig(metaRes.data)
-        if (metaRes?.data) setMarkets(Object.fromEntries(metaRes.data.contractList.map((c: any) => {
-          const name = c.contractName.toUpperCase()
-          const quote = name.endsWith('USD') ? 'USD' : ''
-          const base = quote ? name.replace(quote, '') : name
-          return [c.contractName, { ...c, baseAsset: base, quoteAsset: quote }]
-        })))
-        if (labelsRes?.data) setContractLabels(labelsRes.data)
+        if (labelsRes?.data) {
+          const categoriesMap: Record<string, string[]> = {
+            All: metaRes.data.contractList.filter((c: any) => c.enableDisplay == true).flatMap((c: any) => c.contractName),
+            ...Object.fromEntries(
+              labelsRes.data.map((s: any) => [s.name, s.contracts.map((c: any) => c.contractName)])
+            )
+          }
+          if (metaRes?.data) setPerpsMarketsData(Object.fromEntries(metaRes.data.contractList.filter((c: any) => categoriesMap.All.includes(c.contractName)).map((c: any) => {
+            const name = c.contractName.toUpperCase()
+            const quote = name.endsWith('USD') ? 'USD' : ''
+            const base = quote ? name.replace(quote, '') : name
+            return [c.contractName, { ...c, baseAsset: base, quoteAsset: quote }]
+          })))
+          setPerpsFilterOptions(categoriesMap)
+        }
 
         /* const tradelogs = result[1].result;
         const orderlogs = result?.[2]?.result;
@@ -592,7 +614,25 @@ const Perps: React.FC<PerpsProps> = ({
         subscriptionMessages.forEach((message) => {
           wsRef.current?.send(message);
         });
-
+        if (activeMarket?.contractId) {
+          const subs = [
+            `depth.${activeMarket.contractId}.200`,
+            `trades.${activeMarket.contractId}`,
+            `kline.LAST_PRICE.${activeMarket.contractId}.${selectedInterval === '1d'
+              ? 'DAY_1'
+              : selectedInterval === '4h'
+                ? 'HOUR_4'
+                : selectedInterval === '1h'
+                  ? 'HOUR_1'
+                  : 'MINUTE_' + selectedInterval.slice(0, -1)}`
+          ]
+      
+          subs.forEach((channel: any) => {
+            wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }))
+          })
+      
+          subRefs.current = subs
+        }
         fetchData();
       };
 
@@ -649,27 +689,25 @@ const Perps: React.FC<PerpsProps> = ({
           }
           else if (message.content.channel.startsWith('trades')) {
             if (message.content.dataType == 'Snapshot') {
-                const trades = msg.map((t: any) => {
-                    const isBuy = !t.isBuyerMaker
-                    const priceFormatted = formatCommas(t.price)
-                    const tradeValue = Number(t.value)
-                    const time = formatTime(Number(t.time))
-                    const hash = t.ticketId
-                  
-                    return [isBuy, priceFormatted, tradeValue, time, hash]
-                  })
-                setTrades(trades)
+              const trades = msg.map((t: any) => {
+                  const isBuy = !t.isBuyerMaker
+                  const priceFormatted = formatCommas(t.price)
+                  const tradeValue = Number(t.value)
+                  const time = formatTime(Number(t.time))                
+                  return [isBuy, priceFormatted, tradeValue, time]
+                })
+              setTrades(trades)
             }
             else {
-                const trades = msg.map((t: any) => {
-                    const isBuy = t.isBuyerMaker
-                    const priceFormatted = formatCommas(t.price)
-                    const tradeValue = Number(t.value)
-                    const time = formatTime(Number(t.time) / 1000)
-                    return [isBuy, priceFormatted, tradeValue, time]
-                  })
-                
-                  setTrades(prev => [...trades, ...prev].slice(0, 100))
+              const trades = msg.map((t: any) => {
+                  const isBuy = t.isBuyerMaker
+                  const priceFormatted = formatCommas(t.price)
+                  const tradeValue = Number(t.value)
+                  const time = formatTime(Number(t.time) / 1000)
+                  return [isBuy, priceFormatted, tradeValue, time]
+                })
+              
+                setTrades(prev => [...trades, ...prev].slice(0, 100))
             }
           }
           else if (message.content.channel.startsWith('kline')) {
@@ -720,6 +758,19 @@ const Perps: React.FC<PerpsProps> = ({
                 realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
               }
             }
+          }
+          else if (message.content.channel.startsWith('ticker')) {
+            setPerpsMarketsData((prev: any) =>
+              Object.fromEntries(
+                Object.entries(prev).map(([name, market]: any) => {
+                  const update = message.content.data.find((d: any) => d.contractName === name)
+                  return [
+                    name,
+                    update ? { ...market, ...update } : market
+                  ]
+                })
+              )
+            )
           }
           /* let ordersChanged = false;
           let canceledOrdersChanged = false;
@@ -783,7 +834,7 @@ const Perps: React.FC<PerpsProps> = ({
         reconnectIntervalRef.current = null;
       }
     };
-  }, [activechain, address]);
+  }, []);
 
   const renderChartComponent = useMemo(() => (
     <ChartComponent
@@ -879,7 +930,7 @@ const Perps: React.FC<PerpsProps> = ({
           address={address}
           trades={tradesByMarket}
           currentMarket={
-            activeMarketKey.replace(
+            perpsActiveMarketKey.replace(
               new RegExp(
                 `^${wethticker}|${wethticker}$`,
                 'g'

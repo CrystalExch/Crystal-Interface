@@ -48,32 +48,13 @@ interface ChartHeaderProps {
     discordHandle?: string;
   };
   isPerpsToken?: boolean;
-  perpsTokenData?: {
-    symbol: string;
-    baseAsset: string;
-    quoteAsset: string;
-    price: number;
-    change24h: number;
-    volume24h: number;
-    openInterest: number;
-    fundingRate: number;
-    maxLeverage: number;
-  };
-  perpsMarketsData?: Array<{
-    pair: string;
-    baseAsset: string;
-    price: string;
-    change24h: string;
-    volume: string;
-    funding8h: string;
-    openInterest: string;
-    change: number;
-    icon?: string;
-  }>;
-  perpsFilterOptions?: string[];
+  perpsActiveMarketKey: any;
+  perpsMarketsData: any;
+  perpsFilterOptions: any;
   monUsdPrice: number;
   showLoadingPopup?: (id: string, config: any) => void;
   updatePopup?: (id: string, config: any) => void;
+  setperpsActiveMarketKey: any;
 }
 const ChartHeader: React.FC<ChartHeaderProps> = ({
   in_icon,
@@ -95,12 +76,13 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   isMemeToken = false,
   memeTokenData,
   isPerpsToken = false,
-  perpsTokenData,
+  perpsActiveMarketKey,
   perpsMarketsData,
   perpsFilterOptions,
   monUsdPrice,
   showLoadingPopup,
-  updatePopup
+  updatePopup,
+  setperpsActiveMarketKey
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
@@ -280,12 +262,13 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         isMemeToken={isMemeToken}
         memeTokenData={memeTokenData}
         isPerpsToken={isPerpsToken}
-        perpsTokenData={perpsTokenData}
+        perpsActiveMarketKey={perpsActiveMarketKey}
         perpsMarketsData={perpsMarketsData}
         perpsFilterOptions={perpsFilterOptions}
         monUsdPrice={monUsdPrice}
         showLoadingPopup={showLoadingPopup}
         updatePopup={updatePopup}
+        setperpsActiveMarketKey={setperpsActiveMarketKey}
       />
       {shouldShowFullHeader && (
         <AdditionalMetrics

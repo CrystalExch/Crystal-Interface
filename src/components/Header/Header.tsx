@@ -82,32 +82,10 @@ interface HeaderProps {
   handleInputFocus?: () => void;
   buyPresets?: { [key: number]: { slippage: string; priority: string; amount: string } };
   sellPresets?: { [key: number]: { slippage: string; priority: string } };
-  perpsTokenData: {
-    symbol: string;
-    baseAsset: string;
-    quoteAsset: string;
-    price: number;
-    change24h: number;
-    volume24h: number;
-    openInterest: number;
-    fundingRate: number;
-    maxLeverage: number;
-  };
-  setPerpsTokenData: (data: any) => void;
-  perpsMarketsData: Array<{
-    pair: string;
-    baseAsset: string;
-    price: string;
-    change24h: string;
-    volume: string;
-    funding8h: string;
-    openInterest: string;
-    change: number;
-    icon?: string;
-  }>;
-  setPerpsMarketsData: (markets: any[]) => void;
-  perpsFilterOptions: string[];
-  setPerpsFilterOptions: (filters: string[]) => void;
+  perpsActiveMarketKey: any;
+  setperpsActiveMarketKey: (data: any) => void;
+  perpsMarketsData: any;
+  perpsFilterOptions: any;
 }
 
 const Tooltip: React.FC<{
@@ -306,12 +284,10 @@ const Header: React.FC<HeaderProps> = ({
   handleInputFocus,
   buyPresets,
   sellPresets,
-  perpsTokenData,
-  setPerpsTokenData,
+  perpsActiveMarketKey,
+  setperpsActiveMarketKey,
   perpsMarketsData,
-  setPerpsMarketsData,
   perpsFilterOptions,
-  setPerpsFilterOptions,
 }) => {
   const location = useLocation();
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
@@ -501,7 +477,7 @@ const Header: React.FC<HeaderProps> = ({
     };
   })() : undefined;
   const isPerpsRoute = location.pathname.startsWith('/perps')
-  const currentPerpsTokenData = isPerpsRoute ? perpsTokenData : undefined;
+  const currentperpsActiveMarketKey = isPerpsRoute ? perpsActiveMarketKey : undefined;
 
   const formatNumberWithCommas = (num: number, decimals = 2) => {
     if (num === 0) return "0";
@@ -658,12 +634,13 @@ const Header: React.FC<HeaderProps> = ({
             isMemeToken={isMemeTokenPage}
             memeTokenData={memeTokenData}
             isPerpsToken={isPerpsRoute}
-            perpsTokenData={currentPerpsTokenData}
+            perpsActiveMarketKey={currentperpsActiveMarketKey}
             perpsMarketsData={perpsMarketsData}
             perpsFilterOptions={perpsFilterOptions}
             monUsdPrice={monUsdPrice}
             showLoadingPopup={showLoadingPopup}
             updatePopup={updatePopup}
+            setperpsActiveMarketKey={setperpsActiveMarketKey}
           />
         </div>
         <div className={rightHeaderClass}>

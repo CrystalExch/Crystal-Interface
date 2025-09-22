@@ -454,6 +454,14 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     } catch (e) {}
   }, [orders, isOrdersVisible, chartReady]);
 
+  const getPriceScale = (tickSize: number) => {
+    const str = tickSize.toString()
+    if (str.includes(".")) {
+      return Math.pow(10, str.split(".")[1].length)
+    }
+    return 1 / tickSize
+  }
+
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
     if (Object.keys(activeMarketRef.current).length == 0) return;
@@ -540,7 +548,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                         ) -
                         1,
                     )
-                  : perps ? 1 / Number(activeMarketRef.current?.tickSize || 1) : Number(activeMarketRef.current.priceFactor),
+                  : perps ? getPriceScale(activeMarketRef.current?.tickSize || 1) : Number(activeMarketRef.current.priceFactor),
               has_intraday: true,
               has_volume: true,
               supported_resolutions: ['1', '5', '15', '60', '240', '1D'],
