@@ -7,13 +7,13 @@
   font-size: 0.8rem;
   grid-template-columns: 
     minmax(100px, 1.2fr) 
-    minmax(130px, 2.5fr) 
+    minmax(130px, 1fr) 
     minmax(80px, 1fr) 
     minmax(90px, 1.2fr) 
     minmax(90px, 1.2fr) 
     minmax(110px, 1.5fr) 
     minmax(70px, 1fr) 
-    minmax(110px, 1.5fr);
+    minmax(110px, 1fr);
   min-height: 52px;
   position: relative;
   transition: background-color 0.15s ease;

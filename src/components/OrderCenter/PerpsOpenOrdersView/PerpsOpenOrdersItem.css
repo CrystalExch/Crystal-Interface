@@ -8,7 +8,7 @@
   grid-template-columns: 
     minmax(80px, 1fr) 
     minmax(60px, 0.8fr) 
-    minmax(80px, 2fr) 
+    minmax(80px, 1fr) 
     minmax(80px, 0.8fr) 
     minmax(80px, 1fr) 
     minmax(90px, 1.1fr) 
@@ -16,7 +16,7 @@
     minmax(80px, 1fr) 
     minmax(120px, 0.8fr) 
     minmax(140px, 1fr) 
-    minmax(110px, 1.3fr);
+    minmax(110px, 1fr);
   min-height: 52px;
   position: relative;
   transition: background-color 0.15s ease;

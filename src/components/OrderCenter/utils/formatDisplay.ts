@@ -16,66 +16,41 @@ export const formatDisplay = (value: string) => {
 
 export const formatSig = (value: string): string => {
   const addCommas = (s: string) => s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  const trimTrailingZeros = (frac: string) => frac.replace(/0+$/, '');
-  const toSubscript = (n: number) =>
-    String(n).replace(/\d/g, (d) => '₀₁₂₃₄₅₆₇₈₉'[Number(d)]);
 
-  const toDecimalFromExp = (s: string) => {
-    const lower = s.toLowerCase();
-    if (!lower.includes('e')) return s;
-
-    let [mant, expStr] = lower.split('e');
-    let sign = '';
-    if (mant.startsWith('-')) { sign = '-'; mant = mant.slice(1); }
-    else if (mant.startsWith('+')) { mant = mant.slice(1); }
-
-    const exp = parseInt(expStr, 10);
-    const digits = mant.replace('.', '');
-    const dotPos = mant.indexOf('.') === -1 ? mant.length : mant.indexOf('.');
-
-    if (!Number.isFinite(exp)) return s; 
-
-    if (exp >= 0) {
-      const pos = dotPos + exp;
-      if (pos >= digits.length) {
-        return sign + digits + '0'.repeat(pos - digits.length);
-      } else {
-        const intPart = digits.slice(0, pos);
-        const fracPart = digits.slice(pos);
-        return sign + intPart + (fracPart.length ? '.' + fracPart : '');
-      }
-    } else {
-      const zeros = '0'.repeat(Math.max(0, -exp - 1));
-      return sign + '0.' + zeros + digits;
-    }
-  };
-
-  if (value === undefined || value === null) return '0.00';
+  if (value === undefined || value === null) return '0.00000';
   const num = Number(value);
-  if (!Number.isFinite(num)) return '0.00';
-  if (num === 0) return '0.00';
+  if (!Number.isFinite(num)) return '0.00000';
+  if (num === 0) return '0.00000';
 
   const neg = num < 0;
   const signStr = neg ? '-' : '';
 
   let rounded = Math.abs(num).toPrecision(5);
+
+  const toDecimalFromExp = (s: string) => {
+    if (!/[eE]/.test(s)) return s;
+    const [mant, expStr] = s.toLowerCase().split('e');
+    const exp = parseInt(expStr, 10);
+    const digits = mant.replace('.', '');
+    const dotPos = mant.indexOf('.') === -1 ? mant.length : mant.indexOf('.');
+    if (exp >= 0) {
+      const pos = dotPos + exp;
+      return pos >= digits.length
+        ? digits + '0'.repeat(pos - digits.length)
+        : digits.slice(0, pos) + (pos < digits.length ? '.' + digits.slice(pos) : '');
+    } else {
+      return '0.' + '0'.repeat(-exp - 1) + digits;
+    }
+  };
+
   rounded = toDecimalFromExp(rounded);
-  if (rounded.endsWith('.')) rounded = rounded.slice(0, -1);
 
   let [intRaw, fracRaw = ''] = rounded.split('.');
-  fracRaw = trimTrailingZeros(fracRaw);
 
-  if (!fracRaw) return signStr + addCommas(intRaw);
-
-  if (intRaw === '0') {
-    let z = 0;
-    while (z < fracRaw.length && fracRaw[z] === '0') z++;
-    if (z > 2) {
-      const remainder = fracRaw.slice(z);
-      if (!remainder) return signStr + '0';
-      return `${signStr}0.0${toSubscript(z)}${remainder}`;
-    }
+  const sigCount = intRaw.replace(/^0+/, '').length + fracRaw.length;
+  if (sigCount < 5) {
+    fracRaw = fracRaw.padEnd(fracRaw.length + (5 - sigCount), '0');
   }
 
-  return `${signStr}${addCommas(intRaw)}.${fracRaw}`;
+  return fracRaw ? `${signStr}${addCommas(intRaw)}.${fracRaw}` : signStr + addCommas(intRaw);
 };

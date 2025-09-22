@@ -5552,16 +5552,16 @@ function App() {
         const json = await res.json();
         const list = Array.isArray(json?.data?.markets) ? json.data.markets : [];
 
-        const ETH_ADDR = settings.chainConfig[activechain].eth.toLowerCase();
-        const WETH_ADDR = settings.chainConfig[activechain].weth.toLowerCase();
+        const ETH_ADDR = settings.chainConfig[activechain].eth;
+        const WETH_ADDR = settings.chainConfig[activechain].weth;
         const tokenDict = settings.chainConfig[activechain].tokendict as Record<string, any>;
         const tokenDictLC: Record<string, any> = {};
-        for (const [addr, meta] of Object.entries(tokenDict)) tokenDictLC[addr.toLowerCase()] = meta;
+        for (const [addr, meta] of Object.entries(tokenDict)) tokenDictLC[addr] = meta;
 
         const newMarkets: Record<string, any> = {};
         for (const m of list) {
-          const baseAddr0 = String(m.baseAsset || '').toLowerCase();
-          const quoteAddr0 = String(m.quoteAsset || '').toLowerCase();
+          const baseAddr0 = String(m.baseAddress || '');
+          const quoteAddr0 = String(m.quoteAddress || '');
           const baseTok0 = tokenDictLC[baseAddr0];
           const quoteTok0 = tokenDictLC[quoteAddr0];
           if (!baseTok0 || !quoteTok0) continue;
@@ -13942,7 +13942,7 @@ function App() {
                         Converting
                         <div className="">
                           <span>Balance: </span>
-                          <span>$0.00</span>
+                          <span>0.00</span>
                           <button className="perps-max-button">Max</button>
                         </div>
                       </div>
@@ -13965,8 +13965,8 @@ function App() {
                       <div className="perps-deposit-balance">
                         Receiving
                         <div className="">
-                          <span>Balance:</span>
-                          <span> $0.00</span>
+                          <span>Balance: </span>
+                          <span>0.00</span>
                         </div>
                       </div>
                       <div className="perps-input-bottom-row">
@@ -14017,8 +14017,8 @@ function App() {
                       <div className="perps-deposit-balance">
                         Withdrawing
                         <div className="">
-                          <span>Balance:</span>
-                          <span> $0.00</span>
+                          <span>Balance: </span>
+                          <span>0.00</span>
                           <button className="perps-max-button">Max</button>
                         </div>
                       </div>
@@ -14043,7 +14043,7 @@ function App() {
                         Receiving
                         <div className="">
                           <span>Balance: </span>
-                          <span>$0.00</span>
+                          <span>0.00</span>
                         </div>
                       </div>
                       <div className="perps-input-bottom-row">

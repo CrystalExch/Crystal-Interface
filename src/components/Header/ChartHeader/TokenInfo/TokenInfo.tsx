@@ -1423,6 +1423,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                       <div
                         className="market-item"
                         onClick={() => {
+                          console.log(market)
                           onMarketSelect(market);
                           setSearchQuery('');
                           setIsDropdownVisible(false);

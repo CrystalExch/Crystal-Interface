@@ -465,15 +465,6 @@
   }
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
 .meme-filter-status {
   align-items: center;
   border-radius: 6px;

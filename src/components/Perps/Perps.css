@@ -670,7 +670,7 @@
 .perps-trade-input{
     background:none;
     color: white;
-    direction: rtl;
+    text-align: right;
     width: 100%;
     padding-right: 5px;
     font-size: 0.85rem;
