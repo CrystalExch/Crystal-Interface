@@ -1289,7 +1289,11 @@ function App() {
       ? (stored as string)
       : 'Quote';
   });
-  const [perpsActiveMarketKey, setperpsActiveMarketKey] = useState(location.pathname.split("/").pop()?.toUpperCase() || 'BTCUSD');
+  const [perpsActiveMarketKey, setperpsActiveMarketKey] = useState(
+    location.pathname.startsWith("/perps")
+      ? location.pathname.split("/").pop()?.toUpperCase() || "BTCUSD"
+      : "BTCUSD"
+  );
   const [perpsMarketsData, setPerpsMarketsData] = useState<{ [key: string]: any }>({});
   const [perpsFilterOptions, setPerpsFilterOptions] = useState({});
   const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });

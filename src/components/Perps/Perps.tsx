@@ -406,7 +406,6 @@ const Perps: React.FC<PerpsProps> = ({
 
   useEffect(() => {
     return () => {
-      console.log("bye")
       setPerpsMarketsData({})
       setPerpsFilterOptions({})
     }

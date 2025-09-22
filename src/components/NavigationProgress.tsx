@@ -22,7 +22,7 @@ const NavigationProgress: React.FC<NavigationProgressProps> = ({
 
     if (
       !((isTradeRoute(currentPath) && isTradeRoute(prevPath)) && !(currentPath.split('/')[1] == 'swap' && prevPath.split('/')[1] == 'market') && !(currentPath.split('/')[1] == 'market' && prevPath.split('/')[1] == 'swap')) &&
-      currentPath !== prevPath
+      currentPath.split('/')[1] !== prevPath.split('/')[1]
     ) {
       setIsComplete(false);
       setTimeout(() => {
