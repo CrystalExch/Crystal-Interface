@@ -57,6 +57,8 @@ interface PerpsProps {
   emptyFunction: any;
   handleSetChain: any;
   sliderIncrement?: number;
+  selectedInterval: string;
+  setSelectedInterval: any;
 }
 
 const Perps: React.FC<PerpsProps> = ({
@@ -106,6 +108,8 @@ const Perps: React.FC<PerpsProps> = ({
   emptyFunction,
   handleSetChain,
   sliderIncrement = 10,
+  selectedInterval,
+  setSelectedInterval
 }) => {
 
   const { marketKey } = useParams<{ marketKey: string }>()
@@ -172,7 +176,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [baseInterval, setBaseInterval] = useState<number>(0.1);
   const [obInterval, setOBInterval] = useState<number>(() => {
     const stored = localStorage.getItem(
-      `${activeMarket.baseAsset}_perps_ob_interval`,
+      `${activeMarket.baseAsset}_ob_interval`,
     );
     return stored !== null ? JSON.parse(stored) : 0.1;
   });
@@ -184,6 +188,7 @@ const Perps: React.FC<PerpsProps> = ({
   const sliderRef = useRef<HTMLInputElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const presetInputRef = useRef<HTMLInputElement>(null);
+  const subRefs = useRef<any>([]);
 
   const marketButtonRef = useRef<HTMLButtonElement>(null);
   const limitButtonRef = useRef<HTMLButtonElement>(null);
@@ -384,29 +389,46 @@ const Perps: React.FC<PerpsProps> = ({
   const [tradehistory, settradehistory] = useState<any[]>([]);
   const [tradesByMarket, settradesByMarket] = useState<any>({});
   const [currentLimitPrice, setCurrentLimitPrice] = useState<number>(0);
+  const prevAmountsQuote = useRef(amountsQuote)
 
   const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
   }, []);
-      
+
   useEffect(() => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
     if (!activeMarket?.contractId) return
 
-    wsRef.current.send(JSON.stringify({ type: 'unsubscribe', channel: `fundingRate.*` }))
-    wsRef.current.send(JSON.stringify({ type: 'unsubscribe', channel: `depth.*.200` }))
-    wsRef.current.send(JSON.stringify({ type: 'unsubscribe', channel: `trades.*` }))
-
     const subs = [
       `fundingRate.${activeMarket.contractId}`,
       `depth.${activeMarket.contractId}.200`,
-      `trades.${activeMarket.contractId}`
+      `trades.${activeMarket.contractId}`,
+      `kline.LAST_PRICE.${activeMarket.contractId}.${selectedInterval === '1d'
+        ? 'DAY_1'
+        : selectedInterval === '4h'
+          ? 'HOUR_4'
+          : selectedInterval === '1h'
+            ? 'HOUR_1'
+            : 'MINUTE_' + selectedInterval.slice(0, -1)}`
     ]
 
-    subs.forEach(channel => {
-      wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }))
-    });
+    const newSubs = new Set(subs)
+    const oldSubs = new Set(subRefs.current)
 
-  }, [activeMarket?.contractId])
+    oldSubs.forEach((channel: any) => {
+      if (!newSubs.has(channel)) {
+        wsRef.current?.send(JSON.stringify({ type: 'unsubscribe', channel }))
+      }
+    })
+
+    newSubs.forEach((channel: any) => {
+      if (!oldSubs.has(channel)) {
+        wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }))
+      }
+    })
+
+    subRefs.current = subs
+
+  }, [activeMarket?.contractId, selectedInterval])
 
   useEffect(() => {
     if (!orderdata || !Array.isArray(orderdata) || orderdata.length < 2) return
@@ -414,21 +436,20 @@ const Perps: React.FC<PerpsProps> = ({
     try {
       const [bids, asks] = orderdata
 
-      const sortedBids = [...bids].sort((a, b) => b.price - a.price)
-      const sortedAsks = [...asks].sort((a, b) => a.price - b.price)
-
       let runningBid = 0
-      const processedBids = sortedBids.map(o => {
-        runningBid += o.size
-        return { ...o, totalSize: runningBid, shouldFlash: false }
+      const processedBids = bids.map((o: any) => {
+        const sizeVal = amountsQuote === 'Quote' ? o.size * o.price : o.size
+        runningBid += sizeVal
+        return { ...o, size: sizeVal, totalSize: runningBid, shouldFlash: false }
       })
 
       let runningAsk = 0
-      const processedAsks = sortedAsks.map(o => {
-        runningAsk += o.size
-        return { ...o, totalSize: runningAsk, shouldFlash: false }
+      const processedAsks = asks.map((o: any) => {
+        const sizeVal = amountsQuote === 'Quote' ? o.size * o.price : o.size
+        runningAsk += sizeVal
+        return { ...o, size: sizeVal, totalSize: runningAsk, shouldFlash: false }
       })
-
+      
       const highestBid = processedBids[0]?.price
       const lowestAsk = processedAsks[0]?.price
       const spread = {
@@ -441,55 +462,56 @@ const Perps: React.FC<PerpsProps> = ({
             ? (highestBid + lowestAsk) / 2
             : NaN,
       }
-
-      const prevBuyMap = new Map(
-        roundedBuyOrders?.orders?.map((o: any, i: number) => [
-          `${o.price}_${o.size}`,
-          i,
-        ])
-      )
-      const prevSellMap = new Map(
-        roundedSellOrders?.orders?.map((o: any, i: number) => [
-          `${o.price}_${o.size}`,
-          i,
-        ])
-      )
-
-      for (let i = 0; i < processedBids.length; i++) {
-        const prevIndex = prevBuyMap.get(
-          `${processedBids[i].price}_${processedBids[i].size}`
+      if (prevAmountsQuote.current == amountsQuote) {
+        const prevBuyMap = new Map(
+          roundedBuyOrders?.orders?.map((o: any, i: number) => [
+            `${o.price}_${o.size}`,
+            i,
+          ])
         )
-        if (prevIndex === undefined || (i === 0 && prevIndex !== 0)) {
-          processedBids[i].shouldFlash = true
+        const prevSellMap = new Map(
+          roundedSellOrders?.orders?.map((o: any, i: number) => [
+            `${o.price}_${o.size}`,
+            i,
+          ])
+        )
+
+        for (let i = 0; i < processedBids.length; i++) {
+          const prevIndex = prevBuyMap.get(
+            `${processedBids[i].price}_${processedBids[i].size}`
+          )
+          if (prevIndex === undefined || (i === 0 && prevIndex !== 0)) {
+            processedBids[i].shouldFlash = true
+          }
+        }
+
+        for (let i = 0; i < processedAsks.length; i++) {
+          const prevIndex = prevSellMap.get(
+            `${processedAsks[i].price}_${processedAsks[i].size}`
+          )
+          if (prevIndex === undefined || (i === 0 && prevIndex !== 0)) {
+            processedAsks[i].shouldFlash = true
+          }
         }
       }
-
-      for (let i = 0; i < processedAsks.length; i++) {
-        const prevIndex = prevSellMap.get(
-          `${processedAsks[i].price}_${processedAsks[i].size}`
-        )
-        if (prevIndex === undefined || (i === 0 && prevIndex !== 0)) {
-          processedAsks[i].shouldFlash = true
-        }
-      }
-
       setSpreadData(spread)
       setRoundedBuyOrders({ orders: processedBids, key: activeMarketKey })
       setRoundedSellOrders({ orders: processedAsks, key: activeMarketKey })
-      setBaseInterval(1 / Number(activeMarket.tickSize));
+      setBaseInterval(Number(activeMarket.tickSize));
       setOBInterval(
-        localStorage.getItem(`${activeMarket.baseAsset}_perps_ob_interval`)
+        localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
           ? Number(
             localStorage.getItem(
-              `${activeMarket.baseAsset}_perps_ob_interval`,
+              `${activeMarket.baseAsset}_ob_interval`,
             ),
           )
           : Number(activeMarket.tickSize)
       );
+      prevAmountsQuote.current = amountsQuote
     } catch (e) {
       console.error(e)
     }
-  }, [orderdata, activeMarketKey])
+  }, [orderdata, amountsQuote, activeMarketKey])
 
   useEffect(() => {
     let liveStreamCancelled = false;
@@ -596,7 +618,9 @@ const Perps: React.FC<PerpsProps> = ({
                   } else if (idx !== -1) {
                     temporders[0][idx].size = size
                   } else if (size > 0) {
-                    temporders[0].push({ ...i, price, size })
+                      let insertAt = temporders[0].findIndex(o => o.price < price)
+                      if (insertAt === -1) insertAt = temporders[0].length
+                      temporders[0].splice(insertAt, 0, { ...i, price, size })
                   }
                 })
 
@@ -610,7 +634,9 @@ const Perps: React.FC<PerpsProps> = ({
                   } else if (idx !== -1) {
                     temporders[1][idx].size = size
                   } else if (size > 0) {
-                    temporders[1].push({ ...i, price, size })
+                    let insertAt = temporders[1].findIndex(o => o.price > price)
+                    if (insertAt === -1) insertAt = temporders[1].length
+                    temporders[1].splice(insertAt, 0, { ...i, price, size })
                   }
                 })
 
@@ -619,7 +645,7 @@ const Perps: React.FC<PerpsProps> = ({
             }
           }
           else if (message.content.channel.startsWith('trades')) {
-            if (message.content.dataType == 'SNAPSHOT') {
+            if (message.content.dataType == 'Snapshot') {
                 const trades = msg.map((t: any) => {
                     const isBuy = !t.isBuyerMaker
                     const priceFormatted = formatCommas(t.price)
@@ -641,6 +667,55 @@ const Perps: React.FC<PerpsProps> = ({
                   })
                 
                   setTrades(prev => [...trades, ...prev].slice(0, 100))
+            }
+          }
+          else if (message.content.channel.startsWith('kline')) {
+            if (message.content.dataType == 'Snapshot') {
+              const key = msg?.[0].contractName + (msg?.[0].klineType === 'DAY_1'
+                ? '1D'
+                : msg?.[0].klineType === 'HOUR_4'
+                  ? '240'
+                  : msg?.[0].klineType === 'HOUR_1'
+                    ? '60'
+                    : msg?.[0].klineType.startsWith('MINUTE_')
+                      ? msg?.[0].klineType.slice('MINUTE_'.length)
+                      : msg?.[0].klineType)
+
+              if (realtimeCallbackRef.current[key]) {
+                  const mapKlines = (klines: any[]) =>
+                    klines.map(candle => ({
+                      time: Number(candle.klineTime),
+                      open: Number(candle.open),
+                      high: Number(candle.high),
+                      low: Number(candle.low),
+                      close: Number(candle.close),
+                      volume: Number(candle.makerBuyValue),
+                    }))
+                realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
+              }
+            }
+            else {
+              const key = msg?.[0].contractName + (msg?.[0].klineType === 'DAY_1'
+                ? '1D'
+                : msg?.[0].klineType === 'HOUR_4'
+                  ? '240'
+                  : msg?.[0].klineType === 'HOUR_1'
+                    ? '60'
+                    : msg?.[0].klineType.startsWith('MINUTE_')
+                      ? msg?.[0].klineType.slice('MINUTE_'.length)
+                      : msg?.[0].klineType)
+              if (realtimeCallbackRef.current[key]) {
+                  const mapKlines = (klines: any[]) =>
+                    klines.map(candle => ({
+                      time: Number(candle.klineTime),
+                      open: Number(candle.open),
+                      high: Number(candle.high),
+                      low: Number(candle.low),
+                      close: Number(candle.close),
+                      volume: Number(candle.makerBuyValue),
+                    }))
+                realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
+              }
             }
           }
           /* let ordersChanged = false;
@@ -729,6 +804,8 @@ const Perps: React.FC<PerpsProps> = ({
       amountIn={amountIn}
       isLimitOrderMode={location.pathname.slice(1) === 'limit'}
       perps={true}
+      selectedInterval={selectedInterval}
+      setSelectedInterval={setSelectedInterval}
     />
   ), [
     activeMarket,
@@ -743,6 +820,7 @@ const Perps: React.FC<PerpsProps> = ({
     updateLimitAmount,
     amountIn,
     location.pathname,
+    selectedInterval
   ]);
 
   return (

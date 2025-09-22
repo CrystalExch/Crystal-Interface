@@ -861,6 +861,20 @@ function App() {
     if (window.innerHeight > 720) return 239.98;
     return 198.78;
   });
+  const [selectedInterval, setSelectedInterval] = useState(() => {
+    const savedTimeframe = localStorage.getItem('crystal_chart_timeframe');
+    if (savedTimeframe !== null) {
+      return (savedTimeframe === '1D'
+        ? '1d'
+        : savedTimeframe === '240'
+          ? '4h'
+          : savedTimeframe === '60'
+            ? '1h'
+            : savedTimeframe + 'm')
+    }
+
+    return '5m'
+  });
   const [showChartOutliers, setShowChartOutliers] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_show_chart_outliers') || 'false');
   });
@@ -20884,6 +20898,8 @@ function App() {
       tokenIn={tokenIn}
       amountIn={amountIn}
       isLimitOrderMode={location.pathname.slice(1) === 'limit'}
+      selectedInterval={selectedInterval}
+      setSelectedInterval={setSelectedInterval}
     />
   ), [
     activeMarket,
@@ -21486,6 +21502,8 @@ function App() {
                 memoizedSortConfig={memoizedSortConfig}
                 emptyFunction={emptyFunction}
                 handleSetChain={handleSetChain}
+                selectedInterval={selectedInterval}
+                setSelectedInterval={setSelectedInterval}
               />
             } />
           <Route path="/leaderboard"
