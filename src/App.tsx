@@ -2927,57 +2927,57 @@ function App() {
       }
     };
   }, [isVertDragging]);
-const [perpsTokenData, setPerpsTokenData] = useState({
-  symbol: 'BTC-USDC',
-  baseAsset: 'BTC', 
-  quoteAsset: 'USDC',
-  price: 43250.50,
-  change24h: 2.35,
-  volume24h: 1250000000,
-  openInterest: 890000000,
-  fundingRate: 0.0001,
-  maxLeverage: 100,
-});
-
-const [perpsMarketsData, setPerpsMarketsData] = useState([
-  {
-    pair: 'BTC-USD',
+  const [perpsTokenData, setPerpsTokenData] = useState({
+    symbol: 'BTC-USDC',
     baseAsset: 'BTC',
-    price: '43,250.00',
-    change24h: '+2.45%',
-    volume: '1.2B',
-    funding8h: '+0.0125%',
-    openInterest: '89.2M',
-    change: 2.45,
-    icon: '/btc-icon.png' // Add appropriate icon paths
-  },
-  {
-    pair: 'ETH-USD',
-    baseAsset: 'ETH',
-    price: '2,580.00',
-    change24h: '-1.23%',
-    volume: '890M',
-    funding8h: '-0.0089%',
-    openInterest: '45.7M',
-    change: -1.23,
-    icon: '/eth-icon.png'
-  },
-  {
-    pair: 'SOL-USD',
-    baseAsset: 'SOL',
-    price: '98.50',
-    change24h: '+5.67%',
-    volume: '340M',
-    funding8h: '+0.0234%',
-    openInterest: '12.3M',
-    change: 5.67,
-    icon: '/sol-icon.png'
-  }
-]);
+    quoteAsset: 'USDC',
+    price: 43250.50,
+    change24h: 2.35,
+    volume24h: 1250000000,
+    openInterest: 890000000,
+    fundingRate: 0.0001,
+    maxLeverage: 100,
+  });
 
-const [perpsFilterOptions, setPerpsFilterOptions] = useState([
-  'all', 'favorites', 'trending', 'altcoins', 'defi', 'memes', 'layer 1', 'layer 2'
-]);
+  const [perpsMarketsData, setPerpsMarketsData] = useState([
+    {
+      pair: 'BTC-USD',
+      baseAsset: 'BTC',
+      price: '43,250.00',
+      change24h: '+2.45%',
+      volume: '1.2B',
+      funding8h: '+0.0125%',
+      openInterest: '89.2M',
+      change: 2.45,
+      icon: '/btc-icon.png'
+    },
+    {
+      pair: 'ETH-USD',
+      baseAsset: 'ETH',
+      price: '2,580.00',
+      change24h: '-1.23%',
+      volume: '890M',
+      funding8h: '-0.0089%',
+      openInterest: '45.7M',
+      change: -1.23,
+      icon: '/eth-icon.png'
+    },
+    {
+      pair: 'SOL-USD',
+      baseAsset: 'SOL',
+      price: '98.50',
+      change24h: '+5.67%',
+      volume: '340M',
+      funding8h: '+0.0234%',
+      openInterest: '12.3M',
+      change: 5.67,
+      icon: '/sol-icon.png'
+    }
+  ]);
+
+  const [perpsFilterOptions, setPerpsFilterOptions] = useState([
+    'all', 'favorites', 'trending', 'altcoins', 'defi', 'memes', 'layer 1', 'layer 2'
+  ]);
 
   // auto resizer
   useEffect(() => {
@@ -21108,69 +21108,69 @@ const [perpsFilterOptions, setPerpsFilterOptions] = useState([
         // style={getAppContainerStyle()} 
         >
 
-<Header
-  setTokenIn={setTokenIn}
-  setTokenOut={setTokenOut}
-  setorders={setorders}
-  settradehistory={settradehistory}
-  settradesByMarket={settradesByMarket}
-  setcanceledorders={setcanceledorders}
-  setpopup={setpopup}
-  setChain={handleSetChain}
-  account={{
-    connected: connected,
-    address: address,
-    chainId: userchain,
-  }}
-  activechain={activechain}
-  tokenIn={tokenIn}
-  setShowTrade={setShowTrade}
-  simpleView={simpleView}
-  setSimpleView={setSimpleView}
-  tokendict={tokendict}
-  transactions={transactions}
-  activeMarket={activeMarket}
-  orderdata={{
-    liquidityBuyOrders,
-    liquiditySellOrders,
-    reserveQuote,
-    reserveBase
-  }}
-  onMarketSelect={onMarketSelect}
-  marketsData={sortedMarkets}
-  tradesloading={tradesloading}
-  tradesByMarket={tradesByMarket}
-  currentWalletIcon={currentWalletIcon}
-  subWallets={subWallets}
-  walletTokenBalances={walletTokenBalances}
-  activeWalletPrivateKey={oneCTSigner}
-  setOneCTSigner={setOneCTSigner}
-  refetch={refetch}
-  isBlurred={isBlurred}
-  terminalRefetch={terminalRefetch}
-  tokenList={memoizedTokenList}
-  logout={logout}
-  tokenBalances={tokenBalances}
-  lastRefGroupFetch={lastRefGroupFetch}
-  tokenData={tokenData}
-  monUsdPrice={monUsdPrice}
-  sendUserOperationAsync={sendUserOperationAsync}
-  setTerminalToken={setTerminalToken}
-  setTokenData={setTokenData}
-  quickAmounts={quickAmounts}
-  setQuickAmount={setQuickAmount}
-  activePresets={activePresets}
-  setActivePreset={setActivePreset}
-  handleInputFocus={handleInputFocus}
-  buyPresets={buyPresets}
-  sellPresets={sellPresets}
-  perpsTokenData={perpsTokenData}
-  setPerpsTokenData={setPerpsTokenData}
-  perpsMarketsData={perpsMarketsData}
-  setPerpsMarketsData={setPerpsMarketsData}
-  perpsFilterOptions={perpsFilterOptions}
-  setPerpsFilterOptions={setPerpsFilterOptions}
-/>
+          <Header
+            setTokenIn={setTokenIn}
+            setTokenOut={setTokenOut}
+            setorders={setorders}
+            settradehistory={settradehistory}
+            settradesByMarket={settradesByMarket}
+            setcanceledorders={setcanceledorders}
+            setpopup={setpopup}
+            setChain={handleSetChain}
+            account={{
+              connected: connected,
+              address: address,
+              chainId: userchain,
+            }}
+            activechain={activechain}
+            tokenIn={tokenIn}
+            setShowTrade={setShowTrade}
+            simpleView={simpleView}
+            setSimpleView={setSimpleView}
+            tokendict={tokendict}
+            transactions={transactions}
+            activeMarket={activeMarket}
+            orderdata={{
+              liquidityBuyOrders,
+              liquiditySellOrders,
+              reserveQuote,
+              reserveBase
+            }}
+            onMarketSelect={onMarketSelect}
+            marketsData={sortedMarkets}
+            tradesloading={tradesloading}
+            tradesByMarket={tradesByMarket}
+            currentWalletIcon={currentWalletIcon}
+            subWallets={subWallets}
+            walletTokenBalances={walletTokenBalances}
+            activeWalletPrivateKey={oneCTSigner}
+            setOneCTSigner={setOneCTSigner}
+            refetch={refetch}
+            isBlurred={isBlurred}
+            terminalRefetch={terminalRefetch}
+            tokenList={memoizedTokenList}
+            logout={logout}
+            tokenBalances={tokenBalances}
+            lastRefGroupFetch={lastRefGroupFetch}
+            tokenData={tokenData}
+            monUsdPrice={monUsdPrice}
+            sendUserOperationAsync={sendUserOperationAsync}
+            setTerminalToken={setTerminalToken}
+            setTokenData={setTokenData}
+            quickAmounts={quickAmounts}
+            setQuickAmount={setQuickAmount}
+            activePresets={activePresets}
+            setActivePreset={setActivePreset}
+            handleInputFocus={handleInputFocus}
+            buyPresets={buyPresets}
+            sellPresets={sellPresets}
+            perpsTokenData={perpsTokenData}
+            setPerpsTokenData={setPerpsTokenData}
+            perpsMarketsData={perpsMarketsData}
+            setPerpsMarketsData={setPerpsMarketsData}
+            perpsFilterOptions={perpsFilterOptions}
+            setPerpsFilterOptions={setPerpsFilterOptions}
+          />
         </div>
       }
       <div className="app-container">

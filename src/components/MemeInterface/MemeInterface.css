@@ -2701,7 +2701,8 @@
   display: flex;
   justify-content: space-between;
   margin-top: 8px;
-  padding: 8px 10px;
+  padding: 6px;
+  padding-right: 8px;
 }
 
 .meme-similar-token-left {
@@ -2715,10 +2716,10 @@
   background: var(--bg-2);
   border-radius: 4px;
   display: grid;
-  height: 34px;
+  height: 43px;
   overflow: hidden;
   place-items: center;
-  width: 34px;
+  width: 43px;
 }
 
 .meme-similar-token-avatar img {
@@ -2736,10 +2737,11 @@
 
 .meme-similar-token-meta {
   display: grid;
+  gap: 4px
 }
 
 .meme-similar-token-title {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2750,32 +2752,32 @@
 }
 
 .meme-similar-token-id {
-  font-size: 10px;
-  max-width: 60px;
+  font-size: 0.8rem;
   opacity: 0.6;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .meme-similar-token-right {
   display: flex;
-  gap: 14px;
+  flex-direction: column;
 }
 
 .meme-similar-token-stat {
-  display: grid;
-  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
 }
 
 .meme-similar-token-stat .label {
-  font-size: 10px;
+  font-size: 0.75rem;
   opacity: 0.6;
+  margin-top: 2px;
 }
 
 .meme-similar-token-stat .value {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 0.8rem;
 }
 
 .meme-similar-token-empty {
