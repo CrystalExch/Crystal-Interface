@@ -111,6 +111,7 @@ const OrderCenter: React.FC<OrderCenterProps> = ({
   perpsOrderHistory = [],
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [isResizing, setIsResizing] = useState<boolean>(false);
   
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1200
@@ -126,6 +127,7 @@ const OrderCenter: React.FC<OrderCenterProps> = ({
   const indicatorRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<(HTMLDivElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const showMarketOutside = windowWidth > BREAKPOINT_HIDE_MARKET;
   const showTypeOutside = windowWidth > BREAKPOINT_HIDE_TYPE;
@@ -311,13 +313,30 @@ const OrderCenter: React.FC<OrderCenterProps> = ({
   useEffect(() => {
     const isMobileView = window.innerWidth <= 1020;
     updateIndicatorPosition(isMobileView, activeSection);
+    
     const handleResize = () => {
       const width = window.innerWidth;
       setWindowWidth(width);
+      
+      // Set resizing state to true immediately
+      setIsResizing(true);
+      
+      // Clear any existing timeout
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
+      
+      // Set a timeout to re-enable transitions after resize is complete
+      resizeTimeoutRef.current = setTimeout(() => {
+        setIsResizing(false);
+      }, 150); // Small delay to ensure resize is complete
+      
       updateIndicatorPosition(width <= 1020, activeSection);
     };
+    
     window.addEventListener('resize', handleResize);
     handleResize();
+    
     let resizeObserver: any = null;
     if (!isMobileView && indicatorRef.current && tabsRef.current.length > 0) {
       resizeObserver = new ResizeObserver(() => {
@@ -329,9 +348,13 @@ const OrderCenter: React.FC<OrderCenterProps> = ({
       const container = containerRef.current;
       if (container) resizeObserver.observe(container);
     }
+    
     return () => {
       window.removeEventListener('resize', handleResize);
       if (resizeObserver) resizeObserver.disconnect();
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
     };
   }, [activeSection]);
 
@@ -455,7 +478,7 @@ const OrderCenter: React.FC<OrderCenterProps> = ({
       style={{
         position: 'relative',
         height: orderCenterHeight === 0 || isOrderCenterVisible == false ? '0px' : `${orderCenterHeight}px`,
-        transition: isVertDragging ? 'none' : 'height 0.1s ease',
+        transition: (isVertDragging || isResizing) ? 'none' : 'height 0.1s ease',
         overflow: 'visible',
       }}
     >
