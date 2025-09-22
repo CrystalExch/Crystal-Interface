@@ -493,6 +493,7 @@ export const settings: any = {
           address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
           decimals: BigInt(18),
           image: iconmonad,
+          website: 'https://www.monad.xyz/',
         },
         '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701': {
           ticker: 'WMON',
@@ -500,6 +501,7 @@ export const settings: any = {
           address: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701',
           decimals: BigInt(18),
           image: iconwmonad,
+          website: 'https://www.monad.xyz/',
         },
         '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea': {
           ticker: 'USDC',
@@ -515,6 +517,7 @@ export const settings: any = {
           decimals: BigInt(18),
           image: iconsmon,
           lst: true,
+          website: 'https://kintsu.xyz/',
         },
         '0xb2f82D0f38dc453D596Ad40A37799446Cc89274A': {
           ticker: 'aprMON',
@@ -523,6 +526,7 @@ export const settings: any = {
           decimals: BigInt(18),
           image: iconaprmon,
           lst: true,
+          website: 'https://apr.io/',
         },
         '0x3a98250F98Dd388C211206983453837C8365BDc1': {
           ticker: 'shMON',
@@ -531,6 +535,7 @@ export const settings: any = {
           decimals: BigInt(18),
           image: iconshmon,
           lst: true,
+          website: 'https://shmonad.xyz/',
         },
         '0x0F0BDEbF0F83cD1EE3974779Bcb7315f9808c714': {
           ticker: 'DAK',
@@ -538,6 +543,7 @@ export const settings: any = {
           address: '0x0F0BDEbF0F83cD1EE3974779Bcb7315f9808c714',
           decimals: BigInt(18),
           image: icondak,
+          website: 'https://monad.xyz/',
         },
         '0xE0590015A873bF326bd645c3E1266d4db41C4E6B': {
           ticker: 'CHOG',
@@ -545,6 +551,7 @@ export const settings: any = {
           address: '0xE0590015A873bF326bd645c3E1266d4db41C4E6B',
           decimals: BigInt(18),
           image: iconchog,
+          website: 'https://monad.xyz/',
         },
         '0xfe140e1dCe99Be9F4F15d657CD9b7BF622270C50': {
           ticker: 'YAKI',
@@ -552,6 +559,7 @@ export const settings: any = {
           address: '0xfe140e1dCe99Be9F4F15d657CD9b7BF622270C50',
           decimals: BigInt(18),
           image: iconyaki,
+          website: 'https://monad.xyz/',
         },
         '0xB5a30b0FDc5EA94A52fDc42e3E9760Cb8449Fb37': {
           ticker: 'WETH',
@@ -559,6 +567,7 @@ export const settings: any = {
           address: '0xB5a30b0FDc5EA94A52fDc42e3E9760Cb8449Fb37',
           decimals: BigInt(18),
           image: iconweth,
+          website: 'https://ethereum.org/en/wrapped-eth/',
         },
         '0xcf5a6076cfa32686c0Df13aBaDa2b40dec133F1d': {
           ticker: 'WBTC',
@@ -566,6 +575,7 @@ export const settings: any = {
           address: '0xcf5a6076cfa32686c0Df13aBaDa2b40dec133F1d',
           decimals: BigInt(8),
           image: iconwbtc,
+          website: 'https://www.wbtc.network/',
         },
         '0x5387C85A4965769f6B0Df430638a1388493486F1': {
           ticker: 'WSOL',
@@ -573,6 +583,7 @@ export const settings: any = {
           address: '0x5387C85A4965769f6B0Df430638a1388493486F1',
           decimals: BigInt(9),
           image: iconsol,
+          website: 'https://solana.com/',
         },
         '0x88b8E2161DEDC77EF4ab7585569D2415a1C1055D': {
           ticker: 'USDT',
@@ -580,6 +591,7 @@ export const settings: any = {
           address: '0x88b8E2161DEDC77EF4ab7585569D2415a1C1055D',
           decimals: BigInt(6),
           image: iconusdt,
+          website: 'https://tether.to/',
         },
       },
     },
