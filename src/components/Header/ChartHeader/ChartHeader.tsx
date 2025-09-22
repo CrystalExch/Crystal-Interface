@@ -8,6 +8,7 @@ import { formatCommas } from '../../../utils/numberDisplayFormat';
 import { settings } from '../../../settings.ts';
 import './ChartHeader.css';
 
+
 interface ChartHeaderProps {
   in_icon: string;
   out_icon: string;
@@ -58,11 +59,22 @@ interface ChartHeaderProps {
     fundingRate: number;
     maxLeverage: number;
   };
+  perpsMarketsData?: Array<{
+    pair: string;
+    baseAsset: string;
+    price: string;
+    change24h: string;
+    volume: string;
+    funding8h: string;
+    openInterest: string;
+    change: number;
+    icon?: string;
+  }>;
+  perpsFilterOptions?: string[];
   monUsdPrice: number;
   showLoadingPopup?: (id: string, config: any) => void;
   updatePopup?: (id: string, config: any) => void;
 }
-
 const ChartHeader: React.FC<ChartHeaderProps> = ({
   in_icon,
   out_icon,
@@ -84,6 +96,8 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   memeTokenData,
   isPerpsToken = false,
   perpsTokenData,
+  perpsMarketsData,
+  perpsFilterOptions,
   monUsdPrice,
   showLoadingPopup,
   updatePopup
@@ -251,7 +265,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
 
   return (
     <div className={`chart-header ${!shouldShowFullHeader ? 'simplified' : ''}`}>
-      <TokenInfo
+        <TokenInfo
         in_icon={in_icon}
         out_icon={out_icon}
         price={price}
@@ -267,7 +281,11 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         memeTokenData={memeTokenData}
         isPerpsToken={isPerpsToken}
         perpsTokenData={perpsTokenData}
+        perpsMarketsData={perpsMarketsData}
+        perpsFilterOptions={perpsFilterOptions}
         monUsdPrice={monUsdPrice}
+        showLoadingPopup={showLoadingPopup}
+        updatePopup={updatePopup}
       />
       {shouldShowFullHeader && (
         <AdditionalMetrics

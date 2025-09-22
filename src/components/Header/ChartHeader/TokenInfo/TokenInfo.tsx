@@ -155,6 +155,18 @@ interface TokenInfoProps {
     fundingRate: number;
     maxLeverage: number;
   };
+  perpsMarketsData?: Array<{
+    pair: string;
+    baseAsset: string;
+    price: string;
+    change24h: string;
+    volume: string;
+    funding8h: string;
+    openInterest: string;
+    change: number;
+    icon?: string;
+  }>;
+  perpsFilterOptions?: string[];
   monUsdPrice: number;
   showLoadingPopup?: (id: string, config: any) => void;
   updatePopup?: (id: string, config: any) => void;
@@ -162,7 +174,6 @@ interface TokenInfoProps {
     totalPnl: number;
   };
 }
-
 const TokenInfo: React.FC<TokenInfoProps> = ({
   in_icon,
   out_icon,
@@ -179,6 +190,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   memeTokenData,
   isPerpsToken = false,
   perpsTokenData,
+  perpsMarketsData = [],
+  perpsFilterOptions = ['all'], 
   monUsdPrice,
   showLoadingPopup,
   updatePopup,
@@ -208,6 +221,20 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const perpsSearchInputRef = useRef<HTMLInputElement>(null);
 
   const isAdvancedView = isTradeRoute && !simpleView;
+
+
+    const perpsFilterTabs = perpsFilterOptions.map((filter) => (
+    <button
+      key={filter}
+      className={`filter-tab ${perpsActiveFilter === filter ? 'active' : ''}`}
+      onClick={() => setPerpsActiveFilter(filter)}
+    >
+      {filter.charAt(0).toUpperCase() + filter.slice(1)}
+    </button>
+  ));
+    const filteredPerpsMarkets = perpsMarketsData.filter(market =>
+    market.pair.toLowerCase().includes(perpsSearchQuery.toLowerCase())
+  );
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -1071,17 +1098,9 @@ if (isPerpsToken && perpsTokenData) {
               </div>
             </div>
 
-            <div className="market-filter-tabs" ref={perpsFilterTabsRef}>
-              {['all', 'favorites', 'trending', 'altcoins', 'defi' ,'memes', 'layer 1', 'layer 2'].map((filter) => (
-                <button
-                  key={filter}
-                  className={`filter-tab ${perpsActiveFilter === filter ? 'active' : ''}`}
-                  onClick={() => setPerpsActiveFilter(filter)}
-                >
-                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                </button>
-              ))}
-            </div>
+          <div className="market-filter-tabs" ref={perpsFilterTabsRef}>
+                {perpsFilterTabs}
+              </div>
 
             <div className="perps-markets-list-header">
               <div className="favorites-header" />
@@ -1091,111 +1110,77 @@ if (isPerpsToken && perpsTokenData) {
               <div className="perps-funding-header">8hr Funding</div>
               <div className="perps-oi-header">Open Interest</div>
             </div>
-
-            <div className="perps-markets-list" ref={perpsMarketsListRef}>
-              {[
-                {
-                  pair: 'BTC-USD',
-                  baseAsset: 'BTC',
-                  price: '43,250.00',
-                  change24h: '+2.45%',
-                  volume: '1.2B',
-                  funding8h: '+0.0125%',
-                  openInterest: '89.2M',
-                  change: 2.45
-                },
-                {
-                  pair: 'ETH-USD',
-                  baseAsset: 'ETH',
-                  price: '2,580.00',
-                  change24h: '-1.23%',
-                  volume: '890M',
-                  funding8h: '-0.0089%',
-                  openInterest: '45.7M',
-                  change: -1.23
-                },
-                {
-                  pair: 'SOL-USD',
-                  baseAsset: 'SOL',
-                  price: '98.50',
-                  change24h: '+5.67%',
-                  volume: '340M',
-                  funding8h: '+0.0234%',
-                  openInterest: '12.3M',
-                  change: 5.67
-                }
-              ].filter(market =>
-                market.pair.toLowerCase().includes(perpsSearchQuery.toLowerCase())
-              ).map((market, index) => (
-                <div
-                  key={market.pair}
-                  className={`perps-market-item-container ${index === perpsSelectedIndex ? 'selected' : ''}`}
-                  onMouseEnter={() => setPerpsSelectedIndex(index)}
-                >
+              <div className="perps-markets-list" ref={perpsMarketsListRef}>
+                {filteredPerpsMarkets.map((market, index) => (
                   <div
-                    className="perps-market-item"
-                    onClick={() => {
-                      setPerpsSearchQuery('');
-                      setIsPerpsDropdownVisible(false);
-                      setTimeout(() => {
-                        setIsPerpsDropdownOpen(false);
-                      }, 200);
-                    }}
+                    key={market.pair}
+                    className={`perps-market-item-container ${index === perpsSelectedIndex ? 'selected' : ''}`}
+                    onMouseEnter={() => setPerpsSelectedIndex(index)}
                   >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
+                    <div
+                      className="perps-market-item"
+                      onClick={() => {
+                        setPerpsSearchQuery('');
+                        setIsPerpsDropdownVisible(false);
+                        setTimeout(() => {
+                          setIsPerpsDropdownOpen(false);
+                        }, 200);
                       }}
-                      className="dropdown-market-favorite-button"
                     >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                        className="dropdown-market-favorite-button"
                       >
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                      </svg>
-                    </button>
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                        </svg>
+                      </button>
 
-                    <div className="market-pair-section">
-                      <img src={market?.icon} className="market-icon" />
-                      <div className="market-info">
-                        <div className="market-pair-container">
-                          <span className="market-pair">{market.pair}</span>
+                      <div className="market-pair-section">
+                        <img src={market?.icon} className="market-icon" />
+                        <div className="market-info">
+                          <div className="market-pair-container">
+                            <span className="market-pair">{market.pair}</span>
+                          </div>
+                          <span className="market-volume">${market.volume}</span>
                         </div>
-                        <span className="market-volume">${market.volume}</span>
                       </div>
-                    </div>
 
-                    <div className="minichart-section">
-                      <div className="perps-mini-chart-placeholder">Chart</div>
-                    </div>
-
-
-                    <div className="perps-funding-section">
-                      <div className={`perps-funding-rate ${market.funding8h.startsWith('-') ? 'negative' : 'positive'}`}>
-                        {market.funding8h}
+                      <div className="minichart-section">
+                        <div className="perps-mini-chart-placeholder">Chart</div>
                       </div>
-                    </div>
 
-                    <div className="perps-oi-section">
-                      <div className="perps-open-interest">${market.openInterest}</div>
-                    </div>
-                                        <div className="market-price-section">
-                      <div className="market-price">{market.price}</div>
-                      <div className={`market-change ${market.change < 0 ? 'negative' : 'positive'}`}>
-                        {market.change24h}
+                      <div className="perps-funding-section">
+                        <div className={`perps-funding-rate ${market.funding8h.startsWith('-') ? 'negative' : 'positive'}`}>
+                          {market.funding8h}
+                        </div>
+                      </div>
+
+                      <div className="perps-oi-section">
+                        <div className="perps-open-interest">${market.openInterest}</div>
+                      </div>
+
+                      <div className="market-price-section">
+                        <div className="market-price">{market.price}</div>
+                        <div className={`market-change ${market.change < 0 ? 'negative' : 'positive'}`}>
+                          {market.change24h}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
           </div>
         )}
       </div>

@@ -2927,6 +2927,57 @@ function App() {
       }
     };
   }, [isVertDragging]);
+const [perpsTokenData, setPerpsTokenData] = useState({
+  symbol: 'BTC-USDC',
+  baseAsset: 'BTC', 
+  quoteAsset: 'USDC',
+  price: 43250.50,
+  change24h: 2.35,
+  volume24h: 1250000000,
+  openInterest: 890000000,
+  fundingRate: 0.0001,
+  maxLeverage: 100,
+});
+
+const [perpsMarketsData, setPerpsMarketsData] = useState([
+  {
+    pair: 'BTC-USD',
+    baseAsset: 'BTC',
+    price: '43,250.00',
+    change24h: '+2.45%',
+    volume: '1.2B',
+    funding8h: '+0.0125%',
+    openInterest: '89.2M',
+    change: 2.45,
+    icon: '/btc-icon.png' // Add appropriate icon paths
+  },
+  {
+    pair: 'ETH-USD',
+    baseAsset: 'ETH',
+    price: '2,580.00',
+    change24h: '-1.23%',
+    volume: '890M',
+    funding8h: '-0.0089%',
+    openInterest: '45.7M',
+    change: -1.23,
+    icon: '/eth-icon.png'
+  },
+  {
+    pair: 'SOL-USD',
+    baseAsset: 'SOL',
+    price: '98.50',
+    change24h: '+5.67%',
+    volume: '340M',
+    funding8h: '+0.0234%',
+    openInterest: '12.3M',
+    change: 5.67,
+    icon: '/sol-icon.png'
+  }
+]);
+
+const [perpsFilterOptions, setPerpsFilterOptions] = useState([
+  'all', 'favorites', 'trending', 'altcoins', 'defi', 'memes', 'layer 1', 'layer 2'
+]);
 
   // auto resizer
   useEffect(() => {
@@ -3814,7 +3865,7 @@ function App() {
   const [memeStatsRaw, setMemeStatsRaw] = useState<Record<string, any> | null>(null);
   const [memeChartData, setMemeChartData] = useState<any>(null);
   const [memeSimilarTokens, setMemeSimilarTokens] = useState<any[]>([]);
-  const [memeSelectedInterval, setMemeSelectedInterval] = useState(() => 
+  const [memeSelectedInterval, setMemeSelectedInterval] = useState(() =>
     localStorage.getItem('meme_chart_timeframe') || '1m'
   );
   const [memeTrackedAddresses, setMemeTrackedAddresses] = useState<string[]>([]);
@@ -4246,7 +4297,7 @@ function App() {
     return () => {
       try {
         ws.close();
-      } catch {}
+      } catch { }
     };
   }, [activechain, address, pushRealtimeTick]);
 
@@ -4277,7 +4328,7 @@ function App() {
               typeof v === 'number' && /volume/i.test(k) ? v / 1e18 : v;
           }
           setMemeStatsRaw(normalized);
-        } catch (e) {}
+        } catch (e) { }
       };
 
       ws.onclose = () => {
@@ -4288,7 +4339,7 @@ function App() {
       ws.onerror = () => {
         try {
           ws.close();
-        } catch {}
+        } catch { }
       };
     };
 
@@ -4298,7 +4349,7 @@ function App() {
       disposed = true;
       try {
         memeStatsWsRef.current?.close();
-      } catch {}
+      } catch { }
     };
   }, []);
 
@@ -4334,26 +4385,25 @@ function App() {
                   amountIn
                   amountOut
                 }
-                series: ${
-                  'series' +
-                  (interval === '1s'
-                    ? '1'
-                    : interval === '5s'
-                      ? '5'
-                      : interval === '15s'
-                        ? '15'
-                        : interval === '1m'
-                          ? '60'
-                          : interval === '5m'
-                            ? '300'
-                            : interval === '15m'
-                              ? '900'
-                              : interval === '1h'
-                                ? '3600'
-                                : interval === '4h'
-                                  ? '14400'
-                                  : '86400')
-                } 
+                series: ${'series' +
+            (interval === '1s'
+              ? '1'
+              : interval === '5s'
+                ? '5'
+                : interval === '15s'
+                  ? '15'
+                  : interval === '1m'
+                    ? '60'
+                    : interval === '5m'
+                      ? '300'
+                      : interval === '15m'
+                        ? '900'
+                        : interval === '1h'
+                          ? '3600'
+                          : interval === '4h'
+                            ? '14400'
+                            : '86400')
+            } 
                   {
                   klines(first: 1000, orderBy: time, orderDirection: desc) {
                     time open high low close baseVolume
@@ -4497,19 +4547,19 @@ function App() {
     setMemeSimilarTokens([]);
     setMemeTrackedAddresses([]);
     setMemeTop10HoldingPercentage(0);
-    
+
     // Clear refs
     memeHoldersMapRef.current = new Map();
     memePositionsMapRef.current = new Map();
     memeDevTokenIdsRef.current = new Set();
     memeTopTradersMapRef.current = new Map();
     memeTrackedAddressesRef.current = [];
-    
+
     // Close WebSocket connections
     try {
       memeWsRef.current?.close();
       memeStatsWsRef.current?.close();
-    } catch {}
+    } catch { }
   }, []);
 
   // Meme helper functions
@@ -4518,33 +4568,33 @@ function App() {
       const d = (devAddress || '').toLowerCase();
       setMemeTrackedAddresses(d ? [d] : []);
     }, []),
-    
+
     setTrackedToYou: useCallback(() => {
       const me = (address || '').toLowerCase();
       setMemeTrackedAddresses(me ? [me] : []);
     }, [address]),
-    
+
     clearTracked: useCallback(() => {
       setMemeTrackedAddresses([]);
     }, []),
-    
+
     toggleTrackedAddress: useCallback((addr: string) => {
       const a = (addr || '').toLowerCase();
       setMemeTrackedAddresses((prev) =>
         prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a],
       );
     }, []),
-    
+
     connectWebSocket: connectMemeWebSocket,
     connectStatsWebSocket: connectMemeStatsWebSocket,
     fetchTokenData: fetchMemeTokenData,
     clearData: clearMemeData,
-    
+
     // Chart callback management
     setRealtimeCallback: useCallback((key: string, callback: any) => {
       memeRealtimeCallbackRef.current[key] = callback;
     }, []),
-    
+
     removeRealtimeCallback: useCallback((key: string) => {
       delete memeRealtimeCallbackRef.current[key];
     }, []),
@@ -14069,12 +14119,12 @@ function App() {
           </div>
         ) : null}
         {popup === 27 ? ( // PNL popup
-        <div ref={popupref}>
-          <PNLComponent
+          <div ref={popupref}>
+            <PNLComponent
               windowWidth={window.innerWidth}
             />
-            </div>
-          
+          </div>
+
         ) : null}
         {popup === 28 ? (
           <div className="onect-trading-selection-bg">
@@ -14552,8 +14602,8 @@ function App() {
                         </div>
                       </div>
                     </div>
-                    <div className="perps-switch-icon" onClick={() => setpopup(31)}> 
-                      <img  className="perps-switch-img"src={switchicon} />
+                    <div className="perps-switch-icon" onClick={() => setpopup(31)}>
+                      <img className="perps-switch-img" src={switchicon} />
                     </div>
                     <div className="perps-deposit-input-wrapper">
                       <div className="perps-deposit-balance">
@@ -14630,8 +14680,8 @@ function App() {
                       </div>
                     </div>
                     <div className="perps-switch-icon" onClick={() => setpopup(30)}
-                    >                      <img  className="perps-switch-img"src={switchicon} />
-</div>
+                    >                      <img className="perps-switch-img" src={switchicon} />
+                    </div>
                     <div className="perps-deposit-input-wrapper">
                       <div className="perps-deposit-balance">
                         Receiving
@@ -21057,63 +21107,70 @@ function App() {
         <div
         // style={getAppContainerStyle()} 
         >
-          <Header
-            setTokenIn={setTokenIn}
-            setTokenOut={setTokenOut}
-            setorders={setorders}
-            settradehistory={settradehistory}
-            settradesByMarket={settradesByMarket}
-            setcanceledorders={setcanceledorders}
-            setpopup={setpopup}
-            setChain={handleSetChain}
-            account={{
-              connected: connected,
-              address: address,
-              chainId: userchain,
-            }}
-            activechain={activechain}
-            tokenIn={tokenIn}
-            setShowTrade={setShowTrade}
-            simpleView={simpleView}
-            setSimpleView={setSimpleView}
-            tokendict={tokendict}
-            transactions={transactions}
-            activeMarket={activeMarket}
-            orderdata={{
-              liquidityBuyOrders,
-              liquiditySellOrders,
-              reserveQuote,
-              reserveBase
-            }}
-            onMarketSelect={onMarketSelect}
-            marketsData={sortedMarkets}
-            tradesloading={tradesloading}
-            tradesByMarket={tradesByMarket}
-            currentWalletIcon={currentWalletIcon}
-            subWallets={subWallets}
-            walletTokenBalances={walletTokenBalances}
-            activeWalletPrivateKey={oneCTSigner}
-            setOneCTSigner={setOneCTSigner}
-            refetch={refetch}
-            isBlurred={isBlurred}
-            terminalRefetch={terminalRefetch}
-            tokenList={memoizedTokenList}
-            logout={logout}
-            tokenBalances={tokenBalances}
-            lastRefGroupFetch={lastRefGroupFetch}
-            tokenData={tokenData}
-            monUsdPrice={monUsdPrice}
-            sendUserOperationAsync={sendUserOperationAsync}
-            setTerminalToken={setTerminalToken}
-            setTokenData={setTokenData}
-            quickAmounts={quickAmounts}
-            setQuickAmount={setQuickAmount}
-            activePresets={activePresets}
-            setActivePreset={setActivePreset}
-            handleInputFocus={handleInputFocus}
-            buyPresets={buyPresets}
-            sellPresets={sellPresets}
-          />
+
+<Header
+  setTokenIn={setTokenIn}
+  setTokenOut={setTokenOut}
+  setorders={setorders}
+  settradehistory={settradehistory}
+  settradesByMarket={settradesByMarket}
+  setcanceledorders={setcanceledorders}
+  setpopup={setpopup}
+  setChain={handleSetChain}
+  account={{
+    connected: connected,
+    address: address,
+    chainId: userchain,
+  }}
+  activechain={activechain}
+  tokenIn={tokenIn}
+  setShowTrade={setShowTrade}
+  simpleView={simpleView}
+  setSimpleView={setSimpleView}
+  tokendict={tokendict}
+  transactions={transactions}
+  activeMarket={activeMarket}
+  orderdata={{
+    liquidityBuyOrders,
+    liquiditySellOrders,
+    reserveQuote,
+    reserveBase
+  }}
+  onMarketSelect={onMarketSelect}
+  marketsData={sortedMarkets}
+  tradesloading={tradesloading}
+  tradesByMarket={tradesByMarket}
+  currentWalletIcon={currentWalletIcon}
+  subWallets={subWallets}
+  walletTokenBalances={walletTokenBalances}
+  activeWalletPrivateKey={oneCTSigner}
+  setOneCTSigner={setOneCTSigner}
+  refetch={refetch}
+  isBlurred={isBlurred}
+  terminalRefetch={terminalRefetch}
+  tokenList={memoizedTokenList}
+  logout={logout}
+  tokenBalances={tokenBalances}
+  lastRefGroupFetch={lastRefGroupFetch}
+  tokenData={tokenData}
+  monUsdPrice={monUsdPrice}
+  sendUserOperationAsync={sendUserOperationAsync}
+  setTerminalToken={setTerminalToken}
+  setTokenData={setTokenData}
+  quickAmounts={quickAmounts}
+  setQuickAmount={setQuickAmount}
+  activePresets={activePresets}
+  setActivePreset={setActivePreset}
+  handleInputFocus={handleInputFocus}
+  buyPresets={buyPresets}
+  sellPresets={sellPresets}
+  perpsTokenData={perpsTokenData}
+  setPerpsTokenData={setPerpsTokenData}
+  perpsMarketsData={perpsMarketsData}
+  setPerpsMarketsData={setPerpsMarketsData}
+  perpsFilterOptions={perpsFilterOptions}
+  setPerpsFilterOptions={setPerpsFilterOptions}
+/>
         </div>
       }
       <div className="app-container">

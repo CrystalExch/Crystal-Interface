@@ -28,6 +28,8 @@ interface Language {
   name: string;
 }
 
+
+
 interface HeaderProps {
   setTokenIn: (token: string) => void;
   setTokenOut: (token: string) => void;
@@ -80,7 +82,34 @@ interface HeaderProps {
   handleInputFocus?: () => void;
   buyPresets?: { [key: number]: { slippage: string; priority: string; amount: string } };
   sellPresets?: { [key: number]: { slippage: string; priority: string } };
+  perpsTokenData: {
+    symbol: string;
+    baseAsset: string;
+    quoteAsset: string;
+    price: number;
+    change24h: number;
+    volume24h: number;
+    openInterest: number;
+    fundingRate: number;
+    maxLeverage: number;
+  };
+  setPerpsTokenData: (data: any) => void;
+  perpsMarketsData: Array<{
+    pair: string;
+    baseAsset: string;
+    price: string;
+    change24h: string;
+    volume: string;
+    funding8h: string;
+    openInterest: string;
+    change: number;
+    icon?: string;
+  }>;
+  setPerpsMarketsData: (markets: any[]) => void;
+  perpsFilterOptions: string[];
+  setPerpsFilterOptions: (filters: string[]) => void;
 }
+
 const Tooltip: React.FC<{
   content: string;
   children: React.ReactNode;
@@ -231,6 +260,8 @@ const Tooltip: React.FC<{
     </div>
   );
 };
+
+
 const Header: React.FC<HeaderProps> = ({
   setTokenIn,
   setTokenOut,
@@ -275,6 +306,12 @@ const Header: React.FC<HeaderProps> = ({
   handleInputFocus,
   buyPresets,
   sellPresets,
+  perpsTokenData,
+  setPerpsTokenData,
+  perpsMarketsData,
+  setPerpsMarketsData,
+  perpsFilterOptions,
+  setPerpsFilterOptions,
 }) => {
   const location = useLocation();
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
@@ -464,19 +501,8 @@ const Header: React.FC<HeaderProps> = ({
     };
   })() : undefined;
   const isPerpsRoute = location.pathname.startsWith('/perps')
+  const currentPerpsTokenData = isPerpsRoute ? perpsTokenData : undefined;
 
-  const perpsTokenData = isPerpsRoute ? {
-    symbol: 'BTC-USDC',
-    baseAsset: 'BTC',
-    quoteAsset: 'USDC',
-    price: 43250.50,
-    change24h: 2.35,
-    volume24h: 1250000000,
-    openInterest: 890000000,
-    fundingRate: 0.0001,
-    maxLeverage: 100,
-  } : undefined;
-  
   const formatNumberWithCommas = (num: number, decimals = 2) => {
     if (num === 0) return "0";
     if (num >= 1e9) return `${(num / 1e9).toFixed(decimals)}B`;
@@ -598,7 +624,7 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
         <div className="left-header">
-          <ChartHeader
+         <ChartHeader
             in_icon={tokendict[activeMarket.baseAddress].image}
             out_icon={tokendict[activeMarket.quoteAddress].image}
             price={isMemeTokenPage && memeTokenData ?
@@ -632,7 +658,9 @@ const Header: React.FC<HeaderProps> = ({
             isMemeToken={isMemeTokenPage}
             memeTokenData={memeTokenData}
             isPerpsToken={isPerpsRoute}
-            perpsTokenData={perpsTokenData}
+            perpsTokenData={currentPerpsTokenData}
+            perpsMarketsData={perpsMarketsData}
+            perpsFilterOptions={perpsFilterOptions}
             monUsdPrice={monUsdPrice}
             showLoadingPopup={showLoadingPopup}
             updatePopup={updatePopup}
