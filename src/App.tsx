@@ -3900,7 +3900,7 @@ const [perpsMarketsData, setPerpsMarketsData] = useState([
 
   // Add these constants (move from MemeInterface)
   const TOTAL_SUPPLY = 1e9;
-  const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
+  const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.15';
   const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
   const STATS_WS_BASE = 'wss://crystal-backend.up.railway.app';
   const PAGE_SIZE = 100;
@@ -5411,7 +5411,7 @@ const [perpsMarketsData, setPerpsMarketsData] = useState([
         isAddressInfoFetching = true;
         try {
           // const endpoint = `https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e`;
-          const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
+          const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.3.15';
           const query = `
             query {
               account(id: "${address}") {
@@ -6308,7 +6308,7 @@ const [perpsMarketsData, setPerpsMarketsData] = useState([
       try {
         settradesloading(true);
 
-        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
+        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.3.15';
         const query = `
           query {
             markets(first: 100, orderBy: volume, orderDirection: desc, where: {isCanonical:true}) {

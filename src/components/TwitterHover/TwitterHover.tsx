@@ -14,7 +14,7 @@ import {
 } from '@floating-ui/react';
 import './TwitterHover.css';
 import type { Placement } from '@floating-ui/react';
-import verified from '../../assets/verified.png'
+import verified from '../../assets/verified.png';
 
 /** ---------- Types returned by the backend ---------- */
 type Media = { type: 'photo' | 'video' | 'animated_gif'; url: string; width?: number; height?: number };
@@ -36,6 +36,7 @@ type Preview =
       location?: string;
       url: string;
     };
+    _stale?: boolean;
   }
   | {
     kind: 'tweet';
@@ -49,6 +50,7 @@ type Preview =
     };
     author: { id: string; name: string; username: string; avatar: string; verified: boolean } | null;
     url: string;
+    _stale?: boolean;
   };
 
 type Props = {
@@ -59,35 +61,50 @@ type Props = {
   portal?: boolean;
 };
 
+/** ================= client cache / in-flight ================= */
 const CLIENT_CACHE = new Map<string, { data: Preview; exp: number }>();
 const INFLIGHT = new Map<string, Promise<Response>>();
 
-const API_BASE =
-  (import.meta as any).env?.VITE_PREVIEW_API_BASE ||
-  'http://localhost:3000';
+/** ================= backend endpoint =================
+ * Always target the prod API host. Allow override via VITE_PREVIEW_API_BASE if set.
+ */
+const ORIGIN_BASE =
+  (typeof window !== 'undefined' && (import.meta as any)?.env?.VITE_PREVIEW_API_BASE) ||
+  'https://api.crystal.exchange'; // hard-set prod base
 
+const PRIMARY_PATH = '/x';        // FastAPI router path
+const FALLBACK_PATH = '/api/x';   // legacy Next route (kept as safety)
+
+function joinUrl(base: string, path: string) {
+  if (!base) return path;
+  return base.endsWith('/') ? `${base.slice(0, -1)}${path}` : `${base}${path}`;
+}
+
+/** normalize handle/url for stable keys and input */
+function normalizeXInput(s: string) {
+  const raw = s.trim();
+  if (!raw) return '';
+  if (raw.includes('://')) return raw; // full URL already
+  // bare or @handle
+  const h = raw.startsWith('@') ? raw.slice(1) : raw;
+  return `@${h}`;
+}
+
+/** remove t.co links if we already show media; preserve mentions and line breaks */
 function parseTextWithMentions(text: string, hasMedia = false) {
   let processedText = text;
+  if (hasMedia) processedText = processedText.replace(/https:\/\/t\.co\/\S+/g, '').trim();
 
-  // Remove t.co URLs when media is present (they're redundant since we show media separately)
-  if (hasMedia) {
-    processedText = processedText.replace(/https:\/\/t\.co\/\S+/g, '').trim();
-  }
-
-  // Preserve line breaks by converting them to JSX
   const lines = processedText.split('\n');
   const mentionRegex = /@([A-Za-z0-9_]{1,15})\b/g;
-  
+
   const processedLines = lines.map((line, lineIndex) => {
-    const parts = [];
+    const parts: React.ReactNode[] = [];
     let lastIndex = 0;
-    let match;
+    let match: RegExpExecArray | null;
 
     while ((match = mentionRegex.exec(line)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(line.slice(lastIndex, match.index));
-      }
-
+      if (match.index > lastIndex) parts.push(line.slice(lastIndex, match.index));
       const username = match[1];
       parts.push(
         <a
@@ -99,26 +116,18 @@ function parseTextWithMentions(text: string, hasMedia = false) {
           onClick={(e) => e.stopPropagation()}
         >
           @{username}
-        </a>
+        </a>,
       );
-
       lastIndex = match.index + match[0].length;
     }
-
-    if (lastIndex < line.length) {
-      parts.push(line.slice(lastIndex));
-    }
-
+    if (lastIndex < line.length) parts.push(line.slice(lastIndex));
     return parts.length > 1 ? parts : line;
   });
 
-  // Join lines with <br> elements, but don't add <br> after the last line
-  const result = [];
+  const result: React.ReactNode[] = [];
   processedLines.forEach((line, index) => {
     result.push(line);
-    if (index < processedLines.length - 1) {
-      result.push(<br key={`br-${index}`} />);
-    }
+    if (index < processedLines.length - 1) result.push(<br key={`br-${index}`} />);
   });
 
   return result.length > 1 ? result : processedText;
@@ -135,7 +144,7 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
   const abortRef = React.useRef<AbortController | null>(null);
   const fetchingRef = React.useRef(false);
 
-  const stableUrl = React.useMemo(() => url?.trim() || '', [url]);
+  const stableUrl = React.useMemo(() => normalizeXInput(url || ''), [url]);
 
   const { refs, floatingStyles, context } = useFloating({
     open,
@@ -154,47 +163,23 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
     if (open && refs.floating.current) {
       const floating = refs.floating.current;
       const rect = floating.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
+      const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
       const availableBelow = viewportHeight - rect.top - 20;
-      const availableAbove = rect.top - 20; 
-      
+      const availableAbove = rect.top - 20;
       const maxAvailable = Math.max(availableBelow, availableAbove);
-      const calculatedMaxHeight = Math.min(maxAvailable, 500); 
-      
-      setMaxHeight(Math.max(calculatedMaxHeight, 200)); // Minimum 200px
+      const calculatedMaxHeight = Math.min(maxAvailable, 500);
+      setMaxHeight(Math.max(calculatedMaxHeight, 200));
     }
   }, [open, floatingStyles]);
 
-  React.useEffect(() => {
-    console.log('🎭 TwitterHover State:', {
-      open,
-      loading,
-      hasFetched,
-      fetchingRef: fetchingRef.current,
-      dataKind: data?.kind,
-      error: !!error,
-      url: stableUrl
-    });
-  }, [open, loading, hasFetched, data?.kind, error, stableUrl]);
-
   const fetchPreview = React.useCallback(async () => {
-    if (!stableUrl) {
-      console.log('❌ TwitterHover: No URL provided');
-      return;
-    }
-
-    if (fetchingRef.current) {
-      console.log('⏸️ TwitterHover: Already fetching, skipping');
-      return;
-    }
+    if (!stableUrl) return;
+    if (fetchingRef.current) return;
 
     const key = stableUrl;
-    console.log('🔍 TwitterHover: Starting fetch for URL:', key);
-
     const now = Date.now();
     const hit = CLIENT_CACHE.get(key);
     if (hit && hit.exp > now) {
-      console.log('💾 TwitterHover: Using cached data:', hit.data);
       setData(hit.data);
       setHasFetched(true);
       return;
@@ -204,62 +189,48 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
     setLoading(true);
     setError(null);
 
-    if (abortRef.current) {
-      console.log('⏹️ TwitterHover: Aborting previous request');
-      abortRef.current.abort();
-    }
+    if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
 
-    try {
-      const target = `${API_BASE}/api/x/preview?url=${encodeURIComponent(stableUrl)}`;
-      console.log('🌐 TwitterHover: Making API request to:', target);
+    const makeReq = (path: string) =>
+      fetch(`${joinUrl(ORIGIN_BASE, path)}?url=${encodeURIComponent(stableUrl)}`, {
+        signal: abortRef.current!.signal,
+        mode: 'cors',
+        credentials: 'omit',
+      });
 
+    try {
+      // Prefer FastAPI /x, fallback to /api/x (Next)
       let req = INFLIGHT.get(key);
       if (!req) {
-        req = fetch(target, {
-          signal: abortRef.current.signal,
-          mode: 'cors',
-          credentials: 'omit'
-        });
+        req = makeReq(PRIMARY_PATH);
         INFLIGHT.set(key, req);
-      } else {
-        console.log('🔄 TwitterHover: Request already in flight, waiting...');
+      }
+      let r = await req;
+
+      if (!r.ok && r.status === 404) {
+        // fallback path one time
+        r = await makeReq(FALLBACK_PATH);
       }
 
-      const r = await req;
-      console.log('📡 TwitterHover: API response status:', r.status, r.statusText);
-
-      if (INFLIGHT.get(key) === req) {
-        INFLIGHT.delete(key);
-      }
+      if (INFLIGHT.get(key) === req) INFLIGHT.delete(key);
 
       if (!r.ok) {
         const txt = await r.text();
-        console.error('❌ TwitterHover: API error response:', { status: r.status, text: txt });
         if (r.status === 429) throw new Error('Rate limited (429). Try again soon.');
-        throw new Error(`HTTP ${r.status}: ${txt}`);
+        throw new Error(`HTTP ${r.status}: ${txt || 'Upstream error'}`);
       }
 
       const j = (await r.json()) as Preview;
-      console.log('✅ TwitterHover: API success response:', j);
-
-      CLIENT_CACHE.set(key, { data: j, exp: now + 60 * 60 * 1000 });
+      CLIENT_CACHE.set(key, { data: j, exp: now + 60 * 60 * 1000 }); // 1h client cache
       setData(j);
       setHasFetched(true);
-      console.log('💾 TwitterHover: Data cached and set in state');
-
     } catch (e: any) {
       const isAbort =
         e?.name === 'AbortError' ||
         (e instanceof DOMException && e.name === 'AbortError') ||
         /abort/i.test(String(e?.message));
-
-      if (!isAbort) {
-        console.error('❌ TwitterHover: Fetch error:', e);
-        setError(e?.message || 'Failed to load preview');
-      } else {
-        console.log('⏹️ TwitterHover: Request aborted');
-      }
+      if (!isAbort) setError(e?.message || 'Failed to load preview');
     } finally {
       setLoading(false);
       fetchingRef.current = false;
@@ -267,73 +238,49 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
   }, [stableUrl]);
 
   React.useEffect(() => {
-    if (open && !hasFetched && !loading && !data && !error) {
-      console.log('🚀 TwitterHover: Triggering fetch because popup opened');
-      fetchPreview();
-    }
+    if (open && !hasFetched && !loading && !data && !error) fetchPreview();
   }, [open, hasFetched, loading, data, error, fetchPreview]);
 
   React.useEffect(() => {
-    console.log('🔄 TwitterHover: URL changed, resetting state');
     setData(null);
     setError(null);
     setHasFetched(false);
-
-    if (abortRef.current) {
-      abortRef.current.abort();
-    }
+    if (abortRef.current) abortRef.current.abort();
   }, [stableUrl]);
 
   React.useEffect(() => {
-    return () => {
-      console.log('🧹 TwitterHover: Cleanup on unmount');
-      if (abortRef.current) {
-        abortRef.current.abort();
-      }
-    };
+    return () => abortRef.current?.abort();
   }, []);
 
   const card = open ? (
     <div
       ref={refs.setFloating}
-      style={{
-        ...floatingStyles as React.CSSProperties,
-        maxHeight: maxHeight ? `${maxHeight}px` : undefined
-      }}
+      style={{ ...(floatingStyles as React.CSSProperties), maxHeight: maxHeight ? `${maxHeight}px` : undefined }}
       {...getFloatingProps()}
       className="twitter-hover-card"
     >
       <div ref={arrowRef} className="twitter-hover-arrow" />
-      {loading && (
-        <div className="twitter-hover-skeleton">
-        </div>
-      )}
+      {loading && <div className="twitter-hover-skeleton" />}
       {error && <div className="twitter-hover-error">{error}</div>}
-      {!loading && !error && data?.kind === 'user' && (() => {
-        console.log('👤 TwitterHover: Rendering UserCard with data:', data.user);
-        return <UserCard {...data.user} />;
-      })()}
-      {!loading && !error && data?.kind === 'tweet' && (() => {
-        console.log('🐦 TwitterHover: Rendering TweetCard with data:', data);
-        return <TweetCard {...data} />;
-      })()}
+      {!loading && !error && data?.kind === 'user' && <UserCard {...data.user} />}
+      {!loading && !error && data?.kind === 'tweet' && <TweetCard {...data} />}
     </div>
   ) : null;
+
+  const canPortal = typeof document !== 'undefined' && portal;
 
   return (
     <>
       <span ref={refs.setReference} {...getReferenceProps()} className="twitter-hover-ref">
         {children}
       </span>
-      {portal ? (card ? createPortal(card, document.body) : null) : card}
+      {canPortal ? (card ? createPortal(card, document.body) : null) : card}
     </>
   );
 }
 
 function VerifiedBadge() {
-  return (
-    <img src={verified} alt="Verified badge" className="twitter-hover-verified" />
-  );
+  return <img src={verified} alt="Verified badge" className="twitter-hover-verified" />;
 }
 
 function UserCard(props: {
@@ -350,29 +297,15 @@ function UserCard(props: {
   url: string;
   location?: string;
 }) {
-  console.log('👤 UserCard: Rendering with props:', props);
-  console.log('🖼️ Banner data:', {
-    banner: props.banner,
-    hasBanner: !!props.banner,
-    bannerType: typeof props.banner
-  });
-
   const profileUrl = `https://x.com/${props.username}`;
 
   return (
     <div className="twitter-hover-usercard">
       {props.banner && (
         <div className="twitter-hover-banner">
-          <img
-            src={props.banner}
-            alt=""
-            className="twitter-hover-banner-image"
-            onLoad={() => console.log('✅ Banner image loaded successfully')}
-            onError={() => console.log('❌ Banner image failed to load')}
-          />
+          <img src={props.banner} alt="" className="twitter-hover-banner-image" />
         </div>
       )}
-
       <div className="twitter-hover-body">
         <div className="twitter-hover-header">
           <img src={props.avatar} alt="" className="twitter-hover-avatar" />
@@ -392,11 +325,8 @@ function UserCard(props: {
             </a>
           </div>
         </div>
-        {props.description && (
-          <p className="twitter-hover-desc">
-            {parseTextWithMentions(props.description, false)}
-          </p>
-        )}
+
+        {props.description && <p className="twitter-hover-desc">{parseTextWithMentions(props.description, false)}</p>}
 
         <div className="twitter-hover-details">
           {props.location && props.location.trim() && (
@@ -409,7 +339,7 @@ function UserCard(props: {
           )}
           <span className="twitter-hover-join-date">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="twitter-hover-calendar-icon">
-              <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
+              <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c-1.1 0-2-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
             </svg>
             Joined {new Date(props.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </span>
@@ -442,15 +372,10 @@ function TweetCard(payload: {
   author: { id: string; name: string; username: string; avatar: string; verified: boolean } | null;
   url: string;
 }) {
-  console.log('🐦 TweetCard: Rendering with payload:', payload);
-
   const a = payload.author;
-  // Get all media (photos, videos, GIFs)
   const allMedia = payload.tweet.media ?? [];
   const photos = allMedia.filter((m) => m.type === 'photo');
   const videos = allMedia.filter((m) => m.type === 'video' || m.type === 'animated_gif');
-
-  // Consider any media present for text processing
   const hasAnyMedia = allMedia.length > 0;
 
   return (
@@ -459,7 +384,7 @@ function TweetCard(payload: {
         {a && (
           <div className="twitter-hover-header">
             <img src={a.avatar} alt="" className="twitter-hover-avatar" />
-            <div className='twitter-hover-header-text'>
+            <div className="twitter-hover-header-text">
               <div className="verify-name">
                 <span className="twitter-hover-name">{a.name}</span>
                 {a.verified && <VerifiedBadge />}
@@ -478,11 +403,8 @@ function TweetCard(payload: {
         )}
 
         <div className="twitter-hover-text-container">
-          <p className="twitter-hover-text">
-            {parseTextWithMentions(payload.tweet.text, hasAnyMedia)}
-          </p>
+          <p className="twitter-hover-text">{parseTextWithMentions(payload.tweet.text, hasAnyMedia)}</p>
 
-          {/* Display photos inside scrollable container */}
           {photos.length > 0 && (
             <div className={`twitter-hover-photos twitter-hover-photos-${photos.length}`}>
               {photos.map((m, i) => (
@@ -491,46 +413,28 @@ function TweetCard(payload: {
             </div>
           )}
 
-          {/* Display videos/GIFs inside scrollable container */}
           {videos.length > 0 && (
             <div className="twitter-hover-videos">
               {videos.map((m, i) => (
                 <div key={i} className="twitter-hover-video-container">
                   {m.type === 'animated_gif' ? (
-                    <video 
-                      src={m.url} 
+                    <video
+                      src={m.url}
                       autoPlay
                       loop
                       muted
                       playsInline
                       className="twitter-hover-video"
                       style={{ borderRadius: '0.5rem', width: '100%', height: 'auto' }}
-                      onError={(e) => {
-                        console.error('GIF video failed to load:', m.url);
-                        // Fallback to img tag if video fails
-                        const target = e.target as HTMLVideoElement;
-                        const img = document.createElement('img');
-                        img.src = m.url;
-                        img.className = 'twitter-hover-video';
-                        img.style.borderRadius = '0.5rem';
-                        img.style.width = '100%';
-                        img.style.height = 'auto';
-                        target.parentNode?.replaceChild(img, target);
-                      }}
-                    >
-                      Your browser does not support the video tag.
-                    </video>
+                    />
                   ) : (
-                    <video 
-                      src={m.url} 
-                      controls 
+                    <video
+                      src={m.url}
+                      controls
                       className="twitter-hover-video"
                       style={{ borderRadius: '0.5rem', width: '100%', height: 'auto' }}
                       preload="metadata"
-                      onError={(e) => console.error('Video failed to load:', m.url)}
-                    >
-                      Your browser does not support the video tag.
-                    </video>
+                    />
                   )}
                 </div>
               ))}
