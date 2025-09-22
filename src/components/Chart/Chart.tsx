@@ -29,6 +29,8 @@ interface ChartComponentProps {
   updateLimitAmount?: any;
   tokenIn?: string;
   amountIn?: bigint;
+  selectedInterval: string;
+  setSelectedInterval: any;
   isLimitOrderMode?: boolean;
   perps?: boolean;
 }
@@ -52,12 +54,13 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   updateLimitAmount,
   tokenIn,
   amountIn,
+  selectedInterval,
+  setSelectedInterval,
   isLimitOrderMode = false,
   perps = false,
 }) => {
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [_lastPair, setLastPair] = useState('');
-  const [selectedInterval, setSelectedInterval] = useState('5m');
 
   useEffect(() => {
     let isFetching = true;

@@ -617,7 +617,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                       close: Number(candle.close),
                       volume: Number(candle.makerBuyValue),
                     }))
-                    dataRef.current[key] = mapKlines(kline0.data.dataList.reverse().concat([]))
+                    dataRef.current[key] = mapKlines(kline0.data.dataList.reverse())
             })()
             }
             else {
@@ -637,7 +637,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
             bars = bars.filter(
               (bar: any) => bar.time >= from * 1000 && bar.time <= to * 1000,
             );
-
             setTimeout(() => {
               if (bars && bars.length) {
                 onHistoryCallback(bars, { noData: false });

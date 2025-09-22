@@ -57,6 +57,8 @@ interface PerpsProps {
   emptyFunction: any;
   handleSetChain: any;
   sliderIncrement?: number;
+  selectedInterval: string;
+  setSelectedInterval: any;
 }
 
 const Perps: React.FC<PerpsProps> = ({
@@ -106,6 +108,8 @@ const Perps: React.FC<PerpsProps> = ({
   emptyFunction,
   handleSetChain,
   sliderIncrement = 10,
+  selectedInterval,
+  setSelectedInterval
 }) => {
 
   const { marketKey } = useParams<{ marketKey: string }>()
@@ -184,6 +188,7 @@ const Perps: React.FC<PerpsProps> = ({
   const sliderRef = useRef<HTMLInputElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const presetInputRef = useRef<HTMLInputElement>(null);
+  const subRefs = useRef<any>([]);
 
   const marketButtonRef = useRef<HTMLButtonElement>(null);
   const limitButtonRef = useRef<HTMLButtonElement>(null);
@@ -387,26 +392,42 @@ const Perps: React.FC<PerpsProps> = ({
 
   const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
   }, []);
-      
+
   useEffect(() => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
     if (!activeMarket?.contractId) return
 
-    wsRef.current.send(JSON.stringify({ type: 'unsubscribe', channel: `fundingRate.*` }))
-    wsRef.current.send(JSON.stringify({ type: 'unsubscribe', channel: `depth.*.200` }))
-    wsRef.current.send(JSON.stringify({ type: 'unsubscribe', channel: `trades.*` }))
-
     const subs = [
       `fundingRate.${activeMarket.contractId}`,
       `depth.${activeMarket.contractId}.200`,
-      `trades.${activeMarket.contractId}`
+      `trades.${activeMarket.contractId}`,
+      `kline.LAST_PRICE.${activeMarket.contractId}.${selectedInterval === '1d'
+        ? 'DAY_1'
+        : selectedInterval === '4h'
+          ? 'HOUR_4'
+          : selectedInterval === '1h'
+            ? 'HOUR_1'
+            : 'MINUTE_' + selectedInterval.slice(0, -1)}`
     ]
 
-    subs.forEach(channel => {
-      wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }))
-    });
+    const newSubs = new Set(subs)
+    const oldSubs = new Set(subRefs.current)
 
-  }, [activeMarket?.contractId])
+    oldSubs.forEach((channel: any) => {
+      if (!newSubs.has(channel)) {
+        wsRef.current?.send(JSON.stringify({ type: 'unsubscribe', channel }))
+      }
+    })
+
+    newSubs.forEach((channel: any) => {
+      if (!oldSubs.has(channel)) {
+        wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }))
+      }
+    })
+
+    subRefs.current = subs
+
+  }, [activeMarket?.contractId, selectedInterval])
 
   useEffect(() => {
     if (!orderdata || !Array.isArray(orderdata) || orderdata.length < 2) return
@@ -619,7 +640,7 @@ const Perps: React.FC<PerpsProps> = ({
             }
           }
           else if (message.content.channel.startsWith('trades')) {
-            if (message.content.dataType == 'SNAPSHOT') {
+            if (message.content.dataType == 'Snapshot') {
                 const trades = msg.map((t: any) => {
                     const isBuy = !t.isBuyerMaker
                     const priceFormatted = formatCommas(t.price)
@@ -641,6 +662,55 @@ const Perps: React.FC<PerpsProps> = ({
                   })
                 
                   setTrades(prev => [...trades, ...prev].slice(0, 100))
+            }
+          }
+          else if (message.content.channel.startsWith('kline')) {
+            if (message.content.dataType == 'Snapshot') {
+              const key = msg?.[0].contractName + (msg?.[0].klineType === 'DAY_1'
+                ? '1D'
+                : msg?.[0].klineType === 'HOUR_4'
+                  ? '240'
+                  : msg?.[0].klineType === 'HOUR_1'
+                    ? '60'
+                    : msg?.[0].klineType.startsWith('MINUTE_')
+                      ? msg?.[0].klineType.slice('MINUTE_'.length)
+                      : msg?.[0].klineType)
+
+              if (realtimeCallbackRef.current[key]) {
+                  const mapKlines = (klines: any[]) =>
+                    klines.map(candle => ({
+                      time: Number(candle.klineTime),
+                      open: Number(candle.open),
+                      high: Number(candle.high),
+                      low: Number(candle.low),
+                      close: Number(candle.close),
+                      volume: Number(candle.makerBuyValue),
+                    }))
+                realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
+              }
+            }
+            else {
+              const key = msg?.[0].contractName + (msg?.[0].klineType === 'DAY_1'
+                ? '1D'
+                : msg?.[0].klineType === 'HOUR_4'
+                  ? '240'
+                  : msg?.[0].klineType === 'HOUR_1'
+                    ? '60'
+                    : msg?.[0].klineType.startsWith('MINUTE_')
+                      ? msg?.[0].klineType.slice('MINUTE_'.length)
+                      : msg?.[0].klineType)
+              if (realtimeCallbackRef.current[key]) {
+                  const mapKlines = (klines: any[]) =>
+                    klines.map(candle => ({
+                      time: Number(candle.klineTime),
+                      open: Number(candle.open),
+                      high: Number(candle.high),
+                      low: Number(candle.low),
+                      close: Number(candle.close),
+                      volume: Number(candle.makerBuyValue),
+                    }))
+                realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
+              }
             }
           }
           /* let ordersChanged = false;
@@ -729,6 +799,8 @@ const Perps: React.FC<PerpsProps> = ({
       amountIn={amountIn}
       isLimitOrderMode={location.pathname.slice(1) === 'limit'}
       perps={true}
+      selectedInterval={selectedInterval}
+      setSelectedInterval={setSelectedInterval}
     />
   ), [
     activeMarket,
@@ -743,6 +815,7 @@ const Perps: React.FC<PerpsProps> = ({
     updateLimitAmount,
     amountIn,
     location.pathname,
+    selectedInterval
   ]);
 
   return (
