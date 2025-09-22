@@ -1082,10 +1082,6 @@ function App() {
   const [scaleButton, setScaleButton] = useState(12)
   const [scaleButtonDisabled, setScaleButtonDisabled] = useState(true)
   const [isBlurred, setIsBlurred] = useState(false);
-  const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string }>({ orders: [], key: '' });
-  const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string }>({ orders: [], key: '' });
-  const [liquidityBuyOrders, setLiquidityBuyOrders] = useState<{ orders: any[], market: string }>({ orders: [], market: '' });
-  const [liquiditySellOrders, setLiquiditySellOrders] = useState<{ orders: any[], market: string }>({ orders: [], market: '' });
   const [prevOrderData, setPrevOrderData] = useState<any[]>([])
   const [stateloading, setstateloading] = useState(true);
   const [tradesloading, settradesloading] = useState(true);
@@ -1293,6 +1289,10 @@ function App() {
       ? (stored as string)
       : 'Quote';
   });
+  const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
+  const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
+  const [liquidityBuyOrders, setLiquidityBuyOrders] = useState<{ orders: any[], market: string }>({ orders: [], market: '' });
+  const [liquiditySellOrders, setLiquiditySellOrders] = useState<{ orders: any[], market: string }>({ orders: [], market: '' });
   const [_processedLogs, setProcessedLogs] = useState<Set<string>>(new Set());
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const emptyFunction = useCallback(() => { }, []);
@@ -1459,6 +1459,7 @@ function App() {
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<any>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const prevAmountsQuote = useRef(amountsQuote)
 
   // more constants
   const languageOptions = [
@@ -3086,13 +3087,13 @@ const [perpsMarketsData, setPerpsMarketsData] = useState([
         const buyOrdersRaw: bigint[] = [];
         const sellOrdersRaw: bigint[] = [];
 
-        for (let i = 2; i < prevOrderData[2].length; i += 64) {
-          const chunk = prevOrderData[2].slice(i, i + 64);
+        for (let i = 2; i < prevOrderData[4].length; i += 64) {
+          const chunk = prevOrderData[4].slice(i, i + 64);
           buyOrdersRaw.push(BigInt(`0x${chunk}`));
         }
 
-        for (let i = 2; i < prevOrderData[3].length; i += 64) {
-          const chunk = prevOrderData[3].slice(i, i + 64);
+        for (let i = 2; i < prevOrderData[5].length; i += 64) {
+          const chunk = prevOrderData[5].slice(i, i + 64);
           sellOrdersRaw.push(BigInt(`0x${chunk}`));
         }
 
@@ -3119,25 +3120,28 @@ const [perpsMarketsData, setPerpsMarketsData] = useState([
           false,
         );
 
-        const prevBuyMap = new Map(roundedBuyOrders?.orders?.map((o, i) => [`${o.price}_${o.size}`, i]));
-        const prevSellMap = new Map(roundedSellOrders?.orders?.map((o, i) => [`${o.price}_${o.size}`, i]));
+        if (prevAmountsQuote.current == amountsQuote) {
+          const prevBuyMap = new Map(roundedBuyOrders?.orders?.map((o, i) => [`${o.price}_${o.size}`, i]));
+          const prevSellMap = new Map(roundedSellOrders?.orders?.map((o, i) => [`${o.price}_${o.size}`, i]));
 
-        for (let i = 0; i < roundedBuy.length; i++) {
-          const prevIndex = prevBuyMap.get(`${roundedBuy[i].price}_${roundedBuy[i].size}`);
-          if (prevIndex === undefined || (i === 0 && prevIndex !== 0)) {
-            roundedBuy[i].shouldFlash = true;
+          for (let i = 0; i < roundedBuy.length; i++) {
+            const prevIndex = prevBuyMap.get(`${roundedBuy[i].price}_${roundedBuy[i].size}`);
+            if (prevIndex === undefined || (i === 0 && prevIndex !== 0)) {
+              roundedBuy[i].shouldFlash = true;
+            }
+          }
+
+          for (let i = 0; i < roundedSell.length; i++) {
+            const prevIndex = prevSellMap.get(`${roundedSell[i].price}_${roundedSell[i].size}`);
+            if (prevIndex === undefined || (i === 0 && prevIndex !== 0)) {
+              roundedSell[i].shouldFlash = true;
+            }
           }
         }
 
-        for (let i = 0; i < roundedSell.length; i++) {
-          const prevIndex = prevSellMap.get(`${roundedSell[i].price}_${roundedSell[i].size}`);
-          if (prevIndex === undefined || (i === 0 && prevIndex !== 0)) {
-            roundedSell[i].shouldFlash = true;
-          }
-        }
-
-        setRoundedBuyOrders({ orders: roundedBuy, key: activeMarketKey });
-        setRoundedSellOrders({ orders: roundedSell, key: activeMarketKey });
+        setRoundedBuyOrders({ orders: roundedBuy, key: activeMarketKey, amountsQuote});
+        setRoundedSellOrders({ orders: roundedSell, key: activeMarketKey, amountsQuote });
+        prevAmountsQuote.current = amountsQuote
       } catch (error) {
         console.error(error);
       }
@@ -3393,8 +3397,8 @@ const [perpsMarketsData, setPerpsMarketsData] = useState([
             }
 
             setSpreadData(spread);
-            setRoundedBuyOrders({ orders: roundedBuy, key: activeMarketKey });
-            setRoundedSellOrders({ orders: roundedSell, key: activeMarketKey });
+            setRoundedBuyOrders({ orders: roundedBuy, key: activeMarketKey, amountsQuote });
+            setRoundedSellOrders({ orders: roundedSell, key: activeMarketKey, amountsQuote });
             setLiquidityBuyOrders({ orders: liquidityBuy, market: activeMarket.address });
             setLiquiditySellOrders({ orders: liquiditySell, market: activeMarket.address });
             setBaseInterval(1 / (activeMarket?.marketType != 0 && spread?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor)));
@@ -21127,7 +21131,7 @@ const [perpsMarketsData, setPerpsMarketsData] = useState([
                   orderbookWidth={orderbookWidth}
                   setOrderbookWidth={setOrderbookWidth}
                   obInterval={obInterval}
-                  amountsQuote={amountsQuote}
+                  amountsQuote={roundedBuyOrders?.amountsQuote}
                   setAmountsQuote={setAmountsQuote}
                   obtrades={trades}
                   setOBInterval={setOBInterval}
@@ -21607,8 +21611,6 @@ const [perpsMarketsData, setPerpsMarketsData] = useState([
                 isOrderbookVisible={isOrderbookVisible}
                 orderbookWidth={orderbookWidth}
                 setOrderbookWidth={setOrderbookWidth}
-                amountsQuote={amountsQuote}
-                setAmountsQuote={setAmountsQuote}
                 viewMode={viewMode}
                 setViewMode={setViewMode}
                 activeTab={obTab}

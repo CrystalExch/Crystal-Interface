@@ -18,8 +18,6 @@ interface PerpsProps {
   isOrderbookVisible: boolean;
   orderbookWidth: number;
   setOrderbookWidth: any;
-  amountsQuote: any;
-  setAmountsQuote: any;
   viewMode: 'both' | 'buy' | 'sell';
   setViewMode: any;
   activeTab: 'orderbook' | 'trades';
@@ -69,8 +67,6 @@ const Perps: React.FC<PerpsProps> = ({
   isOrderbookVisible,
   orderbookWidth,
   setOrderbookWidth,
-  amountsQuote,
-  setAmountsQuote,
   viewMode,
   setViewMode,
   activeTab,
@@ -118,8 +114,6 @@ const Perps: React.FC<PerpsProps> = ({
   const [contractLabels, setContractLabels] = useState();
   const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
   const [activeMarketKey, setActiveMarketKey] = useState(marketKey || 'BTCUSD');
-  const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string }>({ orders: [], key: '' });
-  const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string }>({ orders: [], key: '' });
   const [orderdata, setorderdata] = useState<any>([]);
   const activeMarket = markets[activeMarketKey] || {};
 
@@ -389,7 +383,16 @@ const Perps: React.FC<PerpsProps> = ({
   const [tradehistory, settradehistory] = useState<any[]>([]);
   const [tradesByMarket, settradesByMarket] = useState<any>({});
   const [currentLimitPrice, setCurrentLimitPrice] = useState<number>(0);
+  const [amountsQuote, setAmountsQuote] = useState(() => {
+    const stored = localStorage.getItem('perps_ob_amounts_quote');
+
+    return ['Quote', 'Base'].includes(String(stored))
+      ? (stored as string)
+      : 'Quote';
+  });
   const prevAmountsQuote = useRef(amountsQuote)
+  const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
+  const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
 
   const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
   }, []);
@@ -438,14 +441,14 @@ const Perps: React.FC<PerpsProps> = ({
 
       let runningBid = 0
       const processedBids = bids.map((o: any) => {
-        const sizeVal = amountsQuote === 'Quote' ? o.size * o.price : o.size
+        const sizeVal = amountsQuote == 'Quote' ? o.size * o.price : o.size
         runningBid += sizeVal
         return { ...o, size: sizeVal, totalSize: runningBid, shouldFlash: false }
       })
 
       let runningAsk = 0
       const processedAsks = asks.map((o: any) => {
-        const sizeVal = amountsQuote === 'Quote' ? o.size * o.price : o.size
+        const sizeVal = amountsQuote == 'Quote' ? o.size * o.price : o.size
         runningAsk += sizeVal
         return { ...o, size: sizeVal, totalSize: runningAsk, shouldFlash: false }
       })
@@ -493,20 +496,20 @@ const Perps: React.FC<PerpsProps> = ({
             processedAsks[i].shouldFlash = true
           }
         }
+        setSpreadData(spread)
+        setBaseInterval(Number(activeMarket.tickSize));
+        setOBInterval(
+          localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
+            ? Number(
+              localStorage.getItem(
+                `${activeMarket.baseAsset}_ob_interval`,
+              ),
+            )
+            : Number(activeMarket.tickSize)
+        );
       }
-      setSpreadData(spread)
-      setRoundedBuyOrders({ orders: processedBids, key: activeMarketKey })
-      setRoundedSellOrders({ orders: processedAsks, key: activeMarketKey })
-      setBaseInterval(Number(activeMarket.tickSize));
-      setOBInterval(
-        localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
-          ? Number(
-            localStorage.getItem(
-              `${activeMarket.baseAsset}_ob_interval`,
-            ),
-          )
-          : Number(activeMarket.tickSize)
-      );
+      setRoundedBuyOrders({ orders: processedBids, key: activeMarketKey, amountsQuote })
+      setRoundedSellOrders({ orders: processedAsks, key: activeMarketKey, amountsQuote })
       prevAmountsQuote.current = amountsQuote
     } catch (e) {
       console.error(e)
@@ -845,7 +848,7 @@ const Perps: React.FC<PerpsProps> = ({
             orderbookWidth={orderbookWidth}
             setOrderbookWidth={setOrderbookWidth}
             obInterval={obInterval}
-            amountsQuote={amountsQuote}
+            amountsQuote={roundedBuyOrders?.amountsQuote}
             setAmountsQuote={setAmountsQuote}
             obtrades={trades}
             setOBInterval={setOBInterval}

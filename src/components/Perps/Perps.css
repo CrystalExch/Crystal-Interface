@@ -356,14 +356,13 @@
 }
 
 .perps-tpsl-section {
-    margin: 12px 12px 0 12px;
+    margin: 12px;
 }
 
 .perps-tpsl-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 8px;
 }
 
 .perps-tpsl-checkbox-wrapper {
