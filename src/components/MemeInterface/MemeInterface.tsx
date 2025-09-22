@@ -4265,9 +4265,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                             </span>
                           </div>
                           <div className="meme-similar-token-id">
-                            {String(t.id)}
-                          </div>
-                          <div className="meme-similar-token-id">
+                            <span>Last TX: </span> 
                             {
                               (() => {
                                 const tsSec = Number(t.lastUpdatedAt);

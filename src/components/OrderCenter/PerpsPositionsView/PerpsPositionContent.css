@@ -4,15 +4,14 @@
   font-size: 0.75rem;
   font-weight: 300;
   grid-template-columns: 
-    35px 
-    minmax(140px, 2fr) 
-    minmax(80px, 1fr) 
+    105px 
+    minmax(80px, 2fr) 
+    minmax(120px, 1fr) 
     minmax(100px, 1.2fr) 
     minmax(90px, 1fr) 
     minmax(90px, 1fr) 
     minmax(100px, 1.2fr) 
     minmax(90px, 1fr) 
-    minmax(80px, 1fr) 
     minmax(80px, 1fr) 
     minmax(120px, 1.4fr);
   height: 32px;
@@ -26,10 +25,6 @@
   width: 100%;
 }
 
-.perps-positions-header .ghost {
-  grid-column: 1;
-  width: 35px;
-}
 
 .perps-positions-header .oc-cell {
   color: #ffffff73;

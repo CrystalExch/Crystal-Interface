@@ -46,14 +46,13 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
   return (
     <>
       <div className="perps-positions-header">
-        <div className="ghost" />
         <SortableHeaderCell
           columnKey="coin"
           sortColumn={sortColumn}
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('coin')}
+          {t('Coin')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="size"
@@ -61,7 +60,7 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('size')}
+          {t('Size')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="positionValue"
@@ -70,7 +69,7 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
           onSort={handleSort}
         >
           <TooltipLabel
-            label={t('positionValue')}
+            label={t('Position Value')}
             tooltipText={
               <div>
                 <div className="tooltip-description">
@@ -87,7 +86,7 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('entryPrice')}
+          {t('Entry Price')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="markPrice"
@@ -95,7 +94,7 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('markPrice')}
+          {t('Mark Price')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="pnl"
@@ -104,7 +103,7 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
           onSort={handleSort}
         >
           <TooltipLabel
-            label={t('pnl')}
+            label={t('PNL (ROE %)')}
             tooltipText={
               <div>
                 <div className="tooltip-description">
@@ -121,7 +120,7 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('liqPrice')}
+          {t('Liq. Price')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="margin"
@@ -129,7 +128,7 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('margin')}
+          {t('Margin')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="funding"
@@ -138,7 +137,7 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
           onSort={handleSort}
         >
           <TooltipLabel
-            label={t('funding')}
+            label={t('Funding')}
             tooltipText={
               <div>
                 <div className="tooltip-description">
@@ -149,7 +148,6 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
             className="funding-label"
           />
         </SortableHeaderCell>
-        <div className="oc-cell actions">Actions</div>
       </div>
 
       {currentItems.length > 0 ? (

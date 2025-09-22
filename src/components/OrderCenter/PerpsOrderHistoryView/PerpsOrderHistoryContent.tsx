@@ -55,7 +55,7 @@ const PerpsOrderHistoryContent: React.FC<PerpsOrderHistoryContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('time')}
+          {t('Time')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="type"
@@ -63,7 +63,7 @@ const PerpsOrderHistoryContent: React.FC<PerpsOrderHistoryContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('type')}
+          {t('Type')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="coin"
@@ -71,7 +71,7 @@ const PerpsOrderHistoryContent: React.FC<PerpsOrderHistoryContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('coin')}
+          {t('Coin')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="direction"
@@ -79,7 +79,7 @@ const PerpsOrderHistoryContent: React.FC<PerpsOrderHistoryContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('direction')}
+          {t('Direction')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="size"
@@ -87,7 +87,7 @@ const PerpsOrderHistoryContent: React.FC<PerpsOrderHistoryContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('size')}
+          {t('Size')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="filledSize"
@@ -96,7 +96,7 @@ const PerpsOrderHistoryContent: React.FC<PerpsOrderHistoryContentProps> = ({
           onSort={handleSort}
         >
           <TooltipLabel
-            label={t('filledSize')}
+            label={t('Filled Size')}
             tooltipText={
               <div>
                 <div className="tooltip-description">
@@ -113,7 +113,7 @@ const PerpsOrderHistoryContent: React.FC<PerpsOrderHistoryContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('orderValue')}
+          {t('Order Value')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="price"
@@ -130,7 +130,7 @@ const PerpsOrderHistoryContent: React.FC<PerpsOrderHistoryContentProps> = ({
           onSort={handleSort}
         >
           <TooltipLabel
-            label={t('reduceOnly')}
+            label={t('Reduce Only')}
             tooltipText={
               <div>
                 <div className="tooltip-description">
@@ -147,7 +147,7 @@ const PerpsOrderHistoryContent: React.FC<PerpsOrderHistoryContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('trigger')}
+          {t('Trigger Conditions')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="tpsl"
@@ -156,7 +156,7 @@ const PerpsOrderHistoryContent: React.FC<PerpsOrderHistoryContentProps> = ({
           onSort={handleSort}
         >
           <TooltipLabel
-            label={t('tpSl')}
+            label={t('TP/SL')}
             tooltipText={
               <div>
                 <div className="tooltip-description">
@@ -173,7 +173,7 @@ const PerpsOrderHistoryContent: React.FC<PerpsOrderHistoryContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('status')}
+          {t('Status')}
         </SortableHeaderCell>
       </div>
 

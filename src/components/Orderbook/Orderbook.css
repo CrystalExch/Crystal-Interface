@@ -4,6 +4,7 @@
   height: 100%;
   overflow: visible;
   width: 100%;
+  padding-left: 1px;
 }
 
 .ob-container,

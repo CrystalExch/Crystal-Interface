@@ -58,7 +58,7 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('time')}
+          {t('Time')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="type"
@@ -66,7 +66,7 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('type')}
+          {t('Type')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="coin"
@@ -74,7 +74,7 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('coin')}
+          {t('Coin')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="direction"
@@ -82,7 +82,7 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('direction')}
+          {t('Direction')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="size"
@@ -90,7 +90,7 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('size')}
+          {t('Size')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="originalSize"
@@ -99,7 +99,7 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
           onSort={handleSort}
         >
           <TooltipLabel
-            label={t('originalSize')}
+            label={t('Original Size')}
             tooltipText={
               <div>
                 <div className="tooltip-description">
@@ -116,7 +116,7 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('orderValue')}
+          {t('Order Value')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="price"
@@ -124,7 +124,7 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('price')}
+          {t('Price')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="reduceOnly"
@@ -133,7 +133,7 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
           onSort={handleSort}
         >
           <TooltipLabel
-            label={t('reduceOnly')}
+            label={t('Reduce Only')}
             tooltipText={
               <div>
                 <div className="tooltip-description">
@@ -150,7 +150,7 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
           sortOrder={sortOrder}
           onSort={handleSort}
         >
-          {t('trigger')}
+          {t('Trigger Conditions')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="tpsl"
@@ -159,7 +159,7 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
           onSort={handleSort}
         >
           <TooltipLabel
-            label={t('tpSl')}
+            label={t('TP/SL')}
             tooltipText={
               <div>
                 <div className="tooltip-description">
@@ -170,7 +170,6 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
             className="tpsl-label"
           />
         </SortableHeaderCell>
-        <div className="oc-cell actions">{t('actions')}</div>
       </div>
 
       {currentItems.length > 0 ? (
