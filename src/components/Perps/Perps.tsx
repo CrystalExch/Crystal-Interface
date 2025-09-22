@@ -834,7 +834,7 @@ const Perps: React.FC<PerpsProps> = ({
         />
       </div>
       <div className="perps-trade-modal">
-        <div className="perps-top-section">
+        <div className="perps-top-section" >
           <div className="perps-order-types-wrapper">
             <div className="perps-order-types" ref={orderTypesContainerRef}>
               <button
@@ -1256,7 +1256,7 @@ const Perps: React.FC<PerpsProps> = ({
 
                     </div>
                 </div>
-                <div className="perps-bottom-section" style={{ minHeight: `${orderCenterHeight}px` }}>
+                <div className="perps-bottom-section" style={{ minHeight: `${orderCenterHeight}px`, maxHeight: `${orderCenterHeight}px`}}>
                 <div className="perps-deposit-withdraw-section">
                     <button
                         className="perps-deposit-button"
