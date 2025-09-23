@@ -752,7 +752,7 @@
     padding: 10px 15px 15px 15px;
     bottom: 0;
     width: 100%;
-    box-shadow: 0 -10px 10px black;
+    box-shadow: 0 -10px 7px rgba(0, 0, 0, 0.7);
 }
 
 .perps-deposit-withdraw-section {
@@ -1033,4 +1033,30 @@
 .perps-loading-button {
     width: 30px;
     height: 12px;
+}
+
+
+.perps-wallet-icon{
+    width: 14px;
+    height: 14px;
+}
+
+.perps-balance-container{
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+
+.leverage-button{
+    display: flex;
+    align-items: center;
+    filter: brightness(0) saturate(100%) invert(86%) sepia(2%) saturate(3380%) hue-rotate(199deg) brightness(91%) contrast(133%);
+}
+
+.leverage-button-icon{
+    width: 14px;
+    height: 14px;
 }

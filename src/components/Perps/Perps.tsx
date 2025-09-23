@@ -2,12 +2,13 @@ import React, { useEffect, useRef, useState, useMemo, useCallback, memo } from '
 import ChartOrderbookPanel from '../ChartOrderbookPanel/ChartOrderbookPanel';
 import OrderCenter from '../OrderCenter/OrderCenter';
 import ChartComponent from '../Chart/Chart';
-import editicon from "../../assets/edit.svg";
+import editicon from "../../assets/edit.png";
 import { DataPoint } from '../Chart/utils/chartDataGenerator';
 import './Perps.css'
 import TooltipLabel from '../TooltipLabel/TooltipLabel';
 import { formatTime } from '../../utils/formatTime.ts'
 import { formatCommas } from '../../utils/numberDisplayFormat';
+import walleticon from '../../assets/wallet_icon.png'
 
 interface PerpsProps {
   layoutSettings: string;
@@ -338,8 +339,8 @@ const Perps: React.FC<PerpsProps> = ({
     return 'positions';
   });
 
-const isTokenInfoLoading = !activeMarket.contractId || Object.keys(perpsMarketsData).length === 0;
-const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.length < 2;
+  const isTokenInfoLoading = !activeMarket.contractId || Object.keys(perpsMarketsData).length === 0;
+  const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.length < 2;
 
   const [_isVertDragging, setIsVertDragging] = useState(false);
   const initialHeightRef = useRef(0);
@@ -468,7 +469,7 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
         runningAsk += sizeVal
         return { ...o, size: sizeVal, totalSize: runningAsk, shouldFlash: false }
       })
-      
+
       const highestBid = processedBids[0]?.price
       const lowestAsk = processedAsks[0]?.price
       const spread = {
@@ -535,7 +536,7 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
   useEffect(() => {
     let liveStreamCancelled = false;
     let isAddressInfoFetching = false;
-    
+
     const fetchData = async () => {
       try {
         const [metaRes, labelsRes] = await Promise.all([
@@ -631,11 +632,11 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
                   ? 'HOUR_1'
                   : 'MINUTE_' + selectedInterval.slice(0, -1)}`
           ]
-      
+
           subs.forEach((channel: any) => {
             wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }))
           })
-      
+
           subRefs.current = subs
         }
         fetchData();
@@ -666,9 +667,9 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
                   } else if (idx !== -1) {
                     temporders[0][idx].size = size
                   } else if (size > 0) {
-                      let insertAt = temporders[0].findIndex(o => o.price < price)
-                      if (insertAt === -1) insertAt = temporders[0].length
-                      temporders[0].splice(insertAt, 0, { ...i, price, size })
+                    let insertAt = temporders[0].findIndex(o => o.price < price)
+                    if (insertAt === -1) insertAt = temporders[0].length
+                    temporders[0].splice(insertAt, 0, { ...i, price, size })
                   }
                 })
 
@@ -695,24 +696,24 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
           else if (message.content.channel.startsWith('trades')) {
             if (message.content.dataType == 'Snapshot') {
               const trades = msg.map((t: any) => {
-                  const isBuy = !t.isBuyerMaker
-                  const priceFormatted = formatCommas(t.price)
-                  const tradeValue = Number(t.value)
-                  const time = formatTime(Number(t.time))                
-                  return [isBuy, priceFormatted, tradeValue, time]
-                })
+                const isBuy = !t.isBuyerMaker
+                const priceFormatted = formatCommas(t.price)
+                const tradeValue = Number(t.value)
+                const time = formatTime(Number(t.time))
+                return [isBuy, priceFormatted, tradeValue, time]
+              })
               setTrades(trades)
             }
             else {
               const trades = msg.map((t: any) => {
-                  const isBuy = t.isBuyerMaker
-                  const priceFormatted = formatCommas(t.price)
-                  const tradeValue = Number(t.value)
-                  const time = formatTime(Number(t.time) / 1000)
-                  return [isBuy, priceFormatted, tradeValue, time]
-                })
-              
-                setTrades(prev => [...trades, ...prev].slice(0, 100))
+                const isBuy = t.isBuyerMaker
+                const priceFormatted = formatCommas(t.price)
+                const tradeValue = Number(t.value)
+                const time = formatTime(Number(t.time) / 1000)
+                return [isBuy, priceFormatted, tradeValue, time]
+              })
+
+              setTrades(prev => [...trades, ...prev].slice(0, 100))
             }
           }
           else if (message.content.channel.startsWith('kline')) {
@@ -728,15 +729,15 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
                       : msg?.[0].klineType)
 
               if (realtimeCallbackRef.current[key]) {
-                  const mapKlines = (klines: any[]) =>
-                    klines.map(candle => ({
-                      time: Number(candle.klineTime),
-                      open: Number(candle.open),
-                      high: Number(candle.high),
-                      low: Number(candle.low),
-                      close: Number(candle.close),
-                      volume: Number(candle.makerBuyValue),
-                    }))
+                const mapKlines = (klines: any[]) =>
+                  klines.map(candle => ({
+                    time: Number(candle.klineTime),
+                    open: Number(candle.open),
+                    high: Number(candle.high),
+                    low: Number(candle.low),
+                    close: Number(candle.close),
+                    volume: Number(candle.makerBuyValue),
+                  }))
                 realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
               }
             }
@@ -751,15 +752,15 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
                       ? msg?.[0].klineType.slice('MINUTE_'.length)
                       : msg?.[0].klineType)
               if (realtimeCallbackRef.current[key]) {
-                  const mapKlines = (klines: any[]) =>
-                    klines.map(candle => ({
-                      time: Number(candle.klineTime),
-                      open: Number(candle.open),
-                      high: Number(candle.high),
-                      low: Number(candle.low),
-                      close: Number(candle.close),
-                      volume: Number(candle.makerBuyValue),
-                    }))
+                const mapKlines = (klines: any[]) =>
+                  klines.map(candle => ({
+                    time: Number(candle.klineTime),
+                    open: Number(candle.open),
+                    high: Number(candle.high),
+                    low: Number(candle.low),
+                    close: Number(candle.close),
+                    volume: Number(candle.makerBuyValue),
+                  }))
                 realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
               }
             }
@@ -884,39 +885,39 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
     <div className="main-content-wrapper">
       <div className="chartandorderbookandordercenter">
         <div className="chartandorderbook">
-<ChartOrderbookPanel
-  layoutSettings={layoutSettings}
-  orderbookPosition={orderbookPosition}
-  orderdata={{
-    roundedBuyOrders: roundedBuyOrders?.orders,
-    roundedSellOrders: roundedSellOrders?.orders,
-    spreadData,
-    priceFactor: Number(1 / activeMarket?.tickSize),
-    marketType: 0,
-    symbolIn: activeMarket.quoteAsset,
-    symbolOut: activeMarket.baseAsset,
-  }}
-  windowWidth={windowWidth}
-  mobileView={mobileView}
-  isOrderbookVisible={isOrderbookVisible}
-  orderbookWidth={orderbookWidth}
-  setOrderbookWidth={setOrderbookWidth}
-  obInterval={obInterval}
-  amountsQuote={roundedBuyOrders?.amountsQuote}
-  setAmountsQuote={setAmountsQuote}
-  obtrades={trades}
-  setOBInterval={setOBInterval}
-  baseInterval={baseInterval}
-  viewMode={viewMode}
-  setViewMode={setViewMode}
-  activeTab={obTab}
-  setActiveTab={setOBTab}
-  updateLimitAmount={updateLimitAmount}
-  renderChartComponent={renderChartComponent}
-  reserveQuote={0n}
-  reserveBase={0n}
-  isOrderbookLoading={isOrderbookLoading}
-/>
+          <ChartOrderbookPanel
+            layoutSettings={layoutSettings}
+            orderbookPosition={orderbookPosition}
+            orderdata={{
+              roundedBuyOrders: roundedBuyOrders?.orders,
+              roundedSellOrders: roundedSellOrders?.orders,
+              spreadData,
+              priceFactor: Number(1 / activeMarket?.tickSize),
+              marketType: 0,
+              symbolIn: activeMarket.quoteAsset,
+              symbolOut: activeMarket.baseAsset,
+            }}
+            windowWidth={windowWidth}
+            mobileView={mobileView}
+            isOrderbookVisible={isOrderbookVisible}
+            orderbookWidth={orderbookWidth}
+            setOrderbookWidth={setOrderbookWidth}
+            obInterval={obInterval}
+            amountsQuote={roundedBuyOrders?.amountsQuote}
+            setAmountsQuote={setAmountsQuote}
+            obtrades={trades}
+            setOBInterval={setOBInterval}
+            baseInterval={baseInterval}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            activeTab={obTab}
+            setActiveTab={setOBTab}
+            updateLimitAmount={updateLimitAmount}
+            renderChartComponent={renderChartComponent}
+            reserveQuote={0n}
+            reserveBase={0n}
+            isOrderbookLoading={isOrderbookLoading}
+          />
         </div>
         <div
           className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
@@ -1019,12 +1020,17 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
           </div>
           <div className="perps-amount-section">
             <div className="perps-available-to-trade">
-              <div className="label-container">
-                {t('Available to Trade')}
+              <div className="perps-balance-container">
+                <img className="perps-wallet-icon" src={walleticon} />
+                <div className="balance-value-container">
+                  0.00
+                </div>
               </div>
-              <div className="value-container">
-                $0.00
-              </div>
+              <button className="leverage-button">
+                <img className="leverage-button-icon" src={editicon} />
+                10x
+              </button>
+
             </div>
             <div className="perps-available-to-trade">
               <div className="label-container">
@@ -1139,22 +1145,22 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
                 >
                   <span className="perps-tif-label">TIF</span>
                   <div className="perps-tif-inner" onClick={() => setIsTifDropdownOpen(!isTifDropdownOpen)}>
-                  <span className="perps-tif-value">{timeInForce}</span>
-                  <svg
-                    className={`perps-tif-button-arrow ${isTifDropdownOpen ? 'open' : ''}`}
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    width="16"
-                    height="16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-                </div>
+                    <span className="perps-tif-value">{timeInForce}</span>
+                    <svg
+                      className={`perps-tif-button-arrow ${isTifDropdownOpen ? 'open' : ''}`}
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </div>
                 </div>
 
                 {isTifDropdownOpen && (
@@ -1176,282 +1182,282 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
               </div>
             </div>
 
-                        {isTpSlEnabled && (
-                            <div className="perps-tpsl-content">
-                                <div className="perps-tpsl-row">
-                                    <div className="perps-tpsl-label-section">
-                                        <span className="perps-tpsl-row-label">TP Price</span>
-                                        <input
-                                            type="number"
-                                            placeholder="Enter TP price"
-                                            value={tpPrice}
-                                            onChange={(e) => setTpPrice(e.target.value)}
-                                            className="perps-tpsl-price-input"
-                                        />
-                                    </div>
-                                    <div className="perps-tpsl-input-section">
-                                        <div className="perps-tpsl-percentage">
-                                            <span className="perps-tpsl-row-label">TP%</span>
-                                            <input
-                                                type="number"
-                                                value={tpPercent}
-                                                onChange={(e) => setTpPercent(e.target.value)}
-                                                className="perps-tpsl-percent-input"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="perps-tpsl-row">
-                                    <div className="perps-tpsl-label-section">
-                                        <span className="perps-tpsl-row-label">SL Price</span>
-                                        <input
-                                            type="number"
-                                            placeholder="Enter SL price"
-                                            value={tpPrice}
-                                            onChange={(e) => setSlPrice(e.target.value)}
-                                            className="perps-tpsl-price-input"
-                                        />
-                                    </div>
-                                    <div className="perps-tpsl-input-section">
-                                        <div className="perps-tpsl-percentage">
-                                            <span className="perps-tpsl-row-label">SL%</span>
-                                            <input
-                                                type="number"
-                                                value={tpPercent}
-                                                onChange={(e) => setSlPercent(e.target.value)}
-                                                className="perps-tpsl-percent-input"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        )}
+            {isTpSlEnabled && (
+              <div className="perps-tpsl-content">
+                <div className="perps-tpsl-row">
+                  <div className="perps-tpsl-label-section">
+                    <span className="perps-tpsl-row-label">TP Price</span>
+                    <input
+                      type="number"
+                      placeholder="Enter TP price"
+                      value={tpPrice}
+                      onChange={(e) => setTpPrice(e.target.value)}
+                      className="perps-tpsl-price-input"
+                    />
+                  </div>
+                  <div className="perps-tpsl-input-section">
+                    <div className="perps-tpsl-percentage">
+                      <span className="perps-tpsl-row-label">TP%</span>
+                      <input
+                        type="number"
+                        value={tpPercent}
+                        onChange={(e) => setTpPercent(e.target.value)}
+                        className="perps-tpsl-percent-input"
+                      />
                     </div>
-                    <div className="perps-trade-details-section">
-                        <button
-                            className={`perps-trade-action-button ${activeTradeType}`}
-                            onClick={() => {
-                                if (isTpSlEnabled) {
-                                    console.log(`TP Price: ${tpPrice}, SL Price: ${slPrice}`);
-                                }
-                            }}
-                        >
-                            {activeOrderType === "market"
-                                ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
-                                : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`
-                            }
-                        </button>
-                        <div className="perps-info-rectangle">
-                            <div className="price-impact">
-                                <div className="label-container">
-                                    <TooltipLabel
-                                        label={t('Liquidation Price')}
-                                        tooltipText={
-                                            <div>
-                                                <div className="tooltip-description">
-                                                    {t('priceImpactHelp')}
-                                                </div>
-                                            </div>
-                                        }
-                                        className="impact-label"
-                                    />
-                                </div>
-                                <div className="value-container">
-                                    $0.00
-                                </div>
-                            </div>
-                            <div className="price-impact">
-                                <div className="label-container">
-                                    <TooltipLabel
-                                        label={t('Order Value')}
-                                        tooltipText={
-                                            <div>
-                                                <div className="tooltip-description">
-                                                    {t('priceImpactHelp')}
-                                                </div>
-                                            </div>
-                                        }
-                                        className="impact-label"
-                                    />
-                                </div>
-                                <div className="value-container">
-                                    $0.00
-                                </div>
-                            </div>
-                            <div className="price-impact">
-                                <div className="label-container">
-                                    <TooltipLabel
-                                        label={t('Margin Required')}
-                                        tooltipText={
-                                            <div>
-                                                <div className="tooltip-description">
-                                                    {t('priceImpactHelp')}
-                                                </div>
-                                            </div>
-                                        }
-                                        className="impact-label"
-                                    />
-                                </div>
-                                <div className="value-container">
-                                    $0.00
-                                </div>
-                            </div>
-                            <div className="price-impact">
-                                <div className="label-container">
-                                    <TooltipLabel
-                                        label={t('Slippage')}
-                                        tooltipText={
-                                            <div>
-                                                <div className="tooltip-description">
-                                                    {t('slippageHelp')}
-                                                </div>
-                                            </div>
-                                        }
-                                        className="impact-label"
-                                    />
-                                </div>
-                                <div className="slippage-input-container">
-                                <input
-                                    inputMode="decimal"
-                                    className={`slippage-inline-input ${parseFloat(slippageString) > 5 ? 'red' : ''
-                                    }`}
-                                    type="text"
-                                    value={slippageString}
-                                    onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        (e.target as HTMLInputElement).blur()
-                                        e.stopPropagation()
-                                    };
-                                    }}
-                                    onChange={(e) => {
-                                    const value = e.target.value;
+                  </div>
+                </div>
 
-                                    if (
-                                        /^(?!0{2})\d*\.?\d{0,2}$/.test(value) &&
-                                        !/^\d{2}\.\d{2}$/.test(value)
-                                    ) {
-                                        if (value === '') {
-                                        setSlippageString('');
-                                        setSlippage(BigInt(9900));
-                                        localStorage.setItem('crystal_slippage_string', '1');
-                                        localStorage.setItem('crystal_slippage', '9900');
-                                        } else if (parseFloat(value) <= 50) {
-                                        setSlippageString(value);
-                                        localStorage.setItem('crystal_slippage_string', value);
+                <div className="perps-tpsl-row">
+                  <div className="perps-tpsl-label-section">
+                    <span className="perps-tpsl-row-label">SL Price</span>
+                    <input
+                      type="number"
+                      placeholder="Enter SL price"
+                      value={tpPrice}
+                      onChange={(e) => setSlPrice(e.target.value)}
+                      className="perps-tpsl-price-input"
+                    />
+                  </div>
+                  <div className="perps-tpsl-input-section">
+                    <div className="perps-tpsl-percentage">
+                      <span className="perps-tpsl-row-label">SL%</span>
+                      <input
+                        type="number"
+                        value={tpPercent}
+                        onChange={(e) => setSlPercent(e.target.value)}
+                        className="perps-tpsl-percent-input"
+                      />
+                    </div>
+                  </div>
+                </div>
 
-                                        const newSlippage = BigInt(
-                                            10000 - parseFloat(value) * 100,
-                                        );
-                                        setSlippage(newSlippage);
-                                        localStorage.setItem(
-                                            'crystal_slippage',
-                                            newSlippage.toString(),
-                                        );
-                                        }
-                                    }
-                                    }}
-                                    onBlur={() => {
-                                    if (slippageString === '') {
-                                        setSlippageString('1');
-                                        localStorage.setItem('crystal_slippage_string', '1');
-
-                                        setSlippage(BigInt(9900));
-                                        localStorage.setItem('crystal_slippage', '9900');
-                                    }
-                                    }}
-                                />
-                                <span
-                                    className={`slippage-symbol ${parseFloat(slippageString) > 5 ? 'red' : ''
-                                    }`}
-                                >
-                                    %
-                                </span>
-                                </div>
-                            </div>
-                            <div className="price-impact">
-                                <div className="label-container">
-                                    <TooltipLabel
-                                        label={t('Fees')}
-                                        tooltipText={
-                                            <div>
-                                                <div className="tooltip-description">
-                                                    {t('takerfeeexplanation')}
-                                                </div>
-                                            </div>
-                                        }
-                                        className="impact-label"
-                                    />
-                                </div>
-                                <div className="value-container">
-                                    0.038% / 0.015%
-                                </div>
-                            </div>
+              </div>
+            )}
+          </div>
+          <div className="perps-trade-details-section">
+            <button
+              className={`perps-trade-action-button ${activeTradeType}`}
+              onClick={() => {
+                if (isTpSlEnabled) {
+                  console.log(`TP Price: ${tpPrice}, SL Price: ${slPrice}`);
+                }
+              }}
+            >
+              {activeOrderType === "market"
+                ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
+                : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`
+              }
+            </button>
+            <div className="perps-info-rectangle">
+              <div className="price-impact">
+                <div className="label-container">
+                  <TooltipLabel
+                    label={t('Liquidation Price')}
+                    tooltipText={
+                      <div>
+                        <div className="tooltip-description">
+                          {t('priceImpactHelp')}
                         </div>
+                      </div>
+                    }
+                    className="impact-label"
+                  />
+                </div>
+                <div className="value-container">
+                  $0.00
+                </div>
+              </div>
+              <div className="price-impact">
+                <div className="label-container">
+                  <TooltipLabel
+                    label={t('Order Value')}
+                    tooltipText={
+                      <div>
+                        <div className="tooltip-description">
+                          {t('priceImpactHelp')}
+                        </div>
+                      </div>
+                    }
+                    className="impact-label"
+                  />
+                </div>
+                <div className="value-container">
+                  $0.00
+                </div>
+              </div>
+              <div className="price-impact">
+                <div className="label-container">
+                  <TooltipLabel
+                    label={t('Margin Required')}
+                    tooltipText={
+                      <div>
+                        <div className="tooltip-description">
+                          {t('priceImpactHelp')}
+                        </div>
+                      </div>
+                    }
+                    className="impact-label"
+                  />
+                </div>
+                <div className="value-container">
+                  $0.00
+                </div>
+              </div>
+              <div className="price-impact">
+                <div className="label-container">
+                  <TooltipLabel
+                    label={t('Slippage')}
+                    tooltipText={
+                      <div>
+                        <div className="tooltip-description">
+                          {t('slippageHelp')}
+                        </div>
+                      </div>
+                    }
+                    className="impact-label"
+                  />
+                </div>
+                <div className="slippage-input-container">
+                  <input
+                    inputMode="decimal"
+                    className={`slippage-inline-input ${parseFloat(slippageString) > 5 ? 'red' : ''
+                      }`}
+                    type="text"
+                    value={slippageString}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        (e.target as HTMLInputElement).blur()
+                        e.stopPropagation()
+                      };
+                    }}
+                    onChange={(e) => {
+                      const value = e.target.value;
 
-                    </div>
+                      if (
+                        /^(?!0{2})\d*\.?\d{0,2}$/.test(value) &&
+                        !/^\d{2}\.\d{2}$/.test(value)
+                      ) {
+                        if (value === '') {
+                          setSlippageString('');
+                          setSlippage(BigInt(9900));
+                          localStorage.setItem('crystal_slippage_string', '1');
+                          localStorage.setItem('crystal_slippage', '9900');
+                        } else if (parseFloat(value) <= 50) {
+                          setSlippageString(value);
+                          localStorage.setItem('crystal_slippage_string', value);
+
+                          const newSlippage = BigInt(
+                            10000 - parseFloat(value) * 100,
+                          );
+                          setSlippage(newSlippage);
+                          localStorage.setItem(
+                            'crystal_slippage',
+                            newSlippage.toString(),
+                          );
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      if (slippageString === '') {
+                        setSlippageString('1');
+                        localStorage.setItem('crystal_slippage_string', '1');
+
+                        setSlippage(BigInt(9900));
+                        localStorage.setItem('crystal_slippage', '9900');
+                      }
+                    }}
+                  />
+                  <span
+                    className={`slippage-symbol ${parseFloat(slippageString) > 5 ? 'red' : ''
+                      }`}
+                  >
+                    %
+                  </span>
                 </div>
-                <div className="perps-bottom-section" style={{ minHeight: `${orderCenterHeight}px`, maxHeight: `${orderCenterHeight}px`}}>
-                <div className="perps-deposit-withdraw-section">
-                    <button
-                        className="perps-deposit-button"
-                        onClick={() => setpopup(30)}
-                    >
-                        Deposit
-                    </button>
-                    <button
-                        className="perps-withdraw-button"
-                        onClick={() => setpopup(31)}
-                    >
-                        Withdraw
-                    </button>
+              </div>
+              <div className="price-impact">
+                <div className="label-container">
+                  <TooltipLabel
+                    label={t('Fees')}
+                    tooltipText={
+                      <div>
+                        <div className="tooltip-description">
+                          {t('takerfeeexplanation')}
+                        </div>
+                      </div>
+                    }
+                    className="impact-label"
+                  />
                 </div>
-                <div
-                    className="perps-account-details"
-                >
-                    <span className="perps-account-section-title" >Account Overview</span>
-                    <div className="perps-account-row">
-                        <span className="perps-account-title">
-                            Balance
-                        </span>
-                        <span className="perps-account-subtitle">
-                            $0.00
-                        </span>
-                    </div>
-                    <div className="perps-account-row">
-                        <span className="perps-account-title">
-                            Unrealized PNL
-                        </span>
-                        <span className="perps-account-subtitle">
-                            $0.00
-                        </span>
-                    </div>
-                    <div className="perps-account-row">
-                        <span className="perps-account-title">
-                            Cross Margin Ratio
-                        </span>
-                        <span className="perps-account-subtitle">
-                            $0.00
-                        </span>
-                    </div>
-                    <div className="perps-account-row">
-                        <span className="perps-account-title">
-                            Maintenance Margin
-                        </span>
-                        <span className="perps-account-subtitle">
-                            $0.00
-                        </span>
-                    </div>
-                    <div className="perps-account-row">
-                        <span className="perps-account-title">
-                            Cross Account Leverage
-                        </span>
-                        <span className="perps-account-subtitle">
-                            $0.00
-                        </span>
-                    </div>
+                <div className="value-container">
+                  0.038% / 0.015%
                 </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <div className="perps-bottom-section" style={{ minHeight: `${orderCenterHeight}px`, maxHeight: `${orderCenterHeight}px` }}>
+          <div className="perps-deposit-withdraw-section">
+            <button
+              className="perps-deposit-button"
+              onClick={() => setpopup(30)}
+            >
+              Deposit
+            </button>
+            <button
+              className="perps-withdraw-button"
+              onClick={() => setpopup(31)}
+            >
+              Withdraw
+            </button>
+          </div>
+          <div
+            className="perps-account-details"
+          >
+            <span className="perps-account-section-title" >Account Overview</span>
+            <div className="perps-account-row">
+              <span className="perps-account-title">
+                Balance
+              </span>
+              <span className="perps-account-subtitle">
+                $0.00
+              </span>
+            </div>
+            <div className="perps-account-row">
+              <span className="perps-account-title">
+                Unrealized PNL
+              </span>
+              <span className="perps-account-subtitle">
+                $0.00
+              </span>
+            </div>
+            <div className="perps-account-row">
+              <span className="perps-account-title">
+                Cross Margin Ratio
+              </span>
+              <span className="perps-account-subtitle">
+                $0.00
+              </span>
+            </div>
+            <div className="perps-account-row">
+              <span className="perps-account-title">
+                Maintenance Margin
+              </span>
+              <span className="perps-account-subtitle">
+                $0.00
+              </span>
+            </div>
+            <div className="perps-account-row">
+              <span className="perps-account-title">
+                Cross Account Leverage
+              </span>
+              <span className="perps-account-subtitle">
+                $0.00
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
