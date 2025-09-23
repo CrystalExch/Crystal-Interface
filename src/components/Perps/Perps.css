@@ -8,16 +8,22 @@
     flex-direction: column;
     justify-content: space-between;
     height: 100%;
-    width: 300px;
+    width: 350px;
     background-color: rgb(6,6,6);
     overflow-y: scroll;
 }
 
 
+@media (max-width: 1200px) {
+    .perps-trade-modal {
+        width: 300px
+    }
+}
+
 .perps-top-section{
     display: flex;
     flex-direction: column;
-    width: 300px;
+    width: 100%;
     overflow-y: scroll;
 
 }
@@ -736,7 +742,7 @@
     border-top: 1px solid rgba(179, 184, 249, 0.1);
     padding: 10px 15px 15px 15px;
     bottom: 0;
-    width: 300px;
+    width: 100%;
     box-shadow: 0 -10px 10px black;
 }
 

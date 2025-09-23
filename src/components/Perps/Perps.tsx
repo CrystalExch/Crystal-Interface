@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback, memo } from 'react';
 import ChartOrderbookPanel from '../ChartOrderbookPanel/ChartOrderbookPanel';
 import OrderCenter from '../OrderCenter/OrderCenter';
 import ChartComponent from '../Chart/Chart';
