@@ -1682,7 +1682,6 @@
   animation: none !important;
 }
 
-/* Re-enable transitions when not scrolling */
 .perps-markets-list-virtualized:not([data-scrolling="true"]) .perps-market-item-container {
   transition: background-color 0.1s ease;
 }
@@ -1692,10 +1691,11 @@
   align-items: center;
   font-size: 0.7rem;
   padding: 0px 4px;
-  border-radius: 2px;
-  background-color: #9aa1dd22;
+  border-radius: 4px;
+  background-color: #a095f111;
   height: 14px;
   color: #d8dcff;
+  padding-bottom: 1px;
 }
 
 

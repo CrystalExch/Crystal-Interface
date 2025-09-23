@@ -13488,7 +13488,7 @@ function App() {
             </div>
           </div>
         ) : null}
-        {popup === 27 ? ( // PNL popup
+        {popup === 27 ? ( // PNL
           <div ref={popupref}>
             <PNLComponent
               windowWidth={window.innerWidth}
