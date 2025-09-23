@@ -1086,9 +1086,9 @@
 }
 
 .skeleton-symbol {
-  width: 120px;
-  height: 18px;
-  margin-top: 4px;
+  width: 80px;
+  height: 24px;
+  margin-right: 20px;
 }
 
 .skeleton-name {
@@ -1486,10 +1486,6 @@
 .perps-interface-token-header-left {
   cursor: pointer;
   position: relative;
-}
-
-.perps-interface-token-header-left:hover {
-  opacity: 0.8;
 }
 
 .perps-markets-dropdown {

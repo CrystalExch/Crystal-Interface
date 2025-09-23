@@ -59,12 +59,28 @@ const PerpsTokenSkeleton = () => {
     <div className="perps-interface-token-info-container">
       <div className="perps-interface-token-header-info">
         <div className="perps-interface-token-header-left">
+        <button
+              className={`favorite-icon ${''}`}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill={'none'}
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+              </svg>
+            </button>
           <div className="perps-interface-token-icon-container">
             <div className="skeleton-circle" style={{ width: '28px', height: '28px', marginRight: '3px' }}></div>
           </div>
           <div className="perps-interface-token-identity">
             <div className="perps-interface-token-name-row">
-              <div className="skeleton-text skeleton-symbol" style={{ width: '120px', height: '18px' }}></div>
+              <div className="skeleton-text skeleton-symbol" style={{ width: '80px', height: '24px' }}></div>
             </div>
           </div>
         </div>
@@ -201,7 +217,7 @@ const PerpsMarketRow = memo(({ index, style, data }: {
           />
           <div className="market-info">
             <div className="market-pair-container">
-              <span className="market-pair">{market.contractName}</span>  <span className="market-leverage">100x</span>
+              <span className="market-pair">{market.contractName}</span>  <span className="market-leverage">{market.displayMaxLeverage}x</span>
             </div>
             <span className="market-volume">{market.formattedVolume}</span>
           </div>
