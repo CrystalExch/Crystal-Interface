@@ -8914,6 +8914,23 @@ function App() {
 
   const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
 
+  const [currentPNLData, setCurrentPNLData] = useState({
+    balance: 0,
+    amountBought: 0,
+    amountSold: 0,
+    valueBought: 0,
+    valueSold: 0,
+    valueNet: 0,
+    entryPrice: 0,
+    exitPrice: 0,
+  });
+  const [currentTokenData, setCurrentTokenData] = useState({
+    address: '',
+    symbol: '',
+    name: '',
+    price: 0,
+  });
+
   //popup modals
   const Modals = (
     <>
@@ -13480,6 +13497,13 @@ function App() {
           <div ref={popupref}>
             <PNLComponent
               windowWidth={window.innerWidth}
+              tokenAddress={currentTokenData.address}
+              userAddress={address}
+              tokenSymbol={currentTokenData.symbol}
+              tokenName={currentTokenData.name}
+              monUsdPrice={monUsdPrice}
+              externalUserStats={currentPNLData}
+              currentPrice={currentTokenData.price}
             />
           </div>
 
