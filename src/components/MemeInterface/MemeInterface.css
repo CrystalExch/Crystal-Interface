@@ -75,7 +75,7 @@
 
 .meme-buy-button,
 .meme-sell-button {
-  border: 1.5px solid transparent;
+  border: 1px solid transparent;
   border-radius: 4px;
   cursor: pointer;
   font-size: .9rem;
@@ -93,15 +93,7 @@
 
 }
 
-.meme-buy-button {
-  background-color: #326e4051;
-  color: rgb(67 254 154)
-}
 
-.meme-sell-button {
-  background-color: #6e324051;
-  color: rgb(235, 112, 112)
-}
 
 .meme-token-info-container {
   border-bottom: 1px solid rgba(179, 184, 249, .09);
@@ -357,8 +349,9 @@
 
 
 .meme-buy-button.active {
-  background-color: #326e4051;
-  color: rgb(67 254 154);
+    border: 1px solid rgba(67, 254, 154, 0.7);
+    box-shadow: inset 0 0 6px 4px rgba(67, 254, 154, 0.2);
+    color: rgb(67 254 154);
 }
 
 .meme-buy-button.inactive {
@@ -367,8 +360,9 @@
 }
 
 .meme-sell-button.active {
-  background-color: #6e324051;
-  color: rgb(235, 112, 112);
+  border: 1px solid rgb(235, 112, 112, 0.5);
+    box-shadow: inset 0 0 4px 4px rgb(235, 112, 112, 0.2);
+    color: rgb(235, 112, 112);
 }
 
 .meme-sell-button.inactive {
@@ -377,14 +371,12 @@
 }
 
 .meme-buy-button:hover {
-  background-color: #326e4051;
   border-color: transparent;
   color: rgb(67 254 154);
 
 }
 
 .meme-sell-button:hover {
-  background-color: #6e324051;
   border-color: transparent;
   color: rgb(235, 112, 112);
 
@@ -498,8 +490,9 @@
 }
 
 .meme-trade-action-button.buy {
-  background-color: #326e4051;
-  color: rgb(67 254 154);
+    border: 1px solid rgba(67, 254, 154, 0.7);
+    box-shadow: inset 0 0 6px 4px rgba(67, 254, 154, 0.2);
+    color: rgb(67 254 154);
 }
 
 .meme-trade-action-button.buy .meme-button-spinner {
@@ -518,8 +511,9 @@
 }
 
 .meme-trade-action-button.sell {
-  background-color: #6e324051;
-  color: rgb(235, 112, 112);
+    border: 1px solid rgb(235, 112, 112, 0.5);
+    box-shadow: inset 0 0 4px 4px rgb(235, 112, 112, 0.2);
+    color: rgb(235, 112, 112);
 }
 
 
@@ -1413,13 +1407,15 @@
 }
 
 .meme-mobile-trade-btn.active.buy {
-  background-color: #326e4051;
-  color: rgb(67 254 154);
+    border: 1px solid rgba(67, 254, 154, 0.7);
+    box-shadow: inset 0 0 6px 4px rgba(67, 254, 154, 0.2);
+    color: rgb(67 254 154);
 }
 
 .meme-mobile-trade-btn.active.sell {
-  background-color: #6e324051;
-  color: rgb(235, 112, 112);
+    border: 1px solid rgb(235, 112, 112, 0.5);
+    box-shadow: inset 0 0 4px 4px rgb(235, 112, 112, 0.2);
+    color: rgb(235, 112, 112);
 }
 
 .meme-mobile-trade-btn:hover:not(.active) {
