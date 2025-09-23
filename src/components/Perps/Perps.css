@@ -475,17 +475,17 @@
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     z-index: 100;
-    min-width: 60px;
+    min-width: 50px;
     margin-top: 2px;
+    overflow: hidden;
 }
 
 .perps-tif-option {
-    padding: 6px 12px;
+    padding: 3px 8px;
     cursor: pointer;
     font-size: 0.7rem;
     color: rgba(255, 255, 255, 0.8);
     transition: all 0.2s ease;
-    border-bottom: 1px solid rgba(128, 128, 128, 0.08);
 }
 
 .perps-tif-option:last-child {
@@ -502,6 +502,7 @@
     flex-direction: column;
     gap: 8px;
     margin-bottom: 12px;
+    margin-top: 12px;
 }
 
 .perps-tpsl-row {
