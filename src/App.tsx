@@ -20616,6 +20616,8 @@ function App() {
                 sellPresets={sellPresets}
                 monPresets={monPresets}
                 setMonPresets={setMonPresets}
+                onPNLDataChange={setCurrentPNLData}
+                onTokenDataChange={setCurrentTokenData}
               />
             } />
           <Route path="/board"
