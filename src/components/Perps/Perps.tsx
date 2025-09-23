@@ -806,11 +806,9 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
           clearInterval(pingIntervalRef.current);
           pingIntervalRef.current = null;
         }
-        if (liveStreamCancelled) {
-          reconnectIntervalRef.current = setTimeout(() => {
-            connectWebSocket();
-          }, 500);
-        }
+        reconnectIntervalRef.current = setTimeout(() => {
+          connectWebSocket();
+        }, 500);
       };
 
       wsRef.current.onerror = (error) => {
