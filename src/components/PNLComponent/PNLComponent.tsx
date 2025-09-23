@@ -172,6 +172,11 @@ interface ImageDimensions {
   height: number;
 }
 
+interface TimePeriod {
+  label: string;
+  days: number | null;
+}
+
 const ToggleSwitch: React.FC<{
   checked: boolean;
   onChange: () => void;
@@ -180,6 +185,112 @@ const ToggleSwitch: React.FC<{
     <div className="toggle-switch-handle" />
   </div>
 );
+
+const usePNLDataWithTime = (tokenAddress: string, userAddress: string, days: number | null) => {
+  const [pnlData, setPnlData] = useState({
+    balance: 0,
+    amountBought: 0,
+    amountSold: 0,
+    valueBought: 0,
+    valueSold: 0,
+    valueNet: 0,
+    lastPrice: 0,
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!tokenAddress || !userAddress) {
+      setPnlData({
+        balance: 0,
+        amountBought: 0,
+        amountSold: 0,
+        valueBought: 0,
+        valueSold: 0,
+        valueNet: 0,
+        lastPrice: 0,
+      });
+      return;
+    }
+
+    const fetchPNLData = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const currentTime = Math.floor(Date.now() / 1000);
+        const timeFilter = days ? currentTime - (days * 24 * 60 * 60) : 0;
+        
+        const response = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: ``,
+            variables: {
+              userAddr: userAddress.toLowerCase(),
+              tokenAddr: tokenAddress.toLowerCase(),
+              timestamp: timeFilter,
+            },
+          }),
+        });
+
+        const { data } = await response.json();
+        const position = data?.launchpadPositions?.[0];
+        const buys = data?.launchpadBuys || [];
+        const sells = data?.launchpadSells || [];
+
+        if (position || buys.length > 0 || sells.length > 0) {
+          // Calculate totals from filtered transactions
+          const totalBoughtTokens = buys.reduce((sum: number, buy: any) => 
+            sum + (Number(buy.tokenAmount) / 1e18), 0);
+          const totalSoldTokens = sells.reduce((sum: number, sell: any) => 
+            sum + (Number(sell.tokenAmount) / 1e18), 0);
+          const totalSpentNative = buys.reduce((sum: number, buy: any) => 
+            sum + (Number(buy.nativeAmount) / 1e18), 0);
+          const totalReceivedNative = sells.reduce((sum: number, sell: any) => 
+            sum + (Number(sell.nativeAmount) / 1e18), 0);
+          
+          const balance = position ? Number(position.tokens) / 1e18 : 0;
+          const lastPrice = position ? Number(position.token.lastPriceNativePerTokenWad) / 1e18 : 0;
+
+          // Calculate PnL for the time period
+          const realized = totalReceivedNative - totalSpentNative;
+          const unrealized = balance * lastPrice;
+          const totalPnL = realized + unrealized;
+
+          setPnlData({
+            balance,
+            amountBought: totalBoughtTokens,
+            amountSold: totalSoldTokens,
+            valueBought: totalSpentNative,
+            valueSold: totalReceivedNative,
+            valueNet: totalPnL,
+            lastPrice,
+          });
+        } else {
+          setPnlData({
+            balance: 0,
+            amountBought: 0,
+            amountSold: 0,
+            valueBought: 0,
+            valueSold: 0,
+            valueNet: 0,
+            lastPrice: 0,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching PNL data:', error);
+        setError('Failed to fetch trading data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPNLData();
+  }, [tokenAddress, userAddress, days]);
+
+  return { pnlData, isLoading, error };
+};
 
 const PNLComponent: React.FC<PNLComponentProps> = ({ 
   windowWidth = window.innerWidth,
@@ -199,9 +310,19 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   currentPrice = 0, // NEW: Accept current price
 }) => {
 
-  const { pnlData: fetchedPnlData, isLoading, error } = usePNLData(
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>({ label: 'MAX', days: null });
+  
+  const timePeriods: TimePeriod[] = [
+    { label: '1D', days: 1 },
+    { label: '7D', days: 7 },
+    { label: '30D', days: 30 },
+    { label: 'MAX', days: null }
+  ];
+
+  const { pnlData: fetchedPnlData, isLoading, error } = usePNLDataWithTime(
     (!demoMode && !externalUserStats) ? (tokenAddress || '') : '',
-    (!demoMode && !externalUserStats) ? (userAddress || '') : ''
+    (!demoMode && !externalUserStats) ? (userAddress || '') : '',
+    selectedTimePeriod.days
   );
 
   const pnlData = useMemo(() => {
@@ -780,6 +901,8 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   // drag hint
   const showScrollHint = isUploadedImageSelected && (needsHorizontal || needsVertical) && !hasInteracted && !isCapturing;
 
+  
+
   if (isLoading && !demoMode && !externalUserStats) {
     return (
       <div className="pnl-loading">
@@ -796,6 +919,10 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
       </div>
     );
   }
+
+  
+
+  
 
   return (
     <div>
@@ -974,8 +1101,15 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
               <button className="pnl-footer-btn" onClick={toggleRightPanel}>
                 {showRightPanel ? 'Hide Panel' : 'Customize'}
               </button>
-              {['1D', '7D', '30D', 'MAX'].map(label => (
-                <button key={label} className="pnl-footer-btn">{label}</button>
+              {timePeriods.map(period => (
+                <button 
+                  key={period.label} 
+                  className={`pnl-footer-btn ${selectedTimePeriod.label === period.label ? 'active' : ''}`}
+                  onClick={() => setSelectedTimePeriod(period)}
+                  disabled={isLoading}
+                >
+                  {period.label}
+                </button>
               ))}
             </div>
             <div className="pnl-footer-right">

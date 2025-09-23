@@ -8183,6 +8183,17 @@ input::-webkit-inner-spin-button {
   border-color: #2a2a2e52;
 }
 
+.pnl-footer-btn.active {
+  background: rgb(170 174 207 / 8%);
+  border-color: #aaaecf66;
+  box-shadow: 0 0 0 .05px rgba(170, 174, 207, 0.6);
+}
+
+.pnl-footer-btn.active span {
+  color: #d8dcff;
+}
+
+
 .pnl-section {
   position: relative;
   width: 100%;
