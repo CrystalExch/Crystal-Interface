@@ -133,6 +133,20 @@ interface MemeInterfaceProps {
   sellPresets?: { [key: number]: { slippage: string; priority: string } };
   monPresets?: number[];
   setMonPresets?: (presets: number[]) => void;
+  onPNLDataChange?: (pnlData: {
+    balance: number;
+    amountBought: number;
+    amountSold: number;
+    valueBought: number;
+    valueSold: number;
+    valueNet: number;
+  }) => void;
+  onTokenDataChange?: (tokenData: {
+    address: string;
+    symbol: string;
+    name: string;
+    price: number;
+  }) => void;
 }
 
 const MARKET_UPDATE_EVENT =
@@ -374,6 +388,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   sellPresets,
   monPresets = [5, 20, 100, 500],
   setMonPresets,
+  onPNLDataChange,
+  onTokenDataChange,
 }) => {
   const getSliderPosition = (
     activeView: 'chart' | 'trades' | 'ordercenter',
@@ -529,6 +545,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [isLoadingTrades, setIsLoadingTrades] = useState(false);
   const [similarTokens, setSimilarTokens] = useState<any[]>([]);
   const { activechain } = useSharedContext();
+  
 
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
   const explorer = settings.chainConfig[activechain]?.explorer;
@@ -1152,6 +1169,23 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       cancelled = true;
     };
   }, [token.id, trackedAddresses]);
+
+  useEffect(() => {
+    if (onPNLDataChange) {
+      onPNLDataChange(userStats);
+    }
+  }, [userStats, onPNLDataChange]);
+
+  useEffect(() => {
+    if (onTokenDataChange) {
+      onTokenDataChange({
+        address: token.id,
+        symbol: token.symbol,
+        name: token.name,
+        price: currentPrice,
+      });
+    }
+  }, [token.id, token.symbol, token.name, currentPrice, onTokenDataChange]);
 
   const lastInvalidateRef = useRef(0);
   const currentPriceRef = useRef(0);
