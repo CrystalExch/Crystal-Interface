@@ -145,15 +145,15 @@ const PerpsMarketRow = memo(({ index, style, data }: {
         </button>
 
         <div className="market-pair-section">
-<img 
-  src={market.iconSrc} 
-  className="market-icon" 
-  loading="lazy"
-  alt={market.baseAsset}
-/>
+          <img
+            src={market.iconSrc}
+            className="market-icon"
+            loading="lazy"
+            alt={market.baseAsset}
+          />
           <div className="market-info">
             <div className="market-pair-container">
-              <span className="market-pair">{market.contractName}</span>
+              <span className="market-pair">{market.contractName}</span>  <span className="market-leverage">100x</span>
             </div>
             <span className="market-volume">{market.formattedVolume}</span>
           </div>
@@ -170,14 +170,14 @@ const PerpsMarketRow = memo(({ index, style, data }: {
         </div>
 
         <div className="perps-funding-section">
-<div className={`perps-funding-rate ${market.fundingClass}`}>
+          <div className={`perps-funding-rate ${market.fundingClass}`}>
             {market.formattedFunding}
           </div>
         </div>
 
         <div className="market-price-section">
           <div className="market-price">{market.lastPrice}</div>
-<div className={`market-change ${market.changeClass}`}>
+          <div className={`market-change ${market.changeClass}`}>
             {market.formattedChange}
           </div>
         </div>
@@ -280,12 +280,12 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const perpsSearchInputRef = useRef<HTMLInputElement>(null);
   const virtualizationListRef = useRef<List>(null);
 
-useEffect(() => {
-  const timer = setTimeout(() => {
-    setDebouncedPerpsSearchQuery(perpsSearchQuery);
-  }, 150);
-  return () => clearTimeout(timer);
-}, [perpsSearchQuery]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedPerpsSearchQuery(perpsSearchQuery);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [perpsSearchQuery]);
   const filteredPerpsMarkets = useMemo(() => {
     return Object.values(perpsMarketsData)
       .filter(market =>
@@ -494,7 +494,7 @@ useEffect(() => {
     const container = memeMetricsRef.current;
     if (container && isMemeToken) {
       container.addEventListener('scroll', handleMemeScroll);
-      handleMemeScroll(); 
+      handleMemeScroll();
     }
 
     return () => {

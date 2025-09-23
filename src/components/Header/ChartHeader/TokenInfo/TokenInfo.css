@@ -1586,7 +1586,6 @@
   border-radius: 5px;
   cursor: pointer;
   display: grid;
-  grid-template-columns: 23px 1.2fr 0.8fr 0.6fr 0.6fr 0.6fr;
   padding: 0px 10px;
   
   padding-left: 20px;
@@ -1655,11 +1654,11 @@
 }
 
 .perps-markets-list-header {
-  grid-template-columns: 23px 1fr 0.6fr 0.6fr 0.6fr 0.6fr;
+  grid-template-columns: 23px 1fr 0.6fr 0.8fr 0.6fr 0.6fr;
 }
 
 .perps-market-item {
-  grid-template-columns: 13px 0.8fr 0.8fr 0.6fr 0.6fr 0.6fr;
+  grid-template-columns: 13px 0.8fr 0.8fr 0.8fr 0.6fr 0.6fr;
 }
 
 .perps-markets-list-virtualized {
@@ -1710,4 +1709,22 @@
 /* Force GPU acceleration */
 .perps-market-item-container {
   transform: translate3d(0, 0, 0);
+}
+
+.market-leverage{
+  display: flex;
+  align-items: center;
+  font-size: 0.7rem;
+  padding: 0px 4px;
+  border-radius: 20px;
+  background-color: #3f3f4335;
+  height: 14px;
+  color: #e0e2f7;
+}
+
+
+.market-pair-container{
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
