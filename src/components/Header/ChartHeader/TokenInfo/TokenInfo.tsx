@@ -1195,16 +1195,36 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     return () => clearInterval(id)
   }, [perpsTokenInfo?.nextFundingTime])
 
-if (isPerpsToken) {
-  const isPerpsLoading = !perpsTokenInfo?.lastPrice || !perpsTokenInfo?.contractName;
-  
-  if (isPerpsLoading) {
-    return <PerpsTokenSkeleton />;
-  }
+  if (isPerpsToken) {
+    const isPerpsLoading = !perpsTokenInfo?.lastPrice || !perpsTokenInfo?.contractName;
+
+    if (isPerpsLoading) {
+      return <PerpsTokenSkeleton />;
+    }
     return (
       <div className="perps-interface-token-info-container">
         <div className="perps-interface-token-header-info">
           <div className="perps-interface-token-header-left" onClick={togglePerpsDropdown}>
+                 <button
+              className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavorite(tokenAddress);
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+              </svg>
+            </button>
             <div className="perps-interface-token-icon-container">
               <img
                 src={`https://static.edgex.exchange/icons/coin/${perpsTokenInfo.baseAsset}.svg`}
@@ -1214,7 +1234,9 @@ if (isPerpsToken) {
             <div className="perps-interface-token-identity">
               <div className="perps-interface-token-name-row">
                 <h1 className="perps-interface-token-symbol">{perpsTokenInfo.baseAsset}/{perpsTokenInfo.quoteAsset}</h1>
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="perps-markets-dropdown-arrow"><path d="m6 9 6 6 6-6" /></svg>
+              </div>
+              <div className="ctrlktooltip">
+                Ctrl+K
               </div>
               <div className="perps-interface-token-meta-row">
               </div>

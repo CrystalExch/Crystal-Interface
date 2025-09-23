@@ -4,6 +4,7 @@
   overflow: visible;
   position: relative;
   width: calc(100vw - 345px);
+  background-color: rgb(6,6,6);
 }
 
 .orderbook-container {
