@@ -372,8 +372,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 
             }}
             onClick={handleColorPickerClick}
-            title="Click to pick color"
-            
           />
           <input
             type="text"
@@ -520,12 +518,12 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     const scaledWidth = imgWidth * zoomScale;
     const scaledHeight = imgHeight * zoomScale;
     
-    // Calculate if image is larger than card in either dimension
-    const needsHorizontal = imgWidth > cardWidth;
-    const needsVertical = imgHeight > cardHeight;
+    // Calculate if image is larger than card in either dimension AT CURRENT ZOOM LEVEL
+    const needsHorizontal = scaledWidth > cardWidth;
+    const needsVertical = scaledHeight > cardHeight;
     
     return { needsHorizontal, needsVertical };
-  }, [uploadedImageDimensions]);
+  }, [uploadedImageDimensions, backgroundZoom]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!isUploadedImageSelected) return;
@@ -825,8 +823,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                   pointerEvents: 'none',
                   zIndex: 1000
                 }}>
-                  {needsHorizontal && needsVertical ? 'Drag to scroll' : 
-                   needsHorizontal ? 'Drag to scroll horizontally' : 'Drag to scroll vertically'}
+                  {needsHorizontal || needsVertical ? 'Drag to scroll' : "Drag to scroll"}
                 </div>
               )}
               
@@ -892,6 +889,40 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
             </div>
           </div>
 
+          {isUploadedImageSelected && (
+                <div className="pnl-zoom-controls">
+                  <label className="zoom-label">Zoom: {backgroundZoom}%</label>
+                  <input
+                    type="range"
+                    min="50"
+                    max="200"
+                    value={backgroundZoom}
+                    onChange={(e) => setBackgroundZoom(Number(e.target.value))}
+                    className="zoom-slider"
+                  />
+                  <div className="zoom-buttons">
+                    <button 
+                      className="zoom-btn"
+                      onClick={() => setBackgroundZoom(Math.max(50, backgroundZoom - 10))}
+                    >
+                      -
+                    </button>
+                    <button 
+                      className="zoom-btn"
+                      onClick={() => setBackgroundZoom(100)}
+                    >
+                      Reset
+                    </button>
+                    <button 
+                      className="zoom-btn"
+                      onClick={() => setBackgroundZoom(Math.min(200, backgroundZoom + 10))}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )}
+
           <div className="pnl-section pnl-layer-middle">
             <div className="pnl-middle-left">
               <button
@@ -933,39 +964,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                 />
               </label>
 
-              {isUploadedImageSelected && (
-                <div className="pnl-zoom-controls">
-                  <label className="zoom-label">Zoom: {backgroundZoom}%</label>
-                  <input
-                    type="range"
-                    min="50"
-                    max="200"
-                    value={backgroundZoom}
-                    onChange={(e) => setBackgroundZoom(Number(e.target.value))}
-                    className="zoom-slider"
-                  />
-                  <div className="zoom-buttons">
-                    <button 
-                      className="zoom-btn"
-                      onClick={() => setBackgroundZoom(Math.max(50, backgroundZoom - 10))}
-                    >
-                      -
-                    </button>
-                    <button 
-                      className="zoom-btn"
-                      onClick={() => setBackgroundZoom(100)}
-                    >
-                      Reset
-                    </button>
-                    <button 
-                      className="zoom-btn"
-                      onClick={() => setBackgroundZoom(Math.min(200, backgroundZoom + 10))}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              )}
+              
             </div>
           </div>
 
@@ -1000,18 +999,18 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 
             <div className="customization-body">
               <div className="section">
-                <h3 className="section-title">Text Colors</h3>
+                <h3 className="pnl-section-title">Text Colors</h3>
                 {colorInputs.mainText}
               </div>
 
               <div className="section">
-                <h3 className="section-title">PNL Colors</h3>
+                <h3 className="pnl-section-title">PNL Colors</h3>
                 {colorInputs.positivePNL}
                 {colorInputs.negativePNL}
               </div>
 
               <div className="section">
-                <h3 className="section-title">Layout Options</h3>
+                <h3 className="pnl-section-title">Layout Options</h3>
                 <div className="layout-toggle-row">
                   <span className="layout-toggle-sublabel">Show PNL Rectangle</span>
                   <div className="toggle-switch-wrapper">
