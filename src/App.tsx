@@ -5776,7 +5776,6 @@ function App() {
           BigInt(amountIn) !== BigInt(0)
         ) {
           const mkObj = getMarket(activeMarket.path.at(0), activeMarket.path.at(1));
-          setActiveMarket(mkObj);
           const wethticker = settings.chainConfig[activechain].wethticker;
           const ethticker = settings.chainConfig[activechain].ethticker;
           const mkKey = (({ baseAsset, quoteAsset }: any) =>
