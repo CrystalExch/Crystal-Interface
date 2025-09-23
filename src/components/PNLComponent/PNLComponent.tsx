@@ -8,9 +8,147 @@ import PNLBG from '../../assets/PNLBG.png';
 import PNLBG2 from '../../assets/PNLBG2.png'
 import monadicon from '../../assets/monadlogo.svg'
 
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
+
+const usePNLData = (tokenAddress: string, userAddress: string) => {
+  const [pnlData, setPnlData] = useState({
+    balance: 0,
+    amountBought: 0,
+    amountSold: 0,
+    valueBought: 0,
+    valueSold: 0,
+    valueNet: 0,
+    lastPrice: 0,
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!tokenAddress || !userAddress) {
+      setPnlData({
+        balance: 0,
+        amountBought: 0,
+        amountSold: 0,
+        valueBought: 0,
+        valueSold: 0,
+        valueNet: 0,
+        lastPrice: 0,
+      });
+      return;
+    }
+
+    const fetchPNLData = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const response = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+              query ($userAddr: String!, $tokenAddr: String!) {
+                launchpadPositions(
+                  where: { 
+                    account: $userAddr, 
+                    token: $tokenAddr 
+                  }
+                ) {
+                  tokenBought
+                  tokenSold
+                  nativeSpent
+                  nativeReceived
+                  tokens
+                  token {
+                    lastPriceNativePerTokenWad
+                    symbol
+                    name
+                  }
+                }
+              }
+            `,
+            variables: {
+              userAddr: userAddress.toLowerCase(),
+              tokenAddr: tokenAddress.toLowerCase(),
+            },
+          }),
+        });
+
+        const { data } = await response.json();
+        const position = data?.launchpadPositions?.[0];
+
+        if (position) {
+          const boughtTokens = Number(position.tokenBought) / 1e18;
+          const soldTokens = Number(position.tokenSold) / 1e18;
+          const spentNative = Number(position.nativeSpent) / 1e18;
+          const receivedNative = Number(position.nativeReceived) / 1e18;
+          const balance = Number(position.tokens) / 1e18;
+          const lastPrice = Number(position.token.lastPriceNativePerTokenWad) / 1e18;
+
+          const realized = receivedNative - spentNative;
+          const unrealized = balance * lastPrice;
+          const totalPnL = realized + unrealized;
+
+          setPnlData({
+            balance,
+            amountBought: boughtTokens,
+            amountSold: soldTokens,
+            valueBought: spentNative,
+            valueSold: receivedNative,
+            valueNet: totalPnL,
+            lastPrice,
+          });
+        } else {
+          setPnlData({
+            balance: 0,
+            amountBought: 0,
+            amountSold: 0,
+            valueBought: 0,
+            valueSold: 0,
+            valueNet: 0,
+            lastPrice: 0,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching PNL data:', error);
+        setError('Failed to fetch trading data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPNLData();
+  }, [tokenAddress, userAddress]);
+
+  return { pnlData, isLoading, error };
+};
 
 interface PNLComponentProps {
   windowWidth?: number;
+  tokenAddress?: string;
+  userAddress?: string;
+  tokenSymbol?: string;
+  tokenName?: string;
+  monUsdPrice?: number;
+  //overrides for demo/testing
+  demoMode?: boolean;
+  demoData?: {
+    pnl: number;
+    entryPrice: number;
+    exitPrice: number;
+    leverage: number;
+    valueNet?: number;
+  };
+  // Accept external user stats from MemeInterface
+  externalUserStats?: {
+    balance: number;
+    amountBought: number;
+    amountSold: number;
+    valueBought: number;
+    valueSold: number;
+    valueNet: number;
+  };
+  currentPrice?: number;
 }
 
 interface CustomizationSettings {
@@ -44,15 +182,85 @@ const ToggleSwitch: React.FC<{
 );
 
 const PNLComponent: React.FC<PNLComponentProps> = ({ 
-  windowWidth = window.innerWidth 
+  windowWidth = window.innerWidth,
+  tokenAddress,
+  userAddress,
+  tokenSymbol = 'MON',
+  tokenName = 'MON',
+  monUsdPrice = 1,
+  demoMode = false,
+  demoData = {
+    pnl: +0,
+    entryPrice: 0,
+    exitPrice: 0,
+    leverage: 0,
+  },
+  externalUserStats, // NEW: Accept external stats
+  currentPrice = 0, // NEW: Accept current price
 }) => {
-  const tokenIconUrl = './monad.svg';
-  const tokenName = 'MON';
-  const leverage = 10;
-  const pnl = -55.05;
-  const entryPrice = 38.88;
-  const exitPrice = 38.88;
-  const referralCode = 138296;
+
+  const { pnlData: fetchedPnlData, isLoading, error } = usePNLData(
+    (!demoMode && !externalUserStats) ? (tokenAddress || '') : '',
+    (!demoMode && !externalUserStats) ? (userAddress || '') : ''
+  );
+
+  const pnlData = useMemo(() => {
+    if (demoMode) {
+      return {
+        balance: 0,
+        amountBought: 0,
+        amountSold: 0,
+        valueBought: 0,
+        valueSold: 0,
+        valueNet: 0,
+        lastPrice: 0,
+      };
+    }
+    
+    if (externalUserStats) {
+      return {
+        balance: externalUserStats.balance,
+        amountBought: externalUserStats.amountBought,
+        amountSold: externalUserStats.amountSold,
+        valueBought: externalUserStats.valueBought,
+        valueSold: externalUserStats.valueSold,
+        valueNet: externalUserStats.valueNet,
+        lastPrice: currentPrice,
+      };
+    }
+    
+    return fetchedPnlData;
+  }, [demoMode, externalUserStats, fetchedPnlData, currentPrice]);
+
+  // Calculations
+  const displayData = useMemo(() => {
+    if (demoMode) {
+      return {
+        ...demoData,
+        valueNet: demoData.valueNet ?? 0,
+      }
+    }
+
+    const pnlPercentage = pnlData.valueBought > 0 
+      ? ((pnlData.valueNet / pnlData.valueBought) * 100) 
+      : 0;
+
+    const entryPrice = pnlData.amountBought > 0
+      ? (pnlData.valueBought / pnlData.amountBought) * monUsdPrice
+      : 0;
+    const exitPrice = pnlData.amountSold > 0 
+      ? (pnlData.valueSold / pnlData.amountSold) * monUsdPrice
+      : pnlData.lastPrice * monUsdPrice;
+
+    return {
+      pnl: pnlPercentage,
+      entryPrice,
+      exitPrice,
+      leverage: 1, // Default to 1x for spot
+      valueNet: pnlData.valueNet * monUsdPrice,
+      balance: pnlData.balance,
+    };
+  }, [demoMode, demoData, pnlData, monUsdPrice]);
 
   const defaultCustomizationSettings: CustomizationSettings = {
     mainTextColor: '#EAEDFF',
@@ -64,7 +272,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   const [backgroundZoom, setBackgroundZoom] = useState(100);
   const [uploadedBg, setUploadedBg] = useState<string | null>(null);
   const [uploadedImageDimensions, setUploadedImageDimensions] = useState<ImageDimensions | null>(null);
-  const [backgroundPosition, setBackgroundPosition] = useState({ x: 50, y: 50 }); // percentage values
+  const [backgroundPosition, setBackgroundPosition] = useState({ x: 50, y: 50 });
   const [currency, setCurrency] = useState(tokenName);
   const [selectedBg, setSelectedBg] = useState(PNLBG2);
   const [customizationSettings, setCustomizationSettings] = useState<CustomizationSettings>(defaultCustomizationSettings);
@@ -75,7 +283,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [hasInteracted, setHasInteracted] = useState(false); // Track if user has interacted
+  const [hasInteracted, setHasInteracted] = useState(false); //for the drag to scroll shi
 
   const captureRef = useRef<HTMLDivElement>(null);
   const pickerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -371,9 +579,8 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   const handleBgSelect = (bg: string) => {
     setSelectedBg(bg);
     setCustomizationSettings(defaultCustomizationSettings);
-    setHasInteracted(false); // Reset interaction state when changing background
+    setHasInteracted(false);
     setBackgroundZoom(100);
-    // Reset background position when selecting a different background
     if (bg !== uploadedBg) {
       setBackgroundPosition({ x: 50, y: 50 });
     }
@@ -574,6 +781,23 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   // drag hint
   const showScrollHint = isUploadedImageSelected && (needsHorizontal || needsVertical) && !hasInteracted && !isCapturing;
 
+  if (isLoading && !demoMode && !externalUserStats) {
+    return (
+      <div className="pnl-loading">
+        <p>Loading trading data...</p>
+      </div>
+    );
+  }
+
+  if (error && !demoMode && !externalUserStats) {
+    return (
+      <div className="pnl-error">
+        <p>Error: {error}</p>
+        <button onClick={() => window.location.reload()}>Retry</button>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div
@@ -616,10 +840,14 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                     <div className="pnl-token-info">
                       <img src={monadicon} className="pnl-token-icon" crossOrigin="anonymous" />
                       <span className="pnl-token-name" style={{ color: customizationSettings.mainTextColor }}>
-                        {tokenName}
+                        {tokenSymbol || tokenName}
                       </span>
                     </div>
-                    <div className="pnl-leverage-tag">SHORT {leverage}X</div>
+                    {displayData.leverage > 1 && (
+                      <div className="pnl-leverage-tag">
+                        {displayData.pnl > 0 ? 'LONG' : 'SHORT'} {displayData.leverage}X
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -628,35 +856,36 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                   style={{
                     color: customizationSettings.showPNLRectangle
                       ? customizationSettings.rectangleTextColor
-                      : (pnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor),
+                      : (displayData.pnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor),
                     backgroundColor: customizationSettings.showPNLRectangle
-                      ? (pnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor)
+                      ? (displayData.pnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor)
                       : 'transparent',
                   }}
                 >
-                  {pnl > 0 ? '+' : ''}{pnl.toFixed(2)}%
+                  {displayData.pnl > 0 ? '+' : ''}{displayData.pnl.toFixed(2)}%
                 </div>
               </div>
 
+              
               <div className="pnl-entry-exit-referral">
                 <div className="pnl-entry-exit-group">
                   <div className="pnl-entry">
                     <div className="pnl-entry-label">Entry Price</div>
                     <div className="pnl-entry-value" style={{ color: customizationSettings.mainTextColor }}>
-                      ${entryPrice.toFixed(2)}
+                      ${displayData.entryPrice.toFixed(4)}
                     </div>
                   </div>
                   <div className="pnl-exit">
                     <div className="pnl-exit-label">Exit Price</div>
                     <div className="pnl-exit-value" style={{ color: customizationSettings.mainTextColor }}>
-                      ${exitPrice.toFixed(2)}
+                      ${displayData.exitPrice.toFixed(4)}
                     </div>
                   </div>
                 </div>
                 <div className="pnl-referral">
                   <div className="pnl-referral-label">Referral Code</div>
                   <div className="pnl-referral-value" style={{ color: customizationSettings.mainTextColor }}>
-                    {referralCode}
+                    {demoMode ? '42069' : '---'}
                   </div>
                 </div>
               </div>
@@ -695,7 +924,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 
             <div className="pnl-middle-right">
               <label className="pnl-upload-box">
-                Upload File
+                Upload FIle
                 <input
                   type="file"
                   accept="image/*"
