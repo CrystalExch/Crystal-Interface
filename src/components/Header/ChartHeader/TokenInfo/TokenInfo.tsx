@@ -1,11 +1,12 @@
 import { Search, SearchIcon } from 'lucide-react';
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom'
 import camera from '../../../../assets/camera.svg'
 import CopyButton from '../../../CopyButton/CopyButton';
 import TokenInfoPopup from './TokenInfoPopup/TokenInfoPopup';
 import MiniChart from './MiniChart/MiniChart';
 import '../../../Portfolio/Portfolio.css';
+import { FixedSizeList as List } from 'react-window';
 
 import SortArrow from '../../../OrderCenter/SortArrow/SortArrow';
 import PriceDisplay from '../PriceDisplay/PriceDisplay';
@@ -115,7 +116,81 @@ const MemeTokenSkeleton = () => {
     </div>
   );
 };
+const PerpsMarketRow = memo(({ index, style, data }: {
+  index: number;
+  style: React.CSSProperties;
+  data: {
+    markets: any[];
+    selectedIndex: number;
+    onMouseEnter: (index: number) => void;
+    onClick: (market: any) => void;
+  }
+}) => {
+  const { markets, selectedIndex, onMouseEnter, onClick } = data;
+  const market = markets[index];
 
+  if (!market) return null;
+
+  return (
+    <div
+      style={style}
+      className={`perps-market-item-container ${index === selectedIndex ? 'selected' : ''}`}
+      onMouseEnter={() => onMouseEnter(index)}
+    >
+      <div className="perps-market-item" onClick={() => onClick(market)}>
+        <button onClick={(e) => e.stopPropagation()} className="dropdown-market-favorite-button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+          </svg>
+        </button>
+
+        <div className="market-pair-section">
+<img 
+  src={market.iconSrc} 
+  className="market-icon" 
+  loading="lazy"
+  alt={market.baseAsset}
+/>
+          <div className="market-info">
+            <div className="market-pair-container">
+              <span className="market-pair">{market.contractName}</span>
+            </div>
+            <span className="market-volume">{market.formattedVolume}</span>
+          </div>
+        </div>
+
+        <div className="minichart-section">
+          <div className="perps-mini-chart-placeholder">Chart</div>
+        </div>
+
+        <div className="perps-oi-section">
+          <div className="perps-open-interest">
+            {market.formattedOI}
+          </div>
+        </div>
+
+        <div className="perps-funding-section">
+<div className={`perps-funding-rate ${market.fundingClass}`}>
+            {market.formattedFunding}
+          </div>
+        </div>
+
+        <div className="market-price-section">
+          <div className="market-price">{market.lastPrice}</div>
+<div className={`market-change ${market.changeClass}`}>
+            {market.formattedChange}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}, (prevProps: { index: string | number; data: { selectedIndex: any; markets: { [x: string]: any; }; }; }, nextProps: { index: string | number; data: { selectedIndex: any; markets: { [x: string]: any; }; }; }) => {
+  return (
+    prevProps.index === nextProps.index &&
+    prevProps.data.selectedIndex === nextProps.data.selectedIndex &&
+    prevProps.data.markets[prevProps.index] === nextProps.data.markets[nextProps.index]
+  );
+});
 interface TokenInfoProps {
   in_icon: string;
   out_icon: string;
@@ -172,7 +247,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   isPerpsToken = false,
   perpsActiveMarketKey,
   perpsMarketsData,
-  perpsFilterOptions, 
+  perpsFilterOptions,
   monUsdPrice,
   showLoadingPopup,
   updatePopup,
@@ -191,6 +266,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [isPerpsDropdownOpen, setIsPerpsDropdownOpen] = useState(false);
   const [isPerpsDropdownVisible, setIsPerpsDropdownVisible] = useState(false);
   const [perpsSearchQuery, setPerpsSearchQuery] = useState('');
+  const [debouncedPerpsSearchQuery, setDebouncedPerpsSearchQuery] = useState('');
   const [perpsActiveFilter, setPerpsActiveFilter] = useState('All');
   const [perpsSelectedIndex, setPerpsSelectedIndex] = useState(0);
   const [perpsShouldFocus, setPerpsShouldFocus] = useState(false);
@@ -202,6 +278,85 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const perpsMarketsListRef = useRef<HTMLDivElement>(null);
   const perpsDropdownRef = useRef<HTMLDivElement>(null);
   const perpsSearchInputRef = useRef<HTMLInputElement>(null);
+  const virtualizationListRef = useRef<List>(null);
+
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedPerpsSearchQuery(perpsSearchQuery);
+  }, 150);
+  return () => clearTimeout(timer);
+}, [perpsSearchQuery]);
+  const filteredPerpsMarkets = useMemo(() => {
+    return Object.values(perpsMarketsData)
+      .filter(market =>
+        perpsFilterOptions[perpsActiveFilter]?.includes(market.contractName) &&
+        market.contractName.toLowerCase().includes(debouncedPerpsSearchQuery.toLowerCase())
+      )
+      .map(market => ({
+        ...market,
+        formattedVolume: `$${formatCommas(Number(market.value).toFixed(2))}`,
+        formattedOI: `$${formatCommas((Number(market.openInterest) * Number(market.lastPrice)).toFixed(2))}`,
+        formattedFunding: `${market.fundingRate >= 0 ? '+' : ''}${(market.fundingRate * 100).toFixed(4)}%`,
+        formattedChange: `${(Number(market.priceChangePercent) >= 0 ? '+' : '') +
+          (market.priceChange) + ' / ' +
+          (Number(market.priceChangePercent) >= 0 ? '+' : '') +
+          Number(market.priceChangePercent * 100).toFixed(2)}%`,
+        fundingClass: market.fundingRate < 0 ? 'negative' : 'positive',
+        changeClass: market.priceChangePercent < 0 ? 'negative' : 'positive',
+        iconSrc: `https://static.edgex.exchange/icons/coin/${market.baseAsset}.svg`
+      }));
+  }, [perpsMarketsData, perpsFilterOptions, perpsActiveFilter, debouncedPerpsSearchQuery]);
+  const togglePerpsDropdown = () => {
+    if (!isPerpsDropdownOpen) {
+      setPerpsSearchQuery('');
+      setPerpsSelectedIndex(0);
+      setIsPerpsDropdownOpen(true);
+      requestAnimationFrame(() => {
+        setIsPerpsDropdownVisible(true);
+      });
+    } else {
+      setIsPerpsDropdownVisible(false);
+      setTimeout(() => {
+        setIsPerpsDropdownOpen(false);
+        setPerpsSearchQuery('');
+        setPerpsSelectedIndex(0);
+      }, 200);
+    }
+  };
+  const handlePerpsMarketSelect = useCallback((market: any) => {
+    setPerpsSearchQuery('');
+    setIsPerpsDropdownVisible(false);
+    setperpsActiveMarketKey(market.contractName);
+    navigate(`/perps/${market.contractName}`);
+    setTimeout(() => {
+      setIsPerpsDropdownOpen(false);
+    }, 200);
+  }, [navigate, setperpsActiveMarketKey]);
+
+  const handlePerpsMouseEnter = useCallback((index: number) => {
+    setPerpsSelectedIndex(index);
+  }, []);
+
+  const virtualizationData = useMemo(() => ({
+    markets: filteredPerpsMarkets,
+    selectedIndex: perpsSelectedIndex,
+    onMouseEnter: handlePerpsMouseEnter,
+    onClick: handlePerpsMarketSelect,
+  }), [filteredPerpsMarkets, perpsSelectedIndex, handlePerpsMouseEnter, handlePerpsMarketSelect]); <div className="perps-markets-list-virtualized" style={{ height: '400px', width: '100%' }}>
+    <List
+      ref={virtualizationListRef}
+      height={400}
+      width="100%"
+      itemCount={filteredPerpsMarkets.length}
+      itemSize={40}
+      itemData={virtualizationData}
+      overscanCount={15}
+      itemKey={(index, data) => data.markets[index]?.contractName || index}
+      useIsScrolling={true}
+    >
+      {PerpsMarketRow}
+    </List>
+  </div>
 
   const isAdvancedView = isTradeRoute && !simpleView;
 
@@ -215,11 +370,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     </button>
   ));
 
-  const filteredPerpsMarkets = Object.values(perpsMarketsData).filter(market =>
-    perpsFilterOptions[perpsActiveFilter]?.includes(market.contractName) &&
-    market.contractName.toLowerCase().includes(perpsSearchQuery.toLowerCase())
-  );
-
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
@@ -227,25 +377,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
     return () => clearInterval(interval);
   }, []);
-  const togglePerpsDropdown = () => {
-    if (!isPerpsDropdownOpen) {
-      setPerpsSearchQuery('');
-      setPerpsSelectedIndex(0);
-      setIsPerpsDropdownOpen(true);
-      setPerpsShouldFocus(true);
-      requestAnimationFrame(() => {
-        setIsPerpsDropdownVisible(true);
-      });
-    } else {
-      setIsPerpsDropdownVisible(false);
-      setPerpsShouldFocus(false);
-      setTimeout(() => {
-        setIsPerpsDropdownOpen(false);
-        setPerpsSearchQuery('');
-        setPerpsSelectedIndex(0);
-      }, 200);
-    }
-  };
+
   const bondingPercentage = useMemo(() => {
     if (!isMemeToken || !activeMarket) return 0;
     const TOTAL_SUPPLY = 1e9;
@@ -362,7 +494,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     const container = memeMetricsRef.current;
     if (container && isMemeToken) {
       container.addEventListener('scroll', handleMemeScroll);
-      handleMemeScroll(); // Initial check
+      handleMemeScroll(); 
     }
 
     return () => {
@@ -397,7 +529,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     const container = perpsMetricsRef.current;
     if (container && isPerpsToken) {
       container.addEventListener('scroll', handlePerpsScroll);
-      handlePerpsScroll(); // Initial check
+      handlePerpsScroll();
     }
 
     return () => {
@@ -985,13 +1117,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     if (!perpsTokenInfo?.lastPrice) return
     const current = Number(perpsTokenInfo.lastPrice)
     const prev = prevPriceRef.current
-  
+
     if (prev !== null) {
       if (current > prev) setPriceColor("positive")
       else if (current < prev) setPriceColor("negative")
       else setPriceColor("")
     }
-  
+
     prevPriceRef.current = current
   }, [perpsTokenInfo?.lastPrice])
 
@@ -1039,9 +1171,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
           <div className="perps-interface-token-header-right">
             <div className="perps-interface-token-metrics" ref={perpsMetricsRef}>
-                <span className={`perps-interface-metric-value perps-price-large ${priceColor}`}>
-                  {Number(perpsTokenInfo.lastPrice).toFixed((perpsTokenInfo.lastPrice.toString().split(".")[1] || "").length).toLocaleString()}
-                </span>
+              <span className={`perps-interface-metric-value perps-price-large ${priceColor}`}>
+                {Number(perpsTokenInfo.lastPrice).toFixed((perpsTokenInfo.lastPrice.toString().split(".")[1] || "").length).toLocaleString()}
+              </span>
 
               <div className="perps-interface-token-metric">
                 <span className="perps-interface-metric-label">Oracle</span>
@@ -1122,91 +1254,32 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 </div>
               </div>
 
-            <div className="market-filter-tabs" ref={perpsFilterTabsRef}>
-                  {perpsFilterTabs}
-                </div>
+              <div className="market-filter-tabs" ref={perpsFilterTabsRef}>
+                {perpsFilterTabs}
+              </div>
 
               <div className="perps-markets-list-header">
                 <div className="favorites-header" />
                 <div>Market / Volume</div>
                 <div className="markets-dropdown-chart-container">Last Day</div>
-                <div className="markets-dropdown-price-container">Price</div>
                 <div className="perps-oi-header">Open Interest</div>
                 <div className="perps-funding-header">8hr Funding</div>
+                <div className="markets-dropdown-price-container">Price</div>
               </div>
-                <div className="perps-markets-list" ref={perpsMarketsListRef}>
-                  {filteredPerpsMarkets.map((market, index) => (
-                    <div
-                      key={market.contractName}
-                      className={`perps-market-item-container ${index === perpsSelectedIndex ? 'selected' : ''}`}
-                      onMouseEnter={() => setPerpsSelectedIndex(index)}
-                    >
-                      <div
-                        className="perps-market-item"
-                        onClick={() => {
-                          setPerpsSearchQuery('');
-                          setIsPerpsDropdownVisible(false);
-                          setperpsActiveMarketKey(market.contractName)
-                          navigate(`/perps/${market.contractName}`)
-                          setTimeout(() => {
-                            setIsPerpsDropdownOpen(false);
-                          }, 200);
-                        }}
-                      >
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                          className="dropdown-market-favorite-button"
-                        >
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                          </svg>
-                        </button>
-
-                        <div className="market-pair-section">
-                          <img src={`https://static.edgex.exchange/icons/coin/${market.baseAsset}.svg`} className="market-icon" loading="lazy"/>
-                          <div className="market-info">
-                            <div className="market-pair-container">
-                              <span className="market-pair">{market.contractName}</span>
-                            </div>
-                            <span className="market-volume">${formatCommas(Number(market.value).toFixed(2))}</span>
-                          </div>
-                        </div>
-
-                        <div className="minichart-section">
-                          <div className="perps-mini-chart-placeholder">Chart</div>
-                        </div>
-
-                        <div className="market-price-section">
-                          <div className="market-price">{market.lastPrice}</div>
-                          <div className={`market-change ${market.priceChangePercent < 0 ? 'negative' : 'positive'}`}>
-                          {(Number(market.priceChangePercent) >= 0 ? '+' : '') + (market.priceChange) + ' / ' + (Number(market.priceChangePercent) >= 0 ? '+' : '') + Number(market.priceChangePercent * 100).toFixed(2)}%
-                          </div>
-                        </div>
-
-                        <div className="perps-oi-section">
-                          <div className="perps-open-interest">${formatCommas((Number(market.openInterest) * Number(market.lastPrice)).toFixed(2))}</div>
-                        </div>
-
-                        <div className="perps-funding-section">
-                          <div className={`perps-funding-rate ${market.fundingRate.startsWith('-') ? 'negative' : 'positive'}`}>
-                          {market.fundingRate >= 0 ? '+' : ''}{(market.fundingRate * 100).toFixed(4)}%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div className="perps-markets-list-virtualized" style={{ height: '400px', width: '100%' }}>
+                <List
+                  ref={virtualizationListRef}
+                  height={400}
+                  width="100%"
+                  itemCount={filteredPerpsMarkets.length}
+                  itemSize={40}
+                  itemData={virtualizationData}
+                  overscanCount={2}
+                  itemKey={(index, data) => data.markets[index]?.contractName || index}
+                >
+                  {PerpsMarketRow}
+                </List>
+              </div>
             </div>
           )}
         </div>
