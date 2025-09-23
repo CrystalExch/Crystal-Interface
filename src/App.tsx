@@ -20871,6 +20871,7 @@ function App() {
                 setPerpsMarketsData={setPerpsMarketsData}
                 perpsFilterOptions={perpsFilterOptions}
                 setPerpsFilterOptions={setPerpsFilterOptions}
+                signTypedDataAsync={signTypedDataAsync}
               />
             } />
           <Route path="/leaderboard"

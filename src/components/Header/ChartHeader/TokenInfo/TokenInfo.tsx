@@ -76,7 +76,7 @@ const PerpsTokenSkeleton = () => {
               </svg>
             </button>
           <div className="perps-interface-token-icon-container">
-            <div className="skeleton-circle" style={{ width: '28px', height: '28px', marginRight: '3px' }}></div>
+            <div className="skeleton-circle" style={{ width: '29px', height: '29px', marginRight: '3px' }}></div>
           </div>
           <div className="perps-interface-token-identity">
             <div className="perps-interface-token-name-row">
@@ -104,17 +104,17 @@ const PerpsTokenSkeleton = () => {
 
             <div className="perps-interface-token-metric">
               <div className="skeleton-text skeleton-label" style={{ width: '50px', height: '12px' }}></div>
-              <div className="skeleton-text skeleton-value" style={{ width: '70px', height: '14px' }}></div>
+              <div className="skeleton-text skeleton-value" style={{ width: '90px', height: '14px' }}></div>
             </div>
 
             <div className="perps-interface-token-metric">
               <div className="skeleton-text skeleton-label" style={{ width: '70px', height: '12px' }}></div>
-              <div className="skeleton-text skeleton-value" style={{ width: '80px', height: '14px' }}></div>
+              <div className="skeleton-text skeleton-value" style={{ width: '90px', height: '14px' }}></div>
             </div>
 
             <div className="perps-interface-token-metric">
-              <div className="skeleton-text skeleton-label" style={{ width: '90px', height: '12px' }}></div>
-              <div className="skeleton-text skeleton-value" style={{ width: '90px', height: '14px' }}></div>
+              <div className="skeleton-text skeleton-label" style={{ width: '110px', height: '12px' }}></div>
+              <div className="skeleton-text skeleton-value" style={{ width: '110px', height: '14px' }}></div>
             </div>
           </div>
         </div>

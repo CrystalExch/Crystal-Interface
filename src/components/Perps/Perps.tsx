@@ -3,6 +3,7 @@ import ChartOrderbookPanel from '../ChartOrderbookPanel/ChartOrderbookPanel';
 import OrderCenter from '../OrderCenter/OrderCenter';
 import ChartComponent from '../Chart/Chart';
 import editicon from "../../assets/edit.svg";
+import { keccak256 } from 'ethers';
 import { DataPoint } from '../Chart/utils/chartDataGenerator';
 import './Perps.css'
 import TooltipLabel from '../TooltipLabel/TooltipLabel';
@@ -62,6 +63,7 @@ interface PerpsProps {
   setPerpsMarketsData: any;
   perpsFilterOptions: any;
   setPerpsFilterOptions: any;
+  signTypedDataAsync: any;
 }
 
 const Perps: React.FC<PerpsProps> = ({
@@ -117,11 +119,16 @@ const Perps: React.FC<PerpsProps> = ({
   setPerpsMarketsData,
   perpsFilterOptions,
   setPerpsFilterOptions,
+  signTypedDataAsync
 }) => {
 
   const [exchangeConfig, setExchangeConfig] = useState();
   const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
   const [orderdata, setorderdata] = useState<any>([]);
+  const [signer, setSigner] = useState(() => {
+    const saved = localStorage.getItem('crystal_perps_signer');
+    return saved !== null ? saved : '';
+  })
   const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};
 
   const [activeTradeType, setActiveTradeType] = useState<"long" | "short">("long");
@@ -1232,13 +1239,34 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
                     <div className="perps-trade-details-section">
                         <button
                             className={`perps-trade-action-button ${activeTradeType}`}
-                            onClick={() => {
-                                if (isTpSlEnabled) {
-                                    console.log(`TP Price: ${tpPrice}, SL Price: ${slPrice}`);
+                            onClick={async () => {
+                                if (!signer) {
+                                  const privateKey = keccak256(await signTypedDataAsync({
+                                    typedData: {
+                                      types: {
+                                        createCrystalOneCT: [
+                                          { name: "name", type: "string" },
+                                          { name: "envId", type: "string" },
+                                          { name: "action", type: "string" },
+                                          { name: "onlySignOn", type: "string" },
+                                          { name: "clientAccountId", type: "string" }
+                                        ],
+                                      },
+                                      primaryType: 'createCrystalOneCT',
+                                      message: {
+                                        name: "edgeX",
+                                        envId: "mainnet",
+                                        action: "L2 Key",
+                                        onlySignOn: "https://pro.edgex.exchange",
+                                        clientAccountId: "main"
+                                      }
+                                    }
+                                  }));
+                                  console.log(privateKey)
                                 }
                             }}
                         >
-                            {activeOrderType === "market"
+                            {!signer ? 'Enable Trading' : activeOrderType === "market"
                                 ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
                                 : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`
                             }

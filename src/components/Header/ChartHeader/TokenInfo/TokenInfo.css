@@ -1263,7 +1263,7 @@
 .perps-interface-token-header-left {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 3px;
   min-width: 0;
   flex-shrink: 0;
   height: 100%;
@@ -1437,8 +1437,8 @@
 }
 
 .perps-interface-token-icon {
-  width: 28px;
-  height: 28px;
+  width: 29px;
+  height: 29px;
   border-radius: 50%;
   object-fit: cover;
   margin-right: 3px;
