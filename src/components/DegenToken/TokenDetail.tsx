@@ -84,7 +84,7 @@ interface TokenDetailProps {
 }
 
 const SUBGRAPH_URL =
-  'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
+  'https://api.studio.thegraph.com/query/104695/test/v0.3.16';
 const TOTAL_SUPPLY = 1e9;
 
 const formatPrice = (p: number) => {

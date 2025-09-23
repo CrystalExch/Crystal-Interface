@@ -1239,8 +1239,8 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
                             }}
                         >
                             {activeOrderType === "market"
-                                ? `${activeTradeType === "long" ? "Long" : "Short"} Market`
-                                : `Set ${activeTradeType === "long" ? "Long" : "Short"} Limit`
+                                ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
+                                : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`
                             }
                         </button>
                         <div className="perps-info-rectangle">

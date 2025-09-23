@@ -154,7 +154,7 @@ const MARKET_UPDATE_EVENT =
 const MARKET_CREATED_EVENT =
   '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
 const TOTAL_SUPPLY = 1e9;
-// const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
+// const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.16';
 const SUBGRAPH_URL =
   'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
 const TRANSFER_TOPIC =
