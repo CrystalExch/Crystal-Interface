@@ -156,7 +156,7 @@
   width: 35px;
   height: 35px;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 5px;
+  border-radius: 20px;
 }
 
 .app-settings-button:hover {
@@ -174,7 +174,7 @@
   width: 35px;
   height: 35px;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 5px;
+  border-radius: 20px;
 }
 
 .history-button:hover {
@@ -864,7 +864,7 @@
   transition: all.2s cubic-bezier(0.2, 0, 0.1, 1);
   height: 35px;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 5px;
+  border-radius: 20px;
   font-size: 0.8rem;
   letter-spacing: -0.3px;
   padding: 0 12px;
