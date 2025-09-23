@@ -1091,7 +1091,6 @@
   width: 120px;
   height: 18px;
   margin-top: 4px;
-  margin-bottom: 5px;
 }
 
 .skeleton-name {
@@ -1155,6 +1154,14 @@
   position: relative;
 }
 
+
+.perps-skeleton-text{
+    background: #1f1f23;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 5px;
+  position: relative;
+}
 .skeleton-circle {
   border-radius: 50%;
 }
@@ -1727,4 +1734,37 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.perps-interface-token-info-container.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.perps-interface-token-info-container.loading .perps-interface-token-icon {
+  animation: shimmer 1.5s infinite linear;
+}
+
+
+.perps-skeleton-text {
+    background: #1f1f23;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 5px;
+    position: relative;
+}
+
+.perps-skeleton-text::after {
+    animation: shimmer 2s infinite;
+    background-image: linear-gradient(
+        90deg,
+        rgb(255 255 255 / 0%) 0,
+        rgb(255 255 255 / 5%) 20%,
+        rgb(255 255 255 / 10%) 60%,
+        rgb(255 255 255 / 0%)
+    );
+    content: '';
+    inset: 0;
+    position: absolute;
+    transform: translateX(-100%);
 }

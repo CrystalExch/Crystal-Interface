@@ -34,3 +34,90 @@
   flex-direction: column;
   z-index: 1;
 }
+
+
+
+
+.orderbook-loading-container {
+    width: 100%;
+    height: 100%;
+    padding: 8px;
+}
+
+.ob-loading-skeleton {
+    background: linear-gradient(90deg, 
+        #1f1f23 25%, 
+        #28282c 50%, 
+        #1f1f23 75%);
+    background-size: 200px 100%;
+    border-radius: 4px;
+    animation: shimmer 1.5s infinite linear;
+}
+
+.ob-loading-tab {
+    width: 60px;
+    height: 16px;
+}
+
+.orderbook-loading-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.orderbook-loading-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 0;
+    gap: 8px;
+}
+
+.ob-loading-price {
+    width: 55px;
+    height: 14px;
+}
+
+.ob-loading-amount {
+    width: 45px;
+    height: 14px;
+}
+
+.ob-loading-total {
+    width: 35px;
+    height: 14px;
+}
+
+
+.ob-loading-spread-value {
+    width: 80px;
+    height: 16px;
+}
+
+.orderbook-loading-row:nth-child(odd) .ob-loading-skeleton {
+    animation-delay: 0.1s;
+}
+
+.orderbook-loading-row:nth-child(even) .ob-loading-skeleton {
+    animation-delay: 0.2s;
+}
+
+.orderbook-loading-row:nth-child(3n) .ob-loading-skeleton {
+    animation-delay: 0.3s;
+}
+
+.orderbook-container,
+.perps-amount-section {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

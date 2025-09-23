@@ -54,7 +54,55 @@ const calculateBondingPercentage = (marketCap: number) => {
   return bondingPercentage;
 };
 
+const PerpsTokenSkeleton = () => {
+  return (
+    <div className="perps-interface-token-info-container">
+      <div className="perps-interface-token-header-info">
+        <div className="perps-interface-token-header-left">
+          <div className="perps-interface-token-icon-container">
+            <div className="skeleton-circle" style={{ width: '28px', height: '28px', marginRight: '3px' }}></div>
+          </div>
+          <div className="perps-interface-token-identity">
+            <div className="perps-interface-token-name-row">
+              <div className="skeleton-text skeleton-symbol" style={{ width: '120px', height: '18px' }}></div>
+            </div>
+          </div>
+        </div>
 
+        <div className="perps-interface-token-header-right">
+          <div className="perps-interface-token-metrics">
+            <div className="perps-skeleton-text" style={{ width: '80px', height: '20px' }}></div>
+
+            <div className="perps-interface-token-metric">
+              <div className="skeleton-text skeleton-label" style={{ width: '40px', height: '12px' }}></div>
+              <div className="skeleton-text skeleton-value" style={{ width: '60px', height: '14px' }}></div>
+            </div>
+
+            <div className="perps-interface-token-metric">
+              <div className="skeleton-text skeleton-label" style={{ width: '60px', height: '12px' }}></div>
+              <div className="skeleton-text skeleton-value" style={{ width: '80px', height: '14px' }}></div>
+            </div>
+
+            <div className="perps-interface-token-metric">
+              <div className="skeleton-text skeleton-label" style={{ width: '50px', height: '12px' }}></div>
+              <div className="skeleton-text skeleton-value" style={{ width: '70px', height: '14px' }}></div>
+            </div>
+
+            <div className="perps-interface-token-metric">
+              <div className="skeleton-text skeleton-label" style={{ width: '70px', height: '12px' }}></div>
+              <div className="skeleton-text skeleton-value" style={{ width: '80px', height: '14px' }}></div>
+            </div>
+
+            <div className="perps-interface-token-metric">
+              <div className="skeleton-text skeleton-label" style={{ width: '90px', height: '12px' }}></div>
+              <div className="skeleton-text skeleton-value" style={{ width: '90px', height: '14px' }}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 const MemeTokenSkeleton = () => {
   return (
     <div className="meme-interface-token-info-container-meme">
@@ -1147,8 +1195,12 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     return () => clearInterval(id)
   }, [perpsTokenInfo?.nextFundingTime])
 
-  if (isPerpsToken && perpsTokenInfo?.lastPrice) {
-
+if (isPerpsToken) {
+  const isPerpsLoading = !perpsTokenInfo?.lastPrice || !perpsTokenInfo?.contractName;
+  
+  if (isPerpsLoading) {
+    return <PerpsTokenSkeleton />;
+  }
     return (
       <div className="perps-interface-token-info-container">
         <div className="perps-interface-token-header-info">
@@ -1361,7 +1413,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               <>
                 <span className="first-asset">{activeMarket.baseAsset}</span>
                 <span>/</span>
-                <span className="second-asset">{activeMarket.quoteAsset}</span>
+                <span className="second-asset">{activeMarket?.quoteAsset}</span>
                 {tokendict[activeMarket?.baseAddress]?.lst && (
                   <span className="lst-multiplier">
                     1.25x
@@ -1380,7 +1432,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           {shouldShowFullHeader && (
             <div className={isLoading && shouldShowFullHeader ? 'pair-skeleton' : 'token-name'}>
               <span className="full-token-name">
-                {tokendict[activeMarket.baseAddress].name}
+                {tokendict[activeMarket?.baseAddress]?.name}
               </span>
               <div
                 className="token-actions"
@@ -1388,7 +1440,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               >
                 <CopyButton textToCopy={marketAddress} />
                 <TokenInfoPopup
-                  symbol={activeMarket.baseAsset}
+                  symbol={activeMarket?.baseAsset}
                   setpopup={setpopup}
                 />
               </div>

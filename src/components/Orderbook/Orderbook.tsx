@@ -23,6 +23,7 @@ interface OrderBookProps {
   updateLimitAmount: any;
   reserveQuote: any;
   reserveBase: any;
+  isOrderbookLoading?: boolean;
 }
 
 const OrderBook: React.FC<OrderBookProps> = ({
@@ -43,6 +44,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
   updateLimitAmount,
   reserveQuote,
   reserveBase,
+  isOrderbookLoading,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
@@ -130,6 +132,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
         updateLimitAmount={updateLimitAmount}
         reserveQuote={reserveQuote}
         reserveBase={reserveBase}
+        isOrderbookLoading={isOrderbookLoading}
       />
 
       <TradesView

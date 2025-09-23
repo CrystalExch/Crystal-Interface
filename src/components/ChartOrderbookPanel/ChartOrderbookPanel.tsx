@@ -27,6 +27,8 @@ interface ChartOrderbookPanelProps {
   renderChartComponent: any;
   reserveQuote: any;
   reserveBase: any;
+    isOrderbookLoading?: boolean;
+
 }
 
 const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
@@ -52,6 +54,7 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   renderChartComponent,
   reserveQuote,
   reserveBase,
+  isOrderbookLoading,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -188,36 +191,39 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
         />
       </div>
 
-      <div
-        className={
-          windowWidth > 1020 ||
-          mobileView === 'orderbook' ||
-          mobileView === 'trades'
-            ? 'orderbook-container'
-            : 'hidden'
-        }
-        style={windowWidth > 1020 ? orderBookStyle : {}}
-      >
-        <OrderBook
-          trades={obtrades}
-          orderdata={orderdata}
-          layoutSettings={layoutSettings}
-          orderbookPosition={orderbookPosition}
-          hideHeader={windowWidth > 1020 ? false : true}
-          interval={baseInterval}
-          amountsQuote={amountsQuote}
-          setAmountsQuote={setAmountsQuote}
-          obInterval={obInterval}
-          setOBInterval={setOBInterval}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          updateLimitAmount={updateLimitAmount}
-          reserveQuote={reserveQuote}
-          reserveBase={reserveBase}
-        />
-      </div>
+<div
+  className={
+    windowWidth > 1020 ||
+    mobileView === 'orderbook' ||
+    mobileView === 'trades'
+      ? 'orderbook-container'
+      : 'hidden'
+  }
+  style={windowWidth > 1020 ? orderBookStyle : {}}
+>
+
+    <OrderBook
+      trades={obtrades}
+      orderdata={orderdata}
+      layoutSettings={layoutSettings}
+      orderbookPosition={orderbookPosition}
+      hideHeader={windowWidth > 1020 ? false : true}
+      interval={baseInterval}
+      amountsQuote={amountsQuote}
+      setAmountsQuote={setAmountsQuote}
+      obInterval={obInterval}
+      setOBInterval={setOBInterval}
+      viewMode={viewMode}
+      setViewMode={setViewMode}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      updateLimitAmount={updateLimitAmount}
+      reserveQuote={reserveQuote}
+      reserveBase={reserveBase}
+      isOrderbookLoading={isOrderbookLoading}
+    />
+  
+</div>
     </div>
   );
 };

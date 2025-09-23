@@ -338,6 +338,9 @@ const Perps: React.FC<PerpsProps> = ({
     return 'positions';
   });
 
+const isTokenInfoLoading = !activeMarket.contractId || Object.keys(perpsMarketsData).length === 0;
+const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.length < 2;
+
   const [_isVertDragging, setIsVertDragging] = useState(false);
   const initialHeightRef = useRef(0);
   const handleVertMouseDown = (e: React.MouseEvent) => {
@@ -880,38 +883,39 @@ const Perps: React.FC<PerpsProps> = ({
     <div className="main-content-wrapper">
       <div className="chartandorderbookandordercenter">
         <div className="chartandorderbook">
-          <ChartOrderbookPanel
-            layoutSettings={layoutSettings}
-            orderbookPosition={orderbookPosition}
-            orderdata={{
-              roundedBuyOrders: roundedBuyOrders?.orders,
-              roundedSellOrders: roundedSellOrders?.orders,
-              spreadData,
-              priceFactor: Number(1 / activeMarket?.tickSize),
-              marketType: 0,
-              symbolIn: activeMarket.quoteAsset,
-              symbolOut: activeMarket.baseAsset,
-            }}
-            windowWidth={windowWidth}
-            mobileView={mobileView}
-            isOrderbookVisible={isOrderbookVisible}
-            orderbookWidth={orderbookWidth}
-            setOrderbookWidth={setOrderbookWidth}
-            obInterval={obInterval}
-            amountsQuote={roundedBuyOrders?.amountsQuote}
-            setAmountsQuote={setAmountsQuote}
-            obtrades={trades}
-            setOBInterval={setOBInterval}
-            baseInterval={baseInterval}
-            viewMode={viewMode}
-            setViewMode={setViewMode}
-            activeTab={obTab}
-            setActiveTab={setOBTab}
-            updateLimitAmount={updateLimitAmount}
-            renderChartComponent={renderChartComponent}
-            reserveQuote={0n}
-            reserveBase={0n}
-          />
+<ChartOrderbookPanel
+  layoutSettings={layoutSettings}
+  orderbookPosition={orderbookPosition}
+  orderdata={{
+    roundedBuyOrders: roundedBuyOrders?.orders,
+    roundedSellOrders: roundedSellOrders?.orders,
+    spreadData,
+    priceFactor: Number(1 / activeMarket?.tickSize),
+    marketType: 0,
+    symbolIn: activeMarket.quoteAsset,
+    symbolOut: activeMarket.baseAsset,
+  }}
+  windowWidth={windowWidth}
+  mobileView={mobileView}
+  isOrderbookVisible={isOrderbookVisible}
+  orderbookWidth={orderbookWidth}
+  setOrderbookWidth={setOrderbookWidth}
+  obInterval={obInterval}
+  amountsQuote={roundedBuyOrders?.amountsQuote}
+  setAmountsQuote={setAmountsQuote}
+  obtrades={trades}
+  setOBInterval={setOBInterval}
+  baseInterval={baseInterval}
+  viewMode={viewMode}
+  setViewMode={setViewMode}
+  activeTab={obTab}
+  setActiveTab={setOBTab}
+  updateLimitAmount={updateLimitAmount}
+  renderChartComponent={renderChartComponent}
+  reserveQuote={0n}
+  reserveBase={0n}
+  isOrderbookLoading={isOrderbookLoading}
+/>
         </div>
         <div
           className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}

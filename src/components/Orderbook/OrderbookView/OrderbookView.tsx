@@ -31,6 +31,7 @@ interface OrderbookViewProps {
   updateLimitAmount: any;
   reserveQuote: any;
   reserveBase: any;
+  isOrderbookLoading?: boolean;
 }
 
 const OrderbookView: React.FC<OrderbookViewProps> = ({
@@ -53,6 +54,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   show = true,
   reserveQuote,
   reserveBase,
+  isOrderbookLoading,
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
@@ -88,7 +90,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   useEffect(() => {
     localStorage.setItem('ob_viewmode', viewMode);
   }, [viewMode]);
-  
+
   const { orders: processedBuyOrders, leftoverPerRow: extraBuy } = useMemo(() => {
     return scaleOrders(
       roundedBuy,
@@ -119,7 +121,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
     const lastBuySize = processedBuyOrders
       .filter((order) => order.price !== 0)
       .slice(-1)[0]?.totalSize || 0;
-  
+
     const lastSellSize = processedSellOrders
       .filter((order) => order.price !== 0)
       .slice(-1)[0]?.totalSize || 0;
@@ -147,93 +149,110 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
           symbolQuote={symbolQuote}
           symbolBase={symbolBase}
         />
-        {viewMode === 'both' && containerHeight != 0 && (
-          <div className="view-both">
-            <OrderList
-              roundedOrders={processedSellOrders}
-              extra={extraSell}
-              maxTotalSize={adjustedMaxSize}
-              color="rgb(255, 108, 108)"
-              amountsQuote={amountsQuote}
-              isBuyOrderList={false}
-              symbolQuote={symbolQuote}
-              symbolBase={symbolBase}
-              priceFactor={priceFactor}
-              spreadPrice={spreadData.averagePrice}
-              orderbookPosition={orderbookPosition}
-              updateLimitAmount={updateLimitAmount}
-              marketType={marketType}
-            />
-            <SpreadDisplay
-              averagePrice={spreadData.averagePrice}
-              spread={spreadData.spread}
-              priceFactor={priceFactor}
-            />
-            <OrderList
-              roundedOrders={processedBuyOrders}
-              extra={extraBuy}
-              maxTotalSize={adjustedMaxSize}
-              color="rgb(111, 255, 111)"
-              amountsQuote={amountsQuote}
-              isBuyOrderList={true}
-              symbolQuote={symbolQuote}
-              symbolBase={symbolBase}
-              priceFactor={priceFactor}
-              spreadPrice={spreadData.averagePrice}
-              orderbookPosition={orderbookPosition}
-              updateLimitAmount={updateLimitAmount}
-              marketType={marketType}
-            />
+        {isOrderbookLoading ? (
+          <div className="orderbook-loading-container">
+            <div className="orderbook-loading-content">
+              {Array.from({ length: 40 }).map((_, i) => (
+                <div key={i} className="orderbook-loading-row">
+                  <div className="ob-loading-skeleton ob-loading-price" />
+                  <div className="ob-loading-skeleton ob-loading-amount" />
+                  <div className="ob-loading-skeleton ob-loading-total" />
+                </div>
+              ))}
+            </div>
           </div>
+        ) : (
+          <>
+            {viewMode === 'both' && containerHeight != 0 && (
+              <div className="view-both">
+                <OrderList
+                  roundedOrders={processedSellOrders}
+                  extra={extraSell}
+                  maxTotalSize={adjustedMaxSize}
+                  color="rgb(255, 108, 108)"
+                  amountsQuote={amountsQuote}
+                  isBuyOrderList={false}
+                  symbolQuote={symbolQuote}
+                  symbolBase={symbolBase}
+                  priceFactor={priceFactor}
+                  spreadPrice={spreadData.averagePrice}
+                  orderbookPosition={orderbookPosition}
+                  updateLimitAmount={updateLimitAmount}
+                  marketType={marketType}
+                />
+                <SpreadDisplay
+                  averagePrice={spreadData.averagePrice}
+                  spread={spreadData.spread}
+                  priceFactor={priceFactor}
+                />
+                <OrderList
+                  roundedOrders={processedBuyOrders}
+                  extra={extraBuy}
+                  maxTotalSize={adjustedMaxSize}
+                  color="rgb(111, 255, 111)"
+                  amountsQuote={amountsQuote}
+                  isBuyOrderList={true}
+                  symbolQuote={symbolQuote}
+                  symbolBase={symbolBase}
+                  priceFactor={priceFactor}
+                  spreadPrice={spreadData.averagePrice}
+                  orderbookPosition={orderbookPosition}
+                  updateLimitAmount={updateLimitAmount}
+                  marketType={marketType}
+                />
+              </div>
+            )}
+            {viewMode === 'sell' && containerHeight != 0 && (
+              <div className="ob-sell-only">
+                <OrderList
+                  roundedOrders={processedSellOrders}
+                  extra={extraSell}
+                  maxTotalSize={adjustedMaxSize}
+                  color="rgb(255, 108, 108)"
+                  amountsQuote={amountsQuote}
+                  isBuyOrderList={false}
+                  symbolQuote={symbolQuote}
+                  symbolBase={symbolBase}
+                  priceFactor={priceFactor}
+                  spreadPrice={spreadData.averagePrice}
+                  orderbookPosition={orderbookPosition}
+                  updateLimitAmount={updateLimitAmount}
+                  marketType={marketType}
+                />
+                <SpreadDisplay
+                  averagePrice={spreadData.averagePrice}
+                  spread={spreadData.spread}
+                  priceFactor={priceFactor}
+                />
+              </div>
+            )}
+            {viewMode === 'buy' && containerHeight != 0 && (
+              <div className="ob-buy-only">
+                <SpreadDisplay
+                  averagePrice={spreadData.averagePrice}
+                  spread={spreadData.spread}
+                  priceFactor={priceFactor}
+                />
+                <OrderList
+                  roundedOrders={processedBuyOrders}
+                  extra={extraBuy}
+                  maxTotalSize={adjustedMaxSize}
+                  color="rgb(111, 255, 111)"
+                  amountsQuote={amountsQuote}
+                  isBuyOrderList={true}
+                  symbolQuote={symbolQuote}
+                  symbolBase={symbolBase}
+                  priceFactor={priceFactor}
+                  spreadPrice={spreadData.averagePrice}
+                  orderbookPosition={orderbookPosition}
+                  updateLimitAmount={updateLimitAmount}
+                  marketType={marketType}
+                />
+              </div>
+            )}
+          </>
         )}
-        {viewMode === 'sell' && containerHeight != 0 && (
-          <div className="ob-sell-only">
-            <OrderList
-              roundedOrders={processedSellOrders}
-              extra={extraSell}
-              maxTotalSize={adjustedMaxSize}
-              color="rgb(255, 108, 108)"
-              amountsQuote={amountsQuote}
-              isBuyOrderList={false}
-              symbolQuote={symbolQuote}
-              symbolBase={symbolBase}
-              priceFactor={priceFactor}
-              spreadPrice={spreadData.averagePrice}
-              orderbookPosition={orderbookPosition}
-              updateLimitAmount={updateLimitAmount}
-              marketType={marketType}
-            />
-            <SpreadDisplay
-              averagePrice={spreadData.averagePrice}
-              spread={spreadData.spread}
-              priceFactor={priceFactor}
-            />
-          </div>
-        )}
-        {viewMode === 'buy' && containerHeight != 0 && (
-          <div className="ob-buy-only">
-            <SpreadDisplay
-              averagePrice={spreadData.averagePrice}
-              spread={spreadData.spread}
-              priceFactor={priceFactor}
-            />
-            <OrderList
-              roundedOrders={processedBuyOrders}
-              extra={extraBuy}
-              maxTotalSize={adjustedMaxSize}
-              color="rgb(111, 255, 111)"
-              amountsQuote={amountsQuote}
-              isBuyOrderList={true}
-              symbolQuote={symbolQuote}
-              symbolBase={symbolBase}
-              priceFactor={priceFactor}
-              spreadPrice={spreadData.averagePrice}
-              orderbookPosition={orderbookPosition}
-              updateLimitAmount={updateLimitAmount}
-              marketType={marketType}
-            />
-          </div>
-        )}
+
       </div>
     </DropdownContext.Provider>
   );
