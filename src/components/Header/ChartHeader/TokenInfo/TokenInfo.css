@@ -72,7 +72,7 @@
   letter-spacing: 0.5px;
   background-color: #1b1b230b;
   border: 1px solid rgba(218, 216, 249, 0.087);
-  border-radius: 20px;
+  border-radius: 4px;
   color: #aaa8b8;
   font-size: 0.75rem;
   padding: 4px 8px;
@@ -372,12 +372,10 @@
 
 .market-change.positive {
   color: #50f08d;
-  font-size: 0.75rem;
 }
 
 .market-change.negative {
   color: rgb(235, 112, 112);
-  font-size: 0.75rem;
 }
 
 .markets-tabs {
@@ -464,20 +462,6 @@
 
 .cancel-search:hover {
   color: #727477;
-}
-
-.dropdown-market-favorite-button {
-  align-items: center;
-  background: none;
-  border: none;
-  color: #464a51;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  margin-left: -15px;
-  padding: 5px;
-  transition: color.2s;
-  width: 25px;
 }
 
 .markets-dropdown-content {
@@ -589,7 +573,7 @@
 .market-change {
   margin-top: -2px;
   white-space: nowrap;
-  
+  font-size: 0.75rem;
 }
 
 .markets-list-header {
@@ -1088,7 +1072,6 @@
 .skeleton-symbol {
   width: 80px;
   height: 24px;
-  margin-right: 20px;
 }
 
 .skeleton-name {
@@ -1268,7 +1251,6 @@
   justify-content: space-between;
   width: 100%;
   height: 53px;
-  padding-left: 12px;
   gap: 20px;
 }
 
@@ -1286,6 +1268,7 @@
   flex-shrink: 0;
   height: 100%;
   border-right: 1px solid rgba(179, 184, 249, 0.1);
+  padding: 7px 10px;
 }
 
 @media(max-width: 1020px) {
@@ -1303,15 +1286,13 @@
 
 .perps-interface-token-name-row {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .perps-interface-token-symbol {
   font-size: 1.2rem;
   color: #ffffff;
-  margin: 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   letter-spacing: -0.5px;
 }
@@ -1574,10 +1555,6 @@
   scrollbar-color: rgba(179, 184, 249, 0.1) transparent;
 }
 
-.perps-market-item-container {
-  border: 1px solid transparent;
-}
-
 .perps-market-item-container.selected {
   background-color: rgba(170, 174, 207, 0.05);
   position: relative;
@@ -1596,15 +1573,15 @@
 
 .perps-funding-section,
 .perps-oi-section {
-  align-items: flex-start;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  text-align: right;
 }
 
 .perps-funding-rate {
   color: #e5e7eb;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 .perps-funding-rate.positive {
@@ -1617,7 +1594,7 @@
 
 .perps-open-interest {
   color: #e5e7eb;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 .perps-mini-chart-placeholder {
@@ -1655,11 +1632,11 @@
 }
 
 .perps-markets-list-header {
-  grid-template-columns: 23px 1fr 0.6fr 0.8fr 0.6fr 0.6fr;
+  grid-template-columns: 23px 1.1fr 0.8fr 0.7fr 0.6fr 0.6fr;
 }
 
 .perps-market-item {
-  grid-template-columns: 13px 0.8fr 0.8fr 0.8fr 0.6fr 0.6fr;
+  grid-template-columns: 13px 0.8fr 0.6fr 0.9fr 0.6fr 0.8fr;
 }
 
 .perps-markets-list-virtualized {
@@ -1667,13 +1644,22 @@
   contain: layout style paint;
 }
 
-.perps-market-item-container {
-  will-change: transform;
+.perps-markets-dropdown-content {
+  width: 700px;
+  contain: layout style paint;
 }
 
-.perps-markets-dropdown-content {
-  width: 600px;
-  contain: layout style paint;
+.perps-market-change {
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+.perps-market-change.positive {
+  color: #50f08d;
+}
+
+.perps-market-change.negative {
+  color: rgb(235, 112, 112);
 }
 
 .perps-markets-list-virtualized {
@@ -1686,9 +1672,13 @@
 .perps-market-item-container {
   contain: layout style;
   will-change: transform;
-  transform: translateZ(0);
+  transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   isolation: isolate;
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .perps-market-item {
@@ -1707,18 +1697,13 @@
   transition: background-color 0.1s ease;
 }
 
-/* Force GPU acceleration */
-.perps-market-item-container {
-  transform: translate3d(0, 0, 0);
-}
-
-.market-leverage{
+.market-leverage {
   display: flex;
   align-items: center;
   font-size: 0.7rem;
   padding: 0px 4px;
-  border-radius: 20px;
-  background-color: #3f3f4335;
+  border-radius: 2px;
+  background-color: #aaaecf31;
   height: 14px;
   color: #e0e2f7;
 }

@@ -551,12 +551,15 @@ const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.
               labelsRes.data.map((s: any) => [s.name, s.contracts.map((c: any) => c.contractName)])
             )
           }
-          if (metaRes?.data) setPerpsMarketsData(Object.fromEntries(metaRes.data.contractList.filter((c: any) => categoriesMap.All.includes(c.contractName)).map((c: any) => {
-            const name = c.contractName.toUpperCase()
-            const quote = name.endsWith('USD') ? 'USD' : ''
-            const base = quote ? name.replace(quote, '') : name
-            return [c.contractName, { ...c, baseAsset: base, quoteAsset: quote }]
-          })))
+          if (metaRes?.data) {
+            const coinMap = Object.fromEntries(metaRes.data.coinList.map((c: any) => [c.coinName, c.iconUrl]))
+            setPerpsMarketsData(Object.fromEntries(metaRes.data.contractList.filter((c: any) => categoriesMap.All.includes(c.contractName)).map((c: any) => {
+              const name = c.contractName.toUpperCase()
+              const quote = name.endsWith('USD') ? 'USD' : ''
+              const base = quote ? name.replace(quote, '') : name
+              return [c.contractName, { ...c, baseAsset: base, quoteAsset: quote, iconURL: coinMap[base] }]
+            })))
+          }
           setPerpsFilterOptions(categoriesMap)
         }
 

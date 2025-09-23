@@ -82,6 +82,9 @@ const PerpsTokenSkeleton = () => {
             <div className="perps-interface-token-name-row">
               <div className="skeleton-text skeleton-symbol" style={{ width: '80px', height: '24px' }}></div>
             </div>
+            <div className="ctrlktooltip">
+                Ctrl+K
+              </div>
           </div>
         </div>
 
@@ -119,6 +122,7 @@ const PerpsTokenSkeleton = () => {
     </div>
   );
 };
+
 const MemeTokenSkeleton = () => {
   return (
     <div className="meme-interface-token-info-container-meme">
@@ -180,6 +184,7 @@ const MemeTokenSkeleton = () => {
     </div>
   );
 };
+
 const PerpsMarketRow = memo(({ index, style, data }: {
   index: number;
   style: React.CSSProperties;
@@ -188,9 +193,10 @@ const PerpsMarketRow = memo(({ index, style, data }: {
     selectedIndex: number;
     onMouseEnter: (index: number) => void;
     onClick: (market: any) => void;
+    toggleFavorite: any;
   }
 }) => {
-  const { markets, selectedIndex, onMouseEnter, onClick } = data;
+  const { markets, selectedIndex, onMouseEnter, onClick, toggleFavorite } = data;
   const market = markets[index];
 
   if (!market) return null;
@@ -202,7 +208,10 @@ const PerpsMarketRow = memo(({ index, style, data }: {
       onMouseEnter={() => onMouseEnter(index)}
     >
       <div className="perps-market-item" onClick={() => onClick(market)}>
-        <button onClick={(e) => e.stopPropagation()} className="dropdown-market-favorite-button">
+        <button onClick={(e) => {
+          e.stopPropagation();
+          toggleFavorite(market.contractName);
+          }} className="dropdown-market-favorite-button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
           </svg>
@@ -212,24 +221,22 @@ const PerpsMarketRow = memo(({ index, style, data }: {
           <img
             src={market.iconSrc}
             className="market-icon"
-            loading="lazy"
-            alt={market.baseAsset}
           />
           <div className="market-info">
             <div className="market-pair-container">
-              <span className="market-pair">{market.contractName}</span>  <span className="market-leverage">{market.displayMaxLeverage}x</span>
+              <span className="market-pair">{market.baseAsset}/{market.quoteAsset}</span>  <span className="market-leverage">{market.displayMaxLeverage}x</span>
             </div>
             <span className="market-volume">{market.formattedVolume}</span>
           </div>
         </div>
 
-        <div className="minichart-section">
-          <div className="perps-mini-chart-placeholder">Chart</div>
+        <div className="perps-oi-section">
+          <div className="perps-open-interest">{market.lastPrice}</div>
         </div>
 
-        <div className="perps-oi-section">
-          <div className="perps-open-interest">
-            {market.formattedOI}
+        <div className="perps-funding-section">
+          <div className={`perps-market-change ${market.changeClass}`}>
+            {market.formattedChange}
           </div>
         </div>
 
@@ -238,11 +245,10 @@ const PerpsMarketRow = memo(({ index, style, data }: {
             {market.formattedFunding}
           </div>
         </div>
-
-        <div className="market-price-section">
-          <div className="market-price">{market.lastPrice}</div>
-          <div className={`market-change ${market.changeClass}`}>
-            {market.formattedChange}
+        
+        <div className="perps-oi-section">
+          <div className="perps-open-interest">
+            {market.formattedOI}
           </div>
         </div>
       </div>
@@ -255,6 +261,7 @@ const PerpsMarketRow = memo(({ index, style, data }: {
     prevProps.data.markets[prevProps.index] === nextProps.data.markets[nextProps.index]
   );
 });
+
 interface TokenInfoProps {
   in_icon: string;
   out_icon: string;
@@ -294,6 +301,7 @@ interface TokenInfoProps {
   };
   setperpsActiveMarketKey: any;
 }
+
 const TokenInfo: React.FC<TokenInfoProps> = ({
   in_icon,
   out_icon,
@@ -343,6 +351,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const perpsDropdownRef = useRef<HTMLDivElement>(null);
   const perpsSearchInputRef = useRef<HTMLInputElement>(null);
   const virtualizationListRef = useRef<List>(null);
+  const { favorites, toggleFavorite, activechain } = useSharedContext();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -350,6 +359,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     }, 150);
     return () => clearTimeout(timer);
   }, [perpsSearchQuery]);
+
   const filteredPerpsMarkets = useMemo(() => {
     return Object.values(perpsMarketsData)
       .filter(market =>
@@ -367,9 +377,10 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           Number(market.priceChangePercent * 100).toFixed(2)}%`,
         fundingClass: market.fundingRate < 0 ? 'negative' : 'positive',
         changeClass: market.priceChangePercent < 0 ? 'negative' : 'positive',
-        iconSrc: `https://static.edgex.exchange/icons/coin/${market.baseAsset}.svg`
+        iconSrc: market.iconURL
       }));
   }, [perpsMarketsData, perpsFilterOptions, perpsActiveFilter, debouncedPerpsSearchQuery]);
+
   const togglePerpsDropdown = () => {
     if (!isPerpsDropdownOpen) {
       setPerpsSearchQuery('');
@@ -387,6 +398,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       }, 200);
     }
   };
+
   const handlePerpsMarketSelect = useCallback((market: any) => {
     setPerpsSearchQuery('');
     setIsPerpsDropdownVisible(false);
@@ -406,7 +418,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     selectedIndex: perpsSelectedIndex,
     onMouseEnter: handlePerpsMouseEnter,
     onClick: handlePerpsMarketSelect,
-  }), [filteredPerpsMarkets, perpsSelectedIndex, handlePerpsMouseEnter, handlePerpsMarketSelect]); <div className="perps-markets-list-virtualized" style={{ height: '400px', width: '100%' }}>
+    toggleFavorite: toggleFavorite,
+  }), [filteredPerpsMarkets, perpsSelectedIndex, handlePerpsMouseEnter, handlePerpsMarketSelect, toggleFavorite]); <div className="perps-markets-list-virtualized" style={{ height: '400px', width: '100%' }}>
     <List
       ref={virtualizationListRef}
       height={400}
@@ -448,6 +461,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     const marketCap = parseFloat(price.replace(/,/g, '')) * TOTAL_SUPPLY;
     return calculateBondingPercentage(marketCap || 0);
   }, [activeMarket, price, isMemeToken]);
+
   const getBondingColorMeme = (percentage: number): string => {
     if (percentage < 25) return 'rgb(235, 112, 112)';
     if (percentage < 50) return '#f59e0b';
@@ -480,6 +494,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       }
     };
   }, [currentTime]);
+
   const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) => {
     if (formatted.type === 'simple') {
       return <span>{formatted.text}</span>;
@@ -533,6 +548,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       setTimeout(focusInput, 100);
     }
   }, [isPerpsDropdownVisible, perpsShouldFocus]);
+
   useEffect(() => {
     const handleMemeScroll = () => {
       const container = memeMetricsRef.current;
@@ -691,8 +707,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     'asc' | 'desc' | undefined
   >('desc');
 
-  const { favorites, toggleFavorite, activechain } = useSharedContext();
-
   const marketAddress =
     activeMarket?.baseAddress || '0x0000000000000000000000000000000000000000';
 
@@ -702,7 +716,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   const shouldShowFullHeader = isTradeRoute && !simpleView;
   const shouldShowTokenInfo = isTradeRoute && !simpleView ? "token-info-container" : "token-info-container-simple";
-  const [showPNLModal, setShowPNLModal] = useState(false);
 
   const handleSymbolInfoClick = (e: React.MouseEvent) => {
     if (
@@ -905,6 +918,46 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   useEffect(() => {
     setSelectedIndex(0);
   }, [searchQuery, activeFilter]);
+
+  const perpsTokenInfo = perpsMarketsData[perpsActiveMarketKey];
+
+  const [remaining, setRemaining] = useState("")
+  const [priceColor, setPriceColor] = useState<string>("")
+  const prevPriceRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!perpsTokenInfo?.lastPrice) return
+    const current = Number(perpsTokenInfo.lastPrice)
+    const prev = prevPriceRef.current
+
+    if (prev !== null) {
+      if (current > prev) setPriceColor("positive")
+      else if (current < prev) setPriceColor("negative")
+      else setPriceColor("")
+    }
+
+    prevPriceRef.current = current
+  }, [perpsTokenInfo?.lastPrice])
+
+  useEffect(() => {
+    if (!perpsTokenInfo?.nextFundingTime) return
+    const tick = () => {
+      const diff = (perpsTokenInfo?.nextFundingTime) - Date.now()
+      if (diff <= 0) {
+        setRemaining("00:00:00")
+        return
+      }
+      const h = Math.floor(diff / 3600000)
+      const m = Math.floor((diff % 3600000) / 60000)
+      const s = Math.floor((diff % 60000) / 1000)
+      setRemaining(
+        [h, m, s].map(v => v.toString().padStart(2, "0")).join(":")
+      )
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [perpsTokenInfo?.nextFundingTime])
 
   if (isMemeToken && !memeTokenData) {
     return <MemeTokenSkeleton />;
@@ -1171,45 +1224,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       </div>
     );
   }
-  const perpsTokenInfo = perpsMarketsData[perpsActiveMarketKey];
-
-  const [remaining, setRemaining] = useState("")
-  const [priceColor, setPriceColor] = useState<string>("")
-  const prevPriceRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    if (!perpsTokenInfo?.lastPrice) return
-    const current = Number(perpsTokenInfo.lastPrice)
-    const prev = prevPriceRef.current
-
-    if (prev !== null) {
-      if (current > prev) setPriceColor("positive")
-      else if (current < prev) setPriceColor("negative")
-      else setPriceColor("")
-    }
-
-    prevPriceRef.current = current
-  }, [perpsTokenInfo?.lastPrice])
-
-  useEffect(() => {
-    if (!perpsTokenInfo?.nextFundingTime) return
-    const tick = () => {
-      const diff = (perpsTokenInfo?.nextFundingTime) - Date.now()
-      if (diff <= 0) {
-        setRemaining("00:00:00")
-        return
-      }
-      const h = Math.floor(diff / 3600000)
-      const m = Math.floor((diff % 3600000) / 60000)
-      const s = Math.floor((diff % 60000) / 1000)
-      setRemaining(
-        [h, m, s].map(v => v.toString().padStart(2, "0")).join(":")
-      )
-    }
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [perpsTokenInfo?.nextFundingTime])
 
   if (isPerpsToken) {
     const isPerpsLoading = !perpsTokenInfo?.lastPrice || !perpsTokenInfo?.contractName;
@@ -1221,18 +1235,18 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       <div className="perps-interface-token-info-container">
         <div className="perps-interface-token-header-info">
           <div className="perps-interface-token-header-left" onClick={togglePerpsDropdown}>
-                 <button
-              className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
+            <button
+              className={`favorite-icon ${favorites.includes(perpsTokenInfo.contractName) ? 'active' : ''}`}
               onClick={(e) => {
                 e.stopPropagation();
-                toggleFavorite(tokenAddress);
+                toggleFavorite(perpsTokenInfo.contractName);
               }}
             >
               <svg
                 width="16"
                 height="16"
                 viewBox="0 0 24 24"
-                fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
+                fill={favorites.includes(perpsTokenInfo.contractName) ? 'currentColor' : 'none'}
                 stroke="currentColor"
                 strokeWidth="1.5"
                 strokeLinecap="round"
@@ -1243,18 +1257,16 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             </button>
             <div className="perps-interface-token-icon-container">
               <img
-                src={`https://static.edgex.exchange/icons/coin/${perpsTokenInfo.baseAsset}.svg`}
+                src={perpsTokenInfo.iconURL}
                 className="perps-interface-token-icon"
               />
             </div>
             <div className="perps-interface-token-identity">
               <div className="perps-interface-token-name-row">
-                <h1 className="perps-interface-token-symbol">{perpsTokenInfo.baseAsset}/{perpsTokenInfo.quoteAsset}</h1>
+                <div className="perps-interface-token-symbol">{perpsTokenInfo.baseAsset}/{perpsTokenInfo.quoteAsset}</div>
               </div>
               <div className="ctrlktooltip">
                 Ctrl+K
-              </div>
-              <div className="perps-interface-token-meta-row">
               </div>
             </div>
           </div>
@@ -1351,10 +1363,10 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               <div className="perps-markets-list-header">
                 <div className="favorites-header" />
                 <div>Market / Volume</div>
-                <div className="markets-dropdown-chart-container">Last Day</div>
-                <div className="perps-oi-header">Open Interest</div>
+                <div className="markets-dropdown-chart-container">Last Price</div>
+                <div className="perps-oi-header">24hr Change</div>
                 <div className="perps-funding-header">8hr Funding</div>
-                <div className="markets-dropdown-price-container">Price</div>
+                <div className="markets-dropdown-price-container">Open Interest</div>
               </div>
               <div className="perps-markets-list-virtualized" style={{ height: '400px', width: '100%' }}>
                 <List
@@ -1443,7 +1455,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             )}
           </div>
         )}
-
 
         <div className="token-details">
           <div className={isLoading && shouldShowFullHeader ? 'symbol-skeleton' : 'trading-pair'}>

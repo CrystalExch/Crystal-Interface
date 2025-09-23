@@ -8,17 +8,34 @@
     flex-direction: column;
     justify-content: space-between;
     height: 100%;
-    width: 350px;
     background-color: rgb(6, 6, 6);
     overflow-y: scroll;
+    min-width: 290px;
+    width: 290px;
 }
 
 
-@media (max-width: 1400px) {
+@media (width>=1320px) {
     .perps-trade-modal {
-        width: 300px
+      min-width: 300px;
+      width: 300px;
     }
-}
+  }
+  
+  
+  @media (width>=1500px) {
+    .perps-trade-modal {
+      min-width: 320px;
+      width: 320px;
+    }
+  }
+  
+  @media (width>=1920px) {
+    .perps-trade-modal {
+      min-width: 340px;
+      width: 340px;
+    }
+  }
 
 .perps-top-section {
     display: flex;
@@ -591,7 +608,7 @@
     transition: all 0.2s ease;
     letter-spacing: -0.3px;
     border: none;
-    border-radius: 20px;
+    border-radius: 4px;
     margin: 0 12px;
     margin-top: auto;
     margin-bottom: 15px;
@@ -962,10 +979,6 @@
     background-color: rgba(170, 174, 207, 0.025);
 }
 
-
-
-
-
 .perps-deposit-icon {
     width: 18px;
     height: 18px;
@@ -988,42 +1001,16 @@
     cursor: pointer;
 }
 
-
 .perps-switch-img {
     transform: rotate(45deg);
     width: 18px;
     height: 18px;
 }
 
-
-
-
-
 .perps-switch-img {
     transform: rotate(45deg);
     width: 18px;
     height: 18px;
-}
-
-/* Loading Animation Styles */
-@keyframes shimmer {
-    0% {
-        background-position: -200px 0;
-    }
-
-    100% {
-        background-position: calc(200px + 100%) 0;
-    }
-}
-
-.perps-loading-skeleton {
-    background: linear-gradient(90deg,
-            rgba(255, 255, 255, 0.05) 25%,
-            rgba(255, 255, 255, 0.1) 50%,
-            rgba(255, 255, 255, 0.05) 75%);
-    background-size: 200px 100%;
-    border-radius: 4px;
-    animation: shimmer 1.5s infinite linear;
 }
 
 .perps-loading-value {
