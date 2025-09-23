@@ -8034,8 +8034,8 @@ input::-webkit-inner-spin-button {
 }
 
 .pnl-card {
-  width: 600px;
-  height: 360px;
+  width: 720px;
+  height: 500px;
   background-size: cover;
   background-position: center;
   display: flex;
@@ -8148,6 +8148,7 @@ input::-webkit-inner-spin-button {
 }
 
 .pnl-footer {
+  height: 55px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -8194,7 +8195,7 @@ input::-webkit-inner-spin-button {
   align-items: center;
   pointer-events: auto;
   z-index: 2;
-  height: 100px;
+  height: 120px;
 }
 
 .pnl-middle-left {
@@ -8348,7 +8349,6 @@ input::-webkit-inner-spin-button {
 
 @media (max-width: 768px) {
   .pnl-zoom-controls {
-    top: 6px;
     padding: 4px 12px;
     gap: 8px;
     font-size: 0.7rem;
@@ -8612,12 +8612,6 @@ input::-webkit-inner-spin-button {
 }
 
 @media (max-width: 1208px) {
-  .pnl-modal-overlay {
-    align-items: flex-start;
-    padding: 20px;
-    overflow-y: auto;
-  }
-
   .pnl-modal-container {
     flex-direction: column;
     height: auto;

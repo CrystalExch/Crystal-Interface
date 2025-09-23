@@ -248,14 +248,15 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     const entryPrice = pnlData.amountBought > 0
       ? (pnlData.valueBought / pnlData.amountBought) * monUsdPrice
       : 0;
+      
     const exitPrice = pnlData.amountSold > 0 
       ? (pnlData.valueSold / pnlData.amountSold) * monUsdPrice
       : pnlData.lastPrice * monUsdPrice;
 
     return {
       pnl: pnlPercentage,
-      entryPrice,
-      exitPrice,
+      entryPrice: entryPrice,
+      exitPrice: exitPrice,
       leverage: 1, // Default to 1x for spot
       valueNet: pnlData.valueNet * monUsdPrice,
       balance: pnlData.balance,
@@ -869,13 +870,13 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                   <div className="pnl-entry">
                     <div className="pnl-entry-label">Entry Price</div>
                     <div className="pnl-entry-value" style={{ color: customizationSettings.mainTextColor }}>
-                      ${displayData.entryPrice.toFixed(4)}
+                      ${displayData.entryPrice.toFixed(8)}
                     </div>
                   </div>
                   <div className="pnl-exit">
                     <div className="pnl-exit-label">Exit Price</div>
                     <div className="pnl-exit-value" style={{ color: customizationSettings.mainTextColor }}>
-                      ${displayData.exitPrice.toFixed(4)}
+                      ${displayData.exitPrice.toFixed(8)}
                     </div>
                   </div>
                 </div>
