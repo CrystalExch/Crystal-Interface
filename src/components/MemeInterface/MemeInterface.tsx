@@ -1331,7 +1331,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             sellTransactions: (p.sellTransactions || 0) + (isBuy ? 0 : 1),
             volume24h: (p.volume24h || 0) + (isBuy ? amountIn : amountOut),
           }));
-
+          setLimitPrice((price * TOTAL_SUPPLY).toFixed(0))
           const passesFilter =
             trackedAddressesRef.current.length === 0 ||
             trackedAddressesRef.current.includes(callerAddr);
@@ -1713,7 +1713,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             buyTransactions: updatedTokenData.buyTransactions,
             sellTransactions: updatedTokenData.sellTransactions,
           }));
-
+          setLimitPrice((updatedTokenData.marketCap).toFixed(0))
           setTokenData(updatedTokenData);
         }
 
@@ -3068,29 +3068,31 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           <div className="meme-trade-input-wrapper">
             <input
               type="number"
-              placeholder="0"
+              placeholder="0.00"
               value={tradeAmount}
               onChange={(e) => setTradeAmount(e.target.value)}
               className="meme-trade-input"
+              autoFocus
             />
-
             <div className="meme-trade-currency">
               <img
                 className="meme-currency-monad-icon"
                 src={monadicon}
-                alt="MON"
               />
             </div>
           </div>
           {activeOrderType === 'Limit' && (
             <div className="meme-trade-input-wrapper">
               <input
-                type="number"
-                placeholder={token.marketCap.toString()}
+                inputMode="decimal"
+                placeholder="0.00"
                 value={limitPrice}
                 onChange={(e) => setLimitPrice(e.target.value)}
                 className="meme-trade-input"
               />
+              <div className="meme-trade-currency">
+                Market Cap
+              </div>
             </div>
           )}
           <div className="meme-balance-slider-wrapper">
@@ -3734,22 +3736,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       userStats.valueNet * monUsdPrice,
                       1,
                     )}
-                    {userStats.valueBought > 0
-                      ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)`
-                      : ' (0%)'}
                   </>
                 ) : (
                   <>
                     <img
                       className="meme-mobile-monad-icon"
                       src={monadicon}
-                      alt="MON"
                     />
                     {userStats.valueNet >= 0 ? '+' : ''}
                     {formatNumberWithCommas(userStats.valueNet, 1)}
-                    {userStats.valueBought > 0
-                      ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)`
-                      : ' (0%)'}
                   </>
                 )}
               </div>

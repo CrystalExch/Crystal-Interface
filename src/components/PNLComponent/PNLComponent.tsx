@@ -1010,7 +1010,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                 <div className="pnl-referral">
                   <div className="pnl-referral-label">Referral Code</div>
                   <div className="pnl-referral-value" style={{ color: customizationSettings.mainTextColor }}>
-                    {demoMode ? '42069' : '---'}
+                    {demoMode ? '42069' : 'crystal'}
                   </div>
                 </div>
               </div>

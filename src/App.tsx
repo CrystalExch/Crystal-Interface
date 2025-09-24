@@ -35,6 +35,7 @@ import {
   useUser,
   AuthCard,
   useSignTypedData,
+  useSignMessage
 } from "@account-kit/react";
 import { Wallet, keccak256 } from 'ethers'
 import { useQuery } from '@tanstack/react-query';
@@ -180,6 +181,7 @@ function App() {
   //PNL
   const [showPNLModal, setShowPNLModal] = useState(false);
   const { signTypedDataAsync } = useSignTypedData({ client })
+  const { signMessageAsync } = useSignMessage({ client })
   const user = useUser();
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
@@ -460,7 +462,7 @@ function App() {
 
   const createSubWallet = async () => {
     try {
-      const privateKey = keccak256(await signTypedDataAsync({
+      const privateKey = '0x' + (BigInt(keccak256(await signTypedDataAsync({
         typedData: {
           types: {
             createCrystalOneCT: [
@@ -474,7 +476,7 @@ function App() {
             account: BigInt(subWallets.length + 1),
           }
         }
-      }));
+      }))) % BigInt("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141")).toString(16).padStart(64, "0");
 
       const tempWallet = new Wallet(privateKey);
       const walletAddress = tempWallet.address as string;
@@ -20804,8 +20806,6 @@ function App() {
                 handleSetChain={handleSetChain}
                 handleSubwalletTransfer={handleSubwalletTransfer}
                 createSubWallet={createSubWallet}
-                signTypedDataAsync={signTypedDataAsync}
-                keccak256={keccak256}
                 Wallet={Wallet}
                 activeWalletPrivateKey={oneCTSigner}
                 setShowRefModal={undefined}
@@ -20871,7 +20871,7 @@ function App() {
                 setPerpsMarketsData={setPerpsMarketsData}
                 perpsFilterOptions={perpsFilterOptions}
                 setPerpsFilterOptions={setPerpsFilterOptions}
-                signTypedDataAsync={signTypedDataAsync}
+                signTypedDataAsync={signMessageAsync}
               />
             } />
           <Route path="/leaderboard"

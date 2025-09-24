@@ -156,7 +156,7 @@ const Launchpad: React.FC<LaunchpadProps> = ({
         },
       });
       setIsLaunching(false);
-      navigate('/explorer');
+      navigate('/board');
     } catch (err: any) {
       setIsLaunching(false);
       return

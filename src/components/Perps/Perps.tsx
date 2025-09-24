@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState, useMemo, useCallback, memo } from '
 import ChartOrderbookPanel from '../ChartOrderbookPanel/ChartOrderbookPanel';
 import OrderCenter from '../OrderCenter/OrderCenter';
 import ChartComponent from '../Chart/Chart';
-import editicon from "../../assets/edit.svg";
-import { keccak256 } from 'ethers';
+import editicon from "../../assets/edit.png";
+import { keccak256, toUtf8Bytes, computeHmac } from 'ethers';
 import { DataPoint } from '../Chart/utils/chartDataGenerator';
 import './Perps.css'
 import TooltipLabel from '../TooltipLabel/TooltipLabel';
@@ -122,21 +122,146 @@ const Perps: React.FC<PerpsProps> = ({
   setPerpsFilterOptions,
   signTypedDataAsync
 }) => {
+  const starkPubFromPriv = (privHex: string) => {
+    const P = BigInt("0x800000000000011000000000000000000000000000000000000000000000001"), A = 1n;
+    const GX = 874739451078007766457464989774322083649278607533249481151382481072868806602n, GY = 152666792071518830868575557812948353041420400780739481342941381225525861407n;
+    const mod = (x: bigint) => ((x % P) + P) % P;
+    const inv = (x: bigint) => { let a = mod(x), b = P, u = 1n, v = 0n; while (b) { const q = a / b; [a, b] = [b, a - q * b]; [u, v] = [v, u - q * v]; } return u < 0n ? u + P : u; };
+    const add = (x1: bigint, y1: bigint, x2: bigint, y2: bigint): [bigint, bigint] => { if (!x1 && !y1) return [x2, y2]; if (!x2 && !y2) return [x1, y1]; const m = x1 === x2 && y1 === y2 ? mod((3n * x1 * x1 + A) * inv(2n * y1)) : mod((y2 - y1) * inv(x2 - x1)); const x3 = mod(m * m - x1 - x2), y3 = mod(m * (x1 - x3) - y1); return [x3, y3]; };
+    let k = BigInt(privHex.startsWith("0x") ? privHex : "0x" + privHex), rx = 0n, ry = 0n, ax = GX, ay = GY;
+    while (k > 0n) { if (k & 1n) [rx, ry] = add(rx, ry, ax, ay); [ax, ay] = add(ax, ay, ax, ay); k >>= 1n; }
+    return { privateKey: privHex, publicKey: "0x" + rx.toString(16).padStart(64, "0"), publicKeyY: "0x" + ry.toString(16).padStart(64, "0") };
+  };
 
+  function starkSign(msgHashHex: string, privKeyHex: string): { r: string; s: string } {
+    // StarkEx curve parameters
+    const P = 0x800000000000011000000000000000000000000000000000000000000001n;
+    const N = 0x800000000000010ffffffffffffffffb781126dcae7b2321e66a241adc64d2fn;
+    const ALPHA = 1n; // StarkEx uses alpha = 1
+    const BETA = 0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89n;
+    const Gx = 874739451078007766457464989774322083649278607533249481151382481072868806602n;
+    const Gy = 152666792071518830868575557812948353041420400780739481342941381225525861407n;
+    const N_ELEMENT_BITS = 251n;
+    const MAX_VAL = 1n << N_ELEMENT_BITS; // 2^251
+  
+    // Helper functions
+    const mod = (x: bigint, m: bigint): bigint => ((x % m) + m) % m;
+    
+    const modPow = (base: bigint, exp: bigint, modulus: bigint): bigint => {
+      let result = 1n;
+      base %= modulus;
+      while (exp > 0n) {
+        if (exp & 1n) result = (result * base) % modulus;
+        base = (base * base) % modulus;
+        exp >>= 1n;
+      }
+      return result;
+    };
+    
+    const inv = (x: bigint, m: bigint): bigint => modPow(x, m - 2n, m);
+  
+    // Elliptic curve operations
+    const ecAdd = (x1: bigint, y1: bigint, x2: bigint, y2: bigint): [bigint, bigint] => {
+      // Point at infinity handling
+      if (x1 === 0n && y1 === 0n) return [x2, y2];
+      if (x2 === 0n && y2 === 0n) return [x1, y1];
+  
+      if (x1 === x2) {
+        if (y1 === y2) {
+          // Point doubling
+          const slope = mod((3n * x1 * x1 + ALPHA) * inv(2n * y1, P), P);
+          const x3 = mod(slope * slope - 2n * x1, P);
+          const y3 = mod(slope * (x1 - x3) - y1, P);
+          return [x3, y3];
+        } else {
+          // Points are inverses
+          return [0n, 0n];
+        }
+      }
+  
+      // Regular addition
+      const slope = mod((y2 - y1) * inv(x2 - x1, P), P);
+      const x3 = mod(slope * slope - x1 - x2, P);
+      const y3 = mod(slope * (x1 - x3) - y1, P);
+      return [x3, y3];
+    };
+  
+    const ecMul = (k: bigint, x: bigint, y: bigint): [bigint, bigint] => {
+      if (k === 0n) throw new Error("Cannot multiply by 0");
+      
+      let rx = 0n, ry = 0n;
+      let ax = x, ay = y;
+      
+      while (k > 0n) {
+        if (k & 1n) {
+          [rx, ry] = ecAdd(rx, ry, ax, ay);
+        }
+        [ax, ay] = ecAdd(ax, ay, ax, ay);
+        k >>= 1n;
+      }
+      return [rx, ry];
+    };
+  
+    // Format hex output
+    const toHex = (n: bigint): string => n.toString(16).padStart(64, "0");
+  
+    // Parse inputs
+    const msgHash = mod(BigInt("0x" + msgHashHex.replace("0x", "")), N);
+    let privKey = mod(BigInt("0x" + privKeyHex.replace("0x", "")), N);
+    if (privKey === 0n) privKey = 1n;
+  
+    // Signing loop (StarkEx ECDSA variant)
+    while (true) {
+      // Generate random k in range [1, N)
+      const randomBytes = new Uint8Array(32);
+      crypto.getRandomValues(randomBytes);
+      const k = mod(
+        BigInt("0x" + Array.from(randomBytes).map(b => b.toString(16).padStart(2, "0")).join("")),
+        N - 1n
+      ) + 1n;
+  
+      // Calculate r = (k * G).x
+      const [rx, _] = ecMul(k, Gx, Gy);
+      const r = rx; // Note: StarkEx uses x coordinate directly, not mod N
+  
+      // Check r is in valid range (less than 2^251)
+      if (!(1n <= r && r < MAX_VAL)) continue;
+  
+      // Check (msgHash + r * privKey) % N != 0
+      const numerator = mod(msgHash + r * privKey, N);
+      if (numerator === 0n) continue;
+  
+      // Calculate w = k / (msgHash + r * privKey) mod N
+      const w = mod(k * inv(numerator, N), N);
+  
+      // Check w is in valid range (less than 2^251)
+      if (!(1n <= w && w < MAX_VAL)) continue;
+  
+      // Calculate s = 1/w mod N (StarkEx inverts the standard ECDSA s)
+      const s = inv(w, N);
+  
+      return { 
+        r: toHex(r), 
+        s: toHex(s) 
+      };
+    }
+  }
+  
   const [exchangeConfig, setExchangeConfig] = useState();
   const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
   const [orderdata, setorderdata] = useState<any>([]);
-  const [signer, setSigner] = useState(() => {
+  const [signer, setSigner] = useState<any>(() => {
     const saved = localStorage.getItem('crystal_perps_signer');
-    return saved !== null ? saved : '';
+    return saved !== null ? JSON.parse(saved) : {};
   })
-  const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};
+  const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};  
 
   const [activeTradeType, setActiveTradeType] = useState<"long" | "short">("long");
   const [activeOrderType, setActiveOrderType] = useState<"market" | "Limit" | "Pro">("market");
 
   const [inputString, setInputString] = useState('');
   const [limitPriceString, setlimitPriceString] = useState('');
+  const [limitChase, setlimitChase] = useState(true);
   const [amountIn, setAmountIn] = useState(BigInt(0));
   const [limitPrice, setlimitPrice] = useState(BigInt(0));
   const [sliderPercent, setSliderPercent] = useState(0);
@@ -150,6 +275,8 @@ const Perps: React.FC<PerpsProps> = ({
   const [tpPrice, setTpPrice] = useState("");
   const [slPrice, setSlPrice] = useState("");
   const [tpPercent, setTpPercent] = useState("0.0");
+  const [currentPosition, setCurrentPosition] = useState("0.0");
+  const [leverage, setLeverage] = useState("0.0");
   const [slPercent, setSlPercent] = useState("0.0");
 
   const [slippage, setSlippage] = useState(() => {
@@ -207,6 +334,9 @@ const Perps: React.FC<PerpsProps> = ({
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<any>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const accwsRef = useRef<WebSocket | null>(null);
+  const accpingIntervalRef = useRef<any>(null);
+  const accreconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const updateIndicatorPosition = useCallback(() => {
     const container = orderTypesContainerRef.current;
@@ -847,6 +977,274 @@ const Perps: React.FC<PerpsProps> = ({
     };
   }, []);
 
+  /* useEffect(() => {
+    if (Object.keys(signer).length == 0) return;
+    let liveStreamCancelled = false;
+    let isAddressInfoFetching = false;
+
+    const fetchData = async () => {
+      try {
+        const ts=Date.now().toString()
+        const path='/api/v1/private/account/getAccountPage'
+        const sorted='accountId=652477428161053296&size=100'
+        const {r,s}=starkSign(keccak256(toUtf8Bytes(ts + "GET" + path + sorted)), signer.privateKey)
+        const signature=r+s
+        
+        const [metaRes]=await Promise.all([
+          fetch("/api/v1/private/account/getAccountPage?accountId=652477428161053296&size=100",{
+            method:"GET",
+            headers:{
+              "Content-Type":"application/json",
+              "X-edgeX-Api-Timestamp":ts,
+              "X-edgeX-Api-Signature":signature
+            }
+          }).then(r=>r.json())
+        ])
+        if(liveStreamCancelled)return
+        console.log(metaRes)
+      
+      } catch (e){
+        console.log(e)
+      }
+    };
+    (async () => {
+      await fetchData();
+    })()
+    const connectWebSocket = () => {
+      if (liveStreamCancelled) return;
+      const accountId = "652477428161053296";
+      const path = "/api/v1/private/ws";
+      const ts = Date.now().toString();
+      const qs = `accountId=${accountId}`;
+      const endpoint = `wss://quote.edgex.exchange${path}?${qs}&timestamp=${ts}`;
+      const signature = starkSign(keccak256(toUtf8Bytes(ts + "GET" + path + qs)), signer.privateKey);
+
+      const payload = JSON.stringify({
+        "X-edgeX-Api-Signature": signature.r + signature.s + signer.publicKeyY.toString(16).padStart(64,"0"),
+        "X-edgeX-Api-Timestamp": ts,
+      });
+
+      accwsRef.current = new WebSocket(endpoint, btoa(payload).replace(/=+$/, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_"));
+
+      accwsRef.current.onopen = async () => {
+        const subscriptionMessages = [
+          JSON.stringify({
+            type: 'subscribe',
+            channel: 'ticker.all.1s',
+          })
+        ];
+
+        accpingIntervalRef.current = setInterval(() => {
+          if (accwsRef.current?.readyState === WebSocket.OPEN) {
+            accwsRef.current.send(JSON.stringify({
+              type: 'pong',
+              time: Date.now().toString()
+            }));
+          }
+        }, 15000);
+
+        subscriptionMessages.forEach((message) => {
+          accwsRef.current?.send(message);
+        });
+        if (activeMarket?.contractId) {
+          const subs = [
+            `depth.${activeMarket.contractId}.200`,
+            `trades.${activeMarket.contractId}`,
+            `kline.LAST_PRICE.${activeMarket.contractId}.${selectedInterval === '1d'
+              ? 'DAY_1'
+              : selectedInterval === '4h'
+                ? 'HOUR_4'
+                : selectedInterval === '1h'
+                  ? 'HOUR_1'
+                  : 'MINUTE_' + selectedInterval.slice(0, -1)}`
+          ]
+
+          subs.forEach((channel: any) => {
+            accwsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }))
+          })
+
+          subRefs.current = subs
+        }
+        fetchData();
+      };
+
+      accwsRef.current.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        console.log(message)
+        if (message?.content?.data) {
+          const msg = message?.content?.data;
+          if (message.content.channel.startsWith('depth')) {
+            if (msg[0].depthType == 'SNAPSHOT') {
+              setorderdata([
+                msg[0].bids.map((i: any) => ({ ...i, price: Number(i.price), size: Number(i.size) })),
+                msg[0].asks.map((i: any) => ({ ...i, price: Number(i.price), size: Number(i.size) }))
+              ])
+            }
+            else {
+              setorderdata((prev: any) => {
+                const temporders = [[...prev[0]], [...prev[1]]]
+
+                msg[0].bids.forEach((i: any) => {
+                  const price = Number(i.price)
+                  const size = Number(i.size)
+                  const idx = temporders[0].findIndex(o => o.price === price)
+
+                  if (size === 0 && idx !== -1) {
+                    temporders[0].splice(idx, 1)
+                  } else if (idx !== -1) {
+                    temporders[0][idx].size = size
+                  } else if (size > 0) {
+                    let insertAt = temporders[0].findIndex(o => o.price < price)
+                    if (insertAt === -1) insertAt = temporders[0].length
+                    temporders[0].splice(insertAt, 0, { ...i, price, size })
+                  }
+                })
+
+                msg[0].asks.forEach((i: any) => {
+                  const price = Number(i.price)
+                  const size = Number(i.size)
+                  const idx = temporders[1].findIndex(o => o.price === price)
+
+                  if (size === 0 && idx !== -1) {
+                    temporders[1].splice(idx, 1)
+                  } else if (idx !== -1) {
+                    temporders[1][idx].size = size
+                  } else if (size > 0) {
+                    let insertAt = temporders[1].findIndex(o => o.price > price)
+                    if (insertAt === -1) insertAt = temporders[1].length
+                    temporders[1].splice(insertAt, 0, { ...i, price, size })
+                  }
+                })
+
+                return temporders
+              })
+            }
+          }
+          else if (message.content.channel.startsWith('trades')) {
+            if (message.content.dataType == 'Snapshot') {
+              const trades = msg.map((t: any) => {
+                const isBuy = !t.isBuyerMaker
+                const priceFormatted = formatCommas(t.price)
+                const tradeValue = Number(t.value)
+                const time = formatTime(Number(t.time))
+                return [isBuy, priceFormatted, tradeValue, time]
+              })
+              setTrades(trades)
+            }
+            else {
+              const trades = msg.map((t: any) => {
+                const isBuy = t.isBuyerMaker
+                const priceFormatted = formatCommas(t.price)
+                const tradeValue = Number(t.value)
+                const time = formatTime(Number(t.time) / 1000)
+                return [isBuy, priceFormatted, tradeValue, time]
+              })
+
+              setTrades(prev => [...trades, ...prev].slice(0, 100))
+            }
+          }
+          else if (message.content.channel.startsWith('kline')) {
+            if (message.content.dataType == 'Snapshot') {
+              const key = msg?.[0].contractName + (msg?.[0].klineType === 'DAY_1'
+                ? '1D'
+                : msg?.[0].klineType === 'HOUR_4'
+                  ? '240'
+                  : msg?.[0].klineType === 'HOUR_1'
+                    ? '60'
+                    : msg?.[0].klineType.startsWith('MINUTE_')
+                      ? msg?.[0].klineType.slice('MINUTE_'.length)
+                      : msg?.[0].klineType)
+
+              if (realtimeCallbackRef.current[key]) {
+                const mapKlines = (klines: any[]) =>
+                  klines.map(candle => ({
+                    time: Number(candle.klineTime),
+                    open: Number(candle.open),
+                    high: Number(candle.high),
+                    low: Number(candle.low),
+                    close: Number(candle.close),
+                    volume: Number(candle.makerBuyValue),
+                  }))
+                realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
+              }
+            }
+            else {
+              const key = msg?.[0].contractName + (msg?.[0].klineType === 'DAY_1'
+                ? '1D'
+                : msg?.[0].klineType === 'HOUR_4'
+                  ? '240'
+                  : msg?.[0].klineType === 'HOUR_1'
+                    ? '60'
+                    : msg?.[0].klineType.startsWith('MINUTE_')
+                      ? msg?.[0].klineType.slice('MINUTE_'.length)
+                      : msg?.[0].klineType)
+              if (realtimeCallbackRef.current[key]) {
+                const mapKlines = (klines: any[]) =>
+                  klines.map(candle => ({
+                    time: Number(candle.klineTime),
+                    open: Number(candle.open),
+                    high: Number(candle.high),
+                    low: Number(candle.low),
+                    close: Number(candle.close),
+                    volume: Number(candle.makerBuyValue),
+                  }))
+                realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
+              }
+            }
+          }
+          else if (message.content.channel.startsWith('ticker')) {
+            setPerpsMarketsData((prev: any) =>
+              Object.fromEntries(
+                Object.entries(prev).map(([name, market]: any) => {
+                  const update = message.content.data.find((d: any) => d.contractName === name)
+                  return [
+                    name,
+                    update ? { ...market, ...update } : market
+                  ]
+                })
+              )
+            )
+          }
+        }
+      }
+
+      accwsRef.current.onclose = () => {
+        if (accpingIntervalRef.current) {
+          clearInterval(accpingIntervalRef.current);
+          accpingIntervalRef.current = null;
+        }
+        accreconnectIntervalRef.current = setTimeout(() => {
+          connectWebSocket();
+        }, 500);
+      };
+
+      accwsRef.current.onerror = (error) => {
+        console.error(error);
+      };
+    };
+
+    connectWebSocket();
+
+    return () => {
+      liveStreamCancelled = true;
+      isAddressInfoFetching = false;
+      if (accpingIntervalRef.current) {
+        clearInterval(accpingIntervalRef.current);
+        accpingIntervalRef.current = null;
+      }
+      if (accwsRef.current) {
+        accwsRef.current.close();
+        accwsRef.current = null;
+      }
+      if (accreconnectIntervalRef.current) {
+        clearTimeout(accreconnectIntervalRef.current);
+        accreconnectIntervalRef.current = null;
+      }
+    };
+  }, [signer]); */
+
   const renderChartComponent = useMemo(() => (
     <ChartComponent
       activeMarket={activeMarket}
@@ -1026,7 +1424,23 @@ const Perps: React.FC<PerpsProps> = ({
             </button>
           </div>
           <div className="perps-amount-section">
+          <div className="perps-available-to-trade">
+              <div className="label-container">
+                <div className="perps-current-position-container">{t('Available to Trade')}</div>
+              </div>
+              <div className="value-container">
+                0.00
+              </div>
+            </div>
             <div className="perps-available-to-trade">
+              <div className="label-container">
+                <div className="perps-current-position-container">{t('Current Position')}</div>
+              </div>
+              <div className="value-container">
+                {currentPosition + (activeMarket?.baseAsset ? ' ' + activeMarket.baseAsset : '')}
+              </div>
+            </div>
+            <div className="perps-available-to-trade" style={{marginTop: '5px'}}>
               <div className="perps-balance-container">
                 <img className="perps-wallet-icon" src={walleticon} />
                 <div className="balance-value-container">
@@ -1034,25 +1448,17 @@ const Perps: React.FC<PerpsProps> = ({
                 </div>
               </div>
               <button className="leverage-button">
-                <img className="leverage-button-icon" src={editicon} />
                 10x
+                <img className="leverage-button-icon" src={editicon} />
               </button>
 
-            </div>
-            <div className="perps-available-to-trade">
-              <div className="label-container">
-                {t('Current Position')}
-              </div>
-              <div className="value-container">
-                $0.00
-              </div>
             </div>
             {activeOrderType === "Limit" && (
               <div className="perps-trade-input-wrapper">
                 Price
                 <input
-                  type="number"
-                  placeholder="0"
+                  type="decimal"
+                  placeholder="0.00"
                   value={limitPriceString}
                   onChange={(e) => setlimitPriceString(e.target.value)}
                   className="perps-trade-input"
@@ -1065,11 +1471,15 @@ const Perps: React.FC<PerpsProps> = ({
             <div className="perps-trade-input-wrapper">
               Size
               <input
-                type="number"
-                placeholder="0"
+                type="decimal"
+                placeholder="0.00"
                 value={inputString}
-                onChange={(e) => setInputString(e.target.value)}
+                onChange={(e) => {
+                  setInputString(e.target.value)
+                  setAmountIn(BigInt(e.target.value))
+                }}
                 className="perps-trade-input"
+                autoFocus
               />
               USD
             </div>
@@ -1246,35 +1656,22 @@ const Perps: React.FC<PerpsProps> = ({
                         <button
                             className={`perps-trade-action-button ${activeTradeType}`}
                             onClick={async () => {
-                                if (!signer) {
-                                  const privateKey = keccak256(await signTypedDataAsync({
-                                    typedData: {
-                                      types: {
-                                        createCrystalOneCT: [
-                                          { name: "name", type: "string" },
-                                          { name: "envId", type: "string" },
-                                          { name: "action", type: "string" },
-                                          { name: "onlySignOn", type: "string" },
-                                          { name: "clientAccountId", type: "string" }
-                                        ],
-                                      },
-                                      primaryType: 'createCrystalOneCT',
-                                      message: {
-                                        name: "edgeX",
-                                        envId: "mainnet",
-                                        action: "L2 Key",
-                                        onlySignOn: "https://pro.edgex.exchange",
-                                        clientAccountId: "main"
-                                      }
-                                    }
-                                  }));
-                                  console.log(privateKey)
+                                if (!address) {
+                                  setpopup(4)
+                                }
+                                else if (Object.keys(signer).length == 0) {
+                                  const privateKey = '0x' + (BigInt(keccak256(await signTypedDataAsync({message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main"
+                                  }))) >> 5n).toString(16).padStart(64, "0");
+                                  const tempsigner = starkPubFromPriv(privateKey);
+                                  localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
+                                  setSigner(tempsigner)
                                 }
                             }}
+                            disabled={address && Object.keys(signer).length != 0 && amountIn == 0n}
                         >
-                            {!signer ? 'Enable Trading' : activeOrderType === "market"
+                            {address ? (Object.keys(signer).length == 0 ? 'Enable Trading' : activeOrderType === "market"
                                 ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
-                                : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`
+                                : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`) : 'Connect Wallet'
                             }
                         </button>
                         <div className="perps-info-rectangle">
@@ -1293,7 +1690,7 @@ const Perps: React.FC<PerpsProps> = ({
                                     />
                                 </div>
                                 <div className="value-container">
-                                    $0.00
+                                    0.00
                                 </div>
                             </div>
                             <div className="price-impact">

@@ -275,8 +275,6 @@ interface PortfolioProps {
   handleSetChain: () => Promise<void>;
   handleSubwalletTransfer: (nonce: number, toAddress: string, amount: bigint, fromPrivateKey: string) => Promise<void>;
   createSubWallet?: () => Promise<void>;
-  signTypedDataAsync?: any;
-  keccak256?: any;
   Wallet?: any;
   activeWalletPrivateKey?: string;
   lastRefGroupFetch: any;
@@ -347,8 +345,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
   handleSetChain,
   handleSubwalletTransfer,
   createSubWallet,
-  signTypedDataAsync,
-  keccak256,
   Wallet,
   activeWalletPrivateKey,
   lastRefGroupFetch,

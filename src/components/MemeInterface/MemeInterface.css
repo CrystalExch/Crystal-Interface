@@ -40,7 +40,6 @@
   width: 100%;
 }
 
-
 .meme-trades-container {
   border-left: 1px solid rgba(179, 184, 249, .09);
   height: 100%;
@@ -407,15 +406,6 @@
   padding: 4px 80px 4px 12px;
   transition: all 0.2s ease;
   width: 100%;
-
-}
-
-.meme-trade-input::-moz-placeholder {
-  color: rgba(255, 255, 255, 1) !important;
-}
-
-.meme-trade-input::placeholder {
-  color: rgba(255, 255, 255, 1) !important;
 }
 
 .meme-trade-spinner {

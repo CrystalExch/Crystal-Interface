@@ -42,8 +42,8 @@
 .graph-container{
     background:rgb(6,6,6);
     height:100%;
-    padding:15px 10px 30px
-}
+    padding:15px 0px 30px 10px
+  }
 .graph-outer-container{
     background:#141418;
     flex:1;
@@ -1140,8 +1140,8 @@
     .graph-container{
         background:rgb(6,6,6);
         height:100%;
-        padding:15px 10px 30px
-    }
+        padding:15px 0px 30px 10px
+      }
     .graph-outer-container{
         background:#141418;
         flex:1;
@@ -3374,12 +3374,18 @@
 .trenches-pnl-button {
   border: none;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
-.trenches-pnl-button:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
+.trenches-pnl-button path {
+  transition: fill 0.2s;
+}
+
+.trenches-pnl-button:hover path {
+  fill: #73758b;
+}
+
+.meme-interface-pnl-value-container {
+  display: flex;
 }
 
 .trenches-performance-header{
