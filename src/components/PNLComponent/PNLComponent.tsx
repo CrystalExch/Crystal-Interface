@@ -868,7 +868,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                   </div>
 
                   <div className="pnl-token-row">
-                    <div className="pnl-token-info-leverage" ref={captureRef}> 
+                    <div className="pnl-token-info-leverage"> 
                       <div className="pnl-token-info">
                         <img src={monadicon} className="pnl-token-icon" crossOrigin="anonymous" />
                         <span className="pnl-token-name" style={{ color: customizationSettings.mainTextColor }}>
