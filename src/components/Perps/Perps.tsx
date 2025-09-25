@@ -122,6 +122,90 @@ const Perps: React.FC<PerpsProps> = ({
   setPerpsFilterOptions,
   signTypedDataAsync
 }) => {
+  const [exchangeConfig, setExchangeConfig] = useState();
+  const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
+  const [orderdata, setorderdata] = useState<any>([]);
+  const [signer, setSigner] = useState<any>(() => {
+    const saved = localStorage.getItem('crystal_perps_signer');
+    return saved !== null ? JSON.parse(saved) : {};
+  })
+  const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};  
+  const [activeTradeType, setActiveTradeType] = useState<"long" | "short">("long");
+  const [activeOrderType, setActiveOrderType] = useState<"market" | "Limit" | "Pro">("market");
+  const [inputString, setInputString] = useState('');
+  const [limitPriceString, setlimitPriceString] = useState('');
+  const [limitChase, setlimitChase] = useState(true);
+  const [amountIn, setAmountIn] = useState(BigInt(0));
+  const [limitPrice, setlimitPrice] = useState(BigInt(0));
+  const [sliderPercent, setSliderPercent] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedPerpsPreset, setSelectedPerpsPreset] = useState<number | null>(null);
+  const [isPresetEditMode, setIsPresetEditMode] = useState(false);
+  const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
+  const [tempPresetValue, setTempPresetValue] = useState('');
+  const [isTpSlEnabled, setIsTpSlEnabled] = useState(false);
+  const [tpPrice, setTpPrice] = useState("");
+  const [slPrice, setSlPrice] = useState("");
+  const [tpPercent, setTpPercent] = useState("0.0");
+  const [currentPosition, setCurrentPosition] = useState("0.0");
+  const [leverage, setLeverage] = useState("0.0");
+  const [slPercent, setSlPercent] = useState("0.0");
+  const [slippage, setSlippage] = useState(() => {
+    const saved = localStorage.getItem('crystal_perps_slippage');
+    return saved !== null ? BigInt(saved) : BigInt(9900);
+  });
+  const [slippageString, setSlippageString] = useState(() => {
+    const saved = localStorage.getItem('crystal_perps_slippage_string');
+    return saved !== null ? saved : '1';
+  });
+  const [timeInForce, setTimeInForce] = useState("GTC");
+  const [isTifDropdownOpen, setIsTifDropdownOpen] = useState(false);
+  const [indicatorStyle, setIndicatorStyle] = useState<{
+    width: number;
+    left: number;
+  }>({ width: 0, left: 0 });
+  const [trades, setTrades] = useState<
+    [boolean, string, number, string, string][]
+  >([]);
+  const [spreadData, setSpreadData] = useState<any>({});
+  const [obTab, setOBTab] = useState<'orderbook' | 'trades'>(() => {
+    const stored = localStorage.getItem('perps_ob_active_tab');
+
+    if (['orderbook', 'trades'].includes(stored ?? '')) {
+      return stored as 'orderbook' | 'trades';
+    }
+
+    return mobileView === 'trades' ? 'trades' : 'orderbook';
+  });
+  const [baseInterval, setBaseInterval] = useState<number>(0.1);
+  const [obInterval, setOBInterval] = useState<number>(() => {
+    const stored = localStorage.getItem(
+      `${activeMarket.baseAsset}_ob_interval`,
+    );
+    return stored !== null ? JSON.parse(stored) : 0.1;
+  });
+  const [isDragging2, setIsDragging2] = useState(false);
+
+  const initialMousePosRef = useRef(0);
+  const initialWidthRef = useRef(0);
+  const widthRef = useRef<HTMLDivElement>(null);
+  const sliderRef = useRef<HTMLInputElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const presetInputRef = useRef<HTMLInputElement>(null);
+  const subRefs = useRef<any>([]);
+
+  const marketButtonRef = useRef<HTMLButtonElement>(null);
+  const limitButtonRef = useRef<HTMLButtonElement>(null);
+  const proButtonRef = useRef<HTMLButtonElement>(null);
+  const orderTypesContainerRef = useRef<HTMLDivElement>(null);
+  const realtimeCallbackRef = useRef<any>({});
+  const wsRef = useRef<WebSocket | null>(null);
+  const pingIntervalRef = useRef<any>(null);
+  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const accwsRef = useRef<WebSocket | null>(null);
+  const accpingIntervalRef = useRef<any>(null);
+  const accreconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const starkPubFromPriv = (privHex: string) => {
     const P = BigInt("0x800000000000011000000000000000000000000000000000000000000000001"), A = 1n;
     const GX = 874739451078007766457464989774322083649278607533249481151382481072868806602n, GY = 152666792071518830868575557812948353041420400780739481342941381225525861407n;
@@ -247,97 +331,6 @@ const Perps: React.FC<PerpsProps> = ({
     }
   }
   
-  const [exchangeConfig, setExchangeConfig] = useState();
-  const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
-  const [orderdata, setorderdata] = useState<any>([]);
-  const [signer, setSigner] = useState<any>(() => {
-    const saved = localStorage.getItem('crystal_perps_signer');
-    return saved !== null ? JSON.parse(saved) : {};
-  })
-  const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};  
-
-  const [activeTradeType, setActiveTradeType] = useState<"long" | "short">("long");
-  const [activeOrderType, setActiveOrderType] = useState<"market" | "Limit" | "Pro">("market");
-
-  const [inputString, setInputString] = useState('');
-  const [limitPriceString, setlimitPriceString] = useState('');
-  const [limitChase, setlimitChase] = useState(true);
-  const [amountIn, setAmountIn] = useState(BigInt(0));
-  const [limitPrice, setlimitPrice] = useState(BigInt(0));
-  const [sliderPercent, setSliderPercent] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [selectedPerpsPreset, setSelectedPerpsPreset] = useState<number | null>(null);
-  const [isPresetEditMode, setIsPresetEditMode] = useState(false);
-  const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
-  const [tempPresetValue, setTempPresetValue] = useState('');
-
-  const [isTpSlEnabled, setIsTpSlEnabled] = useState(false);
-  const [tpPrice, setTpPrice] = useState("");
-  const [slPrice, setSlPrice] = useState("");
-  const [tpPercent, setTpPercent] = useState("0.0");
-  const [currentPosition, setCurrentPosition] = useState("0.0");
-  const [leverage, setLeverage] = useState("0.0");
-  const [slPercent, setSlPercent] = useState("0.0");
-
-  const [slippage, setSlippage] = useState(() => {
-    const saved = localStorage.getItem('crystal_perps_slippage');
-    return saved !== null ? BigInt(saved) : BigInt(9900);
-  });
-  const [slippageString, setSlippageString] = useState(() => {
-    const saved = localStorage.getItem('crystal_perps_slippage_string');
-    return saved !== null ? saved : '1';
-  });
-
-  const [timeInForce, setTimeInForce] = useState("GTC");
-  const [isTifDropdownOpen, setIsTifDropdownOpen] = useState(false);
-
-  const [indicatorStyle, setIndicatorStyle] = useState<{
-    width: number;
-    left: number;
-  }>({ width: 0, left: 0 });
-
-  const [trades, setTrades] = useState<
-    [boolean, string, number, string, string][]
-  >([]);
-  const [spreadData, setSpreadData] = useState<any>({});
-  const [obTab, setOBTab] = useState<'orderbook' | 'trades'>(() => {
-    const stored = localStorage.getItem('perps_ob_active_tab');
-
-    if (['orderbook', 'trades'].includes(stored ?? '')) {
-      return stored as 'orderbook' | 'trades';
-    }
-
-    return mobileView === 'trades' ? 'trades' : 'orderbook';
-  });
-  const [baseInterval, setBaseInterval] = useState<number>(0.1);
-  const [obInterval, setOBInterval] = useState<number>(() => {
-    const stored = localStorage.getItem(
-      `${activeMarket.baseAsset}_ob_interval`,
-    );
-    return stored !== null ? JSON.parse(stored) : 0.1;
-  });
-  const [isDragging2, setIsDragging2] = useState(false);
-
-  const initialMousePosRef = useRef(0);
-  const initialWidthRef = useRef(0);
-  const widthRef = useRef<HTMLDivElement>(null);
-  const sliderRef = useRef<HTMLInputElement>(null);
-  const popupRef = useRef<HTMLDivElement>(null);
-  const presetInputRef = useRef<HTMLInputElement>(null);
-  const subRefs = useRef<any>([]);
-
-  const marketButtonRef = useRef<HTMLButtonElement>(null);
-  const limitButtonRef = useRef<HTMLButtonElement>(null);
-  const proButtonRef = useRef<HTMLButtonElement>(null);
-  const orderTypesContainerRef = useRef<HTMLDivElement>(null);
-  const realtimeCallbackRef = useRef<any>({});
-  const wsRef = useRef<WebSocket | null>(null);
-  const pingIntervalRef = useRef<any>(null);
-  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const accwsRef = useRef<WebSocket | null>(null);
-  const accpingIntervalRef = useRef<any>(null);
-  const accreconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
   const updateIndicatorPosition = useCallback(() => {
     const container = orderTypesContainerRef.current;
     if (!container) return;
@@ -468,6 +461,7 @@ const Perps: React.FC<PerpsProps> = ({
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
   };
+
   const [perpsActiveSection, setPerpsActiveSection] = useState<'positions' | 'openOrders' | 'tradeHistory' | 'orderHistory'>(() => {
     const stored = localStorage.getItem('crystal_perps_oc_tab');
     if (['positions', 'openOrders', 'tradeHistory', 'orderHistory'].includes(stored ?? '')) {
@@ -476,11 +470,25 @@ const Perps: React.FC<PerpsProps> = ({
     return 'positions';
   });
 
-  const isTokenInfoLoading = !activeMarket.contractId || Object.keys(perpsMarketsData).length === 0;
-  const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.length < 2;
-
+  const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.length < 3;
   const [_isVertDragging, setIsVertDragging] = useState(false);
   const initialHeightRef = useRef(0);
+  const [orders, setorders] = useState<any[]>([]);
+  const [canceledorders, setcanceledorders] = useState<any[]>([]);
+  const [tradehistory, settradehistory] = useState<any[]>([]);
+  const [tradesByMarket, settradesByMarket] = useState<any>({});
+  const [currentLimitPrice, setCurrentLimitPrice] = useState<number>(0);
+  const [amountsQuote, setAmountsQuote] = useState(() => {
+    const stored = localStorage.getItem('perps_ob_amounts_quote');
+
+    return ['Quote', 'Base'].includes(String(stored))
+      ? (stored as string)
+      : 'Quote';
+  });
+  const prevAmountsQuote = useRef(amountsQuote)
+  const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
+  const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
+
   const handleVertMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -525,22 +533,6 @@ const Perps: React.FC<PerpsProps> = ({
     // setTradeAmount(calculatedAmount.toString());
     positionPopup(percent);
   }, [positionPopup]);
-
-  const [orders, setorders] = useState<any[]>([]);
-  const [canceledorders, setcanceledorders] = useState<any[]>([]);
-  const [tradehistory, settradehistory] = useState<any[]>([]);
-  const [tradesByMarket, settradesByMarket] = useState<any>({});
-  const [currentLimitPrice, setCurrentLimitPrice] = useState<number>(0);
-  const [amountsQuote, setAmountsQuote] = useState(() => {
-    const stored = localStorage.getItem('perps_ob_amounts_quote');
-
-    return ['Quote', 'Base'].includes(String(stored))
-      ? (stored as string)
-      : 'Quote';
-  });
-  const prevAmountsQuote = useRef(amountsQuote)
-  const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
-  const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
 
   const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
   }, []);
@@ -588,7 +580,7 @@ const Perps: React.FC<PerpsProps> = ({
   }, [activeMarket?.contractId, selectedInterval])
 
   useEffect(() => {
-    if (!orderdata || !Array.isArray(orderdata) || orderdata.length < 2) return
+    if (!orderdata || !Array.isArray(orderdata) || orderdata.length < 3 || orderdata[2] != perpsActiveMarketKey) return
 
     try {
       const [bids, asks] = orderdata
@@ -662,13 +654,13 @@ const Perps: React.FC<PerpsProps> = ({
             : Number(activeMarket.tickSize)
         );
       }
-      setRoundedBuyOrders({ orders: processedBids, key: perpsActiveMarketKey, amountsQuote })
-      setRoundedSellOrders({ orders: processedAsks, key: perpsActiveMarketKey, amountsQuote })
+      setRoundedBuyOrders({ orders: processedBids, key: orderdata[2], amountsQuote })
+      setRoundedSellOrders({ orders: processedAsks, key: orderdata[2], amountsQuote })
       prevAmountsQuote.current = amountsQuote
     } catch (e) {
       console.error(e)
     }
-  }, [orderdata, amountsQuote, perpsActiveMarketKey])
+  }, [orderdata, amountsQuote])
 
   useEffect(() => {
     let liveStreamCancelled = false;
@@ -787,7 +779,8 @@ const Perps: React.FC<PerpsProps> = ({
             if (msg[0].depthType == 'SNAPSHOT') {
               setorderdata([
                 msg[0].bids.map((i: any) => ({ ...i, price: Number(i.price), size: Number(i.size) })),
-                msg[0].asks.map((i: any) => ({ ...i, price: Number(i.price), size: Number(i.size) }))
+                msg[0].asks.map((i: any) => ({ ...i, price: Number(i.price), size: Number(i.size) })),
+                msg[0].contractName
               ])
             }
             else {
@@ -825,7 +818,7 @@ const Perps: React.FC<PerpsProps> = ({
                     temporders[1].splice(insertAt, 0, { ...i, price, size })
                   }
                 })
-
+                temporders.push(msg[0].contractName)
                 return temporders
               })
             }
@@ -1297,7 +1290,7 @@ const Perps: React.FC<PerpsProps> = ({
               roundedBuyOrders: roundedBuyOrders?.orders,
               roundedSellOrders: roundedSellOrders?.orders,
               spreadData,
-              priceFactor: Number(1 / activeMarket?.tickSize),
+              priceFactor: 1 / baseInterval,
               marketType: 0,
               symbolIn: activeMarket.quoteAsset,
               symbolOut: activeMarket.baseAsset,

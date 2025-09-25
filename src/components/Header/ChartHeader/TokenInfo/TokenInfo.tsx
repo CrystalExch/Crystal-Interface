@@ -206,8 +206,9 @@ const PerpsMarketRow = memo(({ index, style, data }: {
       style={style}
       className={`perps-market-item-container ${index === selectedIndex ? 'selected' : ''}`}
       onMouseEnter={() => onMouseEnter(index)}
+      onClick={() => onClick(market)}
     >
-      <div className="perps-market-item" onClick={() => onClick(market)}>
+      <div className="perps-market-item">
         <button onClick={(e) => {
           e.stopPropagation();
           toggleFavorite(market.contractName);
@@ -953,11 +954,11 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     return () => clearInterval(id)
   }, [perpsTokenInfo?.nextFundingTime])
 
-  if (isMemeToken && !memeTokenData) {
-    return <MemeTokenSkeleton />;
-  }
-
   if (isMemeToken && memeTokenData) {
+    if (!memeTokenData) {
+      return <MemeTokenSkeleton />;
+    }
+
     return (
       <div
         className="meme-interface-token-info-container-meme"
@@ -1221,10 +1222,10 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   if (isPerpsToken) {
     const isPerpsLoading = !perpsTokenInfo?.lastPrice || !perpsTokenInfo?.contractName;
-
     if (isPerpsLoading) {
       return <PerpsTokenSkeleton />;
     }
+
     return (
       <div className="perps-interface-token-info-container">
         <div className="perps-interface-token-header-info">

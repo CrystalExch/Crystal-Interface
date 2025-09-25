@@ -1552,10 +1552,8 @@
 
 .perps-market-item {
   border-radius: 5px;
-  cursor: pointer;
   display: grid;
   padding: 0px 10px;
-  
   padding-left: 20px;
   padding-top: 2px;
   transition: background-color 0.2s;
@@ -1669,6 +1667,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  cursor: pointer;
 }
 
 .perps-market-item {
