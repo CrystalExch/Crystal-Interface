@@ -5629,7 +5629,7 @@ function App() {
 
         settings.chainConfig[activechain].markets = newMarkets;
         const newAddrToMarket: Record<string, string> = {};
-        Object.values(newMarkets).forEach((m: any) => {
+        Object.values(newMarkets).reverse().forEach((m: any) => {
           if (m?.address) newAddrToMarket[String(m.address).toLowerCase()] = m.marketKey;
         });
         settings.chainConfig[activechain].addresstomarket = newAddrToMarket;
@@ -8569,7 +8569,7 @@ function App() {
   const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(newTab);
   }, []);
-
+  const [nonces, setNonces] = useState();
   const [terminalToken, setTerminalToken] = useState();
   const [tokenData, setTokenData] = useState();
   // data loop, reuse to have every single rpc call method in this loop

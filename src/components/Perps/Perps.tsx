@@ -836,7 +836,7 @@ const Perps: React.FC<PerpsProps> = ({
                 const isBuy = !t.isBuyerMaker
                 const priceFormatted = formatCommas(t.price)
                 const tradeValue = Number(t.value)
-                const time = formatTime(Number(t.time))
+                const time = formatTime(Number(t.time) / 1000)
                 return [isBuy, priceFormatted, tradeValue, time]
               })
               setTrades(trades)

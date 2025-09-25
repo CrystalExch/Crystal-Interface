@@ -797,7 +797,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection('desc');
     }
   };
 
