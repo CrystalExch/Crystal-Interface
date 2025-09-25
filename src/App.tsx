@@ -2976,66 +2976,78 @@ function App() {
   }, []);
 
   // dynamic title
-  useEffect(() => {
-    let title = 'Crystal | Decentralized Cryptocurrency Exchange';
-
-    switch (true) {
-      case location.pathname === '/portfolio':
-        title = 'Portfolio | Crystal';
-        break;
-      case location.pathname === '/leaderboard':
-        title = 'Leaderboard | Crystal';
-        break;
-      case location.pathname === '/launchpad':
-        title = 'Launchpad | Crystal';
-        break;
-      case location.pathname === '/spectra':
-        title = 'Spectra | Crystal';
-        break;
-      case location.pathname === '/trackers':
-        title = 'Trackers | Crystal';
-        break;
-      case location.pathname === '/perps':
-        title = 'Perpetuals | Crystal';
-        break;
-      case location.pathname.startsWith('/earn/vaults'):
-        if (location.pathname === '/earn/vaults') {
-          title = 'Vaults | Crystal';
+useEffect(() => {
+  let title = 'Crystal | Decentralized Cryptocurrency Exchange';
+  
+  switch (true) {
+    case location.pathname === '/portfolio':
+      title = 'Portfolio | Crystal';
+      break;
+    case location.pathname === '/leaderboard':
+      title = 'Leaderboard | Crystal';
+      break;
+    case location.pathname === '/launchpad':
+      title = 'Launchpad | Crystal';
+      break;
+    case location.pathname === '/spectra':
+      title = 'Spectra | Crystal';
+      break;
+    case location.pathname === '/trackers':
+      title = 'Trackers | Crystal';
+      break;
+    case location.pathname === '/perps':
+      title = 'Perpetuals | Crystal';
+      break;
+    case location.pathname.startsWith('/perps/'):
+      if (perpsMarketsData && perpsActiveMarketKey) {
+        const perpsMarket = perpsMarketsData[perpsActiveMarketKey];
+        if (perpsMarket && perpsMarket.lastPrice) {
+          const formattedPrice = formatSubscript(perpsMarket.lastPrice);
+          title = `${formattedPrice} - ${perpsMarket.baseAsset}/${perpsMarket.quoteAsset} | Crystal`;
         } else {
-          const pathParts = location.pathname.split('/');
-          if (pathParts.length >= 4) {
-            const vaultAddress = pathParts[3];
-            title = `Vault ${vaultAddress.slice(0, 8)}... | Crystal`;
-          }
+          title = 'Perpetuals | Crystal';
         }
-        break;
-      case location.pathname.startsWith('/earn'):
-        if (location.pathname === '/earn' || location.pathname === '/earn/liquidity-pools') {
-          title = 'Earn | Crystal';
-        } else if (location.pathname.startsWith('/earn/liquidity-pools/')) {
-          const pathParts = location.pathname.split('/');
-          if (pathParts.length >= 4) {
-            const poolIdentifier = pathParts[3];
-            const [firstToken, secondToken] = poolIdentifier.split('-');
-            title = `${firstToken.toUpperCase()}-${secondToken.toUpperCase()} Pool | Crystal`;
-          }
+      } else {
+        title = 'Perpetuals | Crystal';
+      }
+      break;
+    case location.pathname.startsWith('/earn/vaults'):
+      if (location.pathname === '/earn/vaults') {
+        title = 'Vaults | Crystal';
+      } else {
+        const pathParts = location.pathname.split('/');
+        if (pathParts.length >= 4) {
+          const vaultAddress = pathParts[3];
+          title = `Vault ${vaultAddress.slice(0, 8)}... | Crystal`;
         }
-        break;
-      case ['/swap', '/market', '/limit', '/send', '/scale'].includes(location.pathname):
-        if (trades.length > 0) {
-          const formattedPrice = formatSubscript(trades[0][1]);
-          if (activeMarket.quoteAsset) {
-            title = `${formattedPrice} - ${activeMarket.baseAsset + '/' + activeMarket.quoteAsset} | Crystal`;
-          } else {
-            title = `${location.pathname.slice(1).charAt(0).toUpperCase() + location.pathname.slice(2)} | Crystal`;
-          }
+      }
+      break;
+    case location.pathname.startsWith('/earn'):
+      if (location.pathname === '/earn' || location.pathname === '/earn/liquidity-pools') {
+        title = 'Earn | Crystal';
+      } else if (location.pathname.startsWith('/earn/liquidity-pools/')) {
+        const pathParts = location.pathname.split('/');
+        if (pathParts.length >= 4) {
+          const poolIdentifier = pathParts[3];
+          const [firstToken, secondToken] = poolIdentifier.split('-');
+          title = `${firstToken.toUpperCase()}-${secondToken.toUpperCase()} Pool | Crystal`;
         }
-        break;
-    }
-
-    document.title = title;
-  }, [trades, location.pathname, activeMarket]);
-
+      }
+      break;
+    case ['/swap', '/market', '/limit', '/send', '/scale'].includes(location.pathname):
+      if (trades.length > 0) {
+        const formattedPrice = formatSubscript(trades[0][1]);
+        if (activeMarket.quoteAsset) {
+          title = `${formattedPrice} - ${activeMarket.baseAsset + '/' + activeMarket.quoteAsset} | Crystal`;
+        } else {
+          title = `${location.pathname.slice(1).charAt(0).toUpperCase() + location.pathname.slice(2)} | Crystal`;
+        }
+      }
+      break;
+  }
+  
+  document.title = title;
+}, [trades, location.pathname, activeMarket, perpsMarketsData, perpsActiveMarketKey]);
   useEffect(() => {
     if (prevOrderData && Array.isArray(prevOrderData) && prevOrderData.length >= 4) {
       try {
