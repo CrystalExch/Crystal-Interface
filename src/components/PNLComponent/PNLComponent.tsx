@@ -868,7 +868,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                   </div>
 
                   <div className="pnl-token-row">
-                    <div className="pnl-token-info-leverage">
+                    <div className="pnl-token-info-leverage" ref={captureRef}> 
                       <div className="pnl-token-info">
                         <img src={monadicon} className="pnl-token-icon" crossOrigin="anonymous" />
                         <span className="pnl-token-name" style={{ color: customizationSettings.mainTextColor }}>
@@ -892,7 +892,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                       backgroundColor: customizationSettings.showPNLRectangle
                         ? (displayData.pnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor)
                         : 'transparent',
-                    }}
+                    }} 
                   >
                     {displayData.pnl > 0 ? '+' : ''}{displayData.pnl.toFixed(2)}%
                   </div>

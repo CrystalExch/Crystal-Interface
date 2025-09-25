@@ -3,16 +3,7 @@
     overflow-x:auto;
     overflow-y:visible
 }
-.lp-vaults-list-header{
-    display:flex;
-    padding:.75rem 1rem;
-    background-color:rgba(6,6,6,.4);
-    color:#ffffff8b;
-    font-size:.75rem;
-    letter-spacing:-.3px;
-    font-weight:300;
-    border-bottom:1px solid rgba(179,184,249,.1);
-}
+
 .lp-card{
     transition:background-color.2s ease;
     cursor:pointer;
@@ -32,9 +23,6 @@
     justify-content:center;
     padding:.2rem .8rem;
     border-radius:4px
-}
-.lp-col,.vault-deposits-col,.vault-your-deposits-col,.market-info{
-    flex:1
 }
 .lp-asset-col{
     flex:2;
@@ -605,49 +593,6 @@
     .search-container{
         width:100%;
         min-width:auto
-    }
-    .vaults-list-header,.vault-strategy-sliding-indicator{
-        display:none
-    }
-    .vault-row{
-        flex-direction:column;
-        align-items:stretch;
-        gap:.25rem;
-        padding:1.5rem 1rem
-    }
-    .col{
-        flex:none;
-        width:100%
-    }
-    .vault-name-col{
-        order:1
-    }
-    .vault-tokens-col{
-        order:2
-    }
-    .vault-apy-col,.vault-deposits-col,.vault-type-col{
-        display:flex;
-        justify-content:space-between;
-        font-size:.8rem
-    }
-    .vault-type-col::before{
-        content:'Type: ';
-        color:#ffffff79
-    }
-    .vault-apy-col::before{
-        content:'APY: ';
-        color:#ffffff79
-    }
-    .vault-deposits-col::before{
-        content:'Deposits: ';
-        color:#ffffff79
-    }
-    .vault-curator-col{
-        order:6
-    }
-    .vault-actions-col,.vault-snapshot-col{
-        order:7;
-        justify-content:center
     }
     .modal-overlay,.vault-tab-content{
         padding:1rem
@@ -1511,10 +1456,6 @@
 .lp-input-balance-error,.lp-usd-value-balance-error,.vault-pnl-negative{
     color:rgb(235, 112, 112);
 }
-
-.vault-info-section,.vault-tokens-col{
-    flex:1
-}
 .vault-actions-section{
     flex:1;
     border:1px solid rgba(179,184,249,.1);
@@ -1796,8 +1737,9 @@
 .vaults-list{
     border:1px solid rgba(179,184,249,.1);
     border-radius:8px;
-    overflow:hidden;
-    width:100%
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
     
 }
 .vault-row{
@@ -1816,20 +1758,11 @@
     display:flex;
     align-items:center
 }
-.vault-name-col{
-    flex:2.5;
-    flex-direction:column;
-    align-items:flex-start
-}
 .vault-type-col,.vault-apy-col,.vault-age-col{
     flex:.8
 }
 .vault-curator-col,.vault-leader-col{
     flex:1.2
-}
-.vault-actions-col,.vault-snapshot-col,.vault-action-buttons-col{
-    flex:1.5;
-    justify-content:flex-end
 }
 .vault-name-container{
     display:flex;
@@ -2623,9 +2556,6 @@
     color:#fff;
     letter-spacing:-.5px
 }
-.:hover{
-    filter:brightness(1.1)
-}
 .create-vault-button.disabled{
     opacity:.5;
     cursor:not-allowed
@@ -2674,15 +2604,16 @@
     box-shadow:0 0 0 2px rgba(170,174,207,.3)
 }
 .vaults-list-header{
-    display:flex;
-    padding:.75rem 1rem;
-    background-color:rgba(6,6,6,.4);
-    color:#ffffff8b;
-    font-size:.75rem;
-    letter-spacing:-.3px;
-    font-weight:300;
+    display: flex;
+    padding: .5rem 1rem;
+    background-color: transparent;
+    color: #ffffff8b;
+    font-size: .75rem;
+    letter-spacing: -.3px;
+    font-weight: 300;
+    min-width: 780px;
+    flex:1;
     border-bottom:1px solid rgba(179,184,249,.1);
-    
 }
 .vault-row:hover{
     background-color:#2d2d3124
@@ -2690,40 +2621,11 @@
 .vault-row:last-child{
     border-bottom:none
 }
-.col{
-    flex:1;
-    display:flex;
-    align-items:center
-}
-.vault-name-col{
-    flex: 1.5;
-    flex-direction:column;
-    align-items:flex-start
-}
-.vault-type-col{
-    flex:.8
-}
-.vault-tokens-col{
-    flex:1
-}
-.vault-apy-col{
-    flex:1.3
-}
-.vault-deposits-col{
-    flex:1.4
-}
-.vault-leader-col{
-    flex:1.2
-}
-.vault-your-deposits-col{
-    flex:1.2
-}
-.vault-age-col{
-    flex:.7
-}
-.vault-actions-col{
-    flex:1;
-    justify-content:center
+.vault-name-col .vault-leader-col .vault-type-col .vault-tokens-col .vault-apy-col .vault-deposits-col .vault-your-deposits-col .vault-age-col .vault-actions-col{
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: .3rem;
 }
 .vault-action-buttons-col{
     flex:1.5;
@@ -3191,15 +3093,7 @@
         padding:.45rem .7rem;
         top: -85px;
     }
-    .vaults-list {
-        display: flex;
-        flex-direction: column;
-        justify-self: center;
-        width: 100%;
-        border: 1px solid rgba(179, 184, 249, .1);
-        border-radius: 8px;
-        margin-bottom: 1rem;
-    }
+    
 }
 @media (max-width:480px){
     .vault-detail-action-buttons{

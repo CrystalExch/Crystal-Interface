@@ -8158,6 +8158,9 @@ input::-webkit-inner-spin-button {
   gap: 5px;
   margin-top: 10px;
 }
+.pnl-footer-button:focus {
+    outline: 0;
+}
 
 .pnl-footer-btn {
   display: flex;
@@ -8177,13 +8180,15 @@ input::-webkit-inner-spin-button {
 
 .pnl-footer-btn:hover {
   color: #fff;
-  border-color: #2a2a2e52;
+  border-color: #2a2a2f;
+  background-color: #ffffff05;
 }
 
 .pnl-footer-btn.active {
-  background: rgb(170 174 207 / 8%);
-  border-color: #aaaecf66;
-  box-shadow: 0 0 0 .05px rgba(170, 174, 207, 0.6);
+  color: #d8dcff;
+  background-color: rgba(201, 194, 243, .05);
+  border-color: #aaaecf;
+  box-shadow: 0 0 0 2px rgba(170, 174, 207, .3);
 }
 
 .pnl-footer-btn.active span {
