@@ -10,183 +10,7 @@ import monadicon from '../../assets/monadlogo.svg'
 
 const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
 
-const usePNLData = (tokenAddress: string, userAddress: string) => {
-  const [pnlData, setPnlData] = useState({
-    balance: 0,
-    amountBought: 0,
-    amountSold: 0,
-    valueBought: 0,
-    valueSold: 0,
-    valueNet: 0,
-    lastPrice: 0,
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!tokenAddress || !userAddress) {
-      setPnlData({
-        balance: 0,
-        amountBought: 0,
-        amountSold: 0,
-        valueBought: 0,
-        valueSold: 0,
-        valueNet: 0,
-        lastPrice: 0,
-      });
-      return;
-    }
-
-    const fetchPNLData = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        const response = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-              query ($userAddr: String!, $tokenAddr: String!) {
-                launchpadPositions(
-                  where: { 
-                    account: $userAddr, 
-                    token: $tokenAddr 
-                  }
-                ) {
-                  tokenBought
-                  tokenSold
-                  nativeSpent
-                  nativeReceived
-                  tokens
-                  token {
-                    lastPriceNativePerTokenWad
-                    symbol
-                    name
-                  }
-                }
-              }
-            `,
-            variables: {
-              userAddr: userAddress.toLowerCase(),
-              tokenAddr: tokenAddress.toLowerCase(),
-            },
-          }),
-        });
-
-        const { data } = await response.json();
-        const position = data?.launchpadPositions?.[0];
-
-        if (position) {
-          const boughtTokens = Number(position.tokenBought) / 1e18;
-          const soldTokens = Number(position.tokenSold) / 1e18;
-          const spentNative = Number(position.nativeSpent) / 1e18;
-          const receivedNative = Number(position.nativeReceived) / 1e18;
-          const balance = Number(position.tokens) / 1e18;
-          const lastPrice = Number(position.token.lastPriceNativePerTokenWad) / 1e18;
-
-          const realized = receivedNative - spentNative;
-          const unrealized = balance * lastPrice;
-          const totalPnL = realized + unrealized;
-
-          setPnlData({
-            balance,
-            amountBought: boughtTokens,
-            amountSold: soldTokens,
-            valueBought: spentNative,
-            valueSold: receivedNative,
-            valueNet: totalPnL,
-            lastPrice,
-          });
-        } else {
-          setPnlData({
-            balance: 0,
-            amountBought: 0,
-            amountSold: 0,
-            valueBought: 0,
-            valueSold: 0,
-            valueNet: 0,
-            lastPrice: 0,
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching PNL data:', error);
-        setError('Failed to fetch trading data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPNLData();
-  }, [tokenAddress, userAddress]);
-
-  return { pnlData, isLoading, error };
-};
-
-interface PNLComponentProps {
-  windowWidth?: number;
-  tokenAddress?: string;
-  userAddress?: string;
-  tokenSymbol?: string;
-  tokenName?: string;
-  monUsdPrice?: number;
-  //overrides for demo/testing
-  demoMode?: boolean;
-  demoData?: {
-    pnl: number;
-    entryPrice: number;
-    exitPrice: number;
-    leverage: number;
-    valueNet?: number;
-  };
-  // Accept external user stats from MemeInterface
-  externalUserStats?: {
-    balance: number;
-    amountBought: number;
-    amountSold: number;
-    valueBought: number;
-    valueSold: number;
-    valueNet: number;
-  };
-  currentPrice?: number;
-}
-
-interface CustomizationSettings {
-  mainTextColor: string;
-  positivePNLColor: string;
-  negativePNLColor: string;
-  rectangleTextColor: string;
-  showPNLRectangle: boolean;
-}
-
-interface ColorInputProps {
-  color: string;
-  onChange: (color: string) => void;
-  label: string;
-  id: string;
-  defaultColor: string;
-}
-
-interface ImageDimensions {
-  width: number;
-  height: number;
-}
-
-interface TimePeriod {
-  label: string;
-  days: number | null;
-}
-
-const ToggleSwitch: React.FC<{
-  checked: boolean;
-  onChange: () => void;
-}> = ({ checked, onChange }) => (
-  <div className={`toggle-switch ${checked ? 'checked' : ''}`} onClick={onChange}>
-    <div className="toggle-switch-handle" />
-  </div>
-);
-
-const usePNLDataWithTime = (tokenAddress: string, userAddress: string, days: number | null) => {
+const usePNLData = (tokenAddress: string, userAddress: string, days: number | null) => {
   const [pnlData, setPnlData] = useState({
     balance: 0,
     amountBought: 0,
@@ -225,7 +49,47 @@ const usePNLDataWithTime = (tokenAddress: string, userAddress: string, days: num
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
-            query: ``,
+            query: `
+              query ($userAddr: String!, $tokenAddr: String!, $timestamp: Int!) {
+                launchpadPositions(
+                  where: { 
+                    account: $userAddr, 
+                    token: $tokenAddr 
+                  }
+                ) {
+                  tokenBought
+                  tokenSold
+                  nativeSpent
+                  nativeReceived
+                  tokens
+                  token {
+                    lastPriceNativePerTokenWad
+                    symbol
+                    name
+                  }
+                }
+                launchpadBuys(
+                  where: {
+                    account: $userAddr,
+                    token: $tokenAddr,
+                    timestamp_gte: $timestamp
+                  }
+                ) {
+                  tokenAmount
+                  nativeAmount
+                }
+                launchpadSells(
+                  where: {
+                    account: $userAddr,
+                    token: $tokenAddr,
+                    timestamp_gte: $timestamp
+                  }
+                ) {
+                  tokenAmount
+                  nativeAmount
+                }
+              }
+            `,
             variables: {
               userAddr: userAddress.toLowerCase(),
               tokenAddr: tokenAddress.toLowerCase(),
@@ -292,6 +156,67 @@ const usePNLDataWithTime = (tokenAddress: string, userAddress: string, days: num
   return { pnlData, isLoading, error };
 };
 
+interface PNLComponentProps {
+  windowWidth?: number;
+  tokenAddress?: string;
+  userAddress?: string;
+  tokenSymbol?: string;
+  tokenName?: string;
+  monUsdPrice?: number;
+  demoMode?: boolean;
+  demoData?: {
+    pnl: number;
+    entryPrice: number;
+    exitPrice: number;
+    leverage: number;
+    valueNet?: number;
+  };
+  externalUserStats?: {
+    balance: number;
+    amountBought: number;
+    amountSold: number;
+    valueBought: number;
+    valueSold: number;
+    valueNet: number;
+  };
+  currentPrice?: number;
+}
+
+interface CustomizationSettings {
+  mainTextColor: string;
+  positivePNLColor: string;
+  negativePNLColor: string;
+  rectangleTextColor: string;
+  showPNLRectangle: boolean;
+}
+
+interface ColorInputProps {
+  color: string;
+  onChange: (color: string) => void;
+  label: string;
+  id: string;
+  defaultColor: string;
+}
+
+interface ImageDimensions {
+  width: number;
+  height: number;
+}
+
+interface TimePeriod {
+  label: string;
+  days: number | null;
+}
+
+const ToggleSwitch: React.FC<{
+  checked: boolean;
+  onChange: () => void;
+}> = ({ checked, onChange }) => (
+  <div className={`toggle-switch ${checked ? 'checked' : ''}`} onClick={onChange}>
+    <div className="toggle-switch-handle" />
+  </div>
+);
+
 const PNLComponent: React.FC<PNLComponentProps> = ({ 
   windowWidth = window.innerWidth,
   tokenAddress,
@@ -301,13 +226,13 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   monUsdPrice = 1,
   demoMode = false,
   demoData = {
-    pnl: +0,
+    pnl: 0,
     entryPrice: 0,
     exitPrice: 0,
     leverage: 0,
   },
-  externalUserStats, // NEW: Accept external stats
-  currentPrice = 0, // NEW: Accept current price
+  externalUserStats,
+  currentPrice = 0,
 }) => {
 
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>({ label: 'MAX', days: null });
@@ -319,7 +244,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     { label: 'MAX', days: null }
   ];
 
-  const { pnlData: fetchedPnlData, isLoading, error } = usePNLDataWithTime(
+  const { pnlData: fetchedPnlData, isLoading, error } = usePNLData(
     (!demoMode && !externalUserStats) ? (tokenAddress || '') : '',
     (!demoMode && !externalUserStats) ? (userAddress || '') : '',
     selectedTimePeriod.days
@@ -391,6 +316,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     rectangleTextColor: '#020307',
     showPNLRectangle: true,
   };
+
   const [backgroundZoom, setBackgroundZoom] = useState(100);
   const [uploadedBg, setUploadedBg] = useState<string | null>(null);
   const [uploadedImageDimensions, setUploadedImageDimensions] = useState<ImageDimensions | null>(null);
@@ -405,7 +331,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [hasInteracted, setHasInteracted] = useState(false); //for the drag to scroll shi
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const captureRef = useRef<HTMLDivElement>(null);
   const pickerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -490,9 +416,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         <div className="color-input-container">
           <div
             className="color-preview"
-            style={{ backgroundColor: color,
-
-            }}
+            style={{ backgroundColor: color }}
             onClick={handleColorPickerClick}
           />
           <input
@@ -538,14 +462,11 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 
     setIsCapturing(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
       return await html2canvas(captureRef.current, {
         useCORS: true,
         backgroundColor: '#000000',
         scale: 2,
-
         ignoreElements: (element) => {
-          // Ignore the scroll hint element during capture
           return element.classList?.contains('scroll-hint');
         }
       });
@@ -555,16 +476,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     } finally {
       setIsCapturing(false);
     }
-  };
-
-  const handleDownload = async () => {
-    const canvas = await captureImage();
-    if (!canvas) return;
-
-    const link = document.createElement('a');
-    link.download = 'pnl-snapshot.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
   };
 
   const handleCopyImage = async () => {
@@ -582,6 +493,16 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         console.error('Clipboard write failed:', err);
       }
     }, 'image/png');
+  };
+
+  const handleDownload = async () => {
+    const canvas = await captureImage();
+    if (!canvas) return;
+
+    const link = document.createElement('a');
+    link.download = 'pnl-snapshot.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
   };
 
   const handleTempColorChange = useCallback((key: keyof CustomizationSettings, color: string) => {
@@ -640,7 +561,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     const scaledWidth = imgWidth * zoomScale;
     const scaledHeight = imgHeight * zoomScale;
     
-    // Calculate if image is larger than card in either dimension AT CURRENT ZOOM LEVEL
     const needsHorizontal = scaledWidth > cardWidth;
     const needsVertical = scaledHeight > cardHeight;
     
@@ -655,7 +575,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     
     e.preventDefault();
     setIsDragging(true);
-    setHasInteracted(true); // Mark as interacted when dragging starts
+    setHasInteracted(true);
     setDragStart({
       x: e.clientX,
       y: e.clientY
@@ -667,28 +587,23 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     
     const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
     
-    // Calculate movement delta
     const deltaX = e.clientX - dragStart.x;
     const deltaY = e.clientY - dragStart.y;
     
-    // Sensitivity
     const sensitivity = 0.2;
     
     let newX = backgroundPosition.x;
     let newY = backgroundPosition.y;
     
     if (needsHorizontal) {
-      //drag
       newX = Math.max(0, Math.min(100, backgroundPosition.x - (deltaX * sensitivity)));
     }
     
     if (needsVertical) {
-      //drag
       newY = Math.max(0, Math.min(100, backgroundPosition.y - (deltaY * sensitivity)));
     }
     
     setBackgroundPosition({ x: newX, y: newY });
-    
     setDragStart({ x: e.clientX, y: e.clientY });
   }, [isDragging, isUploadedImageSelected, dragStart, backgroundPosition, checkImageNeedsScrolling]);
 
@@ -731,14 +646,14 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
             setSelectedBg(result);
             setBackgroundPosition({ x: 50, y: 50 });
             setBackgroundZoom(100);
-            setHasInteracted(false); 
+            setHasInteracted(false);
           } catch (error) {
             console.error('Error getting image dimensions:', error);
             setUploadedBg(result);
             setSelectedBg(result);
             setUploadedImageDimensions(null);
             setBackgroundZoom(100);
-            setHasInteracted(false); 
+            setHasInteracted(false);
           }
         }
       };
@@ -807,7 +722,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
           'rectangleTextColor';
   };
 
-  // calculate size of uploaded img
   const getBackgroundSize = () => {
     if (!isUploadedImageSelected || !uploadedImageDimensions || !cardRef.current) {
       return 'cover';
@@ -854,9 +768,10 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     };
   };
 
+  // Effects
   useEffect(() => {
     setCurrency(tokenName);
-  }, []);
+  }, [tokenName]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -884,7 +799,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     setTempCustomizationSettings(customizationSettings);
   }, [customizationSettings]);
 
-  // Mouse event listeners for dragging
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -898,10 +812,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
   const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
-  // drag hint
   const showScrollHint = isUploadedImageSelected && (needsHorizontal || needsVertical) && !hasInteracted && !isCapturing;
-
-  
 
   if (isLoading && !demoMode && !externalUserStats) {
     return (
@@ -919,10 +830,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
       </div>
     );
   }
-
-  
-
-  
 
   return (
     <div>
@@ -951,7 +858,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                   pointerEvents: 'none',
                   zIndex: 1000
                 }}>
-                  {needsHorizontal || needsVertical ? 'Drag to scroll' : "Drag to scroll"}
+                  Drag to scroll
                 </div>
               )}
               
@@ -991,7 +898,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                 </div>
               </div>
 
-              
               <div className="pnl-entry-exit-referral">
                 <div className="pnl-entry-exit-group">
                   <div className="pnl-entry">
@@ -1018,38 +924,38 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
           </div>
 
           {isUploadedImageSelected && (
-                <div className="pnl-zoom-controls">
-                  <label className="zoom-label">Zoom: {backgroundZoom}%</label>
-                  <input
-                    type="range"
-                    min="50"
-                    max="200"
-                    value={backgroundZoom}
-                    onChange={(e) => setBackgroundZoom(Number(e.target.value))}
-                    className="zoom-slider"
-                  />
-                  <div className="zoom-buttons">
-                    <button 
-                      className="zoom-btn"
-                      onClick={() => setBackgroundZoom(Math.max(50, backgroundZoom - 10))}
-                    >
-                      -
-                    </button>
-                    <button 
-                      className="zoom-btn"
-                      onClick={() => setBackgroundZoom(100)}
-                    >
-                      Reset
-                    </button>
-                    <button 
-                      className="zoom-btn"
-                      onClick={() => setBackgroundZoom(Math.min(200, backgroundZoom + 10))}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              )}
+            <div className="pnl-zoom-controls">
+              <label className="zoom-label">Zoom: {backgroundZoom}%</label>
+              <input
+                type="range"
+                min="50"
+                max="200"
+                value={backgroundZoom}
+                onChange={(e) => setBackgroundZoom(Number(e.target.value))}
+                className="zoom-slider"
+              />
+              <div className="zoom-buttons">
+                <button 
+                  className="zoom-btn"
+                  onClick={() => setBackgroundZoom(Math.max(50, backgroundZoom - 10))}
+                >
+                  -
+                </button>
+                <button 
+                  className="zoom-btn"
+                  onClick={() => setBackgroundZoom(100)}
+                >
+                  Reset
+                </button>
+                <button 
+                  className="zoom-btn"
+                  onClick={() => setBackgroundZoom(Math.min(200, backgroundZoom + 10))}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="pnl-section pnl-layer-middle">
             <div className="pnl-middle-left">
@@ -1083,7 +989,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 
             <div className="pnl-middle-right">
               <label className="pnl-upload-box">
-                Upload FIle
+                Upload File
                 <input
                   type="file"
                   accept="image/*"
@@ -1091,8 +997,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                   onChange={handleFileUpload}
                 />
               </label>
-
-              
             </div>
           </div>
 
