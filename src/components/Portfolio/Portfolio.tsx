@@ -389,6 +389,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportingWallet, setExportingWallet] = useState<{ address: string, privateKey: string } | null>(null);
   const [previewSelection, setPreviewSelection] = useState<Set<string>>(new Set());
+  const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
 
   const showDistributionSuccess = useCallback((amount: string, sourceCount: number, destCount: number) => {
     const txId = `distribution-${Date.now()}`;
@@ -2937,9 +2938,36 @@ const Portfolio: React.FC<PortfolioProps> = ({
                     <div className="pnl-calendar-title-section">
                       <h3 className="pnl-calendar-title">PNL Calendar</h3>
                       <div className="pnl-calendar-nav">
-                        <button className="pnl-calendar-nav-button"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="grey" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg></button>
-                        <span className="pnl-calendar-month">Aug 2025</span>
-                        <button className="pnl-calendar-nav-button"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="grey" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className=""><path d="m9 18 6-6-6-6" /></svg></button>
+                        <button 
+                          className="pnl-calendar-nav-button" 
+                          onClick={() => {
+                            const newDate = new Date(currentCalendarDate);
+                            newDate.setMonth(newDate.getMonth() - 1);
+                            setCurrentCalendarDate(newDate);
+                          }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="grey" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m15 18-6-6 6-6" />
+                          </svg>
+                        </button>
+                        <span className="pnl-calendar-month">
+                          {currentCalendarDate.toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            year: 'numeric' 
+                          })}
+                        </span>
+                        <button 
+                          className="pnl-calendar-nav-button"
+                          onClick={() => {
+                            const newDate = new Date(currentCalendarDate);
+                            newDate.setMonth(newDate.getMonth() + 1);
+                            setCurrentCalendarDate(newDate);
+                          }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="grey" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m9 18 6-6-6-6" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
                     <div className="pnl-calendar-controls">
@@ -2950,42 +2978,59 @@ const Portfolio: React.FC<PortfolioProps> = ({
                       </button>
                     </div>
                   </div>
-
                   <div className="pnl-calendar-gradient-bar">
                     <span className="pnl-calendar-total-label">$0</span>
-
                     <div className="pnl-calendar-ratio-container">
                       <div className="pnl-calendar-ratio-buy"></div>
                       <div className="pnl-calendar-ratio-sell"></div>
                     </div>
-
                     <div className="pnl-calendar-gradient-labels">
                       <span><span className="pnl-buy-color">0</span> / <span className="pnl-buy-color">$0</span></span>
                       <span><span className="pnl-sell-color">0</span> / <span className="pnl-sell-color">$0</span></span>
                     </div>
                   </div>
-
                   <div className="pnl-calendar-content">
                     <div className="pnl-calendar-weekdays">
                       {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
                         <div key={i} className="pnl-calendar-weekday">{day}</div>
                       ))}
                     </div>
-
                     <div className="pnl-calendar-grid">
-                      {Array.from({ length: 31 }, (_, i) => (
-                        <div key={i + 1} className="pnl-calendar-day">
-                          <div className="pnl-calendar-day-number">{i + 1}</div>
-                          <div className="pnl-calendar-day-pnl">$0</div>
-                        </div>
-                      ))}
+                      {(() => {
+                        const year = currentCalendarDate.getFullYear();
+                        const month = currentCalendarDate.getMonth();
+                        
+                        const daysInMonth = new Date(year, month + 1, 0).getDate();
+                        
+                        const firstDay = new Date(year, month, 1).getDay();
+
+                        const startDay = firstDay === 0 ? 6 : firstDay - 1;
+                        
+                        const days = [];
+                        
+                        for (let i = 0; i < startDay; i++) {
+                          days.push(
+                            <div key={`empty-${i}`} className="pnl-calendar-day pnl-calendar-day-empty"></div>
+                          );
+                        }
+                        
+                        for (let day = 1; day <= daysInMonth; day++) {
+                          days.push(
+                            <div key={`day-${day}`} className="pnl-calendar-day">
+                              <div className="pnl-calendar-day-number">{day}</div>
+                              <div className="pnl-calendar-day-pnl">$0</div>
+                            </div>
+                          );
+                        }
+                        
+                        return days;
+                      })()}
                     </div>
                   </div>
-
                   <div className="pnl-calendar-footer">
                     <div className="pnl-calendar-stats">
                       <span>Current Positive Streak: <strong>0d</strong></span>
-                      <span>Best Positive Streak in Aug: <strong>0d</strong></span>
+                      <span>Best Positive Streak in {currentCalendarDate.toLocaleDateString('en-US', { month: 'short' })}: <strong>0d</strong></span>
                     </div>
                   </div>
                 </div>

@@ -1036,7 +1036,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     title="Click to copy contract address"
                   >
                     {memeTokenData.name}
-                  </span>                  <button
+                  </span>                  
+                  <button
                     className="meme-interface-social-btn"
                     onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
                     title="Copy contract address"
