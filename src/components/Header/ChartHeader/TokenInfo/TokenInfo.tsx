@@ -26,6 +26,7 @@ import { settings } from '../../../../settings.ts';
 
 import './TokenInfo.css';
 
+
 const getBondingColor = (percentage: number): string => {
   if (percentage < 25) return '#ee5b5bff';
   if (percentage < 50) return '#f59e0b';
@@ -264,6 +265,15 @@ const PerpsMarketRow = memo(({ index, style, data }: {
 });
 
 interface TokenInfoProps {
+  externalUserStats?: {
+    balance: number;
+    amountBought: number;
+    amountSold: number;
+    valueBought: number;
+    valueSold: number;
+    valueNet: number;
+  };
+  userAddress?: string;
   in_icon: string;
   out_icon: string;
   price: string;
@@ -304,6 +314,8 @@ interface TokenInfoProps {
 }
 
 const TokenInfo: React.FC<TokenInfoProps> = ({
+  userAddress,
+  externalUserStats,
   in_icon,
   out_icon,
   price,
@@ -1025,7 +1037,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     title="Click to copy contract address"
                   >
                     {memeTokenData.name}
-                  </span>                  <button
+                  </span>                  
+                  <button
                     className="meme-interface-social-btn"
                     onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
                     title="Copy contract address"

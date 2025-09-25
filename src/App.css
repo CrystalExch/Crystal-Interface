@@ -7955,8 +7955,6 @@ input::-webkit-inner-spin-button {
 }
 
 
-/* PNL */
-
 .pnl-modal-container {
   display: flex;
   align-items: center;
@@ -8057,19 +8055,20 @@ input::-webkit-inner-spin-button {
   border-radius: 8px;
 }
 
+.pnl-card-display {
+  font-display: block;
+}
+
 .pnl-card-header {
   margin-bottom: 10px;
 }
 
 .pnl-logo {
   width: 140px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .pnl-token-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin: 20px 0;
 }
 
@@ -8106,8 +8105,7 @@ input::-webkit-inner-spin-button {
 .pnl-percentage {
   font-size: 3rem;
   font-weight: bold;
-  margin: 10px 0;
-  padding: 0 12px;
+  padding: 0px 12px;
   border-radius: 4px;
   display: inline-block;
 }
@@ -8116,7 +8114,6 @@ input::-webkit-inner-spin-button {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 20px;
   margin-top: auto;
 }
 
@@ -8343,9 +8340,6 @@ input::-webkit-inner-spin-button {
   justify-content: center;
   transition: all 0.2s ease;
   font-weight: 500;
-  
-
-
 }
 
 .zoom-btn:hover {
@@ -8392,9 +8386,6 @@ input::-webkit-inner-spin-button {
     height: 20px;
   }
 }
-
-/* PNL Right Panel */
-
 
 .right-panel-content {
   flex: 1;
@@ -8640,11 +8631,74 @@ input::-webkit-inner-spin-button {
   }
 
   .pnl-card {
-    width: 100%;
-    height: 280px;
-    flex-shrink: 0;
+    width: 450px;
+    height: 360px;
   }
 
+  .pnl-card-content {
+    padding: 24px;
+  }
+
+  .pnl-logo {
+    width: 105px;
+    margin-bottom: 8px;
+  }
+
+  .pnl-token-row {
+    margin: 15px 0;
+  }
+
+  .pnl-token-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .pnl-token-name {
+    font-size: 1.3rem;
+  }
+
+  .pnl-leverage-tag {
+    font-size: 0.65rem;
+    padding: 3px 6px;
+  }
+
+  .pnl-percentage {
+    font-size: 2.4rem;
+    padding: 0px 10px;
+  }
+
+  .pnl-entry-exit-group {
+    gap: 12px;
+  }
+
+  .pnl-entry-label,
+  .pnl-exit-label,
+  .pnl-referral-label {
+    font-size: 0.75rem;
+  }
+
+  .pnl-entry-value,
+  .pnl-exit-value,
+  .pnl-referral-value {
+    font-size: 1.1rem;
+  }
+
+  .pnl-footer {
+    height: 45px;
+    margin-top: -8px;
+  }
+
+  .pnl-footer-btn {
+    font-size: 0.65rem;
+    padding: 5px 10px;
+    gap: 5px;
+  }
+
+  .pnl-layer-middle {
+    height: 80px;
+  }
+
+  /* Right panel scaling */
   .right-popup {
     position: relative;
     width: 100%;
@@ -8676,41 +8730,75 @@ input::-webkit-inner-spin-button {
     min-height: 200px;
   }
 
+  .right-panel-header {
+    padding: 6px 12px;
+  }
+
+  .right-panel-header h3 {
+    font-size: 0.85rem;
+  }
+
+  .close-right-panel {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .close-button-icon {
+    width: 14px;
+    height: 14px;
+  }
+
   .customization-body {
-    padding: 16px;
-    gap: 16px;
+    padding: 12px;
+    gap: 12px;
     max-height: 180px;
     overflow-y: auto;
     flex: 1;
   }
 
+  .pnl-section-title {
+    font-size: 0.75rem;
+    margin-bottom: 8px;
+  }
+
+  .color-input-row {
+    height: 30px;
+    margin-bottom: 5px, 36px;
+    margin-bottom: 6px;
+  }
+
+  .color-label-inline {
+    font-size: 0.75rem;
+    width: 110px;
+  }
+
+  .color-preview {
+    max-width: 25px;
+    max-height: 25px;
+  }
+
+  .hex-input {
+    max-width: 95px;
+    height: 32px;
+    font-size: 0.7rem;
+    padding: 3px 5px;
+  }
+
+  .layout-toggle-sublabel {
+    font-size: 0.75rem;
+  }
+
   .customization-footer {
-    padding: 12px 16px;
+    padding: 10px 12px;
     flex-shrink: 0;
   }
 
   .apply-btn {
     margin: 0;
     width: 100%;
-    padding: 12px 20px;
-  }
-
-  .section-title {
-    margin-bottom: 10px;
+    padding: 10px 16px;
     font-size: 0.8rem;
-  }
-
-  .layout-toggle-row {
-    margin-bottom: 12px;
-  }
-
-  .color-preview {
-    width: 10px;
-    height: 8px;
-  }
-
-  .hex-input {
-    width: 75px;
   }
 
   .pnl-box,
@@ -8720,10 +8808,173 @@ input::-webkit-inner-spin-button {
     font-size: 0.7rem;
     padding: 4px 8px;
   }
+}
 
+@media (max-width: 768px) {
+  .pnl-card {
+    width: 340px;
+    height: 280px;
+  }
+
+  .pnl-card-content {
+    padding: 18px;
+  }
+
+  .pnl-logo {
+    width: 80px;
+    margin-bottom: 6px;
+  }
+
+  .pnl-token-row {
+    margin: 12px 0;
+  }
+
+  .pnl-token-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .pnl-token-name {
+    font-size: 1.1rem;
+  }
+
+  .pnl-leverage-tag {
+    font-size: 0.55rem;
+    padding: 2px 5px;
+  }
+
+  .pnl-percentage {
+    font-size: 2rem;
+    padding: 0px 8px;
+  }
+
+  .pnl-entry-exit-group {
+    gap: 10px;
+  }
+
+  .pnl-entry-label,
+  .pnl-exit-label,
+  .pnl-referral-label {
+    font-size: 0.65rem;
+  }
+
+  .pnl-entry-value,
+  .pnl-exit-value,
+  .pnl-referral-value {
+    font-size: 0.95rem;
+  }
+
+  .pnl-footer {
+    height: 35px;
+    margin-top: -6px;
+  }
+
+  .pnl-footer-btn {
+    font-size: 0.55rem;
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .right-panel-header {
+    padding: 5px 10px;
+  }
+
+  .right-panel-header h3 {
+    font-size: 0.75rem;
+  }
+
+  .close-right-panel {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .close-button-icon {
+    width: 12px;
+    height: 12px;
+  }
+
+  .customization-body {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .pnl-section-title {
+    font-size: 0.65rem;
+    margin-bottom: 6px;
+  }
+
+  .color-input-row {
+    height: 30px; /* Further reduced */
+    margin-bottom: 5px;
+  }
+
+  .color-label-inline {
+    font-size: 0.65rem; /* Further reduced */
+    width: 90px; /* Further reduced */
+  }
+
+  .color-preview {
+    max-width: 20px; /* Further reduced */
+    max-height: 20px;
+  }
+
+  .hex-input {
+    max-width: 75px; /* Further reduced */
+    height: 28px; /* Further reduced */
+    font-size: 0.6rem; /* Further reduced */
+    padding: 2px 4px;
+  }
+
+  .layout-toggle-sublabel {
+    font-size: 0.65rem; /* Further reduced */
+  }
+
+  .apply-btn {
+    padding: 8px 14px; /* Further reduced */
+    font-size: 0.7rem; /* Further reduced */
+  }
+
+  .pnl-box,
   .pnl-upload-box {
-    padding: 8px;
-    gap: 2px;
+    width: 65px; /* Further reduced */
+    height: 50px;
+    font-size: 0.6rem;
+    padding: 3px 6px;
+  }
+
+  /* Zoom controls scaling */
+  .pnl-zoom-controls {
+    padding: 4px 12px;
+    gap: 8px;
+    font-size: 0.7rem;
+  }
+
+  .zoom-label {
+    font-size: 0.7rem;
+    min-width: 50px;
+  }
+
+  .zoom-slider {
+    width: 80px;
+    height: 3px;
+  }
+
+  .zoom-slider::-webkit-slider-thumb {
+    width: 10px;
+    height: 10px;
+  }
+
+  .zoom-slider::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+  }
+
+  .zoom-btn {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+    min-width: 20px;
+    height: 20px;
   }
 }
 
