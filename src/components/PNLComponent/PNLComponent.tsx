@@ -303,7 +303,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
       pnl: pnlPercentage,
       entryPrice: entryPrice,
       exitPrice: exitPrice,
-      leverage: 1, // Default to 1x for spot
+      leverage: 2, // Default to 1x for spot
       valueNet: pnlData.valueNet * monUsdPrice,
       balance: pnlData.balance,
     };
@@ -844,83 +844,83 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
             style={getBackgroundStyle()}
             onMouseDown={handleMouseDown}
           >
-            <div ref={cardRef} className="pnl-card-content">
-              {showScrollHint && (
-                <div className="scroll-hint" style={{
-                  position: 'absolute',
-                  top: '10px',
-                  right: '10px',
-                  background: 'rgba(0, 0, 0, 0.7)',
-                  color: 'white',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  pointerEvents: 'none',
-                  zIndex: 1000
-                }}>
-                  Drag to scroll
-                </div>
-              )}
-              
-              <div className="pnl-header-section">
-                <div className="pnl-card-header">
-                  <img className="pnl-logo" src={LogoText} alt="Logo" crossOrigin="anonymous" />
-                </div>
+              <div ref={cardRef} className="pnl-card-content">
+                {showScrollHint && (
+                  <div className="scroll-hint" style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    background: 'rgba(0, 0, 0, 0.7)',
+                    color: 'white',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    pointerEvents: 'none',
+                    zIndex: 1000
+                  }}>
+                    Drag to scroll
+                  </div>
+                )}
+                
+                <div className="pnl-header-section">
+                  <div className="pnl-card-header">
+                    <img className="pnl-logo" src={LogoText} alt="Logo" crossOrigin="anonymous" />
+                  </div>
 
-                <div className="pnl-token-row">
-                  <div className="pnl-token-info-leverage">
-                    <div className="pnl-token-info">
-                      <img src={monadicon} className="pnl-token-icon" crossOrigin="anonymous" />
-                      <span className="pnl-token-name" style={{ color: customizationSettings.mainTextColor }}>
-                        {tokenSymbol || tokenName}
-                      </span>
-                    </div>
-                    {displayData.leverage > 1 && (
-                      <div className="pnl-leverage-tag">
-                        {displayData.pnl > 0 ? 'LONG' : 'SHORT'} {displayData.leverage}X
+                  <div className="pnl-token-row">
+                    <div className="pnl-token-info-leverage">
+                      <div className="pnl-token-info">
+                        <img src={monadicon} className="pnl-token-icon" crossOrigin="anonymous" />
+                        <span className="pnl-token-name" style={{ color: customizationSettings.mainTextColor }}>
+                          {tokenSymbol || tokenName}
+                        </span>
                       </div>
-                    )}
+                      {displayData.leverage > 1 && (
+                        <div className="pnl-leverage-tag">
+                          {displayData.pnl > 0 ? 'LONG' : 'SHORT'} {displayData.leverage}X
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div
+                    className="pnl-percentage"
+                    style={{
+                      color: customizationSettings.showPNLRectangle
+                        ? customizationSettings.rectangleTextColor
+                        : (displayData.pnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor),
+                      backgroundColor: customizationSettings.showPNLRectangle
+                        ? (displayData.pnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor)
+                        : 'transparent',
+                    }}
+                  >
+                    {displayData.pnl > 0 ? '+' : ''}{displayData.pnl.toFixed(2)}%
                   </div>
                 </div>
 
-                <div
-                  className="pnl-percentage"
-                  style={{
-                    color: customizationSettings.showPNLRectangle
-                      ? customizationSettings.rectangleTextColor
-                      : (displayData.pnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor),
-                    backgroundColor: customizationSettings.showPNLRectangle
-                      ? (displayData.pnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor)
-                      : 'transparent',
-                  }}
-                >
-                  {displayData.pnl > 0 ? '+' : ''}{displayData.pnl.toFixed(2)}%
-                </div>
-              </div>
-
-              <div className="pnl-entry-exit-referral">
-                <div className="pnl-entry-exit-group">
-                  <div className="pnl-entry">
-                    <div className="pnl-entry-label">Entry Price</div>
-                    <div className="pnl-entry-value" style={{ color: customizationSettings.mainTextColor }}>
-                      ${displayData.entryPrice.toFixed(8)}
+                <div className="pnl-entry-exit-referral">
+                  <div className="pnl-entry-exit-group">
+                    <div className="pnl-entry">
+                      <div className="pnl-entry-label">Entry Price</div>
+                      <div className="pnl-entry-value" style={{ color: customizationSettings.mainTextColor }}>
+                        ${displayData.entryPrice.toFixed(8)}
+                      </div>
+                    </div>
+                    <div className="pnl-exit">
+                      <div className="pnl-exit-label">Exit Price</div>
+                      <div className="pnl-exit-value" style={{ color: customizationSettings.mainTextColor }}>
+                        ${displayData.exitPrice.toFixed(8)}
+                      </div>
                     </div>
                   </div>
-                  <div className="pnl-exit">
-                    <div className="pnl-exit-label">Exit Price</div>
-                    <div className="pnl-exit-value" style={{ color: customizationSettings.mainTextColor }}>
-                      ${displayData.exitPrice.toFixed(8)}
+                  <div className="pnl-referral">
+                    <div className="pnl-referral-label">Referral Code</div>
+                    <div className="pnl-referral-value" style={{ color: customizationSettings.mainTextColor }}>
+                      {demoMode ? '42069' : 'crystal'}
                     </div>
                   </div>
                 </div>
-                <div className="pnl-referral">
-                  <div className="pnl-referral-label">Referral Code</div>
-                  <div className="pnl-referral-value" style={{ color: customizationSettings.mainTextColor }}>
-                    {demoMode ? '42069' : 'crystal'}
-                  </div>
-                </div>
               </div>
-            </div>
           </div>
 
           {isUploadedImageSelected && (
