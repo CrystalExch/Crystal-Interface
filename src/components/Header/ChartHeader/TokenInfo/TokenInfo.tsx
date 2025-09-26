@@ -352,8 +352,10 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [isPerpsDropdownVisible, setIsPerpsDropdownVisible] = useState(false);
   const [perpsSearchQuery, setPerpsSearchQuery] = useState('');
   const [perpsActiveFilter, setPerpsActiveFilter] = useState('All');
-  const [perpsSelectedIndex, setPerpsSelectedIndex] = useState(0);
-  const [perpsShouldFocus, setPerpsShouldFocus] = useState(false);
+const [perpsSelectedIndex, setPerpsSelectedIndex] = useState(0);
+const [perpsShouldFocus, setPerpsShouldFocus] = useState(false);
+const [perpsSortField, setPerpsSortField] = useState<'volume' | 'price' | 'change' | 'funding' | 'openInterest' | 'favorites' | null>('volume');
+const [perpsSortDirection, setPerpsSortDirection] = useState<'asc' | 'desc' | undefined>('desc');
   const filterTabsRef = useRef<HTMLDivElement>(null);
   const marketsListRef = useRef<HTMLDivElement>(null);
   const memeMetricsRef = useRef<HTMLDivElement>(null);
@@ -365,27 +367,66 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const virtualizationListRef = useRef<List>(null);
   const { favorites, toggleFavorite, activechain } = useSharedContext();
 
-  const filteredPerpsMarkets = useMemo(() => {
-    return Object.values(perpsMarketsData)
-      .filter(market =>
-        perpsFilterOptions[perpsActiveFilter]?.includes(market.contractName) &&
-        market.baseAsset.toLowerCase().includes(perpsSearchQuery.toLowerCase())
-      )
-      .map(market => ({
-        ...market,
-        formattedVolume: `$${formatCommas(Number(market.value).toFixed(2))}`,
-        formattedOI: `$${formatCommas((Number(market.openInterest) * Number(market.lastPrice)).toFixed(2))}`,
-        formattedFunding: `${market.fundingRate >= 0 ? '+' : ''}${(market.fundingRate * 100).toFixed(4)}%`,
-        formattedChange: `${(Number(market.priceChangePercent) >= 0 ? '+' : '') +
-          (market.priceChange) + ' / ' +
-          (Number(market.priceChangePercent) >= 0 ? '+' : '') +
-          Number(market.priceChangePercent * 100).toFixed(2)}%`,
-        fundingClass: market.fundingRate < 0 ? 'negative' : 'positive',
-        changeClass: market.priceChangePercent < 0 ? 'negative' : 'positive',
-        iconSrc: market.iconURL
-      }));
-  }, [perpsMarketsData, perpsFilterOptions, perpsActiveFilter, perpsSearchQuery]);
+const filteredPerpsMarkets = useMemo(() => {
+  const filtered = Object.values(perpsMarketsData)
+    .filter(market =>
+      perpsFilterOptions[perpsActiveFilter]?.includes(market.contractName) &&
+      market.baseAsset.toLowerCase().includes(perpsSearchQuery.toLowerCase())
+    )
+    .map(market => ({
+      ...market,
+      formattedVolume: `$${formatCommas(Number(market.value).toFixed(2))}`,
+      formattedOI: `$${formatCommas((Number(market.openInterest) * Number(market.lastPrice)).toFixed(2))}`,
+      formattedFunding: `${market.fundingRate >= 0 ? '+' : ''}${(market.fundingRate * 100).toFixed(4)}%`,
+      formattedChange: `${(Number(market.priceChangePercent) >= 0 ? '+' : '') +
+        (market.priceChange) + ' / ' +
+        (Number(market.priceChangePercent) >= 0 ? '+' : '') +
+        Number(market.priceChangePercent * 100).toFixed(2)}%`,
+      fundingClass: market.fundingRate < 0 ? 'negative' : 'positive',
+      changeClass: market.priceChangePercent < 0 ? 'negative' : 'positive',
+      iconSrc: market.iconURL
+    }));
 
+  // Sort the filtered markets
+  if (perpsSortField && perpsSortDirection) {
+    filtered.sort((a, b) => {
+      let aValue: number = 0;
+      let bValue: number = 0;
+
+ switch (perpsSortField) {
+  case 'volume':
+    aValue = parseFloat((a.value || 0).toString().replace(/,/g, ''));
+    bValue = parseFloat((b.value || 0).toString().replace(/,/g, ''));
+    break;
+  case 'price':
+    aValue = parseFloat((a.lastPrice || 0).toString().replace(/,/g, ''));
+    bValue = parseFloat((b.lastPrice || 0).toString().replace(/,/g, ''));
+    break;
+  case 'change':
+    aValue = parseFloat((a.priceChangePercent || 0).toString().replace(/[+%]/g, ''));
+    bValue = parseFloat((b.priceChangePercent || 0).toString().replace(/[+%]/g, ''));
+    break;
+  case 'funding':
+    aValue = parseFloat((a.fundingRate || 0).toString());
+    bValue = parseFloat((b.fundingRate || 0).toString());
+    break;
+  case 'openInterest':
+    aValue = parseFloat((a.openInterest || 0).toString()) * parseFloat((a.lastPrice || 0).toString());
+    bValue = parseFloat((b.openInterest || 0).toString()) * parseFloat((b.lastPrice || 0).toString());
+    break;
+  case 'favorites':
+    aValue = favorites.includes(a.contractName) ? 1 : 0;
+    bValue = favorites.includes(b.contractName) ? 1 : 0;
+    break;
+  default:
+    return 0;
+}
+      return perpsSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+    });
+  }
+
+  return filtered;
+}, [perpsMarketsData, perpsFilterOptions, perpsActiveFilter, perpsSearchQuery, perpsSortField, perpsSortDirection, favorites]);
   const togglePerpsDropdown = () => {
     if (!isPerpsDropdownOpen) {
       setPerpsSearchQuery('');
@@ -813,7 +854,14 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       setSortDirection('desc');
     }
   };
-
+const handlePerpsSort = (field: 'volume' | 'price' | 'change' | 'funding' | 'openInterest' | 'favorites') => {
+  if (perpsSortField === field) {
+    setPerpsSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+  } else {
+    setPerpsSortField(field);
+    setPerpsSortDirection('desc');
+  }
+};
   const filterMarketsByTab = (market: any) => {
     switch (activeFilter) {
       case 'favorites':
@@ -922,10 +970,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     }
   };
 
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [searchQuery, activeFilter]);
+useEffect(() => {
+  setSelectedIndex(0);
+}, [searchQuery, activeFilter]);
 
+useEffect(() => {
+  setPerpsSelectedIndex(0);
+}, [perpsSearchQuery, perpsActiveFilter, perpsSortField, perpsSortDirection]);
   const perpsTokenInfo = perpsMarketsData[perpsActiveMarketKey];
 
   const [remaining, setRemaining] = useState("")
@@ -1368,14 +1419,67 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 {perpsFilterTabs}
               </div>
 
-              <div className="perps-markets-list-header">
-                <div className="favorites-header" />
-                <div>Market / Volume</div>
-                <div className="markets-dropdown-chart-container">Last Price</div>
-                <div className="perps-oi-header">24hr Change</div>
-                <div className="perps-funding-header">8hr Funding</div>
-                <div className="markets-dropdown-price-container">Open Interest</div>
-              </div>
+<div className="perps-markets-list-header">
+  <div className="favorites-header" onClick={() => handlePerpsSort('favorites')}>
+    <SortArrow
+      sortDirection={perpsSortField === 'favorites' ? perpsSortDirection : undefined}
+      onClick={(e) => {
+        e.stopPropagation();
+        handlePerpsSort('favorites');
+      }}
+    />
+  </div>
+  <div onClick={() => handlePerpsSort('volume')}>
+    Market / Volume
+    <SortArrow
+      sortDirection={perpsSortField === 'volume' ? perpsSortDirection : undefined}
+      onClick={(e) => {
+        e.stopPropagation();
+        handlePerpsSort('volume');
+      }}
+    />
+  </div>
+  <div className="markets-dropdown-chart-container" onClick={() => handlePerpsSort('price')}>
+    Last Price
+    <SortArrow
+      sortDirection={perpsSortField === 'price' ? perpsSortDirection : undefined}
+      onClick={(e) => {
+        e.stopPropagation();
+        handlePerpsSort('price');
+      }}
+    />
+  </div>
+  <div className="perps-oi-header" onClick={() => handlePerpsSort('change')}>
+    24hr Change
+    <SortArrow
+      sortDirection={perpsSortField === 'change' ? perpsSortDirection : undefined}
+      onClick={(e) => {
+        e.stopPropagation();
+        handlePerpsSort('change');
+      }}
+    />
+  </div>
+  <div className="perps-funding-header" onClick={() => handlePerpsSort('funding')}>
+    8hr Funding
+    <SortArrow
+      sortDirection={perpsSortField === 'funding' ? perpsSortDirection : undefined}
+      onClick={(e) => {
+        e.stopPropagation();
+        handlePerpsSort('funding');
+      }}
+    />
+  </div>
+  <div className="markets-dropdown-price-container" onClick={() => handlePerpsSort('openInterest')}>
+    Open Interest
+    <SortArrow
+      sortDirection={perpsSortField === 'openInterest' ? perpsSortDirection : undefined}
+      onClick={(e) => {
+        e.stopPropagation();
+        handlePerpsSort('openInterest');
+      }}
+    />
+  </div>
+</div>
               <div className="perps-markets-list-virtualized" style={{ height: '400px', width: '100%' }}>
                 <List
                   ref={virtualizationListRef}

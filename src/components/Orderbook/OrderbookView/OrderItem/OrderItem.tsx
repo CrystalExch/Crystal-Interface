@@ -76,7 +76,9 @@ const OrderItem = React.forwardRef<HTMLLIElement, OrderItemProps>(
       <li
         ref={ref}
         style={dynamicStyle}
-        className={`order-item-wrapper ${isHighlighted ? 'highlighted' : ''}`}
+        className={`order-item-wrapper ${isHighlighted ? 'highlighted' : ''} ${
+          isBuyOrder ? 'buy-order' : 'sell-order'
+        }`}
         onClick={() => {
           updateLimitAmount(price, priceFactor, marketType != 0 && price ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(price ?? 1)) - 1) : Number(priceFactor));
         }}

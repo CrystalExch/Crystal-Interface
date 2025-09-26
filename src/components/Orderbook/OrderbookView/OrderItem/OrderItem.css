@@ -2,8 +2,12 @@
   cursor: default;
 }
 
-.order-item-wrapper.highlighted {
-  background-color: rgb(255 255 255 / 5%);
+.order-item-wrapper.highlighted.buy-order {
+  background-color: rgba(111, 255, 111, 0.05);
+}
+
+.order-item-wrapper.highlighted.sell-order {
+  background-color: rgba(236, 91, 91, 0.05);
 }
 
 .order-item-wrapper.highlighted:last-of-type {
@@ -35,11 +39,11 @@
 }
 
 .buyOrder.boundary {
-  border-bottom: 1px dashed rgb(255 255 255 / 50%);
+  box-shadow: 0 1px  rgb(111, 255, 111);
 }
 
 .sellOrder.boundary {
-  border-top: 1px dashed rgb(255 255 255 / 50%);
+  box-shadow: 0 -1px  rgb(236, 91, 91);
 }
 
 .order-item.flash::after {
