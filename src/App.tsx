@@ -1243,7 +1243,7 @@ function App() {
   );
   const [isVertDragging, setIsVertDragging] = useState(false);
   const [trades, setTrades] = useState<
-    [boolean, string, number, string, string][]
+    [boolean, string, string, string, string][]
   >([]);
   const [spreadData, setSpreadData] = useState<any>({});
   const [activeSection, setActiveSection] = useState<
@@ -3813,12 +3813,13 @@ function App() {
   useEffect(() => {
     const temp: Trade[] | undefined = tradesByMarket[activeMarketKey];
 
-    let processed: [boolean, string, number, string, string][] = [];
+    let processed: [boolean, string, string, string, string][] = [];
 
     if (temp) {
       processed = temp.slice(0, 100).map((trade: Trade) => {
         const isBuy = trade[2] === 1;
-        const { price, tradeValue } = getTradeValue(trade, activeMarket);
+        const tradeValue = (trade[2] === 1 ? trade[1] : trade[0]) / 10 ** Number(activeMarket.baseDecimals);
+        const price = trade[3] / Number(activeMarket.priceFactor) || 0;
         const time = formatTime(trade[6]);
         const hash = trade[5];
         return [
@@ -3826,7 +3827,7 @@ function App() {
           formatCommas(
             price.toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(price ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
           ),
-          tradeValue,
+          formatSubscript(customRound(tradeValue, 3)),
           time,
           hash,
         ];

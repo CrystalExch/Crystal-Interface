@@ -32,6 +32,7 @@ interface OrderbookViewProps {
   reserveQuote: any;
   reserveBase: any;
   isOrderbookLoading?: boolean;
+  perps?: boolean;
 }
 
 const OrderbookView: React.FC<OrderbookViewProps> = ({
@@ -55,6 +56,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   reserveQuote,
   reserveBase,
   isOrderbookLoading,
+  perps
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
@@ -245,6 +247,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
           onAmountsQuoteChange={setAmountsQuote}
           symbolQuote={symbolQuote}
           symbolBase={symbolBase}
+          perps={perps}
         />
         {isOrderbookLoading ? (
     Array.from({ length: 50 }).map((_, i) => (

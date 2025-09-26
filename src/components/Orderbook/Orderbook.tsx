@@ -24,6 +24,7 @@ interface OrderBookProps {
   reserveQuote: any;
   reserveBase: any;
   isOrderbookLoading?: boolean;
+  perps?: boolean;
 }
 
 type LayoutMode = 'tab' | 'stacked' | 'large';
@@ -47,6 +48,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
   reserveQuote,
   reserveBase,
   isOrderbookLoading,
+  perps
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
@@ -108,7 +110,12 @@ const OrderBook: React.FC<OrderBookProps> = ({
   };
 
   useEffect(() => {
-    localStorage.setItem('ob_active_tab', activeTab);
+    if (perps) {
+      localStorage.setItem('perps_ob_active_tab', activeTab);
+    }
+    else {
+      localStorage.setItem('ob_active_tab', activeTab);
+    }
   }, [activeTab]);
 
   useEffect(() => {
@@ -196,11 +203,12 @@ const OrderBook: React.FC<OrderBookProps> = ({
         reserveQuote={reserveQuote}
         reserveBase={reserveBase}
         isOrderbookLoading={isOrderbookLoading}
+        perps={perps}
       />
       <TradesView
         trades={trades}
         show={activeTab === 'trades'}
-        symbolQuote={orderdata.symbolIn}
+        symbolQuote={perps ? orderdata.symbolIn : orderdata.symbolOut}
       />
     </>
   );
@@ -235,6 +243,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
           reserveQuote={reserveQuote}
           reserveBase={reserveBase}
           isOrderbookLoading={isOrderbookLoading}
+          perps={perps}
         />
       </div>
       <div className="ob-stacked-section">
@@ -279,6 +288,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
           reserveQuote={reserveQuote}
           reserveBase={reserveBase}
           isOrderbookLoading={isOrderbookLoading}
+          perps={perps}
         />
       </div>
       <div className="ob-large-section-trades">

@@ -33,7 +33,7 @@ const TradeItem = ({ trade }: TradeItemProps) => {
           <span>{trade[1]}</span>
         </div>
       </div>
-      <div className="trade-item-center">{trade[2].toFixed(2)}</div>
+      <div className="trade-item-center">{trade[2]}</div>
       <div className="trade-item-right">
         <span>{trade[3]}</span>
         {!!trade?.[4] ?

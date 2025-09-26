@@ -828,7 +828,7 @@ const Perps: React.FC<PerpsProps> = ({
               const trades = msg.map((t: any) => {
                 const isBuy = !t.isBuyerMaker
                 const priceFormatted = formatCommas(t.price)
-                const tradeValue = Number(t.value)
+                const tradeValue = formatCommas(Number(t.value).toFixed(2))
                 const time = formatTime(Number(t.time) / 1000)
                 return [isBuy, priceFormatted, tradeValue, time]
               })
@@ -838,7 +838,7 @@ const Perps: React.FC<PerpsProps> = ({
               const trades = msg.map((t: any) => {
                 const isBuy = t.isBuyerMaker
                 const priceFormatted = formatCommas(t.price)
-                const tradeValue = Number(t.value)
+                const tradeValue = formatCommas(Number(t.value).toFixed(2))
                 const time = formatTime(Number(t.time) / 1000)
                 return [isBuy, priceFormatted, tradeValue, time]
               })
@@ -1315,6 +1315,7 @@ const Perps: React.FC<PerpsProps> = ({
             reserveQuote={0n}
             reserveBase={0n}
             isOrderbookLoading={isOrderbookLoading}
+            perps={true}
           />
         </div>
         <div

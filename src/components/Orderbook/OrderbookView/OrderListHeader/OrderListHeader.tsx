@@ -9,6 +9,7 @@ interface OrderListHeaderProps {
   onAmountsQuoteChange: (value: string) => void;
   symbolQuote: string;
   symbolBase: string;
+  perps?: boolean;
 }
 
 const OrderListHeader: React.FC<OrderListHeaderProps> = ({
@@ -16,6 +17,7 @@ const OrderListHeader: React.FC<OrderListHeaderProps> = ({
   onAmountsQuoteChange,
   symbolQuote,
   symbolBase,
+  perps
 }) => (
   <div className="ol-header">
     <span>{t('price')}</span>
@@ -29,6 +31,7 @@ const OrderListHeader: React.FC<OrderListHeaderProps> = ({
         onChange={onAmountsQuoteChange}
         symbolQuote={symbolQuote}
         symbolBase={symbolBase}
+        perps={perps}
       />
     </span>
   </div>

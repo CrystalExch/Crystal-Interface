@@ -14,6 +14,7 @@ interface OrderbookTokenSelectProps {
   onChange: (value: string) => void;
   symbolQuote: string;
   symbolBase: string;
+  perps?: boolean;
 }
 
 const OrderbookTokenSelect: React.FC<OrderbookTokenSelectProps> = ({
@@ -21,6 +22,7 @@ const OrderbookTokenSelect: React.FC<OrderbookTokenSelectProps> = ({
   onChange,
   symbolQuote,
   symbolBase,
+  perps
 }) => {
   const selectorRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLUListElement>(null);
@@ -105,7 +107,12 @@ const OrderbookTokenSelect: React.FC<OrderbookTokenSelectProps> = ({
             onClick={(e) => {
               e.stopPropagation();
               handleOptionClick('Quote');
-              localStorage.setItem('ob_amounts_quote', 'Quote');
+              if (perps) {
+                localStorage.setItem('perps_ob_amounts_quote', 'Quote');
+              }
+              else {
+                localStorage.setItem('ob_amounts_quote', 'Quote');
+              }
             }}
           >
             <span>{symbolQuote}</span>
@@ -116,7 +123,12 @@ const OrderbookTokenSelect: React.FC<OrderbookTokenSelectProps> = ({
             onClick={(e) => {
               e.stopPropagation();
               handleOptionClick('Base');
-              localStorage.setItem('ob_amounts_quote', 'Base');
+              if (perps) {
+                localStorage.setItem('perps_ob_amounts_quote', 'Base');
+              }
+              else {
+                localStorage.setItem('ob_amounts_quote', 'Base');
+              }
             }}
           >
             <span>{symbolBase}</span>

@@ -121,7 +121,6 @@
 .meme-trade-amount {
   align-items: center;
   display: flex;
-  font-family: 'Geist Mono';
   gap: 4px;
   text-align: left;
   width: 85px;
@@ -137,7 +136,6 @@
 
 .meme-trade-mc {
   color: rgba(255, 255, 255, 0.8);
-  font-family: 'Geist Mono';
   font-size: 0.75rem;
   font-weight: 300;
   text-align: left;
@@ -146,7 +144,6 @@
 
 .meme-trade-trader {
   color: rgba(255, 255, 255, 0.8);
-  font-family: 'Geist Mono';
   font-size: 0.8rem;
   font-weight: 300;
   text-align: left;
@@ -182,7 +179,6 @@
 .meme-trade-age {
   color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  font-family: 'Geist Mono';
   font-size: 0.75rem;
   font-weight: 300;
   min-width: 20px;
@@ -477,7 +473,6 @@
 
 .filter-status-text {
   color: rgba(220, 225, 247, 0.8);
-  font-family: 'Geist Mono';
 }
 
 .filter-reset-btn {
