@@ -128,6 +128,103 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
     return Math.max(lastBuySize, lastSellSize);
   }, [processedBuyOrders, processedSellOrders]);
 
+  const loadingData = useMemo(() => {
+    if (containerHeight === 0) return { rowCount: 0, extra: 0 };
+    
+    const baseHeight = 20.5;
+    const spreadHeight = 29; 
+    const bufferHeight = 17; 
+    const availableHeight = containerHeight - spreadHeight - bufferHeight;
+    
+    if (availableHeight <= 0) return { rowCount: 0, extra: 0 };
+    
+    let rowCount;
+    if (viewMode === 'both') {
+      rowCount = Math.floor(availableHeight / (baseHeight * 2)); 
+    } else {
+      rowCount = Math.floor(availableHeight / baseHeight);
+    }
+    
+    const usedHeight = rowCount * baseHeight * (viewMode === 'both' ? 2 : 1);
+    const leftoverHeight = availableHeight - usedHeight;
+    const totalRows = viewMode === 'both' ? rowCount * 2 : rowCount;
+    const extra = totalRows > 0 ? Math.max(0, leftoverHeight / totalRows) : 0;
+    
+    return { rowCount, extra };
+  }, [containerHeight, viewMode]);
+
+  const loadingSellOrders = useMemo(() => {
+    const { rowCount, extra } = loadingData;
+    
+    return (
+      <div className="orderlist">
+        <ul className="order-list-items bottom-aligned">
+          {Array.from({ length: rowCount }).map((_, i) => {
+            const widthPercentage = 10 + ((i / Math.max(1, rowCount - 1)) * 86);
+            const dynamicStyle = {
+              height: `calc(var(--order-item-height, 20.5px) + ${extra}px)`,
+            };
+            
+            return (
+              <li
+                key={`sell-${i}`}
+                className="order-item-wrapper loading-order"
+                style={dynamicStyle}
+              >
+                <div className="order-item loading-skeleton-item" style={dynamicStyle}>
+                  <div 
+                    className="ob-loading-bar ob-loading-skeleton" 
+                    style={{ width: `${widthPercentage}%` }} 
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  }, [loadingData]);
+
+  const loadingBuyOrders = useMemo(() => {
+    const { rowCount, extra } = loadingData;
+    
+    return (
+      <div className="orderlist">
+        <ul className="order-list-items top-aligned">
+          {Array.from({ length: rowCount }).map((_, i) => {
+            const widthPercentage = 10 + ((i / Math.max(1, rowCount - 1)) * 86);
+            const dynamicStyle = {
+              height: `calc(var(--order-item-height, 20.5px) + ${extra}px)`,
+            };
+            
+            return (
+              <li
+                key={`buy-${i}`}
+                className="order-item-wrapper loading-order"
+                style={dynamicStyle}
+              >
+                <div className="order-item loading-skeleton-item" style={dynamicStyle}>
+                  <div 
+                    className="ob-loading-bar ob-loading-skeleton" 
+                    style={{ width: `${widthPercentage}%` }} 
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  }, [loadingData]);
+
+  const LoadingSpreadDisplay = useMemo(() => (
+    <div className="ob-spread">
+      <div className="ob-spread-inner">
+        <div className="ob-loading-skeleton ob-loading-spread-value" />
+      </div>
+    </div>
+  ), []);
+
   return (
     <DropdownContext.Provider value={{ openDropdown, setOpenDropdown }}>
       <div className={`ob-controls ${!show ? 'hidden' : ''}`}>
@@ -150,17 +247,27 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
           symbolBase={symbolBase}
         />
         {isOrderbookLoading ? (
-          <div className="orderbook-loading-container">
-            <div className="orderbook-loading-content">
-              {Array.from({ length: 40 }).map((_, i) => (
-                <div key={i} className="orderbook-loading-row">
-                  <div className="ob-loading-skeleton ob-loading-price" />
-                  <div className="ob-loading-skeleton ob-loading-amount" />
-                  <div className="ob-loading-skeleton ob-loading-total" />
-                </div>
-              ))}
-            </div>
-          </div>
+          <>
+            {viewMode === 'both' && (
+              <div className="view-both">
+                {loadingSellOrders}
+                {LoadingSpreadDisplay}
+                {loadingBuyOrders}
+              </div>
+            )}
+            {viewMode === 'sell' && (
+              <div className="ob-sell-only">
+                {loadingSellOrders}
+                {LoadingSpreadDisplay}
+              </div>
+            )}
+            {viewMode === 'buy' && (
+              <div className="ob-buy-only">
+                {LoadingSpreadDisplay}
+                {loadingBuyOrders}
+              </div>
+            )}
+          </>
         ) : (
           <>
             {viewMode === 'both' && containerHeight != 0 && (

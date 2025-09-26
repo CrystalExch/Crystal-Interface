@@ -1156,8 +1156,7 @@ body {
 .button1,
 .button2 {
   align-items: center;
-  background: #21212716;
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1.5px solid rgba(189, 193, 246, 0.075);
   border-radius: 20px;
   color: #ffffffd8;
   cursor: pointer;
@@ -1172,6 +1171,7 @@ body {
   position: relative;
   transform: translateY(0);
   white-space: nowrap;
+  box-shadow: 0 2px 1px black;
 }
 
 .button1:hover,
@@ -1551,9 +1551,9 @@ body {
 .switch-button {
   align-items: center;
   align-self: center;
-  border: 1px solid rgba(179, 184, 249, 0.1);
-  background-color: rgb(6, 6, 6);
-  border-radius: 8px;
+  border: 1.5px solid rgb(6, 6, 6);
+  background-color:  rgb(20, 20, 26);
+  border-radius: 12px;
   cursor: pointer;
   display: flex;
   justify-content: center;
