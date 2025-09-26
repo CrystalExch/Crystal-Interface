@@ -31,3 +31,42 @@
 .trades-container.hidden {
   display: none;
 }
+
+
+.trades-loading-list {
+  width: 100%;
+  height: 100%;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.trade-loading-item {
+  padding: 4px 8px;
+  position: relative;
+  cursor: default;
+}
+
+.trade-loading-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.trade-loading-price {
+  width: 65px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.trade-loading-size {
+  width: 50px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.trade-loading-time {
+  width: 45px;
+  height: 14px;
+  border-radius: 2px;
+}

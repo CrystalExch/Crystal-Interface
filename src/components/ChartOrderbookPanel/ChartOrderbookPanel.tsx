@@ -56,7 +56,10 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   isOrderbookLoading,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [layoutMode, setLayoutMode] = useState<'tab' | 'stacked' | 'large'>('tab');
+const [layoutMode, setLayoutMode] = useState<'tab' | 'stacked' | 'large'>(() => {
+  const savedMode = localStorage.getItem('ob_layout_mode') as 'tab' | 'stacked' | 'large';
+  return (savedMode && ['tab', 'stacked', 'large'].includes(savedMode)) ? savedMode : 'tab';
+});
 
   const initialMousePosRef = useRef(0);
   const initialWidthRef = useRef(0);
@@ -89,73 +92,76 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   }, []);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
 
-      e.preventDefault();
-      e.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation();
 
-      const mouseDelta = e.clientX - initialMousePosRef.current;
-      const delta = orderbookPosition === 'left' ? mouseDelta : -mouseDelta;
-      const newWidth = Math.max(
-        250,
-        Math.min(
-          widthRef.current
-            ? widthRef.current.getBoundingClientRect().width / 2
-            : 450,
-          initialWidthRef.current + delta,
-        ),
-      );
+    const mouseDelta = e.clientX - initialMousePosRef.current;
+    const delta = orderbookPosition === 'left' ? mouseDelta : -mouseDelta;
+    
+  
+    const adjustedDelta = layoutMode === 'large' ? delta / 2 : delta;
+    
+    const newWidth = Math.max(
+      250,
+      Math.min(
+        widthRef.current
+          ? widthRef.current.getBoundingClientRect().width / (layoutMode === 'large' ? 4 : 2)
+          : 450,
+        initialWidthRef.current + adjustedDelta,
+      ),
+    );
 
-      setOrderbookWidth(newWidth);
-      localStorage.setItem('orderbookWidth', newWidth.toString());
-    };
+    setOrderbookWidth(newWidth);
+    localStorage.setItem('orderbookWidth', newWidth.toString());
+  };
 
-    const handleMouseUp = (e: MouseEvent) => {
-      if (!isDragging) return;
+  const handleMouseUp = (e: MouseEvent) => {
+    if (!isDragging) return;
 
-      e.preventDefault();
-      e.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation();
 
-      setIsDragging(false);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
+    setIsDragging(false);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
 
-      const overlay = document.getElementById('global-drag-overlay');
-      if (overlay) {
-        document.body.removeChild(overlay);
-      }
-    };
-
-    if (isDragging) {
-      const overlay = document.createElement('div');
-      overlay.id = 'global-drag-overlay';
-      overlay.style.position = 'fixed';
-      overlay.style.top = '0';
-      overlay.style.left = '0';
-      overlay.style.width = '100%';
-      overlay.style.height = '100%';
-      overlay.style.zIndex = '9999';
-      overlay.style.cursor = 'col-resize';
-      document.body.appendChild(overlay);
-
-      window.addEventListener('mousemove', handleMouseMove, { capture: true });
-      window.addEventListener('mouseup', handleMouseUp, { capture: true });
+    const overlay = document.getElementById('global-drag-overlay');
+    if (overlay) {
+      document.body.removeChild(overlay);
     }
+  };
 
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove, {
-        capture: true,
-      });
-      window.removeEventListener('mouseup', handleMouseUp, { capture: true });
+  if (isDragging) {
+    const overlay = document.createElement('div');
+    overlay.id = 'global-drag-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.zIndex = '9999';
+    overlay.style.cursor = 'col-resize';
+    document.body.appendChild(overlay);
 
-      const overlay = document.getElementById('global-drag-overlay');
-      if (overlay) {
-        document.body.removeChild(overlay);
-      }
-    };
-  }, [isDragging, orderbookPosition]);
+    window.addEventListener('mousemove', handleMouseMove, { capture: true });
+    window.addEventListener('mouseup', handleMouseUp, { capture: true });
+  }
 
+  return () => {
+    window.removeEventListener('mousemove', handleMouseMove, {
+      capture: true,
+    });
+    window.removeEventListener('mouseup', handleMouseUp, { capture: true });
+
+    const overlay = document.getElementById('global-drag-overlay');
+    if (overlay) {
+      document.body.removeChild(overlay);
+    }
+  };
+}, [isDragging, orderbookPosition, layoutMode]); 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
