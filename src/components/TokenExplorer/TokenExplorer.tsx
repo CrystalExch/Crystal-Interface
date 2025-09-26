@@ -191,7 +191,7 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
   columnOrder: ['new', 'graduating', 'graduated'],
   quickBuyClickBehavior: 'nothing',
   secondQuickBuyEnabled: false,
-  secondQuickBuyColor: '#526FFF',
+  secondQuickBuyColor: '#50f08dc0',
   visibleRows: {
     marketCap: true,
     volume: true,
@@ -1347,7 +1347,7 @@ const DisplayDropdown: React.FC<{
                 className={`small-size-option ${settings.metricSize === 'small' ? 'active' : ''}`}
                 onClick={() => updateSetting('metricSize', 'small')}
               >
-                MC 77K
+                MC 123K
                 <br />
                 <span className="size-label">Small</span>
               </button>
@@ -1355,7 +1355,7 @@ const DisplayDropdown: React.FC<{
                 className={`large-size-option ${settings.metricSize === 'large' ? 'active' : ''}`}
                 onClick={() => updateSetting('metricSize', 'large')}
               >
-                MC 77K
+                MC 123K
                 <br />
                 <span className="size-label">Large</span>
               </button>

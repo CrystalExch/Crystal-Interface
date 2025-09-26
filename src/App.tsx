@@ -5569,13 +5569,13 @@ function App() {
           body: JSON.stringify({ query }),
         });
         const json = await res.json();
-        const list = Array.isArray(json?.data?.markets) ? json.data.markets : [];
+        const list = Array.isArray(json?.data?.markets) ? [...json.data.markets].reverse() : []
 
         const ETH_ADDR = settings.chainConfig[activechain].eth;
         const WETH_ADDR = settings.chainConfig[activechain].weth;
         const ETH_TICKER = settings.chainConfig[activechain].ethticker;
         const WETH_TICKER = settings.chainConfig[activechain].wethticker;
-        const newMarkets: Record<string, any> = {};
+        const newMarkets: Record<string, any> = settings.chainConfig[activechain].markets;
         for (const m of list) {
           const baseAddr0 = getAddress(String(m.baseAsset || ''));
           const quoteAddr0 = getAddress(String(m.quoteAsset || ''));
@@ -5641,7 +5641,6 @@ function App() {
             const marketKey = `${v.baseAsset}${v.quoteAsset}`;
             const image = (bTok?.image ?? settings.chainConfig[activechain].image ?? null);
             const website = (bTok?.website ?? '');
-
             newMarkets[marketKey] = {
               baseAsset: v.baseAsset,
               quoteAsset: v.quoteAsset,
