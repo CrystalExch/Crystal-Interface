@@ -134,7 +134,6 @@ const OrderBook: React.FC<OrderBookProps> = ({
       <button
         className="layout-dropdown-trigger"
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        aria-label="Select layout mode"
       >
        <img src={filter} className="filter-icon"/>
       </button>
@@ -211,7 +210,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
       <div className="ob-stacked-section">
         <div className="ob-section-header">
           <div className="ob-section-header-content">
-            <h3>Orderbook</h3>
+            <div>Order Book</div>
             <div>{LayoutDropdown}</div>
           </div>
         </div>
@@ -240,7 +239,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
       </div>
       <div className="ob-stacked-section">
         <div className="ob-section-header">
-          <h3>Trades</h3>
+          <div>Trades</div>
         </div>
         <TradesView
           trades={trades}
@@ -256,7 +255,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
       <div className="ob-large-section-orderbook">
         <div className="ob-section-header">
           <div className="ob-section-header-content">
-            <h3>Orderbook</h3>
+            <div>Order Book</div>
           </div>
         </div>
         <OrderbookView
@@ -284,7 +283,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
       </div>
       <div className="ob-large-section-trades">
         <div className="ob-section-header">
-          <h3>Trades</h3>
+          <div>Trades</div>
           <div>{LayoutDropdown}</div>
         </div>
         <TradesView

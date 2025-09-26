@@ -247,27 +247,15 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
           symbolBase={symbolBase}
         />
         {isOrderbookLoading ? (
-          <>
-            {viewMode === 'both' && (
-              <div className="view-both">
-                {loadingSellOrders}
-                {LoadingSpreadDisplay}
-                {loadingBuyOrders}
-              </div>
-            )}
-            {viewMode === 'sell' && (
-              <div className="ob-sell-only">
-                {loadingSellOrders}
-                {LoadingSpreadDisplay}
-              </div>
-            )}
-            {viewMode === 'buy' && (
-              <div className="ob-buy-only">
-                {LoadingSpreadDisplay}
-                {loadingBuyOrders}
-              </div>
-            )}
-          </>
+    Array.from({ length: 50 }).map((_, i) => (
+      <div key={`loading-trade-${i}`} className="trade-loading-item">
+        <div className="trade-loading-content">
+          <div className="trade-loading-price ob-loading-skeleton" />
+          <div className="trade-loading-size ob-loading-skeleton" />
+          <div className="trade-loading-time ob-loading-skeleton" />
+        </div>
+      </div>
+    ))
         ) : (
           <>
             {viewMode === 'both' && containerHeight != 0 && (

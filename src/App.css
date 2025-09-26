@@ -1156,22 +1156,21 @@ body {
 .button1,
 .button2 {
   align-items: center;
-  border: 1.5px solid rgba(189, 193, 246, 0.075);
-  border-radius: 20px;
+  background: #21212716;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 5px;
   color: #ffffffd8;
   cursor: pointer;
   display: inline-flex;
-  font-size: 0.8em;
+  font-size: 0.8rem;
   font-weight: 450;
   margin-bottom: 3px;
   margin-right: 15px;
   overflow: hidden;
   padding: 4px;
-  padding-left: 6px;
   position: relative;
   transform: translateY(0);
   white-space: nowrap;
-  box-shadow: 0 2px 1px black;
 }
 
 .button1:hover,
@@ -1551,9 +1550,9 @@ body {
 .switch-button {
   align-items: center;
   align-self: center;
-  border: 1.5px solid rgb(6, 6, 6);
-  background-color:  rgb(20, 20, 26);
-  border-radius: 12px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  background-color: rgb(6, 6, 6);
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   justify-content: center;
@@ -4846,7 +4845,7 @@ input[type="email"] {
 }
 
 .limit-price-button {
-  border: 1px dotted rgb(102 107 150/25%);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 4px;
   color: #ffffff7b;
   cursor: pointer;
@@ -4862,15 +4861,6 @@ input[type="email"] {
 .limit-price-button:hover {
   border-color: rgb(102 107 150/15%);
   color: #ffffffd8;
-}
-
-.limit-custom-button {
-  border: 1px dotted rgba(228, 226, 252, 0.15);
-}
-
-.limit-custom-button:hover {
-  border: 1px dotted rgba(228, 226, 252, 0.2);
-
 }
 
 .limit-custom-input {
@@ -9021,4 +9011,3 @@ input::-webkit-inner-spin-button {
   opacity: 1;
   cursor: pointer;
 }
-

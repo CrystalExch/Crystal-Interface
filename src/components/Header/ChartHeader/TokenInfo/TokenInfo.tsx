@@ -352,10 +352,10 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [isPerpsDropdownVisible, setIsPerpsDropdownVisible] = useState(false);
   const [perpsSearchQuery, setPerpsSearchQuery] = useState('');
   const [perpsActiveFilter, setPerpsActiveFilter] = useState('All');
-const [perpsSelectedIndex, setPerpsSelectedIndex] = useState(0);
-const [perpsShouldFocus, setPerpsShouldFocus] = useState(false);
-const [perpsSortField, setPerpsSortField] = useState<'volume' | 'price' | 'change' | 'funding' | 'openInterest' | 'favorites' | null>('volume');
-const [perpsSortDirection, setPerpsSortDirection] = useState<'asc' | 'desc' | undefined>('desc');
+  const [perpsSelectedIndex, setPerpsSelectedIndex] = useState(0);
+  const [perpsShouldFocus, setPerpsShouldFocus] = useState(false);
+  const [perpsSortField, setPerpsSortField] = useState<'volume' | 'price' | 'change' | 'funding' | 'openInterest' | null>('volume');
+  const [perpsSortDirection, setPerpsSortDirection] = useState<'asc' | 'desc' | undefined>('desc');
   const filterTabsRef = useRef<HTMLDivElement>(null);
   const marketsListRef = useRef<HTMLDivElement>(null);
   const memeMetricsRef = useRef<HTMLDivElement>(null);
@@ -387,7 +387,6 @@ const filteredPerpsMarkets = useMemo(() => {
       iconSrc: market.iconURL
     }));
 
-  // Sort the filtered markets
   if (perpsSortField && perpsSortDirection) {
     filtered.sort((a, b) => {
       let aValue: number = 0;
@@ -413,10 +412,6 @@ const filteredPerpsMarkets = useMemo(() => {
   case 'openInterest':
     aValue = parseFloat((a.openInterest || 0).toString()) * parseFloat((a.lastPrice || 0).toString());
     bValue = parseFloat((b.openInterest || 0).toString()) * parseFloat((b.lastPrice || 0).toString());
-    break;
-  case 'favorites':
-    aValue = favorites.includes(a.contractName) ? 1 : 0;
-    bValue = favorites.includes(b.contractName) ? 1 : 0;
     break;
   default:
     return 0;
@@ -749,7 +744,7 @@ const filteredPerpsMarkets = useMemo(() => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [sortField, setSortField] = useState<
-    'volume' | 'price' | 'change' | 'favorites' | null
+    'volume' | 'price' | 'change' | null
   >('volume');
   const [sortDirection, setSortDirection] = useState<
     'asc' | 'desc' | undefined
@@ -846,7 +841,7 @@ const filteredPerpsMarkets = useMemo(() => {
     };
   }, []);
 
-  const handleSort = (field: 'volume' | 'price' | 'change' | 'favorites') => {
+  const handleSort = (field: 'volume' | 'price' | 'change') => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -854,7 +849,7 @@ const filteredPerpsMarkets = useMemo(() => {
       setSortDirection('desc');
     }
   };
-const handlePerpsSort = (field: 'volume' | 'price' | 'change' | 'funding' | 'openInterest' | 'favorites') => {
+const handlePerpsSort = (field: 'volume' | 'price' | 'change' | 'funding' | 'openInterest') => {
   if (perpsSortField === field) {
     setPerpsSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
   } else {
@@ -906,10 +901,6 @@ const handlePerpsSort = (field: 'volume' | 'price' | 'change' | 'funding' | 'ope
       case 'change':
         aValue = parseFloat(a.priceChange.replace(/[+%]/g, ''));
         bValue = parseFloat(b.priceChange.replace(/[+%]/g, ''));
-        break;
-      case 'favorites':
-        aValue = favorites.includes(a.baseAddress.toLowerCase()) ? 1 : 0;
-        bValue = favorites.includes(b.baseAddress.toLowerCase()) ? 1 : 0;
         break;
       default:
         return 0;
@@ -970,13 +961,14 @@ const handlePerpsSort = (field: 'volume' | 'price' | 'change' | 'funding' | 'ope
     }
   };
 
-useEffect(() => {
-  setSelectedIndex(0);
-}, [searchQuery, activeFilter]);
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchQuery, activeFilter]);
 
-useEffect(() => {
-  setPerpsSelectedIndex(0);
-}, [perpsSearchQuery, perpsActiveFilter, perpsSortField, perpsSortDirection]);
+  useEffect(() => {
+    setPerpsSelectedIndex(0);
+  }, [perpsSearchQuery, perpsActiveFilter]);
+
   const perpsTokenInfo = perpsMarketsData[perpsActiveMarketKey];
 
   const [remaining, setRemaining] = useState("")
@@ -1420,15 +1412,7 @@ useEffect(() => {
               </div>
 
 <div className="perps-markets-list-header">
-  <div className="favorites-header" onClick={() => handlePerpsSort('favorites')}>
-    <SortArrow
-      sortDirection={perpsSortField === 'favorites' ? perpsSortDirection : undefined}
-      onClick={(e) => {
-        e.stopPropagation();
-        handlePerpsSort('favorites');
-      }}
-    />
-  </div>
+  <div className="favorites-header"></div>
   <div onClick={() => handlePerpsSort('volume')}>
     Market / Volume
     <SortArrow

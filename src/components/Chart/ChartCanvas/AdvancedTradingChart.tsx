@@ -581,6 +581,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               symbolInfo.name.split('/')[0] +
               symbolInfo.name.split('/')[1] +
               resolution;
+
             if (perps) {
               await new Promise<void>((resolve) => {
                 const check = () => {
@@ -614,7 +615,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                       headers: { 'Content-Type': 'application/json' }
                     }).then(r => r.json()),
                   ])
-        
+
                   if (!kline0?.data) return;
                   const mapKlines = (klines: any[]) =>
                     klines.map(candle => ({
@@ -623,8 +624,9 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                       high: Number(candle.high),
                       low: Number(candle.low),
                       close: Number(candle.close),
-                      volume: Number(candle.makerBuyValue),
+                      volume: Number(candle.value),
                     }))
+
                     dataRef.current[key] = mapKlines(kline0.data.dataList.reverse())
             })()
             }
@@ -642,14 +644,16 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               });
             }
             let bars = dataRef.current[key];
-            bars = bars.filter(
-              (bar: any) => bar.time >= from * 1000 && bar.time <= to * 1000,
-            );
+            if (!perps) {
+              bars = bars.filter(
+                (bar: any) => bar.time >= from * 1000 && bar.time <= to * 1000,
+              );
+            }
             setTimeout(() => {
-              if (bars && bars.length) {
+              if (!perps || (bars && bars.length)) {
                 onHistoryCallback(bars, { noData: false });
               } else {
-                onHistoryCallback([], { noData: false });
+                onHistoryCallback([], { noData: true });
               }
             }, 0);
           } catch (error) {

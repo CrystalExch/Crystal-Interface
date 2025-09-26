@@ -866,7 +866,7 @@ const Perps: React.FC<PerpsProps> = ({
                     high: Number(candle.high),
                     low: Number(candle.low),
                     close: Number(candle.close),
-                    volume: Number(candle.makerBuyValue),
+                    volume: Number(candle.value),
                   }))
                 realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
               }
@@ -889,7 +889,7 @@ const Perps: React.FC<PerpsProps> = ({
                     high: Number(candle.high),
                     low: Number(candle.low),
                     close: Number(candle.close),
-                    volume: Number(candle.makerBuyValue),
+                    volume: Number(candle.value),
                   }))
                 realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
               }
@@ -1158,7 +1158,7 @@ const Perps: React.FC<PerpsProps> = ({
                     high: Number(candle.high),
                     low: Number(candle.low),
                     close: Number(candle.close),
-                    volume: Number(candle.makerBuyValue),
+                    volume: Number(candle.value),
                   }))
                 realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
               }
@@ -1181,7 +1181,7 @@ const Perps: React.FC<PerpsProps> = ({
                     high: Number(candle.high),
                     low: Number(candle.low),
                     close: Number(candle.close),
-                    volume: Number(candle.makerBuyValue),
+                    volume: Number(candle.value),
                   }))
                 realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
               }

@@ -43,15 +43,17 @@
   display: flex;
   position: relative;
   user-select: none;
+  width: 100%;
+  padding-right: 10px;
 }
 
 .ob-tab {
   background: none;
   color: #ffffff96;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 300;
-  padding: 8px 16px; 
+  padding: 8px 20px; 
   text-align: center;
   text-decoration: none;
   transition:
@@ -59,8 +61,7 @@
     color 0.3s,
     text-shadow 0.3s;
   white-space: nowrap;
-  letter-spacing: -0.5px;
-  margin: 0;
+  flex: 1;
 }
 
 .ob-tab:hover {
@@ -82,8 +83,7 @@
   bottom: 0px;
   height: 1.5px;
   position: absolute;
-  transition: left 0.2s ease, width 0.2s ease; 
-  margin-left: -1px;
+  transition: left 0.2s ease;
 }
 
 .layout-dropdown {
@@ -94,6 +94,7 @@
 .layout-dropdown-trigger {
   background: none;
   color: #ffffff96;
+  opacity: 0.9;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -125,8 +126,7 @@
 }
 
 .layout-dropdown-chevron {
-  width: 14px;
-  height: 14px;
+  width: 12px;
   transition: transform 0.2s ease;
   flex-shrink: 0;
 }
@@ -144,9 +144,8 @@
   border: 1px solid rgba(128, 128, 128, 0.08);
   border-radius: 5px;
   box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
-  padding: 4px 0;
-  z-index: 1000;
-  width: 100px;
+  z-index: 4;
+  min-width: 80px;
 }
 
 .layout-dropdown-option {
@@ -158,7 +157,7 @@
   align-items: center;
   gap: 8px;
   padding: 3px 8px 3px 10px;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 300;
   transition: all 0.2s ease;
   width: 100%;
@@ -261,12 +260,10 @@
   width: 100%;
 }
 
-.ob-section-header h3 {
+.ob-section-header div {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 400;
-  color: #e3e3f7;
-  letter-spacing: -0.3px;
+  font-size: 0.85rem;
+  color: #ffffff96;
   font-weight: 300;
 }
 
