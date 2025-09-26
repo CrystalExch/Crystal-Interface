@@ -304,8 +304,8 @@ const OrderCenter: React.FC<OrderCenterProps> = ({
       const activeTab = tabsRef.current[activeTabIndex];
       if (activeTab && activeTab.parentElement) {
         const indicator = indicatorRef.current;
-        indicator.style.width = `${activeTab.offsetWidth}px`;
-        indicator.style.left = `${activeTab.offsetLeft}px`;
+        indicator.style.width = `${activeTab.offsetWidth+10}px`;
+        indicator.style.left = `${activeTab.offsetLeft-5}px`;
       }
     }
   }

@@ -60,7 +60,7 @@ const FilterSelect: React.FC<FilterSelectProps> = ({
       </div>
       <ul className={`oc-filter-dropdown-list ${isOpen ? 'open' : ''}`}>
         <li
-          className="oc-filter-dropdown-item"
+          className={`oc-filter-dropdown-item ${filter == 'all' ? 'selected' : ''}`}
           onClick={() => handleItemClick('all')}
         >
           {t('all')}{' '}
@@ -69,7 +69,7 @@ const FilterSelect: React.FC<FilterSelectProps> = ({
           )}
         </li>
         <li
-          className="oc-filter-dropdown-item"
+          className={`oc-filter-dropdown-item ${filter == 'buy' ? 'selected' : ''}`}
           onClick={() => handleItemClick('buy')}
         >
           {t('buy')}{' '}
@@ -78,7 +78,7 @@ const FilterSelect: React.FC<FilterSelectProps> = ({
           )}
         </li>
         <li
-          className="oc-filter-dropdown-item"
+          className={`oc-filter-dropdown-item ${filter == 'sell' ? 'selected' : ''}`}
           onClick={() => handleItemClick('sell')}
         >
           {t('sell')}{' '}

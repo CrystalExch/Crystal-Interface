@@ -1292,7 +1292,7 @@ const Perps: React.FC<PerpsProps> = ({
               spreadData,
               priceFactor: 1 / baseInterval,
               marketType: 0,
-              symbolIn: activeMarket.quoteAsset,
+              symbolIn: activeMarket?.quoteAsset ?? 'USD',
               symbolOut: activeMarket.baseAsset,
             }}
             windowWidth={windowWidth}
