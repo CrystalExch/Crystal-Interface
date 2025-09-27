@@ -6,6 +6,7 @@ import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTrans
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { useSharedContext } from '../../contexts/SharedContext';
 import MemeChart from '../MemeInterface/MemeChart/MemeChart';
+import defaultPfp from '../../assets/leaderboard_default.png';
 import './TokenDetail.css';
 import {
   setGlobalPopupHandlers,
@@ -66,8 +67,10 @@ interface Comment {
   id: string;
   user: string;
   message: string;
+  userAddress: string;
   timestamp: number;
-  likes: number;
+  likes: string[];
+  profilePic?: string;
 }
 
 type SendUserOperation = (args: { uo: { target: `0x${string}`; data: `0x${string}`; value?: bigint } }) => Promise<unknown>;
@@ -455,6 +458,59 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     }
   }, [token, selectedInterval]);
 
+  const handleLikeComment = (commentId: string) => {
+    if (!account.connected) {
+      walletPopup.showConnectionError();
+      return;
+    }
+
+    setComments((prev) => 
+      prev.map(comment => {
+        if (comment.id === commentId) {
+          const hasLiked = comment.likes.includes(account.address);
+          return {
+            ...comment,
+            likes: hasLiked 
+              ? comment.likes.filter(addr => addr !== account.address)
+              : [...comment.likes, account.address]
+          };
+        }
+        return comment;
+      })
+    );
+  };
+  const handleAddComment = () => {
+    if (!account.connected) {
+      walletPopup.showConnectionError();
+      return;
+    }
+    
+    const msg = newComment.trim();
+    if (!msg) return;
+
+    const comment: Comment = {
+      id: Date.now().toString(),
+      user: account.address ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : 'Anonymous',
+      userAddress: account.address || '',
+      message: msg,
+      timestamp: Date.now(),
+      likes: [],
+      profilePic: undefined
+    };
+
+    setComments((prev) => [comment, ...prev]);
+    setNewComment('');
+  };
+
+  const getDefaultProfilePic = (address: string) => {
+    
+    return defaultPfp;
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    setComments((prev) => prev.filter(comment => comment.id !== commentId));
+  };
+
   useEffect(() => {
     if (tokenAddress) setTerminalToken(tokenAddress);
   }, [tokenAddress, setTerminalToken]);
@@ -618,22 +674,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     return false;
   };
 
-  const handleAddComment = () => {
-    const msg = newComment.trim();
-    if (!msg) return;
-
-    const comment: Comment = {
-      id: Date.now().toString(),
-      user: account.address ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : 'Anonymous',
-      message: msg,
-      timestamp: Date.now(),
-      likes: 0,
-    };
-
-    setComments((prev) => [comment, ...prev]);
-    setNewComment('');
-  };
-
   if (loading) {
     return (
       <div className="detail-loading">
@@ -710,24 +750,70 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                 <div className="detail-comment-input">
                   <input
                     type="text"
-                    placeholder="Add a comment..."
+                    placeholder={account.connected ? "Add a comment..." : "Connect wallet to comment..."}
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
                     className="detail-comment-field"
+                    disabled={!account.connected}
                   />
-                  <button onClick={handleAddComment} className="detail-comment-submit">
+                  <button 
+                    onClick={handleAddComment} 
+                    className="detail-comment-submit"
+                    disabled={!account.connected || !newComment.trim()}
+                  >
                     Post
                   </button>
                 </div>
                 <div className="detail-comments-list">
                   {comments.map((comment) => (
                     <div key={comment.id} className="detail-comment">
-                      <div className="detail-comment-header">
-                        <span className="detail-comment-user">{comment.user}</span>
-                        <span className="detail-comment-time">{Math.floor((Date.now() - comment.timestamp) / 60000)}m ago</span>
+                      <div className="detail-comment-container">
+                        {/* Profile Picture */}
+                        <div className="detail-comment-avatar">
+                          <img 
+                            src={comment.profilePic || getDefaultProfilePic(comment.userAddress)} 
+                            alt={`${comment.user} avatar`}
+                            className="detail-comment-avatar-img"
+                          />
+                        </div>
+                        
+                        {/* Comment Content */}
+                        <div className="detail-comment-content">
+                          <div className="detail-comment-header">
+                            <div className="detail-comment-user-info">
+                              <span className="detail-comment-user">{comment.user}</span>
+                              <span className="detail-comment-time">{Math.floor((Date.now() - comment.timestamp) / 60000)}m ago</span>
+                            </div>
+                            
+                            {/* Delete button - only show for comment owner */}
+                            {account.connected && account.address === comment.userAddress && (
+                              <button 
+                                className="detail-comment-delete"
+                                onClick={() => handleDeleteComment(comment.id)}
+                                title="Delete comment"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                          
+                          <div className="detail-comment-message">{comment.message}</div>
+                          
+                          {/* Like section */}
+                          <div className="detail-comment-actions">
+                            <button 
+                              className={`detail-comment-like ${comment.likes.includes(account.address) ? 'liked' : ''}`}
+                              onClick={() => handleLikeComment(comment.id)}
+                              disabled={!account.connected}
+                              title={account.connected ? (comment.likes.includes(account.address) ? 'Unlike' : 'Like') : 'Connect wallet to like'}
+                            >
+                              <span className="detail-comment-like-icon">♥</span>
+                              <span className="detail-comment-like-count">{comment.likes.length}</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="detail-comment-message">{comment.message}</div>
                     </div>
                   ))}
                   {comments.length === 0 && <div className="detail-no-comments">No comments yet. Be the first!</div>}
@@ -777,30 +863,56 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               </div>
 
               {tradeType === 'buy' && selectedCurrency === 'MON' ? (
-                <div className="detail-preset-buttons">
+              <div className="detail-preset-buttons">
+                {/* Left-aligned button */}
+                <button 
+                  className="detail-preset-button-left" 
+                  onClick={() => {/* your custom action */}}
+                >
+                  Custom
+                </button>
+                
+                {/* Right-aligned group */}
+                <div className="detail-preset-buttons-right">
                   {['1', '5', '10', '50'].map((amount) => (
-                    <button key={amount} onClick={() => setTradeAmount(amount)} className="detail-preset-button">
-                      {amount} MON
+                    <button 
+                      key={amount} 
+                      onClick={() => setTradeAmount(amount)} 
+                      className="detail-preset-button"
+                    >
+                      {amount}
                     </button>
                   ))}
-                  <button onClick={handleMaxClick} className="detail-preset-button detail-preset-max">
+                  <button onClick={handleMaxClick} className="detail-preset-button">
                     Max
                   </button>
                 </div>
+              </div>
               ) : (
                 <div className="detail-preset-buttons">
-                  {['25', '50', '75', '100'].map((percentage) => (
-                    <button 
-                      key={percentage} 
-                      onClick={() => handlePercentageClick(Number(percentage))} 
-                      className="detail-preset-button"
-                    >
-                      {percentage}%
-                    </button>
-                  ))}
+                  {/* Left-aligned button */}
+                  <button 
+                    className="detail-preset-button-left" 
+                    onClick={() => {/* your custom action */}}
+                  >
+                    Custom
+                  </button>
+                  
+                  {/* Right-aligned group */}
+                  <div className="detail-preset-buttons-right">
+                    {['25', '50', '75', '100'].map((percentage) => (
+                      <button 
+                        key={percentage} 
+                        onClick={() => handlePercentageClick(Number(percentage))} 
+                        className="detail-preset-button"
+                      >
+                        {percentage}%
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
+              </div>
 
             <button
               onClick={() => {
