@@ -7,6 +7,7 @@ import TokenInfoPopup from './TokenInfoPopup/TokenInfoPopup';
 import MiniChart from './MiniChart/MiniChart';
 import '../../../Portfolio/Portfolio.css';
 import { FixedSizeList as List } from 'react-window';
+import { createPortal } from 'react-dom';
 
 import SortArrow from '../../../OrderCenter/SortArrow/SortArrow';
 import PriceDisplay from '../PriceDisplay/PriceDisplay';
@@ -60,22 +61,22 @@ const PerpsTokenSkeleton = () => {
     <div className="perps-interface-token-info-container">
       <div className="perps-interface-token-header-info">
         <div className="perps-interface-token-header-left">
-        <button
-              className={`favorite-icon ${''}`}
+          <button
+            className={`favorite-icon ${''}`}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill={'none'}
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill={'none'}
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-              </svg>
-            </button>
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+            </svg>
+          </button>
           <div className="perps-interface-token-icon-container">
             <div className="skeleton-circle" style={{ width: '29px', height: '29px', marginRight: '5px' }}></div>
           </div>
@@ -84,8 +85,8 @@ const PerpsTokenSkeleton = () => {
               <div className="skeleton-text skeleton-symbol" style={{ width: '80px', height: '24px' }}></div>
             </div>
             <div className="ctrlktooltip">
-                Ctrl+K
-              </div>
+              Ctrl+K
+            </div>
           </div>
         </div>
 
@@ -213,7 +214,7 @@ const PerpsMarketRow = memo(({ index, style, data }: {
         <button onClick={(e) => {
           e.stopPropagation();
           toggleFavorite(market.contractName);
-          }} className="dropdown-market-favorite-button">
+        }} className="dropdown-market-favorite-button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
           </svg>
@@ -247,7 +248,7 @@ const PerpsMarketRow = memo(({ index, style, data }: {
             {market.formattedFunding}
           </div>
         </div>
-        
+
         <div className="perps-oi-section">
           <div className="perps-open-interest">
             {market.formattedOI}
@@ -339,6 +340,86 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   userPnl,
   setperpsActiveMarketKey
 }) => {
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+  const [hoveredMemeImage, setHoveredMemeImage] = useState(false);
+
+  const [previewPosition, setPreviewPosition] = useState({ top: 0, left: 0 });
+  const [showPreview, setShowPreview] = useState(false);
+  const updatePreviewPosition = useCallback(() => {
+    if (!imageContainerRef.current) return;
+
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    const previewWidth = 220;
+    const previewHeight = 220;
+    const offset = 15;
+
+    let top = 0;
+    let left = 0;
+
+    const leftX = rect.left;
+    const centerY = rect.top + rect.height / 2;
+
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const spaceRight = viewportWidth - rect.right;
+    const spaceLeft = rect.left;
+
+    if (spaceBelow >= previewHeight + offset) {
+      top = rect.bottom + scrollY + offset;
+      left = leftX + scrollX;
+    } else if (spaceAbove >= previewHeight + offset) {
+      top = rect.top + scrollY - previewHeight - offset - 15;
+      left = leftX + scrollX;
+    } else if (spaceRight >= previewWidth + offset) {
+      left = rect.right + scrollX + offset;
+      top = centerY + scrollY - previewHeight / 2;
+    } else if (spaceLeft >= previewWidth + offset) {
+      left = rect.left + scrollX - previewWidth - offset;
+      top = centerY + scrollY - previewHeight / 2;
+    } else {
+      top = rect.bottom + scrollY + offset;
+      left = leftX + scrollX;
+    }
+
+    const margin = 10;
+    if (left < scrollX + margin) left = scrollX + margin;
+    else if (left + previewWidth > scrollX + viewportWidth - margin)
+      left = scrollX + viewportWidth - previewWidth - margin;
+
+    if (top < scrollY + margin) top = scrollY + margin;
+    else if (top + previewHeight > scrollY + viewportHeight - margin)
+      top = scrollY + viewportHeight - previewHeight - margin;
+
+    setPreviewPosition({ top, left });
+  }, []);
+
+  useEffect(() => {
+    if (hoveredMemeImage && memeTokenData?.image) {
+      const calculateAndShow = () => {
+        updatePreviewPosition();
+        setTimeout(() => setShowPreview(true), 10);
+      };
+
+      calculateAndShow();
+
+      const handleResize = () => updatePreviewPosition();
+      window.addEventListener('scroll', updatePreviewPosition);
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('scroll', updatePreviewPosition);
+        window.removeEventListener('resize', handleResize);
+      };
+    } else {
+      setShowPreview(false);
+    }
+  }, [hoveredMemeImage, memeTokenData?.image, updatePreviewPosition]);
   const navigate = useNavigate()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
@@ -367,61 +448,61 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const virtualizationListRef = useRef<List>(null);
   const { favorites, toggleFavorite, activechain } = useSharedContext();
 
-const filteredPerpsMarkets = useMemo(() => {
-  const filtered = Object.values(perpsMarketsData)
-    .filter(market =>
-      perpsFilterOptions[perpsActiveFilter]?.includes(market.contractName) &&
-      market.baseAsset.toLowerCase().includes(perpsSearchQuery.toLowerCase())
-    )
-    .map(market => ({
-      ...market,
-      formattedVolume: `$${formatCommas(Number(market.value).toFixed(2))}`,
-      formattedOI: `$${formatCommas((Number(market.openInterest) * Number(market.lastPrice)).toFixed(2))}`,
-      formattedFunding: `${market.fundingRate >= 0 ? '+' : ''}${(market.fundingRate * 100).toFixed(4)}%`,
-      formattedChange: `${(Number(market.priceChangePercent) >= 0 ? '+' : '') +
-        (market.priceChange) + ' / ' +
-        (Number(market.priceChangePercent) >= 0 ? '+' : '') +
-        Number(market.priceChangePercent * 100).toFixed(2)}%`,
-      fundingClass: market.fundingRate < 0 ? 'negative' : 'positive',
-      changeClass: market.priceChangePercent < 0 ? 'negative' : 'positive',
-      iconSrc: market.iconURL
-    }));
+  const filteredPerpsMarkets = useMemo(() => {
+    const filtered = Object.values(perpsMarketsData)
+      .filter(market =>
+        perpsFilterOptions[perpsActiveFilter]?.includes(market.contractName) &&
+        market.baseAsset.toLowerCase().includes(perpsSearchQuery.toLowerCase())
+      )
+      .map(market => ({
+        ...market,
+        formattedVolume: `$${formatCommas(Number(market.value).toFixed(2))}`,
+        formattedOI: `$${formatCommas((Number(market.openInterest) * Number(market.lastPrice)).toFixed(2))}`,
+        formattedFunding: `${market.fundingRate >= 0 ? '+' : ''}${(market.fundingRate * 100).toFixed(4)}%`,
+        formattedChange: `${(Number(market.priceChangePercent) >= 0 ? '+' : '') +
+          (market.priceChange) + ' / ' +
+          (Number(market.priceChangePercent) >= 0 ? '+' : '') +
+          Number(market.priceChangePercent * 100).toFixed(2)}%`,
+        fundingClass: market.fundingRate < 0 ? 'negative' : 'positive',
+        changeClass: market.priceChangePercent < 0 ? 'negative' : 'positive',
+        iconSrc: market.iconURL
+      }));
 
-  if (perpsSortField && perpsSortDirection) {
-    filtered.sort((a, b) => {
-      let aValue: number = 0;
-      let bValue: number = 0;
+    if (perpsSortField && perpsSortDirection) {
+      filtered.sort((a, b) => {
+        let aValue: number = 0;
+        let bValue: number = 0;
 
- switch (perpsSortField) {
-  case 'volume':
-    aValue = parseFloat((a.value || 0).toString().replace(/,/g, ''));
-    bValue = parseFloat((b.value || 0).toString().replace(/,/g, ''));
-    break;
-  case 'price':
-    aValue = parseFloat((a.lastPrice || 0).toString().replace(/,/g, ''));
-    bValue = parseFloat((b.lastPrice || 0).toString().replace(/,/g, ''));
-    break;
-  case 'change':
-    aValue = parseFloat((a.priceChangePercent || 0).toString().replace(/[+%]/g, ''));
-    bValue = parseFloat((b.priceChangePercent || 0).toString().replace(/[+%]/g, ''));
-    break;
-  case 'funding':
-    aValue = parseFloat((a.fundingRate || 0).toString());
-    bValue = parseFloat((b.fundingRate || 0).toString());
-    break;
-  case 'openInterest':
-    aValue = parseFloat((a.openInterest || 0).toString()) * parseFloat((a.lastPrice || 0).toString());
-    bValue = parseFloat((b.openInterest || 0).toString()) * parseFloat((b.lastPrice || 0).toString());
-    break;
-  default:
-    return 0;
-}
-      return perpsSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-    });
-  }
+        switch (perpsSortField) {
+          case 'volume':
+            aValue = parseFloat((a.value || 0).toString().replace(/,/g, ''));
+            bValue = parseFloat((b.value || 0).toString().replace(/,/g, ''));
+            break;
+          case 'price':
+            aValue = parseFloat((a.lastPrice || 0).toString().replace(/,/g, ''));
+            bValue = parseFloat((b.lastPrice || 0).toString().replace(/,/g, ''));
+            break;
+          case 'change':
+            aValue = parseFloat((a.priceChangePercent || 0).toString().replace(/[+%]/g, ''));
+            bValue = parseFloat((b.priceChangePercent || 0).toString().replace(/[+%]/g, ''));
+            break;
+          case 'funding':
+            aValue = parseFloat((a.fundingRate || 0).toString());
+            bValue = parseFloat((b.fundingRate || 0).toString());
+            break;
+          case 'openInterest':
+            aValue = parseFloat((a.openInterest || 0).toString()) * parseFloat((a.lastPrice || 0).toString());
+            bValue = parseFloat((b.openInterest || 0).toString()) * parseFloat((b.lastPrice || 0).toString());
+            break;
+          default:
+            return 0;
+        }
+        return perpsSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      });
+    }
 
-  return filtered;
-}, [perpsMarketsData, perpsFilterOptions, perpsActiveFilter, perpsSearchQuery, perpsSortField, perpsSortDirection, favorites]);
+    return filtered;
+  }, [perpsMarketsData, perpsFilterOptions, perpsActiveFilter, perpsSearchQuery, perpsSortField, perpsSortDirection, favorites]);
   const togglePerpsDropdown = () => {
     if (!isPerpsDropdownOpen) {
       setPerpsSearchQuery('');
@@ -848,14 +929,14 @@ const filteredPerpsMarkets = useMemo(() => {
       setSortDirection('desc');
     }
   };
-const handlePerpsSort = (field: 'volume' | 'price' | 'change' | 'funding' | 'openInterest') => {
-  if (perpsSortField === field) {
-    setPerpsSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-  } else {
-    setPerpsSortField(field);
-    setPerpsSortDirection('desc');
-  }
-};
+  const handlePerpsSort = (field: 'volume' | 'price' | 'change' | 'funding' | 'openInterest') => {
+    if (perpsSortField === field) {
+      setPerpsSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setPerpsSortField(field);
+      setPerpsSortDirection('desc');
+    }
+  };
   const filterMarketsByTab = (market: any) => {
     switch (activeFilter) {
       case 'favorites':
@@ -1020,8 +1101,10 @@ const handlePerpsSort = (field: 'volume' | 'price' | 'change' | 'funding' | 'ope
         <div className="meme-interface-token-header-info">
           <div className="meme-interface-token-header-left">
             <div className="meme-interface-token-icon-container">
+
               <div
                 className={`meme-interface-token-icon-wrapper ${memeTokenData.status === 'graduated' ? 'graduated' : ''}`}
+                ref={imageContainerRef}
                 style={
                   memeTokenData.status !== 'graduated'
                     ? {
@@ -1035,6 +1118,8 @@ const handlePerpsSort = (field: 'volume' | 'price' | 'change' | 'funding' | 'ope
                   '_blank',
                   'noopener,noreferrer'
                 )}
+                onMouseEnter={() => setHoveredMemeImage(true)}
+                onMouseLeave={() => setHoveredMemeImage(false)}
               >
                 <div className="meme-interface-image-container">
                   {memeTokenData.image ? (
@@ -1079,7 +1164,7 @@ const handlePerpsSort = (field: 'volume' | 'price' | 'change' | 'funding' | 'ope
                     title="Click to copy contract address"
                   >
                     {memeTokenData.name}
-                  </span>                  
+                  </span>
                   <button
                     className="meme-interface-social-btn"
                     onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
@@ -1116,8 +1201,38 @@ const handlePerpsSort = (field: 'volume' | 'price' | 'change' | 'funding' | 'ope
                     <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
                   </svg>
                 </button> */}
-
-
+                {hoveredMemeImage &&
+                  memeTokenData?.image &&
+                  showPreview &&
+                  createPortal(
+                    <div
+                      className="explorer-image-preview show"
+                      style={{
+                        position: 'absolute',
+                        top: `${previewPosition.top}px`,
+                        left: `${previewPosition.left}px`,
+                        zIndex: 9999,
+                        pointerEvents: 'none',
+                        opacity: 1,
+                        transition: 'opacity 0.2s ease',
+                      }}
+                    >
+                      <div className="explorer-preview-content">
+                        <img
+                          src={memeTokenData.image}
+                          alt={memeTokenData.name}
+                          style={{
+                            width: '220px',
+                            height: '220px',
+                            borderRadius: '6px',
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
+                        />
+                      </div>
+                    </div>,
+                    document.body,
+                  )}
               </div>
 
               <div className="meme-interface-token-meta-row">
@@ -1263,7 +1378,7 @@ const handlePerpsSort = (field: 'volume' | 'price' | 'change' | 'funding' | 'ope
                     onClick={() => setpopup(27)}
                   >
                     <svg fill="#cfcfdfff" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
-                      <path d="M31.965 2.008a2 2 0 0 0-1.375.582L20.35 12.82a2.57 2.57 0 0 0-.44.65 2 2 0 0 0 1.85 2.77H30v23.54a2 2 0 0 0 4 0V16.24h8.25a2 2 0 0 0 1.41-3.42L33.41 2.59a2 2 0 0 0-1.446-.582zM12 22a2 2 0 0 0-2 2v32a2 2 0 0 0 2 2h40a2 2 0 0 0 2-2V24a2 2 0 0 0-2-2H42a2 2 0 0 0 0 4h8v28H14V26h8a2 2 0 0 0 0-4H12z"/>
+                      <path d="M31.965 2.008a2 2 0 0 0-1.375.582L20.35 12.82a2.57 2.57 0 0 0-.44.65 2 2 0 0 0 1.85 2.77H30v23.54a2 2 0 0 0 4 0V16.24h8.25a2 2 0 0 0 1.41-3.42L33.41 2.59a2 2 0 0 0-1.446-.582zM12 22a2 2 0 0 0-2 2v32a2 2 0 0 0 2 2h40a2 2 0 0 0 2-2V24a2 2 0 0 0-2-2H42a2 2 0 0 0 0 4h8v28H14V26h8a2 2 0 0 0 0-4H12z" />
                     </svg>
                   </button>
                 </div>
@@ -1410,59 +1525,59 @@ const handlePerpsSort = (field: 'volume' | 'price' | 'change' | 'funding' | 'ope
                 {perpsFilterTabs}
               </div>
 
-<div className="perps-markets-list-header">
-  <div className="favorites-header"></div>
-  <div onClick={() => handlePerpsSort('volume')}>
-    Market / Volume
-    <SortArrow
-      sortDirection={perpsSortField === 'volume' ? perpsSortDirection : undefined}
-      onClick={(e) => {
-        e.stopPropagation();
-        handlePerpsSort('volume');
-      }}
-    />
-  </div>
-  <div className="markets-dropdown-chart-container" onClick={() => handlePerpsSort('price')}>
-    Last Price
-    <SortArrow
-      sortDirection={perpsSortField === 'price' ? perpsSortDirection : undefined}
-      onClick={(e) => {
-        e.stopPropagation();
-        handlePerpsSort('price');
-      }}
-    />
-  </div>
-  <div className="perps-oi-header" onClick={() => handlePerpsSort('change')}>
-    24hr Change
-    <SortArrow
-      sortDirection={perpsSortField === 'change' ? perpsSortDirection : undefined}
-      onClick={(e) => {
-        e.stopPropagation();
-        handlePerpsSort('change');
-      }}
-    />
-  </div>
-  <div className="perps-funding-header" onClick={() => handlePerpsSort('funding')}>
-    8hr Funding
-    <SortArrow
-      sortDirection={perpsSortField === 'funding' ? perpsSortDirection : undefined}
-      onClick={(e) => {
-        e.stopPropagation();
-        handlePerpsSort('funding');
-      }}
-    />
-  </div>
-  <div className="markets-dropdown-price-container" onClick={() => handlePerpsSort('openInterest')}>
-    Open Interest
-    <SortArrow
-      sortDirection={perpsSortField === 'openInterest' ? perpsSortDirection : undefined}
-      onClick={(e) => {
-        e.stopPropagation();
-        handlePerpsSort('openInterest');
-      }}
-    />
-  </div>
-</div>
+              <div className="perps-markets-list-header">
+                <div className="favorites-header"></div>
+                <div onClick={() => handlePerpsSort('volume')}>
+                  Market / Volume
+                  <SortArrow
+                    sortDirection={perpsSortField === 'volume' ? perpsSortDirection : undefined}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePerpsSort('volume');
+                    }}
+                  />
+                </div>
+                <div className="markets-dropdown-chart-container" onClick={() => handlePerpsSort('price')}>
+                  Last Price
+                  <SortArrow
+                    sortDirection={perpsSortField === 'price' ? perpsSortDirection : undefined}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePerpsSort('price');
+                    }}
+                  />
+                </div>
+                <div className="perps-oi-header" onClick={() => handlePerpsSort('change')}>
+                  24hr Change
+                  <SortArrow
+                    sortDirection={perpsSortField === 'change' ? perpsSortDirection : undefined}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePerpsSort('change');
+                    }}
+                  />
+                </div>
+                <div className="perps-funding-header" onClick={() => handlePerpsSort('funding')}>
+                  8hr Funding
+                  <SortArrow
+                    sortDirection={perpsSortField === 'funding' ? perpsSortDirection : undefined}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePerpsSort('funding');
+                    }}
+                  />
+                </div>
+                <div className="markets-dropdown-price-container" onClick={() => handlePerpsSort('openInterest')}>
+                  Open Interest
+                  <SortArrow
+                    sortDirection={perpsSortField === 'openInterest' ? perpsSortDirection : undefined}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePerpsSort('openInterest');
+                    }}
+                  />
+                </div>
+              </div>
               <div className="perps-markets-list-virtualized" style={{ height: '400px', width: '100%' }}>
                 <List
                   ref={virtualizationListRef}

@@ -2771,3 +2771,14 @@
   opacity: 0.6;
   padding: 6px 0;
 }
+
+
+
+.explorer-image-preview.show {
+  opacity: 1;
+}
+
+.explorer-preview-content img {
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}

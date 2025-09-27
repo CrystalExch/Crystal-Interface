@@ -2055,8 +2055,8 @@ const TokenRow = React.memo<{
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    const previewWidth = 316;
-    const previewHeight = 316;
+    const previewWidth = 220;
+    const previewHeight = 220;
     const offset = 15;
 
     let top = 0;
@@ -2074,7 +2074,7 @@ const TokenRow = React.memo<{
       top = rect.bottom + scrollY + offset;
       left = leftX + scrollX;
     } else if (spaceAbove >= previewHeight + offset) {
-      top = rect.top + scrollY - previewHeight - offset;
+      top = rect.top + scrollY - previewHeight - offset - 15;
       left = leftX + scrollX;
     } else if (spaceRight >= previewWidth + offset) {
       left = rect.right + scrollX + offset;

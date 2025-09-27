@@ -413,10 +413,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [hoveredStatsContainer, setHoveredStatsContainer] = useState(false);
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
-  const [similarTokensExpanded, setSimilarTokensExpanded] = useState(true);
-  const [selectedMonPreset, setSelectedMonPreset] = useState<number | null>(
-    null,
-  );
+const [similarTokensExpanded, setSimilarTokensExpanded] = useState(true);
+const [selectedMonPreset, setSelectedMonPreset] = useState<number | null>(null);
+const [hoveredSimilarTokenImage, setHoveredSimilarTokenImage] = useState<string | null>(null);
+const [similarTokenPreviewPosition, setSimilarTokenPreviewPosition] = useState({ top: 0, left: 0 });
+const [showSimilarTokenPreview, setShowSimilarTokenPreview] = useState(false);
+const similarTokenImageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [isPresetEditMode, setIsPresetEditMode] = useState(false);
   const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(
     null,
@@ -633,10 +635,64 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setAdvancedOrders((prev) => prev.filter((order) => order.id !== orderId));
   };
 
-  const handleToggleCurrency = () => {
-    setShowUSD(!showUSD);
-  };
+const handleToggleCurrency = () => {
+  setShowUSD(!showUSD);
+};
 
+const updateSimilarTokenPreviewPosition = useCallback((tokenId: string) => {
+  const imageContainer = similarTokenImageRefs.current.get(tokenId);
+  if (!imageContainer) return;
+
+  const rect = imageContainer.getBoundingClientRect();
+  const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+  const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  const previewWidth = 220;
+  const previewHeight = 220;
+  const offset = 15;
+
+  let top = 0;
+  let left = 0;
+
+  const leftX = rect.left;
+  const centerY = rect.top + rect.height / 2;
+
+  const spaceBelow = viewportHeight - rect.bottom;
+  const spaceAbove = rect.top;
+  const spaceRight = viewportWidth - rect.right;
+  const spaceLeft = rect.left;
+
+  if (spaceBelow >= previewHeight + offset) {
+    top = rect.bottom + scrollY + offset;
+    left = leftX + scrollX;
+  } else if (spaceAbove >= previewHeight + offset) {
+    top = rect.top + scrollY - previewHeight - offset - 15;
+    left = leftX + scrollX;
+  } else if (spaceRight >= previewWidth + offset) {
+    left = rect.right + scrollX + offset;
+    top = centerY + scrollY - previewHeight / 2;
+  } else if (spaceLeft >= previewWidth + offset) {
+    left = rect.left + scrollX - previewWidth - offset;
+    top = centerY + scrollY - previewHeight / 2;
+  } else {
+    top = rect.bottom + scrollY + offset;
+    left = leftX + scrollX;
+  }
+
+  const margin = 10;
+  if (left < scrollX + margin) left = scrollX + margin;
+  else if (left + previewWidth > scrollX + viewportWidth - margin)
+    left = scrollX + viewportWidth - previewWidth - margin;
+
+  if (top < scrollY + margin) top = scrollY + margin;
+  else if (top + previewHeight > scrollY + viewportHeight - margin)
+    top = scrollY + viewportHeight - previewHeight - margin;
+
+  setSimilarTokenPreviewPosition({ top, left });
+}, []);
   const positionPopup = useCallback((percent: number) => {
     const input = sliderRef.current;
     const popup = popupRef.current;
@@ -1176,16 +1232,38 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     }
   }, [userStats, onPNLDataChange]);
 
-  useEffect(() => {
-    if (onTokenDataChange) {
-      onTokenDataChange({
-        address: token.id,
-        symbol: token.symbol,
-        name: token.name,
-        price: currentPrice,
-      });
-    }
-  }, [token.id, token.symbol, token.name, currentPrice, onTokenDataChange]);
+useEffect(() => {
+  if (onTokenDataChange) {
+    onTokenDataChange({
+      address: token.id,
+      symbol: token.symbol,
+      name: token.name,
+      price: currentPrice,
+    });
+  }
+}, [token.id, token.symbol, token.name, currentPrice, onTokenDataChange]);
+
+useEffect(() => {
+  if (hoveredSimilarTokenImage) {
+    const calculateAndShow = () => {
+      updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage);
+      setTimeout(() => setShowSimilarTokenPreview(true), 10);
+    };
+
+    calculateAndShow();
+
+    const handleResize = () => updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage);
+    window.addEventListener('scroll', () => updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage));
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('scroll', () => updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage));
+      window.removeEventListener('resize', handleResize);
+    };
+  } else {
+    setShowSimilarTokenPreview(false);
+  }
+}, [hoveredSimilarTokenImage, updateSimilarTokenPreviewPosition]);
 
   const lastInvalidateRef = useRef(0);
   const currentPriceRef = useRef(0);
@@ -4195,17 +4273,29 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       onClick={() => (window.location.href = `/meme/${t.id}`)}
                     >
                       <div className="meme-similar-token-left">
-                        <div className="meme-similar-token-avatar">
-                          {img ? (
-                            <img src={img} alt={`${t.symbol || t.name} logo`} />
-                          ) : (
-                            <div className="meme-similar-token-avatar-fallback">
-                              {(t.symbol || t.name || '?')
-                                .slice(0, 3)
-                                .toUpperCase()}
-                            </div>
-                          )}
-                        </div>
+                       <div 
+  className="meme-similar-token-avatar"
+  ref={(el) => {
+    if (el) {
+      similarTokenImageRefs.current.set(String(t.id), el);
+    } else {
+      similarTokenImageRefs.current.delete(String(t.id));
+    }
+  }}
+  onMouseEnter={() => img && setHoveredSimilarTokenImage(String(t.id))}
+  onMouseLeave={() => setHoveredSimilarTokenImage(null)}
+  style={{ cursor: img ? 'pointer' : 'default' }}
+>
+  {img ? (
+    <img src={img} alt={`${t.symbol || t.name} logo`} />
+  ) : (
+    <div className="meme-similar-token-avatar-fallback">
+      {(t.symbol || t.name || '?')
+        .slice(0, 3)
+        .toUpperCase()}
+    </div>
+  )}
+</div>
 
                         <div className="meme-similar-token-meta">
                           <div className="meme-similar-token-title">
@@ -4541,7 +4631,39 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         showUSD={showUSD}
         onToggleCurrency={handleToggleCurrency}
         tokenImage={token.image}
-      />
+/>
+      
+      {hoveredSimilarTokenImage &&
+        showSimilarTokenPreview &&
+        createPortal(
+          <div
+            className="explorer-image-preview show"
+            style={{
+              position: 'absolute',
+              top: `${similarTokenPreviewPosition.top}px`,
+              left: `${similarTokenPreviewPosition.left}px`,
+              zIndex: 9999,
+              pointerEvents: 'none',
+              opacity: 1,
+              transition: 'opacity 0.2s ease',
+            }}
+          >
+            <div className="explorer-preview-content">
+              <img
+                src={similarTokens.find(t => String(t.id) === hoveredSimilarTokenImage)?.imageUrl || ''}
+                alt="Token preview"
+                style={{
+                  width: '220px',
+                  height: '220px',
+                  borderRadius: '6px',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
