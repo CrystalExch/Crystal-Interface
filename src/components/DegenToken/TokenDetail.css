@@ -319,7 +319,10 @@
   color: var(--c-muted);
 }
 
-.detail-preset-buttons { display: flex; gap: 4px; }
+.detail-preset-buttons {
+  display: flex;
+  gap: 4px; 
+}
 
 .detail-preset-button {
   width: 100%;
@@ -597,3 +600,180 @@
 .detail-trade-input::-webkit-outer-spin-button,
 .detail-trade-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .detail-trade-input[type="number"] { -moz-appearance: textfield; }
+
+/* Enhanced Top Holders Styles - Add to your existing CSS */
+
+.detail-holders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--gap);
+}
+
+.detail-holder-card {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-lg);
+  padding: 16px;
+  background: rgba(179, 184, 249, 0.03);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  transition: all var(--tr-fast);
+}
+
+.detail-holder-card:hover {
+  background: rgba(179, 184, 249, 0.08);
+  border-color: rgba(179, 184, 249, 0.2);
+  transform: translateY(-1px);
+}
+
+.detail-holder-rank-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--c-text);
+  background: linear-gradient(135deg, var(--c-gold) 0%, #ffa500 100%);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.2);
+}
+
+.detail-holder-rank-badge:nth-child(1) {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+}
+
+.detail-holder-card:nth-child(2) .detail-holder-rank-badge {
+  background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+}
+
+.detail-holder-card:nth-child(3) .detail-holder-rank-badge {
+  background: linear-gradient(135deg, #cd7f32 0%, #daa520 100%);
+}
+
+.detail-holder-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-sm);
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-holder-address-main {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+}
+
+.detail-bonding-curve-label {
+  font-weight: 600;
+  color: var(--c-buy);
+  font-size: 0.9rem;
+  background: var(--c-buy-bg);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.detail-holder-address-copy {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: var(--c-text);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--c-border);
+  transition: all var(--tr-fast);
+}
+
+.detail-holder-address-copy:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(179, 184, 249, 0.3);
+}
+
+.detail-holder-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+}
+
+.detail-holder-balance {
+  font-size: 0.85rem;
+  color: var(--c-muted);
+  font-weight: 500;
+}
+
+.detail-holder-percentage-badge {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--c-gold);
+  background: rgba(255, 215, 0, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.detail-no-holders-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--c-dim);
+  grid-column: 1 / -1;
+}
+
+.detail-no-holders-icon {
+  font-size: 2rem;
+  margin-bottom: var(--gap);
+  opacity: 0.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .detail-holders-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .detail-holder-card {
+    padding: 12px;
+  }
+  
+  .detail-holder-rank-badge {
+    min-width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Enhanced existing holders list in sidebar */
+.detail-holders-list .detail-holder-item {
+  padding: 12px;
+  background: rgba(179, 184, 249, 0.03);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--gap-sm);
+  transition: all var(--tr-fast);
+}
+
+.detail-holders-list .detail-holder-item:hover {
+  background: rgba(179, 184, 249, 0.08);
+  border-color: rgba(179, 184, 249, 0.2);
+  margin: 0 0 var(--gap-sm) 0;
+  padding: 12px;
+}
+
+.detail-holders-list .detail-holder-rank {
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-gold);
+  color: #000;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
