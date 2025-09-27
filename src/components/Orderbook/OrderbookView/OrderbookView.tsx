@@ -132,32 +132,32 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
 
   const loadingData = useMemo(() => {
     if (containerHeight === 0) return { rowCount: 0, extra: 0 };
-    
+
     const baseHeight = 20.5;
-    const spreadHeight = 29; 
-    const bufferHeight = 17; 
+    const spreadHeight = 29;
+    const bufferHeight = 17;
     const availableHeight = containerHeight - spreadHeight - bufferHeight;
-    
+
     if (availableHeight <= 0) return { rowCount: 0, extra: 0 };
-    
+
     let rowCount;
     if (viewMode === 'both') {
-      rowCount = Math.floor(availableHeight / (baseHeight * 2)); 
+      rowCount = Math.floor(availableHeight / (baseHeight * 2));
     } else {
       rowCount = Math.floor(availableHeight / baseHeight);
     }
-    
+
     const usedHeight = rowCount * baseHeight * (viewMode === 'both' ? 2 : 1);
     const leftoverHeight = availableHeight - usedHeight;
     const totalRows = viewMode === 'both' ? rowCount * 2 : rowCount;
     const extra = totalRows > 0 ? Math.max(0, leftoverHeight / totalRows) : 0;
-    
+
     return { rowCount, extra };
   }, [containerHeight, viewMode]);
 
   const loadingSellOrders = useMemo(() => {
     const { rowCount, extra } = loadingData;
-    
+
     return (
       <div className="orderlist">
         <ul className="order-list-items bottom-aligned">
@@ -166,7 +166,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
             const dynamicStyle = {
               height: `calc(var(--order-item-height, 20.5px) + ${extra}px)`,
             };
-            
+
             return (
               <li
                 key={`sell-${i}`}
@@ -174,9 +174,9 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
                 style={dynamicStyle}
               >
                 <div className="order-item loading-skeleton-item" style={dynamicStyle}>
-                  <div 
-                    className="ob-loading-bar ob-loading-skeleton" 
-                    style={{ width: `${widthPercentage}%` }} 
+                  <div
+                    className="ob-loading-bar ob-loading-skeleton"
+                    style={{ width: `${widthPercentage}%` }}
                   />
                 </div>
               </li>
@@ -189,7 +189,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
 
   const loadingBuyOrders = useMemo(() => {
     const { rowCount, extra } = loadingData;
-    
+
     return (
       <div className="orderlist">
         <ul className="order-list-items top-aligned">
@@ -198,7 +198,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
             const dynamicStyle = {
               height: `calc(var(--order-item-height, 20.5px) + ${extra}px)`,
             };
-            
+
             return (
               <li
                 key={`buy-${i}`}
@@ -206,9 +206,9 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
                 style={dynamicStyle}
               >
                 <div className="order-item loading-skeleton-item" style={dynamicStyle}>
-                  <div 
-                    className="ob-loading-bar ob-loading-skeleton" 
-                    style={{ width: `${widthPercentage}%` }} 
+                  <div
+                    className="ob-loading-bar ob-loading-skeleton"
+                    style={{ width: `${widthPercentage}%` }}
                   />
                 </div>
               </li>
@@ -250,15 +250,15 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
           perps={perps}
         />
         {isOrderbookLoading ? (
-    Array.from({ length: 50 }).map((_, i) => (
-      <div key={`loading-trade-${i}`} className="trade-loading-item">
-        <div className="trade-loading-content">
-          <div className="trade-loading-price ob-loading-skeleton" />
-          <div className="trade-loading-size ob-loading-skeleton" />
-          <div className="trade-loading-time ob-loading-skeleton" />
-        </div>
-      </div>
-    ))
+          Array.from({ length: 50 }).map((_, i) => (
+            <div key={`loading-trade-${i}`} className="trade-loading-item">
+              <div className="trade-loading-content">
+                <div className="trade-loading-price ob-loading-skeleton" />
+                <div className="trade-loading-size ob-loading-skeleton" />
+                <div className="trade-loading-time ob-loading-skeleton" />
+              </div>
+            </div>
+          ))
         ) : (
           <>
             {viewMode === 'both' && containerHeight != 0 && (
