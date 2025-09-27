@@ -714,6 +714,9 @@ const Header: React.FC<HeaderProps> = ({
               setActivePreset={setActivePreset}
               handleInputFocus={handleInputFocus}
               buyPresets={buyPresets}
+              marketsData={marketsData} 
+              tokendict={tokendict}
+              onMarketSelect={onMarketSelect}
             />
           </div>
 

@@ -8,6 +8,7 @@ import tweet from '../../assets/tweet.png';
 import lightning from '../../assets/flash.png';
 import monadicon from '../../assets/monad.svg';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
+import { useNavigate } from 'react-router-dom';
 
 const SUBGRAPH_URL =
     'https://api.studio.thegraph.com/query/104695/test/v0.3.16';
@@ -34,11 +35,26 @@ export interface Token {
     description?: string;
 }
 
+export interface Market {
+    address: string;
+    baseAsset: string;
+    quoteAsset: string;
+    baseAddress: string;
+    quoteAddress: string;
+    pair: string;
+    image: string;
+    currentPrice: string;
+    priceChange: string;
+    volume: string;
+    priceFactor?: number;
+}
+
 interface MemeSearchProps {
     isOpen: boolean;
     onClose: () => void;
     monUsdPrice: number;
     onTokenClick?: (token: Token) => void;
+    onMarketSelect?: (market: Market) => void;
     onQuickBuy?: (token: Token, amount: string) => void;
     sendUserOperationAsync?: any;
     quickAmounts?: { [key: string]: string };
@@ -47,6 +63,8 @@ interface MemeSearchProps {
     setActivePreset?: (category: string, preset: number) => void;
     handleInputFocus?: () => void;
     buyPresets?: { [key: number]: { slippage: string; priority: string; amount: string } };
+    marketsData?: Market[];
+    tokendict: any;
 }
 
 const formatPrice = (p: number) => {
@@ -123,12 +141,12 @@ const TOKENS_QUERY = `
   }
 `;
 
-
 const MemeSearch: React.FC<MemeSearchProps> = ({
     isOpen,
     onClose,
     monUsdPrice,
     onTokenClick,
+    onMarketSelect,
     onQuickBuy,
     sendUserOperationAsync,
     quickAmounts,
@@ -137,45 +155,50 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
     setActivePreset,
     handleInputFocus,
     buyPresets,
+    marketsData = [],
+    tokendict,
 }) => {
+        const navigate = useNavigate();
+
     const copyToClipboard = useCallback(async (text: string) => {
-    const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    try {
-        await navigator.clipboard.writeText(text);
-        if (showLoadingPopup && updatePopup) {
-            showLoadingPopup(txId, {
-                title: 'Address Copied',
-                subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`
-            });
-            setTimeout(() => {
-                updatePopup(txId, {
+        const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        try {
+            await navigator.clipboard.writeText(text);
+            if (showLoadingPopup && updatePopup) {
+                showLoadingPopup(txId, {
                     title: 'Address Copied',
-                    subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
-                    variant: 'success',
-                    confirmed: true,
-                    isLoading: false
+                    subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`
                 });
-            }, 100);
-        }
-    } catch (err) {
-        console.error('Copy failed', err);
-        if (showLoadingPopup && updatePopup) {
-            showLoadingPopup(txId, {
-                title: 'Copy Failed',
-                subtitle: 'Unable to copy address to clipboard'
-            });
-            setTimeout(() => {
-                updatePopup(txId, {
+                setTimeout(() => {
+                    updatePopup(txId, {
+                        title: 'Address Copied',
+                        subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+                        variant: 'success',
+                        confirmed: true,
+                        isLoading: false
+                    });
+                }, 100);
+            }
+        } catch (err) {
+            console.error('Copy failed', err);
+            if (showLoadingPopup && updatePopup) {
+                showLoadingPopup(txId, {
                     title: 'Copy Failed',
-                    subtitle: 'Unable to copy address to clipboard',
-                    variant: 'error',
-                    confirmed: true,
-                    isLoading: false
+                    subtitle: 'Unable to copy address to clipboard'
                 });
-            }, 100);
+                setTimeout(() => {
+                    updatePopup(txId, {
+                        title: 'Copy Failed',
+                        subtitle: 'Unable to copy address to clipboard',
+                        variant: 'error',
+                        confirmed: true,
+                        isLoading: false
+                    });
+                }, 100);
+            }
         }
-    }
-}, []);
+    }, []);
+
     const [searchTerm, setSearchTerm] = useState('');
     const [tokens, setTokens] = useState<Token[]>([]);
     const [loading, setLoading] = useState(false);
@@ -201,6 +224,16 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         }
     });
 
+    // Add recently viewed markets state
+    const [recentlyViewedMarkets, setRecentlyViewedMarkets] = useState<Market[]>(() => {
+        try {
+            const saved = localStorage.getItem('crystal_meme_recently_viewed_markets');
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    });
+
     const abortRef = useRef<AbortController | null>(null);
 
     const saveSearchHistory = (history: string[]) => {
@@ -212,6 +245,13 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
     const saveRecentlyViewed = (ts: Token[]) => {
         try {
             localStorage.setItem('crystal_meme_recently_viewed', JSON.stringify(ts));
+        } catch { }
+    };
+
+    // Add save function for recently viewed markets
+    const saveRecentlyViewedMarkets = (markets: Market[]) => {
+        try {
+            localStorage.setItem('crystal_meme_recently_viewed_markets', JSON.stringify(markets));
         } catch { }
     };
 
@@ -230,6 +270,16 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
             const filtered = prev.filter(item => item.id !== token.id);
             const next = [token, ...filtered].slice(0, 20);
             saveRecentlyViewed(next);
+            return next;
+        });
+    };
+
+    // Add function to add markets to recently viewed
+    const addToRecentlyViewedMarkets = (market: Market) => {
+        setRecentlyViewedMarkets(prev => {
+            const filtered = prev.filter(item => item.address !== market.address);
+            const next = [market, ...filtered].slice(0, 20);
+            saveRecentlyViewedMarkets(next);
             return next;
         });
     };
@@ -266,6 +316,17 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         onTokenClick?.(token);
         onClose();
     };
+
+    // Add handler for market clicks
+    const handleMarketClick = (market: Market) => {
+        addToRecentlyViewedMarkets(market);
+        setSearchTerm('');
+        onMarketSelect?.(market);
+        onClose();
+    };
+
+
+
 
     const mapGraphTokenToUi = useCallback(async (m: any): Promise<Token> => {
         const price = Number(m.lastPriceNativePerTokenWad || 0) / 1e18;
@@ -383,7 +444,6 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         }
     }, [mapGraphTokenToUi]);
 
-
     const fetchRecentlyViewedFromSubgraph = useCallback(async (tokens: Token[]) => {
         if (tokens.length === 0) return tokens;
 
@@ -447,11 +507,10 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         if (term.length < 2) {
             setIsSearching(false);
             setLoading(false);
+            setTokens([]); // Clear tokens immediately to prevent flash
 
             if (recentlyViewed.length > 0) {
                 fetchRecentlyViewedFromSubgraph(recentlyViewed).then(setTokens);
-            } else {
-                setTokens([]);
             }
             return;
         }
@@ -477,11 +536,45 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         );
     }, [searchTerm, tokens]);
 
+    const filteredMarkets = useMemo(() => {
+        const t = searchTerm.trim().toLowerCase();
+        if (!t || !marketsData.length) return [];
+        return marketsData.filter(market =>
+            market.pair.toLowerCase().includes(t) ||
+            market.baseAsset.toLowerCase().includes(t) ||
+            market.quoteAsset.toLowerCase().includes(t)
+        );
+    }, [searchTerm, marketsData]);
+
+    // Create combined list for display when no search term
+    const combinedRecentlyViewed = useMemo(() => {
+        if (searchTerm.trim().length > 0) return [];
+        
+        const combined: Array<{ type: 'token' | 'market', data: Token | Market }> = [];
+        
+        // Add recently viewed tokens (use tokens state when available, otherwise recentlyViewed)
+        const tokensToUse = tokens.length > 0 ? tokens : recentlyViewed;
+        tokensToUse.forEach(token => {
+            combined.push({ type: 'token', data: token });
+        });
+        
+        // Add recently viewed markets
+        recentlyViewedMarkets.forEach(market => {
+            combined.push({ type: 'market', data: market });
+        });
+        
+        return combined;
+    }, [tokens, recentlyViewed, recentlyViewedMarkets, searchTerm]);
+
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(e.target.value);
     };
 
     if (!isOpen) return null;
+
+    const showMarkets = searchTerm.trim().length >= 1 && filteredMarkets.length > 0;
+    const showTokens = searchTerm.trim().length > 0 && filteredTokens.length > 0;
+    const showCombinedRecent = searchTerm.trim().length === 0 && combinedRecentlyViewed.length > 0;
 
     return (
         <div className="meme-search-overlay" onClick={onClose}>
@@ -538,7 +631,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                 <div className="meme-search-bar">
                     <input
                         type="text"
-                        placeholder="Search by name, ticker, or CA..."
+                        placeholder="Search markets, tokens, name, ticker, or CA..."
                         value={searchTerm}
                         onChange={handleSearchChange}
                         className="meme-search-input"
@@ -583,7 +676,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                 <div className="meme-search-error">{error}</div>
                             )}
 
-                            {searchTerm.trim().length === 0 && recentlyViewed.length > 0 && (
+                            {showCombinedRecent && (
                                 <div className="meme-search-section">
                                     <div className="meme-search-section-header">
                                         <span>History</span>
@@ -599,49 +692,277 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                 </div>
                             )}
 
-                            {searchTerm.trim().length >= 2 && !(loading || isSearching) && (
-                                <div className="meme-search-section">
-                                    <div className="meme-search-section-header">
-                                        <span>Results</span>
-                                    </div>
-                                </div>
-                            )}
-
                             <div className="meme-search-list">
-                                {filteredTokens.length > 0 ? (
-                                    filteredTokens.map((token) => {
-                                        const status = getTokenStatus(token.progress);
-                                        const bondingPercentage = calculateBondingPercentage(token.marketCap);
-                                        const gradient = createColorGradient(getBondingColor(bondingPercentage));
+                                {/* Show combined recently viewed when no search term */}
+                                {showCombinedRecent && (
+                                    <>
+                                        {combinedRecentlyViewed.map((item, index) => {
+                                            if (item.type === 'market') {
+                                                const market = item.data as Market;
+                                                const marketName = tokendict?.[market?.baseAddress]?.name;
 
-                                        type CSSVars = React.CSSProperties & Record<string, string>;
-                                        const imageStyle: CSSVars = {
-                                            position: 'relative',
-                                            '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
-                                            '--progress-color-start': gradient.start,
-                                            '--progress-color-mid': gradient.mid,
-                                            '--progress-color-end': gradient.end,
-                                        };
+                                                return (
+                                                    <div
+                                                        key={`market-${market.address}`}
+                                                        className="meme-token-row"
+                                                        onClick={() => handleMarketClick(market)}
+                                                        style={{ cursor: 'pointer' }}
+                                                    >
+                                                        <div className="meme-token-content">
+                                                            <div className="meme-token-info">
+                                                                <div className="meme-search-token-avatar-container">
+                                                                    <div className="meme-search-progress-spacer">
+                                                                        <div className="meme-search-image-wrapper">
+                                                                            <img
+                                                                                src={market.image}
+                                                                                alt={market.pair}
+                                                                                className="meme-search-token-image"
+                                                                                onError={(e) => {
+                                                                                    e.currentTarget.style.display = 'none';
+                                                                                    const placeholder = e.currentTarget.parentElement?.querySelector('.meme-search-avatar-placeholder') as HTMLElement;
+                                                                                    if (placeholder) placeholder.style.display = 'flex';
+                                                                                }}
+                                                                            />
+                                                                            <div
+                                                                                className="meme-search-avatar-placeholder"
+                                                                                style={{ display: market.image ? 'none' : 'flex' }}
+                                                                            >
+                                                                                {market.baseAsset?.slice(0, 2) || '??'}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
 
-                                        return (
-                                            <div
-                                                key={token.id}
-                                                className="meme-token-row"
-                                                onClick={() => handleTokenClick(token)}
-                                                style={{ cursor: 'pointer' }}
-                                            >
-                                                <div className="meme-token-content">
-                                                    <div className="meme-token-info">
-                                                        <div
-                                                            className={`meme-search-token-avatar-container ${status === 'graduated' ? 'meme-search-graduated' : ''}`}
-                                                            style={status === 'graduated' ? { position: 'relative' } : imageStyle}
-                                                        >
-                                                            <div className="meme-search-progress-spacer">
-                                                                <div className="meme-search-image-wrapper">
-                                                                    {token.image ? (
+                                                                <div className="meme-token-details">
+                                                                    <div className="meme-market-token-header">
+                                                                        <h3 className="meme-search-token-symbol"> {marketName}</h3>
+                                                                        <div className="meme-search-token-name-container">
+                                                                            <h3 className="meme-search-market-name">
+                                                                                {market.baseAsset}/{market.quoteAsset}
+                                                                            </h3>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="meme-token-stats">
+                                                                <div className="meme-search-stat-item">
+                                                                    <p className="meme-search-stat-label">Price</p>
+                                                                    <p className="meme-search-stat-value">{market.currentPrice}</p>
+                                                                </div>
+                                                                <div className="meme-search-stat-item">
+                                                                    <p className="meme-search-stat-label">24h</p>
+                                                                    <p className={`meme-search-stat-value ${market.priceChange?.startsWith('-') ? 'negative' : 'positive'}`}>
+                                                                        {market.priceChange}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="meme-search-stat-item">
+                                                                    <p className="meme-search-stat-label">Vol</p>
+                                                                    <p className="meme-search-stat-value">{market.volume}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            } else {
+                                                const token = item.data as Token;
+                                                const status = getTokenStatus(token.progress);
+                                                const bondingPercentage = calculateBondingPercentage(token.marketCap);
+                                                const gradient = createColorGradient(getBondingColor(bondingPercentage));
+
+                                                type CSSVars = React.CSSProperties & Record<string, string>;
+                                                const imageStyle: CSSVars = {
+                                                    position: 'relative',
+                                                    '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
+                                                    '--progress-color-start': gradient.start,
+                                                    '--progress-color-mid': gradient.mid,
+                                                    '--progress-color-end': gradient.end,
+                                                };
+
+                                                return (
+                                                    <div
+                                                        key={`token-${token.id}`}
+                                                        className="meme-token-row"
+                                                        onClick={() => handleTokenClick(token)}
+                                                        style={{ cursor: 'pointer' }}
+                                                    >
+                                                        <div className="meme-token-content">
+                                                            <div className="meme-token-info">
+                                                                <div
+                                                                    className={`meme-search-token-avatar-container ${status === 'graduated' ? 'meme-search-graduated' : ''}`}
+                                                                    style={status === 'graduated' ? { position: 'relative' } : imageStyle}
+                                                                >
+                                                                    <div className="meme-search-progress-spacer">
+                                                                        <div className="meme-search-image-wrapper">
+                                                                            {token.image ? (
+                                                                                <img
+                                                                                    src={token.image}
+                                                                                    alt={token.symbol}
+                                                                                    className="meme-search-token-image"
+                                                                                    onError={(e) => {
+                                                                                        e.currentTarget.style.display = 'none';
+                                                                                        const placeholder = e.currentTarget.parentElement?.querySelector('.meme-search-avatar-placeholder') as HTMLElement;
+                                                                                        if (placeholder) placeholder.style.display = 'flex';
+                                                                                    }}
+                                                                                />
+                                                                            ) : null}
+                                                                            <div
+                                                                                className="meme-search-avatar-placeholder"
+                                                                                style={{ display: token.image ? 'none' : 'flex' }}
+                                                                            >
+                                                                                {token.symbol?.slice(0, 2) || '??'}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="meme-token-details">
+                                                                    <div className="meme-token-header">
+                                                                        <h3 className="meme-search-token-symbol">{token.symbol}</h3>
+                                                                        <div className="meme-search-token-name-container">
+                                                                            <h3
+                                                                                className="meme-search-token-name"
+                                                                                onClick={(e) => { e.stopPropagation(); copyToClipboard(token.tokenAddress); }}
+                                                                                style={{ cursor: 'pointer' }}
+                                                                                title="Click to copy token address"
+                                                                            >
+                                                                                {token.name}
+                                                                            </h3>
+                                                                            <button
+                                                                                className="meme-search-copy-btn"
+                                                                                onClick={(e) => { e.stopPropagation(); copyToClipboard(token.tokenAddress); }}
+                                                                                title="Copy token address"
+                                                                            >
+                                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                                                                    <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                                                                </svg>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="meme-token-meta">
+                                                                        <p className="meme-search-token-age">{formatTimeAgo(token.created)}</p>
+                                                                        <div className="meme-social-links">
+                                                                            {!!token.twitterHandle && (
+                                                                                <TwitterHover url={token.twitterHandle}>
+                                                                                    <a
+                                                                                        className="meme-social-link meme-avatar-btn"
+                                                                                        href={token.twitterHandle}
+                                                                                        target="_blank"
+                                                                                        rel="noreferrer"
+                                                                                        onClick={e => e.stopPropagation()}
+                                                                                    >
+                                                                                        <img
+                                                                                            src={token.twitterHandle.includes('/status/') ? tweet : avatar}
+                                                                                            alt="Twitter"
+                                                                                            className={token.twitterHandle.includes('/status/') ? 'tweet-icon' : 'avatar-icon'}
+                                                                                        />
+                                                                                    </a>
+                                                                                </TwitterHover>
+                                                                            )}
+                                                                            {!!token.telegramHandle && (
+                                                                                <a
+                                                                                    className="meme-social-link meme-telegram-btn"
+                                                                                    href={token.telegramHandle}
+                                                                                    target="_blank"
+                                                                                    rel="noreferrer"
+                                                                                    onClick={e => e.stopPropagation()}
+                                                                                >
+                                                                                    <img src={telegram} alt="Telegram" />
+                                                                                </a>
+                                                                            )}
+                                                                            {!!token.discordHandle && (
+                                                                                <a
+                                                                                    className="meme-social-link meme-discord-btn"
+                                                                                    href={token.discordHandle}
+                                                                                    target="_blank"
+                                                                                    rel="noreferrer"
+                                                                                    onClick={e => e.stopPropagation()}
+                                                                                >
+                                                                                    <img src={discord} alt="Discord" />
+                                                                                </a>
+                                                                            )}
+                                                                            {!!token.website && (
+                                                                                <a
+                                                                                    className="meme-social-link meme-website-btn"
+                                                                                    href={token.website}
+                                                                                    target="_blank"
+                                                                                    rel="noreferrer"
+                                                                                    onClick={e => e.stopPropagation()}
+                                                                                >
+                                                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                                                                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                                                                                    </svg>
+                                                                                </a>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="meme-token-stats">
+                                                                <div className="meme-search-stat-item">
+                                                                    <p className="meme-search-stat-label">MC</p>
+                                                                    <p className="meme-search-stat-value">{formatPrice(token.marketCap)}</p>
+                                                                </div>
+                                                                <div className="meme-search-stat-item">
+                                                                    <p className="meme-search-stat-label">V</p>
+                                                                    <p className="meme-search-stat-value">{formatPrice(token.volume24h)}</p>
+                                                                </div>
+                                                                <div className="meme-search-stat-item">
+                                                                    <p className="meme-search-stat-label">L</p>
+                                                                    <p className="meme-search-stat-value">{formatPrice(69000)}</p>
+                                                                </div>
+                                                                <button
+                                                                    className={`meme-price-badge quickbuy-button ${buyingTokens.has(token.id) ? 'loading' : ''}`}
+                                                                    onClick={(e) => handleQuickBuy(token, e)}
+                                                                    disabled={buyingTokens.has(token.id) || !onQuickBuy}
+                                                                    title={`Quick buy ${getCurrentQuickBuyAmount()} MON`}
+                                                                >
+                                                                    {buyingTokens.has(token.id) ? (
+                                                                        <div className="quickbuy-loading-spinner" />
+                                                                    ) : (
+                                                                        <>
+                                                                            <img className="explorer-quick-buy-icon" src={lightning} />
+                                                                            {getCurrentQuickBuyAmount()} MON
+                                                                        </>
+                                                                    )}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                        })}
+                                    </>
+                                )}
+
+                                {/* Show search results when there is a search term */}
+                                {showMarkets && (
+                                    <>
+                                        <div className="meme-search-section">
+                                            <div className="meme-search-section-header">
+                                                <span>Markets:</span>
+                                            </div>
+                                        </div>
+                                        {filteredMarkets.map((market) => {
+                                            const marketName = tokendict?.[market?.baseAddress]?.name;
+
+                                            return (
+                                                <div
+                                                    key={market.address}
+                                                    className="meme-token-row"
+                                                    onClick={() => handleMarketClick(market)}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    <div className="meme-token-content">
+                                                        <div className="meme-token-info">
+                                                            <div className="meme-search-token-avatar-container">
+                                                                <div className="meme-search-progress-spacer">
+                                                                    <div className="meme-search-image-wrapper">
                                                                         <img
-                                                                            src={token.image}
-                                                                            alt={token.symbol}
+                                                                            src={market.image}
+                                                                            alt={market.pair}
                                                                             className="meme-search-token-image"
                                                                             onError={(e) => {
                                                                                 e.currentTarget.style.display = 'none';
@@ -649,141 +970,246 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                                                                 if (placeholder) placeholder.style.display = 'flex';
                                                                             }}
                                                                         />
-                                                                    ) : null}
-                                                                    <div
-                                                                        className="meme-search-avatar-placeholder"
-                                                                        style={{ display: token.image ? 'none' : 'flex' }}
-                                                                    >
-                                                                        {token.symbol?.slice(0, 2) || '??'}
+                                                                        <div
+                                                                            className="meme-search-avatar-placeholder"
+                                                                            style={{ display: market.image ? 'none' : 'flex' }}
+                                                                        >
+                                                                            {market.baseAsset?.slice(0, 2) || '??'}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="meme-token-details">
+                                                                <div className="meme-market-token-header">
+                                                                    <h3 className="meme-search-token-symbol"> {marketName}</h3>
+                                                                    <div className="meme-search-token-name-container">
+                                                                        <h3 className="meme-search-market-name">
+                                                                            {market.baseAsset}/{market.quoteAsset}
+                                                                        </h3>
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </div>
 
-                                                        <div className="meme-token-details">
-                                                            <div className="meme-token-header">
-                                                                <h3 className="meme-search-token-symbol">{token.symbol}</h3>
-                                                                <div className="meme-search-token-name-container">
-                                                                    <h3
-                                                                        className="meme-search-token-name"
-                                                                        onClick={(e) => { e.stopPropagation(); copyToClipboard(token.tokenAddress); }}
-                                                                        style={{ cursor: 'pointer' }}
-                                                                        title="Click to copy token address"
-                                                                    >
-                                                                        {token.name}
-                                                                    </h3>
-                                                                    <button
-                                                                        className="meme-search-copy-btn"
-                                                                        onClick={(e) => { e.stopPropagation(); copyToClipboard(token.tokenAddress); }}
-                                                                        title="Copy token address"
-                                                                    >
-                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                                                                            <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                                                                        </svg>
-                                                                    </button>
+                                                        <div className="meme-token-stats">
+                                                            <div className="meme-search-stat-item">
+                                                                <p className="meme-search-stat-label">Price</p>
+                                                                <p className="meme-search-stat-value">{market.currentPrice}</p>
+                                                            </div>
+                                                            <div className="meme-search-stat-item">
+                                                                <p className="meme-search-stat-label">24h</p>
+                                                                <p className={`meme-search-stat-value ${market.priceChange?.startsWith('-') ? 'negative' : 'positive'}`}>
+                                                                    {market.priceChange}
+                                                                </p>
+                                                            </div>
+                                                            <div className="meme-search-stat-item">
+                                                                <p className="meme-search-stat-label">Vol</p>
+                                                                <p className="meme-search-stat-value">{market.volume}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </>
+                                )}
+
+                                {showTokens && (
+                                    <>
+                                        {showMarkets && (
+                                            <div className="meme-search-section">
+                                                <div className="meme-search-section-header">
+                                                    <span>Tokens:</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {!showMarkets && searchTerm.trim().length >= 2 && !(loading || isSearching) && (
+                                            <div className="meme-search-section">
+                                                <div className="meme-search-section-header">
+                                                    <span>Results</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {filteredTokens.map((token) => {
+                                            const status = getTokenStatus(token.progress);
+                                            const bondingPercentage = calculateBondingPercentage(token.marketCap);
+                                            const gradient = createColorGradient(getBondingColor(bondingPercentage));
+
+                                            type CSSVars = React.CSSProperties & Record<string, string>;
+                                            const imageStyle: CSSVars = {
+                                                position: 'relative',
+                                                '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
+                                                '--progress-color-start': gradient.start,
+                                                '--progress-color-mid': gradient.mid,
+                                                '--progress-color-end': gradient.end,
+                                            };
+
+                                            return (
+                                                <div
+                                                    key={token.id}
+                                                    className="meme-token-row"
+                                                    onClick={() => handleTokenClick(token)}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    <div className="meme-token-content">
+                                                        <div className="meme-token-info">
+                                                            <div
+                                                                className={`meme-search-token-avatar-container ${status === 'graduated' ? 'meme-search-graduated' : ''}`}
+                                                                style={status === 'graduated' ? { position: 'relative' } : imageStyle}
+                                                            >
+                                                                <div className="meme-search-progress-spacer">
+                                                                    <div className="meme-search-image-wrapper">
+                                                                        {token.image ? (
+                                                                            <img
+                                                                                src={token.image}
+                                                                                alt={token.symbol}
+                                                                                className="meme-search-token-image"
+                                                                                onError={(e) => {
+                                                                                    e.currentTarget.style.display = 'none';
+                                                                                    const placeholder = e.currentTarget.parentElement?.querySelector('.meme-search-avatar-placeholder') as HTMLElement;
+                                                                                    if (placeholder) placeholder.style.display = 'flex';
+                                                                                }}
+                                                                            />
+                                                                        ) : null}
+                                                                        <div
+                                                                            className="meme-search-avatar-placeholder"
+                                                                            style={{ display: token.image ? 'none' : 'flex' }}
+                                                                        >
+                                                                            {token.symbol?.slice(0, 2) || '??'}
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
 
-                                                            <div className="meme-token-meta">
-                                                                <p className="meme-search-token-age">{formatTimeAgo(token.created)}</p>
-                                                                <div className="meme-social-links">
-                                                                    {!!token.twitterHandle && (
-                                                                        <TwitterHover url={token.twitterHandle}>
+                                                            <div className="meme-token-details">
+                                                                <div className="meme-token-header">
+                                                                    <h3 className="meme-search-token-symbol">{token.symbol}</h3>
+                                                                    <div className="meme-search-token-name-container">
+                                                                        <h3
+                                                                            className="meme-search-token-name"
+                                                                            onClick={(e) => { e.stopPropagation(); copyToClipboard(token.tokenAddress); }}
+                                                                            style={{ cursor: 'pointer' }}
+                                                                            title="Click to copy token address"
+                                                                        >
+                                                                            {token.name}
+                                                                        </h3>
+                                                                        <button
+                                                                            className="meme-search-copy-btn"
+                                                                            onClick={(e) => { e.stopPropagation(); copyToClipboard(token.tokenAddress); }}
+                                                                            title="Copy token address"
+                                                                        >
+                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                                                                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                                                            </svg>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="meme-token-meta">
+                                                                    <p className="meme-search-token-age">{formatTimeAgo(token.created)}</p>
+                                                                    <div className="meme-social-links">
+                                                                        {!!token.twitterHandle && (
+                                                                            <TwitterHover url={token.twitterHandle}>
+                                                                                <a
+                                                                                    className="meme-social-link meme-avatar-btn"
+                                                                                    href={token.twitterHandle}
+                                                                                    target="_blank"
+                                                                                    rel="noreferrer"
+                                                                                    onClick={e => e.stopPropagation()}
+                                                                                >
+                                                                                    <img
+                                                                                        src={token.twitterHandle.includes('/status/') ? tweet : avatar}
+                                                                                        alt="Twitter"
+                                                                                        className={token.twitterHandle.includes('/status/') ? 'tweet-icon' : 'avatar-icon'}
+                                                                                    />
+                                                                                </a>
+                                                                            </TwitterHover>
+                                                                        )}
+                                                                        {!!token.telegramHandle && (
                                                                             <a
-                                                                                className="meme-social-link meme-avatar-btn"
-                                                                                href={token.twitterHandle}
+                                                                                className="meme-social-link meme-telegram-btn"
+                                                                                href={token.telegramHandle}
                                                                                 target="_blank"
                                                                                 rel="noreferrer"
                                                                                 onClick={e => e.stopPropagation()}
                                                                             >
-                                                                                <img
-                                                                                    src={token.twitterHandle.includes('/status/') ? tweet : avatar}
-                                                                                    alt="Twitter"
-                                                                                    className={token.twitterHandle.includes('/status/') ? 'tweet-icon' : 'avatar-icon'}
-                                                                                />
+                                                                                <img src={telegram} alt="Telegram" />
                                                                             </a>
-                                                                        </TwitterHover>
-                                                                    )}
-                                                                    {!!token.telegramHandle && (
-                                                                        <a
-                                                                            className="meme-social-link meme-telegram-btn"
-                                                                            href={token.telegramHandle}
-                                                                            target="_blank"
-                                                                            rel="noreferrer"
-                                                                            onClick={e => e.stopPropagation()}
-                                                                        >
-                                                                            <img src={telegram} alt="Telegram" />
-                                                                        </a>
-                                                                    )}
-                                                                    {!!token.discordHandle && (
-                                                                        <a
-                                                                            className="meme-social-link meme-discord-btn"
-                                                                            href={token.discordHandle}
-                                                                            target="_blank"
-                                                                            rel="noreferrer"
-                                                                            onClick={e => e.stopPropagation()}
-                                                                        >
-                                                                            <img src={discord} alt="Discord" />
-                                                                        </a>
-                                                                    )}
-                                                                    {!!token.website && (
-                                                                        <a
-                                                                            className="meme-social-link meme-website-btn"
-                                                                            href={token.website}
-                                                                            target="_blank"
-                                                                            rel="noreferrer"
-                                                                            onClick={e => e.stopPropagation()}
-                                                                        >
-                                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                                                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                                                                            </svg>
-                                                                        </a>
-                                                                    )}
+                                                                        )}
+                                                                        {!!token.discordHandle && (
+                                                                            <a
+                                                                                className="meme-social-link meme-discord-btn"
+                                                                                href={token.discordHandle}
+                                                                                target="_blank"
+                                                                                rel="noreferrer"
+                                                                                onClick={e => e.stopPropagation()}
+                                                                            >
+                                                                                <img src={discord} alt="Discord" />
+                                                                            </a>
+                                                                        )}
+                                                                        {!!token.website && (
+                                                                            <a
+                                                                                className="meme-social-link meme-website-btn"
+                                                                                href={token.website}
+                                                                                target="_blank"
+                                                                                rel="noreferrer"
+                                                                                onClick={e => e.stopPropagation()}
+                                                                            >
+                                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                                                                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                                                                                </svg>
+                                                                            </a>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
 
-                                                    <div className="meme-token-stats">
-                                                        <div className="meme-search-stat-item">
-                                                            <p className="meme-search-stat-label">MC</p>
-                                                            <p className="meme-search-stat-value">{formatPrice(token.marketCap)}</p>
+                                                        <div className="meme-token-stats">
+                                                            <div className="meme-search-stat-item">
+                                                                <p className="meme-search-stat-label">MC</p>
+                                                                <p className="meme-search-stat-value">{formatPrice(token.marketCap)}</p>
+                                                            </div>
+                                                            <div className="meme-search-stat-item">
+                                                                <p className="meme-search-stat-label">V</p>
+                                                                <p className="meme-search-stat-value">{formatPrice(token.volume24h)}</p>
+                                                            </div>
+                                                            <div className="meme-search-stat-item">
+                                                                <p className="meme-search-stat-label">L</p>
+                                                                <p className="meme-search-stat-value">{formatPrice(69000)}</p>
+                                                            </div>
+                                                            <button
+                                                                className={`meme-price-badge quickbuy-button ${buyingTokens.has(token.id) ? 'loading' : ''}`}
+                                                                onClick={(e) => handleQuickBuy(token, e)}
+                                                                disabled={buyingTokens.has(token.id) || !onQuickBuy}
+                                                                title={`Quick buy ${getCurrentQuickBuyAmount()} MON`}
+                                                            >
+                                                                {buyingTokens.has(token.id) ? (
+                                                                    <div className="quickbuy-loading-spinner" />
+                                                                ) : (
+                                                                    <>
+                                                                        <img className="explorer-quick-buy-icon" src={lightning} />
+                                                                        {getCurrentQuickBuyAmount()} MON
+                                                                    </>
+                                                                )}
+                                                            </button>
                                                         </div>
-                                                        <div className="meme-search-stat-item">
-                                                            <p className="meme-search-stat-label">V</p>
-                                                            <p className="meme-search-stat-value">{formatPrice(token.volume24h)}</p>
-                                                        </div>
-                                                        <div className="meme-search-stat-item">
-                                                            <p className="meme-search-stat-label">L</p>
-                                                            <p className="meme-search-stat-value">{formatPrice(69000)}</p>
-                                                        </div>
-                                                        <button
-                                                            className={`meme-price-badge quickbuy-button ${buyingTokens.has(token.id) ? 'loading' : ''}`}
-                                                            onClick={(e) => handleQuickBuy(token, e)}
-                                                            disabled={buyingTokens.has(token.id) || !onQuickBuy}
-                                                            title={`Quick buy ${getCurrentQuickBuyAmount()} MON`}
-                                                        >
-                                                            {buyingTokens.has(token.id) ? (
-                                                                <div className="quickbuy-loading-spinner" />
-                                                            ) : (
-                                                                <>
-                                                                    <img className="explorer-quick-buy-icon" src={lightning} />
-                                                                    {getCurrentQuickBuyAmount()} MON
-                                                                </>
-                                                            )}
-                                                        </button>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })
-                                ) : (
+                                            );
+                                        })}
+                                    </>
+                                )}
+
+                                {/* No results */}
+                                {!showMarkets && !showTokens && !showCombinedRecent && (
                                     <div className="meme-no-results">
-                                        {searchTerm.trim().length === 0 && recentlyViewed.length === 0 && (
-                                            <p>No recently viewed tokens</p>
+                                        {searchTerm.trim().length === 0 && recentlyViewed.length === 0 && recentlyViewedMarkets.length === 0 && (
+                                            <p>No recently viewed tokens or markets</p>
                                         )}
-                                        {searchTerm.trim().length >= 2 && filteredTokens.length === 0 && !loading && !isSearching && (
-                                            <p>No tokens found matching "{searchTerm}"</p>
+                                        {searchTerm.trim().length >= 2 && !loading && !isSearching && (
+                                            <p>No markets or tokens found matching "{searchTerm}"</p>
                                         )}
                                     </div>
                                 )}

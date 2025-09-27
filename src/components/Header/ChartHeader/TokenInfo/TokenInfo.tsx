@@ -752,7 +752,6 @@ const filteredPerpsMarkets = useMemo(() => {
 
   const marketAddress =
     activeMarket?.baseAddress || '0x0000000000000000000000000000000000000000';
-
   const tokenAddress =
     activeMarket?.baseAddress?.toLowerCase() ||
     '0x0000000000000000000000000000000000000000';

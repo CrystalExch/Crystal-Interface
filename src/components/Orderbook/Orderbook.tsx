@@ -247,7 +247,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
         />
       </div>
       <div className="ob-stacked-section">
-        <div className="ob-section-header">
+        <div className="ob-trades-header">
           <div>Trades</div>
         </div>
         <TradesView

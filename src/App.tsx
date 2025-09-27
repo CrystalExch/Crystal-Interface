@@ -1243,7 +1243,7 @@ function App() {
   );
   const [isVertDragging, setIsVertDragging] = useState(false);
   const [trades, setTrades] = useState<
-    [boolean, string, string, string, string][]
+    [boolean, string, number, string, string][]
   >([]);
   const [spreadData, setSpreadData] = useState<any>({});
   const [activeSection, setActiveSection] = useState<
@@ -2975,80 +2975,79 @@ function App() {
     };
   }, []);
 
-    // dynamic title
-  useEffect(() => {
-    let title = 'Crystal | Decentralized Cryptocurrency Exchange';
-    
-    switch (true) {
-      case location.pathname === '/portfolio':
-        title = 'Portfolio | Crystal';
-        break;
-      case location.pathname === '/leaderboard':
-        title = 'Leaderboard | Crystal';
-        break;
-      case location.pathname === '/launchpad':
-        title = 'Launchpad | Crystal';
-        break;
-      case location.pathname === '/spectra':
-        title = 'Spectra | Crystal';
-        break;
-      case location.pathname === '/trackers':
-        title = 'Trackers | Crystal';
-        break;
-      case location.pathname === '/perps':
-        title = 'Perpetuals | Crystal';
-        break;
-      case location.pathname.startsWith('/perps/'):
-        if (perpsMarketsData && perpsActiveMarketKey) {
-          const perpsMarket = perpsMarketsData[perpsActiveMarketKey];
-          if (perpsMarket && perpsMarket.lastPrice) {
-            const formattedPrice = formatSubscript(perpsMarket.lastPrice);
-            title = `${formattedPrice} - ${perpsMarket.baseAsset} | Crystal`;
-          } else {
-            title = 'Perpetuals | Crystal';
-          }
+  // dynamic title
+useEffect(() => {
+  let title = 'Crystal | Decentralized Cryptocurrency Exchange';
+  
+  switch (true) {
+    case location.pathname === '/portfolio':
+      title = 'Portfolio | Crystal';
+      break;
+    case location.pathname === '/leaderboard':
+      title = 'Leaderboard | Crystal';
+      break;
+    case location.pathname === '/launchpad':
+      title = 'Launchpad | Crystal';
+      break;
+    case location.pathname === '/spectra':
+      title = 'Spectra | Crystal';
+      break;
+    case location.pathname === '/trackers':
+      title = 'Trackers | Crystal';
+      break;
+    case location.pathname === '/perps':
+      title = 'Perpetuals | Crystal';
+      break;
+    case location.pathname.startsWith('/perps/'):
+      if (perpsMarketsData && perpsActiveMarketKey) {
+        const perpsMarket = perpsMarketsData[perpsActiveMarketKey];
+        if (perpsMarket && perpsMarket.lastPrice) {
+          const formattedPrice = formatSubscript(perpsMarket.lastPrice);
+          title = `${formattedPrice} - ${perpsMarket.baseAsset}/${perpsMarket.quoteAsset} | Crystal`;
         } else {
           title = 'Perpetuals | Crystal';
         }
-        break;
-      case location.pathname.startsWith('/earn/vaults'):
-        if (location.pathname === '/earn/vaults') {
-          title = 'Vaults | Crystal';
+      } else {
+        title = 'Perpetuals | Crystal';
+      }
+      break;
+    case location.pathname.startsWith('/earn/vaults'):
+      if (location.pathname === '/earn/vaults') {
+        title = 'Vaults | Crystal';
+      } else {
+        const pathParts = location.pathname.split('/');
+        if (pathParts.length >= 4) {
+          const vaultAddress = pathParts[3];
+          title = `Vault ${vaultAddress.slice(0, 8)}... | Crystal`;
+        }
+      }
+      break;
+    case location.pathname.startsWith('/earn'):
+      if (location.pathname === '/earn' || location.pathname === '/earn/liquidity-pools') {
+        title = 'Earn | Crystal';
+      } else if (location.pathname.startsWith('/earn/liquidity-pools/')) {
+        const pathParts = location.pathname.split('/');
+        if (pathParts.length >= 4) {
+          const poolIdentifier = pathParts[3];
+          const [firstToken, secondToken] = poolIdentifier.split('-');
+          title = `${firstToken.toUpperCase()}-${secondToken.toUpperCase()} Pool | Crystal`;
+        }
+      }
+      break;
+    case ['/swap', '/market', '/limit', '/send', '/scale'].includes(location.pathname):
+      if (trades.length > 0) {
+        const formattedPrice = formatSubscript(trades[0][1]);
+        if (activeMarket.quoteAsset) {
+          title = `${formattedPrice} - ${activeMarket.baseAsset + '/' + activeMarket.quoteAsset} | Crystal`;
         } else {
-          const pathParts = location.pathname.split('/');
-          if (pathParts.length >= 4) {
-            const vaultAddress = pathParts[3];
-            title = `Vault ${vaultAddress.slice(0, 8)}... | Crystal`;
-          }
+          title = `${location.pathname.slice(1).charAt(0).toUpperCase() + location.pathname.slice(2)} | Crystal`;
         }
-        break;
-      case location.pathname.startsWith('/earn'):
-        if (location.pathname === '/earn' || location.pathname === '/earn/liquidity-pools') {
-          title = 'Earn | Crystal';
-        } else if (location.pathname.startsWith('/earn/liquidity-pools/')) {
-          const pathParts = location.pathname.split('/');
-          if (pathParts.length >= 4) {
-            const poolIdentifier = pathParts[3];
-            const [firstToken, secondToken] = poolIdentifier.split('-');
-            title = `${firstToken.toUpperCase()}-${secondToken.toUpperCase()} Pool | Crystal`;
-          }
-        }
-        break;
-      case ['/swap', '/market', '/limit', '/send', '/scale'].includes(location.pathname):
-        if (trades.length > 0) {
-          const formattedPrice = formatSubscript(trades[0][1]);
-          if (activeMarket.quoteAsset) {
-            title = `${formattedPrice} - ${activeMarket.baseAsset + '/' + activeMarket.quoteAsset} | Crystal`;
-          } else {
-            title = `${location.pathname.slice(1).charAt(0).toUpperCase() + location.pathname.slice(2)} | Crystal`;
-          }
-        }
-        break;
-    }
-    
-    document.title = title;
-  }, [trades, location.pathname, activeMarket, perpsMarketsData, perpsActiveMarketKey]);
+      }
+      break;
+  }
   
+  document.title = title;
+}, [trades, location.pathname, activeMarket, perpsMarketsData, perpsActiveMarketKey]);
   useEffect(() => {
     if (prevOrderData && Array.isArray(prevOrderData) && prevOrderData.length >= 4) {
       try {
@@ -3406,7 +3405,7 @@ function App() {
               const quoteIndex = index;
               const quotePrice = token.ticker == 'USDC' ? 1 : Number(tempmids[(token.ticker == wethticker ? ethticker : token.ticker) + 'USDC']?.[0])
                 / Number(markets[(token.ticker == wethticker ? ethticker : token.ticker) + 'USDC']?.priceFactor)
-              if (Number(refData[quoteIndex + 1]?.result) > 0) {
+              if (Number(refData[quoteIndex + 1].result) != 0) {
                 if (!(newFees as any)[token.address]) {
                   (newFees as any)[token.address] =
                     Number(refData[quoteIndex + 1].result) /
@@ -3813,13 +3812,12 @@ function App() {
   useEffect(() => {
     const temp: Trade[] | undefined = tradesByMarket[activeMarketKey];
 
-    let processed: [boolean, string, string, string, string][] = [];
+    let processed: [boolean, string, number, string, string][] = [];
 
     if (temp) {
       processed = temp.slice(0, 100).map((trade: Trade) => {
         const isBuy = trade[2] === 1;
-        const tradeValue = (trade[2] === 1 ? trade[1] : trade[0]) / 10 ** Number(activeMarket.baseDecimals);
-        const price = trade[3] / Number(activeMarket.priceFactor) || 0;
+        const { price, tradeValue } = getTradeValue(trade, activeMarket);
         const time = formatTime(trade[6]);
         const hash = trade[5];
         return [
@@ -3827,7 +3825,7 @@ function App() {
           formatCommas(
             price.toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(price ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
           ),
-          formatSubscript(customRound(tradeValue, 3)),
+          tradeValue,
           time,
           hash,
         ];
@@ -5533,12 +5531,8 @@ function App() {
               id
               baseAsset
               quoteAsset
-              baseDecimals
-              quoteDecimals
               baseTicker
               quoteTicker
-              baseName
-              quoteName
               marketType
               scaleFactor
               tickSize
@@ -5570,40 +5564,26 @@ function App() {
           body: JSON.stringify({ query }),
         });
         const json = await res.json();
-        const list = Array.isArray(json?.data?.markets) ? [...json.data.markets].reverse() : []
+        const list = Array.isArray(json?.data?.markets) ? json.data.markets : [];
 
         const ETH_ADDR = settings.chainConfig[activechain].eth;
         const WETH_ADDR = settings.chainConfig[activechain].weth;
-        const ETH_TICKER = settings.chainConfig[activechain].ethticker;
-        const WETH_TICKER = settings.chainConfig[activechain].wethticker;
-        const newMarkets: Record<string, any> = settings.chainConfig[activechain].markets;
+        const tokenDict = settings.chainConfig[activechain].tokendict as Record<string, any>;
+        const tokenDictLC: Record<string, any> = {};
+        for (const [addr, meta] of Object.entries(tokenDict)) tokenDictLC[addr] = meta;
+
+        const newMarkets: Record<string, any> = {};
         for (const m of list) {
           const baseAddr0 = getAddress(String(m.baseAsset || ''));
           const quoteAddr0 = getAddress(String(m.quoteAsset || ''));
-          if (!tokendict[baseAddr0]) {
-            tokendict[baseAddr0] = {
-              address: baseAddr0,
-              decimals: BigInt(Number(m.baseDecimals ?? 18)),
-              image: '',
-              name: m.baseName,
-              ticker: m.baseTicker,
-              website: '',
-            }
-          }
-          if (!tokendict[quoteAddr0]) {
-            tokendict[quoteAddr0] = {
-              address: quoteAddr0,
-              decimals: BigInt(Number(m.quoteDecimals ?? 18)),
-              image: '',
-              name: m.quoteName,
-              ticker: m.quoteTicker,
-              website: '',
-            }
-          }
-          const scaleExp = (m.scaleFactor == '21' && m.quoteDecimals == '18') ? 9 : Number(m.scaleFactor ?? 0);
+          const baseTok0 = tokenDictLC[baseAddr0];
+          const quoteTok0 = tokenDictLC[quoteAddr0];
+          if (!baseTok0 || !quoteTok0) continue;
+
+          const scaleExp = Number(m.scaleFactor ?? 0);
           const scaleFactor = (BigInt(10) ** BigInt(scaleExp));
-          const baseDec = Number(m.baseDecimals ?? 18);
-          const quoteDec = Number(m.quoteDecimals ?? 18);
+          const baseDec = Number(baseTok0.decimals ?? 18);
+          const quoteDec = Number(quoteTok0.decimals ?? 18);
           const pfExp = Math.max(0, quoteDec + scaleExp - baseDec);
           const priceFactor = (BigInt(10) ** BigInt(pfExp));
 
@@ -5618,36 +5598,39 @@ function App() {
             maxPrice: BigInt(m.maxPrice ?? 0),
             fee: BigInt(m.takerFee ?? 100000),
             makerRebate: BigInt(m.makerRebate ?? 100000),
-            baseDecimals: BigInt(baseDec),
-            quoteDecimals: BigInt(quoteDec),
           };
 
           const baseIsEthish = baseAddr0 === ETH_ADDR || baseAddr0 === WETH_ADDR;
           const quoteIsEthish = quoteAddr0 === ETH_ADDR || quoteAddr0 === WETH_ADDR;
 
-          const variants: Array<{ baseAddr: string; quoteAddr: string, baseAsset: string, quoteAsset: string }> = [];
+          const variants: Array<{ baseAddr: string; quoteAddr: string }> = [];
           if (baseIsEthish) {
-            variants.push({ baseAddr: ETH_ADDR, quoteAddr: quoteAddr0, baseAsset: ETH_TICKER, quoteAsset: m.quoteTicker });
-            variants.push({ baseAddr: WETH_ADDR, quoteAddr: quoteAddr0, baseAsset: WETH_TICKER, quoteAsset: m.quoteTicker });
+            variants.push({ baseAddr: ETH_ADDR, quoteAddr: quoteAddr0 });
+            variants.push({ baseAddr: WETH_ADDR, quoteAddr: quoteAddr0 });
           } else if (quoteIsEthish) {
-            variants.push({ baseAddr: baseAddr0, quoteAddr: ETH_ADDR, baseAsset: m.baseTicker, quoteAsset: ETH_TICKER });
-            variants.push({ baseAddr: baseAddr0, quoteAddr: WETH_ADDR, baseAsset: m.baseTicker, quoteAsset: WETH_TICKER });
+            variants.push({ baseAddr: baseAddr0, quoteAddr: ETH_ADDR });
+            variants.push({ baseAddr: baseAddr0, quoteAddr: WETH_ADDR });
           } else {
-            variants.push({ baseAddr: baseAddr0, quoteAddr: quoteAddr0, baseAsset: m.baseTicker, quoteAsset: m.quoteTicker });
+            variants.push({ baseAddr: baseAddr0, quoteAddr: quoteAddr0 });
           }
 
           for (const v of variants) {
-            const bTok = tokendict[v.baseAddr];
+            const bTok = tokenDictLC[v.baseAddr];
+            const qTok = tokenDictLC[v.quoteAddr];
+            if (!bTok || !qTok) continue;
 
-            const marketKey = `${v.baseAsset}${v.quoteAsset}`;
-            const image = (bTok?.image ?? settings.chainConfig[activechain].image ?? null);
-            const website = (bTok?.website ?? '');
+            const marketKey = `${bTok.ticker}${qTok.ticker}`;
+            const image = (bTok.image ?? settings.chainConfig[activechain].image ?? null);
+            const website = (bTok.website ?? qTok.website ?? '');
+
             newMarkets[marketKey] = {
-              baseAsset: v.baseAsset,
-              quoteAsset: v.quoteAsset,
+              baseAsset: bTok.ticker,
+              quoteAsset: qTok.ticker,
               baseAddress: v.baseAddr,
               quoteAddress: v.quoteAddr,
-              path: [v.quoteAddr, v.baseAddr],
+              baseDecimals: BigInt(Number(bTok.decimals ?? 18)),
+              quoteDecimals: BigInt(Number(qTok.decimals ?? 18)),
+              path: [qTok.address, bTok.address],
               image,
               website,
               marketKey,
@@ -5658,7 +5641,7 @@ function App() {
 
         settings.chainConfig[activechain].markets = newMarkets;
         const newAddrToMarket: Record<string, string> = {};
-        Object.values(newMarkets).reverse().forEach((m: any) => {
+        Object.values(newMarkets).forEach((m: any) => {
           if (m?.address) newAddrToMarket[String(m.address).toLowerCase()] = m.marketKey;
         });
         settings.chainConfig[activechain].addresstomarket = newAddrToMarket;
@@ -5678,7 +5661,8 @@ function App() {
 
           const cfg = newMarkets[mk];
           if (!cfg) continue;
-          const isWMON = cfg.baseAsset === WETH_TICKER || cfg.quoteAsset === WETH_TICKER;
+          const wethticker = settings.chainConfig[activechain].wethticker;
+          const isWMON = cfg.baseAsset === wethticker || cfg.quoteAsset === wethticker;
 
           const pf = Number(cfg.priceFactor);
           const decs = Math.max(0, Math.floor(Math.log10(pf)));
@@ -5697,7 +5681,7 @@ function App() {
           const pct = open24 === 0 ? 0 : ((last - open24) / open24) * 100;
           const deltaRaw = lastRaw - open24 * pf;
 
-          const volQ = Number((m.volume ?? 0) / 10 ** Number(cfg.quoteDecimals));
+          const volQ = Number((m.volume ?? 0) / 10 ** 6);
           const volumeDisplay = formatCommas(volQ.toFixed(2));
 
           const trades = Array.isArray(m.trades) ? m.trades : [];
@@ -5738,54 +5722,58 @@ function App() {
           const qIsEthish = cfg.quoteAddress === ETH_ADDR_LC || cfg.quoteAddress === WETH_ADDR_LC;
 
           if (bIsEthish || qIsEthish) {
-            const sibBaseTicker = bIsEthish
-              ? (cfg.baseAsset === ETH_TICKER ? WETH_TICKER : ETH_TICKER)
-              : cfg.baseAsset;
-            const sibQuoteTicker = qIsEthish
-              ? (cfg.quoteAsset === ETH_TICKER ? WETH_TICKER : ETH_TICKER)
-              : cfg.quoteAsset;
-            const siblingKey = `${sibBaseTicker}${sibQuoteTicker}`;
-            const siblingCfg = newMarkets[siblingKey];
+            const sibBase = bIsEthish
+              ? (cfg.baseAddress === ETH_ADDR_LC ? WETH_ADDR_LC : ETH_ADDR_LC)
+              : cfg.baseAddress;
+            const sibQuote = qIsEthish
+              ? (cfg.quoteAddress === ETH_ADDR_LC ? WETH_ADDR_LC : ETH_ADDR_LC)
+              : cfg.quoteAddress;
 
-            if (siblingCfg) {
-              const isSiblingWMON =
-                siblingCfg.baseAsset === wethticker || siblingCfg.quoteAsset === wethticker;
+            const sibBaseTok = tokenDictLC[sibBase];
+            const sibQuoteTok = tokenDictLC[sibQuote];
+            if (sibBaseTok && sibQuoteTok) {
+              const siblingKey = `${sibBaseTok.ticker}${sibQuoteTok.ticker}`;
+              const siblingCfg = newMarkets[siblingKey];
+              if (siblingCfg) {
+                const isSiblingWMON =
+                  siblingCfg.baseAsset === wethticker || siblingCfg.quoteAsset === wethticker;
 
-              if (!isSiblingWMON) {
-                const pf2 = Number(siblingCfg.priceFactor);
-                const decs2 = Math.max(0, Math.floor(Math.log10(pf2)));
-                const last2 = pf2 ? lastRaw / pf2 : 0;
-                const miniAsc2 = miniAsc.map((p: any) => ({
-                  time: p.time,
-                  value: pf2 ? (p.value * pf) / pf2 : 0,
-                }));
+                if (!isSiblingWMON) {
+                  const pf2 = Number(siblingCfg.priceFactor);
+                  const decs2 = Math.max(0, Math.floor(Math.log10(pf2)));
+                  const last2 = pf2 ? lastRaw / pf2 : 0;
+                  const miniAsc2 = miniAsc.map((p: any) => ({
+                    time: p.time,
+                    value: pf2 ? (p.value * pf) / pf2 : 0,
+                  }));
 
-                if (trades.length && temptradesByMarket[siblingKey]) {
-                  for (const t of trades) {
-                    temptradesByMarket[siblingKey].push([
-                      Number(t.amountIn ?? 0),
-                      Number(t.amountOut ?? 0),
-                      t.isBuy ? 1 : 0,
-                      t.endPrice,
-                      siblingKey,
-                      t.tx,
-                      Number(t.timestamp ?? 0),
-                    ]);
+                  if (trades.length && temptradesByMarket[siblingKey]) {
+                    for (const t of trades) {
+                      temptradesByMarket[siblingKey].push([
+                        Number(t.amountIn ?? 0),
+                        Number(t.amountOut ?? 0),
+                        t.isBuy ? 1 : 0,
+                        t.endPrice,
+                        siblingKey,
+                        t.tx,
+                        Number(t.timestamp ?? 0),
+                      ]);
+                    }
                   }
-                }
 
-                rows.push({
-                  ...siblingCfg,
-                  pair: `${siblingCfg.baseAsset}/${siblingCfg.quoteAsset}`,
-                  mini: miniAsc2,
-                  currentPrice: formatSig(last2.toFixed(decs2)),
-                  high24h: formatSubscript(Math.max(...miniAsc2.map(p => p.value)).toFixed(decs2)),
-                  low24h: formatSubscript(Math.min(...miniAsc2.map(p => p.value)).toFixed(decs2)),
-                  volume: volumeDisplay,
-                  priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
-                  priceChangeAmount: deltaRaw,
-                  latestPrice: pf2 ? m.latestPrice / pf2 : 0,
-                });
+                  rows.push({
+                    ...siblingCfg,
+                    pair: `${siblingCfg.baseAsset}/${siblingCfg.quoteAsset}`,
+                    mini: miniAsc2,
+                    currentPrice: formatSig(last2.toFixed(decs2)),
+                    high24h: formatSubscript(Math.max(...miniAsc2.map(p => p.value)).toFixed(decs2)),
+                    low24h: formatSubscript(Math.min(...miniAsc2.map(p => p.value)).toFixed(decs2)),
+                    volume: volumeDisplay,
+                    priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
+                    priceChangeAmount: deltaRaw,
+                    latestPrice: pf2 ? m.latestPrice / pf2 : 0,
+                  });
+                }
               }
             }
           }
@@ -8593,7 +8581,7 @@ function App() {
   const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(newTab);
   }, []);
-  const [nonces, setNonces] = useState();
+
   const [terminalToken, setTerminalToken] = useState();
   const [tokenData, setTokenData] = useState();
   // data loop, reuse to have every single rpc call method in this loop
