@@ -2975,10 +2975,10 @@ function App() {
     };
   }, []);
 
-  // dynamic title
+    // dynamic title
   useEffect(() => {
     let title = 'Crystal | Decentralized Cryptocurrency Exchange';
-
+    
     switch (true) {
       case location.pathname === '/portfolio':
         title = 'Portfolio | Crystal';
@@ -3020,8 +3020,6 @@ function App() {
             const vaultAddress = pathParts[3];
             title = `Vault ${vaultAddress.slice(0, 8)}... | Crystal`;
           }
-
-
         }
         break;
       case location.pathname.startsWith('/earn'):
@@ -3047,9 +3045,10 @@ function App() {
         }
         break;
     }
-
+    
     document.title = title;
   }, [trades, location.pathname, activeMarket, perpsMarketsData, perpsActiveMarketKey]);
+  
   useEffect(() => {
     if (prevOrderData && Array.isArray(prevOrderData) && prevOrderData.length >= 4) {
       try {
@@ -3108,7 +3107,7 @@ function App() {
           }
         }
 
-        setRoundedBuyOrders({ orders: roundedBuy, key: activeMarketKey, amountsQuote });
+        setRoundedBuyOrders({ orders: roundedBuy, key: activeMarketKey, amountsQuote});
         setRoundedSellOrders({ orders: roundedSell, key: activeMarketKey, amountsQuote });
         prevAmountsQuote.current = amountsQuote
       } catch (error) {
@@ -3819,7 +3818,8 @@ function App() {
     if (temp) {
       processed = temp.slice(0, 100).map((trade: Trade) => {
         const isBuy = trade[2] === 1;
-        const { price, tradeValue } = getTradeValue(trade, activeMarket);
+        const tradeValue = (trade[2] === 1 ? trade[1] : trade[0]) / 10 ** Number(activeMarket.baseDecimals);
+        const price = trade[3] / Number(activeMarket.priceFactor) || 0;
         const time = formatTime(trade[6]);
         const hash = trade[5];
         return [
@@ -5572,14 +5572,11 @@ function App() {
         const json = await res.json();
         const list = Array.isArray(json?.data?.markets) ? [...json.data.markets].reverse() : []
 
-
         const ETH_ADDR = settings.chainConfig[activechain].eth;
         const WETH_ADDR = settings.chainConfig[activechain].weth;
         const ETH_TICKER = settings.chainConfig[activechain].ethticker;
         const WETH_TICKER = settings.chainConfig[activechain].wethticker;
         const newMarkets: Record<string, any> = settings.chainConfig[activechain].markets;
-
-
         for (const m of list) {
           const baseAddr0 = getAddress(String(m.baseAsset || ''));
           const quoteAddr0 = getAddress(String(m.quoteAsset || ''));
@@ -5627,7 +5624,8 @@ function App() {
 
           const baseIsEthish = baseAddr0 === ETH_ADDR || baseAddr0 === WETH_ADDR;
           const quoteIsEthish = quoteAddr0 === ETH_ADDR || quoteAddr0 === WETH_ADDR;
-  const variants: Array<{ baseAddr: string; quoteAddr: string, baseAsset: string, quoteAsset: string }> = [];
+
+          const variants: Array<{ baseAddr: string; quoteAddr: string, baseAsset: string, quoteAsset: string }> = [];
           if (baseIsEthish) {
             variants.push({ baseAddr: ETH_ADDR, quoteAddr: quoteAddr0, baseAsset: ETH_TICKER, quoteAsset: m.quoteTicker });
             variants.push({ baseAddr: WETH_ADDR, quoteAddr: quoteAddr0, baseAsset: WETH_TICKER, quoteAsset: m.quoteTicker });
@@ -5681,6 +5679,7 @@ function App() {
           const cfg = newMarkets[mk];
           if (!cfg) continue;
           const isWMON = cfg.baseAsset === WETH_TICKER || cfg.quoteAsset === WETH_TICKER;
+
           const pf = Number(cfg.priceFactor);
           const decs = Math.max(0, Math.floor(Math.log10(pf)));
           const lastRaw = Number(m.latestPrice ?? 0);
@@ -5772,10 +5771,6 @@ function App() {
                       t.tx,
                       Number(t.timestamp ?? 0),
                     ]);
-
-
-
-
                   }
                 }
 
@@ -5791,7 +5786,6 @@ function App() {
                   priceChangeAmount: deltaRaw,
                   latestPrice: pf2 ? m.latestPrice / pf2 : 0,
                 });
-
               }
             }
           }
