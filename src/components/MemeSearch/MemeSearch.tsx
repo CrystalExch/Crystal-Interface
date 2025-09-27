@@ -224,7 +224,6 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         }
     });
 
-    // Add recently viewed markets state
     const [recentlyViewedMarkets, setRecentlyViewedMarkets] = useState<Market[]>(() => {
         try {
             const saved = localStorage.getItem('crystal_meme_recently_viewed_markets');
@@ -248,7 +247,6 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         } catch { }
     };
 
-    // Add save function for recently viewed markets
     const saveRecentlyViewedMarkets = (markets: Market[]) => {
         try {
             localStorage.setItem('crystal_meme_recently_viewed_markets', JSON.stringify(markets));
@@ -274,7 +272,6 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         });
     };
 
-    // Add function to add markets to recently viewed
     const addToRecentlyViewedMarkets = (market: Market) => {
         setRecentlyViewedMarkets(prev => {
             const filtered = prev.filter(item => item.address !== market.address);
@@ -317,7 +314,6 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         onClose();
     };
 
-    // Add handler for market clicks
     const handleMarketClick = (market: Market) => {
         addToRecentlyViewedMarkets(market);
         setSearchTerm('');
@@ -507,7 +503,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         if (term.length < 2) {
             setIsSearching(false);
             setLoading(false);
-            setTokens([]); // Clear tokens immediately to prevent flash
+            setTokens([]);
 
             if (recentlyViewed.length > 0) {
                 fetchRecentlyViewedFromSubgraph(recentlyViewed).then(setTokens);
@@ -552,13 +548,11 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         
         const combined: Array<{ type: 'token' | 'market', data: Token | Market }> = [];
         
-        // Add recently viewed tokens (use tokens state when available, otherwise recentlyViewed)
         const tokensToUse = tokens.length > 0 ? tokens : recentlyViewed;
         tokensToUse.forEach(token => {
             combined.push({ type: 'token', data: token });
         });
         
-        // Add recently viewed markets
         recentlyViewedMarkets.forEach(market => {
             combined.push({ type: 'market', data: market });
         });
@@ -937,12 +931,11 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                     </>
                                 )}
 
-                                {/* Show search results when there is a search term */}
                                 {showMarkets && (
                                     <>
                                         <div className="meme-search-section">
                                             <div className="meme-search-section-header">
-                                                <span>Markets:</span>
+                                                <span>Markets</span>
                                             </div>
                                         </div>
                                         {filteredMarkets.map((market) => {
@@ -1020,7 +1013,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                         {showMarkets && (
                                             <div className="meme-search-section">
                                                 <div className="meme-search-section-header">
-                                                    <span>Tokens:</span>
+                                                    <span>Tokens</span>
                                                 </div>
                                             </div>
                                         )}

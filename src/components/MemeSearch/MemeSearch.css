@@ -357,7 +357,6 @@
   }
 }
 
-/* Add these missing CSS classes to your MemeSearch.css */
 
 .meme-search-error {
   text-align: center;
@@ -465,7 +464,6 @@
   margin: 0;
 }
 
-/* Update responsive styles for the new structure */
 @media (max-width: 768px) {
   .meme-search-token-avatar-container {
     width: 48px;
@@ -795,7 +793,6 @@
   gap: 5px
 }
 
-/* Skeleton loading styles */
 .meme-search-skeleton-container {
   display: flex;
   flex-direction: column;
