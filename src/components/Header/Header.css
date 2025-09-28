@@ -14,7 +14,7 @@
   transition: left 0.3s ease;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   backdrop-filter: blur(10px);
-  z-index: 10;
+  z-index: 6;
   background-color: #0000006d;
 }
 

@@ -5062,23 +5062,6 @@ input[type="email"] {
   }
 }
 
-@media (max-width: 768px) {
-  .high-impact-confirmation-popup {
-    width: 90vw;
-  }
-
-  .high-impact-actions {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .high-impact-cancel-button,
-  .high-impact-confirm-button {
-    width: 100%;
-  }
-}
-
-
 .high-impact-confirmation-popup {
   height: min(305px, 90vh);
   border-radius: 8px;
@@ -7876,7 +7859,6 @@ input::-webkit-inner-spin-button {
 
 .subwallet-address-text,
 .subwallet-key-text {
-  font-family: monospace;
   color: rgba(255, 255, 255, 0.9);
   flex: 1;
 }
@@ -8028,7 +8010,6 @@ input::-webkit-inner-spin-button {
   background-position: center;
   display: flex;
   flex-direction: column;
-  font-family: 'Inter', sans-serif;
   color: white;
   border-radius: 8px;
   border: 1px solid rgba(179, 184, 249, 0.15);

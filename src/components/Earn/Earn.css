@@ -65,7 +65,7 @@
 }
 
 .earn-toggle[data-active=vaults]::before {
-  transform: translateX(100%);
+  transform: translateX(105%);
 }
 
 .earn-toggle-tab {

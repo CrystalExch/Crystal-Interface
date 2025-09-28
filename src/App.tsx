@@ -730,7 +730,6 @@ function App() {
   });
   const [rpcUrl, setRpcUrl] = useState(() => localStorage.getItem('crystal_rpc_url') || '')
   const [graphUrl, setGraphUrl] = useState(() => localStorage.getItem('crystal_graph_url') || '')
-  const [graphKey, setGraphKey] = useState(() => localStorage.getItem('crystal_graph_key') || '')
   const [notificationPosition, setNotificationPosition] = useState(() => {
     const saved = localStorage.getItem('crystal_notification_position');
     return saved || 'bottom-right';
@@ -8593,6 +8592,7 @@ function App() {
   const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(newTab);
   }, []);
+  
   const [nonces, setNonces] = useState();
   const [terminalToken, setTerminalToken] = useState();
   const [tokenData, setTokenData] = useState();
@@ -9995,20 +9995,6 @@ function App() {
                                 }}
                               />
                             </div>
-
-                            <div className="input-group">
-                              <label className="input-label">{t('graphAPIKey')} <small>({t('optional')})</small></label>
-                              <input
-                                type="text"
-                                className="input-field"
-                                value={graphKey}
-                                placeholder={t('yourAPIKey')}
-                                onChange={e => {
-                                  setGraphKey(e.target.value)
-                                  localStorage.setItem('crystal_graph_key', e.target.value)
-                                }}
-                              />
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -10512,8 +10498,6 @@ function App() {
                         localStorage.setItem('crystal_rpc_url', '');
                         setGraphUrl('');
                         localStorage.setItem('crystal_graph_url', '');
-                        setGraphKey('');
-                        localStorage.setItem('crystal_graph_key', '');
                         break;
 
                       case 'layout':
@@ -12675,6 +12659,29 @@ function App() {
               </button>
             </div>
 
+            <div className="keywords-section">
+              <div className="keyword-group">
+                <div className="keyword-label">Search Keywords</div>
+                <input
+                  type="text"
+                  placeholder="keyword1, keyword2..."
+                  value={explorerFilters[explorerFiltersActiveTab]?.searchKeywords || ''}
+                  onChange={(e) => handleExplorerFilterInputChange('searchKeywords', e.target.value)}
+                  className="keyword-input"
+                />
+              </div>
+              <div className="keyword-group">
+                <div className="keyword-label">Exclude Keywords</div>
+                <input
+                  type="text"
+                  placeholder="keyword1, keyword2..."
+                  value={explorerFilters[explorerFiltersActiveTab]?.excludeKeywords || ''}
+                  onChange={(e) => handleExplorerFilterInputChange('excludeKeywords', e.target.value)}
+                  className="keyword-input"
+                />
+              </div>
+            </div>
+
             <div className="section-tabs">
               <button
                 className={`section-tab ${explorerFiltersActiveSection === 'audit' ? 'active' : ''}`}
@@ -12686,7 +12693,7 @@ function App() {
                 className={`section-tab ${explorerFiltersActiveSection === 'metrics' ? 'active' : ''}`}
                 onClick={() => setExplorerFiltersActiveSection('metrics')}
               >
-                $ Metrics
+                Metrics
               </button>
               <button
                 className={`section-tab ${explorerFiltersActiveSection === 'socials' ? 'active' : ''}`}
@@ -13007,29 +13014,6 @@ function App() {
 
               {explorerFiltersActiveSection === 'socials' && (
                 <div className="socials-filters">
-                  <div className="keywords-section">
-                    <div className="keyword-group">
-                      <label className="keyword-label">Search Keywords</label>
-                      <input
-                        type="text"
-                        placeholder="keyword1, keyword2..."
-                        value={explorerFilters[explorerFiltersActiveTab]?.searchKeywords || ''}
-                        onChange={(e) => handleExplorerFilterInputChange('searchKeywords', e.target.value)}
-                        className="keyword-input"
-                      />
-                    </div>
-                    <div className="keyword-group">
-                      <label className="keyword-label">Exclude Keywords</label>
-                      <input
-                        type="text"
-                        placeholder="keyword1, keyword2..."
-                        value={explorerFilters[explorerFiltersActiveTab]?.excludeKeywords || ''}
-                        onChange={(e) => handleExplorerFilterInputChange('excludeKeywords', e.target.value)}
-                        className="keyword-input"
-                      />
-                    </div>
-                  </div>
-
                   <div className="social-checkboxes">
                     <div className="checkbox-row">
                       <input
@@ -13699,7 +13683,7 @@ function App() {
                             return marketPair.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               market.baseAsset.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               market.quoteAsset.toLowerCase().includes(searchTerm.toLowerCase());
-                          }).slice(0, 10).map((market) => {
+                          }).slice(0, 100).map((market) => {
                             const marketKey = `${market.baseAsset}${market.quoteAsset}`;
                             return (
                               <div

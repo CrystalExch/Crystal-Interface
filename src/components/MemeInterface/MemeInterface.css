@@ -66,9 +66,7 @@
   border: 1px solid rgba(179, 184, 249, .1);
   border-radius: 6px;
   display: flex;
-  gap: 3px;
   margin: 12px 12px 0 12px;
-  padding: 3px;
   width: calc(100% - 24px);
 }
 
@@ -77,7 +75,8 @@
   border: 1px solid transparent;
   border-radius: 4px;
   cursor: pointer;
-  font-size: .9rem;
+  font-size: .85rem;
+  font-weight: 300;
   padding: 4px;
   transition: 0.3s ease;
   width: 100%;
@@ -88,11 +87,8 @@
   display: flex;
   font-size: 1rem;
   gap: 8px;
-  padding: 10px 12px;
-
+  padding: 10px 12px 6px 12px;
 }
-
-
 
 .meme-token-info-container {
   border-bottom: 1px solid rgba(179, 184, 249, .09);
@@ -114,7 +110,7 @@
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(3, 1fr);
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .meme-token-info-item {
@@ -370,15 +366,11 @@
 }
 
 .meme-buy-button:hover {
-  border-color: transparent;
   color: rgb(67 254 154);
-
 }
 
 .meme-sell-button:hover {
-  border-color: transparent;
   color: rgb(235, 112, 112);
-
 }
 
 .meme-trade-input-container {
@@ -445,7 +437,6 @@
 .meme-trade-panel-content {
   display: flex;
   flex-direction: column;
-  margin-top: 5px;
 }
 
 .meme-trade-conversion {
@@ -540,7 +531,7 @@
   font-size: 0.8rem;
   gap: 0.5rem;
   justify-content: space-between;
-  padding: 15px 0;
+  padding: 8px 0 0 0;
 }
 
 
@@ -549,7 +540,6 @@
   border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 5px;
   color: rgb(169, 169, 174);
-  cursor: pointer;
   display: flex;
   flex-direction: column;
   font-size: 0.9rem;
@@ -573,6 +563,7 @@
   height: 14px;
   margin-right: 2px;
   width: 14px;
+  align-self: center;
 }
 
 .meme-address-link {
@@ -911,7 +902,7 @@
 }
 
 .meme-balance-slider-mark[data-active='true']:not(:first-child):not(:last-child)::before {
-  background-color: rgb(67, 254, 154);
+  background-color: rgb(171, 176, 224);
 }
 
 .meme-balance-slider-mark[data-active='false']:not(:first-child):not(:last-child)::before {
@@ -1918,7 +1909,7 @@
 .meme-advanced-trading-section {
   border-top: 1px solid rgba(179, 184, 249, 0.1);
   margin-top: 8px;
-  padding: 12px;
+  padding: 12px 12px 4px 12px;
 }
 
 .meme-advanced-trading-toggle {
@@ -2164,7 +2155,7 @@
   gap: 8px;
   letter-spacing: -0.3px;
   margin: 4px;
-  padding: 10px 12px;
+  padding: 6px 8px;
   text-align: left;
   transition: all 0.2s ease;
   width: calc(100% - 8px);
@@ -2199,11 +2190,11 @@
 }
 
 .meme-balance-slider-mark.buy[data-active='true']:not(:first-child):not(:last-child)::before {
-  background-color: rgb(67, 254, 154);
+  background-color: rgb(171, 176, 224);
 }
 
 .meme-balance-slider-mark.sell[data-active='true']:not(:first-child):not(:last-child)::before {
-  background-color: rgb(235, 112, 112);
+  background-color: rgb(171, 176, 224);
 }
 
 .meme-settings-preset.active.buy {
@@ -2223,7 +2214,6 @@
 .meme-trading-stats-enhanced {
   background: rgb(6, 6, 6);
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-  margin-bottom: 16px;
   padding: 10px;
   padding-top: 5px;
   position: relative;
@@ -2609,6 +2599,7 @@
 .meme-address-content {
   align-items: center;
   display: flex;
+  cursor: pointer;
 }
 
 .address-top {

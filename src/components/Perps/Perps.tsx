@@ -577,7 +577,7 @@ const Perps: React.FC<PerpsProps> = ({
 
     subRefs.current = subs
 
-  }, [activeMarket?.contractId, selectedInterval])
+  }, [activeMarket?.contractId, selectedInterval, wsRef.current])
 
   useEffect(() => {
     if (!orderdata || !Array.isArray(orderdata) || orderdata.length < 3 || orderdata[2] != perpsActiveMarketKey) return
@@ -1836,6 +1836,14 @@ const Perps: React.FC<PerpsProps> = ({
             className="perps-account-details"
           >
             <span className="perps-account-section-title" >Account Overview</span>
+            <div className="perps-account-row">
+              <span className="perps-account-title">
+                Total Equity
+              </span>
+              <span className="perps-account-subtitle">
+                $0.00
+              </span>
+            </div>
             <div className="perps-account-row">
               <span className="perps-account-title">
                 Balance

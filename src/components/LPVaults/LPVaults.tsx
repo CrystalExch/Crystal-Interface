@@ -452,10 +452,10 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                 </div>
 
                 <div className="vaults-search-container">
-                  <Search size={16} className="search-icon" />
+                  <Search size={16} className="lp-search-icon" />
                   <input
                     type="text"
-                    placeholder="Search vaults..."
+                    placeholder="Search"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="vaults-search-input"
