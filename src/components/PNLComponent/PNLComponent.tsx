@@ -786,6 +786,8 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   const handleColorPickerClick = (id: string, event: React.MouseEvent) => {
     if (activePicker === id) {
       setActivePicker(null);
+      // Remove any existing listener
+      document.removeEventListener('mousedown', handleOutsideClick);
       return;
     }
 
@@ -810,6 +812,16 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 
     setPickerPosition({ top, left });
     setActivePicker(id);
+
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.color-picker-dropdown')) {
+        setActivePicker(null);
+        document.removeEventListener('mousedown', handleOutsideClick);
+      }
+    };
+
+          document.addEventListener('mousedown', handleOutsideClick);
   };
 
   const ColorInput = React.memo<ColorInputProps>(({
@@ -1120,6 +1132,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
       </div>
 
       {activePicker && (
+
         <div
           className="color-picker-dropdown"
           style={{
