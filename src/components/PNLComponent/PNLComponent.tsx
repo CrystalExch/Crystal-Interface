@@ -890,25 +890,25 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                   style={{
                     color: customizationSettings.showPNLRectangle
                       ? customizationSettings.rectangleTextColor
-                      : (displayData.monPnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor),
+                      : (displayData.monPnl >= 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor),
                     backgroundColor: customizationSettings.showPNLRectangle
-                      ? (displayData.monPnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor)
+                      ? (displayData.monPnl >= 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor)
                       : 'transparent',
                   }}
                 >
                   <img src={monadblack} className="monad-pnl-icon" />
-                  {displayData.monPnl > 0 ? '+' : ''}{displayData.monPnl.toFixed(2)}
+                  {displayData.monPnl >= 0 ? '+' : ''}{displayData.monPnl.toFixed(2)}
                 </div>
               </div>
               <div className="pnl-entry-exit-group">
                 <div className="pnl-entry">
                   <div className="pnl-entry-label">PNL</div>
                   <div className="pnl-entry-value" style={{
-                    color: displayData.monPnl > 0
+                    color: displayData.monPnl >= 0
                       ? customizationSettings.positivePNLColor
                       : customizationSettings.negativePNLColor
                   }}>
-                    {displayData.monPnl > 0 ? '+' : ''}{displayData.pnlPercentage.toFixed(2)}%
+                    {displayData.monPnl >= 0 ? '+' : ''}{displayData.pnlPercentage.toFixed(2)}%
                   </div>
                 </div>
                 <div className="pnl-exit">

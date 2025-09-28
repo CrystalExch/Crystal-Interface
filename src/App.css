@@ -8689,10 +8689,3 @@ input::-webkit-inner-spin-button {
   align-items: flex-end;
 }
 
-
-.snapshot-mode *, .snapshot-mode *::before, .snapshot-mode *::after {
-  animation: none !important;
-  transition: none !important;
-  filter: none !important;          /* remove blur/backdrop effects that can shift text */
-  will-change: auto !important;
-}
