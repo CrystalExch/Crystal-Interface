@@ -1421,16 +1421,9 @@ function App() {
     return saved ? JSON.parse(saved) : defaultGroups;
   });
 
-  const audioGroupsRef = useRef(audioGroups);
-
-  useEffect(() => {
-    audioGroupsRef.current = audioGroups;
-  }, [audioGroups]);
-
   const toggleAudioGroup = (group: AudioGroups) => {
     setAudioGroups(prev => {
       const next = { ...prev, [group]: !prev[group] };
-      audioGroupsRef.current = next;
       localStorage.setItem('crystal_audio_groups', JSON.stringify(next));
       return next;
     });
@@ -1443,14 +1436,6 @@ function App() {
     if (action === 'approve') return 'approve';
     return 'swap';
   }
-  const shouldPlayAudio = (action: string): boolean => {
-    const currentAudioGroups = audioGroupsRef.current;
-    if (!isAudioEnabled) {
-      return false;
-    }
-    const group = getGroupForAction(action);
-    return currentAudioGroups[group];
-  };
 
   // refs
   const popupref = useRef<HTMLDivElement>(null);
@@ -1550,7 +1535,7 @@ function App() {
     _price: any = 0,
     _address: any = '',
   ) => {
-    const shouldPlay = shouldPlayAudio(_currentAction);
+    const shouldPlay = isAudioEnabled && audioGroups[getGroupForAction(_currentAction)];
     if (shouldPlay) {
       audio.currentTime = 0;
       audio.play().catch(console.error);
@@ -1573,7 +1558,7 @@ function App() {
 
       return [...prevTransactions, newTransaction];
     });
-  }, [activechain, audio, isAudioEnabled]);
+  }, [activechain, audio, isAudioEnabled, audioGroups]);
 
   const handleSetChain = useCallback(async () => {
     return await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: activechain as any });
@@ -5587,6 +5572,7 @@ function App() {
               name: m.baseName,
               ticker: m.baseTicker,
               website: '',
+              autofetched: true,
             }
           }
           if (!tokendict[quoteAddr0]) {
@@ -5597,6 +5583,7 @@ function App() {
               name: m.quoteName,
               ticker: m.quoteTicker,
               website: '',
+              autofetched: true,
             }
           }
           const scaleExp = (m.scaleFactor == '21' && m.quoteDecimals == '18') ? 9 : Number(m.scaleFactor ?? 0);
@@ -7138,6 +7125,11 @@ function App() {
                 token.name.toLowerCase().includes(tokenString.toLowerCase()) ||
                 token.address.toLowerCase().includes(tokenString.toLowerCase()),
             )
+            .sort((a, b) => {
+              return (Number(tokenBalances[b.address] ?? 0) == 0) !== (Number(tokenBalances[a.address] ?? 0) == 0)
+              ? (Number(tokenBalances[a.address] ?? 0) == 0 ? 1 : -1)
+              : a?.autofetched && !b?.autofetched ? 1 : !a?.autofetched && b?.autofetched ? -1 : (Number(tokenBalances[b.address] ?? 0) / 10 ** Number(b.decimals)) - (Number(tokenBalances[a.address] ?? 0) / 10 ** Number(a.decimals));
+            })
             .map((token, index) => (
               <button
                 className={`tokenbutton ${index === selectedTokenIndex ? 'selected' : ''}`}

@@ -728,7 +728,7 @@
 
 .quickbuy-wallet-balance-amount {
     align-items: center;
-    border: 1px solid rgba(206, 208, 223, 0.1);
+    border: 1px solid rgba(179, 184, 249, 0.12);
     border-radius: 20px;
     color: #ced0df;
     display: flex;
@@ -758,12 +758,12 @@
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    width: 65px;
+    min-width: 65px;
 }
 
 .quickbuy-wallet-token-amount {
     align-items: center;
-    border: 1px solid rgba(206, 208, 223, 0.1);
+    border: 1px solid rgba(179, 184, 249, 0.12);
     border-radius: 20px;
     color: #ced0df;
     display: flex;
@@ -795,7 +795,7 @@
 
 .quickbuy-wallet-token-count {
     align-items: center;
-    border: 1px solid rgba(206, 208, 223, 0.1);
+    border: 1px solid rgba(179, 184, 249, 0.12);
     border-radius: 20px;
     display: flex;
     gap: 5px;

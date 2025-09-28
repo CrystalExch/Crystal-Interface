@@ -48,7 +48,7 @@
   align-items: center;
   justify-content: space-between;
   background: none;
-  border: 1px solid rgb(170 174 207 / 8%);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 4px;
   padding: 2px 6px;
   color: rgb(255 255 255 / 75%);
@@ -79,7 +79,7 @@
   border-radius: 5px;
   box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
   background-color: rgb(9, 9, 9);
-  border: 1px solid rgba(128, 128, 128, 0.08);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   overflow: hidden;
   z-index: 4;
   min-width: 100%;
@@ -149,7 +149,7 @@
   font-size: 0.75rem;
   width: auto;
   min-width: 15px; 
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   height: 18px;
   border-radius: 3px;
   text-align: center;

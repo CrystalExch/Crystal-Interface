@@ -1,6 +1,6 @@
 .highlight-popup {
   background: rgb(6,6,6);
-  border: 1px solid #b5bcf81f;
+  border: 1px solid rgba(179, 184, 249, 0.15);
   border-radius: 6px;
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.7rem;
