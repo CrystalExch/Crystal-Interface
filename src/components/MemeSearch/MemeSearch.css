@@ -794,11 +794,14 @@
   display: flex;
   flex-direction: column;
   padding: 8px 16px;
+    width: 100%;
+
 }
 
 .meme-search-skeleton-row {
   padding: 8px 0;
   animation: pulse 1.5s ease-in-out infinite;
+  width: 100%;
 }
 
 .meme-search-skeleton-content {
@@ -944,8 +947,11 @@
 }
 
 .meme-search-results {
-  height: calc(100% - 85px);
+  display: flex;
+  align-items: center;
+  min-height: 220px;
   overflow-y: auto;
+  width: 100%;
 }
 
 .meme-search-section {
