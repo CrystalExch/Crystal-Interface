@@ -482,7 +482,7 @@ const loadImages = useCallback(async () => {
 }, [uploadedBg, customizationSettings.mainTextColor, customizationSettings.showPNLRectangle, customizationSettings.negativePNLColor, createLogoSVG, createGlobeSVG, createTwitterSVG, createMonadSVG]);
   const applyShadow = useCallback((ctx: CanvasRenderingContext2D) => {
     if (customizationSettings.showShadows) {
-      ctx.shadowColor = 'rgba(0, 0, 0, 1)';
+      ctx.shadowColor = 'rgba(0, 0, 0, .8)';
       ctx.shadowBlur = 4;
       ctx.shadowOffsetX = 2;
       ctx.shadowOffsetY = 2;
