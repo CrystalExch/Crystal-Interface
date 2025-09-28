@@ -8093,6 +8093,8 @@ input::-webkit-inner-spin-button {
 .monad-pnl-icon{
   width: 45px;
   height: 45px;
+  pointer-events: none;
+  user-select: none;
 }
 
 .pnl-entry-exit-referral {
