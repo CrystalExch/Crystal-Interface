@@ -12,6 +12,25 @@ import globe from '../../assets/globe.svg'
 import twitter from '../../assets/twitter.png'
 const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
 
+const formatNumber = (num:any, decimals = 2) => {
+  if (num === 0) return '0';
+  
+  const absNum = Math.abs(num);
+  const sign = num < 0 ? '-' : '';
+  
+  if (absNum >= 1000000) {
+    const formatted = (absNum / 1000000).toFixed(decimals);
+    const cleaned = parseFloat(formatted).toString();
+    return `${sign}${cleaned}M`;
+  } else if (absNum >= 1000) {
+    const formatted = (absNum / 1000).toFixed(decimals);
+    const cleaned = parseFloat(formatted).toString();
+    return `${sign}${cleaned}K`;
+  } else {
+    return `${sign}${absNum.toFixed(decimals)}`;
+  }
+};
+
 const usePNLData = (tokenAddress: string, userAddress: string, days: number | null) => {
   const [pnlData, setPnlData] = useState({
     balance: 0,
@@ -106,7 +125,6 @@ const usePNLData = (tokenAddress: string, userAddress: string, days: number | nu
         const sells = data?.launchpadSells || [];
 
         if (position || buys.length > 0 || sells.length > 0) {
-          // Calculate totals from filtered transactions
           const totalBoughtTokens = buys.reduce((sum: number, buy: any) =>
             sum + (Number(buy.tokenAmount) / 1e18), 0);
           const totalSoldTokens = sells.reduce((sum: number, sell: any) =>
@@ -119,7 +137,6 @@ const usePNLData = (tokenAddress: string, userAddress: string, days: number | nu
           const balance = position ? Number(position.tokens) / 1e18 : 0;
           const lastPrice = position ? Number(position.token.lastPriceNativePerTokenWad) / 1e18 : 0;
 
-          // Calculate PnL for the time period
           const realized = totalReceivedNative - totalSpentNative;
           const unrealized = balance * lastPrice;
           const totalPnL = realized + unrealized;
@@ -773,7 +790,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     };
   };
 
-  // Effects
   useEffect(() => {
     setCurrency(tokenName);
   }, [tokenName]);
@@ -895,7 +911,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                   }}
                 >
                   <img src={monadblack} className="monad-pnl-icon" />
-                  {displayData.monPnl >= 0 ? '+' : ''}{displayData.monPnl.toFixed(2)}
+                  {displayData.monPnl >= 0 ? '+' : ''}{formatNumber(displayData.monPnl)}
                 </div>
               </div>
               <div className="pnl-entry-exit-group">
@@ -912,13 +928,13 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                 <div className="pnl-exit">
                   <div className="pnl-exit-label">Invested</div>
                   <div className="pnl-exit-value" style={{ color: customizationSettings.mainTextColor }}>
-                    <img className="pnl-monad-icon" src={monadicon} />{displayData.entryPrice.toFixed(2)}
+                    <img className="pnl-monad-icon" src={monadicon} />{formatNumber(displayData.entryPrice)}
                   </div>
                 </div>
                 <div className="pnl-exit">
                   <div className="pnl-exit-label">Position</div>
                   <div className="pnl-exit-value" style={{ color: customizationSettings.mainTextColor }}>
-                    <img className="pnl-monad-icon" src={monadicon} />{displayData.exitPrice.toFixed(2)}
+                    <img className="pnl-monad-icon" src={monadicon} />{formatNumber(displayData.exitPrice)}
                   </div>
                 </div>
               </div>
