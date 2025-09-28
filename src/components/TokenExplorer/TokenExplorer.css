@@ -2445,6 +2445,7 @@
   transition: all 0.2s ease;
   width: 26px;
   z-index: 11;
+  margin-left: 3px;
 }
 
 
@@ -3903,9 +3904,9 @@
 }
 
 .explorer-token-actions {
+  position: absolute;
   display: flex;
-  gap: 2px;
-  height: 100%;
+  gap: 10px;
 }
 
 .metric-color-controls {

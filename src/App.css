@@ -7949,14 +7949,18 @@ input::-webkit-inner-spin-button {
   display: flex;
   align-items: center;
   gap: 0;
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   position: relative;
   left: 50%;
   transform: translateX(-50%);
-  height: 500px;
+  height: 650px;
   max-width: 100%;
   max-height: 100%;
   gap: 8px;
+  padding: 25px 20px;
+  border-radius: 6px;
+  background-color: rgb(6,6,6, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(179, 184, 249, 0.1);
 }
 
 .pnl-modal-overlay{
@@ -7986,7 +7990,6 @@ input::-webkit-inner-spin-button {
 }
 
 .pnl-modal {
-  background-color: #080808;
   box-sizing: content-box;
   z-index: 12;
   position: relative;
@@ -8023,15 +8026,17 @@ input::-webkit-inner-spin-button {
 
 .pnl-card {
   width: 720px;
-  height: 500px;
+  height: 600px;
   background-size: cover;
   background-position: center;
   display: flex;
   flex-direction: column;
   font-family: 'Inter', sans-serif;
   color: white;
-  border-radius: 8px;
-  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 20px;
+  border: 1.5px solid rgba(179, 184, 249, 0.1);
+  margin-bottom: 20px;
+  overflow: hidden;
 }
 
 .pnl-card-content {
@@ -8043,6 +8048,7 @@ input::-webkit-inner-spin-button {
   flex-direction: column;
   justify-content: flex-start;
   border-radius: 8px;
+  box-shadow: inset 20px 0 20px 30px black;
 }
 
 .pnl-card-display {
@@ -8050,16 +8056,18 @@ input::-webkit-inner-spin-button {
 }
 
 .pnl-card-header {
-  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
 }
 
 .pnl-logo {
-  width: 140px;
-  margin-bottom: 10px;
+  width: 50px;
+  margin-top: -15px;
+  margin-left: -15px;
 }
 
 .pnl-token-row {
-  margin: 20px 0;
+  margin-top: 15px;
 }
 
 .pnl-token-info-leverage {
@@ -8080,7 +8088,7 @@ input::-webkit-inner-spin-button {
 }
 
 .pnl-token-name {
-  font-size: 1.6rem;
+  font-size: 2rem;
 }
 
 .pnl-leverage-tag {
@@ -8093,11 +8101,20 @@ input::-webkit-inner-spin-button {
 }
 
 .pnl-percentage {
-  font-size: 3rem;
+  display: flex;
+  align-items: center;
+  font-size: 3.3rem;
   font-weight: bold;
   padding: 0px 12px;
-  border-radius: 4px;
-  display: inline-block;
+  padding-bottom: 4px;
+  width: 300px;
+  height: 70px;
+  gap: 4px;
+}
+
+.monad-pnl-icon{
+  width: 45px;
+  height: 45px;
 }
 
 .pnl-entry-exit-referral {
@@ -8109,26 +8126,59 @@ input::-webkit-inner-spin-button {
 
 .pnl-entry-exit-group {
   display: flex;
-  gap: 16px;
+  flex-direction: column;
+  padding: 20px
 }
 
 .pnl-entry,
 .pnl-exit {
+  display: flex;
+  align-items: center;
+  gap: 100px;
   text-align: left;
 }
 
 .pnl-entry-label,
 .pnl-exit-label,
 .pnl-referral-label {
-  font-size: 0.9rem;
-  color: #aaa;
+  font-size: 1.25rem;
+  color: rgb(234, 237, 255);
+  letter-spacing: -0.3px;
+  width: 100px;
 }
 
 .pnl-entry-value,
-.pnl-exit-value,
-.pnl-referral-value {
-  font-size: 1.25rem;
+.pnl-exit-value{
+  display: flex;
+  align-items: center;
+  font-size: 1.35rem;
+  gap: 5px;
 }
+
+.pnl-referral-value {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  gap: 5px;
+  letter-spacing: -0.3px;
+}
+
+.pnl-referral-username{
+  font-size: 1.5rem;
+  text-align: end;
+}
+.pnl-twitter-value {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  gap: 2px;
+}
+
+.pnl-monad-icon{
+  width: 22px;
+  height: 22px;
+}
+
 
 .pnl-referral {
   text-align: right;
@@ -8139,7 +8189,6 @@ input::-webkit-inner-spin-button {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-top: -10px;
 }
 
 .pnl-footer-left,
@@ -8634,10 +8683,7 @@ input::-webkit-inner-spin-button {
     padding: 24px;
   }
 
-  .pnl-logo {
-    width: 105px;
-    margin-bottom: 8px;
-  }
+
 
   .pnl-token-row {
     margin: 15px 0;
@@ -8815,10 +8861,7 @@ input::-webkit-inner-spin-button {
     padding: 18px;
   }
 
-  .pnl-logo {
-    width: 80px;
-    margin-bottom: 6px;
-  }
+
 
   .pnl-token-row {
     margin: 12px 0;
@@ -9010,4 +9053,39 @@ input::-webkit-inner-spin-button {
 .filters-reset-icon:hover {
   opacity: 1;
   cursor: pointer;
+}
+
+
+.pnl-globe{
+  width: 17px;
+  height: 17px;
+  filter: brightness(0) saturate(100%) invert(82%) sepia(17%) saturate(862%) hue-rotate(199deg) brightness(104%) contrast(102%);
+  margin-top: 3px;
+}
+
+.pnl-twitter{
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  filter: brightness(0) saturate(100%) invert(82%) sepia(17%) saturate(862%) hue-rotate(199deg) brightness(104%) contrast(102%);
+}
+
+
+.pnl-crystal-name{
+  font-family: Orbitron;
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.pnl-bottom-row-left{
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.pnl-bottom-row{
+  display: flex;
+  margin-top: auto;
+  justify-content: space-between;
+  align-items: flex-end;
 }
