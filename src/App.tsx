@@ -3264,18 +3264,18 @@ function App() {
         setReserveQuote(orderdata[0])
         setReserveBase(orderdata[1])
         let ammPrice = orderdata[1] == 0n ? 0 : ((BigInt(orderdata[0]) * activeMarket.scaleFactor * 9975n * 100000n + (BigInt(orderdata[1]) * 10000n * activeMarket.makerRebate - 1n)) / (BigInt(orderdata[1]) * 10000n * activeMarket.makerRebate));
-        let temphighestBid = orderdata[0] < ammPrice ? ammPrice : orderdata[0]
+        let temphighestBid = orderdata[2] < ammPrice ? ammPrice : orderdata[2]
         sethighestBid(temphighestBid || BigInt(0));
         temphighestBid = Number(temphighestBid);
         ammPrice = orderdata[1] == 0n ? 0 : ((BigInt(orderdata[0]) * activeMarket.scaleFactor * 10000n * activeMarket.makerRebate) / (BigInt(orderdata[1]) * 9975n * 100000n));
-        let templowestAsk = orderdata[1] > ammPrice ? ammPrice : orderdata[1]
+        let templowestAsk = orderdata[3] > ammPrice ? ammPrice : orderdata[3]
         setlowestAsk(templowestAsk || BigInt(0));
         templowestAsk = Number(templowestAsk);
         setPrevOrderData(orderdata as any);
-        if (orderdata && Array.isArray(orderdata) && orderdata.length >= 4 && !(orderdata[2] == prevOrderData[0] &&
-          orderdata[3] == prevOrderData[1] &&
-          orderdata[4]?.toLowerCase() == prevOrderData[2]?.toLowerCase() &&
-          orderdata[5]?.toLowerCase() == prevOrderData[3]?.toLowerCase())) {
+        if (orderdata && Array.isArray(orderdata) && orderdata.length >= 4 && !(orderdata[0] == prevOrderData[0] && orderdata[1] == prevOrderData[1] && orderdata[2] == prevOrderData[2] &&
+          orderdata[3] == prevOrderData[3] &&
+          orderdata[4]?.toLowerCase() == prevOrderData[4]?.toLowerCase() &&
+          orderdata[5]?.toLowerCase() == prevOrderData[5]?.toLowerCase())) {
           try {
             const buyOrdersRaw: bigint[] = [];
             const sellOrdersRaw: bigint[] = [];

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import closebutton from '../../assets/close_button.png';
+import ToggleSwitch from '../ToggleSwitch/ToggleSwitch';
 import LogoText from '../../assets/whitecrystal.png';
 import PNLBG from '../../assets/lbstand.png';
 import PNLBG2 from '../../assets/PNLBG.png';
@@ -255,15 +256,6 @@ const usePNLData = (tokenAddress: string, userAddress: string, days: number | nu
   return { pnlData, isLoading, error };
 };
 
-const ToggleSwitch: React.FC<{
-  checked: boolean;
-  onChange: () => void;
-}> = ({ checked, onChange }) => (
-  <div className={`toggle-switch ${checked ? 'checked' : ''}`} onClick={onChange}>
-    <div className="toggle-switch-handle" />
-  </div>
-);
-
 const PNLComponent: React.FC<PNLComponentProps> = ({
   windowWidth = window.innerWidth,
   tokenAddress,
@@ -501,7 +493,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     const pnlWidth = 290;
     const pnlHeight = 70;
     const pnlX = 32;
-    const pnlY = 150;
+    const pnlY = 160;
     
     if (customizationSettings.showPNLRectangle) {
       ctx.fillStyle = displayData.monPnl >= 0 
@@ -517,8 +509,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     }
     
     if (!isUSD && images.monadBlack) {
-      const iconSize = 45;
-      const signWidth = 30;
+      const iconSize = 43;
       
       if (displayData.monPnl < 0) {
         ctx.fillText('-', pnlX + 12, pnlY + 8);
@@ -526,9 +517,9 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         ctx.fillText('+', pnlX + 12, pnlY + 8);
       }
       
-      ctx.drawImage(images.monadBlack, pnlX + 16 + signWidth, pnlY + 12, iconSize, iconSize);
+      ctx.drawImage(images.monadBlack, pnlX + 12, pnlY + 12, iconSize, iconSize);
       
-      ctx.fillText(formatNumber(Math.abs(displayData.monPnl)), pnlX + 12 + signWidth + iconSize + 8, pnlY + 8);
+      ctx.fillText(formatNumber(Math.abs(displayData.monPnl)), pnlX + 20 + iconSize, pnlY + 8);
     } else {
       ctx.fillText(pnlText, pnlX + 12, pnlY + 8);
     }
@@ -546,8 +537,8 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     ctx.fillStyle = customizationSettings.mainTextColor;
     ctx.fillText('Invested', 52, statsY + 35);
     if (!isUSD && images.monadIcon) {
-      ctx.drawImage(images.monadIcon, 200, statsY + 35, 22, 22);
-      ctx.fillText(formatNumber(displayData.entryPrice), 230, statsY + 35);
+      ctx.drawImage(images.monadIcon, 200, statsY + 35, 20, 20);
+      ctx.fillText(formatNumber(displayData.entryPrice), 225, statsY + 33);
     } else {
       const investedText = isUSD ? `$${formatNumber(displayData.entryPrice)}` : formatNumber(displayData.entryPrice);
       ctx.fillText(investedText, 200, statsY + 35);
@@ -555,8 +546,8 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     
     ctx.fillText('Position', 52, statsY + 70);
     if (!isUSD && images.monadIcon) {
-      ctx.drawImage(images.monadIcon, 200, statsY + 70, 22, 22);
-      ctx.fillText(formatNumber(displayData.exitPrice), 230, statsY + 70);
+      ctx.drawImage(images.monadIcon, 200, statsY + 70, 20, 20);
+      ctx.fillText(formatNumber(displayData.exitPrice), 225, statsY + 69);
     } else {
       const positionText = isUSD ? `$${formatNumber(displayData.exitPrice)}` : formatNumber(displayData.exitPrice);
       ctx.fillText(positionText, 200, statsY + 70);
@@ -567,20 +558,20 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     ctx.fillStyle = customizationSettings.mainTextColor;
     
     if (images.globe) {
-      ctx.drawImage(images.globe, 52, bottomY + 25,  17, 17);
+      ctx.drawImage(images.globe, 52, bottomY + 29,  17, 17);
     }
-    ctx.fillText('crystal.exchange', 75, bottomY + 25);
+    ctx.fillText('crystal.exchange', 74, bottomY + 30);
     
     if (images.twitter) {
-      ctx.drawImage(images.twitter, 220, bottomY + 24, 17, 17);
+      ctx.drawImage(images.twitter, 220, bottomY + 29, 17, 17);
     }
-    ctx.fillText('CrystalExch', 240, bottomY + 25);
+    ctx.fillText('@CrystalExch', 240, bottomY + 30);
     
     ctx.textAlign = 'right';
     ctx.font = '24px Funnel Display, Arial, sans-serif';
-    ctx.fillText('@crystal', 668, bottomY - 10);
+    ctx.fillText('@crystal', 688, bottomY - 10);
     ctx.font = '16px Funnel Display, Arial, sans-serif';
-    ctx.fillText('Save 25% off Fees', 668, bottomY + 25);
+    ctx.fillText('Save 25% on Fees', 688, bottomY + 25);
     
   }, [imagesLoaded, images, selectedBg, uploadedBg, displayData, customizationSettings, isUSD, tokenSymbol, tokenName]);
 
@@ -806,7 +797,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   if (isLoading && !demoMode && !externalUserStats) {
     return (
       <div className="pnl-loading">
-        <p>Loading trading data...</p>
       </div>
     );
   }
@@ -823,7 +813,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   if (!imagesLoaded) {
     return (
       <div className="pnl-loading">
-        <p>Loading images...</p>
       </div>
     );
   }
@@ -896,7 +885,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                 className={`pnl-footer-btn ${isUSD ? 'active' : ''}`} 
                 onClick={() => setIsUSD(!isUSD)}
               >
-                {isUSD ? 'USD' : 'MON'}
+                {isUSD ? 'Switch to MON' : 'Switch to USD'}
               </button>
               <button className="pnl-footer-btn" onClick={toggleRightPanel}>
                 {showRightPanel ? 'Hide Panel' : 'Customize'}

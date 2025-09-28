@@ -824,13 +824,11 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
   const executeDistribution = async () => {
     if (sourceWallets.length === 0 || destinationWallets.length === 0 || !distributionAmount) {
-      alert('Please add source wallets, destination wallets, and set an amount');
       return;
     }
 
     const amount = parseFloat(distributionAmount);
     if (amount <= 0) {
-      alert('Please enter a valid amount');
       return;
     }
 

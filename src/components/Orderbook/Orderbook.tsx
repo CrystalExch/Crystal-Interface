@@ -253,7 +253,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
         <TradesView
           trades={trades}
           show={true}
-          symbolQuote={orderdata.symbolIn}
+          symbolQuote={perps ? orderdata.symbolIn : orderdata.symbolOut}
         />
       </div>
     </div>
@@ -299,7 +299,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
         <TradesView
           trades={trades}
           show={true}
-          symbolQuote={orderdata.symbolIn}
+          symbolQuote={perps ? orderdata.symbolIn : orderdata.symbolOut}
         />
       </div>
     </div>
