@@ -3030,7 +3030,7 @@ useEffect(() => {
                           );
 
                           if (!isFinite(num)) return 'var(--muted, #9a9ba4)';
-                          if (num === 0) return 'white';
+                          if (num === 0) return 'rgb(235 112 112)';
 
                           return num > 0 ? 'rgb(67 254 154)' : 'rgb(235 112 112)';
                         })(),

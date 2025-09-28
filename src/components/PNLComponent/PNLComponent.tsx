@@ -95,10 +95,10 @@ interface ColorInputProps {
 
 const formatNumber = (num: number, decimals: number = 2): string => {
   if (num === 0) return '0';
-  
+
   const absNum = Math.abs(num);
   const sign = num < 0 ? '-' : '';
-  
+
   if (absNum >= 1000000) {
     const formatted = (absNum / 1000000).toFixed(decimals);
     const cleaned = parseFloat(formatted).toString();
@@ -332,7 +332,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         ...demoData,
         valueNet: demoData.valueNet ?? 0,
       };
-      
+
       if (isUSD) {
         return {
           ...baseData,
@@ -342,10 +342,10 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
           valueNet: baseData.valueNet * monUsdPrice,
         };
       }
-      
+
       return baseData;
     }
-    
+
     const pnlPercentage = pnlData.valueBought > 0
       ? ((pnlData.valueNet / pnlData.valueBought) * 100)
       : 0;
@@ -387,7 +387,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   const [customizationSettings, setCustomizationSettings] = useState<CustomizationSettings>({
     mainTextColor: '#EAEDFF',
     positivePNLColor: '#D8DCFF',
-    negativePNLColor: '#e94e4eff',
+    negativePNLColor: '#e85a5aff',
     rectangleTextColor: '#020307',
     showPNLRectangle: true,
   });
@@ -395,38 +395,56 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   const [tempCustomizationSettings, setTempCustomizationSettings] = useState<CustomizationSettings>({
     mainTextColor: '#EAEDFF',
     positivePNLColor: '#D8DCFF',
-    negativePNLColor: '#e94e4eff',
+    negativePNLColor: '#e85a5aff',
     rectangleTextColor: '#020307',
     showPNLRectangle: true,
   });
+const createGlobeSVG = useCallback((fillColor: string) => {
+  const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${fillColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-globe-icon lucide-globe"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`;
+  const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
+  return loadImage(dataUrl);
+}, []);
 
-  const loadImages = useCallback(async () => {
-    const imagePromises: { [key: string]: Promise<HTMLImageElement> } = {
-      logo: loadImage(LogoText),
-      bg1: loadImage(PNLBG),
-      bg2: loadImage(PNLBG2),
-      monadBlack: loadImage(monadblack),
-      monadIcon: loadImage(monadicon),
-      globe: loadImage(globe),
-      twitter: loadImage(twitter),
-      closeButton: loadImage(closebutton)
-    };
+const createTwitterSVG = useCallback((fillColor: string) => {
+  const svgString = `<svg  viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.08318 6.33193L14.2436 0.333313H13.0208L8.53995 5.54183L4.96112 0.333313H0.833374L6.24526 8.20951L0.833374 14.5H2.05631L6.78818 8.99961L10.5677 14.5H14.6954L9.08288 6.33193H9.08318ZM7.4082 8.2789L6.85987 7.49461L2.49695 1.25392H4.3753L7.89623 6.29036L8.44456 7.07465L13.0213 13.6212H11.143L7.4082 8.2792V8.2789Z" fill="${fillColor}"/></svg>`;
+  const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
+  return loadImage(dataUrl);
+}, []);
 
-    if (uploadedBg) {
-      imagePromises.uploaded = loadImage(uploadedBg);
+const createLogoSVG = useCallback((fillColor: string) => {
+  const svgString = `<svg version="1.2" fill="${fillColor}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700" width="38" height="50"><path d="m136 388l288-349 121 147-89 107-54-65-113 138 53 66-85 105zm413-115l115 139-289 350-116-140 87-103 56 66 113-138-55-67z"/></svg>`;
+  const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
+  return loadImage(dataUrl);
+}, []);
+
+const loadImages = useCallback(async () => {
+  const imagePromises: { [key: string]: Promise<HTMLImageElement> } = {
+    logo: createLogoSVG(customizationSettings.mainTextColor),
+    bg1: loadImage(PNLBG),
+    bg2: loadImage(PNLBG2),
+    monadBlack: loadImage(monadblack),
+    monadIcon: loadImage(monadicon),
+    globe: createGlobeSVG(customizationSettings.mainTextColor),    // <-- Dynamic SVG
+    twitter: createTwitterSVG(customizationSettings.mainTextColor), 
+    closeButton: loadImage(closebutton)
+  };
+
+
+  if (uploadedBg) {
+    imagePromises.uploaded = loadImage(uploadedBg);
+  }
+
+  try {
+    const loadedImages: ImageCollection = {};
+    for (const [key, promise] of Object.entries(imagePromises)) {
+      loadedImages[key as keyof ImageCollection] = await promise;
     }
-
-    try {
-      const loadedImages: ImageCollection = {};
-      for (const [key, promise] of Object.entries(imagePromises)) {
-        loadedImages[key as keyof ImageCollection] = await promise;
-      }
-      setImages(loadedImages);
-      setImagesLoaded(true);
-    } catch (error) {
-      console.error('Error loading images:', error);
-    }
-  }, [uploadedBg]);
+    setImages(loadedImages);
+    setImagesLoaded(true);
+  } catch (error) {
+    console.error('Error loading images:', error);
+  }
+}, [uploadedBg, customizationSettings.mainTextColor, createLogoSVG, createGlobeSVG, createTwitterSVG]);
 
   const loadImage = useCallback((src: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
@@ -444,96 +462,103 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     const dpr = window.devicePixelRatio || 1;
     const displayWidth = 720;
     const displayHeight = 450;
-    
+
     canvas.width = displayWidth * dpr;
     canvas.height = displayHeight * dpr;
-    
+
     canvas.style.width = displayWidth + 'px';
     canvas.style.height = displayHeight + 'px';
-    
+
     ctx.scale(dpr, dpr);
-    
+
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, displayWidth, displayHeight);
-    
+
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    
+
     let bgImage: HTMLImageElement | undefined;
     if (selectedBg === PNLBG) bgImage = images.bg1;
     else if (selectedBg === PNLBG2) bgImage = images.bg2;
     else if (selectedBg === uploadedBg && images.uploaded) bgImage = images.uploaded;
     else bgImage = images.bg2;
-    
+
     if (bgImage) {
       ctx.drawImage(bgImage, 0, 0, displayWidth, displayHeight);
     }
-    
+
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    
+
     if (images.logo) {
-      ctx.drawImage(images.logo, 32, 32, 40, 50);
+      ctx.drawImage(images.logo, 22, 22, 46, 60);
     }
-    
+
     ctx.fillStyle = customizationSettings.mainTextColor;
     ctx.font = '35px Funnel Display, Arial, sans-serif';
     ctx.fillText(tokenSymbol || tokenName, 32, 105);
-    
-    const pnlText = isUSD 
-      ? `${displayData.monPnl >= 0 ? '+' : ''}$${formatNumber(Math.abs(displayData.monPnl))}`
+
+    const pnlText = isUSD
+      ? `${displayData.monPnl >= 0 ? '+' : '-'}$${formatNumber(Math.abs(displayData.monPnl))}`
       : `${displayData.monPnl >= 0 ? '+' : ''}${formatNumber(displayData.monPnl)}`;
-    
+
     ctx.font = 'bold 53px Funnel Display, Arial, sans-serif';
     const pnlMetrics = ctx.measureText(pnlText);
-    const pnlWidth = 290;
+    const pnlWidth = 320;
     const pnlHeight = 70;
     const pnlX = 32;
     const pnlY = 160;
-    
+
     if (customizationSettings.showPNLRectangle) {
-      ctx.fillStyle = displayData.monPnl >= 0 
-        ? customizationSettings.positivePNLColor 
+      ctx.fillStyle = displayData.monPnl >= 0
+        ? customizationSettings.positivePNLColor
         : customizationSettings.negativePNLColor;
       ctx.fillRect(pnlX, pnlY, pnlWidth, pnlHeight);
-      
+
       ctx.fillStyle = customizationSettings.rectangleTextColor;
     } else {
-      ctx.fillStyle = displayData.monPnl >= 0 
-        ? customizationSettings.positivePNLColor 
+      ctx.fillStyle = displayData.monPnl >= 0
+        ? customizationSettings.positivePNLColor
         : customizationSettings.negativePNLColor;
     }
-    
+
     if (!isUSD && images.monadBlack) {
       const iconSize = 43;
-      
+      let currentX = pnlX + 12;
+      let signWidth = 0;
+
       if (displayData.monPnl < 0) {
-        ctx.fillText('-', pnlX + 12, pnlY + 8);
+        ctx.fillText('-', currentX, pnlY + 8);
+        signWidth = 20;
       } else if (displayData.monPnl > 0) {
-        ctx.fillText('+', pnlX + 12, pnlY + 8);
+        ctx.fillText('+', currentX, pnlY + 8);
+        signWidth = 34;
       }
-      
-      ctx.drawImage(images.monadBlack, pnlX + 12, pnlY + 12, iconSize, iconSize);
-      
-      ctx.fillText(formatNumber(Math.abs(displayData.monPnl)), pnlX + 20 + iconSize, pnlY + 8);
+
+      if (displayData.monPnl !== 0) {
+        currentX += signWidth;
+      }
+
+      ctx.drawImage(images.monadBlack, currentX + 3, pnlY + 12, iconSize, iconSize);
+
+      ctx.fillText(formatNumber(Math.abs(displayData.monPnl)), currentX + iconSize + 8, pnlY + 8);
     } else {
       ctx.fillText(pnlText, pnlX + 12, pnlY + 8);
     }
-    
     const statsY = 255;
     ctx.font = '23px Funnel Display, Arial, sans-serif';
     ctx.fillStyle = customizationSettings.mainTextColor;
-    
+
     ctx.fillText('PNL', 52, statsY);
-    ctx.fillStyle = displayData.monPnl >= 0 
-      ? customizationSettings.positivePNLColor 
+    ctx.fillStyle = displayData.monPnl >= 0
+      ? customizationSettings.positivePNLColor
       : customizationSettings.negativePNLColor;
     ctx.fillText(`${displayData.monPnl >= 0 ? '+' : ''}${displayData.pnlPercentage.toFixed(2)}%`, 200, statsY);
-    
+
     ctx.fillStyle = customizationSettings.mainTextColor;
     ctx.fillText('Invested', 52, statsY + 35);
     if (!isUSD && images.monadIcon) {
@@ -543,7 +568,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
       const investedText = isUSD ? `$${formatNumber(displayData.entryPrice)}` : formatNumber(displayData.entryPrice);
       ctx.fillText(investedText, 200, statsY + 35);
     }
-    
+
     ctx.fillText('Position', 52, statsY + 70);
     if (!isUSD && images.monadIcon) {
       ctx.drawImage(images.monadIcon, 200, statsY + 70, 20, 20);
@@ -552,27 +577,27 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
       const positionText = isUSD ? `$${formatNumber(displayData.exitPrice)}` : formatNumber(displayData.exitPrice);
       ctx.fillText(positionText, 200, statsY + 70);
     }
-    
+
     const bottomY = 380;
     ctx.font = '16px Funnel Display, Arial, sans-serif';
     ctx.fillStyle = customizationSettings.mainTextColor;
-    
+
     if (images.globe) {
-      ctx.drawImage(images.globe, 52, bottomY + 29,  17, 17);
+      ctx.drawImage(images.globe, 52, bottomY + 29, 17, 17);
     }
     ctx.fillText('crystal.exchange', 74, bottomY + 30);
-    
+
     if (images.twitter) {
-      ctx.drawImage(images.twitter, 220, bottomY + 29, 17, 17);
+      ctx.drawImage(images.twitter, 223, bottomY + 31, 14, 14);
     }
     ctx.fillText('@CrystalExch', 240, bottomY + 30);
-    
+
     ctx.textAlign = 'right';
     ctx.font = '24px Funnel Display, Arial, sans-serif';
     ctx.fillText('@crystal', 688, bottomY - 10);
     ctx.font = '16px Funnel Display, Arial, sans-serif';
     ctx.fillText('Save 25% on Fees', 688, bottomY + 25);
-    
+
   }, [imagesLoaded, images, selectedBg, uploadedBg, displayData, customizationSettings, isUSD, tokenSymbol, tokenName]);
 
   useEffect(() => {
@@ -824,11 +849,11 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         onClick={e => e.stopPropagation()}
       >
         <div className="pnl-modal main-popup">
-          <canvas 
-            ref={canvasRef} 
-            width={720} 
+          <canvas
+            ref={canvasRef}
+            width={720}
             height={450}
-            style={{ 
+            style={{
               borderRadius: '20px',
               border: '1.5px solid rgba(179, 184, 249, 0.1)',
               marginBottom: '20px',
@@ -881,8 +906,8 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 
           <div className="pnl-footer pnl-layer-bottom">
             <div className="pnl-footer-left">
-              <button 
-                className={`pnl-footer-btn ${isUSD ? 'active' : ''}`} 
+              <button
+                className={`pnl-footer-btn ${isUSD ? 'active' : ''}`}
                 onClick={() => setIsUSD(!isUSD)}
               >
                 {isUSD ? 'Switch to MON' : 'Switch to USD'}
@@ -890,16 +915,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
               <button className="pnl-footer-btn" onClick={toggleRightPanel}>
                 {showRightPanel ? 'Hide Panel' : 'Customize'}
               </button>
-              {timePeriods.map(period => (
-                <button
-                  key={period.label}
-                  className={`pnl-footer-btn ${selectedTimePeriod.label === period.label ? 'active' : ''}`}
-                  onClick={() => setSelectedTimePeriod(period)}
-                  disabled={isLoading}
-                >
-                  {period.label}
-                </button>
-              ))}
             </div>
             <div className="pnl-footer-right">
               <button className="pnl-footer-btn" onClick={handleDownload}>Download</button>
