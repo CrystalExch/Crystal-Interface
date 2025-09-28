@@ -896,7 +896,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
             onMouseDown={handleMouseDown}
           >
             <div ref={cardRef} className="pnl-card-content">
-              {showScrollHint && (
+              {/* {showScrollHint && (
                 <div className="scroll-hint" style={{
                   position: 'absolute',
                   top: '10px',
@@ -911,7 +911,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                 }}>
                   Drag to scroll
                 </div>
-              )}
+              )} */}
 
               <div className="pnl-header-section">
                 <div className="pnl-card-header">
@@ -1007,7 +1007,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
             </div>
           </div>
 
-          {isUploadedImageSelected && (
+          {/* {isUploadedImageSelected && (
             <div className="pnl-zoom-controls">
               <label className="zoom-label">Zoom: {backgroundZoom}%</label>
               <input
@@ -1039,7 +1039,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                 </button>
               </div>
             </div>
-          )}
+          )} */}
 
           <div className="pnl-section pnl-layer-middle">
             <div className="pnl-middle-left">
