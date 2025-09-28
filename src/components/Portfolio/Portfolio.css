@@ -507,7 +507,8 @@
     letter-spacing:-.3px;
     white-space:nowrap;
     overflow:hidden;
-    text-overflow:ellipsis
+    text-overflow:ellipsis;
+    max-width: 80px;
 }
 .wallet-drag-address{
   display: flex;

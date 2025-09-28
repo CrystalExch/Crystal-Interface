@@ -37,7 +37,7 @@ import {
   useSignTypedData,
   useSignMessage
 } from "@account-kit/react";
-import { Wallet, keccak256 } from 'ethers'
+import { JsonRpcProvider, Wallet, keccak256 } from 'ethers'
 import { useQuery } from '@tanstack/react-query';
 
 // import css
@@ -1937,27 +1937,58 @@ function App() {
     return null;
   }, [markets, tradesByMarket]);
 
-  const handleSubwalletTransfer = useCallback(async (nonce: number, toAddress: string, amount: bigint, fromPrivateKey: string) => {
+const getWalletNonce = useCallback(async (walletAddress: string): Promise<number> => {
+  try {
+    const provider = new JsonRpcProvider(HTTP_URL);
+    const nonce = await provider.getTransactionCount(walletAddress, 'pending');
+    return nonce;
+  } catch (error) {
+    console.error('Failed to get nonce for wallet:', walletAddress, error);
+    // Fallback to latest nonce
     try {
-      setIsVaultDepositSigning(true);
-
-      const hash = await sendUserOperationAsync({
-        uo: {
-          target: toAddress as `0x${string}`,
-          value: amount,
-          data: '0x'
-        }
-      }, 0n, 0n, false, fromPrivateKey, nonce);
-
-      console.log('Subwallet transfer successful:', hash);
-
-    } catch (error) {
-      console.error('Subwallet transfer failed:', error);
-      throw error;
-    } finally {
-      setIsVaultDepositSigning(false);
+      const provider = new JsonRpcProvider(HTTP_URL);
+      const nonce = await provider.getTransactionCount(walletAddress, 'latest');
+      return nonce;
+    } catch (fallbackError) {
+      console.error('Fallback nonce fetch failed:', fallbackError);
+      return 0;
     }
-  }, [sendUserOperationAsync]);
+  }
+}, []);
+
+const handleSubwalletTransfer = useCallback(async (
+  toAddress: string, 
+  amount: bigint, 
+  fromPrivateKey: string,
+  fromAddress?: string
+) => {
+  try {
+    setIsVaultDepositSigning(true);
+
+    const walletAddress = fromAddress || (new Wallet(fromPrivateKey)).address;
+    
+    const currentNonce = await getWalletNonce(walletAddress);
+
+    console.log(`Sending ${amount} from ${walletAddress} to ${toAddress} with nonce ${currentNonce}`);
+
+    const hash = await sendUserOperationAsync({
+      uo: {
+        target: toAddress as `0x${string}`,
+        value: amount,
+        data: '0x'
+      }
+    }, 0n, 0n, false, fromPrivateKey, currentNonce);
+
+    console.log('Subwallet transfer successful:', hash);
+    return hash;
+
+  } catch (error) {
+    console.error('Subwallet transfer failed:', error);
+    throw error;
+  } finally {
+    setIsVaultDepositSigning(false);
+  }
+}, [sendUserOperationAsync, getWalletNonce]);
 
   const saveSubWallets = useCallback((wallets: { address: string; privateKey: string; }[] | ((prevState: { address: string; privateKey: string; }[]) => { address: string; privateKey: string; }[])) => {
     setSubWallets((prevWallets) => {
@@ -20812,6 +20843,7 @@ function App() {
                 setShowRefModal={undefined}
                 lastRefGroupFetch={lastRefGroupFetch}
                 scaAddress={scaAddress}
+                getWalletNonce={getWalletNonce} 
               />
             } />
           <Route path="/trackers"

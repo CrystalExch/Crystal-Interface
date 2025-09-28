@@ -273,7 +273,8 @@ interface PortfolioProps {
   isVaultDepositSigning: boolean;
   setIsVaultDepositSigning: (signing: boolean) => void;
   handleSetChain: () => Promise<void>;
-  handleSubwalletTransfer: (nonce: number, toAddress: string, amount: bigint, fromPrivateKey: string) => Promise<void>;
+  handleSubwalletTransfer: (toAddress: string, amount: bigint, fromPrivateKey: string, fromAddress?: string) => Promise<any>;
+  getWalletNonce: (walletAddress: string) => Promise<number>;
   createSubWallet?: () => Promise<void>;
   Wallet?: any;
   activeWalletPrivateKey?: string;
@@ -348,6 +349,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   Wallet,
   activeWalletPrivateKey,
   lastRefGroupFetch,
+  getWalletNonce,
   positions,
   onSellPosition,
   scaAddress
@@ -822,98 +824,268 @@ const Portfolio: React.FC<PortfolioProps> = ({
     return 0;
   };
 
-  const executeDistribution = async () => {
-    if (sourceWallets.length === 0 || destinationWallets.length === 0 || !distributionAmount) {
-      return;
-    }
+const executeDistribution = async () => {
+  if (sourceWallets.length === 0 || destinationWallets.length === 0 || !distributionAmount) {
+    return;
+  }
 
-    const amount = parseFloat(distributionAmount);
-    if (amount <= 0) {
-      return;
-    }
+  const targetAmount = parseFloat(distributionAmount);
+  if (targetAmount <= 0) {
+    return;
+  }
 
-    try {
-      setIsVaultDepositSigning(true);
-      await handleSetChain();
+  try {
+    setIsVaultDepositSigning(true);
+    await handleSetChain();
 
-      // Calculate all transfers first
-      const plannedTransfers = [];
+    const sourceWalletCapacities = sourceWallets.map(sourceWallet => {
+      const balances = walletTokenBalances[sourceWallet.address];
+      let availableBalance = 0;
       
-      for (const sourceWallet of sourceWallets) {
-        const sourceWalletData = subWallets.find(w => w.address === sourceWallet.address);
-        if (!sourceWalletData) continue;
+      if (balances) {
+        const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
+        if (ethToken && balances[ethToken.address]) {
+          const amount = balances[ethToken.address] - settings.chainConfig[activechain].gasamount > BigInt(0)
+            ? balances[ethToken.address] - settings.chainConfig[activechain].gasamount
+            : BigInt(0);
+          
+          availableBalance = Number(amount) / 10 ** Number(ethToken.decimals);
+        }
+      }
+      
+      return {
+        wallet: sourceWallet,
+        availableBalance: Math.max(0, availableBalance), 
+        walletData: subWallets.find(w => w.address === sourceWallet.address)
+      };
+    }).filter(item => item.walletData && item.availableBalance > 0); 
 
-        const amountPerSource = amount / sourceWallets.length;
+    if (sourceWalletCapacities.length === 0) {
+      alert('No source wallets have sufficient balance to send');
+      return;
+    }
+
+    const totalAvailable = sourceWalletCapacities.reduce((sum, item) => sum + item.availableBalance, 0);
+    
+    if (totalAvailable < targetAmount) {
+      console.warn(`Warning: Only ${totalAvailable.toFixed(6)} MON available, but ${targetAmount} requested. Will send what's available.`);
+    }
+
+    const actualDistributionAmount = Math.min(targetAmount, totalAvailable);
+
+    console.log(`Distributing ${actualDistributionAmount.toFixed(6)} MON from ${sourceWalletCapacities.length} wallets`);
+
+    const allTransfers = [];
+
+    if (distributionMode === 'equal') {
+      for (const sourceItem of sourceWalletCapacities) {
+        const sourceContribution = (sourceItem.availableBalance / totalAvailable) * actualDistributionAmount;
+        
+        const amountPerDestination = sourceContribution / destinationWallets.length;
 
         for (const destWallet of destinationWallets) {
-          let transferAmount: number;
-
-          if (distributionMode === 'equal') {
-            transferAmount = amountPerSource / destinationWallets.length;
-          } else {
-            const totalDestValue = destinationWallets.reduce((sum, w) => sum + w.totalValue, 0);
-            const proportion = destWallet.totalValue / (totalDestValue || 1);
-            transferAmount = amountPerSource * proportion;
-          }
-
-          if (transferAmount > 0.000001) {
-            plannedTransfers.push({
-              fromAddress: sourceWallet.address,
+          if (amountPerDestination > 0.000001) {
+            allTransfers.push({
+              fromAddress: sourceItem.wallet.address,
               toAddress: destWallet.address,
-              amount: transferAmount,
-              fromPrivateKey: sourceWalletData.privateKey,
-              fromName: sourceWallet.name,
-              toName: destWallet.name
+              amount: amountPerDestination,
+              fromPrivateKey: sourceItem.walletData!.privateKey,
+              fromName: sourceItem.wallet.name,
+              toName: destWallet.name,
+              maxAmount: sourceItem.availableBalance
             });
           }
         }
       }
-
-      console.log(`Executing ${plannedTransfers.length} transfers...`);
-      let successfulTransfers = 0;
-
-      // Execute transfers one by one with manual transaction creation
-      for (let i = 0; i < plannedTransfers.length; i++) {
-        const transfer = plannedTransfers[i];
+    } else {
+      const totalDestValue = destinationWallets.reduce((sum, w) => sum + w.totalValue, 0);
+      
+      for (const sourceItem of sourceWalletCapacities) {
+        const sourceContribution = (sourceItem.availableBalance / totalAvailable) * actualDistributionAmount;
         
-        try {
-          console.log(`Transfer ${i + 1}/${plannedTransfers.length}: ${transfer.amount.toFixed(6)} MON from ${transfer.fromName} to ${transfer.toName}`);
-          
-          const amountInWei = BigInt(Math.round(transfer.amount * 10**18));
+        for (const destWallet of destinationWallets) {
+          const proportion = destWallet.totalValue / (totalDestValue || 1);
+          const transferAmount = sourceContribution * proportion;
 
-          const nonce = 0;
-          if (amountInWei > 0) {
-            await handleSubwalletTransfer(
-              nonce,
-              address,
-              amountInWei,
-              transfer.fromPrivateKey
-            );
+          if (transferAmount > 0.000001) {
+            allTransfers.push({
+              fromAddress: sourceItem.wallet.address,
+              toAddress: destWallet.address,
+              amount: transferAmount,
+              fromPrivateKey: sourceItem.walletData!.privateKey,
+              fromName: sourceItem.wallet.name,
+              toName: destWallet.name,
+              maxAmount: sourceItem.availableBalance
+            });
           }
-          
-          successfulTransfers++;
-          console.log(`✅ Transfer ${i + 1} sent successfully`);
-
-        } catch (error) {
         }
       }
-
-      setTimeout(() => {
-        terminalRefetch();
-        refetch();
-      }, 0);
-
-      showDistributionSuccess(distributionAmount, sourceWallets.length, destinationWallets.length);
-      clearAllZones();
-      setDistributionAmount('');
-      console.log(`🎉 Distribution completed: ${successfulTransfers}/${plannedTransfers.length} transfers sent`);
-
-    } catch (error) {
-      console.error('Distribution execution error:', error);
-    } finally {
-      setIsVaultDepositSigning(false);
     }
-  };
+
+    const walletTotals = new Map<string, number>();
+    for (const transfer of allTransfers) {
+      const current = walletTotals.get(transfer.fromAddress) || 0;
+      walletTotals.set(transfer.fromAddress, current + transfer.amount);
+    }
+
+    let adjustmentNeeded = false;
+    for (const [walletAddress, totalToSend] of walletTotals.entries()) {
+      const capacity = sourceWalletCapacities.find(item => item.wallet.address === walletAddress);
+      if (capacity && totalToSend > capacity.availableBalance) {
+        console.warn(`Wallet ${walletAddress} trying to send ${totalToSend.toFixed(6)} but only has ${capacity.availableBalance.toFixed(6)}`);
+        adjustmentNeeded = true;
+        
+        const scaleFactor = capacity.availableBalance / totalToSend;
+        allTransfers
+          .filter(t => t.fromAddress === walletAddress)
+          .forEach(t => t.amount *= scaleFactor);
+      }
+    }
+
+
+    const walletTransfers = new Map<string, typeof allTransfers>();
+    const walletNonces = new Map<string, number>();
+
+    for (const transfer of allTransfers) {
+      if (!walletTransfers.has(transfer.fromAddress)) {
+        walletTransfers.set(transfer.fromAddress, []);
+      }
+      walletTransfers.get(transfer.fromAddress)!.push(transfer);
+    }
+
+    const noncePromises = Array.from(walletTransfers.keys()).map(async (address) => {
+      const nonce = await getWalletNonce(address);
+      walletNonces.set(address, nonce);
+    });
+    
+    await Promise.all(noncePromises);
+
+    const transferPromises = [];
+    
+    for (const [walletAddress, transfers] of walletTransfers.entries()) {
+      let currentNonce = walletNonces.get(walletAddress)!;
+      
+      for (const transfer of transfers) {
+        const amountInWei = BigInt(Math.round(transfer.amount * 10**18));
+        
+        const transferPromise = sendUserOperationAsync({
+          uo: {
+            target: transfer.toAddress as `0x${string}`,
+            value: amountInWei,
+            data: '0x'
+          }
+        }, 0n, 0n, false, transfer.fromPrivateKey, currentNonce)
+        .then(() => {
+          return true;
+        })
+        
+        transferPromises.push(transferPromise);
+        currentNonce++; 
+      }
+    }
+
+
+    const results = await Promise.allSettled(transferPromises);
+    const successfulTransfers = results.filter(result => 
+      result.status === 'fulfilled' && result.value === true
+    ).length;
+
+    const actualAmountSent = allTransfers.reduce((sum, t) => sum + t.amount, 0);
+
+    setTimeout(() => {
+      terminalRefetch();
+      refetch();
+    }, 500);
+
+    showDistributionSuccess(actualAmountSent.toFixed(6), sourceWalletCapacities.length, destinationWallets.length);
+    clearAllZones();
+    setDistributionAmount('');
+    console.log(`🎉 Distribution completed: ${successfulTransfers}/${allTransfers.length} transfers sent (${actualAmountSent.toFixed(6)} MON total)`);
+
+  } catch (error) {
+    console.error('Distribution execution error:', error);
+  } finally {
+    setIsVaultDepositSigning(false);
+  }
+};
+
+const calculateMaxAmount = () => {
+  const totalSourceBalance = sourceWallets.reduce((total, wallet) => {
+    const balances = walletTokenBalances[wallet.address];
+    if (!balances) return total;
+
+    const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
+    if (ethToken && balances[ethToken.address]) {
+      const amount = balances[ethToken.address] - settings.chainConfig[activechain].gasamount > BigInt(0)
+        ? balances[ethToken.address] - settings.chainConfig[activechain].gasamount
+        : BigInt(0);
+      
+      const availableBalance = Number(amount) / 10 ** Number(ethToken.decimals);
+      return total + availableBalance;
+    }
+
+    return total;
+  }, 0);
+  return totalSourceBalance;
+};
+const handleSendBackToMain = async () => {
+  if (destinationWallets.length === 0) {
+    alert('No destination wallets to send from');
+    return;
+  }
+
+  try {
+    setIsVaultDepositSigning(true);
+    await handleSetChain();
+
+    let successfulTransfers = 0;
+
+    for (const destWallet of destinationWallets) {
+      const sourceWalletData = subWallets.find(w => w.address === destWallet.address);
+      if (!sourceWalletData) continue;
+
+      try {
+        const balances = walletTokenBalances[destWallet.address];
+        if (balances) {
+          const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
+          if (ethToken && balances[ethToken.address]) {
+            const amount = balances[ethToken.address] - settings.chainConfig[activechain].gasamount > BigInt(0)
+              ? balances[ethToken.address] - settings.chainConfig[activechain].gasamount
+              : BigInt(0);
+            
+            if (amount > 0) {
+              const currentNonce = await getWalletNonce(destWallet.address);
+              
+              await sendUserOperationAsync({
+                uo: {
+                  target: address as `0x${string}`,
+                  value: amount, 
+                  data: '0x'
+                }
+              }, 0n, 0n, false, sourceWalletData.privateKey, currentNonce);
+              
+              successfulTransfers++;
+            }
+          }
+        }
+      } catch (error) {
+      }
+    }
+
+    setTimeout(() => {
+      terminalRefetch();
+      refetch();
+    }, 500);
+
+    showSendBackSuccess(successfulTransfers);
+
+  } catch (error) {
+    console.error('Send back to main wallet failed:', error);
+    alert('Send back to main wallet failed. Please try again.');
+  } finally {
+    setIsVaultDepositSigning(false);
+  }
+};
 
   const [privateKeyRevealed, setPrivateKeyRevealed] = useState(false);
 
@@ -1089,12 +1261,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
   const [customDestinationAddress, setCustomDestinationAddress] = useState<string>('');
   const [customAddressError, setCustomAddressError] = useState<string>('');
-  const calculateMaxAmount = () => {
-    const totalSourceBalance = sourceWallets.reduce((total, wallet) => {
-      return total + getWalletBalanceWithGas(wallet.address);
-    }, 0);
-    return totalSourceBalance;
-  };
   const handleMaxAmount = () => {
     const maxAmount = calculateMaxAmount();
     setDistributionAmount(maxAmount.toFixed(6));
@@ -1132,46 +1298,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
     setDestinationWallets(prev => [...prev, customWallet]);
     setCustomDestinationAddress('');
-  };
-
-  const handleSendBackToMain = async () => {
-    if (destinationWallets.length === 0) {
-      alert('No destination wallets to send from');
-      return;
-    }
-
-    try {
-      setIsVaultDepositSigning(true);
-      await handleSetChain();
-
-      for (const destWallet of destinationWallets) {
-        const sourceWalletData = subWallets.find(w => w.address === destWallet.address);
-        if (!sourceWalletData) continue;
-
-        const walletBalance = getWalletBalance(destWallet.address);
-        const gasAmount = Number(settings.chainConfig[activechain].gasamount || BigInt(0)) / 10 ** 18;
-        const transferAmount = Math.max(0, walletBalance - gasAmount - 0.001);
-        const nonce = 0;
-        if (transferAmount > 0) {
-          await handleSubwalletTransfer(
-            nonce,
-            address,
-            BigInt(Math.round(transferAmount * 1e18)),
-            sourceWalletData.privateKey
-          );
-        }
-      }
-
-      terminalRefetch();
-      refetch();
-
-      showSendBackSuccess(destinationWallets.length);
-
-    } catch (error) {
-      alert('Send back to main wallet failed. Please try again.');
-    } finally {
-      setIsVaultDepositSigning(false);
-    }
   };
 
 
@@ -1826,7 +1952,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
   ) => {
     const isThisContainerSelecting = activeSelectionContainer === containerType;
 
-    // Determine which icon to show based on container type
     const getEmptyStateIcon = () => {
       if (containerType === 'source') {
         return (
