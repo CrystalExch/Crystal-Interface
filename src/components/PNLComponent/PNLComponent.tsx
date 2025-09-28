@@ -3,11 +3,13 @@ import html2canvas from 'html2canvas';
 import { HexColorPicker } from 'react-colorful';
 
 import closebutton from '../../assets/close_button.png';
-import LogoText from '../../assets/LogoText.png';
-import PNLBG from '../../assets/PNLBG.png';
-import PNLBG2 from '../../assets/PNLBG2.png'
-import monadicon from '../../assets/monadlogo.svg'
-
+import LogoText from '../../assets/pnllogo.png';
+import PNLBG from '../../assets/lbstand.png';
+import PNLBG2 from '../../assets/PNLBG.png'
+import monadblack from '../../assets/monadblack.svg'
+import monadicon from '../../assets/monad.svg'
+import globe from '../../assets/globe.svg'
+import twitter from '../../assets/twitter.png'
 const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
 
 const usePNLData = (tokenAddress: string, userAddress: string, days: number | null) => {
@@ -40,11 +42,11 @@ const usePNLData = (tokenAddress: string, userAddress: string, days: number | nu
     const fetchPNLData = async () => {
       setIsLoading(true);
       setError(null);
-      
+
       try {
         const currentTime = Math.floor(Date.now() / 1000);
         const timeFilter = days ? currentTime - (days * 24 * 60 * 60) : 0;
-        
+
         const response = await fetch(SUBGRAPH_URL, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -105,15 +107,15 @@ const usePNLData = (tokenAddress: string, userAddress: string, days: number | nu
 
         if (position || buys.length > 0 || sells.length > 0) {
           // Calculate totals from filtered transactions
-          const totalBoughtTokens = buys.reduce((sum: number, buy: any) => 
+          const totalBoughtTokens = buys.reduce((sum: number, buy: any) =>
             sum + (Number(buy.tokenAmount) / 1e18), 0);
-          const totalSoldTokens = sells.reduce((sum: number, sell: any) => 
+          const totalSoldTokens = sells.reduce((sum: number, sell: any) =>
             sum + (Number(sell.tokenAmount) / 1e18), 0);
-          const totalSpentNative = buys.reduce((sum: number, buy: any) => 
+          const totalSpentNative = buys.reduce((sum: number, buy: any) =>
             sum + (Number(buy.nativeAmount) / 1e18), 0);
-          const totalReceivedNative = sells.reduce((sum: number, sell: any) => 
+          const totalReceivedNative = sells.reduce((sum: number, sell: any) =>
             sum + (Number(sell.nativeAmount) / 1e18), 0);
-          
+
           const balance = position ? Number(position.tokens) / 1e18 : 0;
           const lastPrice = position ? Number(position.token.lastPriceNativePerTokenWad) / 1e18 : 0;
 
@@ -165,7 +167,8 @@ interface PNLComponentProps {
   monUsdPrice?: number;
   demoMode?: boolean;
   demoData?: {
-    pnl: number;
+    monPnl: number;
+    pnlPercentage: number;
     entryPrice: number;
     exitPrice: number;
     leverage: number;
@@ -217,7 +220,7 @@ const ToggleSwitch: React.FC<{
   </div>
 );
 
-const PNLComponent: React.FC<PNLComponentProps> = ({ 
+const PNLComponent: React.FC<PNLComponentProps> = ({
   windowWidth = window.innerWidth,
   tokenAddress,
   userAddress,
@@ -226,7 +229,8 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   monUsdPrice = 1,
   demoMode = false,
   demoData = {
-    pnl: 0,
+    monPnl: 0,
+    pnlPercentage: 0,
     entryPrice: 0,
     exitPrice: 0,
     leverage: 0,
@@ -236,7 +240,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 }) => {
 
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>({ label: 'MAX', days: null });
-  
+
   const timePeriods: TimePeriod[] = [
     { label: '1D', days: 1 },
     { label: '7D', days: 7 },
@@ -262,7 +266,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         lastPrice: 0,
       };
     }
-    
+
     if (externalUserStats) {
       return {
         balance: externalUserStats.balance,
@@ -274,11 +278,10 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         lastPrice: currentPrice,
       };
     }
-    
+
     return fetchedPnlData;
   }, [demoMode, externalUserStats, fetchedPnlData, currentPrice]);
 
-  // Calculations
   const displayData = useMemo(() => {
     if (demoMode) {
       return {
@@ -286,24 +289,27 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         valueNet: demoData.valueNet ?? 0,
       }
     }
-
-    const pnlPercentage = pnlData.valueBought > 0 
-      ? ((pnlData.valueNet / pnlData.valueBought) * 100) 
+    const pnlPercentage = pnlData.valueBought > 0
+      ? ((pnlData.valueNet / pnlData.valueBought) * 100)
+      : 0;
+    const monPnl = pnlData.valueBought > 0
+      ? ((pnlData.valueNet))
       : 0;
 
     const entryPrice = pnlData.amountBought > 0
-      ? (pnlData.valueBought / pnlData.amountBought) * monUsdPrice
+      ? (pnlData.valueBought)
       : 0;
-      
-    const exitPrice = pnlData.amountSold > 0 
-      ? (pnlData.valueSold / pnlData.amountSold) * monUsdPrice
-      : pnlData.lastPrice * monUsdPrice;
+
+    const exitPrice = pnlData.amountSold > 0
+      ? (pnlData.valueSold)
+      : 0;
 
     return {
-      pnl: pnlPercentage,
+      monPnl: monPnl,
+      pnlPercentage: pnlPercentage,
       entryPrice: entryPrice,
       exitPrice: exitPrice,
-      leverage: 2, // Default to 1x for spot
+      leverage: 2,
       valueNet: pnlData.valueNet * monUsdPrice,
       balance: pnlData.balance,
     };
@@ -311,8 +317,8 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 
   const defaultCustomizationSettings: CustomizationSettings = {
     mainTextColor: '#EAEDFF',
-    positivePNLColor: '#2FE3AC',
-    negativePNLColor: '#ec5757ff',
+    positivePNLColor: '#D8DCFF',
+    negativePNLColor: '#e94e4eff',
     rectangleTextColor: '#020307',
     showPNLRectangle: true,
   };
@@ -437,7 +443,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
             title="Reset to default"
             type="button"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
             </svg>
           </button>
@@ -546,33 +552,33 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 
   const checkImageNeedsScrolling = useCallback(() => {
     if (!uploadedImageDimensions || !cardRef.current) return { needsHorizontal: false, needsVertical: false };
-    
+
     const cardRect = cardRef.current.getBoundingClientRect();
     const cardWidth = cardRect.width;
     const cardHeight = cardRect.height;
-    
+
     const { width: imgWidth, height: imgHeight } = uploadedImageDimensions;
 
     const scaleX = cardWidth / imgWidth;
     const scaleY = cardHeight / imgHeight;
     const baseScale = Math.max(scaleX, scaleY);
     const zoomScale = baseScale * (backgroundZoom / 100);
-    
+
     const scaledWidth = imgWidth * zoomScale;
     const scaledHeight = imgHeight * zoomScale;
-    
+
     const needsHorizontal = scaledWidth > cardWidth;
     const needsVertical = scaledHeight > cardHeight;
-    
+
     return { needsHorizontal, needsVertical };
   }, [uploadedImageDimensions, backgroundZoom]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!isUploadedImageSelected) return;
-    
+
     const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
     if (!needsHorizontal && !needsVertical) return;
-    
+
     e.preventDefault();
     setIsDragging(true);
     setHasInteracted(true);
@@ -584,25 +590,25 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging || !isUploadedImageSelected) return;
-    
+
     const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
-    
+
     const deltaX = e.clientX - dragStart.x;
     const deltaY = e.clientY - dragStart.y;
-    
+
     const sensitivity = 0.2;
-    
+
     let newX = backgroundPosition.x;
     let newY = backgroundPosition.y;
-    
+
     if (needsHorizontal) {
       newX = Math.max(0, Math.min(100, backgroundPosition.x - (deltaX * sensitivity)));
     }
-    
+
     if (needsVertical) {
       newY = Math.max(0, Math.min(100, backgroundPosition.y - (deltaY * sensitivity)));
     }
-    
+
     setBackgroundPosition({ x: newX, y: newY });
     setDragStart({ x: e.clientX, y: e.clientY });
   }, [isDragging, isUploadedImageSelected, dragStart, backgroundPosition, checkImageNeedsScrolling]);
@@ -684,7 +690,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         onChange={colorChangeHandlers.positivePNL}
         label="Positive PNL"
         id="positivePNL"
-        defaultColor="#2FE3AC"
+        defaultColor="#D8DCFF"
       />
     ),
     negativePNL: (
@@ -737,7 +743,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 
     const baseScale = Math.max(scaleX, scaleY);
     const zoomScale = baseScale * (backgroundZoom / 100);
-    
+
     const scaledWidth = imgWidth * zoomScale;
     const scaledHeight = imgHeight * zoomScale;
 
@@ -747,7 +753,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   const getBackgroundStyle = () => {
     if (isUploadedImageSelected && uploadedImageDimensions) {
       const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
-      
+
       if (needsHorizontal || needsVertical) {
         return {
           backgroundImage: `url(${selectedBg})`,
@@ -758,7 +764,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         };
       }
     }
-    
+
     return {
       backgroundImage: `url(${selectedBg})`,
       backgroundSize: 'cover',
@@ -803,7 +809,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-      
+
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
@@ -844,83 +850,101 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
             style={getBackgroundStyle()}
             onMouseDown={handleMouseDown}
           >
-              <div ref={cardRef} className="pnl-card-content">
-                {showScrollHint && (
-                  <div className="scroll-hint" style={{
-                    position: 'absolute',
-                    top: '10px',
-                    right: '10px',
-                    background: 'rgba(0, 0, 0, 0.7)',
-                    color: 'white',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    pointerEvents: 'none',
-                    zIndex: 1000
-                  }}>
-                    Drag to scroll
-                  </div>
-                )}
-                
-                <div className="pnl-header-section">
-                  <div className="pnl-card-header">
-                    <img className="pnl-logo" src={LogoText} alt="Logo" crossOrigin="anonymous" />
-                  </div>
+            <div ref={cardRef} className="pnl-card-content">
+              {showScrollHint && (
+                <div className="scroll-hint" style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  background: 'rgba(0, 0, 0, 0.7)',
+                  color: 'white',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  pointerEvents: 'none',
+                  zIndex: 1000
+                }}>
+                  Drag to scroll
+                </div>
+              )}
 
-                  <div className="pnl-token-row">
-                    <div className="pnl-token-info-leverage"> 
-                      <div className="pnl-token-info">
-                        <img src={monadicon} className="pnl-token-icon" crossOrigin="anonymous" />
-                        <span className="pnl-token-name" style={{ color: customizationSettings.mainTextColor }}>
-                          {tokenSymbol || tokenName}
-                        </span>
-                      </div>
-                      {displayData.leverage > 1 && (
-                        <div className="pnl-leverage-tag">
-                          {displayData.pnl > 0 ? 'LONG' : 'SHORT'} {displayData.leverage}X
-                        </div>
-                      )}
+              <div className="pnl-header-section">
+                <div className="pnl-card-header">
+                  <img className="pnl-logo" src={LogoText} alt="Logo" crossOrigin="anonymous" />
+                  <span className="pnl-crystal-name">CRYSTAL</span>
+                </div>
+
+                <div className="pnl-token-row">
+                  <div className="pnl-token-info-leverage">
+                    <div className="pnl-token-info">
+                      <span className="pnl-token-name" style={{ color: customizationSettings.mainTextColor }}>
+                        {tokenSymbol || tokenName}
+                      </span>
                     </div>
-                  </div>
 
-                  <div
-                    className="pnl-percentage"
-                    style={{
-                      color: customizationSettings.showPNLRectangle
-                        ? customizationSettings.rectangleTextColor
-                        : (displayData.pnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor),
-                      backgroundColor: customizationSettings.showPNLRectangle
-                        ? (displayData.pnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor)
-                        : 'transparent',
-                    }} 
-                  >
-                    {displayData.pnl > 0 ? '+' : ''}{displayData.pnl.toFixed(2)}%
                   </div>
                 </div>
 
-                <div className="pnl-entry-exit-referral">
-                  <div className="pnl-entry-exit-group">
-                    <div className="pnl-entry">
-                      <div className="pnl-entry-label">Entry Price</div>
-                      <div className="pnl-entry-value" style={{ color: customizationSettings.mainTextColor }}>
-                        ${displayData.entryPrice.toFixed(8)}
-                      </div>
-                    </div>
-                    <div className="pnl-exit">
-                      <div className="pnl-exit-label">Exit Price</div>
-                      <div className="pnl-exit-value" style={{ color: customizationSettings.mainTextColor }}>
-                        ${displayData.exitPrice.toFixed(8)}
-                      </div>
-                    </div>
+                <div
+                  className="pnl-percentage"
+                  style={{
+                    color: customizationSettings.showPNLRectangle
+                      ? customizationSettings.rectangleTextColor
+                      : (displayData.monPnl >= 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor),
+                    backgroundColor: customizationSettings.showPNLRectangle
+                      ? (displayData.monPnl >= 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor)
+                      : 'transparent',
+                  }}
+                >
+                  <img src={monadblack} className="monad-pnl-icon" />
+                  {displayData.monPnl >= 0 ? '+' : ''}{displayData.monPnl.toFixed(2)}
+                </div>
+              </div>
+              <div className="pnl-entry-exit-group">
+                <div className="pnl-entry">
+                  <div className="pnl-entry-label">PNL</div>
+                  <div className="pnl-entry-value" style={{
+                    color: displayData.monPnl >= 0
+                      ? customizationSettings.positivePNLColor
+                      : customizationSettings.negativePNLColor
+                  }}>
+                    {displayData.monPnl >= 0 ? '+' : ''}{displayData.pnlPercentage.toFixed(2)}%
                   </div>
-                  <div className="pnl-referral">
-                    <div className="pnl-referral-label">Referral Code</div>
-                    <div className="pnl-referral-value" style={{ color: customizationSettings.mainTextColor }}>
-                      {demoMode ? '42069' : 'crystal'}
-                    </div>
+                </div>
+                <div className="pnl-exit">
+                  <div className="pnl-exit-label">Invested</div>
+                  <div className="pnl-exit-value" style={{ color: customizationSettings.mainTextColor }}>
+                    <img className="pnl-monad-icon" src={monadicon} />{displayData.entryPrice.toFixed(2)}
+                  </div>
+                </div>
+                <div className="pnl-exit">
+                  <div className="pnl-exit-label">Position</div>
+                  <div className="pnl-exit-value" style={{ color: customizationSettings.mainTextColor }}>
+                    <img className="pnl-monad-icon" src={monadicon} />{displayData.exitPrice.toFixed(2)}
                   </div>
                 </div>
               </div>
+              <div className="pnl-bottom-row">
+                <div className="pnl-bottom-row-left">
+                  <div className="pnl-referral">
+                    <div className="pnl-referral-value" style={{ color: customizationSettings.mainTextColor }}>
+                      <img className="pnl-globe" src={globe} />crystal.exchange
+                    </div>
+                  </div>
+                  <div className="pnl-referral">
+                    <div className="pnl-twitter-value" style={{ color: customizationSettings.mainTextColor }}>
+                      <img className="pnl-twitter" src={twitter} />CrystalExch
+                    </div>
+                  </div>
+                </div>
+                <div className="pnl-bottom-row-right">
+                  <div className="pnl-referral-username" style={{ color: customizationSettings.mainTextColor }}>@crystal</div>
+                    <div className="pnl-referral-value" style={{ color: customizationSettings.mainTextColor }}>
+                      Save 25% off Fees
+                    </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {isUploadedImageSelected && (
@@ -935,19 +959,19 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                 className="zoom-slider"
               />
               <div className="zoom-buttons">
-                <button 
+                <button
                   className="zoom-btn"
                   onClick={() => setBackgroundZoom(Math.max(50, backgroundZoom - 10))}
                 >
                   -
                 </button>
-                <button 
+                <button
                   className="zoom-btn"
                   onClick={() => setBackgroundZoom(100)}
                 >
                   Reset
                 </button>
-                <button 
+                <button
                   className="zoom-btn"
                   onClick={() => setBackgroundZoom(Math.min(200, backgroundZoom + 10))}
                 >
@@ -1005,16 +1029,16 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
               <button className="pnl-footer-btn" onClick={toggleRightPanel}>
                 {showRightPanel ? 'Hide Panel' : 'Customize'}
               </button>
-              {timePeriods.map(period => (
-                <button 
-                  key={period.label} 
+              {/* {timePeriods.map(period => (
+                <button
+                  key={period.label}
                   className={`pnl-footer-btn ${selectedTimePeriod.label === period.label ? 'active' : ''}`}
                   onClick={() => setSelectedTimePeriod(period)}
                   disabled={isLoading}
                 >
                   {period.label}
                 </button>
-              ))}
+              ))} */}
             </div>
             <div className="pnl-footer-right">
               <button className="pnl-footer-btn" onClick={handleDownload}>Download</button>

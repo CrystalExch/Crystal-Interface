@@ -512,9 +512,10 @@
 .wallet-drag-address{
   display: flex;
   align-items: center;
-    color:rgba(255,255,255,.5);
-    font-size:.75rem;
-        line-height: .8;
+  color:rgba(255,255,255,.5);
+  font-size:.75rem;
+  line-height: .8;
+
 }
 
 .wallets-copy-icon{
@@ -994,9 +995,6 @@
     padding-left: 0;
     flex:1;
     overflow:hidden
-}
-.wallet-name-display:hover{
-    background:rgba(255,255,255,.05)
 }
 .wallet-name-text{
     color:#fff;
