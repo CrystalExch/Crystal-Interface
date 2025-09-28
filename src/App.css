@@ -8039,9 +8039,8 @@ input::-webkit-inner-spin-button {
 }
 
 .pnl-logo {
-  width: 50px;
-  margin-top: -15px;
-  margin-left: -15px;
+  width: 35px;
+  filter: brightness(0) saturate(100%) invert(89%) sepia(27%) saturate(984%) hue-rotate(186deg) brightness(101%) contrast(104%);
 }
 
 .pnl-token-row {
@@ -8094,6 +8093,8 @@ input::-webkit-inner-spin-button {
 .monad-pnl-icon{
   width: 45px;
   height: 45px;
+  pointer-events: none;
+  user-select: none;
 }
 
 .pnl-entry-exit-referral {
