@@ -39,7 +39,7 @@ interface CustomizationSettings {
 const DEFAULT_SETTINGS: CustomizationSettings = {
   mainTextColor: '#EAEDFF',
   positivePNLColor: '#D8DCFF',
-  negativePNLColor: '#e85a5aff',
+  negativePNLColor: '#EA7A7A',
   rectangleTextColor: '#020307',
   showPNLRectangle: true,
   showShadows: false,
@@ -418,7 +418,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   const [tempCustomizationSettings, setTempCustomizationSettings] = useState<CustomizationSettings>({
     mainTextColor: '#EAEDFF',
     positivePNLColor: '#D8DCFF',
-    negativePNLColor: '#e85a5aff',
+    negativePNLColor: '#EA7A7A',
     rectangleTextColor: '#020307',
     showPNLRectangle: true,
     showShadows: false,
@@ -1097,7 +1097,7 @@ const loadImages = useCallback(async () => {
                   onChange={(color) => handleTempColorChange('negativePNLColor', color)}
                   label="Negative PNL"
                   id="negativePNL"
-                  defaultColor="#e94e4eff"
+                  defaultColor="#EA7A7A"
                 />
               </div>
 
