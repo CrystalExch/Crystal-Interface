@@ -3,7 +3,7 @@ import html2canvas from 'html2canvas';
 import { HexColorPicker } from 'react-colorful';
 
 import closebutton from '../../assets/close_button.png';
-import LogoText from '../../assets/pnllogo.png';
+import LogoText from '../../assets/whitecrystal.png';
 import PNLBG from '../../assets/lbstand.png';
 import PNLBG2 from '../../assets/PNLBG.png'
 import monadblack from '../../assets/monadblack.svg'
@@ -471,7 +471,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
       return await html2canvas(captureRef.current, {
         useCORS: true,
         backgroundColor: '#000000',
-        scale: 2,
         ignoreElements: (element) => {
           return element.classList?.contains('scroll-hint');
         }
@@ -871,7 +870,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
               <div className="pnl-header-section">
                 <div className="pnl-card-header">
                   <img className="pnl-logo" src={LogoText} alt="Logo" crossOrigin="anonymous" />
-                  <span className="pnl-crystal-name">CRYSTAL</span>
                 </div>
 
                 <div className="pnl-token-row">
