@@ -551,7 +551,7 @@ const loadImages = useCallback(async () => {
 
     applyShadow(ctx);
     ctx.fillStyle = customizationSettings.mainTextColor;
-    ctx.font = '35px Funnel Display, Arial, sans-serif';
+    ctx.font = '40px Funnel Display, Arial, sans-serif';
     ctx.fillText(tokenSymbol || tokenName, 32, 105);
     clearShadow(ctx);
 
