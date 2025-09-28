@@ -271,12 +271,6 @@
   border-color: #22222e91;
 }
 
-.pnl-footer-btn.active {
-  color: #d8dcff;
-  background-color: rgba(201, 194, 243, .05);
-  border-color: #aaaecf;
-  box-shadow: 0 0 0 2px rgba(170, 174, 207, .3);
-}
 
 .pnl-footer-btn.active span {
   color: #d8dcff;

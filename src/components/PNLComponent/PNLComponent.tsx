@@ -34,6 +34,7 @@ interface CustomizationSettings {
   negativePNLColor: string;
   rectangleTextColor: string;
   showPNLRectangle: boolean;
+  showShadows: boolean;
 }
 
 interface DisplayData {
@@ -390,6 +391,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     negativePNLColor: '#e85a5aff',
     rectangleTextColor: '#020307',
     showPNLRectangle: true,
+    showShadows: false,
   });
 
   const [tempCustomizationSettings, setTempCustomizationSettings] = useState<CustomizationSettings>({
@@ -398,54 +400,69 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     negativePNLColor: '#e85a5aff',
     rectangleTextColor: '#020307',
     showPNLRectangle: true,
+    showShadows: false,
   });
-const createGlobeSVG = useCallback((fillColor: string) => {
-  const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${fillColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-globe-icon lucide-globe"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`;
-  const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
-  return loadImage(dataUrl);
-}, []);
+  const createGlobeSVG = useCallback((fillColor: string) => {
+    const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${fillColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-globe-icon lucide-globe"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`;
+    const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
+    return loadImage(dataUrl);
+  }, []);
 
-const createTwitterSVG = useCallback((fillColor: string) => {
-  const svgString = `<svg  viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.08318 6.33193L14.2436 0.333313H13.0208L8.53995 5.54183L4.96112 0.333313H0.833374L6.24526 8.20951L0.833374 14.5H2.05631L6.78818 8.99961L10.5677 14.5H14.6954L9.08288 6.33193H9.08318ZM7.4082 8.2789L6.85987 7.49461L2.49695 1.25392H4.3753L7.89623 6.29036L8.44456 7.07465L13.0213 13.6212H11.143L7.4082 8.2792V8.2789Z" fill="${fillColor}"/></svg>`;
-  const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
-  return loadImage(dataUrl);
-}, []);
+  const createTwitterSVG = useCallback((fillColor: string) => {
+    const svgString = `<svg  viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.08318 6.33193L14.2436 0.333313H13.0208L8.53995 5.54183L4.96112 0.333313H0.833374L6.24526 8.20951L0.833374 14.5H2.05631L6.78818 8.99961L10.5677 14.5H14.6954L9.08288 6.33193H9.08318ZM7.4082 8.2789L6.85987 7.49461L2.49695 1.25392H4.3753L7.89623 6.29036L8.44456 7.07465L13.0213 13.6212H11.143L7.4082 8.2792V8.2789Z" fill="${fillColor}"/></svg>`;
+    const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
+    return loadImage(dataUrl);
+  }, []);
 
-const createLogoSVG = useCallback((fillColor: string) => {
-  const svgString = `<svg version="1.2" fill="${fillColor}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700" width="38" height="50"><path d="m136 388l288-349 121 147-89 107-54-65-113 138 53 66-85 105zm413-115l115 139-289 350-116-140 87-103 56 66 113-138-55-67z"/></svg>`;
-  const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
-  return loadImage(dataUrl);
-}, []);
+  const createLogoSVG = useCallback((fillColor: string) => {
+    const svgString = `<svg version="1.2" fill="${fillColor}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700" width="38" height="50"><path d="m136 388l288-349 121 147-89 107-54-65-113 138 53 66-85 105zm413-115l115 139-289 350-116-140 87-103 56 66 113-138-55-67z"/></svg>`;
+    const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
+    return loadImage(dataUrl);
+  }, []);
 
-const loadImages = useCallback(async () => {
-  const imagePromises: { [key: string]: Promise<HTMLImageElement> } = {
-    logo: createLogoSVG(customizationSettings.mainTextColor),
-    bg1: loadImage(PNLBG),
-    bg2: loadImage(PNLBG2),
-    monadBlack: loadImage(monadblack),
-    monadIcon: loadImage(monadicon),
-    globe: createGlobeSVG(customizationSettings.mainTextColor),    // <-- Dynamic SVG
-    twitter: createTwitterSVG(customizationSettings.mainTextColor), 
-    closeButton: loadImage(closebutton)
-  };
+  const loadImages = useCallback(async () => {
+    const imagePromises: { [key: string]: Promise<HTMLImageElement> } = {
+      logo: createLogoSVG(customizationSettings.mainTextColor),
+      bg1: loadImage(PNLBG),
+      bg2: loadImage(PNLBG2),
+      monadBlack: loadImage(monadblack),
+      monadIcon: loadImage(monadicon),
+      globe: createGlobeSVG(customizationSettings.mainTextColor),    // <-- Dynamic SVG
+      twitter: createTwitterSVG(customizationSettings.mainTextColor),
+      closeButton: loadImage(closebutton)
+    };
 
 
-  if (uploadedBg) {
-    imagePromises.uploaded = loadImage(uploadedBg);
-  }
-
-  try {
-    const loadedImages: ImageCollection = {};
-    for (const [key, promise] of Object.entries(imagePromises)) {
-      loadedImages[key as keyof ImageCollection] = await promise;
+    if (uploadedBg) {
+      imagePromises.uploaded = loadImage(uploadedBg);
     }
-    setImages(loadedImages);
-    setImagesLoaded(true);
-  } catch (error) {
-    console.error('Error loading images:', error);
-  }
-}, [uploadedBg, customizationSettings.mainTextColor, createLogoSVG, createGlobeSVG, createTwitterSVG]);
 
+    try {
+      const loadedImages: ImageCollection = {};
+      for (const [key, promise] of Object.entries(imagePromises)) {
+        loadedImages[key as keyof ImageCollection] = await promise;
+      }
+      setImages(loadedImages);
+      setImagesLoaded(true);
+    } catch (error) {
+      console.error('Error loading images:', error);
+    }
+  }, [uploadedBg, customizationSettings.mainTextColor, createLogoSVG, createGlobeSVG, createTwitterSVG]);
+  const applyShadow = useCallback((ctx: CanvasRenderingContext2D) => {
+    if (customizationSettings.showShadows) {
+      ctx.shadowColor = 'rgba(0, 0, 0, 1)';
+      ctx.shadowBlur = 4;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
+    }
+  }, [customizationSettings.showShadows]);
+
+  const clearShadow = useCallback((ctx: CanvasRenderingContext2D) => {
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+  }, []);
   const loadImage = useCallback((src: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -495,12 +512,16 @@ const loadImages = useCallback(async () => {
     ctx.textBaseline = 'top';
 
     if (images.logo) {
+      applyShadow(ctx);
       ctx.drawImage(images.logo, 22, 22, 46, 60);
+      clearShadow(ctx);
     }
 
+    applyShadow(ctx);
     ctx.fillStyle = customizationSettings.mainTextColor;
     ctx.font = '35px Funnel Display, Arial, sans-serif';
     ctx.fillText(tokenSymbol || tokenName, 32, 105);
+    clearShadow(ctx);
 
     const pnlText = isUSD
       ? `${displayData.monPnl >= 0 ? '+' : '-'}$${formatNumber(Math.abs(displayData.monPnl))}`
@@ -553,52 +574,85 @@ const loadImages = useCallback(async () => {
     ctx.font = '23px Funnel Display, Arial, sans-serif';
     ctx.fillStyle = customizationSettings.mainTextColor;
 
+    applyShadow(ctx);
     ctx.fillText('PNL', 52, statsY);
+    clearShadow(ctx);
+
     ctx.fillStyle = displayData.monPnl >= 0
       ? customizationSettings.positivePNLColor
       : customizationSettings.negativePNLColor;
+    applyShadow(ctx);
     ctx.fillText(`${displayData.monPnl >= 0 ? '+' : ''}${displayData.pnlPercentage.toFixed(2)}%`, 200, statsY);
+    clearShadow(ctx);
 
     ctx.fillStyle = customizationSettings.mainTextColor;
+    applyShadow(ctx);
     ctx.fillText('Invested', 52, statsY + 35);
+    clearShadow(ctx);
+
     if (!isUSD && images.monadIcon) {
+      applyShadow(ctx);
       ctx.drawImage(images.monadIcon, 200, statsY + 35, 20, 20);
+      clearShadow(ctx);
+      applyShadow(ctx);
       ctx.fillText(formatNumber(displayData.entryPrice), 225, statsY + 33);
+      clearShadow(ctx);
     } else {
       const investedText = isUSD ? `$${formatNumber(displayData.entryPrice)}` : formatNumber(displayData.entryPrice);
+      applyShadow(ctx);
       ctx.fillText(investedText, 200, statsY + 35);
+      clearShadow(ctx);
     }
 
+    applyShadow(ctx);
     ctx.fillText('Position', 52, statsY + 70);
+    clearShadow(ctx);
+
     if (!isUSD && images.monadIcon) {
+      applyShadow(ctx);
       ctx.drawImage(images.monadIcon, 200, statsY + 70, 20, 20);
+      clearShadow(ctx);
+      applyShadow(ctx);
       ctx.fillText(formatNumber(displayData.exitPrice), 225, statsY + 69);
+      clearShadow(ctx);
     } else {
       const positionText = isUSD ? `$${formatNumber(displayData.exitPrice)}` : formatNumber(displayData.exitPrice);
+      applyShadow(ctx);
       ctx.fillText(positionText, 200, statsY + 70);
+      clearShadow(ctx);
     }
-
     const bottomY = 380;
     ctx.font = '16px Funnel Display, Arial, sans-serif';
     ctx.fillStyle = customizationSettings.mainTextColor;
 
     if (images.globe) {
+      applyShadow(ctx);
       ctx.drawImage(images.globe, 52, bottomY + 29, 17, 17);
+      clearShadow(ctx);
     }
+    applyShadow(ctx);
     ctx.fillText('crystal.exchange', 74, bottomY + 30);
+    clearShadow(ctx);
 
     if (images.twitter) {
+      applyShadow(ctx);
       ctx.drawImage(images.twitter, 223, bottomY + 31, 14, 14);
+      clearShadow(ctx);
     }
+    applyShadow(ctx);
     ctx.fillText('@CrystalExch', 240, bottomY + 30);
+    clearShadow(ctx);
 
     ctx.textAlign = 'right';
     ctx.font = '24px Funnel Display, Arial, sans-serif';
+    applyShadow(ctx);
     ctx.fillText('@crystal', 688, bottomY - 10);
+    clearShadow(ctx);
     ctx.font = '16px Funnel Display, Arial, sans-serif';
+    applyShadow(ctx);
     ctx.fillText('Save 25% on Fees', 688, bottomY + 25);
-
-  }, [imagesLoaded, images, selectedBg, uploadedBg, displayData, customizationSettings, isUSD, tokenSymbol, tokenName]);
+    clearShadow(ctx);
+  }, [imagesLoaded, images, selectedBg, uploadedBg, displayData, customizationSettings, isUSD, tokenSymbol, tokenName, applyShadow, clearShadow]);
 
   useEffect(() => {
     if (imagesLoaded) {
@@ -974,6 +1028,15 @@ const loadImages = useCallback(async () => {
                     <ToggleSwitch
                       checked={tempCustomizationSettings.showPNLRectangle}
                       onChange={() => handleTempToggle('showPNLRectangle')}
+                    />
+                  </div>
+                </div>
+                <div className="layout-toggle-row">
+                  <span className="layout-toggle-sublabel">Show Text Shadows</span>
+                  <div className="toggle-switch-wrapper">
+                    <ToggleSwitch
+                      checked={tempCustomizationSettings.showShadows}
+                      onChange={() => handleTempToggle('showShadows')}
                     />
                   </div>
                 </div>
