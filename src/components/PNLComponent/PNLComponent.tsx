@@ -5,10 +5,9 @@ import ToggleSwitch from '../ToggleSwitch/ToggleSwitch';
 import LogoText from '../../assets/whitecrystal.png';
 import PNLBG from '../../assets/lbstand.png';
 import PNLBG2 from '../../assets/PNLBG.png';
-import monadblack from '../../assets/monadblack.svg';
-import monadicon from '../../assets/monad.svg';
 import globe from '../../assets/globe.svg';
 import twitter from '../../assets/twitter.png';
+import monadsvg from '../../assets/monad.svg';
 import './PNLComponent.css';
 
 const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
@@ -86,12 +85,12 @@ interface ImageCollection {
   logo?: HTMLImageElement;
   bg1?: HTMLImageElement;
   bg2?: HTMLImageElement;
-  monadBlack?: HTMLImageElement;
-  monadIcon?: HTMLImageElement;
   globe?: HTMLImageElement;
   twitter?: HTMLImageElement;
   closeButton?: HTMLImageElement;
   uploaded?: HTMLImageElement;
+  monad?: HTMLImageElement;
+  monadicon?: HTMLImageElement;
 }
 
 interface ColorInputProps {
@@ -442,34 +441,45 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     return loadImage(dataUrl);
   }, []);
 
-  const loadImages = useCallback(async () => {
-    const imagePromises: { [key: string]: Promise<HTMLImageElement> } = {
-      logo: createLogoSVG(customizationSettings.mainTextColor),
-      bg1: loadImage(PNLBG),
-      bg2: loadImage(PNLBG2),
-      monadBlack: loadImage(monadblack),
-      monadIcon: loadImage(monadicon),
-      globe: createGlobeSVG(customizationSettings.mainTextColor),    // <-- Dynamic SVG
-      twitter: createTwitterSVG(customizationSettings.mainTextColor),
-      closeButton: loadImage(closebutton)
-    };
+  const createMonadSVG = useCallback((fillColor: string) => {
+    const svgString = `  <svg width="33" height="32" viewBox="0 0 33 32" xmlns="http://www.w3.org/2000/svg">
+     <path d="M16.4452 0C11.8248 0 0.445312 11.3792 0.445312 15.9999C0.445312 20.6206 11.8248 32 16.4452 32C21.0656 32 32.4453 20.6204 32.4453 15.9999C32.4453 11.3794 21.0658 0 16.4452 0ZM13.9519 25.1492C12.0035 24.6183 6.76512 15.455 7.29614 13.5066C7.82716 11.5581 16.9903 6.31979 18.9386 6.8508C20.8871 7.38173 26.1255 16.5449 25.5945 18.4934C25.0635 20.4418 15.9003 25.6802 13.9519 25.1492Z" fill="${fillColor}"  /></svg>`;
+    const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
+    return loadImage(dataUrl);
+  }, []);
 
 
-    if (uploadedBg) {
-      imagePromises.uploaded = loadImage(uploadedBg);
+const loadImages = useCallback(async () => {
+  const monadIconColor = customizationSettings.showPNLRectangle 
+    ? '#000000'
+    : customizationSettings.negativePNLColor;
+
+  const imagePromises: { [key: string]: Promise<HTMLImageElement> } = {
+    logo: createLogoSVG(customizationSettings.mainTextColor),
+    bg1: loadImage(PNLBG),
+    bg2: loadImage(PNLBG2),
+    globe: createGlobeSVG(customizationSettings.mainTextColor),  
+    twitter: createTwitterSVG(customizationSettings.mainTextColor),
+    closeButton: loadImage(closebutton),
+    monad: createMonadSVG(monadIconColor), 
+    monadicon: loadImage(monadsvg),
+  };
+
+  if (uploadedBg) {
+    imagePromises.uploaded = loadImage(uploadedBg);
+  }
+
+  try {
+    const loadedImages: ImageCollection = {};
+    for (const [key, promise] of Object.entries(imagePromises)) {
+      loadedImages[key as keyof ImageCollection] = await promise;
     }
-
-    try {
-      const loadedImages: ImageCollection = {};
-      for (const [key, promise] of Object.entries(imagePromises)) {
-        loadedImages[key as keyof ImageCollection] = await promise;
-      }
-      setImages(loadedImages);
-      setImagesLoaded(true);
-    } catch (error) {
-      console.error('Error loading images:', error);
-    }
-  }, [uploadedBg, customizationSettings.mainTextColor, createLogoSVG, createGlobeSVG, createTwitterSVG]);
+    setImages(loadedImages);
+    setImagesLoaded(true);
+  } catch (error) {
+    console.error('Error loading images:', error);
+  }
+}, [uploadedBg, customizationSettings.mainTextColor, customizationSettings.showPNLRectangle, customizationSettings.negativePNLColor, createLogoSVG, createGlobeSVG, createTwitterSVG, createMonadSVG]);
   const applyShadow = useCallback((ctx: CanvasRenderingContext2D) => {
     if (customizationSettings.showShadows) {
       ctx.shadowColor = 'rgba(0, 0, 0, 1)';
@@ -569,7 +579,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         : customizationSettings.negativePNLColor;
     }
 
-    if (!isUSD && images.monadBlack) {
+    if (!isUSD && images.monad) {
       const iconSize = 43;
       let currentX = pnlX + 12;
       let signWidth = 0;
@@ -586,7 +596,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         currentX += signWidth;
       }
 
-      ctx.drawImage(images.monadBlack, currentX + 3, pnlY + 12, iconSize, iconSize);
+      ctx.drawImage(images.monad, currentX + 3, pnlY + 12, iconSize, iconSize);
 
       ctx.fillText(formatNumber(Math.abs(displayData.monPnl)), currentX + iconSize + 8, pnlY + 8);
     } else {
@@ -612,9 +622,9 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     ctx.fillText('Invested', 52, statsY + 35);
     clearShadow(ctx);
 
-    if (!isUSD && images.monadIcon) {
+    if (!isUSD && images.monadicon) {
       applyShadow(ctx);
-      ctx.drawImage(images.monadIcon, 200, statsY + 35, 20, 20);
+      ctx.drawImage(images.monadicon, 200, statsY + 35, 20, 20);
       clearShadow(ctx);
       applyShadow(ctx);
       ctx.fillText(formatNumber(displayData.entryPrice), 225, statsY + 33);
@@ -630,9 +640,9 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     ctx.fillText('Position', 52, statsY + 70);
     clearShadow(ctx);
 
-    if (!isUSD && images.monadIcon) {
+    if (!isUSD && images.monadicon) {
       applyShadow(ctx);
-      ctx.drawImage(images.monadIcon, 200, statsY + 70, 20, 20);
+      ctx.drawImage(images.monadicon, 200, statsY + 70, 20, 20);
       clearShadow(ctx);
       applyShadow(ctx);
       ctx.fillText(formatNumber(displayData.exitPrice), 225, statsY + 69);
@@ -782,11 +792,16 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
       setTempCustomizationSettings(customizationSettings);
     }
   }, [showRightPanel, customizationSettings]);
-
+  const handleOutsideClick = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('.color-picker-dropdown')) {
+      setActivePicker(null);
+      document.removeEventListener('mousedown', handleOutsideClick);
+    }
+  };
   const handleColorPickerClick = (id: string, event: React.MouseEvent) => {
     if (activePicker === id) {
       setActivePicker(null);
-      // Remove any existing listener
       document.removeEventListener('mousedown', handleOutsideClick);
       return;
     }
@@ -813,15 +828,9 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     setPickerPosition({ top, left });
     setActivePicker(id);
 
-    const handleOutsideClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.color-picker-dropdown')) {
-        setActivePicker(null);
-        document.removeEventListener('mousedown', handleOutsideClick);
-      }
-    };
 
-          document.addEventListener('mousedown', handleOutsideClick);
+
+    document.addEventListener('mousedown', handleOutsideClick);
   };
 
   const ColorInput = React.memo<ColorInputProps>(({
