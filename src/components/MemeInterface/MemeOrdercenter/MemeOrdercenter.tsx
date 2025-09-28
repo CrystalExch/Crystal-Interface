@@ -21,7 +21,7 @@ import lightning from '../../../assets/flash.png';
 import monadicon from '../../../assets/monadlogo.svg';
 import switchicon from '../../../assets/switch.svg';
 import walleticon from '../../../assets/wallet_icon.png';
-
+import { formatNumber } from '../../../utils/formatNumber';
 import './MemeOrderCenter.css';
 
 interface LiveHolder {
@@ -271,7 +271,7 @@ const SellPopup: React.FC<SellPopupProps> = ({
                   onChange={handleSliderChangeLocal}
                   onMouseDown={() => {
                     setSliderDragging(true);
-                    positionPopup(sellSliderPercent); // snap immediately when grabbing
+                    positionPopup(sellSliderPercent);
                   }}
                   onMouseUp={() => setSliderDragging(false)}
                   style={{
@@ -962,11 +962,11 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       </div>
                       <span className="meme-avg-price buy">
                         ($
-                        {formatSig(
+                        {formatNumber(
                           (
-                            (row.valueBought * monUsdPrice) /
+                            (row.valueBought * monUsdPrice * 1e9) /
                             (row.bought || 1)
-                          ).toString(),
+                          ),
                         )}
                         )
                       </span>
@@ -991,11 +991,11 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       </div>
                       <span className="meme-avg-price sell">
                         ($
-                        {formatSig(
+                        {formatNumber(
                           (
-                            (row.valueSold * monUsdPrice) /
+                            (row.valueSold * monUsdPrice * 1e9) /
                             (row.sold || 1)
-                          ).toString(),
+                          ),
                         )}
                         )
                       </span>
@@ -1168,7 +1168,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                           </span>
                         </div>
                         <span className="meme-avg-price buy">
-                          (${formatSig(avgBuyUSD.toString())})
+                          (${formatNumber((avgBuyUSD * 1e9))})
                         </span>
                       </div>
 
@@ -1195,7 +1195,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                           </span>
                         </div>
                         <span className="meme-avg-price sell">
-                          (${formatSig(avgSellUSD.toString())})
+                          (${formatNumber((avgSellUSD * 1e9))})
                         </span>
                       </div>
 

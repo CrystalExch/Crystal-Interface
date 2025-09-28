@@ -3994,7 +3994,7 @@ useEffect(() => {
                         top10HoldingPercentage > 50
                           ? '#eb7070ff'
                           : top10HoldingPercentage > 30
-                            ? '#fbbf24'
+                            ? '#eb7070ff'
                             : 'rgb(67 254 154)'
                       }
                       xmlns="http://www.w3.org/2000/svg"
@@ -4008,7 +4008,7 @@ useEffect(() => {
                           top10HoldingPercentage > 50
                             ? '#eb7070ff'
                             : top10HoldingPercentage > 30
-                              ? '#fbbf24'
+                              ? '#eb7070ff'
                               : 'rgb(67 254 154)',
                       }}
                     >
@@ -4028,7 +4028,7 @@ useEffect(() => {
                         token.devHolding > 50
                           ? '#eb7070ff'
                           : token.devHolding > 30
-                            ? '#fbbf24'
+                            ? '#eb7070ff'
                             : 'rgb(67 254 154)'
                       }
                       xmlns="http://www.w3.org/2000/svg"
@@ -4042,7 +4042,7 @@ useEffect(() => {
                           token.devHolding > 50
                             ? '#eb7070ff'
                             : token.devHolding > 30
-                              ? '#fbbf24'
+                              ? '#eb7070ff'
                               : 'rgb(67 254 154)',
                       }}
                     >
@@ -4074,7 +4074,7 @@ useEffect(() => {
                           token.sniperHolding > 50
                             ? '#eb7070ff'
                             : token.sniperHolding > 30
-                              ? '#fbbf24'
+                              ? '#eb7070ff'
                               : 'rgb(67 254 154)',
                       }}
                     >
@@ -4094,7 +4094,7 @@ useEffect(() => {
                         token.insiderHolding > 50
                           ? '#eb7070ff'
                           : token.insiderHolding > 30
-                            ? '#fbbf24'
+                            ? '#eb7070ff'
                             : 'rgb(67 254 154)'
                       }
                       xmlns="http://www.w3.org/2000/svg"
@@ -4108,7 +4108,7 @@ useEffect(() => {
                           token.insiderHolding > 50
                             ? '#eb7070ff'
                             : token.insiderHolding > 30
-                              ? '#fbbf24'
+                              ? '#eb7070ff'
                               : 'rgb(67 254 154)',
                       }}
                     >

@@ -257,6 +257,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 }) => {
 
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>({ label: 'MAX', days: null });
+  const [isUSD, setIsUSD] = useState(false); // New state for currency toggle
 
   const timePeriods: TimePeriod[] = [
     { label: '1D', days: 1 },
@@ -301,11 +302,24 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 
   const displayData = useMemo(() => {
     if (demoMode) {
-      return {
+      const baseData = {
         ...demoData,
         valueNet: demoData.valueNet ?? 0,
+      };
+      
+      if (isUSD) {
+        return {
+          ...baseData,
+          monPnl: baseData.monPnl * monUsdPrice,
+          entryPrice: baseData.entryPrice * monUsdPrice,
+          exitPrice: baseData.exitPrice * monUsdPrice,
+          valueNet: baseData.valueNet * monUsdPrice,
+        };
       }
+      
+      return baseData;
     }
+    
     const pnlPercentage = pnlData.valueBought > 0
       ? ((pnlData.valueNet / pnlData.valueBought) * 100)
       : 0;
@@ -321,16 +335,28 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
       ? (pnlData.valueSold)
       : 0;
 
-    return {
+    const baseData = {
       monPnl: monPnl,
       pnlPercentage: pnlPercentage,
       entryPrice: entryPrice,
       exitPrice: exitPrice,
       leverage: 2,
-      valueNet: pnlData.valueNet * monUsdPrice,
+      valueNet: pnlData.valueNet,
       balance: pnlData.balance,
     };
-  }, [demoMode, demoData, pnlData, monUsdPrice]);
+
+    if (isUSD) {
+      return {
+        ...baseData,
+        monPnl: baseData.monPnl * monUsdPrice,
+        entryPrice: baseData.entryPrice * monUsdPrice,
+        exitPrice: baseData.exitPrice * monUsdPrice,
+        valueNet: baseData.valueNet * monUsdPrice,
+      };
+    }
+
+    return baseData;
+  }, [demoMode, demoData, pnlData, monUsdPrice, isUSD]);
 
   const defaultCustomizationSettings: CustomizationSettings = {
     mainTextColor: '#EAEDFF',
@@ -475,6 +501,10 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
       setTempCustomizationSettings(customizationSettings);
     }
   }, [showRightPanel, customizationSettings]);
+
+  const toggleCurrency = useCallback(() => {
+    setIsUSD(!isUSD);
+  }, [isUSD]);
 
   const handleApplySettings = useCallback(() => {
     setCustomizationSettings(tempCustomizationSettings);
@@ -910,8 +940,14 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                       : 'transparent',
                   }}
                 >
-                  <img src={monadblack} className="monad-pnl-icon" />
-                  {displayData.monPnl >= 0 ? '+' : ''}{formatNumber(displayData.monPnl)}
+                  {isUSD ? (
+                    <>{displayData.monPnl >= 0 ? '+' : ''}${formatNumber(Math.abs(displayData.monPnl))}</>
+                  ) : (
+                    <>
+                      <img src={monadblack} className="monad-pnl-icon" />
+                      {displayData.monPnl >= 0 ? '+' : ''}{formatNumber(displayData.monPnl)}
+                    </>
+                  )}
                 </div>
               </div>
               <div className="pnl-entry-exit-group">
@@ -928,13 +964,23 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                 <div className="pnl-exit">
                   <div className="pnl-exit-label">Invested</div>
                   <div className="pnl-exit-value" style={{ color: customizationSettings.mainTextColor }}>
-                    <img className="pnl-monad-icon" src={monadicon} />{formatNumber(displayData.entryPrice)}
+                    {isUSD ? (
+                      <>$</>
+                    ) : (
+                      <img className="pnl-monad-icon" src={monadicon} />
+                    )}
+                    {formatNumber(displayData.entryPrice)}
                   </div>
                 </div>
                 <div className="pnl-exit">
                   <div className="pnl-exit-label">Position</div>
                   <div className="pnl-exit-value" style={{ color: customizationSettings.mainTextColor }}>
-                    <img className="pnl-monad-icon" src={monadicon} />{formatNumber(displayData.exitPrice)}
+                    {isUSD ? (
+                      <>$</>
+                    ) : (
+                      <img className="pnl-monad-icon" src={monadicon} />
+                    )}
+                    {formatNumber(displayData.exitPrice)}
                   </div>
                 </div>
               </div>
@@ -1040,6 +1086,12 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 
           <div className="pnl-footer pnl-layer-bottom">
             <div className="pnl-footer-left">
+              <button 
+                className={`pnl-footer-btn ${isUSD ? 'active' : ''}`} 
+                onClick={toggleCurrency}
+              >
+                {isUSD ? 'USD' : 'MON'}
+              </button>
               <button className="pnl-footer-btn" onClick={toggleRightPanel}>
                 {showRightPanel ? 'Hide Panel' : 'Customize'}
               </button>
