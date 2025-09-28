@@ -1,18 +1,98 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import html2canvas from 'html2canvas';
 import { HexColorPicker } from 'react-colorful';
-
 import closebutton from '../../assets/close_button.png';
 import LogoText from '../../assets/whitecrystal.png';
 import PNLBG from '../../assets/lbstand.png';
-import PNLBG2 from '../../assets/PNLBG.png'
-import monadblack from '../../assets/monadblack.svg'
-import monadicon from '../../assets/monad.svg'
-import globe from '../../assets/globe.svg'
-import twitter from '../../assets/twitter.png'
+import PNLBG2 from '../../assets/PNLBG.png';
+import monadblack from '../../assets/monadblack.svg';
+import monadicon from '../../assets/monad.svg';
+import globe from '../../assets/globe.svg';
+import twitter from '../../assets/twitter.png';
+import './PNLComponent.css';
+
 const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
 
-const formatNumber = (num:any, decimals = 2) => {
+interface PNLData {
+  balance: number;
+  amountBought: number;
+  amountSold: number;
+  valueBought: number;
+  valueSold: number;
+  valueNet: number;
+  lastPrice: number;
+}
+
+interface TimePeriod {
+  label: string;
+  days: number | null;
+}
+
+interface CustomizationSettings {
+  mainTextColor: string;
+  positivePNLColor: string;
+  negativePNLColor: string;
+  rectangleTextColor: string;
+  showPNLRectangle: boolean;
+}
+
+interface DisplayData {
+  monPnl: number;
+  pnlPercentage: number;
+  entryPrice: number;
+  exitPrice: number;
+  leverage: number;
+  valueNet: number;
+  balance?: number;
+}
+
+interface PNLComponentProps {
+  windowWidth?: number;
+  tokenAddress?: string;
+  userAddress?: string;
+  tokenSymbol?: string;
+  tokenName?: string;
+  monUsdPrice?: number;
+  demoMode?: boolean;
+  demoData?: {
+    monPnl: number;
+    pnlPercentage: number;
+    entryPrice: number;
+    exitPrice: number;
+    leverage: number;
+    valueNet?: number;
+  };
+  externalUserStats?: {
+    balance: number;
+    amountBought: number;
+    amountSold: number;
+    valueBought: number;
+    valueSold: number;
+    valueNet: number;
+  };
+  currentPrice?: number;
+}
+
+interface ImageCollection {
+  logo?: HTMLImageElement;
+  bg1?: HTMLImageElement;
+  bg2?: HTMLImageElement;
+  monadBlack?: HTMLImageElement;
+  monadIcon?: HTMLImageElement;
+  globe?: HTMLImageElement;
+  twitter?: HTMLImageElement;
+  closeButton?: HTMLImageElement;
+  uploaded?: HTMLImageElement;
+}
+
+interface ColorInputProps {
+  color: string;
+  onChange: (color: string) => void;
+  label: string;
+  id: string;
+  defaultColor: string;
+}
+
+const formatNumber = (num: number, decimals: number = 2): string => {
   if (num === 0) return '0';
   
   const absNum = Math.abs(num);
@@ -32,7 +112,7 @@ const formatNumber = (num:any, decimals = 2) => {
 };
 
 const usePNLData = (tokenAddress: string, userAddress: string, days: number | null) => {
-  const [pnlData, setPnlData] = useState({
+  const [pnlData, setPnlData] = useState<PNLData>({
     balance: 0,
     amountBought: 0,
     amountSold: 0,
@@ -41,7 +121,7 @@ const usePNLData = (tokenAddress: string, userAddress: string, days: number | nu
     valueNet: 0,
     lastPrice: 0,
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -175,59 +255,6 @@ const usePNLData = (tokenAddress: string, userAddress: string, days: number | nu
   return { pnlData, isLoading, error };
 };
 
-interface PNLComponentProps {
-  windowWidth?: number;
-  tokenAddress?: string;
-  userAddress?: string;
-  tokenSymbol?: string;
-  tokenName?: string;
-  monUsdPrice?: number;
-  demoMode?: boolean;
-  demoData?: {
-    monPnl: number;
-    pnlPercentage: number;
-    entryPrice: number;
-    exitPrice: number;
-    leverage: number;
-    valueNet?: number;
-  };
-  externalUserStats?: {
-    balance: number;
-    amountBought: number;
-    amountSold: number;
-    valueBought: number;
-    valueSold: number;
-    valueNet: number;
-  };
-  currentPrice?: number;
-}
-
-interface CustomizationSettings {
-  mainTextColor: string;
-  positivePNLColor: string;
-  negativePNLColor: string;
-  rectangleTextColor: string;
-  showPNLRectangle: boolean;
-}
-
-interface ColorInputProps {
-  color: string;
-  onChange: (color: string) => void;
-  label: string;
-  id: string;
-  defaultColor: string;
-}
-
-interface ImageDimensions {
-  width: number;
-  height: number;
-}
-
-interface TimePeriod {
-  label: string;
-  days: number | null;
-}
-
 const ToggleSwitch: React.FC<{
   checked: boolean;
   onChange: () => void;
@@ -255,9 +282,16 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   externalUserStats,
   currentPrice = 0,
 }) => {
-
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [images, setImages] = useState<ImageCollection>({});
+  const [imagesLoaded, setImagesLoaded] = useState<boolean>(false);
+  const [selectedBg, setSelectedBg] = useState<string>(PNLBG2);
+  const [uploadedBg, setUploadedBg] = useState<string | null>(null);
+  const [isUSD, setIsUSD] = useState<boolean>(false);
+  const [showRightPanel, setShowRightPanel] = useState<boolean>(false);
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>({ label: 'MAX', days: null });
-  const [isUSD, setIsUSD] = useState(false); // New state for currency toggle
+  const [activePicker, setActivePicker] = useState<string | null>(null);
+  const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
 
   const timePeriods: TimePeriod[] = [
     { label: '1D', days: 1 },
@@ -272,7 +306,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     selectedTimePeriod.days
   );
 
-  const pnlData = useMemo(() => {
+  const pnlData = useMemo<PNLData>(() => {
     if (demoMode) {
       return {
         balance: 0,
@@ -300,9 +334,9 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     return fetchedPnlData;
   }, [demoMode, externalUserStats, fetchedPnlData, currentPrice]);
 
-  const displayData = useMemo(() => {
+  const displayData = useMemo<DisplayData>(() => {
     if (demoMode) {
-      const baseData = {
+      const baseData: DisplayData = {
         ...demoData,
         valueNet: demoData.valueNet ?? 0,
       };
@@ -335,7 +369,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
       ? (pnlData.valueSold)
       : 0;
 
-    const baseData = {
+    const baseData: DisplayData = {
       monPnl: monPnl,
       pnlPercentage: pnlPercentage,
       entryPrice: entryPrice,
@@ -358,33 +392,299 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     return baseData;
   }, [demoMode, demoData, pnlData, monUsdPrice, isUSD]);
 
-  const defaultCustomizationSettings: CustomizationSettings = {
+  const [customizationSettings, setCustomizationSettings] = useState<CustomizationSettings>({
     mainTextColor: '#EAEDFF',
     positivePNLColor: '#D8DCFF',
     negativePNLColor: '#e94e4eff',
     rectangleTextColor: '#020307',
     showPNLRectangle: true,
+  });
+
+  const [tempCustomizationSettings, setTempCustomizationSettings] = useState<CustomizationSettings>({
+    mainTextColor: '#EAEDFF',
+    positivePNLColor: '#D8DCFF',
+    negativePNLColor: '#e94e4eff',
+    rectangleTextColor: '#020307',
+    showPNLRectangle: true,
+  });
+
+  const loadImages = useCallback(async () => {
+    const imagePromises: { [key: string]: Promise<HTMLImageElement> } = {
+      logo: loadImage(LogoText),
+      bg1: loadImage(PNLBG),
+      bg2: loadImage(PNLBG2),
+      monadBlack: loadImage(monadblack),
+      monadIcon: loadImage(monadicon),
+      globe: loadImage(globe),
+      twitter: loadImage(twitter),
+      closeButton: loadImage(closebutton)
+    };
+
+    if (uploadedBg) {
+      imagePromises.uploaded = loadImage(uploadedBg);
+    }
+
+    try {
+      const loadedImages: ImageCollection = {};
+      for (const [key, promise] of Object.entries(imagePromises)) {
+        loadedImages[key as keyof ImageCollection] = await promise;
+      }
+      setImages(loadedImages);
+      setImagesLoaded(true);
+    } catch (error) {
+      console.error('Error loading images:', error);
+    }
+  }, [uploadedBg]);
+
+  const loadImage = useCallback((src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }, []);
+
+  const drawPNLImage = useCallback(() => {
+    if (!canvasRef.current || !imagesLoaded) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const dpr = window.devicePixelRatio || 1;
+    const displayWidth = 720;
+    const displayHeight = 450;
+    
+    canvas.width = displayWidth * dpr;
+    canvas.height = displayHeight * dpr;
+    
+    canvas.style.width = displayWidth + 'px';
+    canvas.style.height = displayHeight + 'px';
+    
+    ctx.scale(dpr, dpr);
+    
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, displayWidth, displayHeight);
+    
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
+    let bgImage: HTMLImageElement | undefined;
+    if (selectedBg === PNLBG) bgImage = images.bg1;
+    else if (selectedBg === PNLBG2) bgImage = images.bg2;
+    else if (selectedBg === uploadedBg && images.uploaded) bgImage = images.uploaded;
+    else bgImage = images.bg2;
+    
+    if (bgImage) {
+      ctx.drawImage(bgImage, 0, 0, displayWidth, displayHeight);
+    }
+    
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    
+    if (images.logo) {
+      ctx.drawImage(images.logo, 32, 32, 40, 50);
+    }
+    
+    ctx.fillStyle = customizationSettings.mainTextColor;
+    ctx.font = '35px Funnel Display, Arial, sans-serif';
+    ctx.fillText(tokenSymbol || tokenName, 32, 105);
+    
+    const pnlText = isUSD 
+      ? `${displayData.monPnl >= 0 ? '+' : ''}$${formatNumber(Math.abs(displayData.monPnl))}`
+      : `${displayData.monPnl >= 0 ? '+' : ''}${formatNumber(displayData.monPnl)}`;
+    
+    ctx.font = 'bold 53px Funnel Display, Arial, sans-serif';
+    const pnlMetrics = ctx.measureText(pnlText);
+    const pnlWidth = 290;
+    const pnlHeight = 70;
+    const pnlX = 32;
+    const pnlY = 150;
+    
+    if (customizationSettings.showPNLRectangle) {
+      ctx.fillStyle = displayData.monPnl >= 0 
+        ? customizationSettings.positivePNLColor 
+        : customizationSettings.negativePNLColor;
+      ctx.fillRect(pnlX, pnlY, pnlWidth, pnlHeight);
+      
+      ctx.fillStyle = customizationSettings.rectangleTextColor;
+    } else {
+      ctx.fillStyle = displayData.monPnl >= 0 
+        ? customizationSettings.positivePNLColor 
+        : customizationSettings.negativePNLColor;
+    }
+    
+    if (!isUSD && images.monadBlack) {
+      const iconSize = 45;
+      const signWidth = 30;
+      
+      if (displayData.monPnl < 0) {
+        ctx.fillText('-', pnlX + 12, pnlY + 8);
+      } else if (displayData.monPnl > 0) {
+        ctx.fillText('+', pnlX + 12, pnlY + 8);
+      }
+      
+      ctx.drawImage(images.monadBlack, pnlX + 16 + signWidth, pnlY + 12, iconSize, iconSize);
+      
+      ctx.fillText(formatNumber(Math.abs(displayData.monPnl)), pnlX + 12 + signWidth + iconSize + 8, pnlY + 8);
+    } else {
+      ctx.fillText(pnlText, pnlX + 12, pnlY + 8);
+    }
+    
+    const statsY = 255;
+    ctx.font = '23px Funnel Display, Arial, sans-serif';
+    ctx.fillStyle = customizationSettings.mainTextColor;
+    
+    ctx.fillText('PNL', 52, statsY);
+    ctx.fillStyle = displayData.monPnl >= 0 
+      ? customizationSettings.positivePNLColor 
+      : customizationSettings.negativePNLColor;
+    ctx.fillText(`${displayData.monPnl >= 0 ? '+' : ''}${displayData.pnlPercentage.toFixed(2)}%`, 200, statsY);
+    
+    ctx.fillStyle = customizationSettings.mainTextColor;
+    ctx.fillText('Invested', 52, statsY + 35);
+    if (!isUSD && images.monadIcon) {
+      ctx.drawImage(images.monadIcon, 200, statsY + 35, 22, 22);
+      ctx.fillText(formatNumber(displayData.entryPrice), 230, statsY + 35);
+    } else {
+      const investedText = isUSD ? `$${formatNumber(displayData.entryPrice)}` : formatNumber(displayData.entryPrice);
+      ctx.fillText(investedText, 200, statsY + 35);
+    }
+    
+    ctx.fillText('Position', 52, statsY + 70);
+    if (!isUSD && images.monadIcon) {
+      ctx.drawImage(images.monadIcon, 200, statsY + 70, 22, 22);
+      ctx.fillText(formatNumber(displayData.exitPrice), 230, statsY + 70);
+    } else {
+      const positionText = isUSD ? `$${formatNumber(displayData.exitPrice)}` : formatNumber(displayData.exitPrice);
+      ctx.fillText(positionText, 200, statsY + 70);
+    }
+    
+    const bottomY = 380;
+    ctx.font = '16px Funnel Display, Arial, sans-serif';
+    ctx.fillStyle = customizationSettings.mainTextColor;
+    
+    if (images.globe) {
+      ctx.drawImage(images.globe, 52, bottomY + 25,  17, 17);
+    }
+    ctx.fillText('crystal.exchange', 75, bottomY + 25);
+    
+    if (images.twitter) {
+      ctx.drawImage(images.twitter, 220, bottomY + 24, 17, 17);
+    }
+    ctx.fillText('CrystalExch', 240, bottomY + 25);
+    
+    ctx.textAlign = 'right';
+    ctx.font = '24px Funnel Display, Arial, sans-serif';
+    ctx.fillText('@crystal', 668, bottomY - 10);
+    ctx.font = '16px Funnel Display, Arial, sans-serif';
+    ctx.fillText('Save 25% off Fees', 668, bottomY + 25);
+    
+  }, [imagesLoaded, images, selectedBg, uploadedBg, displayData, customizationSettings, isUSD, tokenSymbol, tokenName]);
+
+  useEffect(() => {
+    if (imagesLoaded) {
+      drawPNLImage();
+    }
+  }, [drawPNLImage, imagesLoaded]);
+
+  useEffect(() => {
+    loadImages();
+  }, [loadImages]);
+
+  useEffect(() => {
+    setTempCustomizationSettings(customizationSettings);
+  }, [customizationSettings]);
+
+  const handleCopyImage = async () => {
+    if (!canvasRef.current) return;
+
+    canvasRef.current.toBlob(async (blob) => {
+      if (!blob) return;
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob }),
+        ]);
+        console.log('Image copied to clipboard!');
+      } catch (err) {
+        console.error('Clipboard write failed:', err);
+      }
+    }, 'image/png');
   };
 
-  const [backgroundZoom, setBackgroundZoom] = useState(100);
-  const [uploadedBg, setUploadedBg] = useState<string | null>(null);
-  const [uploadedImageDimensions, setUploadedImageDimensions] = useState<ImageDimensions | null>(null);
-  const [backgroundPosition, setBackgroundPosition] = useState({ x: 50, y: 50 });
-  const [currency, setCurrency] = useState(tokenName);
-  const [selectedBg, setSelectedBg] = useState(PNLBG2);
-  const [customizationSettings, setCustomizationSettings] = useState<CustomizationSettings>(defaultCustomizationSettings);
-  const [tempCustomizationSettings, setTempCustomizationSettings] = useState<CustomizationSettings>(defaultCustomizationSettings);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [showRightPanel, setShowRightPanel] = useState(false);
-  const [activePicker, setActivePicker] = useState<string | null>(null);
-  const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [hasInteracted, setHasInteracted] = useState(false);
+  const handleDownload = () => {
+    if (!canvasRef.current) return;
 
-  const captureRef = useRef<HTMLDivElement>(null);
-  const pickerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const cardRef = useRef<HTMLDivElement>(null);
+    const link = document.createElement('a');
+    link.download = 'pnl-snapshot.png';
+    link.href = canvasRef.current.toDataURL('image/png');
+    link.click();
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result;
+        if (typeof result === 'string') {
+          setUploadedBg(result);
+          setSelectedBg(result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleApplySettings = useCallback(() => {
+    setCustomizationSettings(tempCustomizationSettings);
+  }, [tempCustomizationSettings]);
+
+  const handleTempColorChange = useCallback((key: keyof CustomizationSettings, color: string) => {
+    setTempCustomizationSettings(prev => ({ ...prev, [key]: color }));
+  }, []);
+
+  const handleTempToggle = useCallback((key: keyof CustomizationSettings) => {
+    setTempCustomizationSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
+  const toggleRightPanel = useCallback(() => {
+    setShowRightPanel(!showRightPanel);
+    if (!showRightPanel) {
+      setTempCustomizationSettings(customizationSettings);
+    }
+  }, [showRightPanel, customizationSettings]);
+
+  const handleColorPickerClick = (id: string, event: React.MouseEvent) => {
+    if (activePicker === id) {
+      setActivePicker(null);
+      return;
+    }
+
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const pickerWidth = 200;
+    const pickerHeight = 250;
+
+    let left = rect.right + 10;
+    let top = rect.top;
+
+    if (left + pickerWidth > viewportWidth) {
+      left = rect.left - pickerWidth - 10;
+    }
+    if (top + pickerHeight > viewportHeight) {
+      top = viewportHeight - pickerHeight - 20;
+    }
+    if (top < 20) {
+      top = 20;
+    }
+
+    setPickerPosition({ top, left });
+    setActivePicker(id);
+  };
 
   const ColorInput = React.memo<ColorInputProps>(({
     color,
@@ -452,13 +752,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
       setIsEditing(false);
     }, [onChange, defaultColor]);
 
-    const handleColorPickerClick = useCallback((e: React.MouseEvent) => {
-      const event = new CustomEvent('colorPickerClick', {
-        detail: { id, event: e }
-      });
-      document.dispatchEvent(event);
-    }, [id]);
-
     return (
       <div className="color-input-row">
         <label className="color-label-inline">{label}</label>
@@ -466,7 +759,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
           <div
             className="color-preview"
             style={{ backgroundColor: color }}
-            onClick={handleColorPickerClick}
+            onClick={(e) => handleColorPickerClick(id, e)}
           />
           <input
             type="text"
@@ -495,270 +788,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     );
   });
 
-  const toggleRightPanel = useCallback(() => {
-    setShowRightPanel(!showRightPanel);
-    if (!showRightPanel) {
-      setTempCustomizationSettings(customizationSettings);
-    }
-  }, [showRightPanel, customizationSettings]);
-
-  const toggleCurrency = useCallback(() => {
-    setIsUSD(!isUSD);
-  }, [isUSD]);
-
-  const handleApplySettings = useCallback(() => {
-    setCustomizationSettings(tempCustomizationSettings);
-  }, [tempCustomizationSettings]);
-
-  const captureImage = async () => {
-    if (!captureRef.current) return null;
-
-    setIsCapturing(true);
-    try {
-      return await html2canvas(captureRef.current, {
-        useCORS: true,
-        backgroundColor: '#000000',
-        ignoreElements: (element) => {
-          return element.classList?.contains('scroll-hint');
-        }
-      });
-    } catch (error) {
-      console.error('Error capturing image:', error);
-      return null;
-    } finally {
-      setIsCapturing(false);
-    }
-  };
-
-  const handleCopyImage = async () => {
-    const canvas = await captureImage();
-    if (!canvas) return;
-
-    canvas.toBlob(async blob => {
-      if (!blob) return;
-      try {
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob }),
-        ]);
-        console.log('Image copied to clipboard!');
-      } catch (err) {
-        console.error('Clipboard write failed:', err);
-      }
-    }, 'image/png');
-  };
-
-  const handleDownload = async () => {
-    const canvas = await captureImage();
-    if (!canvas) return;
-
-    const link = document.createElement('a');
-    link.download = 'pnl-snapshot.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  };
-
-  const handleTempColorChange = useCallback((key: keyof CustomizationSettings, color: string) => {
-    setTempCustomizationSettings(prev => ({ ...prev, [key]: color }));
-  }, []);
-
-  const handleTempToggle = useCallback((key: keyof CustomizationSettings) => {
-    setTempCustomizationSettings(prev => ({ ...prev, [key]: !prev[key] }));
-  }, []);
-
-  const handleColorPickerClickInternal = (id: string, event: React.MouseEvent) => {
-    if (activePicker === id) {
-      setActivePicker(null);
-      return;
-    }
-
-    const rect = (event.target as HTMLElement).getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const pickerWidth = 200;
-    const pickerHeight = 250;
-
-    let left = rect.right + 10;
-    let top = rect.top;
-
-    if (left + pickerWidth > viewportWidth) {
-      left = rect.left - pickerWidth - 10;
-    }
-    if (top + pickerHeight > viewportHeight) {
-      top = viewportHeight - pickerHeight - 20;
-    }
-    if (top < 20) {
-      top = 20;
-    }
-
-    setPickerPosition({ top, left });
-    setActivePicker(id);
-  };
-
-  const isUploadedImageSelected = selectedBg === uploadedBg && uploadedBg !== null;
-
-  const checkImageNeedsScrolling = useCallback(() => {
-    if (!uploadedImageDimensions || !cardRef.current) return { needsHorizontal: false, needsVertical: false };
-
-    const cardRect = cardRef.current.getBoundingClientRect();
-    const cardWidth = cardRect.width;
-    const cardHeight = cardRect.height;
-
-    const { width: imgWidth, height: imgHeight } = uploadedImageDimensions;
-
-    const scaleX = cardWidth / imgWidth;
-    const scaleY = cardHeight / imgHeight;
-    const baseScale = Math.max(scaleX, scaleY);
-    const zoomScale = baseScale * (backgroundZoom / 100);
-
-    const scaledWidth = imgWidth * zoomScale;
-    const scaledHeight = imgHeight * zoomScale;
-
-    const needsHorizontal = scaledWidth > cardWidth;
-    const needsVertical = scaledHeight > cardHeight;
-
-    return { needsHorizontal, needsVertical };
-  }, [uploadedImageDimensions, backgroundZoom]);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!isUploadedImageSelected) return;
-
-    const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
-    if (!needsHorizontal && !needsVertical) return;
-
-    e.preventDefault();
-    setIsDragging(true);
-    setHasInteracted(true);
-    setDragStart({
-      x: e.clientX,
-      y: e.clientY
-    });
-  }, [isUploadedImageSelected, checkImageNeedsScrolling]);
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging || !isUploadedImageSelected) return;
-
-    const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
-
-    const deltaX = e.clientX - dragStart.x;
-    const deltaY = e.clientY - dragStart.y;
-
-    const sensitivity = 0.2;
-
-    let newX = backgroundPosition.x;
-    let newY = backgroundPosition.y;
-
-    if (needsHorizontal) {
-      newX = Math.max(0, Math.min(100, backgroundPosition.x - (deltaX * sensitivity)));
-    }
-
-    if (needsVertical) {
-      newY = Math.max(0, Math.min(100, backgroundPosition.y - (deltaY * sensitivity)));
-    }
-
-    setBackgroundPosition({ x: newX, y: newY });
-    setDragStart({ x: e.clientX, y: e.clientY });
-  }, [isDragging, isUploadedImageSelected, dragStart, backgroundPosition, checkImageNeedsScrolling]);
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  const handleBgSelect = (bg: string) => {
-    setSelectedBg(bg);
-    setCustomizationSettings(defaultCustomizationSettings);
-    setHasInteracted(false);
-    setBackgroundZoom(100);
-    if (bg !== uploadedBg) {
-      setBackgroundPosition({ x: 50, y: 50 });
-    }
-  };
-
-  const getImageDimensions = (src: string): Promise<ImageDimensions> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        resolve({ width: img.naturalWidth, height: img.naturalHeight });
-      };
-      img.onerror = reject;
-      img.src = src;
-    });
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const result = event.target?.result;
-        if (typeof result === 'string') {
-          try {
-            const dimensions = await getImageDimensions(result);
-            setUploadedImageDimensions(dimensions);
-            setUploadedBg(result);
-            setSelectedBg(result);
-            setBackgroundPosition({ x: 50, y: 50 });
-            setBackgroundZoom(100);
-            setHasInteracted(false);
-          } catch (error) {
-            console.error('Error getting image dimensions:', error);
-            setUploadedBg(result);
-            setSelectedBg(result);
-            setUploadedImageDimensions(null);
-            setBackgroundZoom(100);
-            setHasInteracted(false);
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const colorChangeHandlers = useMemo(() => ({
-    mainText: (color: string) => handleTempColorChange('mainTextColor', color),
-    positivePNL: (color: string) => handleTempColorChange('positivePNLColor', color),
-    negativePNL: (color: string) => handleTempColorChange('negativePNLColor', color),
-    rectangleText: (color: string) => handleTempColorChange('rectangleTextColor', color),
-  }), [handleTempColorChange]);
-
-  const colorInputs = useMemo(() => ({
-    mainText: (
-      <ColorInput
-        color={tempCustomizationSettings.mainTextColor}
-        onChange={colorChangeHandlers.mainText}
-        label="Main Text"
-        id="mainText"
-        defaultColor="#EAEDFF"
-      />
-    ),
-    positivePNL: (
-      <ColorInput
-        color={tempCustomizationSettings.positivePNLColor}
-        onChange={colorChangeHandlers.positivePNL}
-        label="Positive PNL"
-        id="positivePNL"
-        defaultColor="#D8DCFF"
-      />
-    ),
-    negativePNL: (
-      <ColorInput
-        color={tempCustomizationSettings.negativePNLColor}
-        onChange={colorChangeHandlers.negativePNL}
-        label="Negative PNL"
-        id="negativePNL"
-        defaultColor="#EC397A"
-      />
-    ),
-    rectangleText: (
-      <ColorInput
-        color={tempCustomizationSettings.rectangleTextColor}
-        onChange={colorChangeHandlers.rectangleText}
-        label="Rectangle Text"
-        id="rectangleText"
-        defaultColor="#020307"
-      />
-    ),
-  }), [tempCustomizationSettings, colorChangeHandlers]);
-
   const getCurrentColor = (pickerId: string) => {
     const key = pickerId.includes('mainText') ? 'mainTextColor' :
       pickerId.includes('positivePNL') ? 'positivePNLColor' :
@@ -773,97 +802,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         pickerId.includes('negativePNL') ? 'negativePNLColor' :
           'rectangleTextColor';
   };
-
-  const getBackgroundSize = () => {
-    if (!isUploadedImageSelected || !uploadedImageDimensions || !cardRef.current) {
-      return 'cover';
-    }
-
-    const cardRect = cardRef.current.getBoundingClientRect();
-    const cardWidth = cardRect.width;
-    const cardHeight = cardRect.height;
-    const { width: imgWidth, height: imgHeight } = uploadedImageDimensions;
-
-    const scaleX = cardWidth / imgWidth;
-    const scaleY = cardHeight / imgHeight;
-
-    const baseScale = Math.max(scaleX, scaleY);
-    const zoomScale = baseScale * (backgroundZoom / 100);
-
-    const scaledWidth = imgWidth * zoomScale;
-    const scaledHeight = imgHeight * zoomScale;
-
-    return `${scaledWidth}px ${scaledHeight}px`;
-  };
-
-  const getBackgroundStyle = () => {
-    if (isUploadedImageSelected && uploadedImageDimensions) {
-      const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
-
-      if (needsHorizontal || needsVertical) {
-        return {
-          backgroundImage: `url(${selectedBg})`,
-          backgroundSize: getBackgroundSize(),
-          backgroundPosition: `${backgroundPosition.x}% ${backgroundPosition.y}%`,
-          backgroundRepeat: 'no-repeat',
-          cursor: isDragging ? 'grabbing' : 'grab',
-        };
-      }
-    }
-
-    return {
-      backgroundImage: `url(${selectedBg})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
-      cursor: 'default',
-    };
-  };
-
-  useEffect(() => {
-    setCurrency(tokenName);
-  }, [tokenName]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (activePicker && pickerRefs.current[activePicker] &&
-        !pickerRefs.current[activePicker]?.contains(event.target as Node)) {
-        setActivePicker(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [activePicker]);
-
-  useEffect(() => {
-    const handleColorPickerClick = (event: any) => {
-      const { id, event: clickEvent } = event.detail;
-      handleColorPickerClickInternal(id, clickEvent);
-    };
-
-    document.addEventListener('colorPickerClick', handleColorPickerClick);
-    return () => document.removeEventListener('colorPickerClick', handleColorPickerClick);
-  }, [activePicker]);
-
-  useEffect(() => {
-    setTempCustomizationSettings(customizationSettings);
-  }, [customizationSettings]);
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging, handleMouseMove, handleMouseUp]);
-
-  const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
-  const showScrollHint = isUploadedImageSelected && (needsHorizontal || needsVertical) && !hasInteracted && !isCapturing;
 
   if (isLoading && !demoMode && !externalUserStats) {
     return (
@@ -882,6 +820,14 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     );
   }
 
+  if (!imagesLoaded) {
+    return (
+      <div className="pnl-loading">
+        <p>Loading images...</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div
@@ -889,163 +835,23 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         onClick={e => e.stopPropagation()}
       >
         <div className="pnl-modal main-popup">
-          <div
-            className={`pnl-card ${!isCapturing ? 'pnl-card-display' : ''}`}
-            ref={captureRef}
-            style={getBackgroundStyle()}
-            onMouseDown={handleMouseDown}
-          >
-            <div ref={cardRef} className="pnl-card-content">
-              {/* {showScrollHint && (
-                <div className="scroll-hint" style={{
-                  position: 'absolute',
-                  top: '10px',
-                  right: '10px',
-                  background: 'rgba(0, 0, 0, 0.7)',
-                  color: 'white',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  pointerEvents: 'none',
-                  zIndex: 1000
-                }}>
-                  Drag to scroll
-                </div>
-              )} */}
-
-              <div className="pnl-header-section">
-                <div className="pnl-card-header">
-                  <img className="pnl-logo" src={LogoText} alt="Logo" crossOrigin="anonymous" />
-                </div>
-
-                <div className="pnl-token-row">
-                  <div className="pnl-token-info-leverage">
-                    <div className="pnl-token-info">
-                      <span className="pnl-token-name" style={{ color: customizationSettings.mainTextColor }}>
-                        {tokenSymbol || tokenName}
-                      </span>
-                    </div>
-
-                  </div>
-                </div>
-
-                <div
-                  className="pnl-percentage"
-                  style={{
-                    color: customizationSettings.showPNLRectangle
-                      ? customizationSettings.rectangleTextColor
-                      : (displayData.monPnl >= 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor),
-                    backgroundColor: customizationSettings.showPNLRectangle
-                      ? (displayData.monPnl >= 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor)
-                      : 'transparent',
-                  }}
-                >
-                  {isUSD ? (
-                    <>{displayData.monPnl >= 0 ? '+' : ''}${formatNumber(Math.abs(displayData.monPnl))}</>
-                  ) : (
-                    <>
-                      <img src={monadblack} className="monad-pnl-icon" />
-                      {displayData.monPnl >= 0 ? '+' : ''}{formatNumber(displayData.monPnl)}
-                    </>
-                  )}
-                </div>
-              </div>
-              <div className="pnl-entry-exit-group">
-                <div className="pnl-entry">
-                  <div className="pnl-entry-label">PNL</div>
-                  <div className="pnl-entry-value" style={{
-                    color: displayData.monPnl >= 0
-                      ? customizationSettings.positivePNLColor
-                      : customizationSettings.negativePNLColor
-                  }}>
-                    {displayData.monPnl >= 0 ? '+' : ''}{displayData.pnlPercentage.toFixed(2)}%
-                  </div>
-                </div>
-                <div className="pnl-exit">
-                  <div className="pnl-exit-label">Invested</div>
-                  <div className="pnl-exit-value" style={{ color: customizationSettings.mainTextColor }}>
-                    {isUSD ? (
-                      <>$</>
-                    ) : (
-                      <img className="pnl-monad-icon" src={monadicon} />
-                    )}
-                    {formatNumber(displayData.entryPrice)}
-                  </div>
-                </div>
-                <div className="pnl-exit">
-                  <div className="pnl-exit-label">Position</div>
-                  <div className="pnl-exit-value" style={{ color: customizationSettings.mainTextColor }}>
-                    {isUSD ? (
-                      <>$</>
-                    ) : (
-                      <img className="pnl-monad-icon" src={monadicon} />
-                    )}
-                    {formatNumber(displayData.exitPrice)}
-                  </div>
-                </div>
-              </div>
-              <div className="pnl-bottom-row">
-                <div className="pnl-bottom-row-left">
-                  <div className="pnl-referral">
-                    <div className="pnl-referral-value" style={{ color: customizationSettings.mainTextColor }}>
-                      <img className="pnl-globe" src={globe} />crystal.exchange
-                    </div>
-                  </div>
-                  <div className="pnl-referral">
-                    <div className="pnl-twitter-value" style={{ color: customizationSettings.mainTextColor }}>
-                      <img className="pnl-twitter" src={twitter} />CrystalExch
-                    </div>
-                  </div>
-                </div>
-                <div className="pnl-bottom-row-right">
-                  <div className="pnl-referral-username" style={{ color: customizationSettings.mainTextColor }}>@crystal</div>
-                    <div className="pnl-referral-value" style={{ color: customizationSettings.mainTextColor }}>
-                      Save 25% off Fees
-                    </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* {isUploadedImageSelected && (
-            <div className="pnl-zoom-controls">
-              <label className="zoom-label">Zoom: {backgroundZoom}%</label>
-              <input
-                type="range"
-                min="50"
-                max="200"
-                value={backgroundZoom}
-                onChange={(e) => setBackgroundZoom(Number(e.target.value))}
-                className="zoom-slider"
-              />
-              <div className="zoom-buttons">
-                <button
-                  className="zoom-btn"
-                  onClick={() => setBackgroundZoom(Math.max(50, backgroundZoom - 10))}
-                >
-                  -
-                </button>
-                <button
-                  className="zoom-btn"
-                  onClick={() => setBackgroundZoom(100)}
-                >
-                  Reset
-                </button>
-                <button
-                  className="zoom-btn"
-                  onClick={() => setBackgroundZoom(Math.min(200, backgroundZoom + 10))}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          )} */}
+          <canvas 
+            ref={canvasRef} 
+            width={720} 
+            height={450}
+            style={{ 
+              borderRadius: '20px',
+              border: '1.5px solid rgba(179, 184, 249, 0.1)',
+              marginBottom: '20px',
+              display: 'block'
+            }}
+          />
 
           <div className="pnl-section pnl-layer-middle">
             <div className="pnl-middle-left">
               <button
                 className="pnl-box"
-                onClick={() => handleBgSelect(PNLBG)}
+                onClick={() => setSelectedBg(PNLBG)}
                 style={{
                   backgroundImage: `url(${PNLBG})`,
                   border: selectedBg === PNLBG ? '1px solid #d8dcff' : '1px solid transparent',
@@ -1053,7 +859,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
               />
               <button
                 className="pnl-box"
-                onClick={() => handleBgSelect(PNLBG2)}
+                onClick={() => setSelectedBg(PNLBG2)}
                 style={{
                   backgroundImage: `url(${PNLBG2})`,
                   border: selectedBg === PNLBG2 ? '1px solid #d8dcff' : '1px solid transparent',
@@ -1088,14 +894,14 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
             <div className="pnl-footer-left">
               <button 
                 className={`pnl-footer-btn ${isUSD ? 'active' : ''}`} 
-                onClick={toggleCurrency}
+                onClick={() => setIsUSD(!isUSD)}
               >
                 {isUSD ? 'USD' : 'MON'}
               </button>
               <button className="pnl-footer-btn" onClick={toggleRightPanel}>
                 {showRightPanel ? 'Hide Panel' : 'Customize'}
               </button>
-              {/* {timePeriods.map(period => (
+              {timePeriods.map(period => (
                 <button
                   key={period.label}
                   className={`pnl-footer-btn ${selectedTimePeriod.label === period.label ? 'active' : ''}`}
@@ -1104,7 +910,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                 >
                   {period.label}
                 </button>
-              ))} */}
+              ))}
             </div>
             <div className="pnl-footer-right">
               <button className="pnl-footer-btn" onClick={handleDownload}>Download</button>
@@ -1129,13 +935,31 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
             <div className="customization-body">
               <div className="section">
                 <h3 className="pnl-section-title">Text Colors</h3>
-                {colorInputs.mainText}
+                <ColorInput
+                  color={tempCustomizationSettings.mainTextColor}
+                  onChange={(color) => handleTempColorChange('mainTextColor', color)}
+                  label="Main Text"
+                  id="mainText"
+                  defaultColor="#EAEDFF"
+                />
               </div>
 
               <div className="section">
                 <h3 className="pnl-section-title">PNL Colors</h3>
-                {colorInputs.positivePNL}
-                {colorInputs.negativePNL}
+                <ColorInput
+                  color={tempCustomizationSettings.positivePNLColor}
+                  onChange={(color) => handleTempColorChange('positivePNLColor', color)}
+                  label="Positive PNL"
+                  id="positivePNL"
+                  defaultColor="#D8DCFF"
+                />
+                <ColorInput
+                  color={tempCustomizationSettings.negativePNLColor}
+                  onChange={(color) => handleTempColorChange('negativePNLColor', color)}
+                  label="Negative PNL"
+                  id="negativePNL"
+                  defaultColor="#e94e4eff"
+                />
               </div>
 
               <div className="section">
@@ -1149,7 +973,13 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                     />
                   </div>
                 </div>
-                {colorInputs.rectangleText}
+                <ColorInput
+                  color={tempCustomizationSettings.rectangleTextColor}
+                  onChange={(color) => handleTempColorChange('rectangleTextColor', color)}
+                  label="Rectangle Text"
+                  id="rectangleText"
+                  defaultColor="#020307"
+                />
               </div>
             </div>
 
@@ -1169,7 +999,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
             top: `${pickerPosition.top}px`,
             left: `${pickerPosition.left}px`,
           }}
-          ref={(el) => pickerRefs.current[activePicker] = el}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
