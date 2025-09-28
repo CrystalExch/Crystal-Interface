@@ -365,18 +365,15 @@
 }
 
 .meme-sell-button.inactive {
-  background-color: #11111328;
   color: #666;
 }
 
 .meme-buy-button:hover {
-  border-color: transparent;
   color: rgb(67 254 154);
 
 }
 
 .meme-sell-button:hover {
-  border-color: transparent;
   color: rgb(235, 112, 112);
 
 }
