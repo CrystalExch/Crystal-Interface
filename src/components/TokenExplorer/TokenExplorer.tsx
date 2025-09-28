@@ -2238,7 +2238,7 @@ const TokenRow = React.memo<{
           </button>
         </div>
 
-        <div className="explorer-token-left">
+        <div className="explorer-token-left" style={!displaySettings.progressBar ? { marginTop : '-3px' } : {}}>
           <div
             ref={imageContainerRef}
             className={`explorer-token-image-container ${token.status === 'graduated' ? 'graduated' : ''} ${!displaySettings.squareImages ? 'circle-mode' : ''} ${!displaySettings.progressBar ? 'no-progress-ring' : ''}`}
@@ -2718,13 +2718,8 @@ const TokenRow = React.memo<{
               <Tooltip content="Global Fees Paid">
                 <div className="explorer-stat-item">
                   <span className="explorer-fee-label">F</span>
-                  <img
-                    className="explorer-fee-icon"
-                    src={monadicon}
-                    alt="fee"
-                  />
                   <span className="explorer-fee-total">
-                    {token.globalFeesPaid}
+                    {formatPrice(token.volume24h * monUsdPrice / 100, displaySettings.noDecimals)}
                   </span>
                 </div>
               </Tooltip>
@@ -3773,7 +3768,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           .map((x: string) => x.trim())
           .filter(Boolean);
         const searchText =
-          `${t.name} ${t.symbol} ${t.description} ${t.tokenAddress}`.toLowerCase();
+          `${t.name} ${t.symbol} ${t.description}`.toLowerCase();
         if (!keywords.some((keyword: string) => searchText.includes(keyword)))
           return false;
       }

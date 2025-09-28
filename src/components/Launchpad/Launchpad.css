@@ -323,7 +323,6 @@
   font-size: 0.85rem;
   margin: 0.5rem 0;
   word-break: break-all;
-  font-family: monospace;
 }
 
 .deployment-results strong {
@@ -507,7 +506,6 @@
     font-size: 0.85rem;
     margin: 0.5rem 0;
     word-break: break-all;
-    font-family: monospace;
   }
 
   .deployment-results strong {

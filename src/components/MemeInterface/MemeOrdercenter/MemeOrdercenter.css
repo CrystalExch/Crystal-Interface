@@ -47,8 +47,7 @@
   color: #ffffff73;
   cursor: pointer;
   flex: 1;
-  font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 300;
   letter-spacing: -0.1px;
   outline: none;
@@ -427,7 +426,6 @@
   border-radius: 4px;
   color: #ef7878;
   cursor: pointer;
-  font-family: inherit;
   font-size: 0.85rem;
   margin-left: 4px;
   outline: none;
@@ -448,7 +446,6 @@
   background: none;
   border-radius: 4px;
   color: #ffffff73;
-  font-family: inherit;
   font-size: 0.75rem;
   outline: none;
   width: 100%;

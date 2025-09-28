@@ -139,10 +139,10 @@
     gap:1rem;
     padding-right: 1rem;
 }
-.lp-detail-asset,.header-controls,.filter-controls{
+.filter-controls{
     display:flex;
     align-items:center;
-    gap:1rem
+    gap:.35rem;
 }
 .lp-detail-token-pair{
     position:relative;
@@ -295,7 +295,7 @@
 .lp-filter-button{
     background:0 0;
     border:1.5px solid rgba(179,184,249,.1);
-    border-radius:12px;
+    border-radius:8px;
     color:#ffffff79;
     font-size:.75rem;
     cursor:pointer;
@@ -316,7 +316,6 @@
     color:#d8dcff;
     background-color:rgba(201,194,243,.05);
     border-color:#aaaecf;
-    box-shadow:0 0 0 2px rgba(170,174,207,.3)
 }
 .lp-filter-button:focus,.lp-tab:focus,.page-toggle-tab:focus{
     outline:0
@@ -350,6 +349,9 @@
 .lp-search-container,.token-selector-container,.token-selector-input-wrapper,.market-selector-container,.time-range-dropdown-container{
     position:relative
 }
+.market-selector-container {
+    align-self: flex-start;
+}
 .lp-search-input{
     display:flex;
     align-items:center;
@@ -357,7 +359,6 @@
     border-radius:12px;
     padding:0 .5rem;
     height:32px;
-    cursor:pointer;
     transition:all.2s ease;
     min-width:240px;
     gap:.3rem
@@ -369,10 +370,7 @@
     border-color:#aaaecf;
     box-shadow:0 0 0 2px rgba(170,174,207,.3)
 }
-.lp-search-icon,.search-icon{
-    color:#8b8989;
-    flex-shrink:0
-}
+
 .lp-search-field{
     background:0 0;
     border:none;
@@ -380,7 +378,6 @@
     color:#fff;
     font-size:.8rem;
     flex:1;
-    cursor:pointer;
     min-width:0
 }
 .lp-search-field::placeholder,.vaults-search-input::placeholder,.form-input::placeholder,.form-textarea::placeholder,.form-group .vault-socials-grid .form-input::placeholder,.vault-amount-input::placeholder,.withdraw-percentage-input::placeholder{
@@ -1696,43 +1693,25 @@
     width:100%;
     margin-bottom:.5rem
 }
-.filter-button{
-    background:0 0;
-    border:1.5px solid rgba(179,184,249,.1);
-    border-radius:12px;
-    color:#ffffff79;
-    font-size:.75rem;
-    cursor:pointer;
-    transition:all.3s ease;
-    white-space:nowrap;
-    padding:.5rem .75rem;
-    height:32px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    letter-spacing:-.3px
-}
 .vaults-search-container{
-    position:relative;
     display:flex;
     align-items:center;
     border:1.5px solid rgba(179,184,249,.1);
     border-radius:12px;
     padding:0 .5rem;
     height:32px;
+    transition:all.2s ease;
     min-width:240px;
     gap:.3rem
 }
 .vaults-search-input{
-    background:0 0;
-    border:none;
-    outline:0;
-    color:#fff;
-    font-size:.8rem;
-    flex:1;
-    min-width:0;
-    letter-spacing:-.3px;
-    padding-left:25px
+    background: transparent;
+    border: none;
+    outline: 0;
+    color: #fff;
+    font-size: .8rem;
+    flex: 1;
+    min-width: 0;
 }
 .vaults-list{
     border:1px solid rgba(179,184,249,.1);
@@ -2579,7 +2558,7 @@
 .filter-button{
     background:0 0;
     border:1.5px solid rgba(179,184,249,.1);
-    border-radius:12px;
+    border-radius:8px;
     color:#ffffff79;
     font-size:.75rem;
     cursor:pointer;
@@ -2601,7 +2580,6 @@
     color:#d8dcff;
     background-color:rgba(201,194,243,.05);
     border-color:#aaaecf;
-    box-shadow:0 0 0 2px rgba(170,174,207,.3)
 }
 .vaults-list-header{
     display: flex;
@@ -3289,7 +3267,6 @@
     padding:2px 8px;
     border-radius:12px;
     font-size:.7rem;
-    font-family:inherit
 }
 .vault-pnl-positive{
     color:#50f08d!important

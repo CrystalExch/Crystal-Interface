@@ -2602,7 +2602,6 @@ useEffect(() => {
       setIsSigning(true);
 
       if (activeTradeType === 'buy') {
-        // Buy logic
         txId = walletPopup.showBuyTransaction(
           tradeAmount,
           inputCurrency,
@@ -2634,7 +2633,77 @@ useEffect(() => {
 
         terminalRefetch();
       } else {
-        // Sell logic (similar structure)
+        txId = walletPopup.showSellTransaction(
+          tradeAmount,
+          inputCurrency === 'TOKEN' ? token.symbol : 'MON',
+          token.symbol,
+          token.image,
+        );
+
+        let amountTokenWei: bigint;
+        let monAmountWei: bigint;
+        let isExactInput: boolean;
+
+        const decimals = tokendict?.[token.id]?.decimals || 18;
+
+        if (inputCurrency === 'TOKEN') {
+          amountTokenWei = BigInt(
+            Math.round(parseFloat(tradeAmount) * 10 ** Number(decimals)),
+          );
+          isExactInput = true;
+          monAmountWei = 0n;
+        } else {
+          monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
+          // const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
+          const tokensToSell = parseFloat(tradeAmount) / currentPrice;
+          amountTokenWei = BigInt(
+            Math.round(tokensToSell * 10 ** Number(decimals)),
+          );
+          isExactInput = false;
+        }
+
+        const currentBalance =
+          walletTokenBalances?.[userAddr]?.[token.id] || 0n;
+        if (amountTokenWei > currentBalance) {
+          amountTokenWei = currentBalance > 1n ? currentBalance - 1n : 0n;
+        }
+
+        if (amountTokenWei <= 0n) {
+          throw new Error(walletPopup.texts.INSUFFICIENT_TOKEN_BALANCE);
+        }
+
+        walletPopup.updateTransactionConfirming(
+          txId,
+          tradeAmount,
+          inputCurrency === 'TOKEN' ? token.symbol : 'MON',
+          token.symbol,
+        );
+
+        const sellUo = {
+          target: routerAddress as `0x${string}`,
+          data: encodeFunctionData({
+            abi: CrystalRouterAbi,
+            functionName: 'sell',
+            args: [
+              isExactInput,
+              tokenAddress as `0x${string}`,
+              amountTokenWei,
+              monAmountWei,
+            ],
+          }),
+          value: 0n,
+        };
+
+        await sendUserOperationAsync({ uo: sellUo });
+
+        walletPopup.updateTransactionSuccess(txId, {
+          tokenAmount: Number(tradeAmount),
+          receivedAmount: Number(quoteValue ?? 0),
+          tokenSymbol: token.symbol,
+          currencyUnit: 'MON',
+        });
+
+        terminalRefetch();
       }
 
       setTradeAmount('');
@@ -2789,7 +2858,7 @@ useEffect(() => {
           className={`meme-mobile-toggle-btn ${mobileActiveView === 'ordercenter' ? 'active' : ''}`}
           onClick={() => setMobileActiveView('ordercenter')}
         >
-          Orders
+          Tables
         </button>
       </div>
 
@@ -3225,11 +3294,7 @@ useEffect(() => {
                   }}
                   onMouseUp={() => setIsDragging(false)}
                   style={{
-                    background: `linear-gradient(to right, ${
-                      activeTradeType === 'buy'
-                        ? 'rgb(67, 254, 154)'
-                        : 'rgb(235, 112, 112)'
-                    } ${sliderPercent}%, rgb(28, 28, 31) ${sliderPercent}%)`,
+                    background: `linear-gradient(to right, rgb(171, 176, 224) ${sliderPercent}%, rgb(28, 28, 31) ${sliderPercent}%)`,
                   }}
                 />
                 <div
@@ -3252,12 +3317,12 @@ useEffect(() => {
                           const currentBalance = getCurrentMONBalance();
                           const newAmount =
                             (currentBalance * markPercent) / 100;
-                          setTradeAmount(newAmount.toString());
+                          setTradeAmount(formatTradeAmount(newAmount));
                         } else {
                           const currentBalance = getCurrentTokenBalance();
                           const newAmount =
                             (currentBalance * markPercent) / 100;
-                          setTradeAmount(newAmount.toString());
+                          setTradeAmount(formatTradeAmount(newAmount));
                         }
                         positionPopup(markPercent);
                       }}
@@ -4102,15 +4167,14 @@ useEffect(() => {
               <div className="meme-token-info-footer">
                 <span className="meme-address">
                   <div className="address-top">
-                    <div className="meme-address-content">
+                    <div className="meme-address-content" onClick={() =>
+                            copyToClipboard(token.id, 'Contract address copied')
+                          }>
+                      <Tooltip content="Copy contract address">
                       <img className="meme-contract-icon" src={contract} />
                       <span className="meme-address-title">CA:</span>{' '}
-                      <Tooltip content="Copy contract address">
                         <span
                           className="meme-explorer-link"
-                          onClick={() =>
-                            copyToClipboard(token.id, 'Contract address copied')
-                          }
                         >
                           {token.id.slice(0, 15)}...{token.id.slice(-4)}
                         </span>
@@ -4134,15 +4198,14 @@ useEffect(() => {
                 </span>
                 <span className="meme-address">
                   <div className="address-top">
-                    <div className="meme-address-content">
+                    <div className="meme-address-content" onClick={() =>
+                            copyToClipboard(token.dev, 'Dev address copied')
+                          }>
+                      <Tooltip content="Copy developer address">
                       <img className="meme-contract-icon" src={contract} />
                       <span className="meme-address-title">DA:</span>{' '}
-                      <Tooltip content="Copy developer address">
                         <span
                           className="meme-explorer-link"
-                          onClick={() =>
-                            copyToClipboard(token.dev, 'Dev address copied')
-                          }
                         >
                           {token.dev.slice(0, 15)}...{token.dev.slice(-4)}
                         </span>

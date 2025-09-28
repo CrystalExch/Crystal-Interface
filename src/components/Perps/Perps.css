@@ -48,8 +48,7 @@
 .perps-buy-sell-container {
     display: flex;
     width: 100%;
-    margin: 0px 12px 0 12px;
-    margin-top: 4px;
+    margin: 4px 12px 0 12px;
     width: calc(100% - 24px);
     border-radius: 6px;
     border: 1px solid rgba(179, 184, 249, .1);
@@ -88,6 +87,15 @@
 .perps-short-button.inactive {
     background: #11111328;
     color: #666;
+}
+
+
+.perps-long-button:hover {
+    color: rgb(67 254 154);
+}
+
+.perps-short-button:hover {
+    color: rgb(235, 112, 112);
 }
 
 .perps-order-types {
@@ -633,16 +641,11 @@
     color: rgb(235, 112, 112);
 }
 
-
-
-.perps-trade-action-button.buy:hover:not(:disabled) {
+.perps-trade-action-button.long:hover:not(:disabled) {
     filter: brightness(1.1)
 }
 
-
-
-
-.perps-trade-action-button.sell:hover:not(:disabled) {
+.perps-trade-action-button.short:hover:not(:disabled) {
     filter: brightness(1.1)
 }
 

@@ -28,7 +28,7 @@
 }
 
 .popup-stack-container.preview-mode {
-  z-index: 11;
+  z-index: 1000;
   pointer-events: auto;
 }
 

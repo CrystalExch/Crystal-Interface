@@ -1907,7 +1907,6 @@
 .deposit-target-address{
     color:rgba(255,255,255,.7);
     font-size:.8rem;
-    font-family:monospace;
     display:block;
     color:#888;
     font-size:13px
@@ -2327,7 +2326,6 @@
   color: rgba(255, 255, 255, 0.8);
   padding: 8px 12px;
   font-size: 0.75rem;
-  font-family: monospace;
   word-break: break-all;
   resize: none;
   min-height: 40px;
