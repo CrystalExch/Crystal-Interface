@@ -633,7 +633,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                 </div>
 
                 <div className="meme-search-results">
-                    {searchTerm.trim().length >= 2 && (!loading || isSearching) ? (
+                    {searchTerm.trim().length >= 2 && (loading || isSearching) ? (
                         <div className="meme-search-skeleton-container">
                             {Array.from({ length: 8 }).map((_, i) => (
                                 <div key={i} className="meme-search-skeleton-row">

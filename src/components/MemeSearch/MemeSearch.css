@@ -19,7 +19,7 @@
   border-radius: 6px;
   width: 100%;
   max-width: 650px;
-  max-height: 530px;
+  height: 610px;
   min-height: 300px;
   max-height: 90vh;
   display: flex;
@@ -794,14 +794,11 @@
   display: flex;
   flex-direction: column;
   padding: 8px 16px;
-    width: 100%;
-
 }
 
 .meme-search-skeleton-row {
   padding: 8px 0;
   animation: pulse 1.5s ease-in-out infinite;
-  width: 100%;
 }
 
 .meme-search-skeleton-content {
@@ -947,11 +944,8 @@
 }
 
 .meme-search-results {
-  display: flex;
-  align-items: center;
-  min-height: 220px;
+  height: calc(100% - 85px);
   overflow-y: auto;
-  width: 100%;
 }
 
 .meme-search-section {
