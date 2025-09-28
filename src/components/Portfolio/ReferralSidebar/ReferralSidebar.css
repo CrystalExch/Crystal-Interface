@@ -609,7 +609,7 @@
   margin-top: 10px;
 }
 
-.customize-button {
+.referrals-customize-button {
   align-items: center;
   background: linear-gradient(
     135deg,
@@ -636,15 +636,15 @@
   letter-spacing: -0.3px;
   padding: 10px;
   transition: all 0.2s;
-  width: calc(100% - 16px);
-  margin:10px 0 10px 15px;
+  width: calc(100% - 32px);
+  margin:10px 0 15px 15px;
 }
 
-.customize-button:hover:not(:disabled) {
+.referrals-customize-button:hover:not(:disabled) {
   filter: brightness(1.1);
 }
 
-.customize-button:disabled {
+.referrals-customize-button:disabled {
   cursor: default;
   opacity: 0.4;
 }

@@ -1086,7 +1086,7 @@ const ColorPicker: React.FC<{
         </div>
 
         <div className="color-picker-content">
-          <div className="color-preview" style={{ backgroundColor: color }} />
+          <div className="tokenexplorer-color-preview" style={{ backgroundColor: color }} />
 
           <div className="color-slider-container">
             <label>Hue</label>
@@ -2198,21 +2198,21 @@ const TokenRow = React.memo<{
         onClick={() => onTokenClick(token)}
       >
         <div className="explorer-token-actions">
-            <button
-              className="explorer-hide-button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onHideToken(token.id);
-              }}
-              title={isHidden ? 'Show token' : 'Hide token'}
-              
-            >
-                        <Tooltip content={isHidden ? 'Show Token' : 'Hide Token'}>
+          <button
+            className="explorer-hide-button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onHideToken(token.id);
+            }}
+            title={isHidden ? 'Show token' : 'Hide token'}
+
+          >
+            <Tooltip content={isHidden ? 'Show Token' : 'Hide Token'}>
 
               {isHidden ? <Eye size={16} /> : <EyeOff size={16} />}
-                        </Tooltip>
+            </Tooltip>
 
-            </button>
+          </button>
 
           <button
             className="explorer-blacklist-button"

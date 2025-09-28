@@ -538,7 +538,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
             </div>
 
             <button
-              className="customize-button"
+              className="referrals-customize-button"
               onClick={handleCreateRef}
               disabled={isSigning || !newRefCode}
             >
@@ -590,7 +590,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
 
             <div className="modal-actions-custom">
               <button
-                className="customize-button"
+                className="referrals-customize-button"
                 onClick={() => handleSetRef(enterRefCode)}
                 disabled={isSigning || !enterRefCode || (isEditingCode && enterRefCode === usedRefLink)}
               >

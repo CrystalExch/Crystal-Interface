@@ -3563,11 +3563,10 @@
   padding: 20px;
 }
 
-.color-preview {
+.tokenexplorer-color-preview {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   height: 60px;
-  margin-bottom: 20px;
   width: 100%;
 }
 
@@ -3644,19 +3643,15 @@
 }
 
 .hex-input {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
+  background: none;
   border-radius: 6px;
   color: #ffffff;
   font-size: 0.9rem;
-  padding: 8px 12px;
   transition: all 0.2s ease;
   width: 100%;
 }
 
 .hex-input:focus {
-  border-color: rgba(170, 174, 207, 0.6);
-  box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.2);
   outline: none;
 }
 
@@ -3802,7 +3797,7 @@
 .color-input-container {
   align-items: center;
   display: flex;
-  gap: 8px;
+  gap: 4px;
   margin-top: 8px;
 }
 

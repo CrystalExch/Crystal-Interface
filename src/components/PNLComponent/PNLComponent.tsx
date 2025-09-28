@@ -443,7 +443,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
             title="Reset to default"
             type="button"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
             </svg>
           </button>
@@ -1029,7 +1029,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
               <button className="pnl-footer-btn" onClick={toggleRightPanel}>
                 {showRightPanel ? 'Hide Panel' : 'Customize'}
               </button>
-              {timePeriods.map(period => (
+              {/* {timePeriods.map(period => (
                 <button
                   key={period.label}
                   className={`pnl-footer-btn ${selectedTimePeriod.label === period.label ? 'active' : ''}`}
@@ -1038,7 +1038,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                 >
                   {period.label}
                 </button>
-              ))}
+              ))} */}
             </div>
             <div className="pnl-footer-right">
               <button className="pnl-footer-btn" onClick={handleDownload}>Download</button>
