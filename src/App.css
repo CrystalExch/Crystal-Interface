@@ -8026,7 +8026,7 @@ input::-webkit-inner-spin-button {
   flex-direction: column;
   justify-content: flex-start;
   border-radius: 8px;
-  box-shadow: inset 20px 0 20px 30px black;
+  overflow: hidden;
 }
 
 .pnl-card-display {
