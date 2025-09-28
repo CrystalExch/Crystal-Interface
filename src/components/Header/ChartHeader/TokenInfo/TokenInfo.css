@@ -1756,3 +1756,13 @@
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+
+
+
+.token-info-trenches-pnl-button {
+ display: flex;
+ align-items: center;
+ font-size: 0.8rem;
+ color: #d8dcff;
+ gap: 4px;
+}

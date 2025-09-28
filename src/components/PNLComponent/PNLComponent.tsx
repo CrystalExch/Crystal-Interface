@@ -37,6 +37,14 @@ interface CustomizationSettings {
   showShadows: boolean;
 }
 
+const DEFAULT_SETTINGS: CustomizationSettings = {
+  mainTextColor: '#EAEDFF',
+  positivePNLColor: '#D8DCFF',
+  negativePNLColor: '#e85a5aff',
+  rectangleTextColor: '#020307',
+  showPNLRectangle: true,
+  showShadows: false,
+};
 interface DisplayData {
   monPnl: number;
   pnlPercentage: number;
@@ -278,9 +286,17 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [images, setImages] = useState<ImageCollection>({});
   const [imagesLoaded, setImagesLoaded] = useState<boolean>(false);
-  const [selectedBg, setSelectedBg] = useState<string>(PNLBG2);
-  const [uploadedBg, setUploadedBg] = useState<string | null>(null);
-  const [isUSD, setIsUSD] = useState<boolean>(false);
+  const [selectedBg, setSelectedBg] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('pnl-selected-bg') || PNLBG2;
+    }
+    return PNLBG2;
+  }); const [uploadedBg, setUploadedBg] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('pnl-uploaded-bg') || null;
+    }
+    return null;
+  }); const [isUSD, setIsUSD] = useState<boolean>(false);
   const [showRightPanel, setShowRightPanel] = useState<boolean>(false);
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>({ label: 'MAX', days: null });
   const [activePicker, setActivePicker] = useState<string | null>(null);
@@ -385,15 +401,21 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     return baseData;
   }, [demoMode, demoData, pnlData, monUsdPrice, isUSD]);
 
-  const [customizationSettings, setCustomizationSettings] = useState<CustomizationSettings>({
-    mainTextColor: '#EAEDFF',
-    positivePNLColor: '#D8DCFF',
-    negativePNLColor: '#e85a5aff',
-    rectangleTextColor: '#020307',
-    showPNLRectangle: true,
-    showShadows: false,
-  });
+  const [customizationSettings, setCustomizationSettings] = useState<CustomizationSettings>(DEFAULT_SETTINGS);
 
+  const [customBgSettings, setCustomBgSettings] = useState<CustomizationSettings>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('pnl-custom-bg-settings');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Failed to parse saved custom background settings:', e);
+        }
+      }
+    }
+    return DEFAULT_SETTINGS;
+  });
   const [tempCustomizationSettings, setTempCustomizationSettings] = useState<CustomizationSettings>({
     mainTextColor: '#EAEDFF',
     positivePNLColor: '#D8DCFF',
@@ -668,6 +690,34 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     setTempCustomizationSettings(customizationSettings);
   }, [customizationSettings]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pnl-selected-bg', selectedBg);
+    }
+
+    if (uploadedBg && selectedBg === uploadedBg) {
+      const saved = localStorage.getItem('pnl-custom-bg-settings');
+      if (saved) {
+        try {
+          const savedSettings = JSON.parse(saved);
+          setCustomizationSettings(savedSettings);
+        } catch (e) {
+          setCustomizationSettings(DEFAULT_SETTINGS);
+        }
+      } else {
+        setCustomizationSettings(DEFAULT_SETTINGS);
+      }
+    } else {
+      setCustomizationSettings(DEFAULT_SETTINGS);
+      setShowRightPanel(false);
+    }
+  }, [selectedBg, uploadedBg]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && uploadedBg && selectedBg === uploadedBg) {
+      localStorage.setItem('pnl-custom-bg-settings', JSON.stringify(customizationSettings));
+    }
+  }, [customizationSettings, selectedBg, uploadedBg]);
   const handleCopyImage = async () => {
     if (!canvasRef.current) return;
 
@@ -692,7 +742,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     link.href = canvasRef.current.toDataURL('image/png');
     link.click();
   };
-
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -702,10 +751,17 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         if (typeof result === 'string') {
           setUploadedBg(result);
           setSelectedBg(result);
+          localStorage.setItem('pnl-uploaded-bg', result);
         }
       };
       reader.readAsDataURL(file);
     }
+  };
+  const clearUploadedBg = () => {
+    setUploadedBg(null);
+    localStorage.removeItem('pnl-uploaded-bg');
+    setSelectedBg(PNLBG2);
+    setShowRightPanel(false);
   };
 
   const handleApplySettings = useCallback(() => {
@@ -908,7 +964,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
             width={720}
             height={450}
             style={{
-              borderRadius: '20px',
+              borderRadius: '6px',
               border: '1.5px solid rgba(179, 184, 249, 0.1)',
               marginBottom: '20px',
               display: 'block'
@@ -934,14 +990,16 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
                 }}
               />
               {uploadedBg && (
-                <button
-                  className="pnl-box"
-                  onClick={() => setSelectedBg(uploadedBg)}
-                  style={{
-                    backgroundImage: `url(${uploadedBg})`,
-                    border: selectedBg === uploadedBg ? '1px solid #d8dcff' : '1px solid transparent',
-                  }}
-                />
+                <div className="uploaded-bg-container" style={{ position: 'relative' }}>
+                  <button
+                    className="pnl-box"
+                    onClick={() => setSelectedBg(uploadedBg)}
+                    style={{
+                      backgroundImage: `url(${uploadedBg})`,
+                      border: selectedBg === uploadedBg ? '1px solid #d8dcff' : '1px solid transparent',
+                    }}
+                  />
+                </div>
               )}
             </div>
 
@@ -966,9 +1024,11 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
               >
                 {isUSD ? 'Switch to MON' : 'Switch to USD'}
               </button>
-              <button className="pnl-footer-btn" onClick={toggleRightPanel}>
-                {showRightPanel ? 'Hide Panel' : 'Customize'}
-              </button>
+              {uploadedBg && selectedBg === uploadedBg && (
+                <button className="pnl-footer-btn" onClick={toggleRightPanel}>
+                  {showRightPanel ? 'Hide Panel' : 'Customize'}
+                </button>
+              )}
             </div>
             <div className="pnl-footer-right">
               <button className="pnl-footer-btn" onClick={handleDownload}>Download</button>

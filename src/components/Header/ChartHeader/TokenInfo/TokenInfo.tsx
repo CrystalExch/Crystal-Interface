@@ -55,7 +55,6 @@ const calculateBondingPercentage = (marketCap: number) => {
   const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
   return bondingPercentage;
 };
-
 const PerpsTokenSkeleton = () => {
   return (
     <div className="perps-interface-token-info-container">
@@ -308,9 +307,6 @@ interface TokenInfoProps {
   monUsdPrice: number;
   showLoadingPopup?: (id: string, config: any) => void;
   updatePopup?: (id: string, config: any) => void;
-  userPnl?: {
-    totalPnl: number;
-  };
   setperpsActiveMarketKey: any;
 }
 
@@ -337,8 +333,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   monUsdPrice,
   showLoadingPopup,
   updatePopup,
-  userPnl,
-  setperpsActiveMarketKey
+  setperpsActiveMarketKey,
+
 }) => {
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const [hoveredMemeImage, setHoveredMemeImage] = useState(false);
@@ -988,7 +984,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
     return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
   });
-
   const handleDropdownKeyDown = (e: React.KeyboardEvent) => {
     if (!isDropdownVisible || sortedMarkets.length === 0) return;
 
@@ -1068,7 +1063,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
     prevPriceRef.current = current
   }, [perpsTokenInfo?.lastPrice])
-
   useEffect(() => {
     if (!perpsTokenInfo?.nextFundingTime) return
     const tick = () => {
@@ -1363,26 +1357,22 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
               )}
 
-              <div className="meme-interface-token-metric">
-                <span className="meme-interface-metric-label">Your PNL</span>
-                <div className="meme-interface-pnl-value-container">
-                  {userPnl && userPnl.totalPnl !== 0 && (
-                    <span
-                      className={`meme-interface-metric-value ${userPnl.totalPnl >= 0 ? 'positive' : 'negative'}`}
+              {externalUserStats && externalUserStats.valueBought > 0 && externalUserStats.valueNet !== 0 && (
+                <div className="meme-interface-token-metric">
+                  <div className="meme-interface-pnl-value-container">
+
+                    <button
+                      className="token-info-trenches-pnl-button"
+                      onClick={() => setpopup(27)}
                     >
-                      {userPnl.totalPnl >= 0 ? '+' : ''}${Math.abs(userPnl.totalPnl).toFixed(2)}
-                    </span>
-                  )}
-                  <button
-                    className="trenches-pnl-button"
-                    onClick={() => setpopup(27)}
-                  >
-                    <svg fill="#cfcfdfff" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
-                      <path d="M31.965 2.008a2 2 0 0 0-1.375.582L20.35 12.82a2.57 2.57 0 0 0-.44.65 2 2 0 0 0 1.85 2.77H30v23.54a2 2 0 0 0 4 0V16.24h8.25a2 2 0 0 0 1.41-3.42L33.41 2.59a2 2 0 0 0-1.446-.582zM12 22a2 2 0 0 0-2 2v32a2 2 0 0 0 2 2h40a2 2 0 0 0 2-2V24a2 2 0 0 0-2-2H42a2 2 0 0 0 0 4h8v28H14V26h8a2 2 0 0 0 0-4H12z" />
-                    </svg>
-                  </button>
+                      <svg fill="#d8dcff" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
+                        <path d="M31.965 2.008a2 2 0 0 0-1.375.582L20.35 12.82a2.57 2.57 0 0 0-.44.65 2 2 0 0 0 1.85 2.77H30v23.54a2 2 0 0 0 4 0V16.24h8.25a2 2 0 0 0 1.41-3.42L33.41 2.59a2 2 0 0 0-1.446-.582zM12 22a2 2 0 0 0-2 2v32a2 2 0 0 0 2 2h40a2 2 0 0 0 2-2V24a2 2 0 0 0-2-2H42a2 2 0 0 0 0 4h8v28H14V26h8a2 2 0 0 0 0-4H12z" />
+                      </svg>
+                      Share PNL
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

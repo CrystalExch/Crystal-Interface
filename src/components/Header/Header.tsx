@@ -86,7 +86,14 @@ interface HeaderProps {
   setperpsActiveMarketKey: (data: any) => void;
   perpsMarketsData: any;
   perpsFilterOptions: any;
-}
+  externalUserStats?: {
+    balance: number;
+    amountBought: number;
+    amountSold: number;
+    valueBought: number;
+    valueSold: number;
+    valueNet: number;
+  };}
 
 const Tooltip: React.FC<{
   content: string;
@@ -288,6 +295,7 @@ const Header: React.FC<HeaderProps> = ({
   setperpsActiveMarketKey,
   perpsMarketsData,
   perpsFilterOptions,
+  externalUserStats
 }) => {
   const location = useLocation();
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
@@ -641,6 +649,7 @@ const Header: React.FC<HeaderProps> = ({
             showLoadingPopup={showLoadingPopup}
             updatePopup={updatePopup}
             setperpsActiveMarketKey={setperpsActiveMarketKey}
+            externalUserStats={externalUserStats}
           />
         </div>
         <div className={rightHeaderClass}>

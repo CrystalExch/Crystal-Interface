@@ -10,6 +10,14 @@ import './ChartHeader.css';
 
 
 interface ChartHeaderProps {
+    externalUserStats?: {
+    balance: number;
+    amountBought: number;
+    amountSold: number;
+    valueBought: number;
+    valueSold: number;
+    valueNet: number;
+  };
   in_icon: string;
   out_icon: string;
   price: string;
@@ -82,7 +90,8 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   monUsdPrice,
   showLoadingPopup,
   updatePopup,
-  setperpsActiveMarketKey
+  setperpsActiveMarketKey,
+  externalUserStats
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
@@ -269,6 +278,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         showLoadingPopup={showLoadingPopup}
         updatePopup={updatePopup}
         setperpsActiveMarketKey={setperpsActiveMarketKey}
+        externalUserStats={externalUserStats}
       />
       {shouldShowFullHeader && (
         <AdditionalMetrics

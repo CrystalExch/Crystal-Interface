@@ -20549,6 +20549,7 @@ function App() {
             setperpsActiveMarketKey={setperpsActiveMarketKey}
             perpsMarketsData={perpsMarketsData}
             perpsFilterOptions={perpsFilterOptions}
+            externalUserStats={currentPNLData}
           />
         </div>
       }
