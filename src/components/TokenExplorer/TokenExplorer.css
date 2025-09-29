@@ -1,3 +1,27 @@
+@property --progress-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@property --progress-color-start {
+  syntax: '<color>';
+  initial-value: #ee5b5b;
+  inherits: false;
+}
+
+@property --progress-color-mid {
+  syntax: '<color>';
+  initial-value: #f59e0b;
+  inherits: false;
+}
+
+@property --progress-color-end {
+  syntax: '<color>';
+  initial-value: #43e17d;
+  inherits: false;
+}
+
 .explorer-filters-popup {
   border-radius: 6px;
   height: 451px;
@@ -808,7 +832,6 @@
 
 
 
-
 .explorer-token-image-container {
   align-items: center;
   background: conic-gradient(from 0deg,
@@ -824,8 +847,11 @@
   justify-content: center;
   position: relative;
   width: 73px;
+  transition: --progress-angle 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+              --progress-color-start 0.8s ease, 
+              --progress-color-mid 0.8s ease, 
+              --progress-color-end 0.8s ease;
 }
-
 
 .camera-icon {
   height: 30px;
