@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import WalletOperationPopup from './WalletOperationPopup';
 import './MemeTransactionPopupManager.css';
+import stepaudio from '../../assets/step_audio.mp3';
 
 interface PopupData {
   id: string;
@@ -16,7 +17,61 @@ interface PopupData {
   targetIndex?: number;
 }
 
+interface AudioSettings {
+  soundAlertsEnabled: boolean;
+  volume: number;
+  sounds: {
+    newPairs: string;
+    pairMigrating: string;
+    migrated: string;
+  };
+}
+
+interface AudioGroups {
+  swap: boolean;
+  order: boolean;
+  transfer: boolean;
+  approve: boolean;
+}
+
 let globalSetPopups: React.Dispatch<React.SetStateAction<PopupData[]>> | null = null;
+
+const getAudioSettings = (): { isAudioEnabled: boolean; audioGroups: AudioGroups } => {
+  try {
+    const audioEnabled = localStorage.getItem('crystal_audio_notifications');
+    const audioGroupsData = localStorage.getItem('crystal_audio_groups');
+    
+    const isAudioEnabled = audioEnabled ? JSON.parse(audioEnabled) : false;
+    const audioGroups: AudioGroups = audioGroupsData 
+      ? JSON.parse(audioGroupsData) 
+      : { swap: true, order: true, transfer: true, approve: true };
+    
+    return { isAudioEnabled, audioGroups };
+  } catch (error) {
+    console.error('Error loading audio settings:', error);
+    return { 
+      isAudioEnabled: false, 
+      audioGroups: { swap: true, order: true, transfer: true, approve: true } 
+    };
+  }
+};
+
+const playAudioIfEnabled = (audioType: keyof AudioGroups = 'swap') => {
+  const { isAudioEnabled, audioGroups } = getAudioSettings();
+  
+  if (!isAudioEnabled || !audioGroups[audioType]) {
+    return; 
+  }
+  
+  try {
+    const stepAudio = new Audio(stepaudio);
+    stepAudio.volume = 0.8;
+    stepAudio.currentTime = 0;
+    stepAudio.play().catch(console.error);
+  } catch (error) {
+    console.error('Error playing audio:', error);
+  }
+};
 
 export const showLoadingPopup = (id: string, data: {
   title: string;
@@ -53,20 +108,76 @@ export const updatePopup = (id: string, data: {
 }) => {
   if (globalSetPopups) {
     globalSetPopups(prev =>
-      prev.map(p =>
-        p.id === id
-          ? {
-              ...p,
-              title: data.title,
-              subtitle: data.subtitle,
-              variant: data.variant,
-              isLoading: data.isLoading ?? p.isLoading,
-              visible: true,
-              confirmed: data.confirmed ?? true,
-              tokenImage: data.tokenImage || p.tokenImage, 
+      prev.map(p => {
+        if (p.id === id) {
+          const updatedPopup = {
+            ...p,
+            title: data.title,
+            subtitle: data.subtitle,
+            variant: data.variant,
+            isLoading: data.isLoading ?? p.isLoading,
+            visible: true,
+            confirmed: data.confirmed ?? true,
+            tokenImage: data.tokenImage || p.tokenImage, 
+          };
+
+          if (data.variant === 'success' && data.confirmed !== false) {
+            const titleLower = data.title.toLowerCase();
+            const subtitleLower = (data.subtitle || '').toLowerCase();
+            
+            const isBuyOrSell = 
+              titleLower.includes('buy completed') ||
+              titleLower.includes('sell completed') ||
+              titleLower.includes('buy failed') ||
+              titleLower.includes('sell failed') ||
+              subtitleLower.includes('bought') ||
+              subtitleLower.includes('sold') ||
+              subtitleLower.includes('buying') ||
+              subtitleLower.includes('selling') ||
+              titleLower.includes('quick buy') ||
+              titleLower.includes('quickbuy') ||
+              titleLower.includes('buy') ||
+              titleLower.includes('sell');
+            
+            if (isBuyOrSell) {
+              playAudioIfEnabled('swap'); 
             }
-          : p
-      ).slice(0, 7)
+            
+            const isTransfer = 
+              titleLower.includes('transfer') ||
+              titleLower.includes('send') ||
+              titleLower.includes('wrap') ||
+              titleLower.includes('unwrap') ||
+              titleLower.includes('stake');
+            
+            if (isTransfer) {
+              playAudioIfEnabled('transfer');
+            }
+            
+            const isOrder = 
+              titleLower.includes('order') ||
+              titleLower.includes('limit') ||
+              titleLower.includes('filled') ||
+              titleLower.includes('cancelled');
+            
+            if (isOrder) {
+              playAudioIfEnabled('order');
+            }
+            
+            const isApproval = 
+              titleLower.includes('approval') ||
+              titleLower.includes('approve') ||
+              titleLower.includes('allowance');
+            
+            if (isApproval) {
+              playAudioIfEnabled('approve');
+            }
+          }
+
+          return updatedPopup;
+        }
+        return p;
+      }).slice(0, 7)
     );
   }
 };
@@ -96,7 +207,6 @@ const MemeTransactionPopupManager: React.FC = () => {
     }
   }, [transactionPopups, newPopupIds]);
 
-  // prune ids that no longer exist
   React.useEffect(() => {
     const current = new Set(transactionPopups.map(p => p.id));
     setNewPopupIds(prev => {
