@@ -1496,9 +1496,9 @@
 }
 
 .lp-filter-search-container{
-    display: flex;
-    flex-wrap:wrap;
-    gap: 0.35rem;
+    display:flex;
+    align-items:center;
+    gap:.35rem;
 }
 
 .lp-filters{

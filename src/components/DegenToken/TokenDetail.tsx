@@ -662,7 +662,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
     if (account.chainId !== targetChainId)
       return `${walletPopup.texts.SWITCH_CHAIN} to ${settings.chainConfig[activechain]?.name || 'Monad'}`;
-    return `${activeTradeType === 'buy' ? 'Buy' : 'Sell'} ${token.symbol}`;
+    return `${activeTradeType === 'buy' ? 'Buy' : 'Sell'} ${tokenData.symbol}`;
   };
 
   const isTradeDisabled = () => {

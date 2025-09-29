@@ -386,7 +386,8 @@
 
 .detail-preset-buttons {
   display: flex;
-  gap: 4px; 
+    gap: .5rem;
+    align-items: center;
 }
 
 .detail-preset-button {
@@ -408,6 +409,7 @@
   font-size: .85rem; 
   color: var(--c-muted); 
   margin: 0px 4px;
+  height: 22px;
 }
 
 .detail-currency-switch-button {
@@ -505,7 +507,7 @@
 }
 .detail-bonding-fill {
   height: 100%; border-radius: 3px;
-  background: linear-gradient(90deg,#22c55e,var(--c-gold));
+  background: linear-gradient(90deg,#aaaecf,var(--c-gold));
   transition: width .3s ease;
 }
 .detail-bonding-info {
@@ -850,8 +852,7 @@
   gap: 4px; 
 }
 
-.detail-preset-button {
-  padding: 6px 8px; 
+.detail-preset-button { 
   font-size: .6rem; 
   color: #e3e3f0;
   background: transparent;
@@ -859,12 +860,13 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all var(--tr-fast);
-  min-width: 35px;
+  min-width: 30px;
+  min-height: 20px;
 }
 
 .detail-preset-buttons-right {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   margin-left: auto; 
 }
 
