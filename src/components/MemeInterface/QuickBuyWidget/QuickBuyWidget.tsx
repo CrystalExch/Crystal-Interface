@@ -69,6 +69,7 @@ interface QuickBuyWidgetProps {
   showLoadingPopup?: (id: string, config: any) => void;
   updatePopup?: (id: string, config: any) => void;
   tokenImage?: string;
+  nonces: any;
 }
 const Tooltip: React.FC<{
   content: string;
@@ -257,6 +258,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   showUSD = false,
   onToggleCurrency,
   tokenImage,
+  nonces
 }) => {
   const [position, setPosition] = useState(() => {
     try {
@@ -729,9 +731,16 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           variant: 'info',
         });
       }
-
-      const op = await sendUserOperationAsync({ uo });
-
+      let currentNonce = nonces.current.get(account?.address)?.nonce;
+      const params = [{ uo }, 0n, 0n, false, activeWalletPrivateKey, currentNonce];
+      nonces.current.get(account?.address)?.pendingtxs.push(params);
+      const wallet = nonces.current.get(account?.address)
+      if (wallet) wallet.nonce += 1
+      await sendUserOperationAsync(...params);
+      if (wallet) {
+        wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+      }
+      
       const expectedTokens =
         tokenPrice > 0 ? parseFloat(amount) / tokenPrice : 0;
       if (updatePopup) {
@@ -829,7 +838,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         });
       }
 
-      const sellUo = {
+      const uo = {
         target: routerAddress as `0x${string}`,
         data: encodeFunctionData({
           abi: CrystalRouterAbi,
@@ -839,8 +848,15 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         value: 0n,
       };
 
-      const sellOp = await sendUserOperationAsync({ uo: sellUo });
-
+      let currentNonce = nonces.current.get(account?.address)?.nonce;
+      const params = [{ uo }, 0n, 0n, false, activeWalletPrivateKey, currentNonce];
+      nonces.current.get(account?.address)?.pendingtxs.push(params);
+      const wallet = nonces.current.get(account?.address)
+      if (wallet) wallet.nonce += 1
+      await sendUserOperationAsync(...params);
+      if (wallet) {
+        wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+      }
       const soldTokens = Number(amountTokenWei) / 1e18;
       const expectedMON = soldTokens * tokenPrice;
       if (updatePopup) {

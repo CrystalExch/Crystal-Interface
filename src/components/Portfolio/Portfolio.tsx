@@ -273,8 +273,6 @@ interface PortfolioProps {
   isVaultDepositSigning: boolean;
   setIsVaultDepositSigning: (signing: boolean) => void;
   handleSetChain: () => Promise<void>;
-  handleSubwalletTransfer: (toAddress: string, amount: bigint, fromPrivateKey: string, fromAddress?: string) => Promise<any>;
-  getWalletNonce: (walletAddress: string) => Promise<number>;
   createSubWallet?: () => Promise<void>;
   Wallet?: any;
   activeWalletPrivateKey?: string;
@@ -282,6 +280,7 @@ interface PortfolioProps {
   positions?: Position[];
   onSellPosition?: (position: Position, monAmount: string) => void;
   scaAddress: any;
+  nonces: any;
 }
 
 type PortfolioTab = 'spot' | 'Perpetuals' | 'wallets' | 'trenches';
@@ -344,15 +343,14 @@ const Portfolio: React.FC<PortfolioProps> = ({
   isVaultDepositSigning,
   setIsVaultDepositSigning,
   handleSetChain,
-  handleSubwalletTransfer,
   createSubWallet,
   Wallet,
   activeWalletPrivateKey,
   lastRefGroupFetch,
-  getWalletNonce,
   positions,
   onSellPosition,
-  scaAddress
+  scaAddress,
+  nonces
 }) => {
   const [activeTab, setActiveTab] = useState<PortfolioTab>('spot');
   const [activeSection, setActiveSection] = useState<
@@ -880,7 +878,6 @@ const executeDistribution = async () => {
     if (distributionMode === 'equal') {
       for (const sourceItem of sourceWalletCapacities) {
         const sourceContribution = (sourceItem.availableBalance / totalAvailable) * actualDistributionAmount;
-        
         const amountPerDestination = sourceContribution / destinationWallets.length;
 
         for (const destWallet of destinationWallets) {
@@ -944,7 +941,6 @@ const executeDistribution = async () => {
 
 
     const walletTransfers = new Map<string, typeof allTransfers>();
-    const walletNonces = new Map<string, number>();
 
     for (const transfer of allTransfers) {
       if (!walletTransfers.has(transfer.fromAddress)) {
@@ -953,34 +949,38 @@ const executeDistribution = async () => {
       walletTransfers.get(transfer.fromAddress)!.push(transfer);
     }
 
-    const noncePromises = Array.from(walletTransfers.keys()).map(async (address) => {
-      const nonce = await getWalletNonce(address);
-      walletNonces.set(address, nonce);
-    });
-    
-    await Promise.all(noncePromises);
-
     const transferPromises = [];
     
     for (const [walletAddress, transfers] of walletTransfers.entries()) {
-      let currentNonce = walletNonces.get(walletAddress)!;
       
       for (const transfer of transfers) {
+        let currentNonce = nonces.current.get(walletAddress)?.nonce;
         const amountInWei = BigInt(Math.round(transfer.amount * 10**18));
-        
-        const transferPromise = sendUserOperationAsync({
+        const params = [{
           uo: {
             target: transfer.toAddress as `0x${string}`,
             value: amountInWei,
             data: '0x'
           }
-        }, 0n, 0n, false, transfer.fromPrivateKey, currentNonce)
+        }, 21000n, 0n, false, transfer.fromPrivateKey, currentNonce]
+
+        nonces.current.get(walletAddress)?.pendingtxs.push(params);
+        const wallet = nonces.current.get(walletAddress)
+        if (wallet) wallet.nonce += 1
+        const transferPromise = sendUserOperationAsync(...params)
         .then(() => {
+          const wallet = nonces.current.get(walletAddress)
+          if (wallet) {
+            wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+          }
           return true;
+        }).catch(() => {
+          const wallet = nonces.current.get(walletAddress)
+          if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+          return false
         })
         
         transferPromises.push(transferPromise);
-        currentNonce++; 
       }
     }
 
@@ -1054,16 +1054,22 @@ const handleSendBackToMain = async () => {
               : BigInt(0);
             
             if (amount > 0) {
-              const currentNonce = await getWalletNonce(destWallet.address);
-              
-              await sendUserOperationAsync({
+              let currentNonce = nonces.current.get(destWallet.address)?.nonce;
+              const params = [{
                 uo: {
                   target: address as `0x${string}`,
                   value: amount, 
                   data: '0x'
                 }
-              }, 0n, 0n, false, sourceWalletData.privateKey, currentNonce);
-              
+              }, 21000n, 0n, false, sourceWalletData.privateKey, currentNonce]
+      
+              nonces.current.get(destWallet.address)?.pendingtxs.push(params);
+              const wallet = nonces.current.get(destWallet.address)
+              if (wallet) wallet.nonce += 1
+              await sendUserOperationAsync(...params)
+              if (wallet) {
+                wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              }
               successfulTransfers++;
             }
           }

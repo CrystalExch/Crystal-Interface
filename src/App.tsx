@@ -37,7 +37,7 @@ import {
   useSignTypedData,
   useSignMessage
 } from "@account-kit/react";
-import { JsonRpcProvider, Wallet, keccak256 } from 'ethers'
+import { Wallet, keccak256 } from 'ethers'
 import { useQuery } from '@tanstack/react-query';
 
 // import css
@@ -518,7 +518,6 @@ function App() {
 
         const RPC_URLS = [
           HTTP_URL,
-          'https://rpc.monad-testnet.fastlane.xyz/eyJhIjoiMHhlN0QxZjRBQjIyMmQ5NDM4OWI4Mjk4MWY5OUM1ODgyNGZGNDJhN2QwIiwidCI6MTc1MzUwMjEzNiwicyI6IjB4ODE1ODNhMjQ5Yjc5ZTljNjliYzJjNDkzZGZkMDQ0ODdiMWMzZmRhYzE1ZGZlMmVlYjgyOWQ0NTRkZWQ3MTZjMTU4ZmQwMWNmNzlkM2JkNWJlNWRlOTVkZjU1MzE3ODkzNmMyZTBmMGFiYzk1NDlkNTMzYWRmODA4Y2UxODEwNjUxYyJ9',
           'https://rpc.ankr.com/monad_testnet',
           'https://monad-testnet.drpc.org',
           'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
@@ -553,7 +552,6 @@ function App() {
 
         const RPC_URLS = [
           HTTP_URL,
-          'https://rpc.monad-testnet.fastlane.xyz/eyJhIjoiMHhlN0QxZjRBQjIyMmQ5NDM4OWI4Mjk4MWY5OUM1ODgyNGZGNDJhN2QwIiwidCI6MTc1MzUwMjEzNiwicyI6IjB4ODE1ODNhMjQ5Yjc5ZTljNjliYzJjNDkzZGZkMDQ0ODdiMWMzZmRhYzE1ZGZlMmVlYjgyOWQ0NTRkZWQ3MTZjMTU4ZmQwMWNmNzlkM2JkNWJlNWRlOTVkZjU1MzE3ODkzNmMyZTBmMGFiYzk1NDlkNTMzYWRmODA4Y2UxODEwNjUxYyJ9',
           'https://rpc.ankr.com/monad_testnet',
           'https://monad-testnet.drpc.org',
           'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
@@ -1936,59 +1934,6 @@ function App() {
     }
     return null;
   }, [markets, tradesByMarket]);
-
-const getWalletNonce = useCallback(async (walletAddress: string): Promise<number> => {
-  try {
-    const provider = new JsonRpcProvider(HTTP_URL);
-    const nonce = await provider.getTransactionCount(walletAddress, 'pending');
-    return nonce;
-  } catch (error) {
-    console.error('Failed to get nonce for wallet:', walletAddress, error);
-    // Fallback to latest nonce
-    try {
-      const provider = new JsonRpcProvider(HTTP_URL);
-      const nonce = await provider.getTransactionCount(walletAddress, 'latest');
-      return nonce;
-    } catch (fallbackError) {
-      console.error('Fallback nonce fetch failed:', fallbackError);
-      return 0;
-    }
-  }
-}, []);
-
-const handleSubwalletTransfer = useCallback(async (
-  toAddress: string, 
-  amount: bigint, 
-  fromPrivateKey: string,
-  fromAddress?: string
-) => {
-  try {
-    setIsVaultDepositSigning(true);
-
-    const walletAddress = fromAddress || (new Wallet(fromPrivateKey)).address;
-    
-    const currentNonce = await getWalletNonce(walletAddress);
-
-    console.log(`Sending ${amount} from ${walletAddress} to ${toAddress} with nonce ${currentNonce}`);
-
-    const hash = await sendUserOperationAsync({
-      uo: {
-        target: toAddress as `0x${string}`,
-        value: amount,
-        data: '0x'
-      }
-    }, 0n, 0n, false, fromPrivateKey, currentNonce);
-
-    console.log('Subwallet transfer successful:', hash);
-    return hash;
-
-  } catch (error) {
-    console.error('Subwallet transfer failed:', error);
-    throw error;
-  } finally {
-    setIsVaultDepositSigning(false);
-  }
-}, [sendUserOperationAsync, getWalletNonce]);
 
   const saveSubWallets = useCallback((wallets: { address: string; privateKey: string; }[] | ((prevState: { address: string; privateKey: string; }[]) => { address: string; privateKey: string; }[])) => {
     setSubWallets((prevWallets) => {
@@ -8616,7 +8561,7 @@ const handleSubwalletTransfer = useCallback(async (
     setExplorerFiltersActiveTab(newTab);
   }, []);
   
-  const [nonces, setNonces] = useState();
+  const nonces = useRef<any>({})
   const [terminalToken, setTerminalToken] = useState();
   const [tokenData, setTokenData] = useState();
   // data loop, reuse to have every single rpc call method in this loop
@@ -8825,7 +8770,12 @@ const handleSubwalletTransfer = useCallback(async (
           id: 1,
           method: 'eth_call',
           params: [{ to: settings.chainConfig[activechain].multicall3, data: multicallData }, 'latest']
-        }, ...(gasEstimateCall ? [gasEstimateCall] : [])])
+        }, ...(gasEstimateCall ? [gasEstimateCall] : []), ...subWallets.map(w => ({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'eth_getTransactionCount',
+          params: [w.address, 'latest']
+        })),])
       })
 
       const json: any = await response.json()
@@ -8885,9 +8835,15 @@ const handleSubwalletTransfer = useCallback(async (
         }
       });
 
-      if (json?.[1]?.result) {
+      if (gasEstimateCall && json?.[1]?.result) {
         gasEstimate = BigInt(json[1].result)
       }
+      nonces.current = new Map(
+        subWallets.map((w,i)=>{
+          const old = nonces.current[w.address] || { pendingtxs: [] }
+          return [w.address, { ...old, nonce: parseInt(json[i+(gasEstimateCall?2:1)].result,16) + old.pendingtxs.length }]
+        })
+      );
 
       [{ address: scaAddress }].concat(subWallets as any).forEach((wallet, walletIndex) => {
         const balanceMap: { [key: string]: bigint } = {};
@@ -20647,6 +20603,7 @@ const handleSubwalletTransfer = useCallback(async (
                 setMonPresets={setMonPresets}
                 onPNLDataChange={setCurrentPNLData}
                 onTokenDataChange={setCurrentTokenData}
+                nonces={nonces}
               />
             } />
           <Route path="/board"
@@ -20836,14 +20793,13 @@ const handleSubwalletTransfer = useCallback(async (
                 isVaultDepositSigning={isVaultDepositSigning}
                 setIsVaultDepositSigning={setIsVaultDepositSigning}
                 handleSetChain={handleSetChain}
-                handleSubwalletTransfer={handleSubwalletTransfer}
                 createSubWallet={createSubWallet}
                 Wallet={Wallet}
                 activeWalletPrivateKey={oneCTSigner}
                 setShowRefModal={undefined}
                 lastRefGroupFetch={lastRefGroupFetch}
                 scaAddress={scaAddress}
-                getWalletNonce={getWalletNonce} 
+                nonces={nonces}
               />
             } />
           <Route path="/trackers"

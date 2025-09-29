@@ -147,6 +147,7 @@ interface MemeInterfaceProps {
     name: string;
     price: number;
   }) => void;
+  nonces: any;
 }
 
 const MARKET_UPDATE_EVENT =
@@ -390,6 +391,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   setMonPresets,
   onPNLDataChange,
   onTokenDataChange,
+  nonces
 }) => {
   const getSliderPosition = (
     activeView: 'chart' | 'trades' | 'ordercenter',
@@ -4694,6 +4696,7 @@ useEffect(() => {
         showUSD={showUSD}
         onToggleCurrency={handleToggleCurrency}
         tokenImage={token.image}
+        nonces={nonces}
 />
       
       {hoveredSimilarTokenImage &&
