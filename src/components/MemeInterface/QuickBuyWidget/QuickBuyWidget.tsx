@@ -8,6 +8,8 @@ import React, {
 import { createPortal } from 'react-dom';
 import { encodeFunctionData } from 'viem';
 import { CrystalRouterAbi } from '../../../abis/CrystalRouterAbi';
+import { CrystalLaunchpadToken } from '../../../abis/CrystalLaunchpadToken';
+
 import closebutton from '../../../assets/close_button.png';
 import editicon from '../../../assets/edit.svg';
 import gas from '../../../assets/gas.svg';
@@ -30,6 +32,18 @@ interface PendingTransaction {
   timestamp: number;
   status: 'pending' | 'confirming' | 'complete' | 'error';
 }
+const ERC20_ABI = [
+  {
+    type: 'function',
+    name: 'transfer',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' }
+    ],
+    outputs: [{ type: 'bool' }]
+  }
+] as const;
 
 interface UserStats {
   balance: number;
@@ -201,13 +215,12 @@ const Tooltip: React.FC<{
               position: 'absolute',
               top: `${tooltipPosition.top - 20}px`,
               left: `${tooltipPosition.left}px`,
-              transform: `${
-                position === 'top' || position === 'bottom'
-                  ? 'translateX(-50%)'
-                  : position === 'left' || position === 'right'
-                    ? 'translateY(-50%)'
-                    : 'none'
-              } scale(${isVisible ? 1 : 0})`,
+              transform: `${position === 'top' || position === 'bottom'
+                ? 'translateX(-50%)'
+                : position === 'left' || position === 'right'
+                  ? 'translateY(-50%)'
+                  : 'none'
+                } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
               pointerEvents: 'none',
@@ -260,6 +273,20 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   tokenImage,
   nonces
 }) => {
+  type NonceEntry = { nonce: bigint; pendingtxs: any[] };
+
+  const getNonceEntry = (addr: string): NonceEntry => {
+    let entry = nonces.current.get(addr);
+    if (!entry) {
+      entry = { nonce: 0n, pendingtxs: [] };
+      nonces.current.set(addr, entry);
+    }
+
+    if (entry.nonce === undefined || Number.isNaN(Number(entry.nonce))) entry.nonce = 0n;
+    if (typeof entry.nonce === 'number') entry.nonce = BigInt(entry.nonce);
+    if (!entry.pendingtxs) entry.pendingtxs = [];
+    return entry;
+  };
   const [position, setPosition] = useState(() => {
     try {
       const saved = localStorage.getItem('crystal_quickbuy_widget_position');
@@ -386,6 +413,17 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     width: 330,
     height: 480,
   });
+  const distributeEvenly = (totalWei: bigint, n: number): bigint[] => {
+    if (n <= 0) return [];
+    const base = totalWei / BigInt(n);
+    const rem = totalWei % BigInt(n);
+    const out = Array<bigint>(n).fill(base);
+    out[out.length - 1] = out[out.length - 1] + rem;
+    return out;
+  };
+  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
+  const [isConsolidating, setIsConsolidating] = useState(false);
+  const [isSplitting, setIsSplitting] = useState(false);
 
   const widgetRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -602,6 +640,283 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     }
   };
 
+  const toggleWalletSelection = (address: string) => {
+    setSelectedWallets(prev => {
+      const next = new Set(prev);
+      next.has(address) ? next.delete(address) : next.add(address);
+      return next;
+    });
+  };
+
+  const selectAllWithBalance = () => {
+    const walletsWithBalance = subWallets.filter(wallet =>
+      getWalletBalance(wallet.address) > 0
+    );
+    setSelectedWallets(new Set(walletsWithBalance.map(w => w.address)));
+  };
+
+  const handleConsolidateTokens = async () => {
+    if (!tokenAddress) return;
+
+    if (selectedWallets.size !== 1) {
+      const txId = `consolidate-error-${Date.now()}`;
+      showLoadingPopup?.(txId, {
+        title: 'Select one destination wallet',
+        subtitle: 'Check exactly one wallet to receive all tokens'
+      });
+      setTimeout(() => {
+        updatePopup?.(txId, {
+          title: 'Select one destination wallet',
+          subtitle: 'Check exactly one wallet to receive all tokens',
+          variant: 'error',
+          isLoading: false
+        });
+      }, 100);
+      return;
+    }
+
+    const destinationAddr = Array.from(selectedWallets)[0];
+
+    const sourceWallets = subWallets
+      .map((w) => w.address)
+      .filter((addr) => addr !== destinationAddr)
+      .filter(
+        (addr) => (walletTokenBalances[addr]?.[tokenAddress] ?? 0n) > 0n
+      );
+
+    if (sourceWallets.length === 0) {
+      const txId = `consolidate-error-${Date.now()}`;
+      showLoadingPopup?.(txId, {
+        title: 'Nothing to consolidate',
+        subtitle: `No other wallets hold ${tokenSymbol}`
+      });
+      setTimeout(() => {
+        updatePopup?.(txId, {
+          title: 'Nothing to consolidate',
+          subtitle: `No other wallets hold ${tokenSymbol}`,
+          variant: 'error',
+          isLoading: false
+        });
+      }, 100);
+      return;
+    }
+
+    setIsConsolidating(true);
+    const txId = `consolidate-${Date.now()}`;
+    showLoadingPopup?.(txId, {
+      title: 'Consolidating Tokens',
+      subtitle: `Sending ${tokenSymbol} from ${sourceWallets.length} wallets to selected wallet`,
+      tokenImage
+    });
+
+    try {
+      let successCount = 0;
+
+      for (const sourceAddr of sourceWallets) {
+        const sourceWallet = subWallets.find((w) => w.address === sourceAddr);
+        if (!sourceWallet) continue;
+
+        const balance = walletTokenBalances[sourceAddr]?.[tokenAddress];
+        if (!balance || balance <= 0n) continue;
+
+        try {
+          const uo = {
+            target: tokenAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: CrystalLaunchpadToken,
+              functionName: 'transfer',
+              args: [destinationAddr as `0x${string}`, balance as bigint],
+            }),
+            value: 0n,
+          };
+
+          const entry = getNonceEntry(sourceAddr);
+          const currentNonce = entry.nonce;
+          const params = [{ uo }, 0n, 0n, false, sourceWallet.privateKey, currentNonce];
+
+          entry.pendingtxs.push(params);
+          entry.nonce = entry.nonce + 1n;
+
+          try {
+            await sendUserOperationAsync(...params);
+          } finally {
+            entry.pendingtxs = entry.pendingtxs.filter((p: any) => p !== params);
+          }
+
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to consolidate from ${sourceAddr}:`, err);
+        }
+      }
+
+      terminalRefetch()
+      updatePopup?.(txId, {
+        title: 'Consolidation Complete',
+        subtitle: `Consolidated ${tokenSymbol} from ${successCount}/${sourceWallets.length} wallets`,
+        variant: 'success',
+        isLoading: false
+      });
+
+      setSelectedWallets(new Set([destinationAddr]));
+    } catch (error: any) {
+      updatePopup?.(txId, {
+        title: 'Consolidation Failed',
+        subtitle: error?.message || 'Failed to consolidate tokens',
+        variant: 'error',
+        isLoading: false
+      });
+    } finally {
+      setIsConsolidating(false);
+    }
+  };
+
+  const selectAllWallets = () => {
+    setSelectedWallets(new Set(subWallets.map(w => w.address)));
+  };
+
+  const unselectAllWallets = () => {
+    setSelectedWallets(new Set());
+  };
+  const selectAllWalletsWithoutToken = () => {
+    const walletsWithoutToken = subWallets.filter(w => getWalletTokenBalance(w.address) === 0);
+    setSelectedWallets(new Set(walletsWithoutToken.map(w => w.address)));
+  };
+
+  const selectAllWithBalanceWithoutToken = () => {
+    const walletsWithoutToken = subWallets.filter(w => getWalletTokenBalance(w.address) === 0);
+    const walletsWithBalance = walletsWithoutToken.filter(wallet =>
+      getWalletBalance(wallet.address) > 0
+    );
+    setSelectedWallets(new Set(walletsWithBalance.map(w => w.address)));
+  };
+  const handleSplitTokens = async () => {
+    if (selectedWallets.size === 0 || !tokenAddress) return;
+
+    const selected = Array.from(selectedWallets);
+
+    const sourceAddr = selected.find(addr => (walletTokenBalances[addr]?.[tokenAddress] ?? 0n) > 0n);
+    if (!sourceAddr) {
+      const txId = `split-error-${Date.now()}`;
+      showLoadingPopup?.(txId, { title: 'No Tokens to Split', subtitle: 'None of the selected wallets have tokens to split' });
+      setTimeout(() => updatePopup?.(txId, { title: 'No Tokens to Split', subtitle: 'None of the selected wallets have tokens to split', variant: 'error', isLoading: false }), 100);
+      return;
+    }
+
+    const destAddrs = selected.filter(a => a !== sourceAddr);
+    if (destAddrs.length === 0) {
+      const txId = `split-error-${Date.now()}`;
+      showLoadingPopup?.(txId, { title: 'Need More Wallets', subtitle: 'Select at least 2 wallets to split tokens' });
+      setTimeout(() => updatePopup?.(txId, { title: 'Need More Wallets', subtitle: 'Select at least 2 wallets to split tokens', variant: 'error', isLoading: false }), 100);
+      return;
+    }
+
+    const sourceBalance: bigint = walletTokenBalances[sourceAddr]?.[tokenAddress] ?? 0n;
+    if (sourceBalance <= 0n) {
+      const txId = `split-error-${Date.now()}`;
+      showLoadingPopup?.(txId, { title: 'Insufficient Source Balance', subtitle: 'Source wallet has 0 tokens' });
+      setTimeout(() => updatePopup?.(txId, { title: 'Insufficient Source Balance', subtitle: 'Source wallet has 0 tokens', variant: 'error', isLoading: false }), 100);
+      return;
+    }
+
+    setIsSplitting(true);
+    const txId = `split-${Date.now()}`;
+    showLoadingPopup?.(txId, {
+      title: 'Splitting Tokens',
+      subtitle: `Transferring ${tokenSymbol} from source to ${destAddrs.length} wallets (±20%)`,
+      tokenImage
+    });
+
+    try {
+      const BP = 10_000;
+      const VAR = 2_000;
+      const weights: number[] = destAddrs.map(() => {
+        const delta = Math.floor(Math.random() * (2 * VAR + 1)) - VAR; 
+        const w = BP + delta;
+        return Math.max(1, w);
+      });
+      const sumW = weights.reduce((a, b) => a + b, 0);
+      const sumWBig = BigInt(sumW);
+
+      const amounts: bigint[] = [];
+      let allocated = 0n;
+      for (let i = 0; i < destAddrs.length; i++) {
+        if (i === destAddrs.length - 1) {
+          amounts.push(sourceBalance - allocated);
+        } else {
+          const amt = (sourceBalance * BigInt(weights[i])) / sumWBig;
+          amounts.push(amt);
+          allocated += amt;
+        }
+      }
+      const plan = destAddrs
+        .map((to, i) => ({ to, amount: amounts[i] }))
+        .filter(p => p.amount > 0n);
+
+      if (plan.length === 0) {
+        const txId2 = `split-error-${Date.now()}`;
+        showLoadingPopup?.(txId2, { title: 'Split amounts are zero', subtitle: 'Try selecting fewer wallets' });
+        setTimeout(() => updatePopup?.(txId2, { title: 'Split amounts are zero', subtitle: 'Try selecting fewer wallets', variant: 'error', isLoading: false }), 100);
+        setIsSplitting(false);
+        return;
+      }
+
+      const sourceWalletData = subWallets.find(w => w.address === sourceAddr);
+      if (!sourceWalletData) throw new Error('Source wallet not found');
+
+      let success = 0;
+      for (const { to, amount } of plan) {
+        try {
+          const uo = {
+            target: tokenAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: CrystalLaunchpadToken,
+              functionName: 'transfer',
+              args: [to as `0x${string}`, amount],
+            }),
+            value: 0n,
+          };
+
+          const entry = getNonceEntry(sourceAddr);
+          const currentNonce = entry.nonce;
+          const params = [{ uo }, 0n, 0n, false, sourceWalletData.privateKey, currentNonce];
+
+          entry.pendingtxs.push(params);
+          entry.nonce = entry.nonce + 1n;
+
+          try {
+            await sendUserOperationAsync?.(...params);
+          } finally {
+            entry.pendingtxs = entry.pendingtxs.filter((p: any) => p !== params);
+          }
+
+          success++;
+        } catch (err) {
+          console.error(`Split transfer failed to ${to}:`, err);
+        }
+      }
+
+      terminalRefetch()
+       updatePopup?.(txId, {
+        title: 'Split Complete',
+        subtitle: `Sent ${tokenSymbol} to ${success}/${plan.length} wallets`,
+        variant: 'success',
+        isLoading: false
+      });
+
+      setSelectedWallets(new Set());
+    } catch (error: any) {
+      updatePopup?.(txId, {
+        title: 'Split Failed',
+        subtitle: error?.message || 'Failed to split tokens',
+        variant: 'error',
+        isLoading: false
+      });
+    } finally {
+      setIsSplitting(false);
+    }
+  };
+
+
   useEffect(() => {
     if (isOpen && account?.connected) {
       terminalRefetch();
@@ -644,254 +959,260 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   }, [isOpen]);
 
   const handleBuyTrade = async (amount: string) => {
-    if (
-      !account?.connected ||
-      !sendUserOperationAsync ||
-      !tokenAddress ||
-      !routerAddress
-    ) {
-      if (setpopup) setpopup(4);
-      return;
-    }
-
-    const currentChainId = Number(account.chainId);
-
-    if (currentChainId != activechain) {
-      if (setChain) setChain();
-      return;
-    }
-
-    const requestedAmount = parseFloat(amount);
-    const currentMONBalance = getWalletBalance(account?.address);
-
-    if (requestedAmount > currentMONBalance) {
-      const txId = `insufficient-${Date.now()}`;
-      if (showLoadingPopup) {
-        showLoadingPopup(txId, {
-          title: 'Insufficient Balance',
-          subtitle: `Need ${amount} MON but only have ${currentMONBalance.toFixed(4)} MON`,
-          amount: amount,
-          amountUnit: 'MON',
-        });
-      }
-
-      if (updatePopup) {
-        setTimeout(() => {
-          updatePopup(txId, {
-            title: 'Insufficient Balance',
-            subtitle: `You need ${amount} MON but only have ${currentMONBalance.toFixed(4)} MON available`,
-            variant: 'error',
-            isLoading: false,
-          });
-        }, 100);
-      }
-      return;
-    }
-
-    const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-    const newTx: PendingTransaction = {
-      id: txId,
-      type: 'buy',
-      amount,
-      timestamp: Date.now(),
-      status: 'pending',
-    };
-
-    setPendingTransactions((prev) => [...prev, newTx]);
-
-    if (showLoadingPopup) {
-      showLoadingPopup(txId, {
-        title: 'Sending transaction...',
-        subtitle: `Buying ${amount} MON worth of ${tokenSymbol}`,
-        amount,
-        amountUnit: 'MON',
-        tokenImage: tokenImage,
-      });
-    }
-
-    try {
-      const valNum = parseFloat(amount);
-      const value = BigInt(Math.round(valNum * 1e18));
-
-      const uo = {
-        target: routerAddress,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: 'buy',
-          args: [true, tokenAddress as `0x${string}`, value, 0n],
-        }),
-        value,
-      };
-
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Confirming transaction...',
-          subtitle: `Buying ${amount} MON worth of ${tokenSymbol}`,
-          variant: 'info',
-        });
-      }
-      let currentNonce = nonces.current.get(account?.address)?.nonce;
-      const params = [{ uo }, 0n, 0n, false, activeWalletPrivateKey, currentNonce];
-      nonces.current.get(account?.address)?.pendingtxs.push(params);
-      const wallet = nonces.current.get(account?.address)
-      if (wallet) wallet.nonce += 1
-      await sendUserOperationAsync(...params);
-      if (wallet) {
-        wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-      }
-      
-      const expectedTokens =
-        tokenPrice > 0 ? parseFloat(amount) / tokenPrice : 0;
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Buy completed!',
-          subtitle: `Bought ~${formatNumberWithCommas(expectedTokens, 4)} ${tokenSymbol}`,
-          variant: 'success',
-          isLoading: false,
-        });
-      }
-
-      setPendingTransactions((prev) => prev.filter((tx) => tx.id !== txId));
-      terminalRefetch();
-    } catch (error: any) {
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Buy failed',
-          subtitle: error?.message || 'Transaction was rejected',
-          variant: 'error',
-          isLoading: false,
-        });
-      }
-
-      setPendingTransactions((prev) => prev.filter((tx) => tx.id !== txId));
-    }
-  };
-
-  const handleSellTrade = async (value: string) => {
-    if (
-      !account?.connected ||
-      !sendUserOperationAsync ||
-      !tokenAddress ||
-      !routerAddress
-    ) {
+    if (!sendUserOperationAsync || !tokenAddress || !routerAddress) {
       setpopup?.(4);
       return;
     }
 
-    const currentChainId = Number(account.chainId);
-    if (currentChainId != activechain) {
+    const currentChainId = Number(account?.chainId);
+    if (account?.connected && currentChainId != activechain) {
       setChain?.();
       return;
     }
 
-    const txId = `quicksell-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const totalMon = parseFloat(amount || '0');
+    if (!isFinite(totalMon) || totalMon <= 0) return;
+    const totalWei = BigInt(Math.round(totalMon * 1e18));
 
-    const newTx: PendingTransaction = {
-      id: txId,
-      type: 'sell',
-      amount: value,
-      timestamp: Date.now(),
-      status: 'pending',
-    };
+    const targets: string[] =
+      selectedWallets.size > 0
+        ? Array.from(selectedWallets)
+        : (account?.address ? [account.address] : []);
 
-    setPendingTransactions((prev) => [...prev, newTx]);
-
-    if (showLoadingPopup) {
-      showLoadingPopup(txId, {
-        title: 'Sending transaction...',
-        subtitle: `Selling ${value} ${sellMode === 'percent' ? '' : 'MON worth'} of ${tokenSymbol}`,
-        amount: value,
-        amountUnit: sellMode === 'percent' ? '%' : 'MON',
-        tokenImage: tokenImage,
-      });
+    if (targets.length === 0) {
+      setpopup?.(4);
+      return;
     }
 
+    const chunks = distributeEvenly(totalWei, targets.length);
+
+    const txId = `quickbuy-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    showLoadingPopup?.(txId, {
+      title: 'Sending batch buy...',
+      subtitle: `Buying ${amount} MON of ${tokenSymbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
+      amount,
+      amountUnit: 'MON',
+      tokenImage,
+    });
+
     try {
-      let amountTokenWei: bigint;
+      let success = 0;
+      let skippedInsufficient = 0;
+
+      for (let i = 0; i < targets.length; i++) {
+        const addr = targets[i];
+        const partWei = chunks[i];
+
+        if (partWei <= 0n) continue;
+
+        const monBal = getWalletBalance(addr); 
+        const partMon = Number(partWei) / 1e18;
+        if (partMon > monBal + 1e-12) { 
+          skippedInsufficient++;
+          continue;
+        }
+
+        const wallet = subWallets.find(w => w.address === addr);
+        const pk = wallet?.privateKey ?? activeWalletPrivateKey;
+        if (!pk) { continue; }
+
+        const uo = {
+          target: routerAddress as `0x${string}`,
+          data: encodeFunctionData({
+            abi: CrystalRouterAbi,
+            functionName: 'buy',
+            args: [true, tokenAddress as `0x${string}`, partWei, 0n],
+          }),
+          value: partWei,
+        };
+
+        const entry = getNonceEntry(addr);
+        const currentNonce = entry.nonce;
+        const params = [{ uo }, 0n, 0n, false, pk, currentNonce];
+
+        entry.pendingtxs.push(params);
+        entry.nonce = entry.nonce + 1n;
+
+        try {
+          await sendUserOperationAsync(...params);
+          success++;
+        } catch (err) {
+          console.error(`Buy failed for ${addr}:`, err);
+        } finally {
+          entry.pendingtxs = entry.pendingtxs.filter((p: any) => p !== params);
+        }
+
+      }
+
+    terminalRefetch()
+      updatePopup?.(txId, {
+        title: 'Batch buy completed',
+        subtitle:
+          `Succeeded: ${success}/${targets.length}` +
+          (skippedInsufficient ? ` • Skipped (insufficient MON): ${skippedInsufficient}` : ''),
+        variant: 'success',
+        isLoading: false,
+      });
+    } catch (error: any) {
+      updatePopup?.(txId, {
+        title: 'Batch buy failed',
+        subtitle: error?.message || 'One or more transactions failed',
+        variant: 'error',
+        isLoading: false,
+      });
+    }
+  };
+
+  const handleSellTrade = async (value: string) => {
+    if (!sendUserOperationAsync || !tokenAddress || !routerAddress) {
+      setpopup?.(4);
+      return;
+    }
+
+    const currentChainId = Number(account?.chainId);
+    if (account?.connected && currentChainId != activechain) {
+      setChain?.();
+      return;
+    }
+
+    const targets: string[] =
+      selectedWallets.size > 0
+        ? Array.from(selectedWallets)
+        : (account?.address ? [account.address] : []);
+
+    if (targets.length === 0) {
+      setpopup?.(4);
+      return;
+    }
+
+    const txId = `quicksell-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    showLoadingPopup?.(txId, {
+      title: 'Sending batch sell...',
+      subtitle: `Selling ${sellMode === 'percent' ? value + '%' : value + ' MON'} of ${tokenSymbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
+      amount: value,
+      amountUnit: sellMode === 'percent' ? '%' : 'MON',
+      tokenImage,
+    });
+
+    try {
+      let success = 0;
+      let skippedZero = 0;
+      let skippedInsufficient = 0;
 
       if (sellMode === 'percent') {
         const pct = BigInt(parseInt(value.replace('%', ''), 10));
-        amountTokenWei =
-          pct === 100n
-            ? currentTokenBalance > 0n
-              ? currentTokenBalance
-              : 0n
-            : (currentTokenBalance * pct) / 100n;
+        for (const addr of targets) {
+          const balWei: bigint = walletTokenBalances[addr]?.[tokenAddress] ?? 0n;
+          const amountWei =
+            pct >= 100n ? balWei : (balWei * pct) / 100n;
+
+          if (amountWei <= 0n) { skippedZero++; continue; }
+
+          const wallet = subWallets.find(w => w.address === addr);
+          const pk = wallet?.privateKey ?? activeWalletPrivateKey;
+          if (!pk) { skippedInsufficient++; continue; }
+
+          const uo = {
+            target: routerAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: CrystalRouterAbi,
+              functionName: 'sell',
+              args: [true, tokenAddress as `0x${string}`, amountWei, 0n],
+            }),
+            value: 0n,
+          };
+
+          const entry = getNonceEntry(addr);
+          const currentNonce = entry.nonce;
+          const params = [{ uo }, 0n, 0n, false, pk, currentNonce];
+
+          entry.pendingtxs.push(params);
+          entry.nonce = entry.nonce + 1n;
+
+          try {
+            await sendUserOperationAsync(...params);
+            success++;
+          } catch (err) {
+            console.error(`Percent sell failed for ${addr}:`, err);
+          } finally {
+            entry.pendingtxs = entry.pendingtxs.filter((p: any) => p !== params);
+          }
+
+        }
       } else {
-        const mon = parseFloat(value);
-        const tokens = tokenPrice > 0 ? mon / tokenPrice : 0;
-        amountTokenWei = BigInt(Math.floor(tokens * 1e18));
-      }
+        const totalMon = parseFloat(value || '0');
+        if (!isFinite(totalMon) || totalMon <= 0) {
+          updatePopup?.(txId, { title: 'Sell failed', subtitle: 'Invalid MON amount', variant: 'error', isLoading: false });
+          return;
+        }
+        const totalMonWei = BigInt(Math.round(totalMon * 1e18));
+        const parts = distributeEvenly(totalMonWei, targets.length);
 
-      if (amountTokenWei <= 0n || amountTokenWei > currentTokenBalance) {
-        throw new Error(
-          `Invalid sell amount. Trying to sell ${amountTokenWei.toString()} but only have ${currentTokenBalance.toString()}`,
-        );
-      }
+        for (let i = 0; i < targets.length; i++) {
+          const addr = targets[i];
+          const partMonWei = parts[i];
+          if (partMonWei <= 0n) { skippedZero++; continue; }
 
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Confirming sell...',
-          subtitle: `Selling ${value} ${sellMode === 'percent' ? '' : 'MON worth'} of ${tokenSymbol}`,
-          variant: 'info',
-        });
-      }
+          const balWei: bigint = walletTokenBalances[addr]?.[tokenAddress] ?? 0n;
+          let reqTokenWei = 0n;
+          if (tokenPrice > 0) {
+            const partMon = Number(partMonWei) / 1e18;
+            const tokens = partMon / tokenPrice; 
+            reqTokenWei = BigInt(Math.floor(tokens * 1e18));
+          }
+          const amountWei = reqTokenWei > balWei ? balWei : reqTokenWei;
+          if (amountWei <= 0n) { skippedInsufficient++; continue; }
 
-      const uo = {
-        target: routerAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: 'sell',
-          args: [true, tokenAddress as `0x${string}`, amountTokenWei, 0n],
-        }),
-        value: 0n,
-      };
+          const wallet = subWallets.find(w => w.address === addr);
+          const pk = wallet?.privateKey ?? activeWalletPrivateKey;
+          if (!pk) { skippedInsufficient++; continue; }
 
-      let currentNonce = nonces.current.get(account?.address)?.nonce;
-      const params = [{ uo }, 0n, 0n, false, activeWalletPrivateKey, currentNonce];
-      nonces.current.get(account?.address)?.pendingtxs.push(params);
-      const wallet = nonces.current.get(account?.address)
-      if (wallet) wallet.nonce += 1
-      await sendUserOperationAsync(...params);
-      if (wallet) {
-        wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-      }
-      const soldTokens = Number(amountTokenWei) / 1e18;
-      const expectedMON = soldTokens * tokenPrice;
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Sell completed!',
-          subtitle: `Sold ${formatNumberWithCommas(soldTokens, 4)} ${tokenSymbol} for ~${formatNumberWithCommas(expectedMON, 4)} MON`,
-          variant: 'success',
-          isLoading: false,
-        });
-      }
+          const uo = {
+            target: routerAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: CrystalRouterAbi,
+              functionName: 'sell',
+              args: [true, tokenAddress as `0x${string}`, amountWei, 0n],
+            }),
+            value: 0n,
+          };
 
-      setPendingTransactions((prev) => prev.filter((tx) => tx.id !== txId));
-      terminalRefetch();
-    } catch (e: any) {
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Sell failed',
-          subtitle: e?.message || 'Transaction was rejected',
-          variant: 'error',
-          isLoading: false,
-        });
-      }
+          const entry = getNonceEntry(addr);
+          const currentNonce = entry.nonce;
+          const params = [{ uo }, 0n, 0n, false, pk, currentNonce];
 
-      setPendingTransactions((prev) => prev.filter((tx) => tx.id !== txId));
+          entry.pendingtxs.push(params);
+          entry.nonce = entry.nonce + 1n;
 
-      if (String(e?.message || '').includes('Invalid sell amount')) {
-        if (updatePopup) {
-          updatePopup(txId, {
-            title: 'Insufficient balance',
-            subtitle: `Not enough ${tokenSymbol} for this sell`,
-            variant: 'error',
-            isLoading: false,
-          });
+          try {
+            await sendUserOperationAsync(...params);
+            success++;
+          } catch (err) {
+            console.error(`MON sell failed for ${addr}:`, err);
+          } finally {
+            entry.pendingtxs = entry.pendingtxs.filter((p: any) => p !== params);
+          }
+
         }
       }
+
+terminalRefetch?.()
+      updatePopup?.(txId, {
+        title: 'Batch sell completed',
+        subtitle:
+          `Succeeded: ${success}/${targets.length}` +
+          (skippedZero ? ` • Skipped (zero) : ${skippedZero}` : '') +
+          (skippedInsufficient ? ` • Skipped (insufficient/keys): ${skippedInsufficient}` : ''),
+        variant: 'success',
+        isLoading: false,
+      });
+    } catch (error: any) {
+      updatePopup?.(txId, {
+        title: 'Batch sell failed',
+        subtitle: error?.message || 'One or more transactions failed',
+        variant: 'error',
+        isLoading: false,
+      });
     }
   };
 
@@ -993,26 +1314,20 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', () => {
+      const handleMouseUp = () => {
         setIsDragging(false);
-        localStorage.setItem(
-          'crystal_quickbuy_widget_position',
-          JSON.stringify(position),
-        );
-      });
+        localStorage.setItem('crystal_quickbuy_widget_position', JSON.stringify(position));
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
 
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', () => {
-          setIsDragging(false);
-          localStorage.setItem(
-            'crystal_quickbuy_widget_position',
-            JSON.stringify(position),
-          );
-        });
+        document.removeEventListener('mouseup', handleMouseUp);
       };
     }
+
   }, [isDragging, position, handleMouseMove]);
 
   useEffect(() => {
@@ -1114,16 +1429,23 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   );
 
   const getSellButtonStatus = (value: string) => {
-    if (!account?.connected || currentTokenBalance <= 0n) return true;
+    if (!account?.connected) return true;
+    if (!tokenAddress) return true;
 
-    if (sellMode === 'percent') {
-      return currentTokenBalance == 0n;
-    } else {
-      const monAmount = parseFloat(value);
-      const requiredTokens = tokenPrice > 0 ? monAmount / tokenPrice : 0;
-      return requiredTokens > currentTokenBalance / 1e18;
+    if (selectedWallets.size > 0) {
+      const anySelectedHasTokens = Array.from(selectedWallets).some(
+        (a) => (walletTokenBalances[a]?.[tokenAddress] ?? 0n) > 0n
+      );
+      return !anySelectedHasTokens;
     }
+
+    const hasTokens = currentTokenBalance > 0n;
+    if (sellMode === 'percent') return !hasTokens;
+    const monAmount = parseFloat(value);
+    const requiredTokens = tokenPrice > 0 ? monAmount / tokenPrice : 0;
+    return requiredTokens > Number(currentTokenBalance) / 1e18;
   };
+
 
   if (!isOpen) return null;
 
@@ -1194,22 +1516,24 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
             <div className="quickbuy-controls-right-side">
               {subWallets.length > 0 && (
-                <Tooltip content="Toggle Wallets">
+                <Tooltip content={`Toggle Wallets • ${selectedWallets.size} active`}>
                   <button
                     className={`quickbuy-wallets-button ${isWalletsExpanded ? 'active' : ''}`}
                     onClick={() => setIsWalletsExpanded(!isWalletsExpanded)}
+                    aria-label={`Toggle Wallets, ${selectedWallets.size} active`}
                   >
                     <img
                       src={walleticon}
                       alt="Wallet"
                       className="quickbuy-wallets-icon"
                     />
-                    <span className="quickbuy-wallets-count">
-                      {subWallets.length}
+                    <span className={`quickbuy-wallets-count ${selectedWallets.size ? 'has-active' : ''}`}>
+                      {selectedWallets.size}
                     </span>
                   </button>
                 </Tooltip>
               )}
+
 
               <button className="close-btn" onClick={onClose}>
                 <img
@@ -1530,6 +1854,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         </div>
       </div>
 
+
       {isWalletsExpanded && (
         <div
           className={`quickbuy-wallets-panel ${isPanelLeft ? 'left' : 'right'}`}
@@ -1538,146 +1863,333 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             top: `${walletsPosition.y}px`,
           }}
         >
-          <div className="quickbuy-wallets-header">
-            <span className="quickbuy-wallets-title">Wallets</span>
-          </div>
+          {(() => {
+            const walletsWithToken = subWallets.filter(w => getWalletTokenBalance(w.address) > 0);
+            const walletsWithoutToken = subWallets.filter(w => getWalletTokenBalance(w.address) === 0);
+            const hasTokenHolders = walletsWithToken.length > 0;
+            const allSelected = subWallets.length > 0 && selectedWallets.size === subWallets.length;
 
-          <div className="quickbuy-wallets-list">
-            {subWallets.length === 0 ? (
-              <div className="quickbuy-wallets-empty">
-                <div className="quickbuy-wallets-empty-text">No wallets</div>
-                <div className="quickbuy-wallets-empty-subtitle">
-                  Create in Portfolio
-                </div>
-              </div>
-            ) : (
-              subWallets.map((wallet, index) => {
-                const balance = getWalletBalance(wallet.address);
-                const isActive = isWalletActive(wallet.privateKey);
+            const walletsWithoutTokenAddrs = walletsWithoutToken.map(w => w.address);
+            const allWithoutSelected =
+              walletsWithoutTokenAddrs.length > 0 &&
+              walletsWithoutTokenAddrs.every(a => selectedWallets.has(a));
 
-                return (
-                  <div
-                    key={wallet.address}
-                    className={`quickbuy-wallet-item ${isActive ? 'active' : ''}`}
-                    onClick={(e) => {
-                      handleSetActiveWallet(wallet.privateKey);
-                      e.stopPropagation();
-                    }}
-                  >
-                    <div className="quickbuy-wallet-checkbox-container">
-                      <input
-                        type="checkbox"
-                        className="quickbuy-wallet-checkbox"
-                        checked={isActive}
-                        readOnly
-                      />
-                    </div>
+            const hasExactlyOneSelected = selectedWallets.size === 1;
+            const destinationAddr = hasExactlyOneSelected
+              ? Array.from(selectedWallets)[0]
+              : undefined;
 
-                    <div className="quickbuy-wallet-info">
-                      <div className="quickbuy-wallet-name">
-                        {getWalletName(wallet.address, index)}
-                      </div>
-                      <div
-                        className="quickbuy-wallet-address"
-                        onClick={(e) => handleCopyAddress(wallet.address, e)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        {wallet.address.slice(0, 4)}...
-                        {wallet.address.slice(-4)}
-                        <svg
-                          className="quickbuy-wallet-address-copy-icon"
-                          width="11"
-                          height="11"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                        >
-                          <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                        </svg>
-                      </div>
-                    </div>
+            const hasSourceWallets =
+              !!destinationAddr &&
+              subWallets.some(
+                (w) =>
+                  w.address !== destinationAddr &&
+                  (walletTokenBalances[w.address]?.[tokenAddress!] ?? 0n) > 0n
+              );
 
-                    <div className="quickbuy-wallet-balance">
-                      <Tooltip content="MON Balance">
-                        <div
-                          className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}
-                        >
-                          <img
-                            src={monadicon}
-                            className="quickbuy-wallet-mon-icon"
-                            alt="MON"
-                          />
-                          {formatNumberWithCommas(balance, 2)}
-                        </div>
-                      </Tooltip>
-                    </div>
+            return (
+              <>
+                <div className="quickbuy-wallets-header">
+                  <div className="quickbuy-wallets-actions">
+                    {hasTokenHolders ? (
+                      <>
+                        <Tooltip content="Consolidate all tokens to the one active wallet (purple checkbox)">
+                          <button
+                            className="quickbuy-wallet-action-btn consolidate"
+                            onClick={handleConsolidateTokens}
+                            disabled={!hasExactlyOneSelected || !hasSourceWallets || isConsolidating}
+                          >
+                            {isConsolidating ? '...' : 'Consolidate'}
+                          </button>
+                        </Tooltip>
+                        <Tooltip content="Split tokens across selected wallets with 20% variance">
+                          <button
+                            className="quickbuy-wallet-action-btn split"
+                            onClick={handleSplitTokens}
+                            disabled={selectedWallets.size < 2 || isSplitting}
+                          >
+                            {isSplitting ? '...' : 'Split Tokens'}
+                          </button>
+                        </Tooltip>
+                      </>
+                    ) : (
+                      <>
+                        <Tooltip content={allSelected ? 'Unselect all wallets' : 'Select all wallets'}>
+                          <button
+                            className="quickbuy-wallet-action-btn select-all"
+                            onClick={allSelected ? unselectAllWallets : selectAllWallets}
+                          >
+                            {allSelected ? 'Unselect All' : 'Select All'}
+                          </button>
+                        </Tooltip>
 
-                    <div className="quickbuy-wallet-tokens">
-                      {(() => {
-                        const tokenBalance = getWalletTokenBalance(
-                          wallet.address,
-                        );
-                        const tokenCount = getWalletTokenCount(wallet.address);
-
-                        if (tokenBalance > 0) {
-                          return (
-                            <Tooltip content="Tokens">
-                              <div
-                                className={`quickbuy-wallet-token-amount ${isBlurred ? 'blurred' : ''}`}
-                              >
-                                {tokenImage && (
-                                  <img
-                                    src={tokenImage}
-                                    className="quickbuy-wallet-token-icon"
-                                    alt={tokenSymbol}
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
-                                    }}
-                                  />
-                                )}
-                                <span className="quickbuy-wallet-token-balance">
-                                  {formatNumberWithCommas(tokenBalance, 2)}
-                                </span>
-                              </div>
-                            </Tooltip>
-                          );
-                        } else if (tokenCount > 0) {
-                          return (
-                            <Tooltip content="Tokens">
-                              <div className="quickbuy-wallet-token-count">
-                                <div className="quickbuy-wallet-token-structure-icons">
-                                  <div className="token1"></div>
-                                  <div className="token2"></div>
-                                  <div className="token3"></div>
-                                </div>
-                                <span className="quickbuy-wallet-total-tokens">
-                                  {tokenCount}
-                                </span>
-                              </div>
-                            </Tooltip>
-                          );
-                        } else {
-                          return (
-                            <Tooltip content="Tokens">
-                              <div className="quickbuy-wallet-token-count">
-                                <div className="quickbuy-wallet-token-structure-icons">
-                                  <div className="token1"></div>
-                                  <div className="token2"></div>
-                                  <div className="token3"></div>
-                                </div>
-                                <span className="quickbuy-wallet-total-tokens">
-                                  0
-                                </span>
-                              </div>
-                            </Tooltip>
-                          );
-                        }
-                      })()}
-                    </div>
+                        <Tooltip content="Select wallets with MON balance">
+                          <button
+                            className="quickbuy-wallet-action-btn select-all"
+                            onClick={selectAllWithBalance}
+                          >
+                            Select All With Balance
+                          </button>
+                        </Tooltip>
+                      </>
+                    )}
                   </div>
-                );
-              })
-            )}
-          </div>
+                </div>
+
+                <div className="quickbuy-wallets-list">
+                  {subWallets.length === 0 ? (
+                    <div className="quickbuy-wallets-empty">
+                      <div className="quickbuy-wallets-empty-text">No wallets</div>
+                      <div className="quickbuy-wallets-empty-subtitle">
+                        Create in Portfolio
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {walletsWithToken.map((wallet, index) => {
+                        const balance = getWalletBalance(wallet.address);
+                        const isActive = isWalletActive(wallet.privateKey);
+                        const isSelected = selectedWallets.has(wallet.address);
+
+                        return (
+                          <div
+                            key={wallet.address}
+                            className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                            onClick={() => toggleWalletSelection(wallet.address)}
+                          >
+                            <div className="quickbuy-wallet-checkbox-container">
+                              <input
+                                type="checkbox"
+                                className="quickbuy-wallet-checkbox selection"
+                                checked={isSelected}
+                                onChange={(e) => { e.stopPropagation(); toggleWalletSelection(wallet.address); }}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+
+                            </div>
+
+                            <div
+                              className="quickbuy-wallet-info"
+                              onClick={(e) => {
+                                handleSetActiveWallet(wallet.privateKey);
+                                e.stopPropagation();
+                              }}
+                            >
+                              <div className="quickbuy-wallet-name">
+                                {getWalletName(wallet.address, index)}
+                                {isActive && <span className="quickbuy-active-badge">Active</span>}
+                              </div>
+                              <div
+                                className="quickbuy-wallet-address"
+                                onClick={(e) => handleCopyAddress(wallet.address, e)}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                {wallet.address.slice(0, 4)}...
+                                {wallet.address.slice(-4)}
+                                <svg
+                                  className="quickbuy-wallet-address-copy-icon"
+                                  width="11"
+                                  height="11"
+                                  viewBox="0 0 24 24"
+                                  fill="currentColor"
+                                >
+                                  <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                </svg>
+                              </div>
+                            </div>
+
+                            <div className="quickbuy-wallet-balance">
+                              <Tooltip content="MON Balance">
+                                <div
+                                  className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}
+                                >
+                                  <img
+                                    src={monadicon}
+                                    className="quickbuy-wallet-mon-icon"
+                                    alt="MON"
+                                  />
+                                  {formatNumberWithCommas(balance, 2)}
+                                </div>
+                              </Tooltip>
+                            </div>
+
+                            <div className="quickbuy-wallet-tokens">
+                              {(() => {
+                                const tokenBalance = getWalletTokenBalance(wallet.address);
+                                if (tokenBalance > 0) {
+                                  return (
+                                    <Tooltip content="Tokens">
+                                      <div
+                                        className={`quickbuy-wallet-token-amount ${isBlurred ? 'blurred' : ''}`}
+                                      >
+                                        {tokenImage && (
+                                          <img
+                                            src={tokenImage}
+                                            className="quickbuy-wallet-token-icon"
+                                            alt={tokenSymbol}
+                                            onError={(e) => {
+                                              e.currentTarget.style.display = 'none';
+                                            }}
+                                          />
+                                        )}
+                                        <span className="quickbuy-wallet-token-balance">
+                                          {formatNumberWithCommas(tokenBalance, 2)}
+                                        </span>
+                                      </div>
+                                    </Tooltip>
+                                  );
+                                }
+                              })()}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {hasTokenHolders && walletsWithoutToken.length > 0 && (
+                        <div className="quickbuy-wallets-section-label">
+                          <Tooltip content={allWithoutSelected ? 'Unselect wallets without tokens' : 'Select wallets without tokens'}>
+                            <button
+                              className="quickbuy-wallet-action-btn select-all"
+                              onClick={() => {
+                                if (allWithoutSelected) {
+                                  setSelectedWallets(prev => {
+                                    const next = new Set(prev);
+                                    walletsWithoutTokenAddrs.forEach(a => next.delete(a));
+                                    return next;
+                                  });
+                                } else {
+                                  setSelectedWallets(prev => {
+                                    const next = new Set(prev);
+                                    walletsWithoutTokenAddrs.forEach(a => next.add(a));
+                                    return next;
+                                  });
+                                }
+                              }}
+                            >
+                              {allWithoutSelected ? 'Unselect All' : 'Select All'}
+                            </button>
+                          </Tooltip>
+
+                          <Tooltip content="Select wallets with MON balance (no tokens)">
+                            <button
+                              className="quickbuy-wallet-action-btn select-all"
+                              onClick={selectAllWithBalanceWithoutToken}
+                            >
+                              With Balance
+                            </button>
+                          </Tooltip>
+                        </div>
+                      )}
+
+                      {walletsWithoutToken.map((wallet, index) => {
+                        const balance = getWalletBalance(wallet.address);
+                        const isActive = isWalletActive(wallet.privateKey);
+                        const isSelected = selectedWallets.has(wallet.address);
+
+                        return (
+                          <div
+                            key={wallet.address}
+                            className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                            onClick={() => toggleWalletSelection(wallet.address)}
+                          >
+                            <div className="quickbuy-wallet-checkbox-container">
+                              <input
+                                type="checkbox"
+                                className="quickbuy-wallet-checkbox selection"
+                                checked={isSelected}
+                              />
+                            </div>
+
+                            <div
+                              className="quickbuy-wallet-info"
+                              onClick={(e) => {
+                                handleSetActiveWallet(wallet.privateKey);
+                                e.stopPropagation();
+                              }}
+                            >
+                              <div className="quickbuy-wallet-name">
+                                {getWalletName(wallet.address, index + walletsWithToken.length)}
+                                {isActive && <span className="quickbuy-active-badge">Active</span>}
+                              </div>
+                              <div
+                                className="quickbuy-wallet-address"
+                                onClick={(e) => handleCopyAddress(wallet.address, e)}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                {wallet.address.slice(0, 4)}...
+                                {wallet.address.slice(-4)}
+                                <svg
+                                  className="quickbuy-wallet-address-copy-icon"
+                                  width="11"
+                                  height="11"
+                                  viewBox="0 0 24 24"
+                                  fill="currentColor"
+                                >
+                                  <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                </svg>
+                              </div>
+                            </div>
+
+                            <div className="quickbuy-wallet-balance">
+                              <Tooltip content="MON Balance">
+                                <div
+                                  className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}
+                                >
+                                  <img
+                                    src={monadicon}
+                                    className="quickbuy-wallet-mon-icon"
+                                    alt="MON"
+                                  />
+                                  {formatNumberWithCommas(balance, 2)}
+                                </div>
+                              </Tooltip>
+                            </div>
+
+                            <div className="quickbuy-wallet-tokens">
+                              {(() => {
+                                const tokenCount = getWalletTokenCount(wallet.address);
+                                if (tokenCount > 0) {
+                                  return (
+                                    <Tooltip content="Tokens">
+                                      <div className="quickbuy-wallet-token-count">
+                                        <div className="quickbuy-wallet-token-structure-icons">
+                                          <div className="token1"></div>
+                                          <div className="token2"></div>
+                                          <div className="token3"></div>
+                                        </div>
+                                        <span className="quickbuy-wallet-total-tokens">
+                                          {tokenCount}
+                                        </span>
+                                      </div>
+                                    </Tooltip>
+                                  );
+                                } else {
+                                  return (
+                                    <Tooltip content="Tokens">
+                                      <div className="quickbuy-wallet-token-count">
+                                        <div className="quickbuy-wallet-token-structure-icons">
+                                          <div className="token1"></div>
+                                          <div className="token2"></div>
+                                          <div className="token3"></div>
+                                        </div>
+                                        <span className="quickbuy-wallet-total-tokens">
+                                          0
+                                        </span>
+                                      </div>
+                                    </Tooltip>
+                                  );
+                                }
+                              })()}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
     </>
