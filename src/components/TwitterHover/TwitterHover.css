@@ -1,10 +1,10 @@
 .twitter-hover-card {
   z-index: 1000;
   width: 300px;
-  border-radius: 6px;
-  border: 1px solid #b5bcf837;
-  background: #000000;
-  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  border: 1.5px solid #b5bcf818;
+  background: #000000c5;
+  backdrop-filter: blur(10px);
   padding: 1rem;
   box-shadow: 0 6px 20px rgba(0,0,0,0.15);
   position: relative;
@@ -51,27 +51,24 @@
   gap: 0.25rem;
   align-items: center;
   font-weight: 600;
+  padding: 5px 0;
 }
 
 .twitter-hover-name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 1.1rem;
-  margin-top: -3px;
+  font-size: 1rem;
+  margin-top: -5px;
   margin-bottom: -3px;
-}
-
-.twitter-hover-username {
-  color: #8098a5;
-  font-size: 0.9rem;
-  font-weight: 400;
+  letter-spacing: -0.5px;
+  font-weight: 500;
 }
 
 .twitter-hover-verified {
   width: 1rem;
   height: 1rem;
-  fill: #1d9bf0;
+  fill: #bcc1f0;
 }
 
 .twitter-hover-desc {
@@ -90,14 +87,21 @@
   margin-bottom: 0.75rem;
 }
 
+.twitter-hover-tweet-metrics-label{
+  display: flex;
+  gap: .25rem;
+  font-size: 0.875rem;
+  color: #8f95a2;
+}
+
 .twitter-hover-link {
   display: flex;
   align-items: center;
   justify-content: center;
   display: inline-block;
   font-size: 0.875rem;
-  color: #8fc7f6;
-  border: 1px solid #5d6073a0;
+  color: #bcc1f0;
+  border: 1.5px solid #5d607331;
   width: 100%;
   border-radius: 100px;
   font-weight: 500;
@@ -112,15 +116,17 @@
     height: 100%;
     padding: 5px 0;
   transition: all 0.3s ease;
+
 }
 
 .twitter-link:hover{
-    background-color: #2d3745;
+    background-color: #2d374538;
 }
 .twitter-hover-text {
   margin-top: 0.25rem;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+  font-size:1rem;
+  line-height: 1.2rem;
+  letter-spacing: -0.5px;
 }
 
 .twitter-hover-photos {
@@ -157,7 +163,9 @@
 }
 
 .twitter-hover-metrics-number{
-    color: white
+    color: #dfe1f5;
+    letter-spacing: -0.3px;
+    font-weight: 500;
 }
 
 .twitter-hover-header-text{
@@ -167,7 +175,7 @@
 }
 
 .twitter-hover-username-link {
-  color: #1d9bf0;
+  color: #bcc1f0;
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 400;
@@ -180,14 +188,14 @@
 }
 
 .twitter-mention {
-  color: #1d9bf0;
+  color: #bcc1f0;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
 }
 
 .twitter-mention:hover {
-  color: #8fc7f6;
+  color: #aeb5f5;
   text-decoration: underline;
 }
 
@@ -195,6 +203,10 @@
   color: #8098a5;
   font-size: 0.9rem;
   font-weight: 400;
+}
+
+.twitter-hover-username:hover{
+  text-decoration: underline;
 }
 
 .twitter-hover-usercard .twitter-hover-banner {
@@ -229,6 +241,9 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  font-size: .9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .twitter-hover-location-icon,
@@ -253,7 +268,6 @@
   gap: 0.25rem;
 }
 
-/* Tweet card specific styling */
 .twitter-hover-tweetcard {
   display: block;
   gap: 0;
@@ -266,8 +280,6 @@
 }
 
 .twitter-hover-text-container {
-  max-height: 200px;
-  overflow-y: auto;
   line-height: 1.4;
   padding-right: 4px;
 }
@@ -306,7 +318,7 @@
 }
 
 .engagement-stat:hover .engagement-icon {
-  color: #1d9bf0;
+  color: #bcc1f0;
 }
 
 .engagement-icon {
@@ -324,12 +336,30 @@
 
 .twitter-hover-meta {
   margin-top: 0.25rem;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: #666;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
+.twitter-hover-time-ago{
+    margin-top: 0.25rem;
+  font-size: 1rem;
+  color: #3cdd47;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.twitter-top-right-section{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 50px;
+  padding: 6px;
+}
+
 
 .bookmark-stat {
   display: flex;
@@ -345,7 +375,7 @@
 }
 
 .bookmark-stat:hover .bookmark-icon {
-  color: #1d9bf0;
+  color: #bcc1f0;
 }
 
 .bookmark-icon {
@@ -405,7 +435,7 @@
 .comment-engagement-icon {
   width: 16px;
   height: 16px;
-  color: #1d9bf0;
+  color: #bcc1f0;
   transition: color 0.2s ease;
 }
 .repost-engagement-icon {
@@ -422,8 +452,21 @@
   transition: color 0.2s ease;
 }
 
-.engagement-stat span {
-  color: #8098a5;
-  font-size: 0.75rem;
-  min-width: 16px;
+
+.twitter-hover-top-row{
+  display: flex;
+  justify-content: space-between;
+}
+
+.twitter-hover-icon{
+  width: 25px;
+  height: 20px;
+}
+
+.twitter-hover-author-info{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1.5px solid #b5bcf818;
+  padding-bottom: 0.5rem;
 }

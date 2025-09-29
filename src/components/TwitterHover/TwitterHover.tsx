@@ -15,8 +15,7 @@ import {
 import './TwitterHover.css';
 import type { Placement } from '@floating-ui/react';
 import verified from '../../assets/verified.png';
-
-/** ---------- Types returned by the backend ---------- */
+import twitter from '../../assets/twitter-dark.svg'
 type Media = { type: 'photo' | 'video' | 'animated_gif'; url: string; width?: number; height?: number };
 
 type Preview =
@@ -29,6 +28,7 @@ type Preview =
       avatar: string;
       banner?: string | null;
       verified: boolean;
+      verified_type?: string | null;
       created_at: string;
       followers: number | null;
       following: number | null;
@@ -48,7 +48,17 @@ type Preview =
       possibly_sensitive: boolean;
       media?: Media[];
     };
-    author: { id: string; name: string; username: string; avatar: string; verified: boolean } | null;
+    author: { 
+      id: string; 
+      name: string; 
+      username: string; 
+      avatar: string; 
+      verified: boolean; 
+      verified_type?: string | null;
+      created_at: string;
+      followers: number | null;
+      following: number | null;
+    } | null;
     url: string;
     _stale?: boolean;
   };
@@ -65,15 +75,11 @@ type Props = {
 const CLIENT_CACHE = new Map<string, { data: Preview; exp: number }>();
 const INFLIGHT = new Map<string, Promise<Response>>();
 
-/** ================= backend endpoint =================
- * Always target the prod API host. Allow override via VITE_PREVIEW_API_BASE if set.
+/** ================= LOCAL DEVELOPMENT ENDPOINT =================
+ * Use localhost:3000 for local development
  */
-const ORIGIN_BASE =
-  (typeof window !== 'undefined' && (import.meta as any)?.env?.VITE_PREVIEW_API_BASE) ||
-  'https://api.crystal.exchange'; // hard-set prod base
-
-const PRIMARY_PATH = '/x';        // FastAPI router path
-const FALLBACK_PATH = '/api/x';   // legacy Next route (kept as safety)
+const ORIGIN_BASE = 'http://localhost:3000';
+const API_PATH = '/api/x';
 
 function joinUrl(base: string, path: string) {
   if (!base) return path;
@@ -131,6 +137,38 @@ function parseTextWithMentions(text: string, hasMedia = false) {
   });
 
   return result.length > 1 ? result : processedText;
+}
+
+/** format time ago (e.g., "1d", "5h", "3m") */
+function formatTimeAgo(dateString: string): string {
+  const now = new Date();
+  const date = new Date(dateString);
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo`;
+  const years = Math.floor(months / 12);
+  return `${years}y`;
+}
+
+/** get color based on tweet age */
+function getTimeAgoColor(dateString: string): string {
+  const now = new Date();
+  const date = new Date(dateString);
+  const hours = Math.floor((now.getTime() - date.getTime()) / 1000 / 3600);
+
+  if (hours < 6) return '#00ff41'; // green - very recent (< 6 hours)
+  if (hours < 24) return '#7cfc00'; // light green (< 1 day)
+  if (hours < 72) return '#ffa500'; // orange (< 3 days)
+  if (hours < 168) return '#ff6347'; // red-orange (< 1 week)
+  return '#ff0000'; // red - old (> 1 week)
 }
 
 export function TwitterHover({ url, children, openDelayMs = 180, placement = 'top', portal = true }: Props) {
@@ -192,26 +230,16 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
 
-    const makeReq = (path: string) =>
-      fetch(`${joinUrl(ORIGIN_BASE, path)}?url=${encodeURIComponent(stableUrl)}`, {
-        signal: abortRef.current!.signal,
-        mode: 'cors',
-        credentials: 'omit',
-      });
+    const apiUrl = `${joinUrl(ORIGIN_BASE, API_PATH)}?url=${encodeURIComponent(stableUrl)}`;
+    console.log('Fetching from:', apiUrl); // Debug log
 
     try {
-      // Prefer FastAPI /x, fallback to /api/x (Next)
-      let req = INFLIGHT.get(key);
-      if (!req) {
-        req = makeReq(PRIMARY_PATH);
-        INFLIGHT.set(key, req);
-      }
-      let r = await req;
-
-      if (!r.ok && r.status === 404) {
-        // fallback path one time
-        r = await makeReq(FALLBACK_PATH);
-      }
+      const req = fetch(apiUrl, {
+        signal: abortRef.current!.signal,
+      });
+      
+      INFLIGHT.set(key, req);
+      const r = await req;
 
       if (INFLIGHT.get(key) === req) INFLIGHT.delete(key);
 
@@ -230,7 +258,10 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
         e?.name === 'AbortError' ||
         (e instanceof DOMException && e.name === 'AbortError') ||
         /abort/i.test(String(e?.message));
-      if (!isAbort) setError(e?.message || 'Failed to load preview');
+      if (!isAbort) {
+        console.error('Preview fetch error:', e);
+        setError(e?.message || 'Failed to load preview');
+      }
     } finally {
       setLoading(false);
       fetchingRef.current = false;
@@ -279,8 +310,24 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
   );
 }
 
-function VerifiedBadge() {
-  return <img src={verified} alt="Verified badge" className="twitter-hover-verified" />;
+function VerifiedBadge({ type }: { type?: string | null }) {
+  const isBusiness = type === 'business';
+  
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 22 22"
+      fill="none"
+      className="twitter-hover-verified"
+      style={{ filter: isBusiness ? 'none' : undefined }}
+    >
+      <path
+        d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.633.132 1.29.084 1.897-.136.274.586.705 1.084 1.246 1.439.54.354 1.17.551 1.816.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.239 1.266.296 1.903.164.636-.132 1.22-.447 1.68-.907.46-.46.776-1.044.908-1.681s.075-1.299-.165-1.903c.586-.274 1.084-.705 1.439-1.246.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z"
+        fill={isBusiness ? '#D4AF37' : '#1D9BF0'}
+      />
+    </svg>
+  );
 }
 
 function UserCard(props: {
@@ -290,6 +337,7 @@ function UserCard(props: {
   avatar: string;
   banner?: string | null;
   verified: boolean;
+  verified_type?: string | null;
   description: string;
   followers: number | null;
   following: number | null;
@@ -298,6 +346,7 @@ function UserCard(props: {
   location?: string;
 }) {
   const profileUrl = `https://x.com/${props.username}`;
+  const isBusiness = props.verified_type === 'business';
 
   return (
     <div className="twitter-hover-usercard">
@@ -307,23 +356,31 @@ function UserCard(props: {
         </div>
       )}
       <div className="twitter-hover-body">
+        <div className="twitter-hover-top-row">
         <div className="twitter-hover-header">
-          <img src={props.avatar} alt="" className="twitter-hover-avatar" />
+          <img 
+            src={props.avatar} 
+            alt="" 
+            className="twitter-hover-avatar"
+            style={{ borderRadius: isBusiness ? '6px' : '50%' }}
+          />
           <div className="twitter-hover-header-text">
             <div className="verify-name">
               <span className="twitter-hover-name">{props.name}</span>
-              {props.verified && <VerifiedBadge />}
+              {props.verified && <VerifiedBadge type={props.verified_type} />}
             </div>
             <a
               href={profileUrl}
               target="_blank"
               rel="noreferrer"
-              className="twitter-hover-username-link"
+              className="twitter-hover-username"
               onClick={(e) => e.stopPropagation()}
             >
               @{props.username}
             </a>
           </div>
+        </div>
+        <img className="twitter-hover-icon" src={twitter}/>
         </div>
 
         {props.description && <p className="twitter-hover-desc">{parseTextWithMentions(props.description, false)}</p>}
@@ -346,14 +403,14 @@ function UserCard(props: {
         </div>
 
         <div className="twitter-hover-metrics">
-          {props.followers != null && (
-            <span>
-              <b className="twitter-hover-metrics-number">{Intl.NumberFormat().format(props.followers)}</b> Followers
-            </span>
-          )}
           {props.following != null && (
             <span>
-              <b className="twitter-hover-metrics-number">{Intl.NumberFormat().format(props.following)}</b> Following
+              <b className="twitter-hover-metrics-number">{Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(props.following)}</b> Following
+            </span>
+          )}
+          {props.followers != null && (
+            <span>
+              <b className="twitter-hover-metrics-number">{Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(props.followers)}</b> Followers
             </span>
           )}
         </div>
@@ -369,7 +426,17 @@ function UserCard(props: {
 
 function TweetCard(payload: {
   tweet: { id: string; text: string; created_at: string; metrics: Record<string, number>; possibly_sensitive: boolean; media?: Media[] };
-  author: { id: string; name: string; username: string; avatar: string; verified: boolean } | null;
+  author: { 
+    id: string; 
+    name: string; 
+    username: string; 
+    avatar: string; 
+    verified: boolean; 
+    verified_type?: string | null;
+    created_at: string;
+    followers: number | null;
+    following: number | null;
+  } | null;
   url: string;
 }) {
   const a = payload.author;
@@ -377,32 +444,61 @@ function TweetCard(payload: {
   const photos = allMedia.filter((m) => m.type === 'photo');
   const videos = allMedia.filter((m) => m.type === 'video' || m.type === 'animated_gif');
   const hasAnyMedia = allMedia.length > 0;
+  const isBusiness = a?.verified_type === 'business';
 
   return (
     <div className="twitter-hover-tweetcard">
       <div className="twitter-hover-body">
         {a && (
-          <div className="twitter-hover-header">
-            <img src={a.avatar} alt="" className="twitter-hover-avatar" />
-            <div className="twitter-hover-header-text">
-              <div className="verify-name">
-                <span className="twitter-hover-name">{a.name}</span>
-                {a.verified && <VerifiedBadge />}
+          <div className="twitter-hover-top-row">
+            <div className="twitter-hover-header">
+              <img 
+                src={a.avatar} 
+                alt="" 
+                className="twitter-hover-avatar"
+                style={{ borderRadius: isBusiness ? '6px' : '50%' }}
+              />
+              <div className="twitter-hover-header-text">
+                <div className="verify-name">
+                  <span className="twitter-hover-name">{a.name}</span>
+                  {a.verified && <VerifiedBadge type={a.verified_type} />}
+                </div>
+                <a
+                  href={`https://x.com/${a.username}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="twitter-hover-username-link"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  @{a.username}
+                </a>
               </div>
-              <a
-                href={`https://x.com/${a.username}`}
-                target="_blank"
-                rel="noreferrer"
-                className="twitter-hover-username-link"
-                onClick={(e) => e.stopPropagation()}
-              >
-                @{a.username}
-              </a>
+            </div>
+            <div className="twitter-top-right-section">
+              <img className="twitter-hover-icon" src={twitter} />
+              <div className="twitter-hover-time-ago" style={{ color: getTimeAgoColor(payload.tweet.created_at) }}>
+                <span>{formatTimeAgo(payload.tweet.created_at)}</span>
+              </div>
             </div>
           </div>
         )}
 
-        <div className="twitter-hover-text-container">
+        {a && (
+          <div className="twitter-hover-author-info">
+            {a.followers != null && (
+              <span className="twitter-hover-tweet-metrics-label">
+                <b className="twitter-hover-metrics-number">{Intl.NumberFormat('en', { notation: 'compact' }).format(a.followers)}</b> Followers
+              </span>
+            )}
+            {a.created_at && (
+              <span className="twitter-hover-join-date">
+                Joined {new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+              </span>
+            )}
+          </div>
+        )}
+
+        <div className="twitter-hover-text-container-new">
           <p className="twitter-hover-text">{parseTextWithMentions(payload.tweet.text, hasAnyMedia)}</p>
 
           {photos.length > 0 && (
@@ -443,7 +539,14 @@ function TweetCard(payload: {
         </div>
 
         <div className="twitter-hover-meta">
-          <span>{new Date(payload.tweet.created_at).toLocaleString()}</span>
+          <span>{new Date(payload.tweet.created_at).toLocaleString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric', 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+          })}</span>
           <div className="bookmark-stat">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="bookmark-icon">
               <path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5zM6.5 4c-.276 0-.5.22-.5.5v14.56l6-4.29 6 4.29V4.5c0-.28-.224-.5-.5-.5h-11z" />

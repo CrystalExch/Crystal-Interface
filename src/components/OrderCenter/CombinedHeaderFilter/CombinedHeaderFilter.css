@@ -79,7 +79,7 @@
   border-radius: 5px;
   box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
   background-color: rgb(9, 9, 9);
-  border: 1px solid rgba(179, 184, 249, 0.12);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   overflow: hidden;
   z-index: 4;
   min-width: 100%;

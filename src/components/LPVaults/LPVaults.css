@@ -1832,15 +1832,7 @@
     color:#fff;
     letter-spacing:-.3px
 }
-.twitter-link{
-    display:flex;
-    align-items:center;
-    color:#1da1f2;
-    transition:color.2s ease
-}
-.twitter-link:hover{
-    color:#0d8bd9
-}
+
 .edit-button,.share-button{
     display:flex;
     align-items:center;
