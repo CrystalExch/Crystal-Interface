@@ -386,8 +386,8 @@
 
 .detail-preset-buttons {
   display: flex;
-    gap: .5rem;
-    align-items: center;
+  gap: .5rem;
+  align-items: center;
 }
 
 .detail-preset-button {
@@ -536,9 +536,17 @@
 .copy-hint { margin-left: 4px; font-weight: 600; }
 .detail-meme-address-value { text-decoration: underline dotted; }
 .detail-meme-address {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px;
   border: 1px solid var(--c-border);
   border-radius: var(--radius-lg);
+}
+
+.detail-meme-address-title {
+  font-weight: 600;
+  color: var(--c-text);
 }
 
 .detail-chat-section { padding: 5px; }
@@ -654,6 +662,51 @@
   .detail-header { justify-content: center; }
   .detail-chart-section { width: 100%; }
   .detail-info-section { text-align: center; }
+}
+
+@media (max-width: 1000px) {
+  .detail-container {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "header"
+      "chart"
+      "trading"
+      "comments";
+    gap: var(--gap-xl);
+    padding: var(--gap-xl) var(--gap);
+  }
+  
+  .detail-main {
+    display: contents;
+  }
+  
+  .detail-content {
+    display: contents;
+  }
+  
+  .detail-header {
+    grid-area: header;
+  }
+  
+  .detail-chart-section {
+    grid-area: chart;
+  }
+  
+  .detail-trading-panel-container {
+    grid-area: trading;
+    padding-top: 0;
+  }
+  
+  .detail-trading-panel {
+    position: static; 
+  }
+  
+  .detail-info-grid {
+    grid-area: comments;
+    display: grid;
+    gap: var(--gap-xl);
+  }
 }
 
 .detail-comments-list::-webkit-scrollbar { width: 6px; }

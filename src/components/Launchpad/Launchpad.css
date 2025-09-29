@@ -61,6 +61,28 @@
   border-radius: 1px;
 }
 
+.launchpad-back-button {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem .5rem;
+  font-size: 0.9rem;
+  color: #fff;
+  background: transparent;
+  border: 1.5px solid rgba(179, 184, 249, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 1rem;
+  letter-spacing: -0.3px;
+}
+
+.launchpad-back-button:hover {
+  border-color: #aaaecf;
+  background: rgba(179, 184, 249, 0.05);
+}
+
 .launchpad-form-wrapper {
   width: 100%;
 }
