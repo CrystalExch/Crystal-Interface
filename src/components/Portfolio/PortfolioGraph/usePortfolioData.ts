@@ -68,24 +68,23 @@ export const usePortfolioData = (
       let lastBalances = Object.values(balanceResults)[0]?.balances;
       dateRange.forEach((date, idx) => {
         const dailyBalances = balanceResults[date]?.balances || lastBalances || {};
-        
         Object.entries(dailyBalances).forEach(([ticker, bal]) => {
           const tokenBalance = bal as number;
           const normalized = normalizeTicker(ticker, activechain);
 
           let price = lastKnownPrice[normalized] || 0;
           const usdcMkt = marketDataMap[`${normalized}USDC`];
-          if (usdcMkt?.series?.length > idx) {
-            price = usdcMkt.series[idx].close / Number(usdcMkt.priceFactor);
+          if (usdcMkt?.mini?.length > idx) {
+            price = usdcMkt.mini[idx].value;
           } else if (normalized === 'USDC') {
             price = 1;
           } else {
             const tokenEth = marketDataMap[`${normalized}${ethTicker}`];
             if (
-              tokenEth?.series?.length > idx &&
-              ethMarket?.series?.length > idx
+              tokenEth?.mini?.length > idx &&
+              ethMarket?.mini?.length > idx
             ) {
-              price = tokenEth.series[idx].close / Number(tokenEth.priceFactor) * ethMarket.series[idx].close / Number(ethMarket.priceFactor);
+              price = tokenEth.mini[idx].value * ethMarket.mini[idx].value;
             }
           }
           lastKnownPrice[normalized] = price;
@@ -110,18 +109,17 @@ export const usePortfolioData = (
         const normalized = normalizeTicker(token.ticker, activechain);
         let price = 0;
         const usdcMkt = marketDataMap[`${normalized}USDC`];
-  
-        if (usdcMkt?.series?.length) {
-          price = usdcMkt.series[usdcMkt.series.length - 1].close / Number(usdcMkt.priceFactor);
+        if (usdcMkt?.latestPrice) {
+          price = usdcMkt.latestPrice;
         } else if (normalized === 'USDC') {
           price = 1;
         } else {
           const tokenEth = marketDataMap[`${normalized}${ethTicker}`];
           if (
-            tokenEth?.series?.length &&
-            ethMarket?.series?.length
+            tokenEth?.latestPrice &&
+            ethMarket?.latestPrice
           ) {
-            price = tokenEth.series[tokenEth.series.length - 1].close / Number(tokenEth.priceFactor) * ethMarket.series[ethMarket.series.length - 1].close / Number(ethMarket.priceFactor);
+            price = tokenEth.latestPrice * ethMarket.latestPrice;
           }
         }
   
