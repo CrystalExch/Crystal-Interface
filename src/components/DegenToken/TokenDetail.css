@@ -229,10 +229,9 @@
 
 .detail-comment {
   position: relative;
-  padding: 16px 12px;
+  padding: 4px;
   border-radius: var(--radius);
   transition: all var(--tr-fast);
-  margin-bottom: 8px;
 }
 
 .detail-comment-container {
@@ -339,18 +338,25 @@
 }
 
 .detail-trade-tab {
-  flex: 1;
-  padding: 8px 16px;
-  letter-spacing: -0.3px;
-  color: var(--c-dim);
-  background: none;
-  border: none;
-  border-radius: 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all var(--tr-fast);
+  font-size: .85rem;
+  font-weight: 300;
+  padding: 4px;
+  transition: 0.3s ease;
+  width: 100%;
 }
-.detail-trade-tab.active { background: var(--c-buy-bg); color: var(--c-buy); }
-.detail-trade-tab:last-child.active { background: var(--c-sell-bg); color: var(--c-sell); }
+.detail-trade-tab.active {
+  border: 1px solid rgba(67, 254, 154, 0.7);
+    box-shadow: inset 0 0 6px 4px rgba(67, 254, 154, 0.2);
+    color: rgb(67 254 154);
+}
+.detail-trade-tab:last-child.active {
+  border: 1px solid rgb(235, 112, 112, 0.5);
+    box-shadow: inset 0 0 4px 4px rgb(235, 112, 112, 0.2);
+    color: rgb(235, 112, 112);
+}
 
 .detail-trade-form { display: flex; flex-direction: column; gap: var(--gap-lg); }
 .detail-trade-input-group { display: flex; flex-direction: column; gap: var(--gap); }
@@ -404,7 +410,6 @@
   margin: 0px 4px;
 }
 
-/* New currency switch button styles */
 .detail-currency-switch-button {
   padding: 4px 8px;
   font-size: .8rem;
@@ -492,7 +497,6 @@
   -webkit-text-fill-color: transparent;
 }
 
-/* Bonding */
 .detail-bonding-section { border-radius: var(--radius); }
 .detail-bonding-section h4 { margin: 0 0 12px; font-size: .9rem; color: var(--c-text); }
 .detail-bonding-bar {
@@ -509,7 +513,6 @@
   font-size: .8rem; color: var(--c-muted);
 }
 
-/* Loading / Error */
 .detail-loading,
 .detail-error {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -522,7 +525,6 @@
 }
 .detail-error h2 { margin: 0; color: var(--c-text); }
 
-/* Copyable address (single source of truth) */
 .copyable-address {
   background: transparent; border: none; padding: 0;
   font: inherit; color: inherit; cursor: pointer;
@@ -537,7 +539,6 @@
   border-radius: var(--radius-lg);
 }
 
-/* Chat section (unchanged behavior, cleaned grouping) */
 .detail-chat-section { padding: 5px; }
 .detail-chat-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .detail-chat-info { display: flex; align-items: center; gap: 12px; flex: 1; }
@@ -559,7 +560,6 @@
 .detail-chat-join-button:hover { background: rgba(179,184,249,.15); border-color: rgba(179,184,249,.3); }
 .detail-chat-icon { font-size: 1rem; }
 
-/* Chat Modal */
 .detail-chat-modal-overlay {
   position: fixed; inset: 0;
   display: flex; align-items: center; justify-content: center;
@@ -670,8 +670,6 @@
 .detail-trade-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .detail-trade-input[type="number"] { -moz-appearance: textfield; }
 
-/* Enhanced Top Holders Styles - Add to your existing CSS */
-
 .detail-holders-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -745,6 +743,7 @@
 }
 
 .detail-holder-address-copy {
+  font-family: 'Courier New', monospace;
   font-size: 0.85rem;
   color: var(--c-text);
   background: rgba(255, 255, 255, 0.05);
@@ -815,7 +814,6 @@
   }
 }
 
-/* Enhanced existing holders list in sidebar */
 .detail-holders-list .detail-holder-item {
   padding: 12px;
   background: rgba(179, 184, 249, 0.03);
@@ -913,7 +911,6 @@
 .detail-comment-user-info {
   display: flex;
   align-items: center;
-  gap: 8px;
 }
 
 .detail-comment-user { 
@@ -1031,12 +1028,10 @@
   text-align: center;
 }
 
-/* Hide like count when zero but show empty space */
 .detail-comment-like-count:empty {
   width: 8px;
 }
 
-/* Responsive adjustments */
 @media (max-width: 480px) {
   .detail-comment {
     padding: 12px 8px;
