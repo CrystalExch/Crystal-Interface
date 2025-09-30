@@ -802,22 +802,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     setSourceWallets([]);
     setDestinationWallets([]);
   };
-
-  const getWalletBalanceWithGas = (address: string) => {
-    const balances = walletTokenBalances[address];
-    if (!balances) return 0;
-
-    const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
-    if (ethToken && balances[ethToken.address]) {
-      const totalBalance = Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals);
-      const gasAmount = Number(settings.chainConfig[activechain].gasamount || BigInt(0)) / 10 ** Number(ethToken.decimals);
-      const availableBalance = Math.max(0, totalBalance - gasAmount);
-      return availableBalance;
-    }
-
-    return 0;
-  };
-
 const executeDistribution = async () => {
   if (sourceWallets.length === 0 || destinationWallets.length === 0 || !distributionAmount) {
     return;
