@@ -2956,6 +2956,7 @@ if (
               onFilterYou={setTrackedToYou}
               onClearTracked={clearTracked}
               isLoadingTrades={isLoadingTrades}
+              subWallets={subWallets}
             />
           </div>
         </div>

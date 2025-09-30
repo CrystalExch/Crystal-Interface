@@ -245,6 +245,7 @@ interface Props {
   onFilterYou?: () => void;
   onClearTracked?: () => void;
   isLoadingTrades?: boolean;
+  subWallets?: Array<{ address: string; privateKey: string }>;
 }
 
 export default function MemeTradesComponent({
@@ -268,6 +269,7 @@ export default function MemeTradesComponent({
   onFilterYou,
   onClearTracked,
   isLoadingTrades = false,
+  subWallets = [],
 }: Props) {
   const [amountMode, setAmountMode] = useState<AmountMode>('MON');
   const [mcMode, setMcMode] = useState<MCMode>('MC');
@@ -457,10 +459,16 @@ export default function MemeTradesComponent({
     }
 
     return filteredTrades.map((r) => {
-      const callerLower = r.caller.toLowerCase();
-      const currentUserLower = currentUserAddress?.toLowerCase();
-      const devAddressLower = devAddress?.toLowerCase();
-      const isCurrentUser = callerLower === currentUserLower;
+const callerLower = r.caller.toLowerCase();
+const devAddressLower = devAddress?.toLowerCase();
+
+const subWalletSet = new Set(
+  (subWallets || []).map(w => w.address.toLowerCase())
+);
+
+const isCurrentUser =
+  (currentUserAddress && callerLower === currentUserAddress.toLowerCase()) ||
+  subWalletSet.has(callerLower);
       const isTopHolder = top10HolderAddresses.has(callerLower);
       const isDev = Boolean(devAddressLower && callerLower === devAddressLower);
       const sign = r.isBuy ? 1 : -1;
@@ -486,7 +494,7 @@ export default function MemeTradesComponent({
       }
 
       const amountUSD = monUsd > 0 ? amountMON * monUsd : 0;
-      const short = isCurrentUser ? 'YOU' : r.caller.slice(2, 6);
+const short = isCurrentUser ? 'YOU' : r.caller.slice(2, 6);
       const tags: (
         | 'sniper'
         | 'dev'

@@ -169,17 +169,15 @@
 }
 
 .amount-btn {
-    border: 1px solid rgba(67, 254, 154, 0.5);
+    border: 1.5px solid rgba(67, 254, 154, 0.75);
+    box-shadow: 0 0 1.5px rgba(67, 254, 154, 0.25);
     color: rgb(67 254 154);
 }
 
 .percent-btn {
-    border: 1px solid rgb(235, 112, 112, 0.5);
+    border: 1.5px solid rgb(235, 112, 112, 0.75);
+    box-shadow: 0 0 1.5px rgb(235, 112, 112, 1);
     color: rgb(235, 112, 112);
-}
-
-.percent-btn:hover {
-    background-color: #cf13130f;
 }
 
 
