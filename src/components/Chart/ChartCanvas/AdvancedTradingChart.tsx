@@ -4,6 +4,7 @@ import { LocalStorageSaveLoadAdapter } from './LocalStorageSaveLoadAdapter';
 import cancelOrder from '../../../scripts/cancelOrder';
 import replaceOrder from '../../../scripts/replaceOrder';
 import { settings } from '../../../settings';
+import { formatSig } from '../../OrderCenter/utils';
 import customRound from '../../../utils/customRound';
 import normalizeTicker from '../../../utils/normalizeTicker';
 import { formatDisplay } from '../../OrderCenter/utils';
@@ -498,7 +499,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       favorites: {
         intervals: ['5', '60', '1D'],
       },
-
       overrides: overrides,
       studies: ['Volume@tv-basicstudies'],
       studies_overrides: {
@@ -506,7 +506,18 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         'volume.volume.color.1': 'rgba(131, 251, 145, 0.4)',
         'volume.volume.transparency': 10,
       },
-
+      custom_formatters: activeMarketRef.current?.marketType != null &&
+        activeMarketRef.current?.marketType !== 0
+        ? {
+            priceFormatterFactory: (_symbolInfo: any, _minTick: number) => {
+              return {
+                format: (price: string) => {
+                  return formatSig(price);
+                },
+              };
+            },
+          }
+        : undefined,
       save_load_adapter: localAdapterRef.current,
 
       datafeed: {

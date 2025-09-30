@@ -15,7 +15,7 @@ import editicon from '../../../assets/edit.svg';
 import gas from '../../../assets/gas.svg';
 import monadicon from '../../../assets/monadlogo.svg';
 import slippage from '../../../assets/slippage.svg';
-import squares from '../../../assets/squares.svg';
+import merge from '../../../assets/merge.png';
 import circle from '../../../assets/circle_handle.png'
 import switchicon from '../../../assets/switch.svg';
 import walleticon from '../../../assets/wallet_icon.png';
@@ -734,20 +734,20 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           if (wallet) wallet.nonce += 1
           wallet?.pendingtxs.push(params);
           const transferPromise = sendUserOperationAsync(...params)
-          .then(() => {
-            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-            return true;
-          }).catch(() => {
-            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-            return false
-          })
+            .then(() => {
+              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              return true;
+            }).catch(() => {
+              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              return false
+            })
           transferPromises.push(transferPromise);
         } catch (err) {
           console.error(`Failed to consolidate from ${sourceAddr}:`, err);
         }
       }
       const results = await Promise.allSettled(transferPromises);
-      const successfulTransfers = results.filter(result => 
+      const successfulTransfers = results.filter(result =>
         result.status === 'fulfilled' && result.value === true
       ).length;
       terminalRefetch()
@@ -772,12 +772,19 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   };
 
   const selectAllWallets = () => {
-    setSelectedWallets(new Set(subWallets.map(w => w.address)));
+    setSelectedWallets(
+      new Set(
+        subWallets
+          .filter((w) => getWalletTokenBalance(w.address) > 0)
+          .map((w) => w.address),
+      ),
+    );
   };
 
   const unselectAllWallets = () => {
     setSelectedWallets(new Set());
   };
+
   const selectAllWalletsWithoutToken = () => {
     const walletsWithoutToken = subWallets.filter(w => getWalletTokenBalance(w.address) === 0);
     setSelectedWallets(new Set(walletsWithoutToken.map(w => w.address)));
@@ -790,6 +797,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     );
     setSelectedWallets(new Set(walletsWithBalance.map(w => w.address)));
   };
+
   const handleSplitTokens = async () => {
     if (selectedWallets.size === 0 || !tokenAddress) return;
 
@@ -881,20 +889,20 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           if (wallet) wallet.nonce += 1
           wallet?.pendingtxs.push(params);
           const transferPromise = sendUserOperationAsync(...params)
-          .then(() => {
-            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-            return true;
-          }).catch(() => {
-            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-            return false
-          })
+            .then(() => {
+              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              return true;
+            }).catch(() => {
+              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              return false
+            })
           transferPromises.push(transferPromise);
         } catch (err) {
           console.error(`Split transfer failed to ${to}:`, err);
         }
       }
       const results = await Promise.allSettled(transferPromises);
-      const successfulTransfers = results.filter(result => 
+      const successfulTransfers = results.filter(result =>
         result.status === 'fulfilled' && result.value === true
       ).length;
       terminalRefetch()
@@ -917,7 +925,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       setIsSplitting(false);
     }
   };
-
 
   useEffect(() => {
     if (isOpen && account?.connected) {
@@ -1032,17 +1039,17 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         if (wallet) wallet.nonce += 1
         wallet?.pendingtxs.push(params);
         const transferPromise = sendUserOperationAsync(...params)
-        .then(() => {
-          if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-          return true;
-        }).catch(() => {
-          if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-          return false
-        })
+          .then(() => {
+            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+            return true;
+          }).catch(() => {
+            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+            return false
+          })
         transferPromises.push(transferPromise);
       }
       const results = await Promise.allSettled(transferPromises);
-      const successfulTransfers = results.filter(result => 
+      const successfulTransfers = results.filter(result =>
         result.status === 'fulfilled' && result.value === true
       ).length;
 
@@ -1128,13 +1135,13 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           if (wallet) wallet.nonce += 1
           wallet?.pendingtxs.push(params);
           const transferPromise = sendUserOperationAsync(...params)
-          .then(() => {
-            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-            return true;
-          }).catch(() => {
-            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-            return false
-          })
+            .then(() => {
+              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              return true;
+            }).catch(() => {
+              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              return false
+            })
           transferPromises.push(transferPromise);
         }
       } else {
@@ -1179,18 +1186,18 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           if (wallet) wallet.nonce += 1
           wallet?.pendingtxs.push(params);
           const transferPromise = sendUserOperationAsync(...params)
-          .then(() => {
-            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-            return true;
-          }).catch(() => {
-            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-            return false
-          })
+            .then(() => {
+              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              return true;
+            }).catch(() => {
+              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              return false
+            })
           transferPromises.push(transferPromise);
         }
       }
       const results = await Promise.allSettled(transferPromises);
-      const successfulTransfers = results.filter(result => 
+      const successfulTransfers = results.filter(result =>
         result.status === 'fulfilled' && result.value === true
       ).length;
       terminalRefetch()
@@ -1543,7 +1550,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           </div>
           <div className="quickbuy-drag-handle">
             <div className="circle-row">
-              <img src={circle} className="circle"/>
+              <img src={circle} className="circle" />
             </div>
 
           </div>
@@ -1858,7 +1865,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             const walletsWithToken = subWallets.filter(w => getWalletTokenBalance(w.address) > 0);
             const walletsWithoutToken = subWallets.filter(w => getWalletTokenBalance(w.address) === 0);
             const hasTokenHolders = walletsWithToken.length > 0;
-            const allSelected = subWallets.length > 0 && selectedWallets.size === subWallets.length;
+            const allSelected = walletsWithToken.length > 0 && selectedWallets.size === walletsWithToken.length;
 
             const walletsWithoutTokenAddrs = walletsWithoutToken.map(w => w.address);
             const allWithoutSelected =
@@ -1895,19 +1902,22 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                         <div className="cs-container">
                           <Tooltip content="Consolidate all tokens to the one active wallet (purple checkbox)">
                             <button
-                              className="quickbuy-wallet-action-btn consolidate"
+                              className="quickbuy-wallet-merge-btn consolidate"
                               onClick={handleConsolidateTokens}
                               disabled={!hasExactlyOneSelected || !hasSourceWallets || isConsolidating}
                             >
+                              <img src={merge} className="merge-icon"/>
                               {isConsolidating ? '...' : 'Consolidate'}
                             </button>
                           </Tooltip>
                           <Tooltip content="Split tokens across selected wallets with 20% variance">
                             <button
-                              className="quickbuy-wallet-action-btn split"
+                              className="quickbuy-wallet-merge-btn split"
                               onClick={handleSplitTokens}
                               disabled={selectedWallets.size < 2 || isSplitting}
+                              
                             >
+                              <img src={merge} className="merge-icon"/>
                               {isSplitting ? '...' : 'Split Tokens'}
                             </button>
                           </Tooltip>

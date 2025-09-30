@@ -1376,6 +1376,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       </div>
 
       <div className="meme-oc-top-bar">
+        <div className="meme-oc-inner">
         <div className="meme-oc-types">
           <>
             <div className="meme-oc-types-rectangle">
@@ -1421,6 +1422,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             </button>
           </div>
         )}
+        </div>
       </div>
 
       <div

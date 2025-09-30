@@ -941,13 +941,15 @@
 
 .wallet-header-name,.wallet-header-address,.wallet-header-mon,.wallet-header-total{
     flex:1;
-    min-width:0
+    min-width:0;
+    padding: 4px 20px;
 }
 .wallet-header-actions{
     flex:none;
     min-width:140px;
     text-align:right;
-    flex:1.5
+    flex:1.5;
+    padding: 4px 20px;
 }
 .wallets-table-body{
     max-height:400px;
@@ -4020,7 +4022,6 @@
   display: grid;
   grid-template-columns: 16px 180px 80px 1fr 2fr;
   gap: 10px;
-  padding: 4px 20px;
   border-bottom: 1px solid rgba(179,184,249,0.1);
   align-items: center;
   position: sticky;
