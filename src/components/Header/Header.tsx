@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import LanguageSelector from './LanguageSelector/LanguageSelector';
@@ -60,6 +60,8 @@ interface HeaderProps {
   tradesByMarket: any;
   currentWalletIcon?: string;
   subWallets?: Array<{ address: string, privateKey: string }>;
+    selectedWallets?: Set<string> | string[];
+  onToggleWalletSelected?: (address: string) => void;
   walletTokenBalances?: { [address: string]: any };
   activeWalletPrivateKey?: string;
   setOneCTSigner: (privateKey: string) => void;
@@ -272,6 +274,8 @@ const Header: React.FC<HeaderProps> = ({
   subWallets = [],
   walletTokenBalances = {},
   activeWalletPrivateKey,
+  onToggleWalletSelected,
+  selectedWallets,
   setOneCTSigner,
   refetch,
   isBlurred = false,
@@ -297,6 +301,10 @@ const Header: React.FC<HeaderProps> = ({
   perpsFilterOptions,
   externalUserStats
 }) => {
+    const selectedSet = useMemo(() => {
+    if (!selectedWallets) return new Set<string>();
+    return selectedWallets instanceof Set ? selectedWallets : new Set(selectedWallets);
+  }, [selectedWallets]);
   const location = useLocation();
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
   const navigate = useNavigate();
@@ -744,12 +752,9 @@ const Header: React.FC<HeaderProps> = ({
                       src={walleticon}
                       className="img-wallet-icon"
                     />
-                    {subWallets.length > 0 && (
-                      <span className="wallet-count">{subWallets.length}</span>
-                    )}
-                    {subWallets.length == 0 && (
-                      <span className="wallet-count">0</span>
-                    )}
+<span className={`wallet-count ${selectedSet.size ? 'has-active' : ''}`}>
+  {selectedSet.size}
+</span>
                     <span className="wallet-separator"></span>
                     <img
                       src={currentWalletIcon || walleticon}
