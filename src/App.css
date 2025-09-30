@@ -7922,3 +7922,246 @@ input::-webkit-inner-spin-button {
   }
 }
 
+/* Tracker import wallet popup css */
+.import-wallets-backdrop {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 101;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.import-wallets-container {
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgb(6, 6, 6);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(179, 184, 249, 0.1);
+  border-radius: 6px;
+  width: 90%;
+  max-width: 450px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.import-wallets-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1.5px solid rgba(179, 184, 249, 0.1);
+  flex-shrink: 0;
+}
+
+.import-wallets-title {
+  color: #eaedff;
+  font-size: 1rem;
+  margin: 0;
+  letter-spacing: -0.5px;
+  font-weight: 400;
+}
+
+.import-wallets-close {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.import-wallets-close:hover {
+  color: #fff;
+}
+
+.close-button-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.import-wallets-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.import-wallets-textarea {
+  width: 100%;
+  min-height: 200px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1.5px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
+  color: #fff;
+  padding: 12px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+}
+
+.import-wallets-textarea:focus {
+  border-color: rgba(179, 184, 249, 0.2);
+  box-shadow: none;
+}
+
+.import-wallets-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.import-wallets-toggle-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  margin-bottom: 8px;
+}
+
+.import-wallets-toggle-label {
+  color: #ccccccc3;
+  font-size: 0.9rem;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+}
+
+.import-wallets-toggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+}
+
+.import-wallets-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.import-wallets-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #3a3a3f;
+  transition: 0.3s;
+  border-radius: 34px;
+}
+
+.import-wallets-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.import-wallets-toggle input:checked + .import-wallets-toggle-slider {
+  background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
+}
+
+.import-wallets-toggle input:checked + .import-wallets-toggle-slider:before {
+  transform: translateX(22px);
+}
+
+.import-wallets-description {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+  letter-spacing: -0.3px;
+}
+
+.import-wallets-supported {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.import-wallets-supported-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  letter-spacing: -0.3px;
+}
+
+.import-wallets-icon {
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.import-wallets-button-container {
+  padding-top: 16px;
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
+  margin-top: 8px;
+}
+
+.import-wallets-button {
+  width: 100%;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
+  border: none;
+  border-radius: 20px;
+  color: #0f0f12;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
+  transition: filter 0.3s ease;
+  letter-spacing: -0.5px;
+}
+
+.import-wallets-button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.import-wallets-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+}
+
+.import-wallets-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.import-wallets-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.import-wallets-container::-webkit-scrollbar-thumb {
+  background: rgba(179, 184, 249, 0.2);
+  border-radius: 3px;
+}
+
+.import-wallets-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(179, 184, 249, 0.3);
+}
