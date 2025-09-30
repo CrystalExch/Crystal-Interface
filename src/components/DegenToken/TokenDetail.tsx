@@ -91,7 +91,7 @@ interface TokenDetailProps {
 }
 
 const SUBGRAPH_URL =
-  'https://api.studio.thegraph.com/query/104695/test/v0.3.16';
+  'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
 const TOTAL_SUPPLY = 1e9;
 
 const formatPrice = (p: number) => {

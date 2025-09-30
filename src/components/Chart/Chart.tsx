@@ -98,9 +98,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
                     ? 14400
                     : 86400
         }`.toLowerCase();
-        // const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.3.16';
+        // const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
         const endpoint =
-          'https://api.studio.thegraph.com/query/104695/test/v0.3.16';
+          'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
         let allCandles: any[] = [];
         const query = `
           query {

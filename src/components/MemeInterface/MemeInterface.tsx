@@ -155,9 +155,9 @@ const MARKET_UPDATE_EVENT =
 const MARKET_CREATED_EVENT =
   '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
 const TOTAL_SUPPLY = 1e9;
-// const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.16';
+// const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
 const SUBGRAPH_URL =
-  'https://api.studio.thegraph.com/query/104695/test/v0.3.16';
+  'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
 const TRANSFER_TOPIC =
   '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const STATS_WS_BASE = 'wss://crystal-backend.up.railway.app';

@@ -10,7 +10,7 @@ import twitter from '../../assets/twitter.png';
 import monadsvg from '../../assets/monad.svg';
 import './PNLComponent.css';
 
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.11';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
 
 interface PNLData {
   balance: number;

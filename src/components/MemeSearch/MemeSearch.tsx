@@ -11,7 +11,7 @@ import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTrans
 import { useNavigate } from 'react-router-dom';
 
 const SUBGRAPH_URL =
-    'https://api.studio.thegraph.com/query/104695/test/v0.3.16';
+    'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
 
 export interface Token {
     id: string;
