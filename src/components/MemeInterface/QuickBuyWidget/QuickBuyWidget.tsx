@@ -1546,14 +1546,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           </div>
           <div className="quickbuy-drag-handle">
             <div className="circle-row">
-              <div className="circle"></div>
-              <div className="circle"></div>
-              <div className="circle"></div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="circle"><circle cx="12" cy="12" r="10" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="circle"><circle cx="12" cy="12" r="10" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="circle"><circle cx="12" cy="12" r="10" /></svg>
             </div>
             <div className="circle-row">
-                <div className="circle"></div>
-                <div className="circle"></div>
-                <div className="circle"></div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="circle"><circle cx="12" cy="12" r="10" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="circle"><circle cx="12" cy="12" r="10" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="circle"><circle cx="12" cy="12" r="10" /></svg>
             </div>
 
           </div>

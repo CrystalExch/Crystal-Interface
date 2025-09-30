@@ -1043,15 +1043,15 @@
     padding: 2px 16px;
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(179, 184, 249, 0.1)
+    
 }
 
 
 
 .circle{
-    width: 3px;
-    height: 3px;
     background-color: rgba(56, 58, 77, 0.54);
     border-radius: 50%;
+    color: transparent;
 }
 
 .circle-row{
