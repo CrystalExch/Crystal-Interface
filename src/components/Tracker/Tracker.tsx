@@ -1,141 +1,159 @@
-import { Eye, Search, Plus, Edit2 } from 'lucide-react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import copy from '../../assets/copy.svg'
-import closebutton from '../../assets/close_button.png'
-import monadicon from '../../assets/monadlogo.svg';
-import key from '../../assets/key.svg';
-import trash from '../../assets/trash.svg';
-import { settings } from '../../settings';
-import './Tracker.css';
+    import { Eye, Search, Plus, Edit2 } from 'lucide-react';
+    import React, { useCallback, useEffect, useRef, useState } from 'react';
+    import { createPortal } from 'react-dom';
+    import copy from '../../assets/copy.svg'
+    import closebutton from '../../assets/close_button.png'
+    import monadicon from '../../assets/monadlogo.svg';
+    import key from '../../assets/key.svg';
+    import trash from '../../assets/trash.svg';
+    import { settings } from '../../settings';
+    import './Tracker.css';
 
-const Tooltip: React.FC<{
-    content: string;
-    children: React.ReactNode;
-    position?: 'top' | 'bottom' | 'left' | 'right';
-}> = ({ content, children, position = 'top' }) => {
-    const [vis, setVis] = useState(false);
-    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
-    const containerRef = useRef<HTMLDivElement>(null);
+    const Tooltip: React.FC<{
+        content: string;
+        children: React.ReactNode;
+        position?: 'top' | 'bottom' | 'left' | 'right';
+    }> = ({ content, children, position = 'top' }) => {
+        const [vis, setVis] = useState(false);
+        const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+        const containerRef = useRef<HTMLDivElement>(null);
+        
 
-    const updatePosition = useCallback(() => {
-        if (!containerRef.current) return;
+        const updatePosition = useCallback(() => {
+            if (!containerRef.current) return;
 
-        const rect = containerRef.current.getBoundingClientRect();
-        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+            const rect = containerRef.current.getBoundingClientRect();
+            const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+            const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
-        let top = 0;
-        let left = 0;
+            let top = 0;
+            let left = 0;
 
-        switch (position) {
-            case 'top':
-                top = rect.top + scrollY - 25;
-                left = rect.left + scrollX + rect.width / 2;
-                break;
-            case 'bottom':
-                top = rect.bottom + scrollY + 25;
-                left = rect.left + scrollX + rect.width / 2;
-                break;
-            case 'left':
-                top = rect.top + scrollY + rect.height / 2;
-                left = rect.left + scrollX - 25;
-                break;
-            case 'right':
-                top = rect.top + scrollY + rect.height / 2;
-                left = rect.right + scrollX + 25;
-                break;
-        }
+            switch (position) {
+                case 'top':
+                    top = rect.top + scrollY - 25;
+                    left = rect.left + scrollX + rect.width / 2;
+                    break;
+                case 'bottom':
+                    top = rect.bottom + scrollY + 25;
+                    left = rect.left + scrollX + rect.width / 2;
+                    break;
+                case 'left':
+                    top = rect.top + scrollY + rect.height / 2;
+                    left = rect.left + scrollX - 25;
+                    break;
+                case 'right':
+                    top = rect.top + scrollY + rect.height / 2;
+                    left = rect.right + scrollX + 25;
+                    break;
+            }
 
-        setTooltipPosition({ top, left });
-    }, [position]);
+            setTooltipPosition({ top, left });
+        }, [position]);
 
-    useEffect(() => {
-        if (vis) {
-            updatePosition();
-            window.addEventListener('scroll', updatePosition);
-            window.addEventListener('resize', updatePosition);
-            return () => {
-                window.removeEventListener('scroll', updatePosition);
-                window.removeEventListener('resize', updatePosition);
-            };
-        }
-    }, [vis, updatePosition]);
+        useEffect(() => {
+            if (vis) {
+                updatePosition();
+                window.addEventListener('scroll', updatePosition);
+                window.addEventListener('resize', updatePosition);
+                return () => {
+                    window.removeEventListener('scroll', updatePosition);
+                    window.removeEventListener('resize', updatePosition);
+                };
+            }
+        }, [vis, updatePosition]);
 
-    return (
-        <div
-            ref={containerRef}
-            className="tooltip-container"
-            onMouseEnter={() => setVis(true)}
-            onMouseLeave={() => setVis(false)}
-        >
-            {children}
-            {vis && createPortal(
-                <div
-                    className={`tooltip tooltip-${position} fade-popup visible`}
-                    style={{
-                        position: 'absolute',
-                        top: `${tooltipPosition.top}px`,
-                        left: `${tooltipPosition.left}px`,
-                        transform: position === 'top' || position === 'bottom'
-                            ? 'translateX(-50%)'
-                            : position === 'left' || position === 'right'
-                                ? 'translateY(-50%)'
-                                : 'none',
-                        zIndex: 9999,
-                        pointerEvents: 'none'
-                    }}
-                >
-                    <div className="tooltip-content">
-                        {content}
-                    </div>
-                </div>,
-                document.body
-            )}
-        </div>
-    );
-};
+        return (
+            <div
+                ref={containerRef}
+                className="tooltip-container"
+                onMouseEnter={() => setVis(true)}
+                onMouseLeave={() => setVis(false)}
+            >
+                {children}
+                {vis && createPortal(
+                    <div
+                        className={`tooltip tooltip-${position} fade-popup visible`}
+                        style={{
+                            position: 'absolute',
+                            top: `${tooltipPosition.top}px`,
+                            left: `${tooltipPosition.left}px`,
+                            transform: position === 'top' || position === 'bottom'
+                                ? 'translateX(-50%)'
+                                : position === 'left' || position === 'right'
+                                    ? 'translateY(-50%)'
+                                    : 'none',
+                            zIndex: 9999,
+                            pointerEvents: 'none'
+                        }}
+                    >
+                        <div className="tooltip-content">
+                            {content}
+                        </div>
+                    </div>,
+                    document.body
+                )}
+            </div>
+        );
+    };
 
-interface TrackedWallet {
-    address: string;
-    name: string;
-    emoji: string;
-    balance: number;
-    lastActive: string;
-    id: string;
-}
+    interface TrackedWallet {
+        address: string;
+        name: string;
+        emoji: string;
+        balance: number;
+        lastActive: string;
+        id: string;
+    }
 
-interface LiveTrade {
-    id: string;
-    walletName: string;
-    emoji: string;
-    token: string;
-    amount: number;
-    marketCap: number;
-    time: string;
-    txHash: string;
-}
+    interface LiveTrade {
+        id: string;
+        walletName: string;
+        emoji: string;
+        token: string;
+        amount: number;
+        marketCap: number;
+        time: string;
+        txHash: string;
+        type: 'buy' | 'sell';
+        createdAt: string;
+    }
 
-interface TrackerProps {
-    isBlurred: boolean;
-}
+    interface TrackerProps {
+        isBlurred: boolean;
+        setpopup: (value: number) => void;
+        onImportWallets?: (walletsText: string, addToSingleGroup: boolean) => void;
+    }
 
-type TrackerTab = 'wallets' | 'trades';
+    interface MonitorToken {
+        id: string;
+        name: string;
+        symbol: string;
+        price: number;
+        change24h: number;
+        marketCap: number;
+        volume24h: number;
+        holders: number;
+        emoji: string;
+    }
+    
 
-const Tracker: React.FC<TrackerProps> = ({ isBlurred }) => {
-    const [activeTab, setActiveTab] = useState<TrackerTab>('wallets');
-    const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([
-        {
-            id: '1',
-            address: '0x1234...5678',
-            name: 'random demon',
-            emoji: '😈',
-            balance: 3.55,
-            lastActive: '2m'
-        }
-    ]);
+    type TrackerTab = 'wallets' | 'trades' | 'monitor' ;
 
-    const [liveTrades] = useState<LiveTrade[]>([
+    const Tracker: React.FC<TrackerProps> = ({ isBlurred, setpopup}) => {
+        const [activeTab, setActiveTab] = useState<TrackerTab>('wallets');
+        const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([
+            {
+                id: '1',
+                address: '0x1234...5678',
+                name: 'random demon',
+                emoji: '😈',
+                balance: 3.55,
+                lastActive: '2m'
+            }
+        ]);
+
+        const [liveTrades] = useState<LiveTrade[]>([
         {
             id: '1',
             walletName: 'random demon',
@@ -144,7 +162,9 @@ const Tracker: React.FC<TrackerProps> = ({ isBlurred }) => {
             amount: 6.073,
             marketCap: 74400,
             time: '4m',
-            txHash: '0xabc123...'
+            txHash: '0xabc123...',
+            type: 'buy',
+            createdAt: '2025-09-29T10:23:00'
         },
         {
             id: '2',
@@ -154,7 +174,9 @@ const Tracker: React.FC<TrackerProps> = ({ isBlurred }) => {
             amount: 6.073,
             marketCap: 74400,
             time: '4m',
-            txHash: '0xabc124...'
+            txHash: '0xabc124...',
+            type: 'sell',
+            createdAt: '2025-09-29T10:19:00'
         },
         {
             id: '3',
@@ -164,7 +186,9 @@ const Tracker: React.FC<TrackerProps> = ({ isBlurred }) => {
             amount: 6.073,
             marketCap: 74400,
             time: '4m',
-            txHash: '0xabc125...'
+            txHash: '0xabc125...',
+            type: 'buy',
+            createdAt: '2025-09-29T10:15:00'
         },
         {
             id: '4',
@@ -174,7 +198,9 @@ const Tracker: React.FC<TrackerProps> = ({ isBlurred }) => {
             amount: 6.073,
             marketCap: 74400,
             time: '4m',
-            txHash: '0xabc126...'
+            txHash: '0xabc126...',
+            type: 'sell',
+            createdAt: '2025-09-29T10:10:00'
         },
         {
             id: '5',
@@ -184,7 +210,9 @@ const Tracker: React.FC<TrackerProps> = ({ isBlurred }) => {
             amount: 6.073,
             marketCap: 74400,
             time: '4m',
-            txHash: '0xabc127...'
+            txHash: '0xabc127...',
+            type: 'buy',
+            createdAt: '2025-09-29T10:05:00'
         },
         {
             id: '6',
@@ -194,432 +222,666 @@ const Tracker: React.FC<TrackerProps> = ({ isBlurred }) => {
             amount: 6.073,
             marketCap: 74400,
             time: '4m',
-            txHash: '0xabc128...'
+            txHash: '0xabc128...',
+            type: 'buy',
+            createdAt: '2025-09-29T10:00:00'
         }
     ]);
 
-    const [showAddWalletModal, setShowAddWalletModal] = useState(false);
-    const [newWalletAddress, setNewWalletAddress] = useState('');
-    const [newWalletName, setNewWalletName] = useState('');
-    const [newWalletEmoji, setNewWalletEmoji] = useState('😀');
-    const [addWalletError, setAddWalletError] = useState('');
-
-    const [editingWallet, setEditingWallet] = useState<string | null>(null);
-    const [editingName, setEditingName] = useState('');
-
-    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-    const [walletToDelete, setWalletToDelete] = useState<string>('');
-
-    const mainWalletsRef = useRef<HTMLDivElement>(null);
-
-    const emojiOptions = ['😀', '😈', '🚀', '💎', '🔥', '⚡', '💰', '🎯', '👑', '🦄', '🐋', '🐸', '🤖', '👻', '🎪'];
-
-    const isValidAddress = (addr: string) => {
-        return /^0x[a-fA-F0-9]{40}$/.test(addr);
-    };
-
-    const handleAddWallet = () => {
-        setAddWalletError('');
-
-        if (!newWalletAddress.trim()) {
-            setAddWalletError('Please enter a wallet address');
-            return;
+        const [monitorTokens] = useState<MonitorToken[]>([
+        {
+            id: '1',
+            name: 'Carson',
+            symbol: 'JUSTICE',
+            price: 3.18,
+            change24h: -7.2,
+            marketCap: 330000,
+            volume24h: 34900,
+            holders: 2,
+            emoji: '👨'
+        },
+        {
+            id: '2',
+            name: 'MACORN',
+            symbol: 'MARQUIS',
+            price: 0.223,
+            change24h: 5.4,
+            marketCap: 10700,
+            volume24h: 9620,
+            holders: 1,
+            emoji: '🌽'
+        },
+        {
+            id: '3',
+            name: 'Marquis',
+            symbol: 'MQS',
+            price: 0.718,
+            change24h: -2.1,
+            marketCap: 6150,
+            volume24h: 7340,
+            holders: 1,
+            emoji: '👑'
+        },
+        {
+            id: '4',
+            name: 'MCNUG',
+            symbol: 'NUGGET',
+            price: 0.226,
+            change24h: 3.8,
+            marketCap: 7080,
+            volume24h: 6870,
+            holders: 1,
+            emoji: '🍗'
+        },
+        {
+            id: '5',
+            name: 'Simple',
+            symbol: 'SMPL',
+            price: 0.456,
+            change24h: -1.5,
+            marketCap: 12300,
+            volume24h: 8900,
+            holders: 3,
+            emoji: '⚡'
+        },
+        {
+            id: '6',
+            name: 'Cupsey',
+            symbol: 'CUP',
+            price: 0.892,
+            change24h: 8.2,
+            marketCap: 15600,
+            volume24h: 11200,
+            holders: 2,
+            emoji: '☕'
         }
+    ]);
 
-        if (!isValidAddress(newWalletAddress.trim())) {
-            setAddWalletError('Invalid wallet address format');
-            return;
-        }
+        const [showAddWalletModal, setShowAddWalletModal] = useState(false);
+        const [newWalletAddress, setNewWalletAddress] = useState('');
+        const [newWalletName, setNewWalletName] = useState('');
+        const [newWalletEmoji, setNewWalletEmoji] = useState('😀');
+        const [addWalletError, setAddWalletError] = useState('');
 
-        if (!newWalletName.trim()) {
-            setAddWalletError('Please enter a wallet name');
-            return;
-        }
+        const [editingWallet, setEditingWallet] = useState<string | null>(null);
+        const [editingName, setEditingName] = useState('');
 
-        const exists = trackedWallets.some(w => w.address.toLowerCase() === newWalletAddress.trim().toLowerCase());
-        if (exists) {
-            setAddWalletError('This wallet is already being tracked');
-            return;
-        }
+        const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+        const [walletToDelete, setWalletToDelete] = useState<string>('');
 
-        const newWallet: TrackedWallet = {
-            id: Date.now().toString(),
-            address: newWalletAddress.trim(),
-            name: newWalletName.trim(),
-            emoji: newWalletEmoji,
-            balance: 0,
-            lastActive: 'Never'
+        const mainWalletsRef = useRef<HTMLDivElement>(null);
+
+        const emojiOptions = ['😀', '😈', '🚀', '💎', '🔥', '⚡', '💰', '🎯', '👑', '🦄', '🐋', '🐸', '🤖', '👻', '🎪'];
+
+        const isValidAddress = (addr: string) => {
+            return /^0x[a-fA-F0-9]{40}$/.test(addr);
         };
 
-        setTrackedWallets(prev => [...prev, newWallet]);
-        closeAddWalletModal();
-    };
+        const handleAddWallet = () => {
+            setAddWalletError('');
 
-    const closeAddWalletModal = () => {
-        setShowAddWalletModal(false);
-        setNewWalletAddress('');
-        setNewWalletName('');
-        setNewWalletEmoji('😀');
-        setAddWalletError('');
-    };
+            if (!newWalletAddress.trim()) {
+                setAddWalletError('Please enter a wallet address');
+                return;
+            }
 
-    const startEditingWallet = (id: string) => {
-        const wallet = trackedWallets.find(w => w.id === id);
-        if (wallet) {
-            setEditingWallet(id);
-            setEditingName(wallet.name);
-        }
-    };
+            if (!isValidAddress(newWalletAddress.trim())) {
+                setAddWalletError('Invalid wallet address format');
+                return;
+            }
 
-    const saveWalletName = (id: string) => {
-        setTrackedWallets(prev =>
-            prev.map(w => w.id === id ? { ...w, name: editingName.trim() || w.name } : w)
-        );
-        setEditingWallet(null);
-        setEditingName('');
-    };
+            if (!newWalletName.trim()) {
+                setAddWalletError('Please enter a wallet name');
+                return;
+            }
 
-    const confirmDeleteWallet = (id: string) => {
-        setWalletToDelete(id);
-        setShowDeleteConfirmation(true);
-    };
+            const exists = trackedWallets.some(w => w.address.toLowerCase() === newWalletAddress.trim().toLowerCase());
+            if (exists) {
+                setAddWalletError('This wallet is already being tracked');
+                return;
+            }
 
-    const deleteWallet = () => {
-        setTrackedWallets(prev => prev.filter(w => w.id !== walletToDelete));
-        setShowDeleteConfirmation(false);
-        setWalletToDelete('');
-    };
+            const newWallet: TrackedWallet = {
+                id: Date.now().toString(),
+                address: newWalletAddress.trim(),
+                name: newWalletName.trim(),
+                emoji: newWalletEmoji,
+                balance: 0,
+                lastActive: 'Never'
+            };
 
-    const renderWalletItem = (wallet: TrackedWallet) => (
-        <div key={wallet.id} className="tracker-wallet-item">
-            <div className="tracker-wallet-profile">
-                <div className="tracker-wallet-emoji">{wallet.emoji}</div>
+            setTrackedWallets(prev => [...prev, newWallet]);
+            closeAddWalletModal();
+        };
 
-                <div className="tracker-wallet-info">
-                    {editingWallet === wallet.id ? (
-                        <div className="tracker-wallet-name-edit-container">
-                            <input
-                                type="text"
-                                className="tracker-wallet-name-input"
-                                value={editingName}
-                                onChange={(e) => setEditingName(e.target.value)}
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                        saveWalletName(wallet.id);
-                                    } else if (e.key === 'Escape') {
-                                        setEditingWallet(null);
-                                        setEditingName('');
-                                    }
-                                }}
-                                autoFocus
-                                onBlur={() => saveWalletName(wallet.id)}
-                            />
-                        </div>
-                    ) : (
-                        <div className="tracker-wallet-name-display">
-                            <span className="tracker-wallet-name">{wallet.name}</span>
-                            <Edit2
-                                size={12}
-                                className="tracker-wallet-name-edit-icon"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    startEditingWallet(wallet.id);
-                                }}
-                            />
-                        </div>
-                    )}
-                                    <div className="tracker-wallet-address">
-                    {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                    <img
-                        src={copy}
-                        className="tracker-copy-icon"
-                        alt="Copy"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(wallet.address);
-                        }}
-                        style={{ cursor: 'pointer' }}
-                    />
-                </div>
-                </div>
-            </div>
+        const closeAddWalletModal = () => {
+            setShowAddWalletModal(false);
+            setNewWalletAddress('');
+            setNewWalletName('');
+            setNewWalletEmoji('😀');
+            setAddWalletError('');
+        };
 
+        const startEditingWallet = (id: string) => {
+            const wallet = trackedWallets.find(w => w.id === id);
+            if (wallet) {
+                setEditingWallet(id);
+                setEditingName(wallet.name);
+            }
+        };
 
-            <div className={`tracker-wallet-balance ${isBlurred ? 'blurred' : ''}`}>
-                <img src={monadicon} className="tracker-balance-icon" alt="MON" />
-                {wallet.balance.toFixed(2)}K
-            </div>
+        const saveWalletName = (id: string) => {
+            setTrackedWallets(prev =>
+                prev.map(w => w.id === id ? { ...w, name: editingName.trim() || w.name } : w)
+            );
+            setEditingWallet(null);
+            setEditingName('');
+        };
 
-            <div className="tracker-wallet-last-active">{wallet.lastActive}</div>
+        const confirmDeleteWallet = (id: string) => {
+            setWalletToDelete(id);
+            setShowDeleteConfirmation(true);
+        };
 
-            <div className="tracker-wallet-actions">
-                <Tooltip content="View on Explorer">
-                    <a
-                        href={`${settings.chainConfig[activechain].explorer}/address/${wallet.address}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="tracker-action-button"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <svg
-                            className="tracker-action-icon"
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="white"
-                        >
-                            <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                            <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                        </svg>
-                    </a>
-                </Tooltip>
+        const deleteWallet = () => {
+            setTrackedWallets(prev => prev.filter(w => w.id !== walletToDelete));
+            setShowDeleteConfirmation(false);
+            setWalletToDelete('');
+        };
 
-                <Tooltip content="Delete Wallet">
-                    <button
-                        className="tracker-action-button delete-button"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            confirmDeleteWallet(wallet.id);
-                        }}
-                    >
-                        <img src={trash} className="tracker-action-icon" alt="Delete" />
-                    </button>
-                </Tooltip>
-            </div>
-        </div>
-    );
+        
 
-    const handleRemoveAll = () => {
-        setTrackedWallets([]);
-    };
+        const renderWalletItem = (wallet: TrackedWallet) => (
+            <div key={wallet.id} className="tracker-wallet-item">
+                <div className="tracker-wallet-profile">
+                    <div className="tracker-wallet-emoji">{wallet.emoji}</div>
 
-    const renderWalletManager = () => (
-        <div className="tracker-wallet-manager">
-            {trackedWallets.length === 0 ? (
-                <div className="tracker-empty-state">
-                    <div className="tracker-empty-content">
-                        <h4>No Wallets Tracked</h4>
-                        <p>Add wallets to track their activity and trades in real-time.</p>
-                        <button
-                            className="tracker-cta-button"
-                            onClick={() => setShowAddWalletModal(true)}
-                        >
-                            Add Your First Wallet
-                        </button>
-                    </div>
-                </div>
-            ) : (
-                <>
-                    <div className="tracker-wallets-header">
-                        <div className="tracker-wallet-header-cell">Name</div>
-                        <div className="tracker-wallet-header-cell">Balance</div>
-                        <div className="tracker-wallet-header-cell">Last Active</div>
-                        <button
-                            className="tracker-remove-all-button"
-                            onClick={handleRemoveAll}
-                            disabled={trackedWallets.length === 0}
-                        >
-                            Remove All
-                        </button>        </div>
-                    <div
-                        ref={mainWalletsRef}
-                        className="tracker-wallets-list"
-                    >
-                        {trackedWallets.map(wallet => renderWalletItem(wallet))}
-                    </div>
-                </>
-            )}
-        </div>
-    );
-
-    const renderLiveTrades = () => (
-        <div className="tracker-live-trades">
-            <div className="tracker-trades-table">
-                <div className="tracker-table-header">
-                    <div className="tracker-header-cell">Name</div>
-                    <div className="tracker-header-cell">Token</div>
-                    <div className="tracker-header-cell">Amount</div>
-                    <div className="tracker-header-cell">$MC</div>
-                </div>
-
-                <div className="tracker-table-content">
-                    {liveTrades.map((trade) => (
-                        <div key={trade.id} className="tracker-trade-row">
-                            <div className="tracker-trade-name">
-                                <span className="tracker-trade-emoji">{trade.emoji}</span>
-                                <span className="tracker-trade-wallet-name">{trade.walletName}</span>
-                                <span className="tracker-trade-time">{trade.time}</span>
+                    <div className="tracker-wallet-info">
+                        {editingWallet === wallet.id ? (
+                            <div className="tracker-wallet-name-edit-container">
+                                <input
+                                    type="text"
+                                    className="tracker-wallet-name-input"
+                                    value={editingName}
+                                    onChange={(e) => setEditingName(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            saveWalletName(wallet.id);
+                                        } else if (e.key === 'Escape') {
+                                            setEditingWallet(null);
+                                            setEditingName('');
+                                        }
+                                    }}
+                                    autoFocus
+                                    onBlur={() => saveWalletName(wallet.id)}
+                                />
                             </div>
-                            <div className="tracker-trade-token">
-                                <div className="tracker-token-info">
-                                    <div className="tracker-token-icon"></div>
-                                    <span>{trade.token}</span>
-                                    <span className="tracker-token-time">• {trade.time}</span>
+                        ) : (
+                            <div className="tracker-wallet-name-display">
+                                <span className="tracker-wallet-name">{wallet.name}</span>
+                                <Edit2
+                                    size={12}
+                                    className="tracker-wallet-name-edit-icon"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        startEditingWallet(wallet.id);
+                                    }}
+                                />
+                            </div>
+                        )}
+                                        <div className="tracker-wallet-address">
+                        {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                        <img
+                            src={copy}
+                            className="tracker-copy-icon"
+                            alt="Copy"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(wallet.address);
+                            }}
+                            style={{ cursor: 'pointer' }}
+                        />
+                    </div>
+                    </div>
+                </div>
+
+
+                <div className={`tracker-wallet-balance ${isBlurred ? 'blurred' : ''}`}>
+                    <img src={monadicon} className="tracker-balance-icon" alt="MON" />
+                    {wallet.balance.toFixed(2)}K
+                </div>
+
+                <div className="tracker-wallet-last-active">{wallet.lastActive}</div>
+
+                <div className="tracker-wallet-actions">
+                    <Tooltip content="View on Explorer">
+                        <a
+                            href={`${settings.chainConfig[activechain].explorer}/address/${wallet.address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="tracker-action-button"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <svg
+                                className="tracker-action-icon"
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="white"
+                            >
+                                <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                                <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                            </svg>
+                        </a>
+                    </Tooltip>
+
+                    <Tooltip content="Delete Wallet">
+                        <button
+                            className="tracker-action-button delete-button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                confirmDeleteWallet(wallet.id);
+                            }}
+                        >
+                            <img src={trash} className="tracker-action-icon" alt="Delete" />
+                        </button>
+                    </Tooltip>
+                </div>
+            </div>
+        );
+
+        const handleRemoveAll = () => {
+            setTrackedWallets([]);
+        };
+
+        const renderWalletManager = () => (
+            <div className="tracker-wallet-manager">
+                {trackedWallets.length === 0 ? (
+                    <div className="tracker-empty-state">
+                        <div className="tracker-empty-content">
+                            <h4>No Wallets Tracked</h4>
+                            <p>Add wallets to track their activity and trades in real-time.</p>
+                            <button
+                                className="tracker-cta-button"
+                                onClick={() => setShowAddWalletModal(true)}
+                            >
+                                Add Your First Wallet
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <div className="tracker-wallets-header">
+                            <div className="tracker-wallet-header-cell">Name</div>
+                            <div className="tracker-wallet-header-cell">Balance</div>
+                            <div className="tracker-wallet-header-cell">Last Active</div>
+                            <button
+                                className="tracker-remove-all-button"
+                                onClick={handleRemoveAll}
+                                disabled={trackedWallets.length === 0}
+                            >
+                                Remove All
+                            </button>        </div>
+                        <div
+                            ref={mainWalletsRef}
+                            className="tracker-wallets-list"
+                        >
+                            {trackedWallets.map(wallet => renderWalletItem(wallet))}
+                        </div>
+                    </>
+                )}
+            </div>
+        );
+
+        const renderLiveTrades = () => (
+            <div className="tracker-live-trades">
+                <div className="tracker-trades-table">
+                    <div className="tracker-table-header">
+                        <div className="tracker-header-cell">Date Created</div>
+                        <div className="tracker-header-cell">Name</div>
+                        <div className="tracker-header-cell">Token</div>
+                        <div className="tracker-header-cell">Amount</div>
+                        <div className="tracker-header-cell">Market Cap</div>
+                    </div>
+
+                    <div className="tracker-table-content">
+                        {liveTrades.map((trade) => (
+                            <div 
+                                key={trade.id} 
+                                className={`tracker-trade-row ${trade.type === 'buy' ? 'trade-buy' : 'trade-sell'}`}
+                            >
+                                <div className="tracker-trade-date">
+                                    {new Date(trade.createdAt).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </div>
+                                <div className="tracker-trade-name">
+                                    <span className="tracker-trade-emoji">{trade.emoji}</span>
+                                    <span className="tracker-trade-wallet-name">{trade.walletName}</span>
+                                    <span className="tracker-trade-time">{trade.time}</span>
+                                </div>
+                                <div className="tracker-trade-token">
+                                    <div className="tracker-token-info">
+                                        <div className="tracker-token-icon"></div>
+                                        <span>{trade.token}</span>
+                                        <span className="tracker-token-time">• {trade.time}</span>
+                                    </div>
+                                </div>
+                                <div className="tracker-trade-amount">
+                                    <img src={monadicon} className="tracker-amount-icon" alt="MON" />
+                                    <span className={`tracker-amount-value ${isBlurred ? 'blurred' : ''}`}>
+                                        {trade.amount}
+                                    </span>
+                                </div>
+                                <div className={`tracker-trade-mc ${isBlurred ? 'blurred' : ''}`}>
+                                    ${trade.marketCap.toLocaleString()}K
                                 </div>
                             </div>
-                            <div className="tracker-trade-amount">
-                                <img src={monadicon} className="tracker-amount-icon" alt="MON" />
-                                <span className={`tracker-amount-value ${isBlurred ? 'blurred' : ''}`}>
-                                    {trade.amount}
-                                </span>
-                            </div>
-                            <div className={`tracker-trade-mc ${isBlurred ? 'blurred' : ''}`}>
-                                ${trade.marketCap.toLocaleString()}K
-                            </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
 
-    return (
-        <div className="tracker-container">
-            <div className="tracker-header">
-                <div className="tracker-tabs">
-                    <button
-                        className={`tracker-tab ${activeTab === 'wallets' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('wallets')}
-                    >
-                        Wallet Manager
-                    </button>
-                    <button
-                        className={`tracker-tab ${activeTab === 'trades' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('trades')}
-                    >
-                        Live Trades
-                    </button>
+        const renderMonitor = () => (
+            <div className="tracker-monitor">
+                <div className="tracker-monitor-grid">
+                    {monitorTokens.map((token, index) => {
+                        if (index % 2 === 0) {
+                            const nextToken = monitorTokens[index + 1];
+                            return (
+                                <div key={`row-${index}`} className="tracker-monitor-row">
+                                    <div className="tracker-monitor-card">
+                                        <div className="tracker-monitor-card-header">
+                                            <div className="tracker-monitor-token-identity">
+                                                <span className="tracker-monitor-emoji">{token.emoji}</span>
+                                                <div className="tracker-monitor-token-names">
+                                                    <span className="tracker-monitor-token-name">{token.name}</span>
+                                                    <span className="tracker-monitor-token-symbol">{token.symbol}</span>
+                                                </div>
+                                            </div>
+                                            <div className={`tracker-monitor-change ${token.change24h >= 0 ? 'positive' : 'negative'}`}>
+                                                {token.change24h >= 0 ? '+' : ''}{token.change24h}%
+                                            </div>
+                                        </div>
+                                        <div className="tracker-monitor-card-body">
+                                            <div className="tracker-monitor-stat">
+                                                <span className="tracker-monitor-stat-label">MC</span>
+                                                <span className={`tracker-monitor-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                                                    ${(token.marketCap / 1000).toFixed(1)}K
+                                                </span>
+                                            </div>
+                                            <div className="tracker-monitor-stat">
+                                                <span className="tracker-monitor-stat-label">Vol 24h</span>
+                                                <span className={`tracker-monitor-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                                                    ${(token.volume24h / 1000).toFixed(1)}K
+                                                </span>
+                                            </div>
+                                            <div className="tracker-monitor-stat">
+                                                <span className="tracker-monitor-stat-label">Holders</span>
+                                                <span className="tracker-monitor-stat-value">{token.holders}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {nextToken && (
+                                        <div className="tracker-monitor-card">
+                                            <div className="tracker-monitor-card-header">
+                                                <div className="tracker-monitor-token-identity">
+                                                    <span className="tracker-monitor-emoji">{nextToken.emoji}</span>
+                                                    <div className="tracker-monitor-token-names">
+                                                        <span className="tracker-monitor-token-name">{nextToken.name}</span>
+                                                        <span className="tracker-monitor-token-symbol">{nextToken.symbol}</span>
+                                                    </div>
+                                                </div>
+                                                <div className={`tracker-monitor-change ${nextToken.change24h >= 0 ? 'positive' : 'negative'}`}>
+                                                    {nextToken.change24h >= 0 ? '+' : ''}{nextToken.change24h}%
+                                                </div>
+                                            </div>
+                                            <div className="tracker-monitor-card-body">
+                                                <div className="tracker-monitor-stat">
+                                                    <span className="tracker-monitor-stat-label">MC</span>
+                                                    <span className={`tracker-monitor-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                                                        ${(nextToken.marketCap / 1000).toFixed(1)}K
+                                                    </span>
+                                                </div>
+                                                <div className="tracker-monitor-stat">
+                                                    <span className="tracker-monitor-stat-label">Vol 24h</span>
+                                                    <span className={`tracker-monitor-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                                                        ${(nextToken.volume24h / 1000).toFixed(1)}K
+                                                    </span>
+                                                </div>
+                                                <div className="tracker-monitor-stat">
+                                                    <span className="tracker-monitor-stat-label">Holders</span>
+                                                    <span className="tracker-monitor-stat-value">{nextToken.holders}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        }
+                        return null;
+                    })}
                 </div>
-                {activeTab === 'wallets' && (
-                    <div className="tracker-header-actions">
-                        <div className="tracker-search">
-                            <Search size={14} className="tracker-search-icon" />
-                            <input
-                                type="text"
-                                placeholder="Search by name or addr..."
-                                className="tracker-search-input"
-                            />
-                        </div>
-                        <button className="tracker-header-button">Import</button>
-                        <button className="tracker-header-button">Export</button>
+            </div>
+        );
+
+        return (
+            <div className="tracker-container">
+                <div className="tracker-header">
+                    <div className="tracker-tabs">
                         <button
-                            className="tracker-add-button"
-                            onClick={() => setShowAddWalletModal(true)}
+                            className={`tracker-tab ${activeTab === 'wallets' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('wallets')}
                         >
-                            Add Wallet
+                            Wallet Manager
                         </button>
+                        <button
+                            className={`tracker-tab ${activeTab === 'trades' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('trades')}
+                        >
+                            Live Trades
+                        </button>
+
+                         <button
+                            className={`tracker-tab ${activeTab === 'monitor' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('monitor')}
+                        >
+                            Monitor
+                        </button>
+                    </div>
+                    {activeTab === 'wallets' && (
+                        <div className="tracker-header-actions">
+                            <div className="tracker-search">
+                                <Search size={14} className="tracker-search-icon" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by name or addr..."
+                                    className="tracker-search-input"
+                                />
+                            </div>
+                            <button className="tracker-header-button" onClick={() => setpopup(32)} >Import</button>
+                            <button className="tracker-header-button">Export</button>
+                            <button
+                                className="tracker-add-button"
+                                onClick={() => setShowAddWalletModal(true)}
+                            >
+                                Add Wallet
+                            </button>
+                        </div>
+                    )}
+
+                    {activeTab === 'trades' && (
+                        <div className="tracker-header-actions">
+                            <div className="tracker-search">
+                                <Search size={14} className="tracker-search-icon" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by name or ticker"
+                                    className="tracker-search-input"
+                                />
+                            </div>
+                            <button className="tracker-header-button" onClick={() => setpopup(33)}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 6h18M7 12h10M10 18h4"/>
+                                </svg>
+                            </button>
+                            <button className="tracker-header-button" onClick={() => setpopup(34)}>P1</button>
+                            <button className="tracker-header-button">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                                </svg>
+                            </button>
+                            <button className="tracker-header-button">0.0</button>
+                        </div>
+                    )}
+
+                    {activeTab === 'monitor' && (
+                        <div className="tracker-header-actions">
+                            <div className="tracker-search">
+                                <Search size={14} className="tracker-search-icon" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by name or ticker"
+                                    className="tracker-search-input"
+                                />
+                            </div>
+                            <button className="tracker-header-button">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 6h18M7 12h10M10 18h4"/>
+                                </svg>
+                            </button>
+                            <button className="tracker-header-button">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="11" cy="11" r="8"/>
+                                    <path d="m21 21-4.35-4.35"/>
+                                </svg>
+                            </button>
+                            <button className="tracker-header-button">USD $</button>
+                            <button className="tracker-header-button">P1</button>
+                            <button className="tracker-header-button">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                                </svg>
+                            </button>
+                            <button className="tracker-header-button">0.0</button>
+                        </div>
+                    )}
+                </div>
+
+                <div className="tracker-content">
+                    {activeTab === 'wallets' ? renderWalletManager() : 
+                    activeTab === 'trades' ? renderLiveTrades() : 
+                    renderMonitor()}
+                </div>
+
+                {showAddWalletModal && (
+                    <div className="tracker-modal-backdrop" onClick={closeAddWalletModal}>
+                        <div className="tracker-modal-container" onClick={(e) => e.stopPropagation()}>
+                            <div className="tracker-modal-header">
+                                <h3 className="tracker-modal-title">Add Wallet</h3>
+                                <button className="tracker-modal-close" onClick={closeAddWalletModal}>
+                                    <img src={closebutton} className="close-button-icon" />
+                                </button>
+                            </div>
+                            <div className="tracker-modal-content">
+                                <div className="tracker-input-section">
+                                    <label className="tracker-label">Wallet Address:</label>
+                                    <input
+                                        type="text"
+                                        className="tracker-input"
+                                        value={newWalletAddress}
+                                        onChange={(e) => {
+                                            setNewWalletAddress(e.target.value);
+                                            setAddWalletError('');
+                                        }}
+                                        placeholder="0x..."
+                                    />
+                                </div>
+
+                                <div className="tracker-input-section">
+                                    <label className="tracker-label">Wallet Name:</label>
+                                    <input
+                                        type="text"
+                                        className="tracker-input"
+                                        value={newWalletName}
+                                        onChange={(e) => {
+                                            setNewWalletName(e.target.value);
+                                            setAddWalletError('');
+                                        }}
+                                        placeholder="Enter a name for this wallet"
+                                    />
+                                </div>
+
+                                <div className="tracker-input-section">
+                                    <label className="tracker-label">Emoji:</label>
+                                    <div className="tracker-emoji-grid">
+                                        {emojiOptions.map((emoji) => (
+                                            <button
+                                                key={emoji}
+                                                className={`tracker-emoji-option ${newWalletEmoji === emoji ? 'selected' : ''}`}
+                                                onClick={() => setNewWalletEmoji(emoji)}
+                                            >
+                                                {emoji}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {addWalletError && (
+                                    <div className="tracker-error-message">
+                                        {addWalletError}
+                                    </div>
+                                )}
+
+                                <div className="tracker-modal-actions">
+                                    <button
+                                        className="tracker-confirm-button"
+                                        onClick={handleAddWallet}
+                                        disabled={!newWalletAddress.trim() || !newWalletName.trim()}
+                                    >
+                                        Add Wallet
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Delete Confirmation Modal */}
+                {showDeleteConfirmation && (
+                    <div className="tracker-modal-backdrop" onClick={() => setShowDeleteConfirmation(false)}>
+                        <div className="tracker-modal-container" onClick={(e) => e.stopPropagation()}>
+                            <div className="tracker-modal-header">
+                                <h3 className="tracker-modal-title">Delete Wallet</h3>
+                                <button className="tracker-modal-close" onClick={() => setShowDeleteConfirmation(false)}>
+                                    <img src={closebutton} className="close-button-icon" />
+                                </button>
+                            </div>
+                            <div className="tracker-modal-content">
+                                <div className="tracker-delete-warning">
+                                    <p>Are you sure you want to remove this wallet from tracking?</p>
+                                    <p>This action cannot be undone.</p>
+                                </div>
+                                <div className="tracker-modal-actions">
+                                    <button
+                                        className="tracker-delete-confirm-button"
+                                        onClick={deleteWallet}
+                                    >
+                                        Delete Wallet
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
+        );
+    };
 
-            <div className="tracker-content">
-                {activeTab === 'wallets' ? renderWalletManager() : renderLiveTrades()}
-            </div>
-
-            {/* Add Wallet Modal */}
-            {showAddWalletModal && (
-                <div className="tracker-modal-backdrop" onClick={closeAddWalletModal}>
-                    <div className="tracker-modal-container" onClick={(e) => e.stopPropagation()}>
-                        <div className="tracker-modal-header">
-                            <h3 className="tracker-modal-title">Add Wallet</h3>
-                            <button className="tracker-modal-close" onClick={closeAddWalletModal}>
-                                <img src={closebutton} className="close-button-icon" />
-                            </button>
-                        </div>
-                        <div className="tracker-modal-content">
-                            <div className="tracker-input-section">
-                                <label className="tracker-label">Wallet Address:</label>
-                                <input
-                                    type="text"
-                                    className="tracker-input"
-                                    value={newWalletAddress}
-                                    onChange={(e) => {
-                                        setNewWalletAddress(e.target.value);
-                                        setAddWalletError('');
-                                    }}
-                                    placeholder="0x..."
-                                />
-                            </div>
-
-                            <div className="tracker-input-section">
-                                <label className="tracker-label">Wallet Name:</label>
-                                <input
-                                    type="text"
-                                    className="tracker-input"
-                                    value={newWalletName}
-                                    onChange={(e) => {
-                                        setNewWalletName(e.target.value);
-                                        setAddWalletError('');
-                                    }}
-                                    placeholder="Enter a name for this wallet"
-                                />
-                            </div>
-
-                            <div className="tracker-input-section">
-                                <label className="tracker-label">Emoji:</label>
-                                <div className="tracker-emoji-grid">
-                                    {emojiOptions.map((emoji) => (
-                                        <button
-                                            key={emoji}
-                                            className={`tracker-emoji-option ${newWalletEmoji === emoji ? 'selected' : ''}`}
-                                            onClick={() => setNewWalletEmoji(emoji)}
-                                        >
-                                            {emoji}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {addWalletError && (
-                                <div className="tracker-error-message">
-                                    {addWalletError}
-                                </div>
-                            )}
-
-                            <div className="tracker-modal-actions">
-                                <button
-                                    className="tracker-confirm-button"
-                                    onClick={handleAddWallet}
-                                    disabled={!newWalletAddress.trim() || !newWalletName.trim()}
-                                >
-                                    Add Wallet
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Delete Confirmation Modal */}
-            {showDeleteConfirmation && (
-                <div className="tracker-modal-backdrop" onClick={() => setShowDeleteConfirmation(false)}>
-                    <div className="tracker-modal-container" onClick={(e) => e.stopPropagation()}>
-                        <div className="tracker-modal-header">
-                            <h3 className="tracker-modal-title">Delete Wallet</h3>
-                            <button className="tracker-modal-close" onClick={() => setShowDeleteConfirmation(false)}>
-                                <img src={closebutton} className="close-button-icon" />
-                            </button>
-                        </div>
-                        <div className="tracker-modal-content">
-                            <div className="tracker-delete-warning">
-                                <p>Are you sure you want to remove this wallet from tracking?</p>
-                                <p>This action cannot be undone.</p>
-                            </div>
-                            <div className="tracker-modal-actions">
-                                <button
-                                    className="tracker-delete-confirm-button"
-                                    onClick={deleteWallet}
-                                >
-                                    Delete Wallet
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
-export default Tracker;
+    export default Tracker;
