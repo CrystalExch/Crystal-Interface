@@ -274,20 +274,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   tokenImage,
   nonces
 }) => {
-  type NonceEntry = { nonce: bigint; pendingtxs: any[] };
-
-  const getNonceEntry = (addr: string): NonceEntry => {
-    let entry = nonces.current.get(addr);
-    if (!entry) {
-      entry = { nonce: 0n, pendingtxs: [] };
-      nonces.current.set(addr, entry);
-    }
-
-    if (entry.nonce === undefined || Number.isNaN(Number(entry.nonce))) entry.nonce = 0n;
-    if (typeof entry.nonce === 'number') entry.nonce = BigInt(entry.nonce);
-    if (!entry.pendingtxs) entry.pendingtxs = [];
-    return entry;
-  };
   const [position, setPosition] = useState(() => {
     try {
       const saved = localStorage.getItem('crystal_quickbuy_widget_position');
