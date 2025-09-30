@@ -3874,23 +3874,7 @@ function App() {
                 ],
               },
             ],
-          }] : []),
-          ...(address?.slice(2) ? [JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'sub2',
-            method: 'eth_subscribe',
-            params: [
-              'monadLogs',
-              {
-                address: router,
-                topics: [
-                  '0xa195980963150be5fcca4acd6a80bf5a9de7f9c862258501b7c705e7d2c2d2f4',
-                  null,
-                  '0x000000000000000000000000' + address?.slice(2),
-                ],
-              },
-            ],
-          })] : [])]),
+          }] : [])]),
         });
         const result = await req.json();
         if (liveStreamCancelled) return;

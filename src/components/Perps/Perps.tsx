@@ -217,6 +217,66 @@ const Perps: React.FC<PerpsProps> = ({
     return { privateKey: privHex, publicKey: "0x" + rx.toString(16).padStart(64, "0"), publicKeyY: "0x" + ry.toString(16).padStart(64, "0") };
   };
 
+  const generateApiKeyFromSignature = (signature: string) => {
+    try {
+      // Remove the "0x" prefix if present
+      const cleanSig = signature.startsWith('0x') ? signature.slice(2) : signature;
+
+      // Convert hex string to byte array
+      const bytes = new Uint8Array(cleanSig.length / 2);
+      for (let i = 0; i < cleanSig.length; i += 2) {
+        bytes[i / 2] = parseInt(cleanSig.slice(i, i + 2), 16);
+      }
+
+      // Extract r (first 32 bytes)
+      const rBytes = bytes.slice(0, 32);
+      // Extract s (next 32 bytes)
+      const sBytes = bytes.slice(32, 64);
+
+      // keccak256 hash of r and s
+      const rHashHex = keccak256(rBytes);
+      const sHashHex = keccak256(sBytes);
+
+      // Convert rHashHex and sHashHex back to Uint8Arrays
+      const rHashBytes = new Uint8Array(rHashHex.length / 2);
+      const sHashBytes = new Uint8Array(sHashHex.length / 2);
+      for (let i = 0; i < rHashHex.length; i += 2) {
+        rHashBytes[i / 2] = parseInt(rHashHex.slice(i, i + 2), 16);
+        sHashBytes[i / 2] = parseInt(sHashHex.slice(i, i + 2), 16);
+      }
+
+      // Create UUID from first 16 bytes of sHash
+      let uuid = '';
+      for (let i = 0; i < 16; i++) {
+        uuid += sHashBytes[i].toString(16).padStart(2, '0');
+      }
+      uuid = `${uuid.slice(0, 8)}-${uuid.slice(8, 12)}-${uuid.slice(12, 16)}-${uuid.slice(16, 20)}-${uuid.slice(20)}`;
+
+      // Create apiSecret from rHashBytes (first 32 bytes), Base64URL encoded
+      const apiSecret = Buffer.from(rHashBytes.slice(0, 32))
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+      // Create apiPassphrase from second half of sHashBytes (bytes 16 to 32), Base64URL encoded
+      const apiPassphrase = Buffer.from(sHashBytes.slice(16, 32))
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+      return {
+        apiKey: uuid,
+        apiPassphrase,
+        apiSecret,
+      };
+    } catch (error) {
+      console.error('Failed to generate API key from signature:', error);
+      return null;
+    }
+  };
+
   function starkSign(msgHashHex: string, privKeyHex: string): { r: string; s: string } {
     // StarkEx curve parameters
     const P = 0x800000000000011000000000000000000000000000000000000000000001n;
@@ -970,7 +1030,7 @@ const Perps: React.FC<PerpsProps> = ({
     };
   }, []);
 
-  /* useEffect(() => {
+  useEffect(() => {
     if (Object.keys(signer).length == 0) return;
     let liveStreamCancelled = false;
     let isAddressInfoFetching = false;
@@ -978,18 +1038,19 @@ const Perps: React.FC<PerpsProps> = ({
     const fetchData = async () => {
       try {
         const ts=Date.now().toString()
-        const path='/api/v1/private/account/getAccountPage'
-        const sorted='accountId=652477428161053296&size=100'
-        const {r,s}=starkSign(keccak256(toUtf8Bytes(ts + "GET" + path + sorted)), signer.privateKey)
-        const signature=r+s
-        
+        const path='/api/v1/private/user/info'
+        const sorted=''
+        const signature = computeHmac("sha256", Buffer.from(signer.apiSecret, "base64"), toUtf8Bytes(ts + "GET" + path + sorted))
+        console.log(signature)
         const [metaRes]=await Promise.all([
-          fetch("/api/v1/private/account/getAccountPage?accountId=652477428161053296&size=100",{
+          fetch("/api/v1/private/user/info",{
             method:"GET",
             headers:{
               "Content-Type":"application/json",
-              "X-edgeX-Api-Timestamp":ts,
-              "X-edgeX-Api-Signature":signature
+              "X-edgeX-Timestamp":ts,
+              "X-edgeX-Signature":signature,
+              "X-edgeX-Passphrase":signer.apiPassphrase,
+              "X-edgeX-Api-Key":signer.apiKey
             }
           }).then(r=>r.json())
         ])
@@ -1000,9 +1061,11 @@ const Perps: React.FC<PerpsProps> = ({
         console.log(e)
       }
     };
+    
     (async () => {
       await fetchData();
     })()
+
     const connectWebSocket = () => {
       if (liveStreamCancelled) return;
       const accountId = "652477428161053296";
@@ -1010,10 +1073,11 @@ const Perps: React.FC<PerpsProps> = ({
       const ts = Date.now().toString();
       const qs = `accountId=${accountId}`;
       const endpoint = `wss://quote.edgex.exchange${path}?${qs}&timestamp=${ts}`;
-      const signature = starkSign(keccak256(toUtf8Bytes(ts + "GET" + path + qs)), signer.privateKey);
+      const signature = computeHmac("sha256", Buffer.from(signer.apiSecret, "base64"), toUtf8Bytes(ts + "GET" + path + qs))
+      console.log(signature)
 
       const payload = JSON.stringify({
-        "X-edgeX-Api-Signature": signature.r + signature.s + signer.publicKeyY.toString(16).padStart(64,"0"),
+        "X-edgeX-Api-Signature": signature,
         "X-edgeX-Api-Timestamp": ts,
       });
 
@@ -1218,7 +1282,7 @@ const Perps: React.FC<PerpsProps> = ({
       };
     };
 
-    connectWebSocket();
+    // connectWebSocket();
 
     return () => {
       liveStreamCancelled = true;
@@ -1236,7 +1300,7 @@ const Perps: React.FC<PerpsProps> = ({
         accreconnectIntervalRef.current = null;
       }
     };
-  }, [signer]); */
+  }, [signer]);
 
   const renderChartComponent = useMemo(() => (
     <ChartComponent
@@ -1478,8 +1542,6 @@ const Perps: React.FC<PerpsProps> = ({
               USD
             </div>
 
-
-
             <div className="perps-balance-slider-wrapper">
               <div className="perps-slider-container perps-slider-mode">
                 <input
@@ -1642,178 +1704,178 @@ const Perps: React.FC<PerpsProps> = ({
                     </div>
                   </div>
                 </div>
-
-                            </div>
-                        )}
-                    </div>
-                    <div className="perps-trade-details-section">
-                        <button
-                            className={`perps-trade-action-button ${activeTradeType}`}
-                            onClick={async () => {
-                                if (!address) {
-                                  setpopup(4)
-                                }
-                                else if (Object.keys(signer).length == 0) {
-                                  const privateKey = '0x' + (BigInt(keccak256(await signTypedDataAsync({message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main"
-                                  }))) >> 5n).toString(16).padStart(64, "0");
-                                  const tempsigner = starkPubFromPriv(privateKey);
-                                  localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
-                                  setSigner(tempsigner)
-                                }
-                            }}
-                            disabled={address && Object.keys(signer).length != 0 && amountIn == 0n}
-                        >
-                            {address ? (Object.keys(signer).length == 0 ? 'Enable Trading' : activeOrderType === "market"
-                                ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
-                                : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`) : 'Connect Wallet'
-                            }
-                        </button>
-                        <div className="perps-info-rectangle">
-                            <div className="price-impact">
-                                <div className="label-container">
-                                    <TooltipLabel
-                                        label={t('Liquidation Price')}
-                                        tooltipText={
-                                            <div>
-                                                <div className="tooltip-description">
-                                                    {t('priceImpactHelp')}
-                                                </div>
-                                            </div>
-                                        }
-                                        className="impact-label"
-                                    />
-                                </div>
-                                <div className="value-container">
-                                    0.00
-                                </div>
-                            </div>
-                            <div className="price-impact">
-                                <div className="label-container">
-                                    <TooltipLabel
-                                        label={t('Order Value')}
-                                        tooltipText={
-                                            <div>
-                                                <div className="tooltip-description">
-                                                    {t('priceImpactHelp')}
-                                                </div>
-                                            </div>
-                                        }
-                                        className="impact-label"
-                                    />
-                                </div>
-                                <div className="value-container">
-                                    $0.00
-                                </div>
-                            </div>
-                            <div className="price-impact">
-                                <div className="label-container">
-                                    <TooltipLabel
-                                        label={t('Margin Required')}
-                                        tooltipText={
-                                            <div>
-                                                <div className="tooltip-description">
-                                                    {t('priceImpactHelp')}
-                                                </div>
-                                            </div>
-                                        }
-                                        className="impact-label"
-                                    />
-                                </div>
-                                <div className="value-container">
-                                    $0.00
-                                </div>
-                            </div>
-                            <div className="price-impact">
-                                <div className="label-container">
-                                    <TooltipLabel
-                                        label={t('Slippage')}
-                                        tooltipText={
-                                            <div>
-                                                <div className="tooltip-description">
-                                                    {t('slippageHelp')}
-                                                </div>
-                                            </div>
-                                        }
-                                        className="impact-label"
-                                    />
-                                </div>
-                                <div className="slippage-input-container">
-                                <input
-                                    inputMode="decimal"
-                                    className={`slippage-inline-input ${parseFloat(slippageString) > 5 ? 'red' : ''
-                                    }`}
-                                    type="text"
-                                    value={slippageString}
-                                    onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        (e.target as HTMLInputElement).blur()
-                                        e.stopPropagation()
-                                    };
-                                    }}
-                                    onChange={(e) => {
-                                    const value = e.target.value;
-
-                      if (
-                        /^(?!0{2})\d*\.?\d{0,2}$/.test(value) &&
-                        !/^\d{2}\.\d{2}$/.test(value)
-                      ) {
-                        if (value === '') {
-                          setSlippageString('');
-                          setSlippage(BigInt(9900));
-                          localStorage.setItem('crystal_slippage_string', '1');
-                          localStorage.setItem('crystal_slippage', '9900');
-                        } else if (parseFloat(value) <= 50) {
-                          setSlippageString(value);
-                          localStorage.setItem('crystal_slippage_string', value);
-
-                          const newSlippage = BigInt(
-                            10000 - parseFloat(value) * 100,
-                          );
-                          setSlippage(newSlippage);
-                          localStorage.setItem(
-                            'crystal_slippage',
-                            newSlippage.toString(),
-                          );
-                        }
-                      }
-                    }}
-                    onBlur={() => {
-                      if (slippageString === '') {
-                        setSlippageString('1');
-                        localStorage.setItem('crystal_slippage_string', '1');
-
-                        setSlippage(BigInt(9900));
-                        localStorage.setItem('crystal_slippage', '9900');
-                      }
-                    }}
-                  />
-                  <span
-                    className={`slippage-symbol ${parseFloat(slippageString) > 5 ? 'red' : ''
-                      }`}
-                  >
-                    %
-                  </span>
-                </div>
               </div>
-              <div className="price-impact">
-                <div className="label-container">
-                  <TooltipLabel
-                    label={t('Fees')}
-                    tooltipText={
-                      <div>
-                        <div className="tooltip-description">
-                          {t('takerfeeexplanation')}
-                        </div>
+              )}
+          </div>
+          <div className="perps-trade-details-section">
+              <button
+                  className={`perps-trade-action-button ${activeTradeType}`}
+                  onClick={async () => {
+                      if (!address) {
+                        setpopup(4)
+                      }
+                      else if (Object.keys(signer).length == 0) {
+                        const signature = await signTypedDataAsync({message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main"})
+                        const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
+                        const tempsigner = {...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(signature)};
+                        localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
+                        console.log(tempsigner)
+                        setSigner(tempsigner)
+                      }
+                  }}
+                  disabled={address && Object.keys(signer).length != 0 && amountIn == 0n}
+              >
+                  {address ? (Object.keys(signer).length == 0 ? 'Enable Trading' : activeOrderType === "market"
+                      ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
+                      : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`) : 'Connect Wallet'
+                  }
+              </button>
+              <div className="perps-info-rectangle">
+                  <div className="price-impact">
+                      <div className="label-container">
+                          <TooltipLabel
+                              label={t('Liquidation Price')}
+                              tooltipText={
+                                  <div>
+                                      <div className="tooltip-description">
+                                          {t('priceImpactHelp')}
+                                      </div>
+                                  </div>
+                              }
+                              className="impact-label"
+                          />
                       </div>
-                    }
-                    className="impact-label"
-                  />
-                </div>
-                <div className="value-container">
-                  0.038% / 0.015%
-                </div>
+                      <div className="value-container">
+                          0.00
+                      </div>
+                  </div>
+                  <div className="price-impact">
+                      <div className="label-container">
+                          <TooltipLabel
+                              label={t('Order Value')}
+                              tooltipText={
+                                  <div>
+                                      <div className="tooltip-description">
+                                          {t('priceImpactHelp')}
+                                      </div>
+                                  </div>
+                              }
+                              className="impact-label"
+                          />
+                      </div>
+                      <div className="value-container">
+                          $0.00
+                      </div>
+                  </div>
+                  <div className="price-impact">
+                      <div className="label-container">
+                          <TooltipLabel
+                              label={t('Margin Required')}
+                              tooltipText={
+                                  <div>
+                                      <div className="tooltip-description">
+                                          {t('priceImpactHelp')}
+                                      </div>
+                                  </div>
+                              }
+                              className="impact-label"
+                          />
+                      </div>
+                      <div className="value-container">
+                          $0.00
+                      </div>
+                  </div>
+                  <div className="price-impact">
+                      <div className="label-container">
+                          <TooltipLabel
+                              label={t('Slippage')}
+                              tooltipText={
+                                  <div>
+                                      <div className="tooltip-description">
+                                          {t('slippageHelp')}
+                                      </div>
+                                  </div>
+                              }
+                              className="impact-label"
+                          />
+                      </div>
+                      <div className="slippage-input-container">
+                      <input
+                          inputMode="decimal"
+                          className={`slippage-inline-input ${parseFloat(slippageString) > 5 ? 'red' : ''
+                          }`}
+                          type="text"
+                          value={slippageString}
+                          onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                              (e.target as HTMLInputElement).blur()
+                              e.stopPropagation()
+                          };
+                          }}
+                          onChange={(e) => {
+                          const value = e.target.value;
+
+            if (
+              /^(?!0{2})\d*\.?\d{0,2}$/.test(value) &&
+              !/^\d{2}\.\d{2}$/.test(value)
+            ) {
+              if (value === '') {
+                setSlippageString('');
+                setSlippage(BigInt(9900));
+                localStorage.setItem('crystal_slippage_string', '1');
+                localStorage.setItem('crystal_slippage', '9900');
+              } else if (parseFloat(value) <= 50) {
+                setSlippageString(value);
+                localStorage.setItem('crystal_slippage_string', value);
+
+                const newSlippage = BigInt(
+                  10000 - parseFloat(value) * 100,
+                );
+                setSlippage(newSlippage);
+                localStorage.setItem(
+                  'crystal_slippage',
+                  newSlippage.toString(),
+                );
+              }
+            }
+          }}
+          onBlur={() => {
+            if (slippageString === '') {
+              setSlippageString('1');
+              localStorage.setItem('crystal_slippage_string', '1');
+
+              setSlippage(BigInt(9900));
+              localStorage.setItem('crystal_slippage', '9900');
+            }
+          }}
+        />
+        <span
+          className={`slippage-symbol ${parseFloat(slippageString) > 5 ? 'red' : ''
+            }`}
+        >
+          %
+        </span>
+      </div>
+    </div>
+    <div className="price-impact">
+      <div className="label-container">
+        <TooltipLabel
+          label={t('Fees')}
+          tooltipText={
+            <div>
+              <div className="tooltip-description">
+                {t('takerfeeexplanation')}
               </div>
             </div>
+          }
+          className="impact-label"
+        />
+      </div>
+      <div className="value-container">
+        0.038% / 0.015%
+      </div>
+    </div>
+    </div>
 
           </div>
         </div>
