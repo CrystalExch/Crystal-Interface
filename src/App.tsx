@@ -154,6 +154,11 @@ import Tracker from './components/Tracker/Tracker.tsx';
 import Earn from './components/Earn/Earn.tsx';
 import Perps from './components/Perps/Perps.tsx';
 import PNLComponent from './components/PNLComponent/PNLComponent.tsx';
+import ImportWalletsPopup from './components/Tracker/ImportWalletsPopup.tsx';
+import TradingPresetsPopup from './components/Tracker/TradingPresetsPopup/TradingPresetsPopup';
+import LiveTradesSettingsPopup from './components/Tracker/ LiveTradesSettingsPopup/LiveTradesSettingsPopup.tsx';
+
+
 
 // import config
 import { ChevronDown, Search, SearchIcon } from 'lucide-react';
@@ -178,6 +183,7 @@ function App() {
     client,
     waitForTxn: false,
   });
+  
   //PNL
   const [showPNLModal, setShowPNLModal] = useState(false);
   const { signTypedDataAsync } = useSignTypedData({ client })
@@ -583,6 +589,7 @@ function App() {
   );
 
   // state vars
+  const [trackedWallets, setTrackedWallets] = useState<any[]>([]);
   const [showSendDropdown, setShowSendDropdown] = useState(false);
   const sendDropdownRef = useRef<HTMLDivElement | null>(null);
   const sendButtonRef = useRef<HTMLSpanElement | null>(null);
@@ -2452,6 +2459,30 @@ function App() {
     refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 800 : 5000,
     gcTime: 0,
   })
+
+  const handleImportWallets = (walletsText: string, addToSingleGroup: boolean) => {
+      console.log('Importing wallets:', walletsText, 'Add to single group:', addToSingleGroup);
+      
+      try {
+          const lines = walletsText.trim().split('\n');
+          const newWallets = lines.map((line, index) => {
+              const parts = line.split(',');
+              return {
+                  id: Date.now().toString() + index,
+                  address: parts[0]?.trim() || '',
+                  name: parts[1]?.trim() || `Imported Wallet ${index + 1}`,
+                  emoji: parts[2]?.trim() || '😀',
+                  balance: 0,
+                  lastActive: 'Never'
+              };
+          }).filter(w => w.address);
+          
+          setTrackedWallets(prev => [...prev, ...newWallets]);
+          setpopup(0); 
+      } catch (e) {
+          console.error('Failed to parse wallets:', e);
+      }
+  };
 
   const handleSearchKeyDown = (
     e: ReactKeyboardEvent<HTMLInputElement>,
@@ -14087,6 +14118,31 @@ function App() {
             </div>
           </div>
         ) : null}
+
+        {popup === 32 ? ( // Import Wallets
+          <div ref={popupref}>
+              <ImportWalletsPopup
+                  onClose={() => setpopup(0)}
+                  onImport={handleImportWallets}
+              />
+          </div>
+        ) : null}
+
+        {popup === 33 ? ( // Live Trades Settings
+          <div ref={popupref}>
+              <LiveTradesSettingsPopup
+                  onClose={() => setpopup(0)}
+              />
+          </div>
+        ) : null}
+
+        {popup === 34 ? ( // Trading Presets
+            <div ref={popupref}>
+                <TradingPresetsPopup
+                    onClose={() => setpopup(0)}
+                />
+            </div>
+        ) : null}
       </div>
     </>
   );
@@ -20812,6 +20868,8 @@ function App() {
             element={
               <Tracker
                 isBlurred={isBlurred}
+                setpopup={setpopup}
+                onImportWallets={handleImportWallets}
               />
             } />
           <Route path="/perps" element={<Navigate to="/perps/BTCUSD" replace />} />

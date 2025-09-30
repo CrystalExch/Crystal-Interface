@@ -504,9 +504,7 @@
     background:#3a3a3f;
     border-radius:3px
 }
-.lp-search-dropdown::-webkit-scrollbar-thumb:hover,.vault-market-dropdown-list::-webkit-scrollbar-thumb:hover{
-    background:#4a4a4f
-}
+
 @media(max-width:768px){
     .lp-detail-top{
         flex-direction:column;

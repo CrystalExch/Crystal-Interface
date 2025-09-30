@@ -516,9 +516,7 @@
   border-radius: 4px;
 }
 
-.board-container::-webkit-scrollbar-thumb:hover {
-  background: #444;
-}
+
 
 .board-token-card-content{
     display: flex;

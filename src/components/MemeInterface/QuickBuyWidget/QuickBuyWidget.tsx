@@ -16,6 +16,7 @@ import gas from '../../../assets/gas.svg';
 import monadicon from '../../../assets/monadlogo.svg';
 import slippage from '../../../assets/slippage.svg';
 import squares from '../../../assets/squares.svg';
+import circle from '../../../assets/circle_handle.png'
 import switchicon from '../../../assets/switch.svg';
 import walleticon from '../../../assets/wallet_icon.png';
 import { settings } from '../../../settings';
@@ -830,7 +831,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       const BP = 10_000;
       const VAR = 2_000;
       const weights: number[] = destAddrs.map(() => {
-        const delta = Math.floor(Math.random() * (2 * VAR + 1)) - VAR; 
+        const delta = Math.floor(Math.random() * (2 * VAR + 1)) - VAR;
         const w = BP + delta;
         return Math.max(1, w);
       });
@@ -896,7 +897,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       }
 
       terminalRefetch()
-       updatePopup?.(txId, {
+      updatePopup?.(txId, {
         title: 'Split Complete',
         subtitle: `Sent ${tokenSymbol} to ${success}/${plan.length} wallets`,
         variant: 'success',
@@ -1005,9 +1006,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
         if (partWei <= 0n) continue;
 
-        const monBal = getWalletBalance(addr); 
+        const monBal = getWalletBalance(addr);
         const partMon = Number(partWei) / 1e18;
-        if (partMon > monBal + 1e-12) { 
+        if (partMon > monBal + 1e-12) {
           skippedInsufficient++;
           continue;
         }
@@ -1044,7 +1045,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
       }
 
-    terminalRefetch()
+      terminalRefetch()
       updatePopup?.(txId, {
         title: 'Batch buy completed',
         subtitle:
@@ -1157,7 +1158,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           let reqTokenWei = 0n;
           if (tokenPrice > 0) {
             const partMon = Number(partMonWei) / 1e18;
-            const tokens = partMon / tokenPrice; 
+            const tokens = partMon / tokenPrice;
             reqTokenWei = BigInt(Math.floor(tokens * 1e18));
           }
           const amountWei = reqTokenWei > balWei ? balWei : reqTokenWei;
@@ -1196,7 +1197,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         }
       }
 
-terminalRefetch?.()
+      terminalRefetch?.()
       updatePopup?.(txId, {
         title: 'Batch sell completed',
         subtitle:
@@ -1545,16 +1546,10 @@ terminalRefetch?.()
             </div>
           </div>
           <div className="quickbuy-drag-handle">
-            <img
-              src={squares}
-              alt="Squares"
-              className="quickbuy-squares-icon"
-            />
-            <img
-              src={squares}
-              alt="Squares"
-              className="quickbuy-squares-icon"
-            />
+            <div className="circle-row">
+              <img src={circle} className="circle"/>
+            </div>
+
           </div>
         </div>
 
@@ -1893,24 +1888,34 @@ terminalRefetch?.()
                   <div className="quickbuy-wallets-actions">
                     {hasTokenHolders ? (
                       <>
-                        <Tooltip content="Consolidate all tokens to the one active wallet (purple checkbox)">
+                        <Tooltip content={allSelected ? 'Unselect all wallets' : 'Select all wallets'}>
                           <button
-                            className="quickbuy-wallet-action-btn consolidate"
-                            onClick={handleConsolidateTokens}
-                            disabled={!hasExactlyOneSelected || !hasSourceWallets || isConsolidating}
+                            className="quickbuy-wallet-action-btn select-all"
+                            onClick={allSelected ? unselectAllWallets : selectAllWallets}
                           >
-                            {isConsolidating ? '...' : 'Consolidate'}
+                            {allSelected ? 'Unselect All' : 'Select All'}
                           </button>
                         </Tooltip>
-                        <Tooltip content="Split tokens across selected wallets with 20% variance">
-                          <button
-                            className="quickbuy-wallet-action-btn split"
-                            onClick={handleSplitTokens}
-                            disabled={selectedWallets.size < 2 || isSplitting}
-                          >
-                            {isSplitting ? '...' : 'Split Tokens'}
-                          </button>
-                        </Tooltip>
+                        <div className="cs-container">
+                          <Tooltip content="Consolidate all tokens to the one active wallet (purple checkbox)">
+                            <button
+                              className="quickbuy-wallet-action-btn consolidate"
+                              onClick={handleConsolidateTokens}
+                              disabled={!hasExactlyOneSelected || !hasSourceWallets || isConsolidating}
+                            >
+                              {isConsolidating ? '...' : 'Consolidate'}
+                            </button>
+                          </Tooltip>
+                          <Tooltip content="Split tokens across selected wallets with 20% variance">
+                            <button
+                              className="quickbuy-wallet-action-btn split"
+                              onClick={handleSplitTokens}
+                              disabled={selectedWallets.size < 2 || isSplitting}
+                            >
+                              {isSplitting ? '...' : 'Split Tokens'}
+                            </button>
+                          </Tooltip>
+                        </div>
                       </>
                     ) : (
                       <>

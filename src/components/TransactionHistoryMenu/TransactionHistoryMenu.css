@@ -150,9 +150,7 @@
   background:rgba(255,255,255,.2);
   border-radius:5px
 }
-.tx-history-content::-webkit-scrollbar-thumb:hover{
-  background:rgba(255,255,255,.3)
-}
+
 .tx-history-empty-state{
   display:flex;
   flex-direction:column;
@@ -247,9 +245,7 @@
   border-radius: 5px;
 }
 
-.tx-detail-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,.3);
-}
+
 
 .back-arrow{
   width: 12px;

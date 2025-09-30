@@ -847,11 +847,13 @@
 
 .tracker-table-header {
   display: grid;
-  grid-template-columns: 60px 1fr 1fr 1fr 1fr;
+  grid-template-columns: 120px 1fr 1fr 1fr 1fr;
   gap: 16px;
   padding: 8px 20px;
+  color: #ffffff8b;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   align-items: center;
+  border-bottom:1px solid rgba(179,184,249,.1);
 }
 
 .tracker-header-cell {
@@ -868,7 +870,7 @@
 
 .tracker-trade-row {
   display: grid;
-  grid-template-columns: 60px 1fr 1fr 1fr 1fr;
+  grid-template-columns: 120px 1fr 1fr 1fr 1fr;
   gap: 16px;
   padding: 12px 20px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.05);
@@ -1003,5 +1005,154 @@
   /* Hide market cap on smallest screens */
   .tracker-trade-mc {
     display: none;
+  }
+}
+
+/* Trade Type Styling */
+.tracker-trade-row.trade-buy {
+  background: rgba(0, 255, 136, 0.03);
+  border-left: 2px solid rgba(0, 255, 136, 0.3);
+}
+
+.tracker-trade-row.trade-sell {
+  background: rgba(255, 107, 107, 0.03);
+  border-left: 2px solid rgba(255, 107, 107, 0.3);
+}
+
+.tracker-trade-row.trade-buy:hover {
+  background: rgba(0, 255, 136, 0.05);
+}
+
+.tracker-trade-row.trade-sell:hover {
+  background: rgba(255, 107, 107, 0.05);
+}
+
+.tracker-trade-row.trade-buy .tracker-trade-amount {
+  color: #00ff88;
+}
+
+.tracker-trade-row.trade-sell .tracker-trade-amount {
+  color: #ff6b6b;
+}
+
+/* Date Column */
+.tracker-trade-date {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* Monitor Section */
+.tracker-monitor {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.tracker-monitor-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tracker-monitor-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.tracker-monitor-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.2s;
+}
+
+.tracker-monitor-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(179, 184, 249, 0.2);
+}
+
+.tracker-monitor-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.tracker-monitor-token-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tracker-monitor-emoji {
+  font-size: 1.2rem;
+}
+
+.tracker-monitor-token-names {
+  display: flex;
+  flex-direction: column;
+}
+
+.tracker-monitor-token-name {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+}
+
+.tracker-monitor-token-symbol {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+}
+
+.tracker-monitor-change {
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.tracker-monitor-change.positive {
+  color: #00ff88;
+  background: rgba(0, 255, 136, 0.1);
+}
+
+.tracker-monitor-change.negative {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.tracker-monitor-card-body {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tracker-monitor-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tracker-monitor-stat-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+  letter-spacing: -0.2px;
+}
+
+.tracker-monitor-stat-value {
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .tracker-monitor-row {
+    grid-template-columns: 1fr;
   }
 }

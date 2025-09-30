@@ -297,9 +297,6 @@
   border-radius: 2px;
 }
 
-.twitter-hover-text-container::-webkit-scrollbar-thumb:hover {
-  background: #5d6073;
-}
 
 .engagement-stat {
   display: flex;

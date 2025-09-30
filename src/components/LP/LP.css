@@ -416,10 +416,6 @@
     border-radius: 3px;
 }
 
-.lp-search-dropdown::-webkit-scrollbar-thumb:hover {
-    background: #4a4a4f;
-}
-
 .lp-search-token-star {
     flex-shrink: 0;
     cursor: pointer;
