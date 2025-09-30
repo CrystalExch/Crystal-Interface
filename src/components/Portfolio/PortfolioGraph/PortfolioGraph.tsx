@@ -14,6 +14,8 @@ import { Payload } from 'recharts/types/component/DefaultTooltipContent';
 
 import { useSharedContext } from '../../../contexts/SharedContext';
 import { ScaledDataPoint } from './types';
+import { formatNumber } from '../../../utils/formatNumber';
+
 
 import './PortfolioGraph.css';
 
@@ -110,7 +112,7 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
       if (chartDays < 7) return `${month}/${day} ${hour}:00`;
       return `${month}/${day}`;
     };
-  
+
     const calculateXAxisInterval = (): number => {
       switch (chartDays) {
         case 1:
@@ -215,7 +217,7 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
     }
     return (
       <div className="portfolio-graph-container">
-        <div className="chart-days-dropdown" style={isPopup ? {top: '-25px'} : {}}>
+        <div className="chart-days-dropdown" style={isPopup ? { top: '-25px' } : {}}>
           {[
             { value: 1, label: '24H' },
             { value: 7, label: '7D' },
@@ -273,15 +275,16 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
                 padding={{ left: 10 }}
               />
               <YAxis
-                domain={['auto', 'auto']} 
+                domain={['auto', 'auto']}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(value) => `$${value.toFixed(0)}`}
+                tickFormatter={(value) => `$${formatNumber(value)}`}
                 style={{ fontSize: '11px', fill: '#636e72' }}
                 orientation="right"
                 width={isPopup ? 20 : undefined}
                 tick={isPopup ? false : true}
               />
+
               <Tooltip
                 cursor={{ stroke: '#ffffff20', strokeWidth: 1 }}
                 content={({ active, payload, label }) => (
@@ -374,11 +377,12 @@ const EmptyGraph: React.FC<{
             domain={[0, 100]}
             axisLine={false}
             tickLine={false}
-            tickFormatter={(value) => `$${value.toFixed(0)}`}
+            tickFormatter={(value) => `$${formatNumber(value)}`}
             style={{ fontSize: '10px', fill: '#636e72' }}
             tickMargin={10}
             orientation="right"
           />
+
           <Area
             type="monotone"
             dataKey="value"
