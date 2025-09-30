@@ -19,6 +19,8 @@ import trash from '../../assets/trash.svg';
 import { createPortal } from 'react-dom';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import './Portfolio.css'
+import circle from '../../assets/circle_handle.png'
+
 
 const Tooltip: React.FC<{
   content: string;
@@ -1674,7 +1676,7 @@ const handleSendBackToMain = async () => {
       <div
         key={wallet.address}
         data-wallet-address={wallet.address}
-        className={`draggable-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''} ${isDragging ? 'dragging' : ''} ${isMultiDrag && isSelected ? 'multi-drag-ghost' : ''}`}
+  className={`draggable-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''} ${isDragging ? 'dragging' : ''} ${isMultiDrag && isSelected ? 'multi-drag-ghost' : ''} ${(isSelected || isPreviewSelected) ? 'handle-visible' : ''}`}
         draggable
         onDragStart={(e) => {
           setDropPreviewLine(null);
@@ -1760,7 +1762,8 @@ const handleSendBackToMain = async () => {
           />
         )}
 
-        <div className="wallet-active-checkbox-container">
+      
+<div className="wallet-active-checkbox-container">
           <Tooltip content={isWalletActive(wallet.privateKey) ? "Active Wallet" : "Set as Active Wallet"}>
             <input
               type="checkbox"
@@ -1783,7 +1786,11 @@ const handleSendBackToMain = async () => {
             />
           </Tooltip>
         </div>
-
+        
+          <img 
+            src={circle} 
+            className="wallet-drag-handle-icon"
+          />
         <div className="wallet-drag-info">
           <div className="wallet-name-container">
             {editingWallet === wallet.address ? (
@@ -2487,47 +2494,16 @@ const handleSendBackToMain = async () => {
                       >
                         Clear
                       </button>
-                      <button
+                      {/* <button
                         className="clear-zone-button"
                         onClick={handleSendBackToMain}
                         disabled={isVaultDepositSigning || destinationWallets.length === 0}
                         style={{ marginLeft: '8px' }}
                       >
                         {isVaultDepositSigning ? 'Sending...' : 'Send Back to Main'}
-                      </button>
+                      </button> */}
                     </>
                   )}
-                  <div className="custom-address-section">
-                    <div style={{ flex: 1 }}>
-                      <input
-                        type="text"
-                        className="custom-address-input"
-                        value={customDestinationAddress}
-                        onChange={(e) => {
-                          setCustomDestinationAddress(e.target.value);
-                          setCustomAddressError('');
-                        }}
-                        placeholder="0x..."
-                        style={{ fontSize: '0.8rem', padding: '6px 10px' }}
-                      />
-                      {customAddressError && (
-                        <div style={{
-                          color: '#ff6b6b',
-                          fontSize: '0.7rem',
-                          marginTop: '2px'
-                        }}>
-                          {customAddressError}
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      className="deposit-max-button"
-                      onClick={handleAddCustomAddress}
-                      disabled={!customDestinationAddress.trim()}
-                    >
-                      Add
-                    </button>
-                  </div>
                 </div>
                 <div className="wallets-table-header">
                   <div className="wallet-header-checkbox"></div>

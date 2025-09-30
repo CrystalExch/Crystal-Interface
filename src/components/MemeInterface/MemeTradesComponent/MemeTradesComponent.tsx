@@ -286,11 +286,18 @@ export default function MemeTradesComponent({
   const tradesBacklogRef = useRef<RawTrade[]>([]);
   const lastProcessedTradesRef = useRef<RawTrade[]>([]);
 
-  const norm = (s?: string) => (s || '').toLowerCase();
+const norm = (s?: string) => (s || '').toLowerCase();
   const trackedSet = new Set((trackedAddresses || []).map(norm));
   const dev = norm(devAddress);
   const you = norm(currentUserAddress);
-  const devEqualsYou = dev !== '' && dev === you;
+  
+  // Create a set of all "you" addresses (main wallet + sub wallets)
+  const youSet = new Set([
+    you,
+    ...(subWallets || []).map(w => norm(w.address))
+  ].filter(addr => addr !== ''));
+  
+  const devEqualsYou = dev !== '' && youSet.has(dev);
 
   let devActive = false;
   let youActive = false;
@@ -301,7 +308,7 @@ export default function MemeTradesComponent({
     const [only] = Array.from(trackedSet);
     if (devEqualsYou && only === dev) {
       youActive = true;
-    } else if (only === you) {
+    } else if (youSet.has(only)) {
       youActive = true;
     } else if (only === dev) {
       devActive = true;
@@ -309,7 +316,13 @@ export default function MemeTradesComponent({
       trackedActive = true;
     }
   } else {
-    trackedActive = true;
+    // Check if all tracked addresses are "you" addresses
+    const allYou = Array.from(trackedSet).every(addr => youSet.has(addr));
+    if (allYou) {
+      youActive = true;
+    } else {
+      trackedActive = true;
+    }
   }
 
   // Check if transaction filters are active

@@ -2962,7 +2962,7 @@
 }
 
 .draggable-wallet-item.selected {
-  background: rgba(170, 174, 207, 0.15);
+  background: rgba(95, 99, 145, 0.15);
 }
 
 .draggable-wallet-item.multi-drag-ghost {
@@ -3068,7 +3068,7 @@
 }
 
 .draggable-wallet-item.preview-selected {
-  background: rgba(170, 174, 207, 0.15);
+  background: rgba(95, 99, 145, 0.15);
 }
 
 .main-wallet-balance-section {
@@ -3149,7 +3149,6 @@
   margin-top: 8px;
 }
 
-/* Add these new styles to Portfolio.css */
 
 .wallet-active-checkbox-container {
   display: flex;
@@ -3165,23 +3164,29 @@
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  border: 1px solid rgba(170, 174, 207, 0.3);
+  border: 1px solid transparent;
   border-radius: 3px;
   background: transparent;
   position: relative;
-  transition: all 0.2s ease;
   flex-shrink: 0;
+  opacity: 0;
 }
 
-.wallet-active-checkbox:hover {
-  border-color: rgba(170, 174, 207, 0.6);
-  background: rgba(170, 174, 207, 0.05);
+.wallet-active-checkbox:not(:checked) {
+  opacity: 0;
 }
+
+.draggable-wallet-item:hover .wallet-active-checkbox:not(:checked) {
+  opacity: 1;
+  border-color: #d8dcff;
+}
+
 
 .wallet-active-checkbox:checked {
   background: linear-gradient(135deg, #aaaecf 0%, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
   box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
   border: none;
+  opacity: 1;
 }
 
 .wallet-active-checkbox:checked::after {
@@ -4039,10 +4044,9 @@
   text-align: flex-start;
 }
 
-
 .draggable-wallet-item {
   display: grid;
-  grid-template-columns: 16px 180px 80px 1fr 2fr;
+  grid-template-columns: 16px 0px 180px 80px 1fr 2fr;
   gap: 10px;
   padding: 6px 20px;
   cursor: grab;
@@ -4050,6 +4054,9 @@
   align-items: center;
 }
 
+.draggable-wallet-item.handle-visible {
+  grid-template-columns: 16px 20px 180px 80px 1fr 2fr;
+}
 .draggable-wallet-item:hover {
   background: rgba(179, 183, 239, 0.05);
 }
@@ -4105,4 +4112,17 @@
 
 .wallets-source-icon{
   transform: rotate(180deg);
+}
+
+.wallet-drag-handle-icon {
+  width: 15px;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+  transform: rotate(90deg);
+  filter: brightness(0) saturate(100%) invert(88%) sepia(5%) saturate(1307%) hue-rotate(187deg) brightness(91%) contrast(98%);
+}
+
+.draggable-wallet-item.handle-visible .wallet-drag-handle-icon {
+  opacity: 0.3;
 }

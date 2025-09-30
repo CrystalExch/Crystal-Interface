@@ -200,16 +200,16 @@
   width: 22px;
   height: 22px;
   flex-shrink: 0;
-  margin-top: -2px;
+  margin-top: -4px;
 }
 
 .wallet-popup-spinner {
   width: 18px;
   height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.25);
-  border-top: 2px solid #aaaecf;
+  border: 2px solid #aaaecf;
+  border-top: 2px solid transparent;
   border-radius: 50%;
-  animation: walletPopupSpinnerRotate 1s linear infinite;
+  animation: walletPopupSpinnerRotate 0.4s linear infinite;
 }
 
 @keyframes walletPopupSpinnerRotate {
@@ -217,7 +217,6 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Token Icon Styles */
 .wallet-popup-token-amount {
   display: inline-flex;
   align-items: center;
