@@ -473,10 +473,6 @@
   border-radius: 3px;
 }
 
-.meme-oc-content::-webkit-scrollbar-thumb:hover,
-.meme-oc-items::-webkit-scrollbar-thumb:hover {
-  background: rgba(170, 174, 207, 0.5);
-}
 
 @media (max-width: 1200px) {
 
