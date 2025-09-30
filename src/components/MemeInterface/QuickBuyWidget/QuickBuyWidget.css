@@ -779,7 +779,7 @@
     display: flex;
     font-size: 0.85rem;
     font-weight: 400;
-    gap: 3px;
+    gap: 5px;
     letter-spacing: -0.2px;
     padding: 2px 6px;
 }
@@ -991,7 +991,10 @@
     width: 100%;
 }
 
+
 .quickbuy-wallet-action-btn {
+    display: flex;
+    align-items: center;
     background: rgba(179, 184, 249, 0.05);
     border-radius: 20px;
     color: #ced0df;
@@ -1006,7 +1009,6 @@
 
 .quickbuy-wallet-action-btn:hover:not(:disabled) {
     background: rgba(179, 184, 249, 0.1);
-    border-color: rgba(179, 184, 249, 0.3);
     color: #d8dcff;
 }
 
@@ -1015,21 +1017,51 @@
     opacity: 0.5;
 }
 
-.quickbuy-wallet-action-btn.consolidate {
-    border-color: rgba(67, 254, 154, 0.3);
+
+
+.merge-icon{
+    width: 13px;
+    height: 13px;
+filter: brightness(0) saturate(100%) invert(84%) sepia(19%) saturate(506%) hue-rotate(198deg) brightness(96%) contrast(88%);
+}
+
+.quickbuy-wallet-merge-btn {
+    display: flex;
+    align-items: center;
+    border-radius: 20px;
+    color: #ced0df;
+    cursor: pointer;
+    font-size: 0.75rem;
+    letter-spacing: -0.2px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    user-select: none !important;
+    gap: 2px;
+    margin-left: 3px;
+}
+
+.quickbuy-wallet-merge-btn:hover:not(:disabled) {
+    color: #d8dcff;
+}
+
+.quickbuy-wallet-merge-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.quickbuy-wallet-merge-btn.consolidate {
     color: #aaaecf;
 }
 
 
-.quickbuy-wallet-action-btn.split {
-    border-color: rgba(176, 196, 222, 0.3);
+.quickbuy-wallet-merge-btn.split {
     color: #b0c4de;
 }
 
-.quickbuy-wallet-action-btn.split:hover:not(:disabled) {
-    background: rgba(176, 196, 222, 0.1);
-    border-color: rgba(176, 196, 222, 0.5);
-}
+
+
+
+
 
 
 

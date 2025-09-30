@@ -654,8 +654,19 @@
   justify-content: center;
   transition: all 0.2s ease;
   width: 18px;
-
 }
+
+.graduated-icon {
+  align-items: center;
+  color: #7f808d;
+  cursor: pointer;
+  display: flex;
+  height: 15px;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 15px;
+}
+
 
 .explorer-copy-icon {
   height: 13px;
