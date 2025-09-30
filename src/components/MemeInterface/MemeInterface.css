@@ -2221,7 +2221,6 @@
 
 .top-stats-grid {
   display: grid;
-  gap: 16px;
   grid-template-columns: repeat(4, 1fr);
   padding: 4px;
   position: relative;
@@ -2233,6 +2232,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  margin: 0 4px;
 }
 
 
@@ -2252,6 +2252,7 @@
   font-size: 0.75rem;
   font-weight: 300;
   line-height: 1;
+
 }
 
 
@@ -2260,11 +2261,13 @@
   display: flex;
   flex-direction: column;
   position: relative;
+
 }
 
 .stat-group-net-vol .stat-value {
   color: #ffffff;
   font-size: 0.85rem;
+
 }
 
 .stat-group-net-vol .stat-label {
@@ -2272,6 +2275,8 @@
   font-size: 0.75rem;
   font-weight: 300;
   line-height: 1;
+  white-space: nowrap;
+
 }
 
 .stat-group-net-vol .stat-value.green {
