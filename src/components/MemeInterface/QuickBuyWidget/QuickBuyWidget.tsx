@@ -778,6 +778,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   const unselectAllWallets = () => {
     setSelectedWallets(new Set());
   };
+
   const selectAllWalletsWithoutToken = () => {
     const walletsWithoutToken = subWallets.filter(w => getWalletTokenBalance(w.address) === 0);
     setSelectedWallets(new Set(walletsWithoutToken.map(w => w.address)));
@@ -790,6 +791,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     );
     setSelectedWallets(new Set(walletsWithBalance.map(w => w.address)));
   };
+
   const handleSplitTokens = async () => {
     if (selectedWallets.size === 0 || !tokenAddress) return;
 
@@ -917,7 +919,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       setIsSplitting(false);
     }
   };
-
 
   useEffect(() => {
     if (isOpen && account?.connected) {
