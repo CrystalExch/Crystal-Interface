@@ -1545,16 +1545,17 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             </div>
           </div>
           <div className="quickbuy-drag-handle">
-            <img
-              src={squares}
-              alt="Squares"
-              className="quickbuy-squares-icon"
-            />
-            <img
-              src={squares}
-              alt="Squares"
-              className="quickbuy-squares-icon"
-            />
+            <div className="circle-row">
+              <div className="circle"></div>
+              <div className="circle"></div>
+              <div className="circle"></div>
+            </div>
+            <div className="circle-row">
+                <div className="circle"></div>
+                <div className="circle"></div>
+                <div className="circle"></div>
+            </div>
+
           </div>
         </div>
 
