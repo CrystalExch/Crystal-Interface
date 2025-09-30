@@ -2585,7 +2585,7 @@ const TokenRow = React.memo<{
                           : 'rgb(67, 254, 154)',
                     }}
                   >
-                    {token.top10Holding.toFixed(1)}%
+                    {token.top10Holding.toFixed(2)}%
                   </span>
                 </div>
               </Tooltip>
@@ -2646,7 +2646,7 @@ const TokenRow = React.memo<{
                           : 'rgb(67, 254, 154)',
                     }}
                   >
-                    {token.devHolding.toFixed(1)}%
+                    {(token.devHolding * 100).toFixed(2)}%
                   </span>
                 </div>
               </Tooltip>
@@ -3604,6 +3604,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 amountIn
                 amountOut
               }
+              totalHolders
+              devHoldingAmount
+              holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
+                account { id }
+                tokens
+              }
             }
             migrated: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:true}) {
               id
@@ -3640,6 +3646,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 id
                 amountIn
                 amountOut
+              }
+              totalHolders
+              devHoldingAmount
+              holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
+                account { id }
+                tokens
               }
             }
           }`,
@@ -3694,6 +3706,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             }
             const website = socials[0];
 
+            console.log(m, routerAddress);
+
             return {
               ...defaultMetrics,
               id: m.id.toLowerCase(),
@@ -3721,9 +3735,19 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               telegramHandle: telegram ?? '',
               launchedTokens: m.creator.tokensLaunched ?? '',
               graduatedTokens: m.creator.tokensGraduated ?? '',
+              holders: m.totalHolders,
+              devHolding: m.devHoldingAmount / 1e27,
+              top10Holding: Number(
+                (m.holders ?? [])
+                  .filter((h: { account?: { id?: string } }) => (h.account?.id?.toLowerCase() ?? '') !== (routerAddress ?? '').toLowerCase())
+                  .slice(0, 10)
+                  .reduce((sum: bigint, h: { tokens: string }) => sum + BigInt(h.tokens || '0'), 0n)
+              ) / 1e25,
             } as Token;
           }),
         );
+
+        console.log(tokens);
 
         dispatch({ type: 'INIT', tokens });
         const all = tokens.map((t) => t.id);
