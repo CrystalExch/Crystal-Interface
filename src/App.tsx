@@ -442,10 +442,6 @@ function App() {
     }
   }, [connected, alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.name]);
 
-  const saveSubWalletsToStorage = (wallets: Array<{ address: string, privateKey: string }>) => {
-    localStorage.setItem('crystal_sub_wallets', JSON.stringify(wallets));
-  };
-
   const [createVaultForm, setCreateVaultForm] = useState({
     name: '',
     description: '',
@@ -487,9 +483,9 @@ function App() {
       };
 
       const updatedWallets = [...subWallets, newWallet];
+      lastNonceGroupFetch.current = 0;
       setSubWallets(updatedWallets);
-      saveSubWalletsToStorage(updatedWallets);
-
+      localStorage.setItem('crystal_sub_wallets', JSON.stringify(updatedWallets));
       if (!validOneCT && updatedWallets.length === 1) {
         setOneCTSigner(privateKey);
         refetch();
@@ -1238,6 +1234,8 @@ function App() {
     stateIsLoading,
     (popup == 4 && connected) || location.pathname.slice(1) == 'portfolio'
   );
+  const [terminalToken, setTerminalToken] = useState();
+  const [tokenData, setTokenData] = useState();
   const [isVertDragging, setIsVertDragging] = useState(false);
   const [trades, setTrades] = useState<
     [boolean, string, string, string, string][]
@@ -1434,7 +1432,6 @@ function App() {
     if (action === 'approve') return 'approve';
     return 'swap';
   }
-
   // refs
   const popupref = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -1444,12 +1441,13 @@ function App() {
   const initialHeightRef = useRef(0);
   const txPending = useRef(false);
   const lastRefGroupFetch = useRef(0);
+  const lastNonceGroupFetch = useRef(0);
+  const nonces = useRef<any>({})
   const blockNumber = useRef(0n);
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<any>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const prevAmountsQuote = useRef(amountsQuote)
-
   // more constants
   const languageOptions = [
     { code: 'EN', name: 'English' },
@@ -1938,10 +1936,10 @@ function App() {
   const saveSubWallets = useCallback((wallets: { address: string; privateKey: string; }[] | ((prevState: { address: string; privateKey: string; }[]) => { address: string; privateKey: string; }[])) => {
     setSubWallets((prevWallets) => {
       const newWallets = typeof wallets === 'function' ? wallets(prevWallets) : wallets;
-      saveSubWalletsToStorage(newWallets);
+      localStorage.setItem('crystal_sub_wallets', JSON.stringify(newWallets));
       return newWallets;
     });
-  }, [saveSubWalletsToStorage]);
+  }, []);
 
   // on market select
   const onMarketSelect = useCallback((market: { quoteAddress: any; baseAddress: any; }) => {
@@ -8560,16 +8558,13 @@ function App() {
   const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(newTab);
   }, []);
-  
-  const nonces = useRef<any>({})
-  const [terminalToken, setTerminalToken] = useState();
-  const [tokenData, setTokenData] = useState();
   // data loop, reuse to have every single rpc call method in this loop
   const { data: terminalQueryData, isLoading: isTerminalDataLoading, dataUpdatedAt: terminalDataUpdatedAt, refetch: terminalRefetch } = useQuery({
     queryKey: [
       'crystal_rpc_terminal_reads',
       address,
       terminalToken,
+      subWallets.length
     ],
     queryFn: async () => {
       let gasEstimateCall: any = null;
@@ -8762,6 +8757,12 @@ function App() {
         args: [false, callData]
       })
 
+      let shouldFetchNonce = false;
+      if (Date.now() - lastNonceGroupFetch.current >= 9500) {
+        lastNonceGroupFetch.current = Date.now();
+        shouldFetchNonce = true;
+      }
+
       const response: any = await fetch(HTTP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -8770,12 +8771,12 @@ function App() {
           id: 1,
           method: 'eth_call',
           params: [{ to: settings.chainConfig[activechain].multicall3, data: multicallData }, 'latest']
-        }, ...(gasEstimateCall ? [gasEstimateCall] : []), ...subWallets.map(w => ({
+        }, ...(gasEstimateCall ? [gasEstimateCall] : []), ...(shouldFetchNonce ? subWallets.map(w => ({
           jsonrpc: '2.0',
           id: 1,
           method: 'eth_getTransactionCount',
           params: [w.address, 'latest']
-        })),])
+        })) : [])])
       })
 
       const json: any = await response.json()
@@ -8838,12 +8839,15 @@ function App() {
       if (gasEstimateCall && json?.[1]?.result) {
         gasEstimate = BigInt(json[1].result)
       }
-      nonces.current = new Map(
-        subWallets.map((w,i)=>{
-          const old = nonces.current[w.address] || { pendingtxs: [] }
-          return [w.address, { ...old, nonce: parseInt(json[i+(gasEstimateCall?2:1)].result,16) + old.pendingtxs.length }]
-        })
-      );
+
+      if (shouldFetchNonce) {
+        nonces.current = new Map(
+          subWallets.map((w,i)=>{
+            const old = nonces.current[w.address] || { pendingtxs: [] }
+            return [w.address, { ...old, nonce: parseInt(json[i+(gasEstimateCall?2:1)].result,16) + old.pendingtxs.length }]
+          })
+        );
+      }
 
       [{ address: scaAddress }].concat(subWallets as any).forEach((wallet, walletIndex) => {
         const balanceMap: { [key: string]: bigint } = {};
@@ -20271,6 +20275,7 @@ function App() {
     tokenIn,
     amountIn,
     location.pathname,
+    selectedInterval
   ]);
 
   const TradeLayout = (swapComponent: JSX.Element) => (
@@ -20537,6 +20542,7 @@ function App() {
             perpsMarketsData={perpsMarketsData}
             perpsFilterOptions={perpsFilterOptions}
             externalUserStats={currentPNLData}
+            lastNonceGroupFetch={lastNonceGroupFetch}
           />
         </div>
       }
