@@ -1049,9 +1049,10 @@
 
 
 .circle{
-    background-color: rgba(56, 58, 77, 0.54);
     border-radius: 50%;
     color: transparent;
+    min-width: 18px;
+    filter: brightness(0) saturate(100%) invert(11%) sepia(10%) saturate(1587%) hue-rotate(205deg) brightness(100%) contrast(88%);
 }
 
 .circle-row{

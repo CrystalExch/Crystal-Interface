@@ -16,6 +16,7 @@ import gas from '../../../assets/gas.svg';
 import monadicon from '../../../assets/monadlogo.svg';
 import slippage from '../../../assets/slippage.svg';
 import squares from '../../../assets/squares.svg';
+import circle from '../../../assets/circle_handle.png'
 import switchicon from '../../../assets/switch.svg';
 import walleticon from '../../../assets/wallet_icon.png';
 import { settings } from '../../../settings';
@@ -1546,14 +1547,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           </div>
           <div className="quickbuy-drag-handle">
             <div className="circle-row">
-              <svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="circle"><circle cx="12" cy="12" r="10" /></svg>
-              <svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="circle"><circle cx="12" cy="12" r="10" /></svg>
-              <svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="circle"><circle cx="12" cy="12" r="10" /></svg>
-            </div>
-            <div className="circle-row">
-              <svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="circle"><circle cx="12" cy="12" r="10" /></svg>
-              <svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="circle"><circle cx="12" cy="12" r="10" /></svg>
-              <svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="circle"><circle cx="12" cy="12" r="10" /></svg>
+              <img src={circle} className="circle"/>
             </div>
 
           </div>
