@@ -567,12 +567,19 @@ const short = isCurrentUser ? 'YOU' : r.caller.slice(2, 6);
       </span>
     );
   };
+const fmtAmount = (v: number) => {
+  const val = Math.abs(v);
 
-  const fmtAmount = (v: number) =>
-    amountMode === 'USDC'
-      ? `$${Math.abs(v).toFixed(3)}`
-      : `${Math.abs(v).toFixed(3)}`;
+  if (amountMode === 'USDC') {
+    // >=$1k uses K/M/B/T; otherwise compact dollars
+    return val >= 1_000 ? `$${formatKMBT(val, 2)}` : `$${val.toFixed(2)}`;
+  }
 
+  if (val >= 1_000) return formatKMBT(val, 2); 
+  if (val >= 1) return val.toFixed(3);        
+  if (val >= 0.01) return val.toFixed(4);      
+  return val.toPrecision(3);                  
+};
   const fmtTimeAgo = (ts: number) => {
     const now = Date.now() / 1000;
     const secondsAgo = Math.max(0, Math.floor(now - ts));
@@ -582,6 +589,15 @@ const short = isCurrentUser ? 'YOU' : r.caller.slice(2, 6);
     if (secondsAgo < 86400) return `${Math.floor(secondsAgo / 3600)}h`;
     return `${Math.floor(secondsAgo / 86400)}d`;
   };
+const formatKMBT = (value: number, decimals: number = 2) => {
+  const abs = Math.abs(value);
+  const sign = value < 0 ? '-' : '';
+  if (abs >= 1e12) return `${sign}${(abs / 1e12).toFixed(decimals)}T`;
+  if (abs >= 1e9)  return `${sign}${(abs / 1e9).toFixed(decimals)}B`;
+  if (abs >= 1e6)  return `${sign}${(abs / 1e6).toFixed(decimals)}M`;
+  if (abs >= 1e3)  return `${sign}${(abs / 1e3).toFixed(decimals)}K`;
+  return `${sign}${abs.toFixed(8).replace(/\.?0+$/,'')}`;
+};
 
   const handleApplyFilters = (filters: TransactionFilters) => {
     setTransactionFilters(filters);
@@ -892,20 +908,17 @@ const short = isCurrentUser ? 'YOU' : r.caller.slice(2, 6);
                     {fmtAmount(shownAmount)}
                   </div>
 
-                  <div className="meme-trade-mc">
-                    {mcMode === 'MC' ? (
-                      <span className="meme-trade-mc">
-                        ${(t.mcUSD / 1000).toFixed(2)}K
-                      </span>
-                    ) : (
-                      <span>
-                        $
-                        <FormattedNumberDisplay
-                          formatted={formatSubscript(t.priceUSD.toFixed(8))}
-                        />
-                      </span>
-                    )}
-                  </div>
+                <div className="meme-trade-mc">
+  {mcMode === 'MC' ? (
+    <span className="meme-trade-mc">
+      ${formatKMBT(t.mcUSD, 2)}
+    </span>
+  ) : (
+    <span>
+      ${formatKMBT(t.priceUSD, 6)}
+    </span>
+  )}
+</div>
 
                   <div
                     className={`meme-trade-trader ${t.isCurrentUser ? 'current-user' : 'clickable'}`}

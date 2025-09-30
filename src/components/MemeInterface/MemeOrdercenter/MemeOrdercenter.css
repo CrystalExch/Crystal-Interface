@@ -156,7 +156,6 @@
 .meme-oc-header {
   align-items: flex-start;
   background-color: rgba(6, 6, 6, 0.95);
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   display: grid;
   min-height: 30px;
   padding: 6px 15px;
