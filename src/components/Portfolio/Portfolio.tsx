@@ -535,7 +535,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
     const updatedWallets = subWallets.filter(w => w.address !== address);
     setSubWallets(updatedWallets);
-    saveSubWalletsToStorage(updatedWallets);
+    localStorage.setItem('crystal_sub_wallets', JSON.stringify(updatedWallets));
 
     const newEnabledWallets = new Set(enabledWallets);
     newEnabledWallets.delete(address);
@@ -601,11 +601,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     }
   }, []);
 
-  const saveSubWalletsToStorage = (wallets: Array<{ address: string, privateKey: string }>) => {
-    localStorage.setItem('crystal_sub_wallets', JSON.stringify(wallets));
-  };
-
-
   const handleDragStartFromZone = (e: React.DragEvent, wallet: WalletDragItem, zone: 'source' | 'destination') => {
     setDraggedWallet({ ...wallet, sourceZone: zone });
     e.dataTransfer.effectAllowed = 'move';
@@ -614,6 +609,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
     e.dataTransfer.setData('application/json', JSON.stringify(dragData));
     e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
   };
+
   const handleDragStart = (e: React.DragEvent, wallet: { address: string, privateKey: string }, index: number) => {
     e.stopPropagation();
     const dragData: WalletDragItem & { type: string } = {
@@ -954,7 +950,7 @@ const executeDistribution = async () => {
     for (const [walletAddress, transfers] of walletTransfers.entries()) {
       
       for (const transfer of transfers) {
-        let currentNonce = nonces.current.get(walletAddress)?.nonce;
+        const wallet = nonces.current.get(walletAddress)
         const amountInWei = BigInt(Math.round(transfer.amount * 10**18));
         const params = [{
           uo: {
@@ -962,24 +958,17 @@ const executeDistribution = async () => {
             value: amountInWei,
             data: '0x'
           }
-        }, 21000n, 0n, false, transfer.fromPrivateKey, currentNonce]
-
-        nonces.current.get(walletAddress)?.pendingtxs.push(params);
-        const wallet = nonces.current.get(walletAddress)
+        }, 21000n, 0n, false, transfer.fromPrivateKey, wallet?.nonce]
         if (wallet) wallet.nonce += 1
+        wallet?.pendingtxs.push(params);
         const transferPromise = sendUserOperationAsync(...params)
         .then(() => {
-          const wallet = nonces.current.get(walletAddress)
-          if (wallet) {
-            wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-          }
+          if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
           return true;
         }).catch(() => {
-          const wallet = nonces.current.get(walletAddress)
           if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
           return false
         })
-        
         transferPromises.push(transferPromise);
       }
     }
@@ -1165,7 +1154,7 @@ const handleSendBackToMain = async () => {
 
       const updatedWallets = [...subWallets, newWallet];
       setSubWallets(updatedWallets);
-      saveSubWalletsToStorage(updatedWallets);
+      localStorage.setItem('crystal_sub_wallets', JSON.stringify(updatedWallets));
 
       closeImportModal();
       showWalletImported(walletAddress);
@@ -1657,7 +1646,7 @@ const handleSendBackToMain = async () => {
           const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
           reorderedWallets.splice(targetIndex, 0, movedWallet);
           setSubWallets(reorderedWallets);
-          saveSubWalletsToStorage(reorderedWallets);
+          localStorage.setItem('crystal_sub_wallets', JSON.stringify(reorderedWallets));
         } else if (containerType === 'source') {
           const reorderedWallets = [...sourceWallets];
           const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);

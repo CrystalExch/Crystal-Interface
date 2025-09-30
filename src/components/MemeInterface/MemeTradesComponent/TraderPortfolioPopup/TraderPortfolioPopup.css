@@ -117,9 +117,6 @@
   border-radius: 3px;
 }
 
-.trader-popup-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(179, 184, 249, 0.5);
-}
 
 /* Account Summary */
 .trader-account-summary {

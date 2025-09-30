@@ -95,7 +95,9 @@ interface HeaderProps {
     valueBought: number;
     valueSold: number;
     valueNet: number;
-  };}
+  };
+  lastNonceGroupFetch: any;
+}
 
 const Tooltip: React.FC<{
   content: string;
@@ -248,7 +250,6 @@ const Tooltip: React.FC<{
   );
 };
 
-
 const Header: React.FC<HeaderProps> = ({
   setTokenIn,
   setTokenOut,
@@ -299,7 +300,8 @@ const Header: React.FC<HeaderProps> = ({
   setperpsActiveMarketKey,
   perpsMarketsData,
   perpsFilterOptions,
-  externalUserStats
+  externalUserStats,
+  lastNonceGroupFetch
 }) => {
     const selectedSet = useMemo(() => {
     if (!selectedWallets) return new Set<string>();
@@ -543,6 +545,7 @@ const Header: React.FC<HeaderProps> = ({
       localStorage.setItem('crystal_active_wallet_private_key', privateKey);
       setOneCTSigner(privateKey);
       lastRefGroupFetch.current = 0;
+      lastNonceGroupFetch.current = 0;
       setTimeout(() => refetch(), 0);
       if (terminalRefetch) {
         setTimeout(() => terminalRefetch(), 0);
@@ -552,6 +555,7 @@ const Header: React.FC<HeaderProps> = ({
       localStorage.removeItem('crystal_active_wallet_private_key');
       setOneCTSigner('')
       lastRefGroupFetch.current = 0;
+      lastNonceGroupFetch.current = 0;
       setTimeout(() => refetch(), 0);
     }
   };

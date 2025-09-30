@@ -1540,11 +1540,15 @@ useEffect(() => {
           });
         }
 
-        setPositions((prev) => {
-          const copy = Array.isArray(prev) ? [...prev] : [];
-          let idx = positionsMapRef.current.get(tokenAddr);
+setPositions((prev) => {
+  const copy = Array.isArray(prev) ? [...prev] : [];
+  let idx = positionsMapRef.current.get(tokenAddr);
 
-          const isUserTrade = callerAddr === userAddr.toLowerCase();
+  const allUserAddresses = [
+    userAddr.toLowerCase(),
+    ...subWallets.map(w => w.address.toLowerCase())
+  ];
+  const isUserTrade = allUserAddresses.includes(callerAddr);
 
           if (idx === undefined && isUserTrade) {
             const isCurrent =
@@ -1651,23 +1655,29 @@ useEffect(() => {
         return;
       }
 
-      if (
-        tokenAddress &&
-        log.address?.toLowerCase() === tokenAddress.toLowerCase() &&
-        log.topics[0] === TRANSFER_TOPIC &&
-        address
-      ) {
-        const walletTopic = '0x' + address.slice(2).padStart(64, '0');
-        const involvesWallet =
-          log.topics[1] === walletTopic || log.topics[2] === walletTopic;
-        if (involvesWallet) {
-          const now = Date.now();
-          if (now - lastInvalidateRef.current > 800) {
-            lastInvalidateRef.current = now;
-            terminalRefetch();
-          }
-        }
-      }
+if (
+  tokenAddress &&
+  log.address?.toLowerCase() === tokenAddress.toLowerCase() &&
+  log.topics[0] === TRANSFER_TOPIC &&
+  address
+) {
+  const allWalletTopics = [
+    '0x' + address.slice(2).padStart(64, '0'),
+    ...subWallets.map(w => '0x' + w.address.slice(2).padStart(64, '0'))
+  ];
+  
+  const involvesWallet = allWalletTopics.some(
+    walletTopic => log.topics[1] === walletTopic || log.topics[2] === walletTopic
+  );
+  
+  if (involvesWallet) {
+    const now = Date.now();
+    if (now - lastInvalidateRef.current > 800) {
+      lastInvalidateRef.current = now;
+      terminalRefetch();
+    }
+  }
+}
     };
 
     return () => {
@@ -1675,7 +1685,7 @@ useEffect(() => {
         ws.close();
       } catch {}
     };
-  }, [token.id, tokenAddress, address, terminalRefetch]);
+}, [token.id, tokenAddress, address, terminalRefetch, subWallets]);
 
   // metadata n klines
   useEffect(() => {
@@ -2351,8 +2361,16 @@ useEffect(() => {
   }, [tokenAddress]);
 
   // positions
+// positions - aggregated across all wallets
   useEffect(() => {
-    if (!userAddr) return;
+    // Collect all addresses (main wallet + sub wallets)
+    const allAddresses = [
+      userAddr,
+      ...subWallets.map(w => w.address)
+    ].filter(Boolean).map(a => a.toLowerCase());
+
+    if (allAddresses.length === 0) return;
+
     let cancelled = false;
 
     (async () => {
@@ -2365,85 +2383,114 @@ useEffect(() => {
         lastPriceNative: 0,
       };
 
-      const all: any[] = [];
-      let skip = 0;
+      // Map to aggregate positions by tokenId
+      const aggregatedMap = new Map<string, any>();
 
-      while (true) {
-        const response = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: POSITIONS_QUERY,
-            variables: {
-              a: (userAddr || '').toLowerCase(),
-              skip,
-              first: PAGE_SIZE,
-            },
-          }),
-        });
+      // Fetch positions for each address
+      for (const addr of allAddresses) {
+        let skip = 0;
 
-        const { data } = await response.json();
-        const rows: any[] = data?.launchpadPositions ?? [];
-        if (!rows.length) break;
+        while (true) {
+          const response = await fetch(SUBGRAPH_URL, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              query: POSITIONS_QUERY,
+              variables: {
+                a: addr,
+                skip,
+                first: PAGE_SIZE,
+              },
+            }),
+          });
 
-        for (const p of rows) {
-          const boughtTokens = Number(p.tokenBought) / 1e18;
-          const soldTokens = Number(p.tokenSold) / 1e18;
-          const spentNative = Number(p.nativeSpent) / 1e18;
-          const receivedNative = Number(p.nativeReceived) / 1e18;
-          const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e18;
-          const balance = Number(p.tokens) / 1e18;
-          const realized = receivedNative - spentNative;
-          const unrealized = balance * lastPrice;
-          const pnlNative = realized + unrealized;
-          const remainingPct =
-            boughtTokens > 0 ? (balance / boughtTokens) * 100 : 0;
+          const { data } = await response.json();
+          const rows: any[] = data?.launchpadPositions ?? [];
+          if (!rows.length) break;
 
-          if (p.token.id == tokenAddress) {
-            totals.amountBought += boughtTokens;
-            totals.amountSold += soldTokens;
-            totals.valueBought += spentNative;
-            totals.valueSold += receivedNative;
-            totals.balance += balance;
-            totals.lastPriceNative = lastPrice || totals.lastPriceNative;
-          }
+          for (const p of rows) {
+            const tokenId = p.token.id.toLowerCase();
+            const boughtTokens = Number(p.tokenBought) / 1e18;
+            const soldTokens = Number(p.tokenSold) / 1e18;
+            const spentNative = Number(p.nativeSpent) / 1e18;
+            const receivedNative = Number(p.nativeReceived) / 1e18;
+            const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e18;
+            const balance = Number(p.tokens) / 1e18;
 
-          let imageUrl = '';
-          if (p.token.metadataCID) {
-            try {
-              const metaRes = await fetch(p.token.metadataCID);
-              if (metaRes.ok) {
-                const meta = await metaRes.json();
-                imageUrl = meta.image || '';
+            // Aggregate into map
+            if (!aggregatedMap.has(tokenId)) {
+              let imageUrl = '';
+              if (p.token.metadataCID) {
+                try {
+                  const metaRes = await fetch(p.token.metadataCID);
+                  if (metaRes.ok) {
+                    const meta = await metaRes.json();
+                    imageUrl = meta.image || '';
+                  }
+                } catch (e) {
+                  console.warn('Failed to load metadata for token', p.token.id, e);
+                }
               }
-            } catch (e) {
-              console.warn('Failed to load metadata for token', p.token.id, e);
+
+              aggregatedMap.set(tokenId, {
+                tokenId: p.token.id,
+                symbol: p.token.symbol,
+                name: p.token.name,
+                metadataCID: p.token.metadataCID,
+                imageUrl: imageUrl,
+                boughtTokens: 0,
+                soldTokens: 0,
+                spentNative: 0,
+                receivedNative: 0,
+                remainingTokens: 0,
+                remainingPct: 0,
+                pnlNative: 0,
+                lastPrice: lastPrice,
+              });
+            }
+
+            const existing = aggregatedMap.get(tokenId);
+            existing.boughtTokens += boughtTokens;
+            existing.soldTokens += soldTokens;
+            existing.spentNative += spentNative;
+            existing.receivedNative += receivedNative;
+            existing.remainingTokens += balance;
+            existing.lastPrice = lastPrice || existing.lastPrice;
+
+            // Update totals for current token if it matches tokenAddress
+            if (p.token.id.toLowerCase() === tokenAddress?.toLowerCase()) {
+              totals.amountBought += boughtTokens;
+              totals.amountSold += soldTokens;
+              totals.valueBought += spentNative;
+              totals.valueSold += receivedNative;
+              totals.balance += balance;
+              totals.lastPriceNative = lastPrice || totals.lastPriceNative;
             }
           }
 
-          all.push({
-            tokenId: p.token.id,
-            symbol: p.token.symbol,
-            name: p.token.name,
-            metadataCID: p.token.metadataCID,
-            imageUrl: imageUrl,
-            boughtTokens,
-            soldTokens,
-            spentNative,
-            receivedNative,
-            remainingTokens: balance,
-            remainingPct,
-            pnlNative,
-            lastPrice,
-          });
+          if (rows.length < PAGE_SIZE) break;
+          skip += PAGE_SIZE;
+          if (cancelled) return;
         }
-
-        if (rows.length < PAGE_SIZE) break;
-        skip += PAGE_SIZE;
-        if (cancelled) return;
       }
 
       if (cancelled) return;
+
+      // Convert map to array and recalculate derived fields
+      const all = Array.from(aggregatedMap.values()).map(pos => {
+        const realized = pos.receivedNative - pos.spentNative;
+        const unrealized = pos.remainingTokens * pos.lastPrice;
+        const pnlNative = realized + unrealized;
+        const remainingPct = pos.boughtTokens > 0 
+          ? (pos.remainingTokens / pos.boughtTokens) * 100 
+          : 0;
+
+        return {
+          ...pos,
+          remainingPct,
+          pnlNative,
+        };
+      });
 
       const markToMarket = totals.balance * (totals.lastPriceNative || 0);
       const totalPnL = totals.valueSold + markToMarket - totals.valueBought;
@@ -2467,7 +2514,7 @@ useEffect(() => {
     return () => {
       cancelled = true;
     };
-  }, [userAddr]);
+  }, [userAddr, subWallets, tokenAddress]);
 
   const handlePresetEditToggle = useCallback(() => {
     setIsPresetEditMode(!isPresetEditMode);

@@ -493,9 +493,7 @@
     background:#3a3a3f;
     border-radius:3px
 }
-.earn-search-dropdown::-webkit-scrollbar-thumb:hover{
-    background:#4a4a4f
-}
+
 @keyframes slideRight{
     from{
         transform:translateX(0)
