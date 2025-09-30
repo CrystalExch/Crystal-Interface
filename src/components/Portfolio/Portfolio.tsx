@@ -950,7 +950,7 @@ const executeDistribution = async () => {
     for (const [walletAddress, transfers] of walletTransfers.entries()) {
       
       for (const transfer of transfers) {
-        let currentNonce = nonces.current.get(walletAddress)?.nonce;
+        const wallet = nonces.current.get(walletAddress)
         const amountInWei = BigInt(Math.round(transfer.amount * 10**18));
         const params = [{
           uo: {
@@ -958,24 +958,17 @@ const executeDistribution = async () => {
             value: amountInWei,
             data: '0x'
           }
-        }, 21000n, 0n, false, transfer.fromPrivateKey, currentNonce]
-
-        nonces.current.get(walletAddress)?.pendingtxs.push(params);
-        const wallet = nonces.current.get(walletAddress)
+        }, 21000n, 0n, false, transfer.fromPrivateKey, wallet?.nonce]
         if (wallet) wallet.nonce += 1
+        wallet?.pendingtxs.push(params);
         const transferPromise = sendUserOperationAsync(...params)
         .then(() => {
-          const wallet = nonces.current.get(walletAddress)
-          if (wallet) {
-            wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-          }
+          if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
           return true;
         }).catch(() => {
-          const wallet = nonces.current.get(walletAddress)
           if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
           return false
         })
-        
         transferPromises.push(transferPromise);
       }
     }

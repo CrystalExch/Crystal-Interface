@@ -711,8 +711,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     });
 
     try {
-      let successCount = 0;
-
+      const transferPromises = [];
       for (const sourceAddr of sourceWallets) {
         const sourceWallet = subWallets.find((w) => w.address === sourceAddr);
         if (!sourceWallet) continue;
@@ -730,30 +729,31 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             }),
             value: 0n,
           };
-
-          const entry = getNonceEntry(sourceAddr);
-          const currentNonce = entry.nonce;
-          const params = [{ uo }, 0n, 0n, false, sourceWallet.privateKey, currentNonce];
-
-          entry.pendingtxs.push(params);
-          entry.nonce = entry.nonce + 1n;
-
-          try {
-            await sendUserOperationAsync(...params);
-          } finally {
-            entry.pendingtxs = entry.pendingtxs.filter((p: any) => p !== params);
-          }
-
-          successCount++;
+          const wallet = nonces.current.get(sourceAddr)
+          const params = [{ uo }, 0n, 0n, false, sourceWallet.privateKey, wallet?.nonce];
+          if (wallet) wallet.nonce += 1
+          wallet?.pendingtxs.push(params);
+          const transferPromise = sendUserOperationAsync(...params)
+          .then(() => {
+            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+            return true;
+          }).catch(() => {
+            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+            return false
+          })
+          transferPromises.push(transferPromise);
         } catch (err) {
           console.error(`Failed to consolidate from ${sourceAddr}:`, err);
         }
       }
-
+      const results = await Promise.allSettled(transferPromises);
+      const successfulTransfers = results.filter(result => 
+        result.status === 'fulfilled' && result.value === true
+      ).length;
       terminalRefetch()
       updatePopup?.(txId, {
         title: 'Consolidation Complete',
-        subtitle: `Consolidated ${tokenSymbol} from ${successCount}/${sourceWallets.length} wallets`,
+        subtitle: `Consolidated ${tokenSymbol} from ${successfulTransfers}/${sourceWallets.length} wallets`,
         variant: 'success',
         isLoading: false
       });
@@ -863,8 +863,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
       const sourceWalletData = subWallets.find(w => w.address === sourceAddr);
       if (!sourceWalletData) throw new Error('Source wallet not found');
-
-      let success = 0;
+      const transferPromises = [];
       for (const { to, amount } of plan) {
         try {
           const uo = {
@@ -877,29 +876,31 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             value: 0n,
           };
 
-          const entry = getNonceEntry(sourceAddr);
-          const currentNonce = entry.nonce;
-          const params = [{ uo }, 0n, 0n, false, sourceWalletData.privateKey, currentNonce];
-
-          entry.pendingtxs.push(params);
-          entry.nonce = entry.nonce + 1n;
-
-          try {
-            await sendUserOperationAsync?.(...params);
-          } finally {
-            entry.pendingtxs = entry.pendingtxs.filter((p: any) => p !== params);
-          }
-
-          success++;
+          const wallet = nonces.current.get(sourceAddr)
+          const params = [{ uo }, 0n, 0n, false, sourceWalletData.privateKey, wallet?.nonce];
+          if (wallet) wallet.nonce += 1
+          wallet?.pendingtxs.push(params);
+          const transferPromise = sendUserOperationAsync(...params)
+          .then(() => {
+            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+            return true;
+          }).catch(() => {
+            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+            return false
+          })
+          transferPromises.push(transferPromise);
         } catch (err) {
           console.error(`Split transfer failed to ${to}:`, err);
         }
       }
-
+      const results = await Promise.allSettled(transferPromises);
+      const successfulTransfers = results.filter(result => 
+        result.status === 'fulfilled' && result.value === true
+      ).length;
       terminalRefetch()
       updatePopup?.(txId, {
         title: 'Split Complete',
-        subtitle: `Sent ${tokenSymbol} to ${success}/${plan.length} wallets`,
+        subtitle: `Sent ${tokenSymbol} to ${successfulTransfers}/${plan.length} wallets`,
         variant: 'success',
         isLoading: false
       });
@@ -997,9 +998,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     });
 
     try {
-      let success = 0;
       let skippedInsufficient = 0;
-
+      const transferPromises = [];
       for (let i = 0; i < targets.length; i++) {
         const addr = targets[i];
         const partWei = chunks[i];
@@ -1013,8 +1013,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           continue;
         }
 
-        const wallet = subWallets.find(w => w.address === addr);
-        const pk = wallet?.privateKey ?? activeWalletPrivateKey;
+        const wally = subWallets.find(w => w.address === addr);
+        const pk = wally?.privateKey ?? activeWalletPrivateKey;
         if (!pk) { continue; }
 
         const uo = {
@@ -1027,29 +1027,30 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           value: partWei,
         };
 
-        const entry = getNonceEntry(addr);
-        const currentNonce = entry.nonce;
-        const params = [{ uo }, 0n, 0n, false, pk, currentNonce];
-
-        entry.pendingtxs.push(params);
-        entry.nonce = entry.nonce + 1n;
-
-        try {
-          await sendUserOperationAsync(...params);
-          success++;
-        } catch (err) {
-          console.error(`Buy failed for ${addr}:`, err);
-        } finally {
-          entry.pendingtxs = entry.pendingtxs.filter((p: any) => p !== params);
-        }
-
+        const wallet = nonces.current.get(addr)
+        const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
+        if (wallet) wallet.nonce += 1
+        wallet?.pendingtxs.push(params);
+        const transferPromise = sendUserOperationAsync(...params)
+        .then(() => {
+          if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+          return true;
+        }).catch(() => {
+          if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+          return false
+        })
+        transferPromises.push(transferPromise);
       }
+      const results = await Promise.allSettled(transferPromises);
+      const successfulTransfers = results.filter(result => 
+        result.status === 'fulfilled' && result.value === true
+      ).length;
 
       terminalRefetch()
       updatePopup?.(txId, {
         title: 'Batch buy completed',
         subtitle:
-          `Succeeded: ${success}/${targets.length}` +
+          `Succeeded: ${successfulTransfers}/${targets.length}` +
           (skippedInsufficient ? ` • Skipped (insufficient MON): ${skippedInsufficient}` : ''),
         variant: 'success',
         isLoading: false,
@@ -1096,10 +1097,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     });
 
     try {
-      let success = 0;
       let skippedZero = 0;
       let skippedInsufficient = 0;
-
+      const transferPromises = [];
       if (sellMode === 'percent') {
         const pct = BigInt(parseInt(value.replace('%', ''), 10));
         for (const addr of targets) {
@@ -1109,8 +1109,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
           if (amountWei <= 0n) { skippedZero++; continue; }
 
-          const wallet = subWallets.find(w => w.address === addr);
-          const pk = wallet?.privateKey ?? activeWalletPrivateKey;
+          const wally = subWallets.find(w => w.address === addr);
+          const pk = wally?.privateKey ?? activeWalletPrivateKey;
           if (!pk) { skippedInsufficient++; continue; }
 
           const uo = {
@@ -1123,22 +1123,19 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             value: 0n,
           };
 
-          const entry = getNonceEntry(addr);
-          const currentNonce = entry.nonce;
-          const params = [{ uo }, 0n, 0n, false, pk, currentNonce];
-
-          entry.pendingtxs.push(params);
-          entry.nonce = entry.nonce + 1n;
-
-          try {
-            await sendUserOperationAsync(...params);
-            success++;
-          } catch (err) {
-            console.error(`Percent sell failed for ${addr}:`, err);
-          } finally {
-            entry.pendingtxs = entry.pendingtxs.filter((p: any) => p !== params);
-          }
-
+          const wallet = nonces.current.get(addr)
+          const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
+          if (wallet) wallet.nonce += 1
+          wallet?.pendingtxs.push(params);
+          const transferPromise = sendUserOperationAsync(...params)
+          .then(() => {
+            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+            return true;
+          }).catch(() => {
+            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+            return false
+          })
+          transferPromises.push(transferPromise);
         }
       } else {
         const totalMon = parseFloat(value || '0');
@@ -1164,8 +1161,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           const amountWei = reqTokenWei > balWei ? balWei : reqTokenWei;
           if (amountWei <= 0n) { skippedInsufficient++; continue; }
 
-          const wallet = subWallets.find(w => w.address === addr);
-          const pk = wallet?.privateKey ?? activeWalletPrivateKey;
+          const wally = subWallets.find(w => w.address === addr);
+          const pk = wally?.privateKey ?? activeWalletPrivateKey;
           if (!pk) { skippedInsufficient++; continue; }
 
           const uo = {
@@ -1177,31 +1174,30 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             }),
             value: 0n,
           };
-
-          const entry = getNonceEntry(addr);
-          const currentNonce = entry.nonce;
-          const params = [{ uo }, 0n, 0n, false, pk, currentNonce];
-
-          entry.pendingtxs.push(params);
-          entry.nonce = entry.nonce + 1n;
-
-          try {
-            await sendUserOperationAsync(...params);
-            success++;
-          } catch (err) {
-            console.error(`MON sell failed for ${addr}:`, err);
-          } finally {
-            entry.pendingtxs = entry.pendingtxs.filter((p: any) => p !== params);
-          }
-
+          const wallet = nonces.current.get(addr)
+          const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
+          if (wallet) wallet.nonce += 1
+          wallet?.pendingtxs.push(params);
+          const transferPromise = sendUserOperationAsync(...params)
+          .then(() => {
+            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+            return true;
+          }).catch(() => {
+            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+            return false
+          })
+          transferPromises.push(transferPromise);
         }
       }
-
-      terminalRefetch?.()
+      const results = await Promise.allSettled(transferPromises);
+      const successfulTransfers = results.filter(result => 
+        result.status === 'fulfilled' && result.value === true
+      ).length;
+      terminalRefetch()
       updatePopup?.(txId, {
         title: 'Batch sell completed',
         subtitle:
-          `Succeeded: ${success}/${targets.length}` +
+          `Succeeded: ${successfulTransfers}/${targets.length}` +
           (skippedZero ? ` • Skipped (zero) : ${skippedZero}` : '') +
           (skippedInsufficient ? ` • Skipped (insufficient/keys): ${skippedInsufficient}` : ''),
         variant: 'success',
@@ -1967,8 +1963,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 type="checkbox"
                                 className="quickbuy-wallet-checkbox selection"
                                 checked={isSelected}
-                                onChange={(e) => { e.stopPropagation(); toggleWalletSelection(wallet.address); }}
-                                onClick={(e) => e.stopPropagation()}
+                                readOnly
                               />
 
                             </div>
@@ -2102,6 +2097,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 type="checkbox"
                                 className="quickbuy-wallet-checkbox selection"
                                 checked={isSelected}
+                                readOnly
                               />
                             </div>
 
