@@ -1025,7 +1025,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       <div className="meme-remaining-info">
                         <div>
                           <span className="meme-remaining">
-                            {row.remainingPct.toFixed(1)}%
+                            {row.remainingPct.toFixed(2)}%
                           </span>
                         </div>
                         <div className="meme-remaining-bar">
@@ -1221,7 +1221,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                         <div className="meme-remaining-info">
                           <div>
                             <span className="meme-remaining">
-                              {remainingPct.toFixed(1)}%
+                              {remainingPct.toFixed(2)}%
                             </span>
                           </div>
                           <div className="meme-remaining-bar">

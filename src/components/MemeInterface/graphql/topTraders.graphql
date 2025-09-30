@@ -1,6 +1,6 @@
 query ($m: Bytes!, $skip: Int!, $first: Int!) {
   launchpadPositions(
-    where: { token: $m }
+    where: { token: $m, tokens_gt: 0 }
     orderBy: nativeReceived # remaining
     orderDirection: desc
     skip: $skip

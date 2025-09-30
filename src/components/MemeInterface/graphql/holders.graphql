@@ -1,6 +1,6 @@
 query ($m: Bytes!, $skip: Int!, $first: Int!) {
   launchpadPositions(
-    where: { token: $m }
+    where: { token: $m, tokens_gt: 0 }
     orderBy: tokens
     orderDirection: desc
     skip: $skip
@@ -20,7 +20,7 @@ query ($m: Bytes!, $skip: Int!, $first: Int!) {
   }
 
   top10: launchpadPositions(
-    where: { token: $m }
+    where: { token: $m, tokens_gt: 0 }
     orderBy: tokens
     orderDirection: desc
     first: 10
