@@ -771,17 +771,17 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     }
   };
 
-const selectAllWallets = () => {
-  const walletsWithToken = subWallets.filter(
-    (w) => getWalletTokenBalance(w.address) > 0
-  );
+  const selectAllWallets = () => {
+    const walletsWithToken = subWallets.filter(
+      (w) => getWalletTokenBalance(w.address) > 0
+    );
 
-  if (walletsWithToken.length > 0) {
-    setSelectedWallets(new Set(walletsWithToken.map((w) => w.address)));
-  } else {
-    setSelectedWallets(new Set(subWallets.map((w) => w.address)));
-  }
-};
+    if (walletsWithToken.length > 0) {
+      setSelectedWallets(new Set(walletsWithToken.map((w) => w.address)));
+    } else {
+      setSelectedWallets(new Set(subWallets.map((w) => w.address)));
+    }
+  };
 
   const unselectAllWallets = () => {
     setSelectedWallets(new Set());
@@ -800,211 +800,211 @@ const selectAllWallets = () => {
     setSelectedWallets(new Set(walletsWithBalance.map(w => w.address)));
   };
 
-const handleSplitTokens = async () => {
-  if (selectedWallets.size === 0 || !tokenAddress) return;
+  const handleSplitTokens = async () => {
+    if (selectedWallets.size === 0 || !tokenAddress) return;
 
-  const selected = Array.from(selectedWallets);
+    const selected = Array.from(selectedWallets);
 
-  // find a wallet that actually has tokens (the "main source")
-  const sourceAddr = selected.find(
-    addr => (walletTokenBalances[addr]?.[tokenAddress] ?? 0n) > 0n
-  );
-  if (!sourceAddr) {
-    const txId = `split-error-${Date.now()}`;
-    showLoadingPopup?.(txId, {
-      title: 'No Tokens to Split',
-      subtitle: 'None of the selected wallets have tokens to split'
-    });
-    setTimeout(
-      () =>
-        updatePopup?.(txId, {
-          title: 'No Tokens to Split',
-          subtitle: 'None of the selected wallets have tokens to split',
-          variant: 'error',
-          isLoading: false
-        }),
-      100
+    // find a wallet that actually has tokens (the "main source")
+    const sourceAddr = selected.find(
+      addr => (walletTokenBalances[addr]?.[tokenAddress] ?? 0n) > 0n
     );
-    return;
-  }
-
-  const sourceBalance: bigint =
-    walletTokenBalances[sourceAddr]?.[tokenAddress] ?? 0n;
-  if (sourceBalance <= 0n) {
-    const txId = `split-error-${Date.now()}`;
-    showLoadingPopup?.(txId, {
-      title: 'Insufficient Source Balance',
-      subtitle: 'Source wallet has 0 tokens'
-    });
-    setTimeout(
-      () =>
-        updatePopup?.(txId, {
-          title: 'Insufficient Source Balance',
-          subtitle: 'Source wallet has 0 tokens',
-          variant: 'error',
-          isLoading: false
-        }),
-      100
-    );
-    return;
-  }
-
-  if (selected.length < 2) {
-    const txId = `split-error-${Date.now()}`;
-    showLoadingPopup?.(txId, {
-      title: 'Need More Wallets',
-      subtitle: 'Select at least 2 wallets to split tokens'
-    });
-    setTimeout(
-      () =>
-        updatePopup?.(txId, {
-          title: 'Need More Wallets',
-          subtitle: 'Select at least 2 wallets to split tokens',
-          variant: 'error',
-          isLoading: false
-        }),
-      100
-    );
-    return;
-  }
-
-  setIsSplitting(true);
-  const txId = `split-${Date.now()}`;
-  showLoadingPopup?.(txId, {
-    title: 'Splitting Tokens',
-    subtitle: `Redistributing ${tokenSymbol} across ${selected.length} wallets (±20%)`,
-    tokenImage
-  });
-
-  try {
-    // random weights for all selected wallets
-    const BP = 10_000;
-    const VAR = 2_000;
-    const weights: number[] = selected.map(() => {
-      const delta = Math.floor(Math.random() * (2 * VAR + 1)) - VAR;
-      return Math.max(1, BP + delta);
-    });
-    const sumW = weights.reduce((a, b) => a + b, 0);
-    const sumWBig = BigInt(sumW);
-
-    // target balances each wallet should have after split
-    const desired: Record<string, bigint> = {};
-    let allocated = 0n;
-    for (let i = 0; i < selected.length; i++) {
-      if (i === selected.length - 1) {
-        // last wallet takes the remainder
-        desired[selected[i]] = sourceBalance - allocated;
-      } else {
-        const amt = (sourceBalance * BigInt(weights[i])) / sumWBig;
-        desired[selected[i]] = amt;
-        allocated += amt;
-      }
-    }
-
-    // build transfer plan: source sends difference to others
-    const plan: { to: string; amount: bigint }[] = [];
-    for (const addr of selected) {
-      if (addr === sourceAddr) continue;
-      const targetAmt = desired[addr];
-      if (targetAmt > 0n) {
-        plan.push({ to: addr, amount: targetAmt });
-      }
-    }
-
-    if (plan.length === 0) {
-      const txId2 = `split-error-${Date.now()}`;
-      showLoadingPopup?.(txId2, {
-        title: 'Split amounts are zero',
-        subtitle: 'Try selecting fewer wallets'
+    if (!sourceAddr) {
+      const txId = `split-error-${Date.now()}`;
+      showLoadingPopup?.(txId, {
+        title: 'No Tokens to Split',
+        subtitle: 'None of the selected wallets have tokens to split'
       });
       setTimeout(
         () =>
-          updatePopup?.(txId2, {
-            title: 'Split amounts are zero',
-            subtitle: 'Try selecting fewer wallets',
+          updatePopup?.(txId, {
+            title: 'No Tokens to Split',
+            subtitle: 'None of the selected wallets have tokens to split',
             variant: 'error',
             isLoading: false
           }),
         100
       );
-      setIsSplitting(false);
       return;
     }
 
-    // send transfers
-    const sourceWalletData = subWallets.find(w => w.address === sourceAddr);
-    if (!sourceWalletData) throw new Error('Source wallet not found');
-
-    const transferPromises = [];
-    for (const { to, amount } of plan) {
-      try {
-        const uo = {
-          target: tokenAddress as `0x${string}`,
-          data: encodeFunctionData({
-            abi: CrystalLaunchpadToken,
-            functionName: 'transfer',
-            args: [to as `0x${string}`, amount]
+    const sourceBalance: bigint =
+      walletTokenBalances[sourceAddr]?.[tokenAddress] ?? 0n;
+    if (sourceBalance <= 0n) {
+      const txId = `split-error-${Date.now()}`;
+      showLoadingPopup?.(txId, {
+        title: 'Insufficient Source Balance',
+        subtitle: 'Source wallet has 0 tokens'
+      });
+      setTimeout(
+        () =>
+          updatePopup?.(txId, {
+            title: 'Insufficient Source Balance',
+            subtitle: 'Source wallet has 0 tokens',
+            variant: 'error',
+            isLoading: false
           }),
-          value: 0n
-        };
-
-        const wallet = nonces.current.get(sourceAddr);
-        const params = [
-          { uo },
-          0n,
-          0n,
-          false,
-          sourceWalletData.privateKey,
-          wallet?.nonce
-        ];
-        if (wallet) wallet.nonce += 1;
-        wallet?.pendingtxs.push(params);
-        const transferPromise = sendUserOperationAsync(...params)
-          .then(() => {
-            if (wallet)
-              wallet.pendingtxs = wallet.pendingtxs.filter(
-                (p: any) => p !== params
-              );
-            return true;
-          })
-          .catch(() => {
-            if (wallet)
-              wallet.pendingtxs = wallet.pendingtxs.filter(
-                (p: any) => p !== params
-              );
-            return false;
-          });
-        transferPromises.push(transferPromise);
-      } catch (err) {
-        console.error(`Split transfer failed to ${to}:`, err);
-      }
+        100
+      );
+      return;
     }
 
-    const results = await Promise.allSettled(transferPromises);
-    const successfulTransfers = results.filter(
-      result => result.status === 'fulfilled' && result.value === true
-    ).length;
+    if (selected.length < 2) {
+      const txId = `split-error-${Date.now()}`;
+      showLoadingPopup?.(txId, {
+        title: 'Need More Wallets',
+        subtitle: 'Select at least 2 wallets to split tokens'
+      });
+      setTimeout(
+        () =>
+          updatePopup?.(txId, {
+            title: 'Need More Wallets',
+            subtitle: 'Select at least 2 wallets to split tokens',
+            variant: 'error',
+            isLoading: false
+          }),
+        100
+      );
+      return;
+    }
 
-    terminalRefetch();
-    updatePopup?.(txId, {
-      title: 'Split Complete',
-      subtitle: `Sent ${tokenSymbol} to ${successfulTransfers}/${plan.length} wallets`,
-      variant: 'success',
-      isLoading: false
+    setIsSplitting(true);
+    const txId = `split-${Date.now()}`;
+    showLoadingPopup?.(txId, {
+      title: 'Splitting Tokens',
+      subtitle: `Redistributing ${tokenSymbol} across ${selected.length} wallets (±20%)`,
+      tokenImage
     });
 
-    setSelectedWallets(new Set());
-  } catch (error: any) {
-    updatePopup?.(txId, {
-      title: 'Split Failed',
-      subtitle: error?.message || 'Failed to split tokens',
-      variant: 'error',
-      isLoading: false
-    });
-  } finally {
-    setIsSplitting(false);
-  }
-};
+    try {
+      // random weights for all selected wallets
+      const BP = 10_000;
+      const VAR = 2_000;
+      const weights: number[] = selected.map(() => {
+        const delta = Math.floor(Math.random() * (2 * VAR + 1)) - VAR;
+        return Math.max(1, BP + delta);
+      });
+      const sumW = weights.reduce((a, b) => a + b, 0);
+      const sumWBig = BigInt(sumW);
+
+      // target balances each wallet should have after split
+      const desired: Record<string, bigint> = {};
+      let allocated = 0n;
+      for (let i = 0; i < selected.length; i++) {
+        if (i === selected.length - 1) {
+          // last wallet takes the remainder
+          desired[selected[i]] = sourceBalance - allocated;
+        } else {
+          const amt = (sourceBalance * BigInt(weights[i])) / sumWBig;
+          desired[selected[i]] = amt;
+          allocated += amt;
+        }
+      }
+
+      // build transfer plan: source sends difference to others
+      const plan: { to: string; amount: bigint }[] = [];
+      for (const addr of selected) {
+        if (addr === sourceAddr) continue;
+        const targetAmt = desired[addr];
+        if (targetAmt > 0n) {
+          plan.push({ to: addr, amount: targetAmt });
+        }
+      }
+
+      if (plan.length === 0) {
+        const txId2 = `split-error-${Date.now()}`;
+        showLoadingPopup?.(txId2, {
+          title: 'Split amounts are zero',
+          subtitle: 'Try selecting fewer wallets'
+        });
+        setTimeout(
+          () =>
+            updatePopup?.(txId2, {
+              title: 'Split amounts are zero',
+              subtitle: 'Try selecting fewer wallets',
+              variant: 'error',
+              isLoading: false
+            }),
+          100
+        );
+        setIsSplitting(false);
+        return;
+      }
+
+      // send transfers
+      const sourceWalletData = subWallets.find(w => w.address === sourceAddr);
+      if (!sourceWalletData) throw new Error('Source wallet not found');
+
+      const transferPromises = [];
+      for (const { to, amount } of plan) {
+        try {
+          const uo = {
+            target: tokenAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: CrystalLaunchpadToken,
+              functionName: 'transfer',
+              args: [to as `0x${string}`, amount]
+            }),
+            value: 0n
+          };
+
+          const wallet = nonces.current.get(sourceAddr);
+          const params = [
+            { uo },
+            0n,
+            0n,
+            false,
+            sourceWalletData.privateKey,
+            wallet?.nonce
+          ];
+          if (wallet) wallet.nonce += 1;
+          wallet?.pendingtxs.push(params);
+          const transferPromise = sendUserOperationAsync(...params)
+            .then(() => {
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p !== params
+                );
+              return true;
+            })
+            .catch(() => {
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p !== params
+                );
+              return false;
+            });
+          transferPromises.push(transferPromise);
+        } catch (err) {
+          console.error(`Split transfer failed to ${to}:`, err);
+        }
+      }
+
+      const results = await Promise.allSettled(transferPromises);
+      const successfulTransfers = results.filter(
+        result => result.status === 'fulfilled' && result.value === true
+      ).length;
+
+      terminalRefetch();
+      updatePopup?.(txId, {
+        title: 'Split Complete',
+        subtitle: `Sent ${tokenSymbol} to ${successfulTransfers}/${plan.length} wallets`,
+        variant: 'success',
+        isLoading: false
+      });
+
+      setSelectedWallets(new Set());
+    } catch (error: any) {
+      updatePopup?.(txId, {
+        title: 'Split Failed',
+        subtitle: error?.message || 'Failed to split tokens',
+        variant: 'error',
+        isLoading: false
+      });
+    } finally {
+      setIsSplitting(false);
+    }
+  };
 
   useEffect(() => {
     if (isOpen && account?.connected) {
@@ -1058,7 +1058,7 @@ const handleSplitTokens = async () => {
     let raw = balances[ethToken.address];
     if (raw <= 0n) return 0n;
 
-    const gasReserve = settings.chainConfig[activechain].gasamount ?? 0n;
+    const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
     const safe = raw > gasReserve ? raw - gasReserve : 0n;
 
     return safe;
@@ -1990,10 +1990,10 @@ const handleSplitTokens = async () => {
           {(() => {
             const walletsWithToken = subWallets.filter(w => getWalletTokenBalance(w.address) > 0);
             const walletsWithoutToken = subWallets.filter(w => getWalletTokenBalance(w.address) === 0);
-const hasTokenHolders = walletsWithToken.length > 0;
-const allSelected = hasTokenHolders
-  ? selectedWallets.size === walletsWithToken.length
-  : selectedWallets.size === subWallets.length;
+            const hasTokenHolders = walletsWithToken.length > 0;
+            const allSelected = hasTokenHolders
+              ? selectedWallets.size === walletsWithToken.length
+              : selectedWallets.size === subWallets.length;
             const walletsWithoutTokenAddrs = walletsWithoutToken.map(w => w.address);
             const allWithoutSelected =
               walletsWithoutTokenAddrs.length > 0 &&
@@ -2018,14 +2018,14 @@ const allSelected = hasTokenHolders
                   <div className="quickbuy-wallets-actions">
                     {hasTokenHolders ? (
                       <>
-<Tooltip content={allSelected ? 'Unselect all wallets' : 'Select all wallets'}>
-  <button
-    className="quickbuy-wallet-action-btn select-all"
-    onClick={allSelected ? unselectAllWallets : selectAllWallets}
-  >
-    {allSelected ? 'Unselect All' : 'Select All'}
-  </button>
-</Tooltip>
+                        <Tooltip content={allSelected ? 'Unselect all wallets' : 'Select all wallets'}>
+                          <button
+                            className="quickbuy-wallet-action-btn select-all"
+                            onClick={allSelected ? unselectAllWallets : selectAllWallets}
+                          >
+                            {allSelected ? 'Unselect All' : 'Select All'}
+                          </button>
+                        </Tooltip>
                         <div className="cs-container">
                           <Tooltip content="Consolidate all tokens to the one active wallet (purple checkbox)">
                             <button
@@ -2212,7 +2212,7 @@ const allSelected = hasTokenHolders
                               className="quickbuy-wallet-action-btn select-all"
                               onClick={selectAllWithBalanceWithoutToken}
                             >
-                              With Balance
+                              Select All With Balance
                             </button>
                           </Tooltip>
                         </div>
