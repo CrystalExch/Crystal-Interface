@@ -365,8 +365,17 @@ const Portfolio: React.FC<PortfolioProps> = ({
   });
 
   const [enabledWallets, setEnabledWallets] = useState<Set<string>>(new Set());
-  const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
-  const [editingWallet, setEditingWallet] = useState<string | null>(null);
+const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(() => {
+  const stored = localStorage.getItem('crystal_wallet_names');
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (error) {
+      return {};
+    }
+  }
+  return {};
+});  const [editingWallet, setEditingWallet] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
 
   const [draggedWallet, setDraggedWallet] = useState<WalletDragItem | null>(null);
@@ -437,26 +446,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
       });
     }
   }, []);
-
-  const showWalletCreated = useCallback(() => {
-    const txId = `wallet-created-${Date.now()}`;
-    if (showLoadingPopup) {
-      showLoadingPopup(txId, {
-        title: 'Subwallet Created',
-        subtitle: 'New subwallet has been successfully created'
-      });
-    }
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: 'Subwallet Created',
-        subtitle: 'New subwallet has been successfully created',
-        variant: 'success',
-        confirmed: true,
-        isLoading: false
-      });
-    }
-  }, []);
-
   const showWalletImported = useCallback((walletAddress: string) => {
     const txId = `wallet-imported-${Date.now()}`;
     if (showLoadingPopup) {
@@ -476,24 +465,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     }
   }, []);
 
-  const showSendBackSuccess = useCallback((walletCount: number) => {
-    const txId = `send-back-${Date.now()}`;
-    if (showLoadingPopup) {
-      showLoadingPopup(txId, {
-        title: 'Send Back Complete',
-        subtitle: `Successfully sent funds back from ${walletCount} wallets to main wallet`
-      });
-    }
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: 'Send Back Complete',
-        subtitle: `Successfully sent funds back from ${walletCount} wallets to main wallet`,
-        variant: 'success',
-        confirmed: true,
-        isLoading: false
-      });
-    }
-  }, []);
 
   const handleResize = () => {
     setIsMobile(window.innerWidth <= 1020);
@@ -546,11 +517,12 @@ const Portfolio: React.FC<PortfolioProps> = ({
     newEnabledWallets.delete(address);
     setEnabledWallets(newEnabledWallets);
     localStorage.setItem('crystal_enabled_wallets', JSON.stringify(Array.from(newEnabledWallets)));
-
     const newWalletNames = { ...walletNames };
     delete newWalletNames[address];
     setWalletNames(newWalletNames);
     localStorage.setItem('crystal_wallet_names', JSON.stringify(newWalletNames));
+
+    window.dispatchEvent(new CustomEvent('walletNamesUpdated', { detail: newWalletNames }));
 
     setShowDeleteConfirmation(false);
     setWalletToDelete('');
@@ -587,50 +559,16 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const isValidPrivateKey = (key: string) => {
     return /^0x[a-fA-F0-9]{64}$/.test(key) || /^[a-fA-F0-9]{64}$/.test(key);
   };
-
-  useEffect(() => {
-    const storedEnabledWallets = localStorage.getItem('crystal_enabled_wallets');
-    if (storedEnabledWallets) {
-      try {
-        setEnabledWallets(new Set(JSON.parse(storedEnabledWallets)));
-      } catch (error) {
-      }
+useEffect(() => {
+  const storedEnabledWallets = localStorage.getItem('crystal_enabled_wallets');
+  if (storedEnabledWallets) {
+    try {
+      setEnabledWallets(new Set(JSON.parse(storedEnabledWallets)));
+    } catch (error) {
     }
+  }
+}, []);
 
-    const storedWalletNames = localStorage.getItem('crystal_wallet_names');
-    if (storedWalletNames) {
-      try {
-        setWalletNames(JSON.parse(storedWalletNames));
-      } catch (error) {
-      }
-    }
-  }, []);
-
-  const handleDragStartFromZone = (e: React.DragEvent, wallet: WalletDragItem, zone: 'source' | 'destination') => {
-    setDraggedWallet({ ...wallet, sourceZone: zone });
-    e.dataTransfer.effectAllowed = 'move';
-
-    const dragData = { ...wallet, sourceZone: zone, type: 'single-zone-drag' };
-    e.dataTransfer.setData('application/json', JSON.stringify(dragData));
-    e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
-  };
-
-  const handleDragStart = (e: React.DragEvent, wallet: { address: string, privateKey: string }, index: number) => {
-    e.stopPropagation();
-    const dragData: WalletDragItem & { type: string } = {
-      address: wallet.address,
-      name: getWalletName(wallet.address, index),
-      balance: getWalletBalance(wallet.address),
-      totalValue: getTotalWalletValue(wallet.address),
-      index,
-      type: 'single-main-drag'
-    };
-
-    setDraggedWallet(dragData);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('application/json', JSON.stringify(dragData));
-    e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
-  };
   const handleSingleMainDrop = (dragData: any, targetZone: 'source' | 'destination') => {
 
     const targetArray = targetZone === 'source' ? sourceWallets : destinationWallets;
@@ -685,7 +623,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     setDropPreviewLine(null);
 
     try {
-      // Check for reorder data first
       const reorderDataStr = e.dataTransfer.getData('text/reorder');
       if (reorderDataStr) {
         try {
@@ -695,7 +632,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
             return;
           }
         } catch (err) {
-          // Not valid reorder data, continue
         }
       }
 
@@ -1040,68 +976,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     setDistributionAmount(calculatedAmount > 0 ? calculatedAmount.toFixed(6) : '');
     positionSliderPopup(percent);
   }, [positionSliderPopup, calculateMaxAmount]);
-  const handleSendBackToMain = async () => {
-    if (destinationWallets.length === 0) {
-      alert('No destination wallets to send from');
-      return;
-    }
-
-    try {
-      setIsVaultDepositSigning(true);
-      await handleSetChain();
-
-      let successfulTransfers = 0;
-
-      for (const destWallet of destinationWallets) {
-        const sourceWalletData = subWallets.find(w => w.address === destWallet.address);
-        if (!sourceWalletData) continue;
-
-        try {
-          const balances = walletTokenBalances[destWallet.address];
-          if (balances) {
-            const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
-            if (ethToken && balances[ethToken.address]) {
-              const amount = balances[ethToken.address] - settings.chainConfig[activechain].gasamount > BigInt(0)
-                ? balances[ethToken.address] - settings.chainConfig[activechain].gasamount
-                : BigInt(0);
-
-              if (amount > 0) {
-                let currentNonce = nonces.current.get(destWallet.address)?.nonce;
-                const params = [{
-                  uo: {
-                    target: address as `0x${string}`,
-                    value: amount,
-                    data: '0x'
-                  }
-                }, 21000n, 0n, false, sourceWalletData.privateKey, currentNonce]
-
-                nonces.current.get(destWallet.address)?.pendingtxs.push(params);
-                const wallet = nonces.current.get(destWallet.address)
-                if (wallet) wallet.nonce += 1
-                await sendUserOperationAsync(...params)
-                if (wallet) {
-                  wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-                }
-                successfulTransfers++;
-              }
-            }
-          }
-        } catch (error) {
-        }
-      }
-
-      setTimeout(() => {
-        terminalRefetch();
-        refetch();
-      }, 500);
-
-      showSendBackSuccess(successfulTransfers);
-
-    } catch (error) {
-    } finally {
-      setIsVaultDepositSigning(false);
-    }
-  };
 
   const [privateKeyRevealed, setPrivateKeyRevealed] = useState(false);
 
@@ -1176,14 +1050,14 @@ const Portfolio: React.FC<PortfolioProps> = ({
       const updatedWallets = [...subWallets, newWallet];
       setSubWallets(updatedWallets);
       localStorage.setItem('crystal_sub_wallets', JSON.stringify(updatedWallets));
-
-      // IMPORTANT: Assign a permanent name immediately
       const newWalletNames = {
         ...walletNames,
         [walletAddress]: `Wallet ${updatedWallets.length}`
       };
       setWalletNames(newWalletNames);
       localStorage.setItem('crystal_wallet_names', JSON.stringify(newWalletNames));
+
+      window.dispatchEvent(new CustomEvent('walletNamesUpdated', { detail: newWalletNames }));
 
       closeImportModal();
       showWalletImported(walletAddress);
@@ -1216,6 +1090,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
     const newWalletNames = { ...walletNames, [address]: editingName || `Wallet ${subWallets.findIndex(w => w.address === address) + 1}` };
     setWalletNames(newWalletNames);
     localStorage.setItem('crystal_wallet_names', JSON.stringify(newWalletNames));
+
+    window.dispatchEvent(new CustomEvent('walletNamesUpdated', { detail: newWalletNames }));
+
     setEditingWallet(null);
     setEditingName('');
   };
@@ -1283,48 +1160,12 @@ const Portfolio: React.FC<PortfolioProps> = ({
     }
   };
 
-  const [customDestinationAddress, setCustomDestinationAddress] = useState<string>('');
-  const [customAddressError, setCustomAddressError] = useState<string>('');
   const [walletSearchQuery, setWalletSearchQuery] = useState<string>('');
 
   const handleMaxAmount = () => {
     const maxAmount = calculateMaxAmount();
     setDistributionAmount(maxAmount.toFixed(6));
     setSliderPercent(100);
-  };
-
-  const handleAddCustomAddress = () => {
-    setCustomAddressError('');
-
-    if (!customDestinationAddress.trim()) {
-      setCustomAddressError('Please enter an address');
-      return;
-    }
-
-    if (!isValidAddress(customDestinationAddress.trim())) {
-      setCustomAddressError('Invalid address format');
-      return;
-    }
-
-    const isAlreadyAdded = destinationWallets.some(w =>
-      w.address.toLowerCase() === customDestinationAddress.trim().toLowerCase()
-    );
-
-    if (isAlreadyAdded) {
-      setCustomAddressError('Address already added to destinations');
-      return;
-    }
-
-    const customWallet: WalletDragItem = {
-      address: customDestinationAddress.trim(),
-      name: `Custom (${customDestinationAddress.slice(0, 6)}...${customDestinationAddress.slice(-4)})`,
-      balance: 0,
-      totalValue: 0,
-      index: -1
-    };
-
-    setDestinationWallets(prev => [...prev, customWallet]);
-    setCustomDestinationAddress('');
   };
 
 
@@ -1589,22 +1430,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     }
   };
 
-  const handleReorderDragStart = (e: React.DragEvent, walletIndex: number, containerType: 'main' | 'source' | 'destination') => {
-
-    setDragReorderState(prev => ({ ...prev, draggedIndex: walletIndex }));
-
-    const reorderData = {
-      type: 'reorder',
-      index: walletIndex,
-      container: containerType,
-      timestamp: Date.now()
-    };
-
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('application/json', JSON.stringify(reorderData));
-
-    e.dataTransfer.setData('text/plain', JSON.stringify(reorderData));
-  };
   useEffect(() => {
     if (subWallets.length > 0) {
       let needsUpdate = false;
@@ -1620,6 +1445,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
       if (needsUpdate) {
         setWalletNames(updatedNames);
         localStorage.setItem('crystal_wallet_names', JSON.stringify(updatedNames));
+        window.dispatchEvent(new CustomEvent('walletNamesUpdated', { detail: updatedNames }));
       }
     }
   }, [subWallets.length]);
@@ -1658,7 +1484,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     const y = e.clientY - rect.top;
     const isTopHalf = y < rect.height / 2;
 
-    // Extract container type from containerKey
     const containerType = containerKey.split('-')[0] as 'main' | 'source' | 'destination';
 
     setDragReorderState(prev => ({
@@ -1756,10 +1581,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
     e.stopPropagation();
 
     try {
-      // Check text/reorder first (where we store reorder data now)
       let reorderData = e.dataTransfer.getData('text/reorder');
-
-      // Fallback to application/json for backward compatibility
       if (!reorderData) {
         const jsonData = e.dataTransfer.getData('application/json');
         if (jsonData) {
@@ -1878,19 +1700,16 @@ const Portfolio: React.FC<PortfolioProps> = ({
             draggedIndex: index,
             draggedContainer: containerType
           }));
-          // Handle multi-drag if multiple items selected
           if (selectedWalletsPerContainer[containerType].size > 1 && isSelected) {
             handleMultiDragStart(e, containerType);
             return;
           }
 
-          // Select this wallet
           setSelectedWalletsPerContainer(prev => ({
             ...prev,
             [containerType]: new Set([wallet.address])
           }));
 
-          // Set PRIMARY data as transfer data (for cross-zone compatibility)
           if (containerType === 'main') {
             const dragData = {
               address: wallet.address,
@@ -1912,7 +1731,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
             e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
           }
 
-          // Add SECONDARY reorder data for same-container drops
           const reorderData = {
             type: 'reorder',
             index: index,
@@ -1921,7 +1739,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
           };
           e.dataTransfer.setData('text/reorder', JSON.stringify(reorderData));
 
-          // Set reorder state for visual feedback
           setDragReorderState(prev => ({ ...prev, draggedIndex: index }));
         }}
         onDragEnd={() => {
@@ -1953,22 +1770,18 @@ const Portfolio: React.FC<PortfolioProps> = ({
           if (!isMultiDrag) {
             e.stopPropagation();
 
-            // Check if this is a reorder within same container
             const reorderDataStr = e.dataTransfer.getData('text/reorder');
             if (reorderDataStr) {
               try {
                 const reorderData = JSON.parse(reorderDataStr);
                 if (reorderData.type === 'reorder' && reorderData.container === containerType) {
-                  // Pass the parsed data directly
                   handleReorderDropWithData(reorderData, containerType);
                   return;
                 }
               } catch (err) {
-                // Not reorder data, continue to universal drop
               }
             }
 
-            // Otherwise handle as transfer
             handleUniversalDrop(e, containerType);
           }
         }}
