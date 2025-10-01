@@ -17,25 +17,25 @@
 
 @media (width>=1320px) {
     .perps-trade-modal {
-      min-width: 300px;
-      width: 300px;
+        min-width: 300px;
+        width: 300px;
     }
-  }
-  
-  
-  @media (width>=1500px) {
+}
+
+
+@media (width>=1500px) {
     .perps-trade-modal {
-      min-width: 320px;
-      width: 320px;
+        min-width: 320px;
+        width: 320px;
     }
-  }
-  
-  @media (width>=1920px) {
+}
+
+@media (width>=1920px) {
     .perps-trade-modal {
-      min-width: 340px;
-      width: 340px;
+        min-width: 340px;
+        width: 340px;
     }
-  }
+}
 
 .perps-top-section {
     display: flex;
@@ -98,6 +98,10 @@
     color: rgb(235, 112, 112);
 }
 
+.perps-order-types-wrapper {
+    position: relative;
+}
+
 .perps-order-types {
     display: flex;
     justify-content: space-between;
@@ -108,17 +112,75 @@
 }
 
 .perps-order-type-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     font-size: 0.75rem;
     color: #ffffff96;
     font-weight: 300;
     background: transparent;
     border: none;
-    padding: 8px 16px;
+    padding: 8px 0;
     cursor: pointer;
     transition: color 0.3s ease;
     position: relative;
     z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+
+
+.perps-pro-button-wrapper {
+    width: 100%;
+
+}
+
+.perps-pro-dropdown-arrow {
+    margin-right: -5px;
+    width: 15px;
+    height: 15px;
+    opacity: 0.6;
+    transition: transform 0.3s ease;
+    vertical-align: middle;
+    display: inline-block;
+    color: #6c7284;
+    font-size: 12px;
+}
+
+.perps-pro-dropdown-arrow.open {
+    transform: rotate(180deg);
+}
+
+.perps-pro-dropdown-menu {
+    position: absolute;
+    top: calc(100%);
+    left: 50%;
+    padding: 2px 0;
+    width: 100%;
+    z-index: 5;
+    background-color: rgb(9, 9, 9);
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
+    border: 1px solid rgba(179, 184, 249, 0.075);
+    overflow: hidden;
+    animation: dropdown-fade-in 0.2s ease-out forwards;
+}
+
+.perps-pro-option {
+    display: block;
+    padding: 2px 1px;
+    color: #ffffff96;
+    text-decoration: none;
+    font-size: 0.75rem;
+    font-weight: 400;
+    transition: background-color 0.2s, color 0.2s;
+    text-align: center;
+    cursor: pointer;
 }
 
 .perps-order-type-button.active {
@@ -403,8 +465,8 @@
 }
 
 .perps-tpsl-checkbox {
-    width: 14px;
-    height: 14px;
+    width: 14.5px;
+    height: 14.5px;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
@@ -416,6 +478,33 @@
     transition: all 0.2s ease;
     flex-shrink: 0;
     margin-right: 8px;
+}
+
+.perps-tpsl-checkbox:checked {
+    border-color: #d8dcff;
+}
+
+.perps-tpsl-checkbox:checked::after {
+    background-color: #d8dcff;
+    border-radius: 1px;
+    content: '';
+    height: 9.5px;
+    left: 1.5px;
+    position: absolute;
+    top: 1.5px;
+    width: 9.5px;
+}
+
+
+
+.perps-tpsl-checkbox:checked::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #0f0f12;
+    font-size: 10px;
+    font-weight: bold;
 }
 
 .perps-tpsl-label {
@@ -1045,12 +1134,12 @@
 }
 
 
-.perps-wallet-icon{
+.perps-wallet-icon {
     width: 14px;
     height: 14px;
 }
 
-.perps-balance-container{
+.perps-balance-container {
     display: flex;
     align-items: center;
     gap: 3px;
@@ -1059,13 +1148,200 @@
 }
 
 
-.leverage-button{
+.leverage-button {
     display: flex;
     align-items: center;
     filter: brightness(0) saturate(100%) invert(86%) sepia(2%) saturate(3380%) hue-rotate(199deg) brightness(91%) contrast(133%);
 }
 
-.leverage-button-icon{
+.leverage-button-icon {
     width: 14px;
     height: 14px;
+}
+
+.perps-pro-button-wrapper {
+    position: relative;
+    outline: none;
+}
+
+
+
+.leverage-modal-content {
+    background: rgb(9, 9, 9);
+    border: 1px solid rgba(179, 184, 249, 0.15);
+    border-radius: 6px;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.leverage-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 15px;
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.leverage-modal-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #ffffffcf;
+    margin: 0;
+    letter-spacing: -0.3px;
+}
+
+
+
+.leverage-modal-body {
+    padding: 18px;
+}
+
+.leverage-description {
+    font-size: 0.8rem;
+    color: #ffffff9b;
+    line-height: 1.2;
+    margin: 0 0 22px 0;
+    font-weight: 300;
+    letter-spacing: -0.2px;
+}
+
+.leverage-slider-section {
+    margin-bottom: 24px;
+}
+
+.leverage-slider-container {
+    position: relative;
+}
+
+.leverage-slider-input {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+    position: relative;
+}
+
+.leverage-slider-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #aaaecf;
+    cursor: pointer;
+    box-shadow: 0 0 0 4px #aaaecf2d;
+    transition: all 0.2s ease;
+}
+
+.leverage-slider-input::-webkit-slider-thumb:hover {
+    background: #aaaecf;
+    box-shadow: 0 0 0 6px #aaaecf2d;
+}
+
+.leverage-slider-input::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #aaaecf;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 0 4px #aaaecf2d;
+    transition: all 0.2s ease;
+}
+
+.leverage-slider-input::-moz-range-thumb:hover {
+    background: #aaaecf;
+    box-shadow: 0 0 0 6px #aaaecf2d;
+}
+
+.leverage-value-popup {
+    position: absolute;
+    top: -20px;
+    left: 0;
+    background: rgb(9, 9, 9);
+    color: #ffffffcf;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    pointer-events: none;
+    border: 1px solid rgba(179, 184, 249, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+.leverage-value-popup.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.leverage-marks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding: 0 2px;
+}
+
+.leverage-mark {
+    font-size: 0.75rem;
+    color: #ffffff7b;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    user-select: none;
+    position: relative;
+}
+
+.leverage-mark:hover {
+    color: #ffffff9b;
+}
+
+.leverage-mark[data-active='true'] {
+    color: #aaaecf;
+}
+
+.leverage-display {
+    gap: 8px;
+    font-size: .9rem;
+    color: #cecddf9b;
+    margin-top: 8px;
+}
+
+.leverage-update-button {
+    width: 100%;
+    padding: 6px;
+    background: linear-gradient(135deg,
+            #aaaecf 0,
+            #9a9ec7 25%,
+            #8b8eb8 50%,
+            #7f82ac 75%,
+            #7f82a1 100%);
+    border: none;
+    border-radius: 20px;
+    box-shadow:
+        inset 0 1px 1px rgb(255 255 255/35%),
+        inset 0 -1px 1px rgb(0 0 0/55%),
+        0 2px 8px rgb(170 174 207/10%);
+    color: black;
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: -0.2px;
+}
+
+.leverage-update-button:hover {
+   filter: brightness(1.1)
+}
+
+.leverage-update-button:active {
+    transform: translateY(1px);
 }

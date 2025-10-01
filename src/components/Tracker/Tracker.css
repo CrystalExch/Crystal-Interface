@@ -256,7 +256,7 @@
   display: grid;
   grid-template-columns: 2fr 1.5fr 1fr 1fr;
   gap: 16px;
-  padding: 4px 20px;
+  padding: 8px 20px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
 }
 
@@ -656,15 +656,14 @@
 }
 
 .tracker-monitor-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.tracker-monitor-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.tracker-monitor-card-wrapper {
+  display: flex;
+  flex-direction: column;
 }
 
 .tracker-monitor-card {
@@ -979,4 +978,176 @@
   .tracker-monitor-row {
     grid-template-columns: 1fr;
   }
+
+  
+}
+
+
+
+.tracker-monitor-trades-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.tracker-monitor-trades-stats {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.tracker-monitor-trade-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tracker-monitor-trade-stat .stat-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.65rem;
+  letter-spacing: -0.2px;
+}
+
+.tracker-monitor-trade-stat .stat-value {
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.tracker-monitor-flash-button {
+  background: transparent;
+  border: 1.5px solid rgba(179, 184, 249, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tracker-monitor-flash-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(179, 184, 249, 0.2);
+  color: #fff;
+}
+
+.tracker-monitor-trades-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.tracker-monitor-trades-table-header {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 0.8fr 0.8fr;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.tracker-monitor-trades-table-header .header-cell {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+  letter-spacing: -0.2px;
+  font-weight: 500;
+}
+
+.tracker-monitor-trade-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 0.8fr 0.8fr;
+  gap: 12px;
+  padding: 10px 12px;
+  align-items: center;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.05);
+  transition: background 0.2s;
+}
+
+.tracker-monitor-trade-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tracker-monitor-trade-row:last-child {
+  border-bottom: none;
+}
+
+.trade-wallet {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trade-emoji {
+  font-size: 1rem;
+}
+
+.trade-wallet-name {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  letter-spacing: -0.2px;
+}
+
+.trade-time {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.exit-badge {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.7rem;
+  letter-spacing: -0.2px;
+}
+
+.time-value {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+}
+
+.trade-bought,
+.trade-sold {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trade-bought .amount {
+  color: #00ff88;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.trade-sold .amount {
+  color: #ff6b6b;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.trade-bought .txns,
+.trade-sold .txns {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.7rem;
+}
+
+.trade-pnl {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.trade-pnl.positive {
+  color: #00ff88;
+}
+
+.trade-pnl.negative {
+  color: #ff6b6b;
+}
+
+.trade-remaining {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  font-weight: 500;
 }
