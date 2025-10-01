@@ -420,42 +420,41 @@ const Header: React.FC<HeaderProps> = ({
 
   const isMemeTokenPage = location.pathname.startsWith('/meme/');
 
-  // Load wallet names from localStorage
-  useEffect(() => {
-    const storedWalletNames = localStorage.getItem('crystal_wallet_names');
-    if (storedWalletNames) {
-      try {
-        setWalletNames(JSON.parse(storedWalletNames));
-      } catch (error) {
-        console.error('Error loading wallet names:', error);
-      }
+useEffect(() => {
+  const storedWalletNames = localStorage.getItem('crystal_wallet_names');
+  if (storedWalletNames) {
+    try {
+      setWalletNames(JSON.parse(storedWalletNames));
+    } catch (error) {
+      console.error('Error loading wallet names:', error);
     }
-  }, []);
+  }
 
-  // Load and restore active wallet from localStorage
+  const handleWalletNamesUpdate = (event: CustomEvent) => {
+    setWalletNames(event.detail);
+  };
+
+  window.addEventListener('walletNamesUpdated', handleWalletNamesUpdate as EventListener);
+
+  return () => {
+    window.removeEventListener('walletNamesUpdated', handleWalletNamesUpdate as EventListener);
+  };
+}, []);
   useEffect(() => {
     const storedActiveWalletPrivateKey = localStorage.getItem('crystal_active_wallet_private_key');
 
-    // Only restore if we have subWallets loaded and a stored active wallet
     if (storedActiveWalletPrivateKey && subWallets.length > 0) {
-      // Check if the stored private key is still valid (exists in current subWallets)
       const isValidWallet = subWallets.some(wallet => wallet.privateKey === storedActiveWalletPrivateKey);
 
       if (isValidWallet) {
-        // Only set if it's different from current active wallet to avoid unnecessary calls
         if (activeWalletPrivateKey !== storedActiveWalletPrivateKey) {
           setOneCTSigner(storedActiveWalletPrivateKey);
-          // Don't refetch here as it might cause issues on initial load
-          // The parent component should handle the refetch when activeWalletPrivateKey changes
         }
       } else {
-        // Clean up invalid stored wallet
         localStorage.removeItem('crystal_active_wallet_private_key');
       }
     }
   }, [subWallets, setOneCTSigner, activeWalletPrivateKey]);
-
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (walletDropdownRef.current && !walletDropdownRef.current.contains(event.target as Node)) {
@@ -524,7 +523,6 @@ const Header: React.FC<HeaderProps> = ({
     const balances = walletTokenBalances[address];
     if (!balances || !tokenList.length) return 0;
 
-    // Get ETH/MON token from settings
     const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth);
     if (ethToken && balances[ethToken.address]) {
       return Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals);
@@ -561,13 +559,10 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const handleLogout = () => {
-    // Clear the active wallet
     if (setOneCTSigner) {
       setOneCTSigner('');
       localStorage.removeItem('crystal_active_wallet_private_key');
     }
-
-    // Call the logout function if available
     if (logout) {
       logout();
     }
@@ -576,7 +571,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const handleOpenPortfolio = () => {
-    setpopup(4); // Open portfolio popup
+    setpopup(4); 
     setIsWalletDropdownOpen(false);
   };
 

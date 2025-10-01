@@ -10,8 +10,8 @@ import monadicon from '../../assets/monad.svg';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import { useNavigate } from 'react-router-dom';
 
-const SUBGRAPH_URL =
-    'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
+// const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 
 export interface Token {
     id: string;

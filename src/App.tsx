@@ -4603,8 +4603,8 @@ function App() {
         setrecipient('');
         isAddressInfoFetching = true;
         try {
-          // const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.4.0`;
-          const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
+          // const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
+          const endpoint = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
           const query = `
             query {
               account(id: "${address}") {
@@ -5499,7 +5499,8 @@ function App() {
       try {
         settradesloading(true);
 
-        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
+        // const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
+        const endpoint = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
         const query = `
           query {
             markets(first: 100, orderBy: volume, orderDirection: desc, where: {isCanonical:true}) {
@@ -12113,7 +12114,7 @@ function App() {
                       if (popup) popup.classList.remove('visible')
                     }}
                     style={{
-                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgb(28, 28, 31) ${(orderSizePercent / 200) * 100}%)`,
+                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgb(22 22 32) ${(orderSizePercent / 200) * 100}%)`,
                     }}
                   />
                   <div className="order-size-slider-percentage-popup">{orderSizePercent}%</div>
@@ -15074,7 +15075,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(28, 28, 31, 1) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(22, 22, 32, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>
@@ -17533,7 +17534,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(28, 28, 31, 1) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(22, 22, 32, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>
@@ -19905,7 +19906,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(28, 28, 31, 1) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(22, 22, 32, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>
