@@ -35,17 +35,16 @@ export const formatSubscript = (value: string): FormattedNumber => {
       }
     }
 
-    if (zerosCount > 3) {
-      const remainder = fractionalPart.slice(zerosCount);
-      return {
-        type: 'subscript',
-        text: `${formattedInteger}.0${remainder}`,
-        subscriptValue: zerosCount,
-        beforeSubscript: `${formattedInteger}.0`,
-        afterSubscript: remainder,
-      };
-    }
-
+if (zerosCount > 3) {
+  const remainder = fractionalPart.slice(zerosCount, zerosCount + 1);
+  return {
+    type: 'subscript',
+    text: `${formattedInteger}.0${remainder}`,
+    subscriptValue: zerosCount,
+    beforeSubscript: `${formattedInteger}.0`,
+    afterSubscript: remainder,
+  };
+}
     return { type: 'simple', text: `${formattedInteger}.${fractionalPart}` };
   }
 

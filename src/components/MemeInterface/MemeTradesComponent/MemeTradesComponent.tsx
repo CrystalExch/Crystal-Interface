@@ -602,6 +602,7 @@ const fmtAmount = (v: number) => {
     if (secondsAgo < 86400) return `${Math.floor(secondsAgo / 3600)}h`;
     return `${Math.floor(secondsAgo / 86400)}d`;
   };
+
 const formatKMBT = (value: number, decimals: number = 2) => {
   const abs = Math.abs(value);
   const sign = value < 0 ? '-' : '';
@@ -609,9 +610,8 @@ const formatKMBT = (value: number, decimals: number = 2) => {
   if (abs >= 1e9)  return `${sign}${(abs / 1e9).toFixed(decimals)}B`;
   if (abs >= 1e6)  return `${sign}${(abs / 1e6).toFixed(decimals)}M`;
   if (abs >= 1e3)  return `${sign}${(abs / 1e3).toFixed(decimals)}K`;
-  return `${sign}${abs.toFixed(8).replace(/\.?0+$/,'')}`;
+  return `${sign}${abs.toFixed(1)}`;
 };
-
   const handleApplyFilters = (filters: TransactionFilters) => {
     setTransactionFilters(filters);
   };
@@ -921,15 +921,15 @@ const formatKMBT = (value: number, decimals: number = 2) => {
                     {fmtAmount(shownAmount)}
                   </div>
 
-                <div className="meme-trade-mc">
+<div className="meme-trade-mc">
   {mcMode === 'MC' ? (
     <span className="meme-trade-mc">
       ${formatKMBT(t.mcUSD, 2)}
     </span>
   ) : (
-    <span>
-      ${formatKMBT(t.priceUSD, 6)}
-    </span>
+<span>
+  $<FormattedNumberDisplay formatted={formatSubscript(t.priceUSD.toString())} />
+</span>
   )}
 </div>
 
