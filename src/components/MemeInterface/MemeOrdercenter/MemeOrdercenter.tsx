@@ -275,7 +275,7 @@ const SellPopup: React.FC<SellPopupProps> = ({
                   }}
                   onMouseUp={() => setSliderDragging(false)}
                   style={{
-                    background: `linear-gradient(to right, rgb(235, 112, 112) ${sellSliderPercent}%, rgb(22 22 32) ${sellSliderPercent}%)`,
+                    background: `linear-gradient(to right, rgb(235, 112, 112) ${sellSliderPercent}%, rgb(21 21 27) ${sellSliderPercent}%)`,
                   }}
                 />
 

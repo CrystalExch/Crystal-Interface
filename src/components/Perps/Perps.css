@@ -97,6 +97,9 @@
 .perps-short-button:hover {
     color: rgb(235, 112, 112);
 }
+.perps-order-types-wrapper {
+    position: relative;
+}
 
 .perps-order-types {
     display: flex;
@@ -108,19 +111,75 @@
 }
 
 .perps-order-type-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     font-size: 0.75rem;
     color: #ffffff96;
     font-weight: 300;
     background: transparent;
     border: none;
-    padding: 8px 16px;
+    padding: 8px 0;
     cursor: pointer;
     transition: color 0.3s ease;
     position: relative;
     z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    white-space: nowrap;
 }
 
+
+
+.perps-pro-button-wrapper {
+    width: 100%;
+
+}
+.perps-pro-dropdown-arrow {
+    margin-right: -5px;
+    width: 15px;
+    height: 15px;
+    opacity: 0.6;
+    transition: transform 0.3s ease;
+    vertical-align: middle;
+    display: inline-block;
+    color: #6c7284;
+    font-size: 12px;
+}
+
+.perps-pro-dropdown-arrow.open {
+    transform: rotate(180deg);
+}
+
+.perps-pro-dropdown-menu {
+ position: absolute;
+    top: calc(100%);
+    left: 50%;
+    padding: 2px 0;
+    width: 100%;
+    z-index: 5;
+    background-color: rgb(9, 9, 9);
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
+    border: 1px solid rgba(179, 184, 249, 0.075);
+    overflow: hidden;
+    animation: dropdown-fade-in 0.2s ease-out forwards;
+}
+
+.perps-pro-option {
+     display: block;
+    padding: 2px 1px;
+    color: #ffffff96;
+    text-decoration: none;
+    font-size: 0.75rem;
+    font-weight: 400;
+    transition: background-color 0.2s, color 0.2s;
+    text-align: center;
+    cursor: pointer;
+}
 .perps-order-type-button.active {
     color: #ffffff;
 }
@@ -403,8 +462,8 @@
 }
 
 .perps-tpsl-checkbox {
-    width: 14px;
-    height: 14px;
+    width: 14.5px;
+    height: 14.5px;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
@@ -416,6 +475,33 @@
     transition: all 0.2s ease;
     flex-shrink: 0;
     margin-right: 8px;
+}
+
+.perps-tpsl-checkbox:checked {
+    border-color: #d8dcff;
+}
+
+.perps-tpsl-checkbox:checked::after {
+    background-color: #d8dcff;
+    border-radius: 1px;
+    content: '';
+    height: 9.5px;
+    left: 1.5px;
+    position: absolute;
+    top: 1.5px;
+    width: 9.5px;
+}
+
+
+
+.perps-tpsl-checkbox:checked::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #0f0f12;
+    font-size: 10px;
+    font-weight: bold;
 }
 
 .perps-tpsl-label {
@@ -1068,4 +1154,9 @@
 .leverage-button-icon{
     width: 14px;
     height: 14px;
+}
+
+.perps-pro-button-wrapper {
+    position: relative;
+    outline: none;
 }

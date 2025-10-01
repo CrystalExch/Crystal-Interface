@@ -12114,7 +12114,7 @@ function App() {
                       if (popup) popup.classList.remove('visible')
                     }}
                     style={{
-                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgb(22 22 32) ${(orderSizePercent / 200) * 100}%)`,
+                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgb(21 21 27) ${(orderSizePercent / 200) * 100}%)`,
                     }}
                   />
                   <div className="order-size-slider-percentage-popup">{orderSizePercent}%</div>
@@ -15075,7 +15075,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(22, 22, 32, 1) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(21, 21, 27, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>
@@ -17534,7 +17534,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(22, 22, 32, 1) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(21, 21, 27, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>
@@ -19906,7 +19906,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(22, 22, 32, 1) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(21, 21, 27, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>

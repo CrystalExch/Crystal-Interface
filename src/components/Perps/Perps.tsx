@@ -145,6 +145,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [tempPresetValue, setTempPresetValue] = useState('');
   const [isTpSlEnabled, setIsTpSlEnabled] = useState(false);
   const [tpPrice, setTpPrice] = useState("");
+  const [isReduceOnly, setIsReduceOnly] = useState(false);
   const [slPrice, setSlPrice] = useState("");
   const [tpPercent, setTpPercent] = useState("0.0");
   const [currentPosition, setCurrentPosition] = useState("0.0");
@@ -158,8 +159,10 @@ const Perps: React.FC<PerpsProps> = ({
     const saved = localStorage.getItem('crystal_perps_slippage_string');
     return saved !== null ? saved : '1';
   });
-  const [timeInForce, setTimeInForce] = useState("GTC");
+const [timeInForce, setTimeInForce] = useState("GTC");
   const [isTifDropdownOpen, setIsTifDropdownOpen] = useState(false);
+  const [isProDropdownOpen, setIsProDropdownOpen] = useState(false);
+  const [selectedProOption, setSelectedProOption] = useState<"Stop Limit" | "Stop Market" | "Scale">("Stop Limit");
   const [indicatorStyle, setIndicatorStyle] = useState<{
     width: number;
     left: number;
@@ -1376,13 +1379,54 @@ const Perps: React.FC<PerpsProps> = ({
               >
                 Limit
               </button>
-              <button
-                ref={proButtonRef}
-                className={`perps-order-type-button ${activeOrderType === "Pro" ? "active" : "inactive"}`}
-                onClick={() => setActiveOrderType("Pro")}
+<div 
+                className="perps-pro-button-wrapper"
+                tabIndex={-1}
+                onBlur={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setIsProDropdownOpen(false);
+                  }
+                }}
               >
-                Pro
-              </button>
+                <button
+                  ref={proButtonRef}
+                  className={`perps-order-type-button ${activeOrderType === "Pro" ? "active" : "inactive"}`}
+                  onClick={() => setIsProDropdownOpen(!isProDropdownOpen)}
+                >
+                  {activeOrderType === "Pro" ? selectedProOption : "Pro"}
+                  <svg
+                    className={`perps-pro-dropdown-arrow ${isProDropdownOpen ? 'open' : ''}`}
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="12"
+                    height="12"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+                {isProDropdownOpen && (
+                  <div className="perps-pro-dropdown-menu">
+                    {['Stop Limit', 'Stop Market', 'Scale'].map((option) => (
+                      <div
+                        key={option}
+                        className="perps-pro-option"
+                        onClick={() => {
+                          setSelectedProOption(option as "Stop Limit" | "Stop Market" | "Scale");
+                          setActiveOrderType("Pro");
+                          setIsProDropdownOpen(false);
+                        }}
+                      >
+                        {option}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div
                 className="perps-sliding-tab-indicator"
                 style={{
@@ -1488,7 +1532,7 @@ const Perps: React.FC<PerpsProps> = ({
                   onMouseUp={() => setIsDragging(false)}
                   style={{
                     background: `linear-gradient(to right, ${activeTradeType === 'long' ? '#aaaecf' : '#aaaecf'
-                      } ${sliderPercent}%, rgb(22 22 32) ${sliderPercent}%)`,
+                      } ${sliderPercent}%, rgb(21 21 27) ${sliderPercent}%)`,
                   }}
                 />
                 <div
@@ -1521,8 +1565,8 @@ const Perps: React.FC<PerpsProps> = ({
                 <label className="perps-tpsl-checkbox-wrapper">
                   <input
                     type="checkbox"
-                    checked={isTpSlEnabled}
-                    onChange={(e) => setIsTpSlEnabled(e.target.checked)}
+                    checked={isReduceOnly}
+                    onChange={(e) => setIsReduceOnly(e.target.checked)}
                     className="perps-tpsl-checkbox"
                   />
                   <span className="perps-tpsl-label">Reduce Only</span>
@@ -1537,7 +1581,15 @@ const Perps: React.FC<PerpsProps> = ({
                   <span className="perps-tpsl-label">TP/SL</span>
                 </label>
               </div>
-              <div className="perps-tif-dropdown">
+<div 
+                className="perps-tif-dropdown"
+                tabIndex={-1}
+                onBlur={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setIsTifDropdownOpen(false);
+                  }
+                }}
+              >
                 <div
                   className="perps-tif-button"
                 >
