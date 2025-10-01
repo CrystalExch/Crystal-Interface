@@ -14019,8 +14019,28 @@ function App() {
               </div>
 
               <div className="modal-footer">
-                <button className="perps-confirm-button" onClick={() => {
-                  
+                <button className="perps-confirm-button" onClick={async () => {
+                  /* await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: 42161 as any });
+                  await rawSendUserOperationAsync({
+                    uo: {
+                      target: '' as `0x${string}`,
+                      data: encodeFunctionData({
+                        abi: [{
+                          inputs: [
+                            { name: "to", type: "address" },
+                            { name: "amount", type: "uint256" }
+                          ],
+                          name: "deposit",
+                          outputs: [],
+                          stateMutability: "nonpayable",
+                          type: "function",
+                        }],
+                        functionName: "deposit",
+                        args: ['', 1000000n, signer.publicKey, accountId, '0x00'],
+                      }),
+                      value: 0n,
+                    }
+                  }) */
                 }}>
                   Deposit
                 </button>
