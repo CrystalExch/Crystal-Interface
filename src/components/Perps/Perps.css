@@ -1191,26 +1191,7 @@
     letter-spacing: -0.3px;
 }
 
-.leverage-close-button {
-    background: transparent;
-    border: none;
-    color: #ffffff7b;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
 
-.leverage-close-button:hover {
-    background: rgba(179, 184, 249, 0.1);
-    color: #ffffffcf;
-}
 
 .leverage-modal-body {
     padding: 18px;

@@ -14142,7 +14142,7 @@ function App() {
       <div className="leverage-modal-header">
         <h2 className="leverage-modal-title">Adjust Leverage</h2>
         <button 
-          className="leverage-close-button" 
+          className="close-button" 
           onClick={() => setpopup(0)}
         >
           ✕
@@ -14234,8 +14234,6 @@ function App() {
                   data-active={parseFloat(perpsLeverage) >= mark}
                   onClick={() => {
                     setPerpsLeverage(mark.toString() + '.0');
-                    
-                    // Update popup position
                     const sliderContainer = document.querySelector('.leverage-slider-container');
                     if (sliderContainer) {
                       const input = sliderContainer.querySelector('.leverage-slider-input') as HTMLInputElement;
