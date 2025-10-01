@@ -183,13 +183,13 @@ function App() {
     client,
     waitForTxn: false,
   });
-  
+
   //PNL
   const [showPNLModal, setShowPNLModal] = useState(false);
   const [perpsLeverage, setPerpsLeverage] = useState<string>(() => {
-  const saved = localStorage.getItem('crystal_perps_leverage');
-  return saved !== null ? saved : '10.0';
-});
+    const saved = localStorage.getItem('crystal_perps_leverage');
+    return saved !== null ? saved : '10.0';
+  });
   const { signTypedDataAsync } = useSignTypedData({ client })
   const { signMessageAsync } = useSignMessage({ client })
   const user = useUser();
@@ -2465,27 +2465,27 @@ function App() {
   })
 
   const handleImportWallets = (walletsText: string, addToSingleGroup: boolean) => {
-      console.log('Importing wallets:', walletsText, 'Add to single group:', addToSingleGroup);
-      
-      try {
-          const lines = walletsText.trim().split('\n');
-          const newWallets = lines.map((line, index) => {
-              const parts = line.split(',');
-              return {
-                  id: Date.now().toString() + index,
-                  address: parts[0]?.trim() || '',
-                  name: parts[1]?.trim() || `Imported Wallet ${index + 1}`,
-                  emoji: parts[2]?.trim() || '😀',
-                  balance: 0,
-                  lastActive: 'Never'
-              };
-          }).filter(w => w.address);
-          
-          setTrackedWallets(prev => [...prev, ...newWallets]);
-          setpopup(0); 
-      } catch (e) {
-          console.error('Failed to parse wallets:', e);
-      }
+    console.log('Importing wallets:', walletsText, 'Add to single group:', addToSingleGroup);
+
+    try {
+      const lines = walletsText.trim().split('\n');
+      const newWallets = lines.map((line, index) => {
+        const parts = line.split(',');
+        return {
+          id: Date.now().toString() + index,
+          address: parts[0]?.trim() || '',
+          name: parts[1]?.trim() || `Imported Wallet ${index + 1}`,
+          emoji: parts[2]?.trim() || '😀',
+          balance: 0,
+          lastActive: 'Never'
+        };
+      }).filter(w => w.address);
+
+      setTrackedWallets(prev => [...prev, ...newWallets]);
+      setpopup(0);
+    } catch (e) {
+      console.error('Failed to parse wallets:', e);
+    }
   };
 
   const handleSearchKeyDown = (
@@ -2968,10 +2968,10 @@ function App() {
     };
   }, []);
 
-    // dynamic title
+  // dynamic title
   useEffect(() => {
     let title = 'Crystal | Decentralized Cryptocurrency Exchange';
-    
+
     switch (true) {
       case location.pathname === '/portfolio':
         title = 'Portfolio | Crystal';
@@ -3038,10 +3038,10 @@ function App() {
         }
         break;
     }
-    
+
     document.title = title;
   }, [trades, location.pathname, activeMarket, perpsMarketsData, perpsActiveMarketKey]);
-  
+
   useEffect(() => {
     if (prevOrderData && Array.isArray(prevOrderData) && prevOrderData.length >= 4) {
       try {
@@ -3100,7 +3100,7 @@ function App() {
           }
         }
 
-        setRoundedBuyOrders({ orders: roundedBuy, key: activeMarketKey, amountsQuote});
+        setRoundedBuyOrders({ orders: roundedBuy, key: activeMarketKey, amountsQuote });
         setRoundedSellOrders({ orders: roundedSell, key: activeMarketKey, amountsQuote });
         prevAmountsQuote.current = amountsQuote
       } catch (error) {
@@ -7121,8 +7121,8 @@ function App() {
             )
             .sort((a, b) => {
               return (Number(tokenBalances[b.address] ?? 0) == 0) !== (Number(tokenBalances[a.address] ?? 0) == 0)
-              ? (Number(tokenBalances[a.address] ?? 0) == 0 ? 1 : -1)
-              : a?.autofetched && !b?.autofetched ? 1 : !a?.autofetched && b?.autofetched ? -1 : (Number(tokenBalances[b.address] ?? 0) / 10 ** Number(b.decimals)) - (Number(tokenBalances[a.address] ?? 0) / 10 ** Number(a.decimals));
+                ? (Number(tokenBalances[a.address] ?? 0) == 0 ? 1 : -1)
+                : a?.autofetched && !b?.autofetched ? 1 : !a?.autofetched && b?.autofetched ? -1 : (Number(tokenBalances[b.address] ?? 0) / 10 ** Number(b.decimals)) - (Number(tokenBalances[a.address] ?? 0) / 10 ** Number(a.decimals));
             })
             .map((token, index) => (
               <button
@@ -8862,9 +8862,9 @@ function App() {
 
       if (shouldFetchNonce) {
         nonces.current = new Map(
-          subWallets.map((w,i)=>{
+          subWallets.map((w, i) => {
             const old = nonces.current[w.address] || { pendingtxs: [] }
-            return [w.address, { ...old, nonce: parseInt(json[i+(gasEstimateCall?2:1)].result,16) + old.pendingtxs.length }]
+            return [w.address, { ...old, nonce: parseInt(json[i + (gasEstimateCall ? 2 : 1)].result, 16) + old.pendingtxs.length }]
           })
         );
       }
@@ -14132,170 +14132,169 @@ function App() {
 
         {popup === 32 ? ( // Import Wallets
           <div ref={popupref}>
-              <ImportWalletsPopup
-                  onClose={() => setpopup(0)}
-                  onImport={handleImportWallets}
-              />
+            <ImportWalletsPopup
+              onClose={() => setpopup(0)}
+              onImport={handleImportWallets}
+            />
           </div>
         ) : null}
 
         {popup === 33 ? ( // Live Trades Settings
           <div ref={popupref}>
-              <LiveTradesSettingsPopup
-                  onClose={() => setpopup(0)}
-              />
+            <LiveTradesSettingsPopup
+              onClose={() => setpopup(0)}
+            />
           </div>
         ) : null}
 
         {popup === 34 ? ( // Trading Presets
-            <div ref={popupref}>
-                <TradingPresetsPopup
-                    onClose={() => setpopup(0)}
-                />
-            </div>
+          <div ref={popupref}>
+            <TradingPresetsPopup
+              onClose={() => setpopup(0)}
+            />
+          </div>
         ) : null}
 
 
-{popup === 35 ? (
-  <div className="leverage-modal-overlay">
-    <div className="leverage-modal-content" ref={popupref}>
-      <div className="leverage-modal-header">
-        <h2 className="leverage-modal-title">Adjust Leverage</h2>
-        <button 
-          className="close-button" 
-          onClick={() => setpopup(0)}
-        >
-          ✕
-        </button>
-      </div>
+        {popup === 35 ? (
+          <div className="leverage-modal-overlay">
+            <div className="leverage-modal-content" ref={popupref}>
+              <div className="leverage-modal-header">
+                <h2 className="leverage-modal-title">Adjust Leverage</h2>
+                <button
+                  className="close-button"
+                  onClick={() => setpopup(0)}
+                >
+                  ✕
+                </button>
+              </div>
 
-      <div className="leverage-modal-body">
-        <p className="leverage-description">
-          Adjust your leverage to manage your exposure. Higher leverage increases
-          both potential profits and risks.
-        </p>
+              <div className="leverage-modal-body">
+                <p className="leverage-description">
+                  Adjust your leverage to manage your exposure. Higher leverage increases
+                  both potential profits and risks.
+                </p>
 
-        <div className="leverage-slider-section">
-          <div className="leverage-slider-container">
-            <input
-              ref={(el) => {
-                if (el && popup === 35) {
-                  const leverageValue = parseFloat(perpsLeverage) || 10;
-                  const percent = (leverageValue / 20) * 100;
-                  const thumbW = 16;
-                  const container = el.parentElement;
-                  if (container) {
-                    const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
-                    if (popup) {
-                      const containerRect = container.getBoundingClientRect();
-                      const inputRect = el.getBoundingClientRect();
-                      const inputLeft = inputRect.left - containerRect.left;
-                      const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
-                      popup.style.left = `${x}px`;
-                      popup.style.transform = 'translateX(-50%)';
-                    }
-                  }
-                }
-              }}
-              type="range"
-              min="0"
-              max="20"
-              step="1"
-              value={parseFloat(perpsLeverage) || 10}
-              onChange={(e) => {
-                const value = e.target.value;
-                setPerpsLeverage(value + '.0');
-                
-                // Update popup position
-                const container = e.target.parentElement;
-                if (container) {
-                  const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
-                  if (popup) {
-                    const percent = (parseInt(value) / 20) * 100;
-                    const thumbW = 16;
-                    const containerRect = container.getBoundingClientRect();
-                    const inputRect = e.target.getBoundingClientRect();
-                    const inputLeft = inputRect.left - containerRect.left;
-                    const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
-                    popup.style.left = `${x}px`;
-                    popup.style.transform = 'translateX(-50%)';
-                  }
-                }
-              }}
-              onMouseDown={(e) => {
-                const container = e.currentTarget.parentElement;
-                if (container) {
-                  const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
-                  if (popup) popup.classList.add('visible');
-                }
-              }}
-              onMouseUp={(e) => {
-                const container = e.currentTarget.parentElement;
-                if (container) {
-                  const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
-                  if (popup) popup.classList.remove('visible');
-                }
-              }}
-              className="leverage-slider-input"
-              style={{
-                background: `linear-gradient(to right, #aaaecf ${((parseFloat(perpsLeverage) || 10) / 20) * 100}%, #2a2a2f ${((parseFloat(perpsLeverage) || 10) / 20) * 100}%)`
-              }}
-            />
-            
-            <div className="leverage-value-popup">
-              {parseFloat(perpsLeverage) || 10}x
-            </div>
+                <div className="leverage-slider-section">
+                  <div className="leverage-slider-container">
+                    <input
+                      ref={(el) => {
+                        if (el && popup === 35) {
+                          const leverageValue = parseFloat(perpsLeverage) || 10;
+                          const percent = ((leverageValue - 1) / 19) * 100;
+                          const thumbW = 16;
+                          const container = el.parentElement;
+                          if (container) {
+                            const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
+                            if (popup) {
+                              const containerRect = container.getBoundingClientRect();
+                              const inputRect = el.getBoundingClientRect();
+                              const inputLeft = inputRect.left - containerRect.left;
+                              const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
+                              popup.style.left = `${x}px`;
+                              popup.style.transform = 'translateX(-50%)';
+                            }
+                          }
+                        }
+                      }}
+                      type="range"
+                      min="1"
+                      max="20"
+                      step="1"
+                      value={parseFloat(perpsLeverage) || 10}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setPerpsLeverage(value + '.0');
 
-            <div className="leverage-marks">
-              {[0, 5, 10, 15, 20].map((mark) => (
-                <span
-                  key={mark}
-                  className="leverage-mark"
-                  data-active={parseFloat(perpsLeverage) >= mark}
+                        // Update popup position
+                        const container = e.target.parentElement;
+                        if (container) {
+                          const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
+                          if (popup) {
+                            const percent = ((parseInt(value) - 1) / 19) * 100; const thumbW = 16;
+                            const containerRect = container.getBoundingClientRect();
+                            const inputRect = e.target.getBoundingClientRect();
+                            const inputLeft = inputRect.left - containerRect.left;
+                            const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
+                            popup.style.left = `${x}px`;
+                            popup.style.transform = 'translateX(-50%)';
+                          }
+                        }
+                      }}
+                      onMouseDown={(e) => {
+                        const container = e.currentTarget.parentElement;
+                        if (container) {
+                          const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
+                          if (popup) popup.classList.add('visible');
+                        }
+                      }}
+                      onMouseUp={(e) => {
+                        const container = e.currentTarget.parentElement;
+                        if (container) {
+                          const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
+                          if (popup) popup.classList.remove('visible');
+                        }
+                      }}
+                      className="leverage-slider-input"
+                      style={{
+                        background: `linear-gradient(to right, #aaaecf ${((parseFloat(perpsLeverage) || 10) - 1) / 19 * 100}%, #2a2a2f ${((parseFloat(perpsLeverage) || 10) - 1) / 19 * 100}%)`
+                      }}
+                    />
+
+                    <div className="leverage-value-popup">
+                      {parseFloat(perpsLeverage) || 10}x
+                    </div>
+
+                    <div className="leverage-marks">
+                      {[1, 5, 10, 15, 20].map((mark) => (
+                        <span
+                          key={mark}
+                          className="leverage-mark"
+                          data-active={parseFloat(perpsLeverage) >= mark}
+                          onClick={() => {
+                            setPerpsLeverage(mark.toString() + '.0');
+                            const sliderContainer = document.querySelector('.leverage-slider-container');
+                            if (sliderContainer) {
+                              const input = sliderContainer.querySelector('.leverage-slider-input') as HTMLInputElement;
+                              const popup = sliderContainer.querySelector('.leverage-value-popup') as HTMLElement;
+                              if (input && popup) {
+                                const percent = ((mark - 1) / 19) * 100;
+                                const thumbW = 16;
+                                const containerRect = sliderContainer.getBoundingClientRect();
+                                const inputRect = input.getBoundingClientRect();
+                                const inputLeft = inputRect.left - containerRect.left;
+                                const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
+                                popup.style.left = `${x}px`;
+                                popup.style.transform = 'translateX(-50%)';
+                              }
+                            }
+                          }}
+                        >
+                          {mark}x
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="leverage-display">
+                    Leverage: <span className="leverage-value">{parseFloat(perpsLeverage) || 10}x</span>
+                  </div>
+                </div>
+
+                <button
+                  className="leverage-update-button"
                   onClick={() => {
-                    setPerpsLeverage(mark.toString() + '.0');
-                    const sliderContainer = document.querySelector('.leverage-slider-container');
-                    if (sliderContainer) {
-                      const input = sliderContainer.querySelector('.leverage-slider-input') as HTMLInputElement;
-                      const popup = sliderContainer.querySelector('.leverage-value-popup') as HTMLElement;
-                      if (input && popup) {
-                        const percent = (mark / 20) * 100;
-                        const thumbW = 16;
-                        const containerRect = sliderContainer.getBoundingClientRect();
-                        const inputRect = input.getBoundingClientRect();
-                        const inputLeft = inputRect.left - containerRect.left;
-                        const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
-                        popup.style.left = `${x}px`;
-                        popup.style.transform = 'translateX(-50%)';
-                      }
-                    }
+                    localStorage.setItem('crystal_perps_leverage', perpsLeverage);
+                    setpopup(0);
                   }}
                 >
-                  {mark}x
-                </span>
-              ))}
+                  Update Leverage
+                </button>
+              </div>
             </div>
           </div>
+        ) : null}
 
-          <div className="leverage-display">
-            Leverage: <span className="leverage-value">{parseFloat(perpsLeverage) || 10}x</span>
-          </div>
-        </div>
-
-        <button 
-          className="leverage-update-button" 
-          onClick={() => {
-            localStorage.setItem('crystal_perps_leverage', perpsLeverage);
-            setpopup(0);
-          }}
-        >
-          Update Leverage
-        </button>
-      </div>
-    </div>
-  </div>
-) : null}
-        
       </div>
     </>
   );
@@ -21078,8 +21077,8 @@ function App() {
                 perpsFilterOptions={perpsFilterOptions}
                 setPerpsFilterOptions={setPerpsFilterOptions}
                 signTypedDataAsync={signMessageAsync}
-                      leverage={perpsLeverage}
-      setLeverage={setPerpsLeverage}
+                leverage={perpsLeverage}
+                setLeverage={setPerpsLeverage}
               />
             } />
           <Route path="/leaderboard"
