@@ -373,10 +373,12 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const [sourceWallets, setSourceWallets] = useState<WalletDragItem[]>([]);
   const [destinationWallets, setDestinationWallets] = useState<WalletDragItem[]>([]);
   const [dragOverZone, setDragOverZone] = useState<'source' | 'destination' | 'main' | null>(null);
-
   const [distributionAmount, setDistributionAmount] = useState<string>('');
   const [distributionMode, setDistributionMode] = useState<'equal' | 'proportional'>('equal');
-
+  const [sliderPercent, setSliderPercent] = useState(0);
+  const [isSliderDragging, setIsSliderDragging] = useState(false);
+  const sliderRef = useRef<HTMLInputElement>(null);
+  const sliderPopupRef = useRef<HTMLDivElement>(null);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [depositTargetWallet, setDepositTargetWallet] = useState<string>('');
   const [depositAmount, setDepositAmount] = useState<string>('');
@@ -395,25 +397,26 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
   const showDistributionSuccess = useCallback((amount: string, sourceCount: number, destCount: number) => {
     const txId = `distribution-${Date.now()}`;
+    const formattedAmount = parseFloat(amount).toFixed(1);
+
     if (showLoadingPopup) {
       showLoadingPopup(txId, {
         title: 'Distribution Complete',
-        subtitle: `Distributed ${amount} MON across ${destCount} wallets from ${sourceCount} sources`,
-        amount: amount,
+        subtitle: `Distributed ${formattedAmount} MON across ${destCount} wallets from ${sourceCount} sources`,
+        amount: formattedAmount,
         amountUnit: 'MON'
       });
     }
     if (updatePopup) {
       updatePopup(txId, {
         title: 'Distribution Complete',
-        subtitle: `Distributed ${amount} MON across ${destCount} wallets from ${sourceCount} sources`,
+        subtitle: `Distributed ${formattedAmount} MON across ${destCount} wallets from ${sourceCount} sources`,
         variant: 'success',
         confirmed: true,
         isLoading: false
       });
     }
   }, []);
-
   const showDepositSuccess = useCallback((amount: string, targetWallet: string) => {
     const txId = `deposit-${Date.now()}`;
     if (showLoadingPopup) {
@@ -641,7 +644,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
       setDestinationWallets(prev => [...prev, { ...dragData, sourceZone: undefined }]);
     }
   };
-  const [showPNLModal, setShowPNLModal] = useState(false);
+  const [showDistributionModal, setShowDistributionModal] = useState(false);
 
   const handleSingleZoneDrop = (dragData: any, targetZone: 'source' | 'destination' | 'main') => {
 
@@ -682,6 +685,20 @@ const Portfolio: React.FC<PortfolioProps> = ({
     setDropPreviewLine(null);
 
     try {
+      // Check for reorder data first
+      const reorderDataStr = e.dataTransfer.getData('text/reorder');
+      if (reorderDataStr) {
+        try {
+          const reorderData = JSON.parse(reorderDataStr);
+          if (reorderData.type === 'reorder' && reorderData.container === targetZone) {
+            handleReorderDrop(e, targetZone);
+            return;
+          }
+        } catch (err) {
+          // Not valid reorder data, continue
+        }
+      }
+
       let data = null;
       const jsonData = e.dataTransfer.getData('application/json');
       if (jsonData) {
@@ -707,7 +724,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
             handleReorderDrop(e, targetZone);
           }
           break;
-
         case 'single-zone-drag':
           if (data.sourceZone && data.sourceZone !== targetZone) {
             handleSingleZoneDrop(data, targetZone);
@@ -804,269 +820,288 @@ const Portfolio: React.FC<PortfolioProps> = ({
     setSourceWallets([]);
     setDestinationWallets([]);
   };
-const executeDistribution = async () => {
-  if (sourceWallets.length === 0 || destinationWallets.length === 0 || !distributionAmount) {
-    return;
-  }
-
-  const targetAmount = parseFloat(distributionAmount);
-  if (targetAmount <= 0) {
-    return;
-  }
-
-  try {
-    setIsVaultDepositSigning(true);
-    await handleSetChain();
-
-    const sourceWalletCapacities = sourceWallets.map(sourceWallet => {
-      const balances = walletTokenBalances[sourceWallet.address];
-      let availableBalance = 0;
-      
-      if (balances) {
-        const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
-        if (ethToken && balances[ethToken.address]) {
-          const amount = balances[ethToken.address] - settings.chainConfig[activechain].gasamount > BigInt(0)
-            ? balances[ethToken.address] - settings.chainConfig[activechain].gasamount
-            : BigInt(0);
-          
-          availableBalance = Number(amount) / 10 ** Number(ethToken.decimals);
-        }
-      }
-      
-      return {
-        wallet: sourceWallet,
-        availableBalance: Math.max(0, availableBalance), 
-        walletData: subWallets.find(w => w.address === sourceWallet.address)
-      };
-    }).filter(item => item.walletData && item.availableBalance > 0); 
-
-    if (sourceWalletCapacities.length === 0) {
-      alert('No source wallets have sufficient balance to send');
+  const executeDistribution = async () => {
+    if (sourceWallets.length === 0 || destinationWallets.length === 0 || !distributionAmount) {
       return;
     }
 
-    const totalAvailable = sourceWalletCapacities.reduce((sum, item) => sum + item.availableBalance, 0);
-    
-    if (totalAvailable < targetAmount) {
-      console.warn(`Warning: Only ${totalAvailable.toFixed(6)} MON available, but ${targetAmount} requested. Will send what's available.`);
+    const targetAmount = parseFloat(distributionAmount);
+    if (targetAmount <= 0) {
+      return;
     }
 
-    const actualDistributionAmount = Math.min(targetAmount, totalAvailable);
+    try {
+      setIsVaultDepositSigning(true);
+      await handleSetChain();
 
-    console.log(`Distributing ${actualDistributionAmount.toFixed(6)} MON from ${sourceWalletCapacities.length} wallets`);
+      const sourceWalletCapacities = sourceWallets.map(sourceWallet => {
+        const balances = walletTokenBalances[sourceWallet.address];
+        let availableBalance = 0;
 
-    const allTransfers = [];
-
-    if (distributionMode === 'equal') {
-      for (const sourceItem of sourceWalletCapacities) {
-        const sourceContribution = (sourceItem.availableBalance / totalAvailable) * actualDistributionAmount;
-        const amountPerDestination = sourceContribution / destinationWallets.length;
-
-        for (const destWallet of destinationWallets) {
-          if (amountPerDestination > 0.000001) {
-            allTransfers.push({
-              fromAddress: sourceItem.wallet.address,
-              toAddress: destWallet.address,
-              amount: amountPerDestination,
-              fromPrivateKey: sourceItem.walletData!.privateKey,
-              fromName: sourceItem.wallet.name,
-              toName: destWallet.name,
-              maxAmount: sourceItem.availableBalance
-            });
-          }
-        }
-      }
-    } else {
-      const totalDestValue = destinationWallets.reduce((sum, w) => sum + w.totalValue, 0);
-      
-      for (const sourceItem of sourceWalletCapacities) {
-        const sourceContribution = (sourceItem.availableBalance / totalAvailable) * actualDistributionAmount;
-        
-        for (const destWallet of destinationWallets) {
-          const proportion = destWallet.totalValue / (totalDestValue || 1);
-          const transferAmount = sourceContribution * proportion;
-
-          if (transferAmount > 0.000001) {
-            allTransfers.push({
-              fromAddress: sourceItem.wallet.address,
-              toAddress: destWallet.address,
-              amount: transferAmount,
-              fromPrivateKey: sourceItem.walletData!.privateKey,
-              fromName: sourceItem.wallet.name,
-              toName: destWallet.name,
-              maxAmount: sourceItem.availableBalance
-            });
-          }
-        }
-      }
-    }
-
-    const walletTotals = new Map<string, number>();
-    for (const transfer of allTransfers) {
-      const current = walletTotals.get(transfer.fromAddress) || 0;
-      walletTotals.set(transfer.fromAddress, current + transfer.amount);
-    }
-
-    let adjustmentNeeded = false;
-    for (const [walletAddress, totalToSend] of walletTotals.entries()) {
-      const capacity = sourceWalletCapacities.find(item => item.wallet.address === walletAddress);
-      if (capacity && totalToSend > capacity.availableBalance) {
-        console.warn(`Wallet ${walletAddress} trying to send ${totalToSend.toFixed(6)} but only has ${capacity.availableBalance.toFixed(6)}`);
-        adjustmentNeeded = true;
-        
-        const scaleFactor = capacity.availableBalance / totalToSend;
-        allTransfers
-          .filter(t => t.fromAddress === walletAddress)
-          .forEach(t => t.amount *= scaleFactor);
-      }
-    }
-
-
-    const walletTransfers = new Map<string, typeof allTransfers>();
-
-    for (const transfer of allTransfers) {
-      if (!walletTransfers.has(transfer.fromAddress)) {
-        walletTransfers.set(transfer.fromAddress, []);
-      }
-      walletTransfers.get(transfer.fromAddress)!.push(transfer);
-    }
-
-    const transferPromises = [];
-    
-    for (const [walletAddress, transfers] of walletTransfers.entries()) {
-      
-      for (const transfer of transfers) {
-        const wallet = nonces.current.get(walletAddress)
-        const amountInWei = BigInt(Math.round(transfer.amount * 10**18));
-        const params = [{
-          uo: {
-            target: transfer.toAddress as `0x${string}`,
-            value: amountInWei,
-            data: '0x'
-          }
-        }, 21000n, 0n, false, transfer.fromPrivateKey, wallet?.nonce]
-        if (wallet) wallet.nonce += 1
-        wallet?.pendingtxs.push(params);
-        const transferPromise = sendUserOperationAsync(...params)
-        .then(() => {
-          if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-          return true;
-        }).catch(() => {
-          if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-          return false
-        })
-        transferPromises.push(transferPromise);
-      }
-    }
-
-
-    const results = await Promise.allSettled(transferPromises);
-    const successfulTransfers = results.filter(result => 
-      result.status === 'fulfilled' && result.value === true
-    ).length;
-
-    const actualAmountSent = allTransfers.reduce((sum, t) => sum + t.amount, 0);
-
-    setTimeout(() => {
-      terminalRefetch();
-      refetch();
-    }, 500);
-
-    showDistributionSuccess(actualAmountSent.toFixed(6), sourceWalletCapacities.length, destinationWallets.length);
-    clearAllZones();
-    setDistributionAmount('');
-    console.log(`🎉 Distribution completed: ${successfulTransfers}/${allTransfers.length} transfers sent (${actualAmountSent.toFixed(6)} MON total)`);
-
-  } catch (error) {
-    console.error('Distribution execution error:', error);
-  } finally {
-    setIsVaultDepositSigning(false);
-  }
-};
-
-const calculateMaxAmount = () => {
-  const totalSourceBalance = sourceWallets.reduce((total, wallet) => {
-    const balances = walletTokenBalances[wallet.address];
-    if (!balances) return total;
-
-    const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
-    if (ethToken && balances[ethToken.address]) {
-      const amount = balances[ethToken.address] - settings.chainConfig[activechain].gasamount > BigInt(0)
-        ? balances[ethToken.address] - settings.chainConfig[activechain].gasamount
-        : BigInt(0);
-      
-      const availableBalance = Number(amount) / 10 ** Number(ethToken.decimals);
-      return total + availableBalance;
-    }
-
-    return total;
-  }, 0);
-  return totalSourceBalance;
-};
-const handleSendBackToMain = async () => {
-  if (destinationWallets.length === 0) {
-    alert('No destination wallets to send from');
-    return;
-  }
-
-  try {
-    setIsVaultDepositSigning(true);
-    await handleSetChain();
-
-    let successfulTransfers = 0;
-
-    for (const destWallet of destinationWallets) {
-      const sourceWalletData = subWallets.find(w => w.address === destWallet.address);
-      if (!sourceWalletData) continue;
-
-      try {
-        const balances = walletTokenBalances[destWallet.address];
         if (balances) {
           const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
           if (ethToken && balances[ethToken.address]) {
             const amount = balances[ethToken.address] - settings.chainConfig[activechain].gasamount > BigInt(0)
               ? balances[ethToken.address] - settings.chainConfig[activechain].gasamount
               : BigInt(0);
-            
-            if (amount > 0) {
-              let currentNonce = nonces.current.get(destWallet.address)?.nonce;
-              const params = [{
-                uo: {
-                  target: address as `0x${string}`,
-                  value: amount, 
-                  data: '0x'
-                }
-              }, 21000n, 0n, false, sourceWalletData.privateKey, currentNonce]
-      
-              nonces.current.get(destWallet.address)?.pendingtxs.push(params);
-              const wallet = nonces.current.get(destWallet.address)
-              if (wallet) wallet.nonce += 1
-              await sendUserOperationAsync(...params)
-              if (wallet) {
-                wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-              }
-              successfulTransfers++;
+
+            availableBalance = Number(amount) / 10 ** Number(ethToken.decimals);
+          }
+        }
+
+        return {
+          wallet: sourceWallet,
+          availableBalance: Math.max(0, availableBalance),
+          walletData: subWallets.find(w => w.address === sourceWallet.address)
+        };
+      }).filter(item => item.walletData && item.availableBalance > 0);
+
+      if (sourceWalletCapacities.length === 0) {
+        alert('No source wallets have sufficient balance to send');
+        return;
+      }
+
+      const totalAvailable = sourceWalletCapacities.reduce((sum, item) => sum + item.availableBalance, 0);
+
+
+      const actualDistributionAmount = Math.min(targetAmount, totalAvailable);
+
+
+      const allTransfers = [];
+
+      if (distributionMode === 'equal') {
+        for (const sourceItem of sourceWalletCapacities) {
+          const sourceContribution = (sourceItem.availableBalance / totalAvailable) * actualDistributionAmount;
+          const amountPerDestination = sourceContribution / destinationWallets.length;
+
+          for (const destWallet of destinationWallets) {
+            if (amountPerDestination > 0.000001) {
+              allTransfers.push({
+                fromAddress: sourceItem.wallet.address,
+                toAddress: destWallet.address,
+                amount: amountPerDestination,
+                fromPrivateKey: sourceItem.walletData!.privateKey,
+                fromName: sourceItem.wallet.name,
+                toName: destWallet.name,
+                maxAmount: sourceItem.availableBalance
+              });
             }
           }
         }
-      } catch (error) {
+      } else {
+        const totalDestValue = destinationWallets.reduce((sum, w) => sum + w.totalValue, 0);
+
+        for (const sourceItem of sourceWalletCapacities) {
+          const sourceContribution = (sourceItem.availableBalance / totalAvailable) * actualDistributionAmount;
+
+          for (const destWallet of destinationWallets) {
+            const proportion = destWallet.totalValue / (totalDestValue || 1);
+            const transferAmount = sourceContribution * proportion;
+
+            if (transferAmount > 0.000001) {
+              allTransfers.push({
+                fromAddress: sourceItem.wallet.address,
+                toAddress: destWallet.address,
+                amount: transferAmount,
+                fromPrivateKey: sourceItem.walletData!.privateKey,
+                fromName: sourceItem.wallet.name,
+                toName: destWallet.name,
+                maxAmount: sourceItem.availableBalance
+              });
+            }
+          }
+        }
       }
+
+      const walletTotals = new Map<string, number>();
+      for (const transfer of allTransfers) {
+        const current = walletTotals.get(transfer.fromAddress) || 0;
+        walletTotals.set(transfer.fromAddress, current + transfer.amount);
+      }
+
+      let adjustmentNeeded = false;
+      for (const [walletAddress, totalToSend] of walletTotals.entries()) {
+        const capacity = sourceWalletCapacities.find(item => item.wallet.address === walletAddress);
+        if (capacity && totalToSend > capacity.availableBalance) {
+          adjustmentNeeded = true;
+
+          const scaleFactor = capacity.availableBalance / totalToSend;
+          allTransfers
+            .filter(t => t.fromAddress === walletAddress)
+            .forEach(t => t.amount *= scaleFactor);
+        }
+      }
+
+
+      const walletTransfers = new Map<string, typeof allTransfers>();
+
+      for (const transfer of allTransfers) {
+        if (!walletTransfers.has(transfer.fromAddress)) {
+          walletTransfers.set(transfer.fromAddress, []);
+        }
+        walletTransfers.get(transfer.fromAddress)!.push(transfer);
+      }
+
+      const transferPromises = [];
+
+      for (const [walletAddress, transfers] of walletTransfers.entries()) {
+
+        for (const transfer of transfers) {
+          const wallet = nonces.current.get(walletAddress)
+          const amountInWei = BigInt(Math.round(transfer.amount * 10 ** 18));
+          const params = [{
+            uo: {
+              target: transfer.toAddress as `0x${string}`,
+              value: amountInWei,
+              data: '0x'
+            }
+          }, 21000n, 0n, false, transfer.fromPrivateKey, wallet?.nonce]
+          if (wallet) wallet.nonce += 1
+          wallet?.pendingtxs.push(params);
+          const transferPromise = sendUserOperationAsync(...params)
+            .then(() => {
+              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              return true;
+            }).catch(() => {
+              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              return false
+            })
+          transferPromises.push(transferPromise);
+        }
+      }
+
+
+      const results = await Promise.allSettled(transferPromises);
+      const successfulTransfers = results.filter(result =>
+        result.status === 'fulfilled' && result.value === true
+      ).length;
+
+      const actualAmountSent = allTransfers.reduce((sum, t) => sum + t.amount, 0);
+
+      setTimeout(() => {
+        terminalRefetch();
+        refetch();
+      }, 500);
+
+      showDistributionSuccess(actualAmountSent.toFixed(6), sourceWalletCapacities.length, destinationWallets.length);
+      clearAllZones();
+      setDistributionAmount('');
+
+    } catch (error) {
+    } finally {
+      setIsVaultDepositSigning(false);
+    }
+  };
+
+  const calculateMaxAmount = () => {
+    const totalSourceBalance = sourceWallets.reduce((total, wallet) => {
+      const balances = walletTokenBalances[wallet.address];
+      if (!balances) return total;
+
+      const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
+      if (ethToken && balances[ethToken.address]) {
+        const amount = balances[ethToken.address] - settings.chainConfig[activechain].gasamount > BigInt(0)
+          ? balances[ethToken.address] - settings.chainConfig[activechain].gasamount
+          : BigInt(0);
+
+        const availableBalance = Number(amount) / 10 ** Number(ethToken.decimals);
+        return total + availableBalance;
+      }
+
+      return total;
+    }, 0);
+    return totalSourceBalance;
+  };
+
+
+  const positionSliderPopup = useCallback((percent: number) => {
+    const input = sliderRef.current;
+    const popup = sliderPopupRef.current;
+    if (!input || !popup) return;
+
+    const container = input.parentElement as HTMLElement;
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const inputRect = input.getBoundingClientRect();
+    const inputLeft = inputRect.left - containerRect.left;
+
+    const thumbW = 10;
+    const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
+
+    popup.style.left = `${x}px`;
+    popup.style.transform = 'translateX(-50%)';
+  }, []);
+
+  const handleSliderChange = useCallback((percent: number) => {
+    setSliderPercent(percent);
+    const maxAmount = calculateMaxAmount();
+    const calculatedAmount = (maxAmount * percent) / 100;
+    setDistributionAmount(calculatedAmount > 0 ? calculatedAmount.toFixed(6) : '');
+    positionSliderPopup(percent);
+  }, [positionSliderPopup, calculateMaxAmount]);
+  const handleSendBackToMain = async () => {
+    if (destinationWallets.length === 0) {
+      alert('No destination wallets to send from');
+      return;
     }
 
-    setTimeout(() => {
-      terminalRefetch();
-      refetch();
-    }, 500);
+    try {
+      setIsVaultDepositSigning(true);
+      await handleSetChain();
 
-    showSendBackSuccess(successfulTransfers);
+      let successfulTransfers = 0;
 
-  } catch (error) {
-    console.error('Send back to main wallet failed:', error);
-    alert('Send back to main wallet failed. Please try again.');
-  } finally {
-    setIsVaultDepositSigning(false);
-  }
-};
+      for (const destWallet of destinationWallets) {
+        const sourceWalletData = subWallets.find(w => w.address === destWallet.address);
+        if (!sourceWalletData) continue;
+
+        try {
+          const balances = walletTokenBalances[destWallet.address];
+          if (balances) {
+            const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
+            if (ethToken && balances[ethToken.address]) {
+              const amount = balances[ethToken.address] - settings.chainConfig[activechain].gasamount > BigInt(0)
+                ? balances[ethToken.address] - settings.chainConfig[activechain].gasamount
+                : BigInt(0);
+
+              if (amount > 0) {
+                let currentNonce = nonces.current.get(destWallet.address)?.nonce;
+                const params = [{
+                  uo: {
+                    target: address as `0x${string}`,
+                    value: amount,
+                    data: '0x'
+                  }
+                }, 21000n, 0n, false, sourceWalletData.privateKey, currentNonce]
+
+                nonces.current.get(destWallet.address)?.pendingtxs.push(params);
+                const wallet = nonces.current.get(destWallet.address)
+                if (wallet) wallet.nonce += 1
+                await sendUserOperationAsync(...params)
+                if (wallet) {
+                  wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+                }
+                successfulTransfers++;
+              }
+            }
+          }
+        } catch (error) {
+        }
+      }
+
+      setTimeout(() => {
+        terminalRefetch();
+        refetch();
+      }, 500);
+
+      showSendBackSuccess(successfulTransfers);
+
+    } catch (error) {
+    } finally {
+      setIsVaultDepositSigning(false);
+    }
+  };
 
   const [privateKeyRevealed, setPrivateKeyRevealed] = useState(false);
 
@@ -1141,6 +1176,14 @@ const handleSendBackToMain = async () => {
       const updatedWallets = [...subWallets, newWallet];
       setSubWallets(updatedWallets);
       localStorage.setItem('crystal_sub_wallets', JSON.stringify(updatedWallets));
+
+      // IMPORTANT: Assign a permanent name immediately
+      const newWalletNames = {
+        ...walletNames,
+        [walletAddress]: `Wallet ${updatedWallets.length}`
+      };
+      setWalletNames(newWalletNames);
+      localStorage.setItem('crystal_wallet_names', JSON.stringify(newWalletNames));
 
       closeImportModal();
       showWalletImported(walletAddress);
@@ -1242,9 +1285,12 @@ const handleSendBackToMain = async () => {
 
   const [customDestinationAddress, setCustomDestinationAddress] = useState<string>('');
   const [customAddressError, setCustomAddressError] = useState<string>('');
+  const [walletSearchQuery, setWalletSearchQuery] = useState<string>('');
+
   const handleMaxAmount = () => {
     const maxAmount = calculateMaxAmount();
     setDistributionAmount(maxAmount.toFixed(6));
+    setSliderPercent(100);
   };
 
   const handleAddCustomAddress = () => {
@@ -1305,8 +1351,9 @@ const handleSendBackToMain = async () => {
     draggedIndex: number;
     dragOverIndex: number;
     dragOverPosition: 'top' | 'bottom' | null;
+    draggedContainer: 'main' | 'source' | 'destination' | null;
+    dragOverContainer: 'main' | 'source' | 'destination' | null;
   }
-
   const [_selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
   const [activeSelectionContainer, setActiveSelectionContainer] = useState<'main' | 'source' | 'destination' | null>(null);
   const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
@@ -1316,7 +1363,9 @@ const handleSendBackToMain = async () => {
   const [dragReorderState, setDragReorderState] = useState<DragReorderState>({
     draggedIndex: -1,
     dragOverIndex: -1,
-    dragOverPosition: null
+    dragOverPosition: null,
+    draggedContainer: null,
+    dragOverContainer: null
   });
   const [dropPreviewLine, setDropPreviewLine] = useState<{ top: number; containerKey: string } | null>(null);
   const getWalletTokenCount = (address: string) => {
@@ -1556,7 +1605,24 @@ const handleSendBackToMain = async () => {
 
     e.dataTransfer.setData('text/plain', JSON.stringify(reorderData));
   };
+  useEffect(() => {
+    if (subWallets.length > 0) {
+      let needsUpdate = false;
+      const updatedNames = { ...walletNames };
 
+      subWallets.forEach((wallet, index) => {
+        if (!updatedNames[wallet.address]) {
+          updatedNames[wallet.address] = `Wallet ${index + 1}`;
+          needsUpdate = true;
+        }
+      });
+
+      if (needsUpdate) {
+        setWalletNames(updatedNames);
+        localStorage.setItem('crystal_wallet_names', JSON.stringify(updatedNames));
+      }
+    }
+  }, [subWallets.length]);
   useEffect(() => {
     const handleGlobalMouseUp = () => {
       endSelection();
@@ -1580,9 +1646,9 @@ const handleSendBackToMain = async () => {
       document.removeEventListener('keydown', handleGlobalKeyDown);
     };
   }, []);
-
   const handleReorderDragOver = (e: React.DragEvent, targetIndex: number, containerKey: string) => {
     e.preventDefault();
+    e.stopPropagation();
     if (isMultiDrag) {
       return;
     }
@@ -1592,10 +1658,14 @@ const handleSendBackToMain = async () => {
     const y = e.clientY - rect.top;
     const isTopHalf = y < rect.height / 2;
 
+    // Extract container type from containerKey
+    const containerType = containerKey.split('-')[0] as 'main' | 'source' | 'destination';
+
     setDragReorderState(prev => ({
       ...prev,
       dragOverIndex: targetIndex,
-      dragOverPosition: isTopHalf ? 'top' : 'bottom'
+      dragOverPosition: isTopHalf ? 'top' : 'bottom',
+      dragOverContainer: containerType
     }));
 
     const parentElement = element.parentElement;
@@ -1608,38 +1678,61 @@ const handleSendBackToMain = async () => {
       setDropPreviewLine({ top: lineTop, containerKey });
     }
   };
-
-  const handleReorderDrop = (e: React.DragEvent, containerType: 'main' | 'source' | 'destination') => {
-    e.preventDefault();
-
+  const handleReorderDropWithData = (reorderData: any, containerType: 'main' | 'source' | 'destination') => {
     try {
-      const jsonData = e.dataTransfer.getData('application/json');
-      if (!jsonData || jsonData.trim() === '') {
-        return;
-      }
-
-      const data = JSON.parse(jsonData);
-
-      if (data.type === 'reorder' && data.container === containerType) {
-        const { index: draggedIndex } = data;
+      if (reorderData.type === 'reorder' && reorderData.container === containerType) {
+        const { index: draggedIndex } = reorderData;
         const { dragOverIndex, dragOverPosition } = dragReorderState;
-        if (draggedIndex === dragOverIndex) return;
+
+        if (draggedIndex === dragOverIndex) {
+          if (draggedIndex === dragOverIndex) {
+            setDragReorderState({
+              draggedIndex: -1,
+              dragOverIndex: -1,
+              dragOverPosition: null,
+              draggedContainer: null,
+              dragOverContainer: null
+            });
+            setDropPreviewLine(null);
+            return;
+          } setDropPreviewLine(null);
+          return;
+        }
+
         let targetIndex = dragOverIndex;
-        if (dragOverPosition === 'bottom') targetIndex++;
-        if (draggedIndex < targetIndex) targetIndex--;
+
+        if (dragOverPosition === 'bottom') {
+          targetIndex++;
+        }
+
+        if (draggedIndex < targetIndex) {
+          targetIndex--;
+        }
+
+        targetIndex = Math.max(0, targetIndex);
+
         if (containerType === 'main') {
           const reorderedWallets = [...subWallets];
+          const maxIndex = reorderedWallets.length - 1;
+          targetIndex = Math.min(targetIndex, maxIndex);
+
           const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
           reorderedWallets.splice(targetIndex, 0, movedWallet);
           setSubWallets(reorderedWallets);
           localStorage.setItem('crystal_sub_wallets', JSON.stringify(reorderedWallets));
         } else if (containerType === 'source') {
           const reorderedWallets = [...sourceWallets];
+          const maxIndex = reorderedWallets.length - 1;
+          targetIndex = Math.min(targetIndex, maxIndex);
+
           const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
           reorderedWallets.splice(targetIndex, 0, movedWallet);
           setSourceWallets(reorderedWallets);
         } else if (containerType === 'destination') {
           const reorderedWallets = [...destinationWallets];
+          const maxIndex = reorderedWallets.length - 1;
+          targetIndex = Math.min(targetIndex, maxIndex);
+
           const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
           reorderedWallets.splice(targetIndex, 0, movedWallet);
           setDestinationWallets(reorderedWallets);
@@ -1647,7 +1740,107 @@ const handleSendBackToMain = async () => {
       }
     } catch (error) {
     }
-    setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
+
+
+    setDragReorderState({
+      draggedIndex: -1,
+      dragOverIndex: -1,
+      dragOverPosition: null,
+      draggedContainer: null,
+      dragOverContainer: null
+    });
+    setDropPreviewLine(null); setDropPreviewLine(null);
+  };
+  const handleReorderDrop = (e: React.DragEvent, containerType: 'main' | 'source' | 'destination') => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      // Check text/reorder first (where we store reorder data now)
+      let reorderData = e.dataTransfer.getData('text/reorder');
+
+      // Fallback to application/json for backward compatibility
+      if (!reorderData) {
+        const jsonData = e.dataTransfer.getData('application/json');
+        if (jsonData) {
+          const data = JSON.parse(jsonData);
+          if (data.type === 'reorder') {
+            reorderData = jsonData;
+          }
+        }
+      }
+
+      if (!reorderData || reorderData.trim() === '') {
+        return;
+      }
+
+      const data = JSON.parse(reorderData);
+
+      if (data.type === 'reorder' && data.container === containerType) {
+        const { index: draggedIndex } = data;
+        const { dragOverIndex, dragOverPosition } = dragReorderState;
+
+        if (draggedIndex === dragOverIndex) {
+          setDragReorderState({
+            draggedIndex: -1,
+            dragOverIndex: -1,
+            dragOverPosition: null,
+            draggedContainer: null,
+            dragOverContainer: null
+          });
+          setDropPreviewLine(null);
+          return;
+        }
+
+        let targetIndex = dragOverIndex;
+
+        if (dragOverPosition === 'bottom') {
+          targetIndex++;
+        }
+
+        if (draggedIndex < targetIndex) {
+          targetIndex--;
+        }
+
+        targetIndex = Math.max(0, targetIndex);
+
+        if (containerType === 'main') {
+          const reorderedWallets = [...subWallets];
+          const maxIndex = reorderedWallets.length - 1;
+          targetIndex = Math.min(targetIndex, maxIndex);
+
+          const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
+          reorderedWallets.splice(targetIndex, 0, movedWallet);
+          setSubWallets(reorderedWallets);
+          localStorage.setItem('crystal_sub_wallets', JSON.stringify(reorderedWallets));
+        } else if (containerType === 'source') {
+          const reorderedWallets = [...sourceWallets];
+          const maxIndex = reorderedWallets.length - 1;
+          targetIndex = Math.min(targetIndex, maxIndex);
+
+          const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
+          reorderedWallets.splice(targetIndex, 0, movedWallet);
+          setSourceWallets(reorderedWallets);
+        } else if (containerType === 'destination') {
+          const reorderedWallets = [...destinationWallets];
+          const maxIndex = reorderedWallets.length - 1;
+          targetIndex = Math.min(targetIndex, maxIndex);
+
+          const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
+          reorderedWallets.splice(targetIndex, 0, movedWallet);
+          setDestinationWallets(reorderedWallets);
+        }
+      }
+    } catch (error) {
+    }
+
+    setDragReorderState({
+      draggedIndex: -1,
+      dragOverIndex: -1,
+      dragOverPosition: null,
+      draggedContainer: null,
+      dragOverContainer: null
+    });
     setDropPreviewLine(null);
   };
 
@@ -1669,46 +1862,77 @@ const handleSendBackToMain = async () => {
   const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 'source' | 'destination', containerKey: string) => {
     const isSelected = selectedWalletsPerContainer[containerType].has(wallet.address);
     const isPreviewSelected = previewSelection.has(wallet.address);
-    const isDragging = dragReorderState.draggedIndex === index;
-    const isDragOver = dragReorderState.dragOverIndex === index;
+    const isDragging = dragReorderState.draggedIndex === index && dragReorderState.draggedContainer === containerType;
+    const isDragOver = dragReorderState.dragOverIndex === index && dragReorderState.dragOverContainer === containerType;
 
     return (
       <div
         key={wallet.address}
         data-wallet-address={wallet.address}
-  className={`draggable-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''} ${isDragging ? 'dragging' : ''} ${isMultiDrag && isSelected ? 'multi-drag-ghost' : ''} ${(isSelected || isPreviewSelected) ? 'handle-visible' : ''}`}
+        className={`draggable-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''} ${isDragging ? 'dragging' : ''} ${isMultiDrag && isSelected ? 'multi-drag-ghost' : ''} ${(isSelected || isPreviewSelected) ? 'handle-visible' : ''}`}
         draggable
         onDragStart={(e) => {
           setDropPreviewLine(null);
-          setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
-
+          setDragReorderState(prev => ({
+            ...prev,
+            draggedIndex: index,
+            draggedContainer: containerType
+          }));
+          // Handle multi-drag if multiple items selected
           if (selectedWalletsPerContainer[containerType].size > 1 && isSelected) {
             handleMultiDragStart(e, containerType);
             return;
           }
 
+          // Select this wallet
           setSelectedWalletsPerContainer(prev => ({
             ...prev,
             [containerType]: new Set([wallet.address])
           }));
 
+          // Set PRIMARY data as transfer data (for cross-zone compatibility)
           if (containerType === 'main') {
-            if (e.shiftKey) {
-              handleReorderDragStart(e, index, containerType);
-            } else {
-              handleDragStart(e, wallet, index);
-            }
+            const dragData = {
+              address: wallet.address,
+              name: getWalletName(wallet.address, index),
+              balance: getWalletBalance(wallet.address),
+              totalValue: getTotalWalletValue(wallet.address),
+              index,
+              type: 'single-main-drag'
+            };
+            e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+            e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
           } else {
-            if (e.shiftKey) {
-              handleReorderDragStart(e, index, containerType);
-            } else {
-              handleDragStartFromZone(e, wallet, containerType);
-            }
+            const dragData = {
+              ...wallet,
+              sourceZone: containerType,
+              type: 'single-zone-drag'
+            };
+            e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+            e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
           }
+
+          // Add SECONDARY reorder data for same-container drops
+          const reorderData = {
+            type: 'reorder',
+            index: index,
+            container: containerType,
+            timestamp: Date.now()
+          };
+          e.dataTransfer.setData('text/reorder', JSON.stringify(reorderData));
+
+          // Set reorder state for visual feedback
+          setDragReorderState(prev => ({ ...prev, draggedIndex: index }));
         }}
         onDragEnd={() => {
           setIsMultiDrag(false);
-          setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
+          setDragReorderState({
+            draggedIndex: -1,
+            dragOverIndex: -1,
+            dragOverPosition: null,
+            draggedContainer: null,
+            dragOverContainer: null
+          });
           setDropPreviewLine(null);
           setDraggedWallet(null);
           setDragOverZone(null);
@@ -1725,8 +1949,28 @@ const handleSendBackToMain = async () => {
             setDragReorderState(prev => ({ ...prev, dragOverIndex: -1, dragOverPosition: null }));
           }
         }}
-        onDrop={() => {
-          return;
+        onDrop={(e) => {
+          if (!isMultiDrag) {
+            e.stopPropagation();
+
+            // Check if this is a reorder within same container
+            const reorderDataStr = e.dataTransfer.getData('text/reorder');
+            if (reorderDataStr) {
+              try {
+                const reorderData = JSON.parse(reorderDataStr);
+                if (reorderData.type === 'reorder' && reorderData.container === containerType) {
+                  // Pass the parsed data directly
+                  handleReorderDropWithData(reorderData, containerType);
+                  return;
+                }
+              } catch (err) {
+                // Not reorder data, continue to universal drop
+              }
+            }
+
+            // Otherwise handle as transfer
+            handleUniversalDrop(e, containerType);
+          }
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -1762,8 +2006,8 @@ const handleSendBackToMain = async () => {
           />
         )}
 
-      
-<div className="wallet-active-checkbox-container">
+
+        <div className="wallet-active-checkbox-container">
           <Tooltip content={isWalletActive(wallet.privateKey) ? "Active Wallet" : "Set as Active Wallet"}>
             <input
               type="checkbox"
@@ -1786,11 +2030,12 @@ const handleSendBackToMain = async () => {
             />
           </Tooltip>
         </div>
-        
-          <img 
-            src={circle} 
+        <Tooltip content="Drag to move wallet">
+          <img
+            src={circle}
             className="wallet-drag-handle-icon"
           />
+        </Tooltip>
         <div className="wallet-drag-info">
           <div className="wallet-name-container">
             {editingWallet === wallet.address ? (
@@ -1941,11 +2186,11 @@ const handleSendBackToMain = async () => {
     const getEmptyStateIcon = () => {
       if (containerType === 'source') {
         return (
-          <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="wallets-source-icon"><path d="m18 9-6-6-6 6"/><path d="M12 3v14"/><path d="M5 21h14"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="wallets-source-icon"><path d="m18 9-6-6-6 6" /><path d="M12 3v14" /><path d="M5 21h14" /></svg>
         )
       } else if (containerType === 'destination') {
         return (
-          <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="wallets-destination-icon"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="wallets-destination-icon"><path d="M12 17V3" /><path d="m6 11 6 6 6-6" /><path d="M19 21H5" /></svg>
         )
       }
       return null;
@@ -2358,29 +2603,40 @@ const handleSendBackToMain = async () => {
         );
 
       case 'wallets':
+        const filteredWallets = subWallets.filter(wallet => {
+          if (!walletSearchQuery.trim()) return true;
+
+          const walletName = getWalletName(wallet.address, subWallets.indexOf(wallet)).toLowerCase();
+          const searchLower = walletSearchQuery.toLowerCase();
+
+          return walletName.includes(searchLower) ||
+            wallet.address.toLowerCase().includes(searchLower);
+        }).filter(wallet =>
+          !sourceWallets.some(w => w.address === wallet.address) &&
+          !destinationWallets.some(w => w.address === wallet.address)
+        );
+
         return (
           <div className="wallets-drag-drop-layout">
             <div className="wallets-left-panel">
               <div className="wallets-summary">
                 <div className="wallets-summary-left">
-                  <div className="summary-item">
-                    <span className="summary-label">Total Wallets</span>
-                    <span className="summary-value">{subWallets.length}</span>
-                  </div>
-
-                  <div className="summary-item">
-                    <span className="summary-label">Combined Value</span>
-                    <span className={`summary-value ${isBlurred ? 'blurred' : ''}`}>
-                      {walletsLoading ? (
-                        <div className="port-loading" style={{ width: 100 }} />
-                      ) : (
-                        `${subWallets.reduce((total, wallet) => total + getTotalWalletValue(wallet.address), 0).toFixed(2)}`
-                      )}
-                    </span>
+                  <div className="portfolio-wallet-search-container" >
+                    <Search size={16} className="search-icon" />
+                    <input
+                      type="text"
+                      placeholder="Search wallets by name..."
+                      className="portfolio-wallet-search-input"
+                      value={walletSearchQuery}
+                      onChange={(e) => setWalletSearchQuery(e.target.value)}
+                    />
                   </div>
                 </div>
-
                 <div className="wallets-summary-right">
+
+                  {selectedWalletsPerContainer.main.size > 0 && (
+                    <span className="drop-zone-selected"> {selectedWalletsPerContainer.main.size} selected</span>
+                  )}
                   <button
                     className="import-wallet-button"
                     onClick={openImportModal}
@@ -2395,7 +2651,6 @@ const handleSendBackToMain = async () => {
                   </button>
                 </div>
               </div>
-
               {subWallets.length === 0 ? (
                 <div className="no-wallets-container">
                   <div className="no-wallets-message">
@@ -2417,6 +2672,13 @@ const handleSendBackToMain = async () => {
                     </div>
                   </div>
                 </div>
+              ) : filteredWallets.length === 0 && walletSearchQuery.trim() ? (
+                <div className="no-wallets-container">
+                  <div className="no-wallets-message">
+                    <h4>No Wallets Found</h4>
+                    <p>Try adjusting your search term</p>
+                  </div>
+                </div>
               ) : (
                 <div className="drag-wallets-container">
                   <div className="wallets-table-header">
@@ -2434,7 +2696,7 @@ const handleSendBackToMain = async () => {
                     ),
                     'main',
                     'main-wallets',
-                    'Drag wallets here',
+                    ' ',
                     mainWalletsRef
                   )}
                 </div>
@@ -2450,14 +2712,19 @@ const handleSendBackToMain = async () => {
                 <div className="drop-zone-header">
                   <span className="drop-zone-title">Source Wallets</span>
                   <span className="drop-zone-count">{sourceWallets.length}</span>
-                  {sourceWallets.length > 0 && (
-                    <button
-                      className="clear-zone-button"
-                      onClick={() => setSourceWallets([])}
-                    >
-                      Clear
-                    </button>
-                  )}
+                  <div className="drop-zone-right-section">
+                    {selectedWalletsPerContainer.source.size > 0 && (
+                      <span className="drop-zone-selected">{selectedWalletsPerContainer.source.size} selected</span>
+                    )}
+                    {sourceWallets.length > 0 && (
+                      <button
+                        className="clear-zone-button"
+                        onClick={() => setSourceWallets([])}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="wallets-table-header">
                   <div className="wallet-header-checkbox"></div>
@@ -2485,25 +2752,31 @@ const handleSendBackToMain = async () => {
                   <div className="destination-wallets-container">
                     <span className="drop-zone-title">Destination Wallets</span>
                     <span className="drop-zone-count">{destinationWallets.length}</span>
+
                   </div>
-                  {destinationWallets.length > 0 && (
-                    <>
+                  <div className="drop-zone-right-section">
+                    {selectedWalletsPerContainer.destination.size > 0 && (
+                      <span className="drop-zone-selected">{selectedWalletsPerContainer.destination.size} selected</span>
+                    )}
+                    {destinationWallets.length > 0 && (
+                      <>
+                        <button
+                          className="clear-zone-button"
+                          onClick={() => setDestinationWallets([])}
+                        >
+                          Clear
+                        </button>
+                      </>
+                    )}
+                    {(sourceWallets.length > 0 && destinationWallets.length > 0) && (
                       <button
-                        className="clear-zone-button"
-                        onClick={() => setDestinationWallets([])}
+                        className="distribution-popup-button"
+                        onClick={() => setShowDistributionModal(true)}
                       >
-                        Clear
+                        Distribute
                       </button>
-                      {/* <button
-                        className="clear-zone-button"
-                        onClick={handleSendBackToMain}
-                        disabled={isVaultDepositSigning || destinationWallets.length === 0}
-                        style={{ marginLeft: '8px' }}
-                      >
-                        {isVaultDepositSigning ? 'Sending...' : 'Send Back to Main'}
-                      </button> */}
-                    </>
-                  )}
+                    )}
+                  </div>
                 </div>
                 <div className="wallets-table-header">
                   <div className="wallet-header-checkbox"></div>
@@ -2522,78 +2795,145 @@ const handleSendBackToMain = async () => {
                 )}
               </div>
             </div>
-            {(sourceWallets.length > 0 || destinationWallets.length > 0) && (
-              <div className="distribution-controls">
-                <div className="distribution-settings">
-                  <div className="distribution-amount-section">
-                    <label className="distribution-label">Amount to Distribute (MON):</label>
-                    <div className="distribution-amount-input-container">
-                      <input
-                        type="text"
-                        className="distribution-amount-input"
-                        value={distributionAmount}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (/^\d*\.?\d{0,18}$/.test(value)) {
-                            setDistributionAmount(value);
-                          }
-                        }}
-                        placeholder="0.00"
-                      />
-                      <button
-                        className="deposit-max-button"
-                        onClick={handleMaxAmount}
-                        disabled={sourceWallets.length === 0}
-                      >
-                        Max
-                      </button>
-                    </div>
-                  </div>
 
-                  <div className="distribution-mode-section">
-                    <label className="distribution-label">Distribution Mode:</label>
-                    <select
-                      className="distribution-mode-select"
-                      value={distributionMode}
-                      onChange={(e) => setDistributionMode(e.target.value as 'equal' | 'proportional')}
-                    >
-                      <option value="equal">Equal Distribution</option>
-                      <option value="proportional">Proportional by Balance</option>
-                    </select>
-                  </div>
-
-                  <div className="distribution-actions">
-                    <button
-                      className="clear-all-button"
-                      onClick={clearAllZones}
-                    >
-                      Clear All
+            {showDistributionModal && (
+              <div className="pk-modal-backdrop" onClick={() => !isVaultDepositSigning && setShowDistributionModal(false)}>
+                <div className="pk-modal-container" onClick={(e) => e.stopPropagation()}>
+                  <div className="pk-modal-header">
+                    <h3 className="pk-modal-title">Distribute MON</h3>
+                    <button className="pk-modal-close" onClick={() => setShowDistributionModal(false)}>
+                      <img src={closebutton} className="close-button-icon" />
                     </button>
-                    <button
-                      className={`execute-distribution-button ${isVaultDepositSigning ? 'loading' : ''}`}
-                      onClick={executeDistribution}
-                      disabled={
-                        sourceWallets.length === 0 ||
-                        destinationWallets.length === 0 ||
-                        !distributionAmount ||
-                        parseFloat(distributionAmount) <= 0 ||
-                        isVaultDepositSigning
-                      }
-                    >
-                      {isVaultDepositSigning ? (
-                        <div className="button-loading-spinner">
-                          <svg
-                            className="loading-spinner"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 50 50"
+                  </div>
+                  <div className="pk-modal-content">
+                    <div className="distribution-settings" style={{ padding: 0 }}>
+                      <div className="distribution-amount-section">
+                        <label className="distribution-label">Amount to Distribute (MON):</label>
+                        <div className="distribution-amount-input-container">
+                          <input
+                            type="text"
+                            className="distribution-amount-input"
+                            value={distributionAmount}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (/^\d*\.?\d{0,18}$/.test(value)) {
+                                const maxAmount = calculateMaxAmount();
+                                const numValue = parseFloat(value);
+                                if (numValue > maxAmount) {
+                                  setDistributionAmount(maxAmount.toFixed(6));
+                                  setSliderPercent(100);
+                                } else {
+                                  setDistributionAmount(value);
+                                  if (maxAmount > 0 && value) {
+                                    const percent = (numValue / maxAmount) * 100;
+                                    setSliderPercent(Math.min(100, Math.max(0, isNaN(percent) ? 0 : percent)));
+                                  } else if (!value) {
+                                    setSliderPercent(0);
+                                  }
+                                }
+                              }
+                            }}
+                            placeholder="Enter amount"
+                          />
+                          <button
+                            className="deposit-max-button"
+                            onClick={handleMaxAmount}
+                            disabled={sourceWallets.length === 0}
                           >
-                          </svg>
+                            Max
+                          </button>
                         </div>
-                      ) : (
-                        'Execute Distribution'
-                      )}
-                    </button>
+                      </div>
+
+                      <div className="perps-balance-slider-wrapper" style={{ marginTop: '-10px' }}>
+                        <div className="perps-slider-container perps-slider-mode">
+                          <input
+                            ref={sliderRef}
+                            type="range"
+                            className={`perps-balance-amount-slider ${isSliderDragging ? "dragging" : ""}`}
+                            min="0"
+                            max="100"
+                            step="1"
+                            value={sliderPercent}
+                            onChange={(e) => {
+                              const percent = parseInt(e.target.value);
+                              handleSliderChange(percent);
+                            }}
+                            onMouseDown={() => {
+                              setIsSliderDragging(true);
+                              positionSliderPopup(sliderPercent);
+                            }}
+                            onMouseUp={() => setIsSliderDragging(false)}
+                            style={{
+                              background: `linear-gradient(to right, #aaaecf ${sliderPercent}%, rgb(28, 28, 31) ${sliderPercent}%)`,
+                            }}
+                          />
+                          <div
+                            ref={sliderPopupRef}
+                            className={`perps-slider-percentage-popup ${isSliderDragging ? "visible" : ""}`}
+                          >
+                            {sliderPercent}%
+                          </div>
+
+                          <div className="perps-balance-slider-marks">
+                            {[0, 25, 50, 75, 100].map((markPercent) => (
+                              <span
+                                key={markPercent}
+                                className="perps-balance-slider-mark"
+                                data-active={sliderPercent >= markPercent}
+                                data-percentage={markPercent}
+                                onClick={() => handleSliderChange(markPercent)}
+                              >
+                                {markPercent}%
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="main-wallet-balance-section">
+                        <div className="main-wallet-balance-container">
+                          <span className="main-wallet-balance-label">Available Balance:</span>
+                          <div className="main-wallet-balance-value">
+                            <img src={monadicon} className="main-wallet-balance-icon" alt="MON" />
+                            <span className={`main-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+                              {calculateMaxAmount().toFixed(6)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="distribution-actions">
+                        <button
+                          className={`execute-distribution-button ${isVaultDepositSigning ? 'loading' : ''}`}
+                          onClick={async () => {
+                            await executeDistribution();
+                            setShowDistributionModal(false);
+                          }}
+                          disabled={
+                            sourceWallets.length === 0 ||
+                            destinationWallets.length === 0 ||
+                            !distributionAmount ||
+                            parseFloat(distributionAmount) <= 0 ||
+                            isVaultDepositSigning
+                          }
+                        >
+                          {isVaultDepositSigning ? (
+                            <div className="button-loading-spinner">
+                              <svg
+                                className="loading-spinner"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 50 50"
+                              >
+                              </svg>
+                            </div>
+                          ) : (
+                            'Execute Distribution'
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2731,8 +3071,13 @@ const handleSendBackToMain = async () => {
               <div className="pk-modal-backdrop" onClick={closeDepositModal}>
                 <div className="pk-modal-container" onClick={(e) => e.stopPropagation()}>
                   <div className="pk-modal-header">
-                    <h3 className="pk-modal-title">Deposit from Main Wallet</h3>
-                    <button className="pk-modal-close" onClick={closeDepositModal}>
+                    <h3 className="pk-modal-title">Distribute MON</h3>
+                    <button
+                      className="pk-modal-close"
+                      onClick={() => setShowDistributionModal(false)}
+                      disabled={isVaultDepositSigning}
+                      style={{ opacity: isVaultDepositSigning ? 0.5 : 1, cursor: isVaultDepositSigning ? 'not-allowed' : 'pointer' }}
+                    >
                       <img src={closebutton} className="close-button-icon" />
                     </button>
                   </div>
@@ -3016,8 +3361,8 @@ const handleSendBackToMain = async () => {
                     <div className="pnl-calendar-title-section">
                       <h3 className="pnl-calendar-title">PNL Calendar</h3>
                       <div className="pnl-calendar-nav">
-                        <button 
-                          className="pnl-calendar-nav-button" 
+                        <button
+                          className="pnl-calendar-nav-button"
                           onClick={() => {
                             const newDate = new Date(currentCalendarDate);
                             newDate.setMonth(newDate.getMonth() - 1);
@@ -3029,12 +3374,12 @@ const handleSendBackToMain = async () => {
                           </svg>
                         </button>
                         <span className="pnl-calendar-month">
-                          {currentCalendarDate.toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            year: 'numeric' 
+                          {currentCalendarDate.toLocaleDateString('en-US', {
+                            month: 'short',
+                            year: 'numeric'
                           })}
                         </span>
-                        <button 
+                        <button
                           className="pnl-calendar-nav-button"
                           onClick={() => {
                             const newDate = new Date(currentCalendarDate);
@@ -3077,21 +3422,21 @@ const handleSendBackToMain = async () => {
                       {(() => {
                         const year = currentCalendarDate.getFullYear();
                         const month = currentCalendarDate.getMonth();
-                        
+
                         const daysInMonth = new Date(year, month + 1, 0).getDate();
-                        
+
                         const firstDay = new Date(year, month, 1).getDay();
 
                         const startDay = firstDay === 0 ? 6 : firstDay - 1;
-                        
+
                         const days = [];
-                        
+
                         for (let i = 0; i < startDay; i++) {
                           days.push(
                             <div key={`empty-${i}`} className="pnl-calendar-day pnl-calendar-day-empty"></div>
                           );
                         }
-                        
+
                         for (let day = 1; day <= daysInMonth; day++) {
                           days.push(
                             <div key={`day-${day}`} className="pnl-calendar-day">
@@ -3100,7 +3445,7 @@ const handleSendBackToMain = async () => {
                             </div>
                           );
                         }
-                        
+
                         return days;
                       })()}
                     </div>
