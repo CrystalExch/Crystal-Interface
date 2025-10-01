@@ -287,8 +287,8 @@
 .meme-token-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
   width: 100%;
+  gap: 4px;
 }
 
 .meme-tag-sniper {
@@ -303,7 +303,11 @@
 .meme-tag-kol {
   color: #ff4400;
 }
-
+.meme-top-holder-icon {
+  color: #fff27a;
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+}
 .meme-tag-bundler {
   color: #ff4400;
 }
@@ -1391,10 +1395,18 @@
 
 .wallet-address-link {
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .memeordercenter-lightning{
 filter: brightness(0) saturate(100%) invert(81%) sepia(4%) saturate(1856%) hue-rotate(198deg) brightness(105%) contrast(105%);
   height: 14px;
   width: 14px;
+}
+
+
+
+
+.meme-top-holder-icon{
+  flex-shrink: 0;
 }
