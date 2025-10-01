@@ -14018,7 +14018,9 @@ function App() {
               </div>
 
               <div className="modal-footer">
-                <button className="perps-confirm-button">
+                <button className="perps-confirm-button" onClick={() => {
+                  
+                }}>
                   Deposit
                 </button>
               </div>

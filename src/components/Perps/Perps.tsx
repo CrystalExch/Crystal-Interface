@@ -217,65 +217,21 @@ const Perps: React.FC<PerpsProps> = ({
     return { privateKey: privHex, publicKey: "0x" + rx.toString(16).padStart(64, "0"), publicKeyY: "0x" + ry.toString(16).padStart(64, "0") };
   };
 
-  const generateApiKeyFromSignature = (signature: string) => {
-    try {
-      // Remove the "0x" prefix if present
-      const cleanSig = signature.startsWith('0x') ? signature.slice(2) : signature;
-
-      // Convert hex string to byte array
-      const bytes = new Uint8Array(cleanSig.length / 2);
-      for (let i = 0; i < cleanSig.length; i += 2) {
-        bytes[i / 2] = parseInt(cleanSig.slice(i, i + 2), 16);
-      }
-
-      // Extract r (first 32 bytes)
-      const rBytes = bytes.slice(0, 32);
-      // Extract s (next 32 bytes)
-      const sBytes = bytes.slice(32, 64);
-
-      // keccak256 hash of r and s
-      const rHashHex = keccak256(rBytes);
-      const sHashHex = keccak256(sBytes);
-
-      // Convert rHashHex and sHashHex back to Uint8Arrays
-      const rHashBytes = new Uint8Array(rHashHex.length / 2);
-      const sHashBytes = new Uint8Array(sHashHex.length / 2);
-      for (let i = 0; i < rHashHex.length; i += 2) {
-        rHashBytes[i / 2] = parseInt(rHashHex.slice(i, i + 2), 16);
-        sHashBytes[i / 2] = parseInt(sHashHex.slice(i, i + 2), 16);
-      }
-
-      // Create UUID from first 16 bytes of sHash
-      let uuid = '';
-      for (let i = 0; i < 16; i++) {
-        uuid += sHashBytes[i].toString(16).padStart(2, '0');
-      }
-      uuid = `${uuid.slice(0, 8)}-${uuid.slice(8, 12)}-${uuid.slice(12, 16)}-${uuid.slice(16, 20)}-${uuid.slice(20)}`;
-
-      // Create apiSecret from rHashBytes (first 32 bytes), Base64URL encoded
-      const apiSecret = Buffer.from(rHashBytes.slice(0, 32))
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-
-      // Create apiPassphrase from second half of sHashBytes (bytes 16 to 32), Base64URL encoded
-      const apiPassphrase = Buffer.from(sHashBytes.slice(16, 32))
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-
-      return {
-        apiKey: uuid,
-        apiPassphrase,
-        apiSecret,
-      };
-    } catch (error) {
-      console.error('Failed to generate API key from signature:', error);
-      return null;
-    }
-  };
+  function generateApiKeyFromSignature(signature: string): {apiKey:string;apiPassphrase:string;apiSecret:string}{
+    try{
+      const hexToByteArray=(hex:string)=>{hex=hex.replace(/^0x/i,'');if(hex.length%2)hex='0'+hex;const b=new Uint8Array(hex.length/2);for(let i=0;i<b.length;i++)b[i]=parseInt(hex.slice(i*2,i*2+2),16);return b}
+      const byteArrayToHex=(a:Uint8Array)=>Array.from(a,x=>(x&255).toString(16).padStart(2,'0')).join('')
+      const uuidFormat=(k:string)=>[k.slice(0,8),k.slice(8,12),k.slice(12,16),k.slice(16,20),k.slice(20)].join('-')
+      const urlBase64Encode=(a:Uint8Array)=>((typeof Buffer!=='undefined'?Buffer.from(a).toString('base64'):btoa(String.fromCharCode(...a)))).replace(/=+$/,'').replace(/\+/g,'-').replace(/\//g,'_')
+      const buf=hexToByteArray(signature)
+      const rHashBytes=hexToByteArray(keccak256(buf.slice(0,32)))
+      const sHashBytes=hexToByteArray(keccak256(buf.slice(32,64)))
+      const apiKey=uuidFormat(byteArrayToHex(sHashBytes.slice(0,16)))
+      const apiSecret=urlBase64Encode(rHashBytes.slice(0,32))
+      const apiPassphrase=urlBase64Encode(sHashBytes.slice(16,32))
+      return{apiKey,apiPassphrase,apiSecret}
+    }catch(e){throw new Error(`Failed to generate API key from signature: ${e}`)}
+  }
 
   function starkSign(msgHashHex: string, privKeyHex: string): { r: string; s: string } {
     // StarkEx curve parameters
@@ -790,13 +746,6 @@ const Perps: React.FC<PerpsProps> = ({
       wsRef.current = new WebSocket(endpoint);
 
       wsRef.current.onopen = async () => {
-        const subscriptionMessages = [
-          JSON.stringify({
-            type: 'subscribe',
-            channel: 'ticker.all.1s',
-          })
-        ];
-
         pingIntervalRef.current = setInterval(() => {
           if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({
@@ -806,28 +755,31 @@ const Perps: React.FC<PerpsProps> = ({
           }
         }, 15000);
 
-        subscriptionMessages.forEach((message) => {
-          wsRef.current?.send(message);
+        const subs = [
+          'ticker.all.1s',
+          ...(activeMarket?.contractId
+            ? [
+                `depth.${activeMarket.contractId}.200`,
+                `trades.${activeMarket.contractId}`,
+                `kline.LAST_PRICE.${activeMarket.contractId}.${
+                  selectedInterval === '1d'
+                    ? 'DAY_1'
+                    : selectedInterval === '4h'
+                    ? 'HOUR_4'
+                    : selectedInterval === '1h'
+                    ? 'HOUR_1'
+                    : 'MINUTE_' + selectedInterval.slice(0, -1)
+                }`,
+              ]
+            : []),
+        ]
+        
+        subs.forEach((channel: any) => {
+          wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }));
         });
-        if (activeMarket?.contractId) {
-          const subs = [
-            `depth.${activeMarket.contractId}.200`,
-            `trades.${activeMarket.contractId}`,
-            `kline.LAST_PRICE.${activeMarket.contractId}.${selectedInterval === '1d'
-              ? 'DAY_1'
-              : selectedInterval === '4h'
-                ? 'HOUR_4'
-                : selectedInterval === '1h'
-                  ? 'HOUR_1'
-                  : 'MINUTE_' + selectedInterval.slice(0, -1)}`
-          ]
 
-          subs.forEach((channel: any) => {
-            wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }))
-          })
+        if (activeMarket?.contractId) subRefs.current = subs.slice(1);
 
-          subRefs.current = subs
-        }
         fetchData();
       };
 
@@ -1038,12 +990,11 @@ const Perps: React.FC<PerpsProps> = ({
     const fetchData = async () => {
       try {
         const ts=Date.now().toString()
-        const path='/api/v1/private/user/info'
-        const sorted=''
-        const signature = computeHmac("sha256", Buffer.from(signer.apiSecret, "base64"), toUtf8Bytes(ts + "GET" + path + sorted))
-        console.log(signature)
+        const path='/api/v1/private/user/getUserInfo'
+        const qs=''
+        const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "GET" + path + qs)).slice(2)
         const [metaRes]=await Promise.all([
-          fetch("/api/v1/private/user/info",{
+          fetch("/api/v1/private/user/getUserInfo",{
             method:"GET",
             headers:{
               "Content-Type":"application/json",
@@ -1061,24 +1012,21 @@ const Perps: React.FC<PerpsProps> = ({
         console.log(e)
       }
     };
-    
-    (async () => {
-      await fetchData();
-    })()
 
     const connectWebSocket = () => {
       if (liveStreamCancelled) return;
-      const accountId = "652477428161053296";
+      const ts=Date.now().toString()
+      const accountId = "664124834304754100";
       const path = "/api/v1/private/ws";
-      const ts = Date.now().toString();
-      const qs = `accountId=${accountId}`;
-      const endpoint = `wss://quote.edgex.exchange${path}?${qs}&timestamp=${ts}`;
-      const signature = computeHmac("sha256", Buffer.from(signer.apiSecret, "base64"), toUtf8Bytes(ts + "GET" + path + qs))
-      console.log(signature)
+      const qs = `accountId=${accountId}&timestamp=${ts}`;
+      const endpoint = `wss://quote.edgex.exchange${path}?${qs}`;
+      const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "GET" + path + qs)).slice(2)
 
       const payload = JSON.stringify({
-        "X-edgeX-Api-Signature": signature,
-        "X-edgeX-Api-Timestamp": ts,
+        "X-edgeX-Timestamp":ts,
+        "X-edgeX-Signature":signature,
+        "X-edgeX-Passphrase":signer.apiPassphrase,
+        "X-edgeX-Api-Key":signer.apiKey
       });
 
       accwsRef.current = new WebSocket(endpoint, btoa(payload).replace(/=+$/, "")
@@ -1086,13 +1034,6 @@ const Perps: React.FC<PerpsProps> = ({
       .replace(/\//g, "_"));
 
       accwsRef.current.onopen = async () => {
-        const subscriptionMessages = [
-          JSON.stringify({
-            type: 'subscribe',
-            channel: 'ticker.all.1s',
-          })
-        ];
-
         accpingIntervalRef.current = setInterval(() => {
           if (accwsRef.current?.readyState === WebSocket.OPEN) {
             accwsRef.current.send(JSON.stringify({
@@ -1102,28 +1043,12 @@ const Perps: React.FC<PerpsProps> = ({
           }
         }, 15000);
 
-        subscriptionMessages.forEach((message) => {
-          accwsRef.current?.send(message);
+        const subs: any = [];
+
+        subs.forEach((channel: any) => {
+          accwsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }));
         });
-        if (activeMarket?.contractId) {
-          const subs = [
-            `depth.${activeMarket.contractId}.200`,
-            `trades.${activeMarket.contractId}`,
-            `kline.LAST_PRICE.${activeMarket.contractId}.${selectedInterval === '1d'
-              ? 'DAY_1'
-              : selectedInterval === '4h'
-                ? 'HOUR_4'
-                : selectedInterval === '1h'
-                  ? 'HOUR_1'
-                  : 'MINUTE_' + selectedInterval.slice(0, -1)}`
-          ]
 
-          subs.forEach((channel: any) => {
-            accwsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }))
-          })
-
-          subRefs.current = subs
-        }
         fetchData();
       };
 
@@ -1282,7 +1207,7 @@ const Perps: React.FC<PerpsProps> = ({
       };
     };
 
-    // connectWebSocket();
+    connectWebSocket();
 
     return () => {
       liveStreamCancelled = true;
@@ -1300,7 +1225,7 @@ const Perps: React.FC<PerpsProps> = ({
         accreconnectIntervalRef.current = null;
       }
     };
-  }, [signer]);
+  }, [signer?.publicKey]);
 
   const renderChartComponent = useMemo(() => (
     <ChartComponent
@@ -1716,10 +1641,10 @@ const Perps: React.FC<PerpsProps> = ({
                       }
                       else if (Object.keys(signer).length == 0) {
                         const signature = await signTypedDataAsync({message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main"})
+                        const apiSig = await signTypedDataAsync({message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange"})
                         const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
-                        const tempsigner = {...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(signature)};
+                        const tempsigner = {...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig)};
                         localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
-                        console.log(tempsigner)
                         setSigner(tempsigner)
                       }
                   }}
