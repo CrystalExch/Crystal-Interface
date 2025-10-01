@@ -2678,7 +2678,7 @@ useEffect(() => {
                             }}
                             onMouseUp={() => setIsSliderDragging(false)}
                             style={{
-                              background: `linear-gradient(to right, #aaaecf ${sliderPercent}%, rgb(28, 28, 31) ${sliderPercent}%)`,
+                              background: `linear-gradient(to right, #aaaecf ${sliderPercent}%, rgb(22 22 32) ${sliderPercent}%)`,
                             }}
                           />
                           <div

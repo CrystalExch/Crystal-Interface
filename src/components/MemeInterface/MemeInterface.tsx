@@ -3343,7 +3343,7 @@ if (
                   }}
                   onMouseUp={() => setIsDragging(false)}
                   style={{
-                    background: `linear-gradient(to right, rgb(171, 176, 224) ${sliderPercent}%, rgb(28, 28, 31) ${sliderPercent}%)`,
+                    background: `linear-gradient(to right, rgb(171, 176, 224) ${sliderPercent}%, rgb(22 22 32) ${sliderPercent}%)`,
                   }}
                 />
                 <div
