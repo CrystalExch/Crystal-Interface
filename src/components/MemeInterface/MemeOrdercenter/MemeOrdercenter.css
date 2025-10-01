@@ -1120,17 +1120,6 @@
   color: rgba(255, 255, 255, 1) !important;
 }
 
-.alerts-popup .meme-trade-currency {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: .95rem;
-  margin-left: 4px;
-  margin-top: -19.5px;
-  pointer-events: none;
-  position: relative;
-  right: 20px;
-  transform: translateY(-50%);
-}
-
 .alerts-popup .meme-balance-slider-wrapper {
   margin: 0 0 20px;
   padding: 0;
@@ -1141,6 +1130,17 @@
   position: relative;
   width: 100%;
 }
+
+.meme-oc-trade-currency {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: .95rem;
+  pointer-events: none;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 
 .alerts-popup .meme-balance-amount-slider {
   -webkit-appearance: none;
@@ -1263,7 +1263,7 @@
 }
 
 .meme-balance-slider-mark.sell[data-active='true']:not(:first-child):not(:last-child)::before {
-  background-color: rgb(235, 112, 112);
+  background-color: rgb(235, 112, 112) !important;
 }
 
 .meme-balance-slider-mark.sell[data-active='false']:not(:first-child):not(:last-child)::before {
@@ -1289,7 +1289,6 @@
 }
 
 .alerts-popup .meme-trade-action-button.sell {
-  background-color: #6e324051;
   color: rgb(235, 112, 112);
 }
 

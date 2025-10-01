@@ -146,13 +146,12 @@ const Tooltip: React.FC<{
               position: 'absolute',
               top: `${tooltipPosition.top - 20}px`,
               left: `${tooltipPosition.left}px`,
-              transform: `${
-                position === 'top' || position === 'bottom'
+              transform: `${position === 'top' || position === 'bottom'
                   ? 'translateX(-50%)'
                   : position === 'left' || position === 'right'
                     ? 'translateY(-50%)'
                     : 'none'
-              } scale(${isVisible ? 1 : 0})`,
+                } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
               pointerEvents: 'none',
@@ -219,12 +218,12 @@ interface Props {
   trades: RawTrade[];
   tokenList?: any[];
   market?:
-    | {
-        baseAsset?: string;
-        quoteAsset?: string;
-        quoteAddress?: string;
-      }
-    | any;
+  | {
+    baseAsset?: string;
+    quoteAsset?: string;
+    quoteAddress?: string;
+  }
+  | any;
   tradesByMarket?: any;
   markets?: any;
   tokendict?: any;
@@ -242,7 +241,7 @@ interface Props {
   monUsdPrice: number;
   trackedAddresses?: string[];
   onFilterDev?: () => void;
-  onFilterYou?: () => void;
+onFilterYou?: (addresses?: string[]) => void;
   onClearTracked?: () => void;
   isLoadingTrades?: boolean;
   subWallets?: Array<{ address: string; privateKey: string }>;
@@ -286,17 +285,17 @@ export default function MemeTradesComponent({
   const tradesBacklogRef = useRef<RawTrade[]>([]);
   const lastProcessedTradesRef = useRef<RawTrade[]>([]);
 
-const norm = (s?: string) => (s || '').toLowerCase();
+  const norm = (s?: string) => (s || '').toLowerCase();
   const trackedSet = new Set((trackedAddresses || []).map(norm));
   const dev = norm(devAddress);
   const you = norm(currentUserAddress);
-  
+
   // Create a set of all "you" addresses (main wallet + sub wallets)
   const youSet = new Set([
     you,
     ...(subWallets || []).map(w => norm(w.address))
   ].filter(addr => addr !== ''));
-  
+
   const devEqualsYou = dev !== '' && youSet.has(dev);
 
   let devActive = false;
@@ -472,16 +471,16 @@ const norm = (s?: string) => (s || '').toLowerCase();
     }
 
     return filteredTrades.map((r) => {
-const callerLower = r.caller.toLowerCase();
-const devAddressLower = devAddress?.toLowerCase();
+      const callerLower = r.caller.toLowerCase();
+      const devAddressLower = devAddress?.toLowerCase();
 
-const subWalletSet = new Set(
-  (subWallets || []).map(w => w.address.toLowerCase())
-);
+      const subWalletSet = new Set(
+        (subWallets || []).map(w => w.address.toLowerCase())
+      );
 
-const isCurrentUser =
-  (currentUserAddress && callerLower === currentUserAddress.toLowerCase()) ||
-  subWalletSet.has(callerLower);
+      const isCurrentUser =
+        (currentUserAddress && callerLower === currentUserAddress.toLowerCase()) ||
+        subWalletSet.has(callerLower);
       const isTopHolder = top10HolderAddresses.has(callerLower);
       const isDev = Boolean(devAddressLower && callerLower === devAddressLower);
       const sign = r.isBuy ? 1 : -1;
@@ -507,7 +506,7 @@ const isCurrentUser =
       }
 
       const amountUSD = monUsd > 0 ? amountMON * monUsd : 0;
-const short = isCurrentUser ? 'YOU' : r.caller.slice(2, 6);
+      const short = isCurrentUser ? 'YOU' : r.caller.slice(2, 6);
       const tags: (
         | 'sniper'
         | 'dev'
@@ -580,19 +579,19 @@ const short = isCurrentUser ? 'YOU' : r.caller.slice(2, 6);
       </span>
     );
   };
-const fmtAmount = (v: number) => {
-  const val = Math.abs(v);
+  const fmtAmount = (v: number) => {
+    const val = Math.abs(v);
 
-  if (amountMode === 'USDC') {
-    // >=$1k uses K/M/B/T; otherwise compact dollars
-    return val >= 1_000 ? `$${formatKMBT(val, 2)}` : `$${val.toFixed(2)}`;
-  }
+    if (amountMode === 'USDC') {
+      // >=$1k uses K/M/B/T; otherwise compact dollars
+      return val >= 1_000 ? `$${formatKMBT(val, 2)}` : `$${val.toFixed(2)}`;
+    }
 
-  if (val >= 1_000) return formatKMBT(val, 2); 
-  if (val >= 1) return val.toFixed(3);        
-  if (val >= 0.01) return val.toFixed(4);      
-  return val.toPrecision(3);                  
-};
+    if (val >= 1_000) return formatKMBT(val, 2);
+    if (val >= 1) return val.toFixed(3);
+    if (val >= 0.01) return val.toFixed(4);
+    return val.toPrecision(3);
+  };
   const fmtTimeAgo = (ts: number) => {
     const now = Date.now() / 1000;
     const secondsAgo = Math.max(0, Math.floor(now - ts));
@@ -603,15 +602,15 @@ const fmtAmount = (v: number) => {
     return `${Math.floor(secondsAgo / 86400)}d`;
   };
 
-const formatKMBT = (value: number, decimals: number = 2) => {
-  const abs = Math.abs(value);
-  const sign = value < 0 ? '-' : '';
-  if (abs >= 1e12) return `${sign}${(abs / 1e12).toFixed(decimals)}T`;
-  if (abs >= 1e9)  return `${sign}${(abs / 1e9).toFixed(decimals)}B`;
-  if (abs >= 1e6)  return `${sign}${(abs / 1e6).toFixed(decimals)}M`;
-  if (abs >= 1e3)  return `${sign}${(abs / 1e3).toFixed(decimals)}K`;
-  return `${sign}${abs.toFixed(1)}`;
-};
+  const formatKMBT = (value: number, decimals: number = 2) => {
+    const abs = Math.abs(value);
+    const sign = value < 0 ? '-' : '';
+    if (abs >= 1e12) return `${sign}${(abs / 1e12).toFixed(decimals)}T`;
+    if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(decimals)}B`;
+    if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(decimals)}M`;
+    if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(decimals)}K`;
+    return `${sign}${abs.toFixed(1)}`;
+  };
   const handleApplyFilters = (filters: TransactionFilters) => {
     setTransactionFilters(filters);
   };
@@ -708,27 +707,31 @@ const formatKMBT = (value: number, decimals: number = 2) => {
     </div>
   );
 
-  const handleFilterClick = (filterType: 'dev' | 'you' | 'tracked') => {
-    switch (filterType) {
-      case 'dev':
-        if (devActive) {
-          onClearTracked?.();
-        } else {
-          onFilterDev?.();
-        }
-        break;
-      case 'you':
-        if (youActive) {
-          onClearTracked?.();
-        } else {
-          onFilterYou?.();
-        }
-        break;
-      case 'tracked':
+const handleFilterClick = (filterType: 'dev' | 'you' | 'tracked') => {
+  switch (filterType) {
+    case 'dev':
+      if (devActive) {
         onClearTracked?.();
-        break;
-    }
-  };
+      } else {
+        onFilterDev?.();
+      }
+      break;
+    case 'you':
+      if (youActive) {
+        onClearTracked?.();
+      } else {
+const allYouAddresses = [
+  currentUserAddress,
+  ...(subWallets || []).map(w => w.address)
+].filter((addr): addr is string => addr !== undefined && addr !== '');
+        onFilterYou?.(allYouAddresses);
+      }
+      break;
+    case 'tracked':
+      onClearTracked?.();
+      break;
+  }
+};
 
   const renderTraderTags = (
     tags: ('sniper' | 'dev' | 'kol' | 'bundler' | 'insider' | 'topHolder')[],
@@ -921,17 +924,17 @@ const formatKMBT = (value: number, decimals: number = 2) => {
                     {fmtAmount(shownAmount)}
                   </div>
 
-<div className="meme-trade-mc">
-  {mcMode === 'MC' ? (
-    <span className="meme-trade-mc">
-      ${formatKMBT(t.mcUSD, 2)}
-    </span>
-  ) : (
-<span>
-  $<FormattedNumberDisplay formatted={formatSubscript(t.priceUSD.toString())} />
-</span>
-  )}
-</div>
+                  <div className="meme-trade-mc">
+                    {mcMode === 'MC' ? (
+                      <span className="meme-trade-mc">
+                        ${formatKMBT(t.mcUSD, 2)}
+                      </span>
+                    ) : (
+                      <span>
+                        $<FormattedNumberDisplay formatted={formatSubscript(t.priceUSD.toString())} />
+                      </span>
+                    )}
+                  </div>
 
                   <div
                     className={`meme-trade-trader ${t.isCurrentUser ? 'current-user' : 'clickable'}`}

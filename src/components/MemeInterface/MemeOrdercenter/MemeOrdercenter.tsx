@@ -249,14 +249,12 @@ const SellPopup: React.FC<SellPopupProps> = ({
                 onChange={onSellAmountChange}
                 className="meme-trade-input"
               />
-              <div
-                className="meme-trade-currency"
-                style={{
-                  left: `${Math.max(12 + (sellAmount.length || 1) * 10, 12)}px`,
-                }}
-              >
-                MON
-              </div>
+                <div className="meme-oc-trade-currency">
+              <img
+                className="meme-currency-monad-icon"
+                src={monadicon}
+              />
+            </div>
             </div>
             <div className="meme-balance-slider-wrapper">
               <div className="meme-slider-container meme-slider-mode">
