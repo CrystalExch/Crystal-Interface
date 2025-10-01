@@ -7,6 +7,7 @@
     import key from '../../assets/key.svg';
     import trash from '../../assets/trash.svg';
     import { settings } from '../../settings';
+    import ImportWalletsPopup from './ImportWalletsPopup';
     import './Tracker.css';
 
     const Tooltip: React.FC<{
@@ -139,20 +140,43 @@
     
 
     type TrackerTab = 'wallets' | 'trades' | 'monitor' ;
+    type SortField = 'balance' | 'lastActive' | 'dateCreated' | 'amount' | 'marketCap' | null;
+    type SortDirection = 'asc' | 'desc';
 
     const Tracker: React.FC<TrackerProps> = ({ isBlurred, setpopup}) => {
+
+        const [walletSortField, setWalletSortField] = useState<'balance' | 'lastActive' | null>(null);
+        const [walletSortDirection, setWalletSortDirection] = useState<SortDirection>('desc');
+
+        const [tradeSortField, setTradeSortField] = useState<'dateCreated' | 'amount' | 'marketCap' | null>(null);
+        const [tradeSortDirection, setTradeSortDirection] = useState<SortDirection>('desc');
         const [activeTab, setActiveTab] = useState<TrackerTab>('wallets');
         const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([
-            {
-                id: '1',
-                address: '0x1234...5678',
-                name: 'random demon',
-                emoji: '😈',
-                balance: 3.55,
-                lastActive: '2m'
-            }
+        {
+            id: '1',
+            address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1',
+            name: 'Whale Hunter',
+            emoji: '🐋',
+            balance: 127.43,
+            lastActive: '5m'
+        },
+        {
+            id: '2',
+            address: '0x8Ba1f109551bD432803012645Ac136ddd64DBA72',
+            name: 'Diamond Hands',
+            emoji: '💎',
+            balance: 89.21,
+            lastActive: '12m'
+        },
+        {
+            id: '3',
+            address: '0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE',
+            name: 'Moon Mission',
+            emoji: '🚀',
+            balance: 45.67,
+            lastActive: '1h'
+        }
         ]);
-
         const [liveTrades] = useState<LiveTrade[]>([
         {
             id: '1',
@@ -171,7 +195,7 @@
             walletName: 'random demon',
             emoji: '😈',
             token: 'Girthc...',
-            amount: 6.073,
+            amount: 8.073,
             marketCap: 74400,
             time: '4m',
             txHash: '0xabc124...',
@@ -226,7 +250,7 @@
             type: 'buy',
             createdAt: '2025-09-29T10:00:00'
         }
-    ]);
+        ]);
 
         const [monitorTokens] = useState<MonitorToken[]>([
         {
@@ -295,8 +319,7 @@
             holders: 2,
             emoji: '☕'
         }
-    ]);
-
+        ]);
         const [showAddWalletModal, setShowAddWalletModal] = useState(false);
         const [newWalletAddress, setNewWalletAddress] = useState('');
         const [newWalletName, setNewWalletName] = useState('');
@@ -308,6 +331,7 @@
 
         const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
         const [walletToDelete, setWalletToDelete] = useState<string>('');
+        const [showImportPopup, setShowImportPopup] = useState(false);
 
         const mainWalletsRef = useRef<HTMLDivElement>(null);
 
@@ -315,6 +339,66 @@
 
         const isValidAddress = (addr: string) => {
             return /^0x[a-fA-F0-9]{40}$/.test(addr);
+        };
+        
+        const parseLastActive = (lastActive: string): number => {
+            const value = parseInt(lastActive);
+            if (lastActive.includes('m')) return value;
+            if (lastActive.includes('h')) return value * 60;
+            if (lastActive.includes('d')) return value * 1440;
+            return 999999;
+        };
+
+        const handleWalletSort = (field: 'balance' | 'lastActive') => {
+            if (walletSortField === field) {
+                setWalletSortDirection(prev => prev === 'desc' ? 'asc' : 'desc');
+            } else {
+                setWalletSortField(field);
+                setWalletSortDirection('desc');
+            }
+        };
+
+        const handleTradeSort = (field: 'dateCreated' | 'amount' | 'marketCap') => {
+            if (tradeSortField === field) {
+                setTradeSortDirection(prev => prev === 'desc' ? 'asc' : 'desc');
+            } else {
+                setTradeSortField(field);
+                setTradeSortDirection('desc');
+            }
+        };
+
+        const getSortedWallets = () => {
+            if (!walletSortField) return trackedWallets;
+            
+            return [...trackedWallets].sort((a, b) => {
+                let comparison = 0;
+                
+                if (walletSortField === 'balance') {
+                    comparison = a.balance - b.balance;
+                } else if (walletSortField === 'lastActive') {
+                    comparison = parseLastActive(a.lastActive) - parseLastActive(b.lastActive);
+                }
+                
+                return walletSortDirection === 'desc' ? -comparison : comparison;
+            });
+        };
+
+        const getSortedTrades = () => {
+            if (!tradeSortField) return liveTrades;
+            
+            return [...liveTrades].sort((a, b) => {
+                let comparison = 0;
+                
+                if (tradeSortField === 'dateCreated') {
+                    comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                } else if (tradeSortField === 'amount') {
+                    comparison = a.amount - b.amount;
+                } else if (tradeSortField === 'marketCap') {
+                    comparison = a.marketCap - b.marketCap;
+                }
+                
+                return tradeSortDirection === 'desc' ? -comparison : comparison;
+            });
         };
 
         const handleAddWallet = () => {
@@ -353,6 +437,60 @@
             setTrackedWallets(prev => [...prev, newWallet]);
             closeAddWalletModal();
         };
+
+        const handleExportWallets = () => {
+            const exportData = trackedWallets.map(wallet => ({
+                trackedWalletAddress: wallet.address,
+                name: wallet.name,
+                emoji: wallet.emoji,
+                alertsOnToast: false,
+                alertsOnBubble: false,
+                alertsOnFeed: true,
+                groups: ["Main"],
+                sound: "default"
+            }));
+            
+            const jsonString = JSON.stringify(exportData, null, 2);
+            navigator.clipboard.writeText(jsonString);
+        };
+
+        const handleImportWallets = (walletsText: string, addToSingleGroup: boolean) => {
+            try {
+                const importedData = JSON.parse(walletsText);
+                
+                if (!Array.isArray(importedData)) {
+                    console.error('Invalid format: expected an array');
+                    return;
+                }
+                
+                const newWallets: TrackedWallet[] = importedData
+                    .filter(item => {
+                        // Check if wallet already exists
+                        const exists = trackedWallets.some(
+                            w => w.address.toLowerCase() === item.trackedWalletAddress.toLowerCase()
+                        );
+                        return !exists && item.trackedWalletAddress;
+                    })
+                    .map(item => ({
+                        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                        address: item.trackedWalletAddress,
+                        name: item.name || 'Imported Wallet',
+                        emoji: item.emoji || '👻',
+                        balance: 0,
+                        lastActive: 'Never'
+                    }));
+                
+                if (newWallets.length > 0) {
+                    setTrackedWallets(prev => [...prev, ...newWallets]);
+                    console.log(`Successfully imported ${newWallets.length} wallets`);
+                } else {
+                    console.log('No new wallets to import');
+                }
+            } catch (error) {
+                console.error('Failed to import wallets:', error);
+            }
+        };
+
 
         const closeAddWalletModal = () => {
             setShowAddWalletModal(false);
@@ -429,7 +567,7 @@
                                 />
                             </div>
                         )}
-                                        <div className="tracker-wallet-address">
+                    <div className="tracker-wallet-address">
                         {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
                         <img
                             src={copy}
@@ -514,20 +652,45 @@
                     <>
                         <div className="tracker-wallets-header">
                             <div className="tracker-wallet-header-cell">Name</div>
-                            <div className="tracker-wallet-header-cell">Balance</div>
-                            <div className="tracker-wallet-header-cell">Last Active</div>
+                            <div 
+                                className={`tracker-wallet-header-cell sortable ${walletSortField === 'balance' ? 'active' : ''}`}
+                                onClick={() => handleWalletSort('balance')}
+                            >
+                                Balance
+                                {walletSortField === 'balance' && (
+                                    <span className={`tracker-sort-arrow ${walletSortDirection}`}>
+                                        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M5 7L2 3H8L5 7Z"/>
+                                        </svg>
+                                    </span>
+                                )}
+                            </div>
+                            <div 
+                                className={`tracker-wallet-header-cell sortable ${walletSortField === 'lastActive' ? 'active' : ''}`}
+                                onClick={() => handleWalletSort('lastActive')}
+                            >
+                                Last Active
+                                {walletSortField === 'lastActive' && (
+                                    <span className={`tracker-sort-arrow ${walletSortDirection}`}>
+                                        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M5 7L2 3H8L5 7Z"/>
+                                        </svg>
+                                    </span>
+                                )}
+                            </div>
                             <button
                                 className="tracker-remove-all-button"
                                 onClick={handleRemoveAll}
                                 disabled={trackedWallets.length === 0}
                             >
                                 Remove All
-                            </button>        </div>
+                            </button>
+                        </div>
                         <div
                             ref={mainWalletsRef}
                             className="tracker-wallets-list"
                         >
-                            {trackedWallets.map(wallet => renderWalletItem(wallet))}
+                            {getSortedWallets().map(wallet => renderWalletItem(wallet))}
                         </div>
                     </>
                 )}
@@ -538,15 +701,52 @@
             <div className="tracker-live-trades">
                 <div className="tracker-trades-table">
                     <div className="tracker-table-header">
-                        <div className="tracker-header-cell">Date Created</div>
+                        <div 
+                            className={`tracker-header-cell sortable ${tradeSortField === 'dateCreated' ? 'active' : ''}`}
+                            onClick={() => handleTradeSort('dateCreated')}
+                        >
+                            Date Created
+                            {tradeSortField === 'dateCreated' && (
+                                <span className={`tracker-sort-arrow ${tradeSortDirection}`}>
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M5 7L2 3H8L5 7Z"/>
+                                    </svg>
+                                </span>
+                            )}
+                        </div>
                         <div className="tracker-header-cell">Name</div>
                         <div className="tracker-header-cell">Token</div>
-                        <div className="tracker-header-cell">Amount</div>
-                        <div className="tracker-header-cell">Market Cap</div>
+                        <div 
+                            className={`tracker-header-cell sortable ${tradeSortField === 'amount' ? 'active' : ''}`}
+                            onClick={() => handleTradeSort('amount')}
+                        >
+                            Amount
+                            {tradeSortField === 'amount' && (
+                                <span className={`tracker-sort-arrow ${tradeSortDirection}`}>
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M5 7L2 3H8L5 7Z"/>
+                                    </svg>
+                                </span>
+                            )}
+                        </div>
+                        <div 
+                            className={`tracker-header-cell sortable ${tradeSortField === 'marketCap' ? 'active' : ''}`}
+                            onClick={() => handleTradeSort('marketCap')}
+                            style={{ justifySelf: 'end' }}
+                        >
+                            Market Cap
+                            {tradeSortField === 'marketCap' && (
+                                <span className={`tracker-sort-arrow ${tradeSortDirection}`}>
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M5 7L2 3H8L5 7Z"/>
+                                    </svg>
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     <div className="tracker-table-content">
-                        {liveTrades.map((trade) => (
+                        {getSortedTrades().map((trade) => (
                             <div 
                                 key={trade.id} 
                                 className={`tracker-trade-row ${trade.type === 'buy' ? 'trade-buy' : 'trade-sell'}`}
@@ -705,8 +905,19 @@
                                     className="tracker-search-input"
                                 />
                             </div>
-                            <button className="tracker-header-button" onClick={() => setpopup(32)} >Import</button>
-                            <button className="tracker-header-button">Export</button>
+                            <button 
+                                className="tracker-header-button" 
+                                onClick={() => setShowImportPopup(true)}
+                            >
+                                Import
+                            </button>
+                            <button 
+                                className="tracker-header-button" 
+                                onClick={handleExportWallets}
+                                disabled={trackedWallets.length === 0}
+                            >
+                                Export
+                            </button>
                             <button
                                 className="tracker-add-button"
                                 onClick={() => setShowAddWalletModal(true)}
@@ -879,6 +1090,13 @@
                             </div>
                         </div>
                     </div>
+                )}
+
+                {showImportPopup && (
+                    <ImportWalletsPopup
+                        onClose={() => setShowImportPopup(false)}
+                        onImport={handleImportWallets}
+                    />
                 )}
             </div>
         );
