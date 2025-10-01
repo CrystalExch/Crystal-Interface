@@ -157,9 +157,8 @@ import PNLComponent from './components/PNLComponent/PNLComponent.tsx';
 import ImportWalletsPopup from './components/Tracker/ImportWalletsPopup.tsx';
 import TradingPresetsPopup from './components/Tracker/TradingPresetsPopup/TradingPresetsPopup';
 import LiveTradesSettingsPopup from './components/Tracker/ LiveTradesSettingsPopup/LiveTradesSettingsPopup.tsx';
-
-
-
+import LiveTradesFiltersPopup from './components/Tracker/LiveTradesFiltersPopup/LiveTradesFIltersPopup.tsx';
+import type { FilterState } from './components/Tracker/LiveTradesFiltersPopup/LiveTradesFIltersPopup.tsx';
 // import config
 import { ChevronDown, Search, SearchIcon } from 'lucide-react';
 import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortfolioData.ts';
@@ -168,6 +167,7 @@ import { useSharedContext } from './contexts/SharedContext.tsx';
 import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 import { sMonAbi } from './abis/sMonAbi.ts';
+
 const clearlogo = '/CrystalLogo.png';
 
 function App() {
@@ -185,7 +185,6 @@ function App() {
   });
 
   //PNL
-  const [showPNLModal, setShowPNLModal] = useState(false);
   const [perpsLeverage, setPerpsLeverage] = useState<string>(() => {
     const saved = localStorage.getItem('crystal_perps_leverage');
     return saved !== null ? saved : '10.0';
@@ -231,6 +230,29 @@ function App() {
     }
     return g;
   })();
+
+  const [activeFilters, setActiveFilters] = useState<FilterState>({
+      transactionTypes: {
+          buyMore: true,
+          firstBuy: true,
+          sellPartial: true,
+          sellAll: true,
+          addLiquidity: true,
+          removeLiquidity: true,
+      },
+      marketCap: {
+          min: '',
+          max: '',
+      },
+      transactionAmount: {
+          min: '',
+          max: '',
+      },
+      tokenAge: {
+          min: '',
+          max: '',
+      },
+  });
 
   const txReceiptResolvers = useRef(new Map<string, () => void>());
   // get market including multihop
@@ -2736,6 +2758,11 @@ function App() {
     }
 
     return requiredInput;
+  };
+
+  const handleApplyFilters = (filters: FilterState) => {
+      setActiveFilters(filters);
+      setpopup(0);
   };
 
   // oc resizers
@@ -14147,12 +14174,12 @@ function App() {
           </div>
         ) : null}
 
-        {popup === 34 ? ( // Trading Presets
-          <div ref={popupref}>
-            <TradingPresetsPopup
-              onClose={() => setpopup(0)}
-            />
-          </div>
+        {popup === 34 ? ( // Live Trades Presets Settings
+            <div ref={popupref}>
+                <TradingPresetsPopup
+                    onClose={() => setpopup(0)}
+                />
+            </div>
         ) : null}
 
 
@@ -21022,6 +21049,8 @@ function App() {
                 isBlurred={isBlurred}
                 setpopup={setpopup}
                 onImportWallets={handleImportWallets}
+                onApplyFilters={handleApplyFilters}
+                activeFilters={activeFilters}
               />
             } />
           <Route path="/perps" element={<Navigate to="/perps/BTCUSD" replace />} />

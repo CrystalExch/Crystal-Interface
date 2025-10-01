@@ -8,6 +8,7 @@
     import trash from '../../assets/trash.svg';
     import { settings } from '../../settings';
     import ImportWalletsPopup from './ImportWalletsPopup';
+    import type { FilterState } from './LiveTradesFiltersPopup/LiveTradesFIltersPopup';
     import './Tracker.css';
 
     const Tooltip: React.FC<{
@@ -124,6 +125,8 @@
         isBlurred: boolean;
         setpopup: (value: number) => void;
         onImportWallets?: (walletsText: string, addToSingleGroup: boolean) => void;
+        onApplyFilters?: (filters: FilterState) => void;
+        activeFilters?: FilterState;
     }
 
     interface MonitorToken {
@@ -159,8 +162,7 @@
     type SortDirection = 'asc' | 'desc';
     
 
-    const Tracker: React.FC<TrackerProps> = ({ isBlurred, setpopup}) => {
-
+    const Tracker: React.FC<TrackerProps> = ({ isBlurred, setpopup, onApplyFilters: externalOnApplyFilters, activeFilters: externalActiveFilters}) => {
         const [walletSortField, setWalletSortField] = useState<'balance' | 'lastActive' | null>(null);
         const [walletSortDirection, setWalletSortDirection] = useState<SortDirection>('desc');
 
@@ -168,6 +170,34 @@
         const [tradeSortDirection, setTradeSortDirection] = useState<SortDirection>('desc');
         const [activeTab, setActiveTab] = useState<TrackerTab>('wallets');
         const [searchQuery, setSearchQuery] = useState('');
+        const [showFiltersPopup, setShowFiltersPopup] = useState(false);
+        const [activeFilters, setActiveFilters] = useState<FilterState>(externalActiveFilters || {
+            transactionTypes: {
+                buyMore: true,
+                firstBuy: true,
+                sellPartial: true,
+                sellAll: true,
+                addLiquidity: true,
+                removeLiquidity: true,
+            },
+            marketCap: {
+                min: '',
+                max: '',
+            },
+            transactionAmount: {
+                min: '',
+                max: '',
+            },
+            tokenAge: {
+                min: '',
+                max: '',
+            },
+        });
+
+        useEffect(() => {
+            setSearchQuery('');
+        }, [activeTab]);
+
         const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([
             
             
@@ -467,14 +497,64 @@
         };
 
         const getFilteredTrades = () => {
-            const sorted = getSortedTrades();
-            if (!searchQuery.trim()) return sorted;
+            let trades = liveTrades.filter(trade => {
+
+                const isBuy = trade.type === 'buy';
+                const isSell = trade.type === 'sell';
+                
+                if (isBuy && !activeFilters.transactionTypes.buyMore && !activeFilters.transactionTypes.firstBuy) {
+                    return false;
+                }
+                if (isSell && !activeFilters.transactionTypes.sellPartial && !activeFilters.transactionTypes.sellAll) {
+                    return false;
+                }
+                
+                // Market cap filter
+                if (activeFilters.marketCap.min && trade.marketCap < parseFloat(activeFilters.marketCap.min)) {
+                    return false;
+                }
+                if (activeFilters.marketCap.max && trade.marketCap > parseFloat(activeFilters.marketCap.max)) {
+                    return false;
+                }
+                
+                // Transaction amount filter
+                if (activeFilters.transactionAmount.min && trade.amount < parseFloat(activeFilters.transactionAmount.min)) {
+                    return false;
+                }
+                if (activeFilters.transactionAmount.max && trade.amount > parseFloat(activeFilters.transactionAmount.max)) {
+                    return false;
+                }
+                
+                return true;
+            });
             
-            const query = searchQuery.toLowerCase();
-            return sorted.filter(trade =>
-                trade.walletName.toLowerCase().includes(query) ||
-                trade.token.toLowerCase().includes(query)
-            );
+            // Sorting
+            if (tradeSortField) {
+                trades = [...trades].sort((a, b) => {
+                    let comparison = 0;
+                    
+                    if (tradeSortField === 'dateCreated') {
+                        comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                    } else if (tradeSortField === 'amount') {
+                        comparison = a.amount - b.amount;
+                    } else if (tradeSortField === 'marketCap') {
+                        comparison = a.marketCap - b.marketCap;
+                    }
+                    
+                    return tradeSortDirection === 'desc' ? -comparison : comparison;
+                });
+            }
+            
+            // apply search
+            if (searchQuery.trim()) {
+                const query = searchQuery.toLowerCase();
+                trades = trades.filter(trade =>
+                    trade.walletName.toLowerCase().includes(query) ||
+                    trade.token.toLowerCase().includes(query)
+                );
+            }
+            
+            return trades;
         };
 
         const getFilteredMonitorTokens = () => {
@@ -613,6 +693,13 @@
             setWalletToDelete('');
         };
 
+        const handleApplyFilters = (filters: FilterState) => {
+            setActiveFilters(filters);
+            if (externalOnApplyFilters) {
+                externalOnApplyFilters(filters);
+            }
+        };
+
         
 
         const renderWalletItem = (wallet: TrackedWallet) => (
@@ -718,6 +805,8 @@
         const handleRemoveAll = () => {
             setTrackedWallets([]);
         };
+
+
 
         const renderWalletManager = () => {
             const filteredWallets = getFilteredWallets();
@@ -1073,6 +1162,11 @@
                                 />
                             </div>
                             <button className="tracker-header-button" onClick={() => setpopup(33)}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 6h18M7 12h10M10 18h4"/>
+                                </svg>
+                            </button>
+                            <button className="tracker-header-button" onClick={() => setpopup(36)}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M3 6h18M7 12h10M10 18h4"/>
                                 </svg>

@@ -2,6 +2,7 @@
   position: fixed;
   display: flex;
   align-items: center;
+  justify-content: center;
   top: 0;
   left: 0;
   right: 0;
@@ -13,8 +14,6 @@
 
 .live-trades-settings-container {
   position: relative;
-  left: 50%;
-  transform: translateX(-50%);
   background-color: rgb(6, 6, 6);
   backdrop-filter: blur(10px);
   border: 1.5px solid rgba(179, 184, 249, 0.1);
@@ -291,10 +290,10 @@
 @keyframes slideInMain {
   from {
     opacity: 0;
-    transform: translateX(-50%) scale(0.95) translateY(-20px);
+    transform: translateY(-20px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) scale(1) translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
