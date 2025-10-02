@@ -193,30 +193,22 @@
   background: rgba(170, 174, 207, 0.15); color: #aaaecf;
 }
 
-.wallet-popup-left-spinner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
-  margin-top: -4px;
-}
+
 
 .wallet-popup-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #aaaecf;
-  border-top: 2px solid transparent;
+  width: 22px;
+  aspect-ratio: 1;
   border-radius: 50%;
-  animation: walletPopupSpinnerRotate 0.4s linear infinite;
+  background: 
+    radial-gradient(farthest-side,#aaaecf 94%,#0000) top/3px 3px no-repeat,
+    conic-gradient(#0000 30%,#aaaecf);
+  -webkit-mask: radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 0);
+  animation: l13 0.5s infinite linear;
+  margin-top: -6px;
 }
-
-@keyframes walletPopupSpinnerRotate {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+@keyframes l13{ 
+  100%{transform: rotate(1turn)}
 }
-
 .wallet-popup-token-amount {
   display: inline-flex;
   align-items: center;

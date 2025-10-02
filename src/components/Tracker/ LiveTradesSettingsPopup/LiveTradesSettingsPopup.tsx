@@ -94,6 +94,7 @@ const LiveTradesSettingsPopup: React.FC<LiveTradesSettingsPopupProps> = ({ onClo
                   value={volume}
                   onChange={(e) => setVolume(parseInt(e.target.value))}
                   className="live-trades-settings-slider"
+                  style={{ '--slider-percent': `${volume}%` } as React.CSSProperties}
                 />
                 <div className="live-trades-settings-slider-labels">
                   <span>0</span>

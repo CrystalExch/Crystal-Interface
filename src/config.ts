@@ -1,5 +1,5 @@
 import { AlchemyAccountsUIConfig, createConfig } from "@account-kit/react";
-import { alchemy } from "@account-kit/infra";
+import { alchemy, arbitrum } from "@account-kit/infra";
 import { QueryClient } from "@tanstack/react-query";
 import { settings } from "./settings";
 
@@ -16,6 +16,14 @@ export const alchemyconfig = createConfig({
   transport: alchemy({ apiKey: "SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng" }),
   policyId: "3333f9e7-1a5d-4306-ae3a-8f358a07e8ab",
   chain: settings.chains[0],
+  chains: [
+    {
+      chain: settings.chains[0],
+    },
+    {
+      chain: arbitrum
+    }
+  ] as any,
   ssr: localStorage.getItem("noSSR") ? false : true,
   enablePopupOauth: true,
   sessionConfig: {

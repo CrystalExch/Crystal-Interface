@@ -243,7 +243,7 @@ const PerpsMarketRow = memo(({ index, style, data }: {
         </div>
 
         <div className="perps-funding-section">
-          <div className={`perps-funding-rate ${market.fundingClass}`}>
+          <div className={`perps-funding-rate`}>
             {market.formattedFunding}
           </div>
         </div>
@@ -454,7 +454,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         ...market,
         formattedVolume: `$${formatCommas(Number(market.value).toFixed(2))}`,
         formattedOI: `$${formatCommas((Number(market.openInterest) * Number(market.lastPrice)).toFixed(2))}`,
-        formattedFunding: `${market.fundingRate >= 0 ? '+' : ''}${(market.fundingRate * 100).toFixed(4)}%`,
+        formattedFunding: `${(market.fundingRate * 100).toFixed(4)}%`,
         formattedChange: `${(Number(market.priceChangePercent) >= 0 ? '+' : '') +
           (market.priceChange) + ' / ' +
           (Number(market.priceChangePercent) >= 0 ? '+' : '') +

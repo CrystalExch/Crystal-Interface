@@ -157,9 +157,8 @@ import PNLComponent from './components/PNLComponent/PNLComponent.tsx';
 import ImportWalletsPopup from './components/Tracker/ImportWalletsPopup.tsx';
 import TradingPresetsPopup from './components/Tracker/TradingPresetsPopup/TradingPresetsPopup';
 import LiveTradesSettingsPopup from './components/Tracker/ LiveTradesSettingsPopup/LiveTradesSettingsPopup.tsx';
-
-
-
+import LiveTradesFiltersPopup from './components/Tracker/LiveTradesFiltersPopup/LiveTradesFIltersPopup.tsx';
+import type { FilterState } from './components/Tracker/LiveTradesFiltersPopup/LiveTradesFIltersPopup.tsx';
 // import config
 import { ChevronDown, Search, SearchIcon } from 'lucide-react';
 import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortfolioData.ts';
@@ -168,6 +167,7 @@ import { useSharedContext } from './contexts/SharedContext.tsx';
 import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 import { sMonAbi } from './abis/sMonAbi.ts';
+
 const clearlogo = '/CrystalLogo.png';
 
 function App() {
@@ -183,9 +183,12 @@ function App() {
     client,
     waitForTxn: false,
   });
-  
+
   //PNL
-  const [showPNLModal, setShowPNLModal] = useState(false);
+  const [perpsLeverage, setPerpsLeverage] = useState<string>(() => {
+    const saved = localStorage.getItem('crystal_perps_leverage');
+    return saved !== null ? saved : '10.0';
+  });
   const { signTypedDataAsync } = useSignTypedData({ client })
   const { signMessageAsync } = useSignMessage({ client })
   const user = useUser();
@@ -227,6 +230,29 @@ function App() {
     }
     return g;
   })();
+
+  const [activeFilters, setActiveFilters] = useState<FilterState>({
+      transactionTypes: {
+          buyMore: true,
+          firstBuy: true,
+          sellPartial: true,
+          sellAll: true,
+          addLiquidity: true,
+          removeLiquidity: true,
+      },
+      marketCap: {
+          min: '',
+          max: '',
+      },
+      transactionAmount: {
+          min: '',
+          max: '',
+      },
+      tokenAge: {
+          min: '',
+          max: '',
+      },
+  });
 
   const txReceiptResolvers = useRef(new Map<string, () => void>());
   // get market including multihop
@@ -588,6 +614,12 @@ function App() {
     [validOneCT]
   );
 
+  const [perpsKeystore, setPerpsKeystore] = useState<any>(() => {
+    const saved = localStorage.getItem('crystal_perps_signer');
+    return saved !== null ? JSON.parse(saved) : {};
+  })
+  const [perpsDepositAmount, setPerpsDepositAmount] = useState('');
+  const [perpsWithdrawAmount, setPerpsWithdrawAmount] = useState('');
   // state vars
   const [trackedWallets, setTrackedWallets] = useState<any[]>([]);
   const [showSendDropdown, setShowSendDropdown] = useState(false);
@@ -2461,27 +2493,27 @@ function App() {
   })
 
   const handleImportWallets = (walletsText: string, addToSingleGroup: boolean) => {
-      console.log('Importing wallets:', walletsText, 'Add to single group:', addToSingleGroup);
-      
-      try {
-          const lines = walletsText.trim().split('\n');
-          const newWallets = lines.map((line, index) => {
-              const parts = line.split(',');
-              return {
-                  id: Date.now().toString() + index,
-                  address: parts[0]?.trim() || '',
-                  name: parts[1]?.trim() || `Imported Wallet ${index + 1}`,
-                  emoji: parts[2]?.trim() || '😀',
-                  balance: 0,
-                  lastActive: 'Never'
-              };
-          }).filter(w => w.address);
-          
-          setTrackedWallets(prev => [...prev, ...newWallets]);
-          setpopup(0); 
-      } catch (e) {
-          console.error('Failed to parse wallets:', e);
-      }
+    console.log('Importing wallets:', walletsText, 'Add to single group:', addToSingleGroup);
+
+    try {
+      const lines = walletsText.trim().split('\n');
+      const newWallets = lines.map((line, index) => {
+        const parts = line.split(',');
+        return {
+          id: Date.now().toString() + index,
+          address: parts[0]?.trim() || '',
+          name: parts[1]?.trim() || `Imported Wallet ${index + 1}`,
+          emoji: parts[2]?.trim() || '😀',
+          balance: 0,
+          lastActive: 'Never'
+        };
+      }).filter(w => w.address);
+
+      setTrackedWallets(prev => [...prev, ...newWallets]);
+      setpopup(0);
+    } catch (e) {
+      console.error('Failed to parse wallets:', e);
+    }
   };
 
   const handleSearchKeyDown = (
@@ -2734,6 +2766,11 @@ function App() {
     return requiredInput;
   };
 
+  const handleApplyFilters = (filters: FilterState) => {
+      setActiveFilters(filters);
+      setpopup(0);
+  };
+
   // oc resizers
   const handleVertMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -2880,6 +2917,115 @@ function App() {
     return { roundedOrders, defaultOrders };
   };
 
+  function v2ToOrderbook(
+    reserve1Raw: number | bigint,
+    reserve2Raw: number | bigint,
+    interval: number,
+    baseDecimals: number,
+    quoteDecimals: number
+  ): { bids: Order[]; asks: Order[] } {
+    if (reserve1Raw == 0 || reserve2Raw == 0 || interval <= 0) return { bids: [], asks: [] };
+  
+    const UNI_V2_FEE_BIPS = 25;
+    const fee = Math.max(0, UNI_V2_FEE_BIPS) / 10_000;
+    const oneMinusFee = Math.max(1e-12, 1 - fee);
+  
+    const toHuman = (raw: number | bigint, decimals: number) => {
+      const n = typeof raw === 'bigint' ? Number(raw) : raw;
+      return n / Math.pow(10, decimals);
+    };
+  
+    const x0 = Math.max(1e-18, toHuman(reserve1Raw, baseDecimals));
+    const y0 = Math.max(1e-18, toHuman(reserve2Raw, quoteDecimals));
+    const k = x0 * y0;
+    const pMid = y0 / x0;
+  
+    const xFromP = (p: number) => Math.sqrt(k * Math.max(p, 1e-18));
+  
+    const intervalToScale = (iv: number) => {
+      const s = iv.toString();
+      let dec: number;
+      if (s.includes('e-')) {
+        const [base, exp] = s.split('e-');
+        const baseDec = (base.split('.')[1] || '').length;
+        dec = parseInt(exp, 10) + baseDec;
+      } else {
+        const dot = s.indexOf('.');
+        dec = dot === -1 ? 0 : s.length - dot - 1;
+      }
+      const pow = Math.min(12, dec + 6);
+      const SCALE = Math.pow(10, pow);
+      const intervalTicks = Math.max(1, Math.round(iv * SCALE));
+      return { SCALE, intervalTicks };
+    };
+  
+    const { SCALE, intervalTicks } = intervalToScale(interval);
+    const toTicks = (p: number) => Math.round(p * SCALE);
+    const fromTicks = (t: number) => t / SCALE;
+  
+    const bids: any[] = [];
+    const asks: any[] = [];
+    const MAX_LEVELS_PER_SIDE = 2000;
+  
+    {
+      let tMid = toTicks(pMid);
+      let tHere = Math.floor(tMid / intervalTicks) * intervalTicks;
+      for (let i = 0; i < MAX_LEVELS_PER_SIDE; i++) {
+        const tLow = tHere - intervalTicks;
+        if (tLow <= 0) break;
+  
+        const pLow = fromTicks(tLow);
+        const pHere = fromTicks(tHere);
+  
+        const xLow = xFromP(pLow);
+        const xHi = xFromP(pHere);
+        const dxEff = Math.max(0, xHi - xLow);
+  
+        const baseIn = dxEff / oneMinusFee;
+        if (baseIn <= 0) break;
+  
+        const effectivePrice = pLow * (1 - fee);
+        bids.push({
+          price: effectivePrice,
+          size: baseIn,
+          totalSize: baseIn,
+          shouldFlash: false,
+          userPrice: false,
+        });
+  
+        tHere = tLow;
+      }
+    }
+  
+    {
+      let tMid = toTicks(pMid);
+      let tHere = Math.ceil(tMid / intervalTicks) * intervalTicks;
+      for (let i = 0; i < MAX_LEVELS_PER_SIDE; i++) {
+        const tHigh = tHere + intervalTicks;
+        const pHere = fromTicks(tHere);
+        const pHigh = fromTicks(tHigh);
+  
+        const xA = xFromP(pHere);
+        const xN = xFromP(pHigh);
+        const baseOut = Math.max(0, xN - xA);
+        if (baseOut <= 0) break;
+  
+        const effectivePrice = pHigh * (1 + fee);
+        asks.push({
+          price: effectivePrice,
+          size: baseOut,
+          totalSize: baseOut,
+          shouldFlash: false,
+          userPrice: false,
+        });
+  
+        tHere = tHigh;
+      }
+    }
+  
+    return { bids, asks };
+  }
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isVertDragging) return;
@@ -2964,10 +3110,10 @@ function App() {
     };
   }, []);
 
-    // dynamic title
+  // dynamic title
   useEffect(() => {
     let title = 'Crystal | Decentralized Cryptocurrency Exchange';
-    
+
     switch (true) {
       case location.pathname === '/portfolio':
         title = 'Portfolio | Crystal';
@@ -3034,10 +3180,10 @@ function App() {
         }
         break;
     }
-    
+
     document.title = title;
   }, [trades, location.pathname, activeMarket, perpsMarketsData, perpsActiveMarketKey]);
-  
+
   useEffect(() => {
     if (prevOrderData && Array.isArray(prevOrderData) && prevOrderData.length >= 4) {
       try {
@@ -3096,8 +3242,12 @@ function App() {
           }
         }
 
-        setRoundedBuyOrders({ orders: roundedBuy, key: activeMarketKey, amountsQuote});
-        setRoundedSellOrders({ orders: roundedSell, key: activeMarketKey, amountsQuote });
+        const interval = 1 / (activeMarket?.marketType != 0 && (Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)) ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor))
+
+        const { bids, asks } = v2ToOrderbook(prevOrderData[1], prevOrderData[0], interval, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals));
+
+        setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
+        setRoundedSellOrders({ orders: roundedSell.concat(asks as any), key: activeMarketKey, amountsQuote });
         prevAmountsQuote.current = amountsQuote
       } catch (error) {
         console.error(error);
@@ -3353,21 +3503,23 @@ function App() {
               }
             }
 
+            const interval = localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
+            ? Number(
+              localStorage.getItem(
+                `${activeMarket.baseAsset}_ob_interval`,
+              ),
+            )
+            : 1 / (activeMarket?.marketType != 0 && spread?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor))
+
+            const { bids, asks } = v2ToOrderbook(orderdata[1], orderdata[0], interval, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals));
+
             setSpreadData(spread);
-            setRoundedBuyOrders({ orders: roundedBuy, key: activeMarketKey, amountsQuote });
-            setRoundedSellOrders({ orders: roundedSell, key: activeMarketKey, amountsQuote });
+            setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
+            setRoundedSellOrders({ orders: roundedSell.concat(asks as any), key: activeMarketKey, amountsQuote });
             setLiquidityBuyOrders({ orders: liquidityBuy, market: activeMarket.address });
             setLiquiditySellOrders({ orders: liquiditySell, market: activeMarket.address });
             setBaseInterval(1 / (activeMarket?.marketType != 0 && spread?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor)));
-            setOBInterval(
-              localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
-                ? Number(
-                  localStorage.getItem(
-                    `${activeMarket.baseAsset}_ob_interval`,
-                  ),
-                )
-                : 1 / (activeMarket?.marketType != 0 && spread?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor)),
-            );
+            setOBInterval(interval);
           } catch (error) {
             console.error(error);
           }
@@ -5631,7 +5783,6 @@ function App() {
             };
           }
         }
-
         settings.chainConfig[activechain].markets = newMarkets;
         const newAddrToMarket: Record<string, string> = {};
         Object.values(newMarkets).reverse().forEach((m: any) => {
@@ -7117,8 +7268,8 @@ function App() {
             )
             .sort((a, b) => {
               return (Number(tokenBalances[b.address] ?? 0) == 0) !== (Number(tokenBalances[a.address] ?? 0) == 0)
-              ? (Number(tokenBalances[a.address] ?? 0) == 0 ? 1 : -1)
-              : a?.autofetched && !b?.autofetched ? 1 : !a?.autofetched && b?.autofetched ? -1 : (Number(tokenBalances[b.address] ?? 0) / 10 ** Number(b.decimals)) - (Number(tokenBalances[a.address] ?? 0) / 10 ** Number(a.decimals));
+                ? (Number(tokenBalances[a.address] ?? 0) == 0 ? 1 : -1)
+                : a?.autofetched && !b?.autofetched ? 1 : !a?.autofetched && b?.autofetched ? -1 : (Number(tokenBalances[b.address] ?? 0) / 10 ** Number(b.decimals)) - (Number(tokenBalances[a.address] ?? 0) / 10 ** Number(a.decimals));
             })
             .map((token, index) => (
               <button
@@ -8858,9 +9009,9 @@ function App() {
 
       if (shouldFetchNonce) {
         nonces.current = new Map(
-          subWallets.map((w,i)=>{
+          subWallets.map((w, i) => {
             const old = nonces.current[w.address] || { pendingtxs: [] }
-            return [w.address, { ...old, nonce: parseInt(json[i+(gasEstimateCall?2:1)].result,16) + old.pendingtxs.length }]
+            return [w.address, { ...old, nonce: parseInt(json[i + (gasEstimateCall ? 2 : 1)].result, 16) + old.pendingtxs.length }]
           })
         );
       }
@@ -12114,7 +12265,7 @@ function App() {
                       if (popup) popup.classList.remove('visible')
                     }}
                     style={{
-                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgb(28, 28, 31) ${(orderSizePercent / 200) * 100}%)`,
+                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgb(21 21 27) ${(orderSizePercent / 200) * 100}%)`,
                     }}
                   />
                   <div className="order-size-slider-percentage-popup">{orderSizePercent}%</div>
@@ -13950,14 +14101,17 @@ function App() {
             </div>
           </div>
         ) : null}
-        {popup === 30 ? ( // perps-deposit-popup
+{popup === 30 ? ( // perps-deposit-popup
           <div className="modal-overlay">
             <div className="modal-content" ref={popupref}>
               <div className="modal-header">
                 <h2>Deposit</h2>
                 <button
                   className="modal-close"
-                  onClick={() => setpopup(0)}
+                  onClick={() => {
+                    setpopup(0);
+                    setPerpsDepositAmount('');
+                  }}
                 >
                   <img src={closebutton} className="close-button-icon" />
                 </button>
@@ -13973,14 +14127,30 @@ function App() {
                         <div className="">
                           <span>Balance: </span>
                           <span>0.00</span>
-                          <button className="perps-max-button">Max</button>
+                          <button 
+                            className="perps-max-button"
+                            onClick={() => {
+                              const usdcBalance = tokenBalances['0xaf88d065e77c8cC2239327C5EDb3A432268e5831'] || 0n;
+                              const maxAmount = (Number(usdcBalance) / 1e6).toFixed(2);
+                              setPerpsDepositAmount(maxAmount);
+                            }}
+                          >
+                            Max
+                          </button>
                         </div>
                       </div>
                       <div className="perps-input-bottom-row">
                         <input
                           type="text"
-                          placeholder="0.0"
+                          placeholder="10.00"
                           className="perps-deposit-input"
+                          value={perpsDepositAmount}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (/^\d*\.?\d{0,2}$/.test(value)) {
+                              setPerpsDepositAmount(value);
+                            }
+                          }}
                         />
                         <div className="perps-deposit-token-badge">
                           <img className="perps-deposit-icon" src={iconusdc} />
@@ -13988,7 +14158,10 @@ function App() {
                         </div>
                       </div>
                     </div>
-                    <div className="perps-switch-icon" onClick={() => setpopup(31)}>
+                    <div className="perps-switch-icon" onClick={() => {
+                      setpopup(31);
+                      setPerpsDepositAmount('');
+                    }}>
                       <img className="perps-switch-img" src={switchicon} />
                     </div>
                     <div className="perps-deposit-input-wrapper">
@@ -14002,8 +14175,10 @@ function App() {
                       <div className="perps-input-bottom-row">
                         <input
                           type="text"
-                          placeholder="0.0"
+                          placeholder="10.00"
                           className="perps-deposit-input"
+                          value={perpsDepositAmount}
+                          readOnly
                         />
                         <div className="perps-deposit-token-badge">
                           <img className="perps-deposit-icon" src={iconusdc} />
@@ -14012,15 +14187,55 @@ function App() {
                         </div>
                       </div>
                     </div>
-
-
                   </div>
                 </div>
               </div>
 
               <div className="modal-footer">
-                <button className="perps-confirm-button">
-                  Deposit
+                <button 
+                  className="perps-confirm-button" 
+                  disabled={!perpsDepositAmount || parseFloat(perpsDepositAmount) < 1}
+                  style={{
+                    opacity: !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 ? 0.5 : 1,
+                    cursor: !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 ? 'not-allowed' : 'pointer'
+                  }}
+                  onClick={async () => {
+                    if (!perpsDepositAmount || parseFloat(perpsDepositAmount) < 1) return;
+                    
+                    const amount = BigInt(Math.floor(parseFloat(perpsDepositAmount) * 1e6));
+                    
+                    await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: 42161 as any });
+                    await rawSendUserOperationAsync({
+                      uo: {
+                        target: '0x81144d6E7084928830f9694a201E8c1ce6eD0cb2' as `0x${string}`,
+                        data: encodeFunctionData({
+                          abi: [{
+                            inputs: [
+                              { name: "token", type: "address" },
+                              { name: "amount", type: "uint256" },
+                              { name: "starkKey", type: "uint256" },
+                              { name: "accountId", type: "uint256" },
+                              { name: "exchangeData", type: "bytes" }
+                            ],
+                            name: "deposit",
+                            outputs: [],
+                            stateMutability: "nonpayable",
+                            type: "function",
+                          }],
+                          functionName: "deposit",
+                          args: ['0xaf88d065e77c8cC2239327C5EDb3A432268e5831', amount, perpsKeystore.publicKey, 664124834304754100n, '0x00'],
+                        }),
+                        value: 0n,
+                      }
+                    });
+                    handleSetChain();
+                    setPerpsDepositAmount('');
+                    setpopup(0);
+                  }}
+                >
+                  {!perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 
+                    ? 'Minimum deposit: 1 USDC' 
+                    : 'Deposit'}
                 </button>
               </div>
             </div>
@@ -14106,28 +14321,169 @@ function App() {
 
         {popup === 32 ? ( // Import Wallets
           <div ref={popupref}>
-              <ImportWalletsPopup
-                  onClose={() => setpopup(0)}
-                  onImport={handleImportWallets}
-              />
+            <ImportWalletsPopup
+              onClose={() => setpopup(0)}
+              onImport={handleImportWallets}
+            />
           </div>
         ) : null}
 
         {popup === 33 ? ( // Live Trades Settings
           <div ref={popupref}>
-              <LiveTradesSettingsPopup
-                  onClose={() => setpopup(0)}
-              />
+            <LiveTradesSettingsPopup
+              onClose={() => setpopup(0)}
+            />
           </div>
         ) : null}
 
-        {popup === 34 ? ( // Trading Presets
+        {popup === 34 ? ( // Live Trades Presets Settings
             <div ref={popupref}>
                 <TradingPresetsPopup
                     onClose={() => setpopup(0)}
                 />
             </div>
         ) : null}
+
+
+        {popup === 35 ? (
+          <div className="leverage-modal-overlay">
+            <div className="leverage-modal-content" ref={popupref}>
+              <div className="leverage-modal-header">
+                <h2 className="leverage-modal-title">Adjust Leverage</h2>
+                <button
+                  className="close-button"
+                  onClick={() => setpopup(0)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="leverage-modal-body">
+                <p className="leverage-description">
+                  Adjust your leverage to manage your exposure. Higher leverage increases
+                  both potential profits and risks.
+                </p>
+
+                <div className="leverage-slider-section">
+                  <div className="leverage-slider-container">
+                    <input
+                      ref={(el) => {
+                        if (el && popup === 35) {
+                          const leverageValue = parseFloat(perpsLeverage) || 10;
+                          const percent = ((leverageValue - 1) / 19) * 100;
+                          const thumbW = 16;
+                          const container = el.parentElement;
+                          if (container) {
+                            const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
+                            if (popup) {
+                              const containerRect = container.getBoundingClientRect();
+                              const inputRect = el.getBoundingClientRect();
+                              const inputLeft = inputRect.left - containerRect.left;
+                              const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
+                              popup.style.left = `${x}px`;
+                              popup.style.transform = 'translateX(-50%)';
+                            }
+                          }
+                        }
+                      }}
+                      type="range"
+                      min="1"
+                      max="20"
+                      step="1"
+                      value={parseFloat(perpsLeverage) || 10}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setPerpsLeverage(value + '.0');
+
+                        // Update popup position
+                        const container = e.target.parentElement;
+                        if (container) {
+                          const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
+                          if (popup) {
+                            const percent = ((parseInt(value) - 1) / 19) * 100; const thumbW = 16;
+                            const containerRect = container.getBoundingClientRect();
+                            const inputRect = e.target.getBoundingClientRect();
+                            const inputLeft = inputRect.left - containerRect.left;
+                            const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
+                            popup.style.left = `${x}px`;
+                            popup.style.transform = 'translateX(-50%)';
+                          }
+                        }
+                      }}
+                      onMouseDown={(e) => {
+                        const container = e.currentTarget.parentElement;
+                        if (container) {
+                          const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
+                          if (popup) popup.classList.add('visible');
+                        }
+                      }}
+                      onMouseUp={(e) => {
+                        const container = e.currentTarget.parentElement;
+                        if (container) {
+                          const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
+                          if (popup) popup.classList.remove('visible');
+                        }
+                      }}
+                      className="leverage-slider-input"
+                      style={{
+                        background: `linear-gradient(to right, #aaaecf ${((parseFloat(perpsLeverage) || 10) - 1) / 19 * 100}%, #2a2a2f ${((parseFloat(perpsLeverage) || 10) - 1) / 19 * 100}%)`
+                      }}
+                    />
+
+                    <div className="leverage-value-popup">
+                      {parseFloat(perpsLeverage) || 10}x
+                    </div>
+
+                    <div className="leverage-marks">
+                      {[1, 5, 10, 15, 20].map((mark) => (
+                        <span
+                          key={mark}
+                          className="leverage-mark"
+                          data-active={parseFloat(perpsLeverage) >= mark}
+                          onClick={() => {
+                            setPerpsLeverage(mark.toString() + '.0');
+                            const sliderContainer = document.querySelector('.leverage-slider-container');
+                            if (sliderContainer) {
+                              const input = sliderContainer.querySelector('.leverage-slider-input') as HTMLInputElement;
+                              const popup = sliderContainer.querySelector('.leverage-value-popup') as HTMLElement;
+                              if (input && popup) {
+                                const percent = ((mark - 1) / 19) * 100;
+                                const thumbW = 16;
+                                const containerRect = sliderContainer.getBoundingClientRect();
+                                const inputRect = input.getBoundingClientRect();
+                                const inputLeft = inputRect.left - containerRect.left;
+                                const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
+                                popup.style.left = `${x}px`;
+                                popup.style.transform = 'translateX(-50%)';
+                              }
+                            }
+                          }}
+                        >
+                          {mark}x
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="leverage-display">
+                    Leverage: <span className="leverage-value">{parseFloat(perpsLeverage) || 10}x</span>
+                  </div>
+                </div>
+
+                <button
+                  className="leverage-update-button"
+                  onClick={() => {
+                    localStorage.setItem('crystal_perps_leverage', perpsLeverage);
+                    setpopup(0);
+                  }}
+                >
+                  Update Leverage
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
       </div>
     </>
   );
@@ -15073,7 +15429,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(28, 28, 31, 1) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(21, 21, 27, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>
@@ -17532,7 +17888,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(28, 28, 31, 1) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(21, 21, 27, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>
@@ -19904,7 +20260,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(28, 28, 31, 1) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(21, 21, 27, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>
@@ -20855,6 +21211,8 @@ function App() {
                 isBlurred={isBlurred}
                 setpopup={setpopup}
                 onImportWallets={handleImportWallets}
+                onApplyFilters={handleApplyFilters}
+                activeFilters={activeFilters}
               />
             } />
           <Route path="/perps" element={<Navigate to="/perps/BTCUSD" replace />} />
@@ -20910,6 +21268,10 @@ function App() {
                 perpsFilterOptions={perpsFilterOptions}
                 setPerpsFilterOptions={setPerpsFilterOptions}
                 signTypedDataAsync={signMessageAsync}
+                leverage={perpsLeverage}
+                setLeverage={setPerpsLeverage}
+                signer={perpsKeystore}
+                setSigner={setPerpsKeystore}
               />
             } />
           <Route path="/leaderboard"

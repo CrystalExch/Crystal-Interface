@@ -1624,7 +1624,7 @@
 }
 
 .perps-market-item {
-  grid-template-columns: 13px 0.8fr 0.6fr 0.9fr 0.6fr 0.8fr;
+  grid-template-columns: 13px 0.8fr 0.6fr 0.9fr 0.6fr 0.75fr;
 }
 
 .perps-markets-list-virtualized {

@@ -2570,7 +2570,7 @@ const TokenRow = React.memo<{
                     height="16"
                     viewBox="0 0 32 32"
                     fill={
-                      token.top10Holding > 5 ? '#eb7070ff' : 'rgb(67, 254, 154)'
+                      token.top10Holding > 25 ? '#eb7070ff' : 'rgb(67, 254, 154)'
                     }
                     xmlns="http://www.w3.org/2000/svg"
                   >
@@ -2580,7 +2580,7 @@ const TokenRow = React.memo<{
                     className="explorer-holding-value"
                     style={{
                       color:
-                        token.top10Holding > 5
+                        token.top10Holding > 25
                           ? '#eb7070ff'
                           : 'rgb(67, 254, 154)',
                     }}
@@ -2599,7 +2599,7 @@ const TokenRow = React.memo<{
                     height="16"
                     viewBox="0 0 24 24"
                     fill={
-                      token.sniperHolding > 5
+                      token.sniperHolding > 20
                         ? '#eb7070ff'
                         : 'rgb(67, 254, 154)'
                     }
@@ -2611,7 +2611,7 @@ const TokenRow = React.memo<{
                     className="explorer-holding-value"
                     style={{
                       color:
-                        token.sniperHolding > 5
+                        token.sniperHolding > 20
                           ? '#eb7070ff'
                           : 'rgb(67, 254, 154)',
                     }}
@@ -2631,7 +2631,7 @@ const TokenRow = React.memo<{
                     height="16"
                     viewBox="0 0 30 30"
                     fill={
-                      token.devHolding > 5 ? '#eb7070ff' : 'rgb(67, 254, 154)'
+                      token.devHolding*100 > 25 ? '#eb7070ff' : 'rgb(67, 254, 154)'
                     }
                     xmlns="http://www.w3.org/2000/svg"
                   >
@@ -2641,7 +2641,7 @@ const TokenRow = React.memo<{
                     className="explorer-holding-value"
                     style={{
                       color:
-                        token.devHolding > 5
+                        token.devHolding * 100 > 25
                           ? '#eb7070ff'
                           : 'rgb(67, 254, 154)',
                     }}

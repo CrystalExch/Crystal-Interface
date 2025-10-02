@@ -7,6 +7,7 @@
   color: #fff;
 }
 
+/* Header */
 .tracker-header {
   display: flex;
   align-items: center;
@@ -29,25 +30,23 @@
   color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
   font-size: 1rem;
-  padding:7px 8px;
+  padding: 7px 8px;
   transition: all 0.2s;
   letter-spacing: -0.5px;
-  border-bottom:1.5px solid transparent;
+  border-bottom: 1.5px solid transparent;
 }
 
 .tracker-tab.active {
-    border-color: #d8dcff;
+  border-color: #d8dcff;
   color: #d8dcff;
 }
-
 
 .tracker-search {
   display: flex;
   align-items: center;
   position: relative;
   flex: 1;
-    max-width: 250px;
-
+  max-width: 250px;
 }
 
 .tracker-search-icon {
@@ -70,7 +69,6 @@
   transition: border-color 0.2s;
   letter-spacing: -0.3px;
   height: 25px;
-
 }
 
 .tracker-search-input:focus {
@@ -159,7 +157,6 @@
 }
 
 .tracker-import-button,
-.tracker-add-button,
 .tracker-clear-button {
   background: transparent;
   display: flex;
@@ -173,7 +170,6 @@
   transition: all 0.2s;
   letter-spacing: -0.3px;
   height: 25px;
-
 }
 
 .tracker-add-button {
@@ -182,6 +178,15 @@
   color: #0f0f12;
   font-weight: 500;
   box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: -0.3px;
+  height: 25px;
+  border-radius: 8px;
 }
 
 .tracker-import-button:hover,
@@ -197,6 +202,7 @@
 
 /* Empty States */
 .tracker-empty-state {
+  padding-top: 10px;
   flex: 1;
   display: flex;
   align-items: center;
@@ -241,27 +247,59 @@
   filter: brightness(1.1);
 }
 
+/* Wallets List */
 .tracker-wallets-list {
   flex: 1;
   overflow-y: auto;
 }
 
-.tracker-wallet-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  margin-bottom: 8px;
-  transition: all 0.2s ease;
+.tracker-wallets-header {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr;
+  gap: 16px;
+  padding: 8px 20px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
 }
 
-
-.tracker-wallet-info {
+.tracker-wallet-header-cell {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+  letter-spacing: -0.3px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
+  gap: 4px;
+}
+
+.tracker-wallet-header-cell.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.tracker-wallet-header-cell.sortable:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.tracker-wallet-header-cell.active {
+  color: #d8dcff;
+}
+
+.tracker-wallet-item {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr;
+  gap: 16px;
+  padding: 8px 20px;
+  transition: all 0.2s ease;
+  align-items: center;
+}
+
+.tracker-wallet-item:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tracker-wallet-profile {
+  display: flex;
+  gap: 4px;
 }
 
 .tracker-wallet-emoji {
@@ -274,13 +312,16 @@
   flex-shrink: 0;
 }
 
-.tracker-wallet-details {
-  flex: 1;
+.tracker-wallet-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
 }
 
-.tracker-wallet-name-container {
-  margin-bottom: 4px;
+.tracker-wallet-details {
+  flex: 1;
+  min-width: 0;
 }
 
 .tracker-wallet-name-display {
@@ -349,13 +390,6 @@
   opacity: 0.7;
 }
 
-.tracker-wallet-stats {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-}
-
 .tracker-wallet-balance {
   display: flex;
   align-items: center;
@@ -406,6 +440,16 @@
   opacity: 0.7;
 }
 
+.tracker-remove-all-button {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 0.8rem;
+  color: rgb(228, 125, 125);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
 /* Live Trades */
 .tracker-live-trades {
   flex: 1;
@@ -414,77 +458,6 @@
   overflow: hidden;
 }
 
-.tracker-trades-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-}
-
-.tracker-trades-info h3 {
-  color: #d8dcff;
-  font-size: 1.1rem;
-  font-weight: 500;
-  margin: 0 0 8px 0;
-  letter-spacing: -0.3px;
-}
-
-.tracker-trades-stats {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.tracker-trades-count {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
-}
-
-.tracker-trades-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
-}
-
-.tracker-status-dot {
-  width: 6px;
-  height: 6px;
-  background: #00ff88;
-  border-radius: 50%;
-}
-
-.tracker-trades-controls {
-  display: flex;
-  gap: 8px;
-}
-
-.tracker-filter-button {
-  background: transparent;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
-  padding: 6px 12px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.tracker-filter-button.active {
-  background: linear-gradient(135deg, #aaaecf 0%, #7f82a1 100%);
-  border: none;
-  color: #0f0f12;
-  font-weight: 500;
-}
-
-.tracker-filter-button:hover:not(.active) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(179, 184, 249, 0.2);
-}
-
-/* Trades Table */
 .tracker-trades-table {
   flex: 1;
   display: flex;
@@ -492,10 +465,56 @@
   overflow: hidden;
 }
 
+.tracker-table-header {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 8px 20px;
+  color: #ffffff8b;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  align-items: center;
+}
+
 .tracker-header-cell {
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.75rem;
   letter-spacing: -0.3px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tracker-header-cell.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.tracker-header-cell.sortable:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.tracker-header-cell.active {
+  color: #d8dcff;
+}
+
+.tracker-sort-arrow {
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s;
+}
+
+.tracker-sort-arrow svg {
+  transition: transform 0.2s;
+}
+
+.tracker-sort-arrow.desc svg {
+  transform: rotate(0deg);
+}
+
+.tracker-sort-arrow.asc svg {
+  transform: rotate(180deg);
 }
 
 .tracker-table-content {
@@ -503,25 +522,72 @@
   overflow-y: auto;
 }
 
+.tracker-trade-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.05);
+  align-items: center;
+  transition: all 0.2s ease;
+}
 
 .tracker-trade-row:hover {
   background: rgba(255, 255, 255, 0.02);
+}
+
+.tracker-trade-row.trade-buy {
+  background: rgba(0, 255, 136, 0.03);
+  border-left: 2px solid rgba(0, 255, 136, 0.3);
+}
+
+.tracker-trade-row.trade-sell {
+  background: rgba(255, 107, 107, 0.03);
+  border-left: 2px solid rgba(255, 107, 107, 0.3);
+}
+
+.tracker-trade-row.trade-buy:hover {
+  background: rgba(0, 255, 136, 0.05);
+}
+
+.tracker-trade-row.trade-sell:hover {
+  background: rgba(255, 107, 107, 0.05);
+}
+
+.tracker-trade-row.trade-buy .tracker-trade-amount {
+  color: #00ff88;
+}
+
+.tracker-trade-row.trade-sell .tracker-trade-amount {
+  color: #ff6b6b;
+}
+
+.tracker-trade-date {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .tracker-trade-name {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .tracker-trade-emoji {
-  font-size: 1rem;
+  font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
 .tracker-trade-wallet-name {
-  color: #ff6b9d;
+  color: #90EE90;
   font-size: 0.85rem;
   letter-spacing: -0.3px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tracker-trade-time {
@@ -532,42 +598,163 @@
 .tracker-trade-token {
   display: flex;
   align-items: center;
+  min-width: 0;
 }
 
 .tracker-token-info {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .tracker-token-icon {
   width: 20px;
   height: 20px;
-  background: #ffd700;
   border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #6B46C1, #EC4899);
 }
 
 .tracker-token-time {
   color: rgba(255, 255, 255, 0.4);
   font-size: 0.75rem;
+  margin-left: 4px;
 }
 
 .tracker-trade-amount {
   display: flex;
   align-items: center;
-  gap: 4px;
-  color: rgba(255, 255, 255, 0.8);
+  gap: 6px;
+  color: #fff;
   font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .tracker-amount-icon {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.tracker-amount-value {
+  white-space: nowrap;
 }
 
 .tracker-trade-mc {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.85rem;
+  font-weight: 500;
+  text-align: right;
+  white-space: nowrap;
+  justify-self: end;
+}
+
+.tracker-monitor {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.tracker-monitor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.tracker-monitor-card-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.tracker-monitor-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.2s;
+}
+
+.tracker-monitor-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(179, 184, 249, 0.2);
+}
+
+.tracker-monitor-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.tracker-monitor-token-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tracker-monitor-emoji {
+  font-size: 1.2rem;
+}
+
+.tracker-monitor-token-names {
+  display: flex;
+  flex-direction: column;
+}
+
+.tracker-monitor-token-name {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+}
+
+.tracker-monitor-token-symbol {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+}
+
+.tracker-monitor-change {
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.tracker-monitor-change.positive {
+  color: #00ff88;
+  background: rgba(0, 255, 136, 0.1);
+}
+
+.tracker-monitor-change.negative {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.tracker-monitor-card-body {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tracker-monitor-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tracker-monitor-stat-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+  letter-spacing: -0.2px;
+}
+
+.tracker-monitor-stat-value {
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 /* Modals */
@@ -663,7 +850,6 @@
   color: rgba(255, 255, 255, 0.4);
 }
 
-/* Emoji Grid */
 .tracker-emoji-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -682,6 +868,7 @@
   align-items: center;
   justify-content: center;
   aspect-ratio: 1;
+  background: transparent;
 }
 
 .tracker-emoji-option:hover {
@@ -762,224 +949,11 @@
   border-color: rgba(255, 107, 107, 0.5);
 }
 
-/* Utility Classes */
 .blurred {
   filter: blur(6px);
   user-select: none;
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-
-
-.tracker-wallets-header {
-  display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr 1fr;
-  gap: 16px;
-  padding: 4px 20px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-}
-
-.tracker-wallet-header-cell {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.75rem;
-  letter-spacing: -0.3px;
-}
-
-.tracker-wallet-item {
-  display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr 1fr;
-  gap: 16px;
-  padding: 8px 20px;
-  transition: all 0.2s ease;
-  align-items: center;
-}
-
-.tracker-wallet-item:hover {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.tracker-wallet-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.tracker-wallet-details {
-  min-width: 0;
-  flex: 1;
-}
-
-.tracker-wallet-stats {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.tracker-wallet-profile{
-    display: flex;
-    gap: 4px
-}
-
-.tracker-remove-all-button{
-    display: flex;
-    justify-content: flex-end;
-    font-size: 0.8rem;
-    color: rgb(228, 125, 125);
-}
-
-/* Live Trades Table */
-.tracker-trades-table {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.tracker-table-header {
-  display: grid;
-  grid-template-columns: 120px 1fr 1fr 1fr 1fr;
-  gap: 16px;
-  padding: 8px 20px;
-  color: #ffffff8b;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-  align-items: center;
-  border-bottom:1px solid rgba(179,184,249,.1);
-}
-
-.tracker-header-cell {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.75rem;
-  letter-spacing: -0.3px;
-  font-weight: 500;
-}
-
-.tracker-table-content {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.tracker-trade-row {
-  display: grid;
-  grid-template-columns: 120px 1fr 1fr 1fr 1fr;
-  gap: 16px;
-  padding: 12px 20px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.05);
-  align-items: center;
-  transition: all 0.2s ease;
-}
-
-.tracker-trade-row:hover {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-/* Time column */
-.tracker-trade-time {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
-  font-weight: 500;
-  min-width: 40px;
-}
-
-/* Name column */
-.tracker-trade-name {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.tracker-trade-emoji {
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-
-.tracker-trade-wallet-name {
-  color: #90EE90;
-  font-size: 0.85rem;
-  letter-spacing: -0.3px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Token column */
-.tracker-trade-token {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
-
-.tracker-token-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.tracker-token-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: linear-gradient(135deg, #6B46C1, #EC4899);
-}
-
-.tracker-token-name {
-  color: #fff;
-  font-size: 0.85rem;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tracker-token-time {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.75rem;
-  margin-left: 4px;
-}
-
-/* Amount column */
-.tracker-trade-amount {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #fff;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.tracker-amount-icon {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
-.tracker-amount-value {
-  white-space: nowrap;
-}
-
-/* Market Cap column */
-.tracker-trade-mc {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.85rem;
-  font-weight: 500;
-  text-align: right;
-  white-space: nowrap;
-}
-
-/* Responsive adjustments */
 @media (max-width: 1200px) {
   .tracker-table-header,
   .tracker-trade-row {
@@ -997,162 +971,184 @@
     padding: 8px 12px;
   }
   
-  /* Hide token time on mobile */
-  .tracker-token-time {
-    display: none;
-  }
-  
-  /* Hide market cap on smallest screens */
+  .tracker-token-time,
   .tracker-trade-mc {
     display: none;
   }
+
+  .tracker-monitor-row {
+    grid-template-columns: 1fr;
+  }
+
+  
 }
 
-/* Trade Type Styling */
-.tracker-trade-row.trade-buy {
-  background: rgba(0, 255, 136, 0.03);
-  border-left: 2px solid rgba(0, 255, 136, 0.3);
-}
 
-.tracker-trade-row.trade-sell {
-  background: rgba(255, 107, 107, 0.03);
-  border-left: 2px solid rgba(255, 107, 107, 0.3);
-}
 
-.tracker-trade-row.trade-buy:hover {
-  background: rgba(0, 255, 136, 0.05);
-}
-
-.tracker-trade-row.trade-sell:hover {
-  background: rgba(255, 107, 107, 0.05);
-}
-
-.tracker-trade-row.trade-buy .tracker-trade-amount {
-  color: #00ff88;
-}
-
-.tracker-trade-row.trade-sell .tracker-trade-amount {
-  color: #ff6b6b;
-}
-
-/* Date Column */
-.tracker-trade-date {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-/* Monitor Section */
-.tracker-monitor {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-}
-
-.tracker-monitor-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.tracker-monitor-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.tracker-monitor-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
-  padding: 12px;
-  transition: all 0.2s;
-}
-
-.tracker-monitor-card:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(179, 184, 249, 0.2);
-}
-
-.tracker-monitor-card-header {
+.tracker-monitor-trades-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 12px;
   margin-bottom: 12px;
-  padding-bottom: 8px;
+  padding-bottom: 12px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
 }
 
-.tracker-monitor-token-identity {
+.tracker-monitor-trades-stats {
   display: flex;
+  gap: 16px;
   align-items: center;
-  gap: 8px;
 }
 
-.tracker-monitor-emoji {
-  font-size: 1.2rem;
-}
-
-.tracker-monitor-token-names {
+.tracker-monitor-trade-stat {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
-.tracker-monitor-token-name {
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 500;
-  letter-spacing: -0.3px;
-}
-
-.tracker-monitor-token-symbol {
+.tracker-monitor-trade-stat .stat-label {
   color: rgba(255, 255, 255, 0.5);
-  font-size: 0.75rem;
+  font-size: 0.65rem;
+  letter-spacing: -0.2px;
 }
 
-.tracker-monitor-change {
+.tracker-monitor-trade-stat .stat-value {
+  color: #fff;
   font-size: 0.85rem;
   font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 4px;
 }
 
-.tracker-monitor-change.positive {
-  color: #00ff88;
-  background: rgba(0, 255, 136, 0.1);
-}
-
-.tracker-monitor-change.negative {
-  color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.1);
-}
-
-.tracker-monitor-card-body {
+.tracker-monitor-flash-button {
+  background: transparent;
+  border: 1.5px solid rgba(179, 184, 249, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: all 0.2s;
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
 }
 
-.tracker-monitor-stat {
+.tracker-monitor-flash-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(179, 184, 249, 0.2);
+  color: #fff;
+}
+
+.tracker-monitor-trades-table {
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
-.tracker-monitor-stat-label {
+.tracker-monitor-trades-table-header {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 0.8fr 0.8fr;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.tracker-monitor-trades-table-header .header-cell {
   color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+  letter-spacing: -0.2px;
+  font-weight: 500;
+}
+
+.tracker-monitor-trade-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 0.8fr 0.8fr;
+  gap: 12px;
+  padding: 10px 12px;
+  align-items: center;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.05);
+  transition: background 0.2s;
+}
+
+.tracker-monitor-trade-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tracker-monitor-trade-row:last-child {
+  border-bottom: none;
+}
+
+.trade-wallet {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trade-emoji {
+  font-size: 1rem;
+}
+
+.trade-wallet-name {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  letter-spacing: -0.2px;
+}
+
+.trade-time {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.exit-badge {
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.7rem;
   letter-spacing: -0.2px;
 }
 
-.tracker-monitor-stat-value {
-  color: #fff;
-  font-size: 0.85rem;
+.time-value {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+}
+
+.trade-bought,
+.trade-sold {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trade-bought .amount {
+  color: #00ff88;
+  font-size: 0.8rem;
   font-weight: 500;
 }
 
-@media (max-width: 768px) {
-  .tracker-monitor-row {
-    grid-template-columns: 1fr;
-  }
+.trade-sold .amount {
+  color: #ff6b6b;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.trade-bought .txns,
+.trade-sold .txns {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.7rem;
+}
+
+.trade-pnl {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.trade-pnl.positive {
+  color: #00ff88;
+}
+
+.trade-pnl.negative {
+  color: #ff6b6b;
+}
+
+.trade-remaining {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  font-weight: 500;
 }
