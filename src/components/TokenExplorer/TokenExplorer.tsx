@@ -3658,6 +3658,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           }),
         });
         const json = await res.json();
+        console.log(json);
         const rawMarkets = [
           ...(json.data?.active ?? []),
           ...(json.data?.migrated ?? []),
@@ -3706,8 +3707,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             }
             const website = socials[0];
 
-            console.log(m, routerAddress);
-
             return {
               ...defaultMetrics,
               id: m.id.toLowerCase(),
@@ -3735,7 +3734,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               telegramHandle: telegram ?? '',
               launchedTokens: m.creator.tokensLaunched ?? '',
               graduatedTokens: m.creator.tokensGraduated ?? '',
-              holders: m.totalHolders,
+              holders: m.totalHolders - 1,
               devHolding: m.devHoldingAmount / 1e27,
               top10Holding: Number(
                 (m.holders ?? [])
