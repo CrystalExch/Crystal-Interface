@@ -333,13 +333,12 @@ const Tooltip: React.FC<{
               position: 'absolute',
               top: `${tooltipPosition.top - 20}px`,
               left: `${tooltipPosition.left}px`,
-              transform: `${
-                position === 'top' || position === 'bottom'
+              transform: `${position === 'top' || position === 'bottom'
                   ? 'translateX(-50%)'
                   : position === 'left' || position === 'right'
                     ? 'translateY(-50%)'
                     : 'none'
-              } scale(${isVisible ? 1 : 0})`,
+                } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
               pointerEvents: 'none',
@@ -414,12 +413,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [hoveredStatsContainer, setHoveredStatsContainer] = useState(false);
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
-const [similarTokensExpanded, setSimilarTokensExpanded] = useState(true);
-const [selectedMonPreset, setSelectedMonPreset] = useState<number | null>(null);
-const [hoveredSimilarTokenImage, setHoveredSimilarTokenImage] = useState<string | null>(null);
-const [similarTokenPreviewPosition, setSimilarTokenPreviewPosition] = useState({ top: 0, left: 0 });
-const [showSimilarTokenPreview, setShowSimilarTokenPreview] = useState(false);
-const similarTokenImageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [similarTokensExpanded, setSimilarTokensExpanded] = useState(true);
+  const [selectedMonPreset, setSelectedMonPreset] = useState<number | null>(null);
+  const [hoveredSimilarTokenImage, setHoveredSimilarTokenImage] = useState<string | null>(null);
+  const [similarTokenPreviewPosition, setSimilarTokenPreviewPosition] = useState({ top: 0, left: 0 });
+  const [showSimilarTokenPreview, setShowSimilarTokenPreview] = useState(false);
+  const similarTokenImageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [isPresetEditMode, setIsPresetEditMode] = useState(false);
   const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(
     null,
@@ -548,7 +547,7 @@ const similarTokenImageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [isLoadingTrades, setIsLoadingTrades] = useState(false);
   const [similarTokens, setSimilarTokens] = useState<any[]>([]);
   const { activechain } = useSharedContext();
-  
+
 
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
   const explorer = settings.chainConfig[activechain]?.explorer;
@@ -623,9 +622,9 @@ const similarTokenImageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
         : orderType === 'devSell'
           ? { percentage: '0' }
           : {
-              percentage: orderType === 'takeProfit' ? '+0' : '-0',
-              amount: '0',
-            }),
+            percentage: orderType === 'takeProfit' ? '+0' : '-0',
+            amount: '0',
+          }),
     };
 
     setAdvancedOrders((prev) => [...prev, newOrder]);
@@ -636,64 +635,64 @@ const similarTokenImageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     setAdvancedOrders((prev) => prev.filter((order) => order.id !== orderId));
   };
 
-const handleToggleCurrency = () => {
-  setShowUSD(!showUSD);
-};
+  const handleToggleCurrency = () => {
+    setShowUSD(!showUSD);
+  };
 
-const updateSimilarTokenPreviewPosition = useCallback((tokenId: string) => {
-  const imageContainer = similarTokenImageRefs.current.get(tokenId);
-  if (!imageContainer) return;
+  const updateSimilarTokenPreviewPosition = useCallback((tokenId: string) => {
+    const imageContainer = similarTokenImageRefs.current.get(tokenId);
+    if (!imageContainer) return;
 
-  const rect = imageContainer.getBoundingClientRect();
-  const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-  const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const rect = imageContainer.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
 
-  const previewWidth = 220;
-  const previewHeight = 220;
-  const offset = 15;
+    const previewWidth = 220;
+    const previewHeight = 220;
+    const offset = 15;
 
-  let top = 0;
-  let left = 0;
+    let top = 0;
+    let left = 0;
 
-  const leftX = rect.left;
-  const centerY = rect.top + rect.height / 2;
+    const leftX = rect.left;
+    const centerY = rect.top + rect.height / 2;
 
-  const spaceBelow = viewportHeight - rect.bottom;
-  const spaceAbove = rect.top;
-  const spaceRight = viewportWidth - rect.right;
-  const spaceLeft = rect.left;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const spaceRight = viewportWidth - rect.right;
+    const spaceLeft = rect.left;
 
-  if (spaceBelow >= previewHeight + offset) {
-    top = rect.bottom + scrollY + offset;
-    left = leftX + scrollX;
-  } else if (spaceAbove >= previewHeight + offset) {
-    top = rect.top + scrollY - previewHeight - offset - 15;
-    left = leftX + scrollX;
-  } else if (spaceRight >= previewWidth + offset) {
-    left = rect.right + scrollX + offset;
-    top = centerY + scrollY - previewHeight / 2;
-  } else if (spaceLeft >= previewWidth + offset) {
-    left = rect.left + scrollX - previewWidth - offset;
-    top = centerY + scrollY - previewHeight / 2;
-  } else {
-    top = rect.bottom + scrollY + offset;
-    left = leftX + scrollX;
-  }
+    if (spaceBelow >= previewHeight + offset) {
+      top = rect.bottom + scrollY + offset;
+      left = leftX + scrollX;
+    } else if (spaceAbove >= previewHeight + offset) {
+      top = rect.top + scrollY - previewHeight - offset - 15;
+      left = leftX + scrollX;
+    } else if (spaceRight >= previewWidth + offset) {
+      left = rect.right + scrollX + offset;
+      top = centerY + scrollY - previewHeight / 2;
+    } else if (spaceLeft >= previewWidth + offset) {
+      left = rect.left + scrollX - previewWidth - offset;
+      top = centerY + scrollY - previewHeight / 2;
+    } else {
+      top = rect.bottom + scrollY + offset;
+      left = leftX + scrollX;
+    }
 
-  const margin = 10;
-  if (left < scrollX + margin) left = scrollX + margin;
-  else if (left + previewWidth > scrollX + viewportWidth - margin)
-    left = scrollX + viewportWidth - previewWidth - margin;
+    const margin = 10;
+    if (left < scrollX + margin) left = scrollX + margin;
+    else if (left + previewWidth > scrollX + viewportWidth - margin)
+      left = scrollX + viewportWidth - previewWidth - margin;
 
-  if (top < scrollY + margin) top = scrollY + margin;
-  else if (top + previewHeight > scrollY + viewportHeight - margin)
-    top = scrollY + viewportHeight - previewHeight - margin;
+    if (top < scrollY + margin) top = scrollY + margin;
+    else if (top + previewHeight > scrollY + viewportHeight - margin)
+      top = scrollY + viewportHeight - previewHeight - margin;
 
-  setSimilarTokenPreviewPosition({ top, left });
-}, []);
+    setSimilarTokenPreviewPosition({ top, left });
+  }, []);
   const positionPopup = useCallback((percent: number) => {
     const input = sliderRef.current;
     const popup = popupRef.current;
@@ -1233,38 +1232,38 @@ const updateSimilarTokenPreviewPosition = useCallback((tokenId: string) => {
     }
   }, [userStats, onPNLDataChange]);
 
-useEffect(() => {
-  if (onTokenDataChange) {
-    onTokenDataChange({
-      address: token.id,
-      symbol: token.symbol,
-      name: token.name,
-      price: currentPrice,
-    });
-  }
-}, [token.id, token.symbol, token.name, currentPrice, onTokenDataChange]);
+  useEffect(() => {
+    if (onTokenDataChange) {
+      onTokenDataChange({
+        address: token.id,
+        symbol: token.symbol,
+        name: token.name,
+        price: currentPrice,
+      });
+    }
+  }, [token.id, token.symbol, token.name, currentPrice, onTokenDataChange]);
 
-useEffect(() => {
-  if (hoveredSimilarTokenImage) {
-    const calculateAndShow = () => {
-      updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage);
-      setTimeout(() => setShowSimilarTokenPreview(true), 10);
-    };
+  useEffect(() => {
+    if (hoveredSimilarTokenImage) {
+      const calculateAndShow = () => {
+        updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage);
+        setTimeout(() => setShowSimilarTokenPreview(true), 10);
+      };
 
-    calculateAndShow();
+      calculateAndShow();
 
-    const handleResize = () => updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage);
-    window.addEventListener('scroll', () => updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage));
-    window.addEventListener('resize', handleResize);
+      const handleResize = () => updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage);
+      window.addEventListener('scroll', () => updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage));
+      window.addEventListener('resize', handleResize);
 
-    return () => {
-      window.removeEventListener('scroll', () => updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage));
-      window.removeEventListener('resize', handleResize);
-    };
-  } else {
-    setShowSimilarTokenPreview(false);
-  }
-}, [hoveredSimilarTokenImage, updateSimilarTokenPreviewPosition]);
+      return () => {
+        window.removeEventListener('scroll', () => updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage));
+        window.removeEventListener('resize', handleResize);
+      };
+    } else {
+      setShowSimilarTokenPreview(false);
+    }
+  }, [hoveredSimilarTokenImage, updateSimilarTokenPreviewPosition]);
 
   const lastInvalidateRef = useRef(0);
   const currentPriceRef = useRef(0);
@@ -1305,7 +1304,7 @@ useEffect(() => {
             imageUrl = meta?.image || '';
           }
         }
-      } catch {}
+      } catch { }
 
       const symbol = String(args.symbol || '').toUpperCase();
       const name = String(args.name || symbol || tokenId.slice(0, 6));
@@ -1539,15 +1538,15 @@ useEffect(() => {
           });
         }
 
-setPositions((prev) => {
-  const copy = Array.isArray(prev) ? [...prev] : [];
-  let idx = positionsMapRef.current.get(tokenAddr);
+        setPositions((prev) => {
+          const copy = Array.isArray(prev) ? [...prev] : [];
+          let idx = positionsMapRef.current.get(tokenAddr);
 
-  const allUserAddresses = [
-    userAddr.toLowerCase(),
-    ...subWallets.map(w => w.address.toLowerCase())
-  ];
-  const isUserTrade = allUserAddresses.includes(callerAddr);
+          const allUserAddresses = [
+            userAddr.toLowerCase(),
+            ...subWallets.map(w => w.address.toLowerCase())
+          ];
+          const isUserTrade = allUserAddresses.includes(callerAddr);
 
           if (idx === undefined && isUserTrade) {
             const isCurrent =
@@ -1558,13 +1557,13 @@ setPositions((prev) => {
               symbol: isCurrent
                 ? token.symbol
                 : copy.find(
-                    (p) => (p.tokenId || '').toLowerCase() === tokenAddr,
-                  )?.symbol || '',
+                  (p) => (p.tokenId || '').toLowerCase() === tokenAddr,
+                )?.symbol || '',
               name: isCurrent
                 ? token.name
                 : copy.find(
-                    (p) => (p.tokenId || '').toLowerCase() === tokenAddr,
-                  )?.name || '',
+                  (p) => (p.tokenId || '').toLowerCase() === tokenAddr,
+                )?.name || '',
               imageUrl: isCurrent ? token.image || '' : '',
               metadataCID: '',
               boughtTokens: 0,
@@ -1654,37 +1653,37 @@ setPositions((prev) => {
         return;
       }
 
-if (
-  tokenAddress &&
-  log.address?.toLowerCase() === tokenAddress.toLowerCase() &&
-  log.topics[0] === TRANSFER_TOPIC &&
-  address
-) {
-  const allWalletTopics = [
-    '0x' + address.slice(2).padStart(64, '0'),
-    ...subWallets.map(w => '0x' + w.address.slice(2).padStart(64, '0'))
-  ];
-  
-  const involvesWallet = allWalletTopics.some(
-    walletTopic => log.topics[1] === walletTopic || log.topics[2] === walletTopic
-  );
-  
-  if (involvesWallet) {
-    const now = Date.now();
-    if (now - lastInvalidateRef.current > 800) {
-      lastInvalidateRef.current = now;
-      terminalRefetch();
-    }
-  }
-}
+      if (
+        tokenAddress &&
+        log.address?.toLowerCase() === tokenAddress.toLowerCase() &&
+        log.topics[0] === TRANSFER_TOPIC &&
+        address
+      ) {
+        const allWalletTopics = [
+          '0x' + address.slice(2).padStart(64, '0'),
+          ...subWallets.map(w => '0x' + w.address.slice(2).padStart(64, '0'))
+        ];
+
+        const involvesWallet = allWalletTopics.some(
+          walletTopic => log.topics[1] === walletTopic || log.topics[2] === walletTopic
+        );
+
+        if (involvesWallet) {
+          const now = Date.now();
+          if (now - lastInvalidateRef.current > 800) {
+            lastInvalidateRef.current = now;
+            terminalRefetch();
+          }
+        }
+      }
     };
 
     return () => {
       try {
         ws.close();
-      } catch {}
+      } catch { }
     };
-}, [token.id, tokenAddress, address, terminalRefetch, subWallets]);
+  }, [token.id, tokenAddress, address, terminalRefetch, subWallets]);
 
   // metadata n klines
   useEffect(() => {
@@ -1720,26 +1719,25 @@ if (
                     amountIn
                     amountOut
                   }
-                  series: ${
-                    'series' +
-                    (selectedInterval === '1s'
-                      ? '1'
-                      : selectedInterval === '5s'
-                        ? '5'
-                        : selectedInterval === '15s'
-                          ? '15'
-                          : selectedInterval === '1m'
-                            ? '60'
-                            : selectedInterval === '5m'
-                              ? '300'
-                              : selectedInterval === '15m'
-                                ? '900'
-                                : selectedInterval === '1h'
-                                  ? '3600'
-                                  : selectedInterval === '4h'
-                                    ? '14400'
-                                    : '86400')
-                  } 
+                  series: ${'series' +
+              (selectedInterval === '1s'
+                ? '1'
+                : selectedInterval === '5s'
+                  ? '5'
+                  : selectedInterval === '15s'
+                    ? '15'
+                    : selectedInterval === '1m'
+                      ? '60'
+                      : selectedInterval === '5m'
+                        ? '300'
+                        : selectedInterval === '15m'
+                          ? '900'
+                          : selectedInterval === '1h'
+                            ? '3600'
+                            : selectedInterval === '4h'
+                              ? '14400'
+                              : '86400')
+              } 
                     {
                     klines(first: 1000, orderBy: time, orderDirection: desc) {
                       time open high low close baseVolume
@@ -2035,7 +2033,7 @@ if (
                 const meta = await metaRes.json();
                 imageUrl = meta.image || '';
               }
-            } catch {}
+            } catch { }
           }
           const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e18;
           out.push({
@@ -2274,7 +2272,7 @@ if (
                   const meta = await metaRes.json();
                   imageUrl = meta.image || '';
                 }
-              } catch {}
+              } catch { }
             }
             const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e18;
             return {
@@ -2330,7 +2328,7 @@ if (
               typeof v === 'number' && /volume/i.test(k) ? v / 1e18 : v;
           }
           setStatsRaw(normalized);
-        } catch (e) {}
+        } catch (e) { }
       };
 
       ws.onclose = () => {
@@ -2345,7 +2343,7 @@ if (
       ws.onerror = () => {
         try {
           ws.close();
-        } catch {}
+        } catch { }
       };
     };
 
@@ -2355,12 +2353,12 @@ if (
       disposed = true;
       try {
         statsWsRef.current?.close();
-      } catch {}
+      } catch { }
     };
   }, [tokenAddress]);
 
   // positions
-// positions - aggregated across all wallets
+  // positions - aggregated across all wallets
   useEffect(() => {
     // Collect all addresses (main wallet + sub wallets)
     const allAddresses = [
@@ -2480,8 +2478,8 @@ if (
         const realized = pos.receivedNative - pos.spentNative;
         const unrealized = pos.remainingTokens * pos.lastPrice;
         const pnlNative = realized + unrealized;
-        const remainingPct = pos.boughtTokens > 0 
-          ? (pos.remainingTokens / pos.boughtTokens) * 100 
+        const remainingPct = pos.boughtTokens > 0
+          ? (pos.remainingTokens / pos.boughtTokens) * 100
           : 0;
 
         return {
@@ -2832,11 +2830,11 @@ if (
         typeof g.change_pct === 'number'
           ? g.change_pct
           : g.start_price_native != null &&
-              g.last_price_native != null &&
-              g.start_price_native !== 0
+            g.last_price_native != null &&
+            g.start_price_native !== 0
             ? ((g.last_price_native - g.start_price_native) /
-                g.start_price_native) *
-              100
+              g.start_price_native) *
+            100
             : null;
       if (pct == null || !isFinite(pct)) return '0%';
       const sign = pct > 0 ? '+' : '';
@@ -2997,6 +2995,11 @@ if (
             trackedAddresses={trackedAddresses}
             onToggleTrackedAddress={toggleTrackedAddress}
             token={token}
+            subWallets={subWallets}
+            walletTokenBalances={walletTokenBalances}
+            tokendict={tokendict}
+            userAddr={address ?? account?.address ?? ''}
+
           />
         </div>
       </div>
@@ -3040,8 +3043,8 @@ if (
                     currentStats.buyVolume - currentStats.sellVolume > 0
                       ? 'rgb(67 254 154)'
                       : currentStats.buyVolume - currentStats.sellVolume < 0
-                      ? 'rgb(235 112 112)'
-                      : 'white',
+                        ? 'rgb(235 112 112)'
+                        : 'white',
                 }}
               >
                 {currentStats.buyVolume - currentStats.sellVolume < 0 ? '-' : ''}
@@ -3423,87 +3426,87 @@ if (
                         <div className="meme-advanced-order-inputs">
                           {(order.type === 'takeProfit' ||
                             order.type === 'stopLoss') && (
-                            <>
-                              <div className="meme-advanced-order-input-group">
-                                <svg
-                                  className="advanced-order-type-icon"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="rgb(154 155 164)"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  style={{
-                                    transform:
-                                      order.type === 'stopLoss'
-                                        ? 'rotate(180deg)'
-                                        : 'none',
-                                    paddingRight: '2px',
-                                  }}
+                              <>
+                                <div className="meme-advanced-order-input-group">
+                                  <svg
+                                    className="advanced-order-type-icon"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="rgb(154 155 164)"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    style={{
+                                      transform:
+                                        order.type === 'stopLoss'
+                                          ? 'rotate(180deg)'
+                                          : 'none',
+                                      paddingRight: '2px',
+                                    }}
+                                  >
+                                    <path d="m5 12 7-7 7 7" />
+                                    <path d="M12 19V5" />
+                                  </svg>
+                                  <span className="meme-advanced-order-input-label">
+                                    {order.type === 'takeProfit' ? 'TP' : 'SL'}
+                                  </span>
+                                  <input
+                                    type="text"
+                                    className="meme-advanced-order-input"
+                                    value={order.percentage || ''}
+                                    onChange={(e) =>
+                                      handleAdvancedOrderUpdate(
+                                        order.id,
+                                        'percentage',
+                                        e.target.value,
+                                      )
+                                    }
+                                    placeholder={
+                                      order.type === 'takeProfit' ? '+0' : '-0'
+                                    }
+                                  />
+                                  <span className="meme-advanced-order-unit">
+                                    %
+                                  </span>
+                                </div>
+                                <div className="meme-advanced-order-input-group">
+                                  <span className="meme-advanced-order-input-label">
+                                    Amount
+                                  </span>
+                                  <input
+                                    type="number"
+                                    className="meme-advanced-order-input"
+                                    value={order.amount || ''}
+                                    onChange={(e) =>
+                                      handleAdvancedOrderUpdate(
+                                        order.id,
+                                        'amount',
+                                        e.target.value,
+                                      )
+                                    }
+                                    placeholder="0"
+                                  />
+                                  <span className="meme-advanced-order-unit">
+                                    %
+                                  </span>
+                                </div>
+                                <button
+                                  className="meme-advanced-order-remove"
+                                  onClick={() =>
+                                    handleAdvancedOrderRemove(order.id)
+                                  }
                                 >
-                                  <path d="m5 12 7-7 7 7" />
-                                  <path d="M12 19V5" />
-                                </svg>
-                                <span className="meme-advanced-order-input-label">
-                                  {order.type === 'takeProfit' ? 'TP' : 'SL'}
-                                </span>
-                                <input
-                                  type="text"
-                                  className="meme-advanced-order-input"
-                                  value={order.percentage || ''}
-                                  onChange={(e) =>
-                                    handleAdvancedOrderUpdate(
-                                      order.id,
-                                      'percentage',
-                                      e.target.value,
-                                    )
-                                  }
-                                  placeholder={
-                                    order.type === 'takeProfit' ? '+0' : '-0'
-                                  }
-                                />
-                                <span className="meme-advanced-order-unit">
-                                  %
-                                </span>
-                              </div>
-                              <div className="meme-advanced-order-input-group">
-                                <span className="meme-advanced-order-input-label">
-                                  Amount
-                                </span>
-                                <input
-                                  type="number"
-                                  className="meme-advanced-order-input"
-                                  value={order.amount || ''}
-                                  onChange={(e) =>
-                                    handleAdvancedOrderUpdate(
-                                      order.id,
-                                      'amount',
-                                      e.target.value,
-                                    )
-                                  }
-                                  placeholder="0"
-                                />
-                                <span className="meme-advanced-order-unit">
-                                  %
-                                </span>
-                              </div>
-                              <button
-                                className="meme-advanced-order-remove"
-                                onClick={() =>
-                                  handleAdvancedOrderRemove(order.id)
-                                }
-                              >
-                                <img
-                                  src={trash}
-                                  className="meme-advanced-order-remove-icon"
-                                  alt="Remove"
-                                  width="14"
-                                  height="14"
-                                />
-                              </button>
-                            </>
-                          )}
+                                  <img
+                                    src={trash}
+                                    className="meme-advanced-order-remove-icon"
+                                    alt="Remove"
+                                    width="14"
+                                    height="14"
+                                  />
+                                </button>
+                              </>
+                            )}
                           {order.type === 'devSell' && (
                             <>
                               <div className="meme-advanced-order-input-group">
@@ -3761,7 +3764,7 @@ if (
               getButtonText()
             )}
           </button>
-          <div  
+          <div
             className="meme-portfolio-stats"
             onClick={handleToggleCurrency}
             style={{ cursor: 'pointer' }}
@@ -4217,11 +4220,11 @@ if (
                 <span className="meme-address">
                   <div className="address-top">
                     <div className="meme-address-content" onClick={() =>
-                            copyToClipboard(token.id, 'Contract address copied')
-                          }>
+                      copyToClipboard(token.id, 'Contract address copied')
+                    }>
                       <Tooltip content="Copy contract address">
-                      <img className="meme-contract-icon" src={contract} />
-                      <span className="meme-address-title">CA:</span>{' '}
+                        <img className="meme-contract-icon" src={contract} />
+                        <span className="meme-address-title">CA:</span>{' '}
                         <span
                           className="meme-explorer-link"
                         >
@@ -4248,11 +4251,11 @@ if (
                 <span className="meme-address">
                   <div className="address-top">
                     <div className="meme-address-content" onClick={() =>
-                            copyToClipboard(token.dev, 'Dev address copied')
-                          }>
+                      copyToClipboard(token.dev, 'Dev address copied')
+                    }>
                       <Tooltip content="Copy developer address">
-                      <img className="meme-contract-icon" src={contract} />
-                      <span className="meme-address-title">DA:</span>{' '}
+                        <img className="meme-contract-icon" src={contract} />
+                        <span className="meme-address-title">DA:</span>{' '}
                         <span
                           className="meme-explorer-link"
                         >
@@ -4385,29 +4388,29 @@ if (
                       onClick={() => (window.location.href = `/meme/${t.id}`)}
                     >
                       <div className="meme-similar-token-left">
-                       <div 
-  className="meme-similar-token-avatar"
-  ref={(el) => {
-    if (el) {
-      similarTokenImageRefs.current.set(String(t.id), el);
-    } else {
-      similarTokenImageRefs.current.delete(String(t.id));
-    }
-  }}
-  onMouseEnter={() => img && setHoveredSimilarTokenImage(String(t.id))}
-  onMouseLeave={() => setHoveredSimilarTokenImage(null)}
-  style={{ cursor: img ? 'pointer' : 'default' }}
->
-  {img ? (
-    <img src={img} alt={`${t.symbol || t.name} logo`} />
-  ) : (
-    <div className="meme-similar-token-avatar-fallback">
-      {(t.symbol || t.name || '?')
-        .slice(0, 3)
-        .toUpperCase()}
-    </div>
-  )}
-</div>
+                        <div
+                          className="meme-similar-token-avatar"
+                          ref={(el) => {
+                            if (el) {
+                              similarTokenImageRefs.current.set(String(t.id), el);
+                            } else {
+                              similarTokenImageRefs.current.delete(String(t.id));
+                            }
+                          }}
+                          onMouseEnter={() => img && setHoveredSimilarTokenImage(String(t.id))}
+                          onMouseLeave={() => setHoveredSimilarTokenImage(null)}
+                          style={{ cursor: img ? 'pointer' : 'default' }}
+                        >
+                          {img ? (
+                            <img src={img} alt={`${t.symbol || t.name} logo`} />
+                          ) : (
+                            <div className="meme-similar-token-avatar-fallback">
+                              {(t.symbol || t.name || '?')
+                                .slice(0, 3)
+                                .toUpperCase()}
+                            </div>
+                          )}
+                        </div>
 
                         <div className="meme-similar-token-meta">
                           <div className="meme-similar-token-title">
@@ -4419,7 +4422,7 @@ if (
                             </span>
                           </div>
                           <div className="meme-similar-token-id">
-                            <span>Last TX: </span> 
+                            <span>Last TX: </span>
                             {
                               (() => {
                                 const tsSec = Number(t.lastUpdatedAt);
@@ -4744,8 +4747,8 @@ if (
         onToggleCurrency={handleToggleCurrency}
         tokenImage={token.image}
         nonces={nonces}
-/>
-      
+      />
+
       {hoveredSimilarTokenImage &&
         showSimilarTokenPreview &&
         createPortal(
