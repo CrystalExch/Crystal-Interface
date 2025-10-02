@@ -11,116 +11,6 @@ const SPREAD_DISPLAY_HEIGHT = 50;
 const HEADER_HEIGHT = 18;
 const MIN_ORDERS = 0;
 
-function v2ToOrderbook(
-  reserve1Raw: number | bigint,
-  reserve2Raw: number | bigint,
-  interval: number,
-): { bids: Order[]; asks: Order[] } {
-  if (reserve1Raw == 0 || reserve2Raw == 0 || interval <= 0) return { bids: [], asks: [] };
-
-  const BASE_DECIMALS = 18;
-  const QUOTE_DECIMALS = 6;
-
-  const UNI_V2_FEE_BIPS = 25;
-  const fee = Math.max(0, UNI_V2_FEE_BIPS) / 10_000;
-  const oneMinusFee = Math.max(1e-12, 1 - fee);
-
-  const toHuman = (raw: number | bigint, decimals: number) => {
-    const n = typeof raw === 'bigint' ? Number(raw) : raw;
-    return n / Math.pow(10, decimals);
-  };
-
-  const x0 = Math.max(1e-18, toHuman(reserve1Raw, BASE_DECIMALS));
-  const y0 = Math.max(1e-18, toHuman(reserve2Raw, QUOTE_DECIMALS));
-  const k = x0 * y0;
-  const pMid = y0 / x0;
-
-  const xFromP = (p: number) => Math.sqrt(k * Math.max(p, 1e-18));
-
-  const intervalToScale = (iv: number) => {
-    const s = iv.toString();
-    let dec: number;
-    if (s.includes('e-')) {
-      const [base, exp] = s.split('e-');
-      const baseDec = (base.split('.')[1] || '').length;
-      dec = parseInt(exp, 10) + baseDec;
-    } else {
-      const dot = s.indexOf('.');
-      dec = dot === -1 ? 0 : s.length - dot - 1;
-    }
-    const pow = Math.min(12, dec + 6);
-    const SCALE = Math.pow(10, pow);
-    const intervalTicks = Math.max(1, Math.round(iv * SCALE));
-    return { SCALE, intervalTicks };
-  };
-
-  const { SCALE, intervalTicks } = intervalToScale(interval);
-  const toTicks = (p: number) => Math.round(p * SCALE);
-  const fromTicks = (t: number) => t / SCALE;
-
-  const bids: Order[] = [];
-  const asks: Order[] = [];
-  const MAX_LEVELS_PER_SIDE = 2000;
-
-  {
-    let tMid = toTicks(pMid);
-    let tHere = Math.floor(tMid / intervalTicks) * intervalTicks;
-    for (let i = 0; i < MAX_LEVELS_PER_SIDE; i++) {
-      const tLow = tHere - intervalTicks;
-      if (tLow <= 0) break;
-
-      const pLow = fromTicks(tLow);
-      const pHere = fromTicks(tHere);
-
-      const xLow = xFromP(pLow);
-      const xHi = xFromP(pHere);
-      const dxEff = Math.max(0, xHi - xLow);
-
-      const baseIn = dxEff / oneMinusFee;
-      if (baseIn <= 0) break;
-
-      const effectivePrice = pLow * (1 - fee);
-      bids.push({
-        price: effectivePrice,
-        size: baseIn,
-        totalSize: baseIn,
-        shouldFlash: false,
-        userPrice: false,
-      });
-
-      tHere = tLow;
-    }
-  }
-
-  {
-    let tMid = toTicks(pMid);
-    let tHere = Math.ceil(tMid / intervalTicks) * intervalTicks;
-    for (let i = 0; i < MAX_LEVELS_PER_SIDE; i++) {
-      const tHigh = tHere + intervalTicks;
-      const pHere = fromTicks(tHere);
-      const pHigh = fromTicks(tHigh);
-
-      const xA = xFromP(pHere);
-      const xN = xFromP(pHigh);
-      const baseOut = Math.max(0, xN - xA);
-      if (baseOut <= 0) break;
-
-      const effectivePrice = pHigh * (1 + fee);
-      asks.push({
-        price: effectivePrice,
-        size: baseOut,
-        totalSize: baseOut,
-        shouldFlash: false,
-        userPrice: false,
-      });
-
-      tHere = tHigh;
-    }
-  }
-
-  return { bids, asks };
-}
-
 export function scaleOrders(
   _orders: Order[],
   reserveQuote: bigint,
@@ -135,13 +25,9 @@ export function scaleOrders(
     return { orders: [], leftoverPerRow: 0 };
   }
 
-  const { bids, asks } = v2ToOrderbook(reserveQuote, reserveBase, interval*25);
-  const ammSide = isBuyOrder ? bids : asks;
-
   const live = Array.isArray(_orders) ? _orders : [];
-  const merged = live.concat(ammSide);
 
-  const groupedOrders = groupOrders(merged, interval, isBuyOrder);
+  const groupedOrders = groupOrders(live, interval, isBuyOrder);
   const adjustedHeight = Math.max(
     containerHeight - HEADER_HEIGHT - SPREAD_DISPLAY_HEIGHT / 2,
     100,

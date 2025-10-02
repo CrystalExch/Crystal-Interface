@@ -61,7 +61,7 @@ const OrderHighlightPopup: React.FC<OrderHighlightPopupProps> = ({
       <div>
       <span style={{color: '#ffffffef'}}>{t('avgPrice')}: </span>
         {formatCommas(
-          marketType == 0 ? highlightData.averagePrice.toFixed(Math.floor(Math.log10(priceFactor))) : highlightData.averagePrice.toFixed(Math.floor(Math.log10(10 ** Math.max(0, 5 - Math.floor(Math.log10(highlightData.averagePrice ?? 1)) - 1)))),
+          marketType == 0 ? highlightData.averagePrice.toFixed(Math.floor(Math.log10(priceFactor))) : highlightData.averagePrice.toFixed(Math.floor(Math.log10(10 ** Math.max(0, 5 - Math.floor(Math.log10(highlightData.averagePrice == 0 ? 1 : highlightData.averagePrice)) - 1)))),
         )}{' '}
         {highlightData.unit}
       </div>
