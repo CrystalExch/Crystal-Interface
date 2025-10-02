@@ -229,29 +229,6 @@ function App() {
     return g;
   })();
 
-  const [activeFilters, setActiveFilters] = useState<FilterState>({
-      transactionTypes: {
-          buyMore: true,
-          firstBuy: true,
-          sellPartial: true,
-          sellAll: true,
-          addLiquidity: true,
-          removeLiquidity: true,
-      },
-      marketCap: {
-          min: '',
-          max: '',
-      },
-      transactionAmount: {
-          min: '',
-          max: '',
-      },
-      tokenAge: {
-          min: '',
-          max: '',
-      },
-  });
-
   const txReceiptResolvers = useRef(new Map<string, () => void>());
   // get market including multihop
   const getMarket = (token1: string, token2: string): any => {
@@ -2778,11 +2755,6 @@ function App() {
     }
 
     return requiredInput;
-  };
-
-  const handleApplyFilters = (filters: FilterState) => {
-      setActiveFilters(filters);
-      setpopup(0);
   };
 
   // oc resizers
@@ -21208,8 +21180,6 @@ function App() {
                 isBlurred={isBlurred}
                 setpopup={setpopup}
                 onImportWallets={handleImportWallets}
-                onApplyFilters={handleApplyFilters}
-                activeFilters={activeFilters}
               />
             } />
           <Route path="/perps" element={<Navigate to="/perps/BTCUSD" replace />} />

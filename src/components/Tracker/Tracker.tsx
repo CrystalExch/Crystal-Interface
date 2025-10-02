@@ -8,8 +8,33 @@
     import trash from '../../assets/trash.svg';
     import { settings } from '../../settings';
     import ImportWalletsPopup from './ImportWalletsPopup';
-    import type { FilterState } from './LiveTradesFiltersPopup/LiveTradesFIltersPopup';
+    import LiveTradesFiltersPopup from './LiveTradesFiltersPopup/LiveTradesFIltersPopup';
     import './Tracker.css';
+    'src/assets/settings'
+
+    export interface FilterState {
+    transactionTypes: {
+        buyMore: boolean;
+        firstBuy: boolean;
+        sellPartial: boolean;
+        sellAll: boolean;
+        addLiquidity: boolean;
+        removeLiquidity: boolean;
+    };
+    marketCap: {
+        min: string;
+        max: string;
+    };
+    transactionAmount: {
+        min: string;
+        max: string;
+    };
+    tokenAge: {
+        min: string;
+        max: string;
+    };
+    }
+
 
     const Tooltip: React.FC<{
         content: string;
@@ -699,7 +724,6 @@
                 externalOnApplyFilters(filters);
             }
         };
-
         
 
         const renderWalletItem = (wallet: TrackedWallet) => (
@@ -1161,12 +1185,12 @@
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
-                            <button className="tracker-header-button" onClick={() => setpopup(33)}>
+                            <button className="tracker-header-button" onClick={() => setShowFiltersPopup(true)}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M3 6h18M7 12h10M10 18h4"/>
                                 </svg>
                             </button>
-                            <button className="tracker-header-button" onClick={() => setpopup(36)}>
+                            <button className="tracker-header-button" onClick={() => setShowFiltersPopup(true)}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M3 6h18M7 12h10M10 18h4"/>
                                 </svg>
@@ -1295,6 +1319,277 @@
                     </div>
                 )}
 
+                {showFiltersPopup && (
+                    <div className="live-trades-filters-backdrop" onClick={() => setShowFiltersPopup(false)}>
+                    <div className="live-trades-filters-container" onClick={(e) => e.stopPropagation()}>
+                        <div className="live-trades-filters-header">
+                        <h3 className="live-trades-filters-title">Live Trades Filters</h3>
+                        <button className="live-trades-filters-close" onClick={() => setShowFiltersPopup(false)}>
+                            <img src={closebutton} className="close-button-icon" alt="Close" />
+                        </button>
+                        </div>
+
+                        <div className="live-trades-filters-content">
+                        <div className="live-trades-filters-section">
+                            <h4 className="live-trades-filters-section-title">Transaction Types</h4>
+                            
+                            <div className="live-trades-filters-checkboxes">
+                            <label className="live-trades-filters-checkbox-label">
+                                <input
+                                type="checkbox"
+                                checked={activeFilters.transactionTypes.buyMore}
+                                onChange={() => setActiveFilters(prev => ({
+                                    ...prev,
+                                    transactionTypes: {
+                                    ...prev.transactionTypes,
+                                    buyMore: !prev.transactionTypes.buyMore,
+                                    },
+                                }))}
+                                className="live-trades-filters-checkbox"
+                                />
+                                <span className="live-trades-filters-checkbox-text">Buy More</span>
+                            </label>
+
+                            <label className="live-trades-filters-checkbox-label">
+                                <input
+                                type="checkbox"
+                                checked={activeFilters.transactionTypes.firstBuy}
+                                onChange={() => setActiveFilters(prev => ({
+                                    ...prev,
+                                    transactionTypes: {
+                                    ...prev.transactionTypes,
+                                    firstBuy: !prev.transactionTypes.firstBuy,
+                                    },
+                                }))}
+                                className="live-trades-filters-checkbox"
+                                />
+                                <span className="live-trades-filters-checkbox-text">First Buy</span>
+                            </label>
+
+                            <label className="live-trades-filters-checkbox-label">
+                                <input
+                                type="checkbox"
+                                checked={activeFilters.transactionTypes.sellPartial}
+                                onChange={() => setActiveFilters(prev => ({
+                                    ...prev,
+                                    transactionTypes: {
+                                    ...prev.transactionTypes,
+                                    sellPartial: !prev.transactionTypes.sellPartial,
+                                    },
+                                }))}
+                                className="live-trades-filters-checkbox"
+                                />
+                                <span className="live-trades-filters-checkbox-text">Sell Partial</span>
+                            </label>
+
+                            <label className="live-trades-filters-checkbox-label">
+                                <input
+                                type="checkbox"
+                                checked={activeFilters.transactionTypes.sellAll}
+                                onChange={() => setActiveFilters(prev => ({
+                                    ...prev,
+                                    transactionTypes: {
+                                    ...prev.transactionTypes,
+                                    sellAll: !prev.transactionTypes.sellAll,
+                                    },
+                                }))}
+                                className="live-trades-filters-checkbox"
+                                />
+                                <span className="live-trades-filters-checkbox-text">Sell All</span>
+                            </label>
+
+                            <label className="live-trades-filters-checkbox-label">
+                                <input
+                                type="checkbox"
+                                checked={activeFilters.transactionTypes.addLiquidity}
+                                onChange={() => setActiveFilters(prev => ({
+                                    ...prev,
+                                    transactionTypes: {
+                                    ...prev.transactionTypes,
+                                    addLiquidity: !prev.transactionTypes.addLiquidity,
+                                    },
+                                }))}
+                                className="live-trades-filters-checkbox"
+                                />
+                                <span className="live-trades-filters-checkbox-text">Add Liquidity</span>
+                            </label>
+
+                            <label className="live-trades-filters-checkbox-label">
+                                <input
+                                type="checkbox"
+                                checked={activeFilters.transactionTypes.removeLiquidity}
+                                onChange={() => setActiveFilters(prev => ({
+                                    ...prev,
+                                    transactionTypes: {
+                                    ...prev.transactionTypes,
+                                    removeLiquidity: !prev.transactionTypes.removeLiquidity,
+                                    },
+                                }))}
+                                className="live-trades-filters-checkbox"
+                                />
+                                <span className="live-trades-filters-checkbox-text">Remove Liquidity</span>
+                            </label>
+                            </div>
+                        </div>
+
+                        <div className="live-trades-filters-section">
+                            <h4 className="live-trades-filters-section-title">Market Cap (USD)</h4>
+                            <div className="live-trades-filters-range">
+                            <div className="live-trades-filters-input-wrapper">
+                                <input
+                                type="text"
+                                placeholder="Min"
+                                value={activeFilters.marketCap.min}
+                                onChange={(e) => setActiveFilters(prev => ({
+                                    ...prev,
+                                    marketCap: {
+                                    ...prev.marketCap,
+                                    min: e.target.value,
+                                    },
+                                }))}
+                                className="live-trades-filters-input"
+                                />
+                                <span className="live-trades-filters-input-suffix">USD</span>
+                            </div>
+                            <div className="live-trades-filters-input-wrapper">
+                                <input
+                                type="text"
+                                placeholder="Max"
+                                value={activeFilters.marketCap.max}
+                                onChange={(e) => setActiveFilters(prev => ({
+                                    ...prev,
+                                    marketCap: {
+                                    ...prev.marketCap,
+                                    max: e.target.value,
+                                    },
+                                }))}
+                                className="live-trades-filters-input"
+                                />
+                                <span className="live-trades-filters-input-suffix">USD</span>
+                            </div>
+                            </div>
+                        </div>
+
+                        <div className="live-trades-filters-section">
+                            <h4 className="live-trades-filters-section-title">Transaction Amount (SOL)</h4>
+                            <div className="live-trades-filters-range">
+                            <div className="live-trades-filters-input-wrapper">
+                                <input
+                                type="text"
+                                placeholder="Min"
+                                value={activeFilters.transactionAmount.min}
+                                onChange={(e) => setActiveFilters(prev => ({
+                                    ...prev,
+                                    transactionAmount: {
+                                    ...prev.transactionAmount,
+                                    min: e.target.value,
+                                    },
+                                }))}
+                                className="live-trades-filters-input"
+                                />
+                                <span className="live-trades-filters-input-suffix">SOL</span>
+                            </div>
+                            <div className="live-trades-filters-input-wrapper">
+                                <input
+                                type="text"
+                                placeholder="Max"
+                                value={activeFilters.transactionAmount.max}
+                                onChange={(e) => setActiveFilters(prev => ({
+                                    ...prev,
+                                    transactionAmount: {
+                                    ...prev.transactionAmount,
+                                    max: e.target.value,
+                                    },
+                                }))}
+                                className="live-trades-filters-input"
+                                />
+                                <span className="live-trades-filters-input-suffix">SOL</span>
+                            </div>
+                            </div>
+                        </div>
+
+                        <div className="live-trades-filters-section">
+                            <h4 className="live-trades-filters-section-title">Token Age (Minutes)</h4>
+                            <div className="live-trades-filters-range">
+                            <div className="live-trades-filters-input-wrapper">
+                                <input
+                                type="text"
+                                placeholder="Min"
+                                value={activeFilters.tokenAge.min}
+                                onChange={(e) => setActiveFilters(prev => ({
+                                    ...prev,
+                                    tokenAge: {
+                                    ...prev.tokenAge,
+                                    min: e.target.value,
+                                    },
+                                }))}
+                                className="live-trades-filters-input"
+                                />
+                                <span className="live-trades-filters-input-suffix">min</span>
+                            </div>
+                            <div className="live-trades-filters-input-wrapper">
+                                <input
+                                type="text"
+                                placeholder="Max"
+                                value={activeFilters.tokenAge.max}
+                                onChange={(e) => setActiveFilters(prev => ({
+                                    ...prev,
+                                    tokenAge: {
+                                    ...prev.tokenAge,
+                                    max: e.target.value,
+                                    },
+                                }))}
+                                className="live-trades-filters-input"
+                                />
+                                <span className="live-trades-filters-input-suffix">min</span>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+
+                        <div className="live-trades-filters-footer">
+                        <button className="live-trades-filters-reset-button" onClick={() => setActiveFilters({
+                            transactionTypes: {
+                            buyMore: true,
+                            firstBuy: true,
+                            sellPartial: true,
+                            sellAll: true,
+                            addLiquidity: true,
+                            removeLiquidity: true,
+                            },
+                            marketCap: {
+                            min: '',
+                            max: '',
+                            },
+                            transactionAmount: {
+                            min: '',
+                            max: '',
+                            },
+                            tokenAge: {
+                            min: '',
+                            max: '',
+                            },
+                        })}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                            <path d="M21 3v5h-5"/>
+                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                            <path d="M3 21v-5h5"/>
+                            </svg>
+                        </button>
+                        <button className="live-trades-filters-apply-button" onClick={() => {
+                            if (externalOnApplyFilters) {
+                            externalOnApplyFilters(activeFilters);
+                            }
+                            setShowFiltersPopup(false);
+                        }}>
+                            Apply Filters
+                        </button>
+                        </div>
+                    </div>
+                    </div>
+                )}
+
                 {/* Delete Confirmation Modal */}
                 {showDeleteConfirmation && (
                     <div className="tracker-modal-backdrop" onClick={() => setShowDeleteConfirmation(false)}>
@@ -1327,6 +1622,14 @@
                     <ImportWalletsPopup
                         onClose={() => setShowImportPopup(false)}
                         onImport={handleImportWallets}
+                    />
+                )}
+
+                {showFiltersPopup && (
+                    <LiveTradesFiltersPopup
+                        onClose={() => setShowImportPopup(false)}
+                        onApply={handleApplyFilters}
+                        initialFilters={activeFilters}
                     />
                 )}
             </div>
