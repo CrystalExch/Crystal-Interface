@@ -65,8 +65,10 @@ interface PerpsProps {
   perpsFilterOptions: any;
   setPerpsFilterOptions: any;
   signTypedDataAsync: any;
-   leverage: string;
+  leverage: string;
   setLeverage: (value: string) => void;
+  signer: any;
+  setSigner: any;
 }
 
 const Perps: React.FC<PerpsProps> = ({
@@ -125,14 +127,12 @@ const Perps: React.FC<PerpsProps> = ({
   signTypedDataAsync,
   leverage,
   setLeverage,
+  signer,
+  setSigner
 }) => {
   const [exchangeConfig, setExchangeConfig] = useState();
   const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
   const [orderdata, setorderdata] = useState<any>([]);
-  const [signer, setSigner] = useState<any>(() => {
-    const saved = localStorage.getItem('crystal_perps_signer');
-    return saved !== null ? JSON.parse(saved) : {};
-  })
   const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};
   const [activeTradeType, setActiveTradeType] = useState<"long" | "short">("long");
   const [activeOrderType, setActiveOrderType] = useState<"market" | "Limit" | "Pro">("market");

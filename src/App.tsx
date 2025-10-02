@@ -592,6 +592,11 @@ function App() {
     [validOneCT]
   );
 
+  const [perpsKeystore, setPerpsKeystore] = useState<any>(() => {
+    const saved = localStorage.getItem('crystal_perps_signer');
+    return saved !== null ? JSON.parse(saved) : {};
+  })
+
   // state vars
   const [trackedWallets, setTrackedWallets] = useState<any[]>([]);
   const [showSendDropdown, setShowSendDropdown] = useState(false);
@@ -13983,7 +13988,7 @@ function App() {
                       <div className="perps-input-bottom-row">
                         <input
                           type="text"
-                          placeholder="0.0"
+                          placeholder="0.00"
                           className="perps-deposit-input"
                         />
                         <div className="perps-deposit-token-badge">
@@ -14006,7 +14011,7 @@ function App() {
                       <div className="perps-input-bottom-row">
                         <input
                           type="text"
-                          placeholder="0.0"
+                          placeholder="0.00"
                           className="perps-deposit-input"
                         />
                         <div className="perps-deposit-token-badge">
@@ -14024,15 +14029,18 @@ function App() {
 
               <div className="modal-footer">
                 <button className="perps-confirm-button" onClick={async () => {
-                  /* await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: 42161 as any });
+                  await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: 42161 as any });
                   await rawSendUserOperationAsync({
                     uo: {
-                      target: '' as `0x${string}`,
+                      target: '0x81144d6E7084928830f9694a201E8c1ce6eD0cb2' as `0x${string}`,
                       data: encodeFunctionData({
                         abi: [{
                           inputs: [
-                            { name: "to", type: "address" },
-                            { name: "amount", type: "uint256" }
+                            { name: "token", type: "address" },
+                            { name: "amount", type: "uint256" },
+                            { name: "starkKey", type: "uint256" },
+                            { name: "accountId", type: "uint256" },
+                            { name: "exchangeData", type: "bytes" }
                           ],
                           name: "deposit",
                           outputs: [],
@@ -14040,11 +14048,13 @@ function App() {
                           type: "function",
                         }],
                         functionName: "deposit",
-                        args: ['', 1000000n, signer.publicKey, accountId, '0x00'],
+                        args: ['0xaf88d065e77c8cC2239327C5EDb3A432268e5831', 1000000n, perpsKeystore.publicKey, 664124834304754100n, '0x00'],
                       }),
                       value: 0n,
                     }
-                  }) */
+                  })
+                  handleSetChain();
+                  setpopup(0);
                 }}>
                   Deposit
                 </button>
@@ -21078,8 +21088,10 @@ function App() {
                 perpsFilterOptions={perpsFilterOptions}
                 setPerpsFilterOptions={setPerpsFilterOptions}
                 signTypedDataAsync={signMessageAsync}
-                      leverage={perpsLeverage}
-      setLeverage={setPerpsLeverage}
+                leverage={perpsLeverage}
+                setLeverage={setPerpsLeverage}
+                signer={perpsKeystore}
+                setSigner={setPerpsKeystore}
               />
             } />
           <Route path="/leaderboard"
