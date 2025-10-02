@@ -1487,6 +1487,7 @@ function App() {
   const pingIntervalRef = useRef<any>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const prevAmountsQuote = useRef(amountsQuote)
+  const backAudioRef = useRef<HTMLAudioElement>(null);
   // more constants
   const languageOptions = [
     { code: 'EN', name: 'English' },
@@ -1509,6 +1510,26 @@ function App() {
       tradesloading ||
       addressinfoloading);
 
+  const [walletTokenBalances, setWalletTokenBalances] = useState({});
+  const [walletTotalValues, setWalletTotalValues] = useState({});
+  const [walletsLoading, setWalletsLoading] = useState(false);
+  const [subwalletBalanceLoading, setSubwalletBalanceLoading] = useState({});
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionDirection, setTransitionDirection] = useState('forward');
+  const [exitingChallenge, setExitingChallenge] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [animationStarted, setAnimationStarted] = useState(false);
+  const [isUsernameSigning, setIsUsernameSigning] = useState(false);
+  const [typedRefCode, setTypedRefCode] = useState(() => searchParams.get('ref') || '');
+  const [usernameInput, setUsernameInput] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [isRefSigning, setIsRefSigning] = useState(false);
+  const [error, setError] = useState('');
+  const [username, setUsername] = useState('');
+  const [isConnectEntering, setIsConnectEntering] = useState(false);
+  const [usernameResolved, setUsernameResolved] = useState(false);
+  const [isWelcomeExiting, setIsWelcomeExiting] = useState(false);
+  const [animating, setAnimating] = useState(false);
   const [sendAmountIn, setSendAmountIn] = useState(BigInt(0));
   const [sendInputAmount, setSendInputAmount] = useState('');
   const [sendUsdValue, setSendUsdValue] = useState('');
@@ -1957,11 +1978,6 @@ function App() {
       setIsVaultWithdrawSigning(false);
     }
   };
-
-  const [walletTokenBalances, setWalletTokenBalances] = useState({});
-  const [walletTotalValues, setWalletTotalValues] = useState({});
-  const [walletsLoading, setWalletsLoading] = useState(false);
-  const [subwalletBalanceLoading, setSubwalletBalanceLoading] = useState({});
 
   const findMarketForToken = useCallback((tokenAddress: string) => {
     for (const [marketKey, marketData] of Object.entries(markets)) {
@@ -6551,24 +6567,6 @@ function App() {
     }
   }, [popup, connected, user != null, loading]);
 
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [transitionDirection, setTransitionDirection] = useState('forward');
-  const [exitingChallenge, setExitingChallenge] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [animationStarted, setAnimationStarted] = useState(false);
-  const [isUsernameSigning, setIsUsernameSigning] = useState(false);
-  const [typedRefCode, setTypedRefCode] = useState(() => searchParams.get('ref') || '');
-  const [usernameInput, setUsernameInput] = useState("");
-  const [usernameError, setUsernameError] = useState("");
-  const [isRefSigning, setIsRefSigning] = useState(false);
-  const [error, setError] = useState('');
-  const [username, setUsername] = useState('');
-  const [isConnectEntering, setIsConnectEntering] = useState(false);
-  const [usernameResolved, setUsernameResolved] = useState(false);
-  const [isWelcomeExiting, setIsWelcomeExiting] = useState(false);
-  const [animating, setAnimating] = useState(false);
-  const backAudioRef = useRef<HTMLAudioElement>(null);
-
   const isValidInput = (value: string) => {
     const regex = /^[a-zA-Z0-9-]{0,20}$/;
     return regex.test(value);
@@ -9095,6 +9093,7 @@ function App() {
     valueSold: 0,
     valueNet: 0,
   });
+
   const [currentTokenData, setCurrentTokenData] = useState({
     address: '',
     symbol: '',
