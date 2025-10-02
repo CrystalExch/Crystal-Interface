@@ -157,8 +157,6 @@ import PNLComponent from './components/PNLComponent/PNLComponent.tsx';
 import ImportWalletsPopup from './components/Tracker/ImportWalletsPopup.tsx';
 import TradingPresetsPopup from './components/Tracker/TradingPresetsPopup/TradingPresetsPopup';
 import LiveTradesSettingsPopup from './components/Tracker/ LiveTradesSettingsPopup/LiveTradesSettingsPopup.tsx';
-import LiveTradesFiltersPopup from './components/Tracker/LiveTradesFiltersPopup/LiveTradesFIltersPopup.tsx';
-import type { FilterState } from './components/Tracker/LiveTradesFiltersPopup/LiveTradesFIltersPopup.tsx';
 // import config
 import { ChevronDown, Search, SearchIcon } from 'lucide-react';
 import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortfolioData.ts';
