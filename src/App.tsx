@@ -26,6 +26,8 @@ import {
 import { TransactionExecutionError, encodeFunctionData, maxUint256, decodeFunctionResult } from 'viem';
 import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
+import { loadWalletsFromStorage, saveWalletsToStorage } from './utils/walletUtils';
+import { deduplicateWallets } from './utils/walletUtils'
 import { config } from './wagmi.ts';
 import {
   useLogout,
@@ -39,6 +41,7 @@ import {
 } from "@account-kit/react";
 import { Wallet, keccak256 } from 'ethers'
 import { useQuery } from '@tanstack/react-query';
+import { decodeEventLog } from 'viem';
 
 // import css
 import './App.css';
@@ -400,15 +403,9 @@ function App() {
   };
   const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : scaAddress as `0x${string}`
   const connected = address != undefined
-  const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>(() => {
-    const storedSubWallets = localStorage.getItem('crystal_sub_wallets');
-    if (storedSubWallets) {
-      try {
-        return JSON.parse(storedSubWallets);
-      } catch { }
-    }
-    return [];
-  });
+const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>(
+  loadWalletsFromStorage()
+);
 
   const getWalletIcon = () => {
     const connectorName = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.name || 'Unknown';
@@ -440,6 +437,14 @@ function App() {
 
   const [withdrawPercentage, setWithdrawPercentage] = useState('');
   const [currentWalletIcon, setCurrentWalletIcon] = useState(walleticon);
+
+  // WebSocket state management
+  const [memeWsData, setMemeWsData] = useState<Record<string, any> | null>(null);
+  const [explorerTokens, setExplorerTokens] = useState<any[]>([]);
+  const memeWsRef = useRef<WebSocket | null>(null);
+  const explorerWsRef = useRef<WebSocket | null>(null);
+  const statsWsRef = useRef<WebSocket | null>(null);
+  const reconnectRef = useRef(0);
 
   useEffect(() => {
     if (connected) {
@@ -1963,14 +1968,16 @@ function App() {
     return null;
   }, [markets, tradesByMarket]);
 
-  const saveSubWallets = useCallback((wallets: { address: string; privateKey: string; }[] | ((prevState: { address: string; privateKey: string; }[]) => { address: string; privateKey: string; }[])) => {
-    setSubWallets((prevWallets) => {
-      const newWallets = typeof wallets === 'function' ? wallets(prevWallets) : wallets;
-      localStorage.setItem('crystal_sub_wallets', JSON.stringify(newWallets));
-      return newWallets;
-    });
-  }, []);
-
+const saveSubWallets = useCallback((wallets: { address: string; privateKey: string; }[] | ((prevState: { address: string; privateKey: string; }[]) => { address: string; privateKey: string; }[])) => {
+  setSubWallets((prevWallets) => {
+    const newWallets = typeof wallets === 'function' ? wallets(prevWallets) : wallets;
+    
+    const deduplicated = deduplicateWallets(newWallets);
+    
+    localStorage.setItem('crystal_sub_wallets', JSON.stringify(deduplicated));
+    return deduplicated;
+  });
+}, []);
   // on market select
   const onMarketSelect = useCallback((market: { quoteAddress: any; baseAddress: any; }) => {
     if (!['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
@@ -3011,7 +3018,13 @@ function App() {
   
     return { bids, asks };
   }
-
+useEffect(() => {
+  const cleaned = deduplicateWallets(subWallets);
+  if (cleaned.length !== subWallets.length) {
+    console.log(`Removed ${subWallets.length - cleaned.length} duplicate wallets on startup`);
+    saveSubWallets(cleaned);
+  }
+}, []); 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isVertDragging) return;
@@ -14111,7 +14124,7 @@ function App() {
                       <div className="perps-input-bottom-row">
                         <input
                           type="text"
-                          placeholder="10.00"
+                          placeholder="0.00"
                           className="perps-deposit-input"
                           value={perpsDepositAmount}
                           onChange={(e) => {
@@ -14144,7 +14157,7 @@ function App() {
                       <div className="perps-input-bottom-row">
                         <input
                           type="text"
-                          placeholder="10.00"
+                          placeholder="0.00"
                           className="perps-deposit-input"
                           value={perpsDepositAmount}
                           readOnly
@@ -14281,7 +14294,7 @@ function App() {
 
               <div className="modal-footer">
                 <button className="perps-confirm-button">
-                  Deposit
+                  Withdraw
                 </button>
               </div>
             </div>
