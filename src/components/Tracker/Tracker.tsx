@@ -8,6 +8,7 @@
     import trash from '../../assets/trash.svg';
     import { settings } from '../../settings';
     import ImportWalletsPopup from './ImportWalletsPopup';
+    import LiveTradesFiltersPopup from './LiveTradesFiltersPopup/LiveTradesFiltersPopup';
     import MonitorFiltersPopup, { MonitorFilterState } from './MonitorFiltersPopup/MonitorFiltersPopup';
     import settingsicon from '../../assets/settings.svg';
     import './Tracker.css';
@@ -153,6 +154,7 @@
         onImportWallets?: (walletsText: string, addToSingleGroup: boolean) => void;
         onApplyFilters?: (filters: FilterState) => void;
         activeFilters?: FilterState;
+        monUsdPrice: number;
     }
 
     interface MonitorToken {
@@ -166,6 +168,8 @@
         holders: number;
         emoji: string;
         trades: TokenTrade[];
+        createdAt: string;
+        lastTransaction: string;
     }
 
     interface TokenTrade {
@@ -188,7 +192,7 @@
     type SortDirection = 'asc' | 'desc';
     
 
-    const Tracker: React.FC<TrackerProps> = ({ isBlurred, setpopup, onApplyFilters: externalOnApplyFilters, activeFilters: externalActiveFilters}) => {
+    const Tracker: React.FC<TrackerProps> = ({ isBlurred, setpopup, onApplyFilters: externalOnApplyFilters, activeFilters: externalActiveFilters, monUsdPrice = 1}) => {
         const [walletSortField, setWalletSortField] = useState<'balance' | 'lastActive' | null>(null);
         const [walletSortDirection, setWalletSortDirection] = useState<SortDirection>('desc');
         const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
@@ -213,6 +217,7 @@
         const [activeTab, setActiveTab] = useState<TrackerTab>('wallets');
         const [searchQuery, setSearchQuery] = useState('');
         const [showFiltersPopup, setShowFiltersPopup] = useState(false);
+        const [monitorCurrency, setMonitorCurrency] = useState<'USD' | 'MON'>('USD');
         const [activeFilters, setActiveFilters] = useState<FilterState>(externalActiveFilters || {
             transactionTypes: {
                 buyMore: true,
@@ -354,21 +359,9 @@
                 volume24h: 7370,
                 holders: 1,
                 emoji: '👨',
-                trades: [
-                    {
-                        id: '1',
-                        wallet: 'cupsey...',
-                        emoji: '☕',
-                        timeInTrade: '15s',
-                        exitStatus: 'Exited',
-                        bought: 215.1,
-                        boughtTxns: 1,
-                        sold: 220.3,
-                        soldTxns: 1,
-                        pnl: 2.701,
-                        remaining: 0
-                    }
-                ]
+                createdAt: '2025-10-03T09:30:00',
+                lastTransaction: '2025-10-03T10:00:00',
+                trades: []
             },
             {
                 id: '2',
@@ -380,21 +373,9 @@
                 volume24h: 9620,
                 holders: 1,
                 emoji: '🌽',
-                trades: [
-                    {
-                        id: '1',
-                        wallet: 'cupsey...',
-                        emoji: '☕',
-                        timeInTrade: '15s',
-                        exitStatus: 'Exited',
-                        bought: 215.1,
-                        boughtTxns: 1,
-                        sold: 220.3,
-                        soldTxns: 1,
-                        pnl: 2.701,
-                        remaining: 0
-                    }
-                ]
+                createdAt: '2025-10-03T08:45:00',
+                lastTransaction: '2025-10-03T09:58:00',
+                trades: []
             },
             {
                 id: '3',
@@ -406,6 +387,8 @@
                 volume24h: 7340,
                 holders: 1,
                 emoji: '👑',
+                createdAt: '2025-10-03T07:20:00',
+                lastTransaction: '2025-10-03T09:55:00',
                 trades: []
             },
             {
@@ -418,6 +401,8 @@
                 volume24h: 6870,
                 holders: 1,
                 emoji: '🍗',
+                createdAt: '2025-10-03T06:10:00',
+                lastTransaction: '2025-10-03T09:50:00',
                 trades: []
             },
             {
@@ -430,6 +415,8 @@
                 volume24h: 8900,
                 holders: 3,
                 emoji: '⚡',
+                createdAt: '2025-10-03T05:00:00',
+                lastTransaction: '2025-10-03T09:45:00',
                 trades: []
             },
             {
@@ -442,6 +429,8 @@
                 volume24h: 11200,
                 holders: 2,
                 emoji: '☕',
+                createdAt: '2025-10-03T04:30:00',
+                lastTransaction: '2025-10-03T09:59:00',
                 trades: []
             }
         ]);
@@ -492,6 +481,7 @@
                 setTradeSortDirection('desc');
             }
         };
+        
 
         const getSortedWallets = () => {
             if (!walletSortField) return trackedWallets;
@@ -598,15 +588,65 @@
             
             return trades;
         };
+        
 
         const getFilteredMonitorTokens = () => {
-            if (!searchQuery.trim()) return monitorTokens;
+            const now = new Date();
             
-            const query = searchQuery.toLowerCase();
-            return monitorTokens.filter(token =>
-                token.name.toLowerCase().includes(query) ||
-                token.symbol.toLowerCase().includes(query)
-            );
+            let tokens = monitorTokens.filter(token => {
+                if (monitorFilters.general.lastTransaction) {
+                    const lastTxTime = new Date(token.lastTransaction);
+                    const secondsAgo = (now.getTime() - lastTxTime.getTime()) / 1000;
+                    if (secondsAgo > parseFloat(monitorFilters.general.lastTransaction)) {
+                        return false;
+                    }
+                }
+                
+                const tokenCreatedTime = new Date(token.createdAt);
+                const tokenAgeMinutes = (now.getTime() - tokenCreatedTime.getTime()) / (1000 * 60);
+                
+                if (monitorFilters.general.tokenAgeMin && tokenAgeMinutes < parseFloat(monitorFilters.general.tokenAgeMin)) {
+                    return false;
+                }
+                if (monitorFilters.general.tokenAgeMax && tokenAgeMinutes > parseFloat(monitorFilters.general.tokenAgeMax)) {
+                    return false;
+                }
+                
+                if (monitorFilters.market.marketCapMin && token.marketCap < parseFloat(monitorFilters.market.marketCapMin)) {
+                    return false;
+                }
+                if (monitorFilters.market.marketCapMax && token.marketCap > parseFloat(monitorFilters.market.marketCapMax)) {
+                    return false;
+                }
+                
+                if (monitorFilters.market.liquidityMin && token.volume24h < parseFloat(monitorFilters.market.liquidityMin)) {
+                    return false;
+                }
+                if (monitorFilters.market.liquidityMax && token.volume24h > parseFloat(monitorFilters.market.liquidityMax)) {
+                    return false;
+                }
+                
+                // Holders filter
+                if (monitorFilters.market.holdersMin && token.holders < parseFloat(monitorFilters.market.holdersMin)) {
+                    return false;
+                }
+                if (monitorFilters.market.holdersMax && token.holders > parseFloat(monitorFilters.market.holdersMax)) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            // Apply search query
+            if (searchQuery.trim()) {
+                const query = searchQuery.toLowerCase();
+                tokens = tokens.filter(token =>
+                    token.name.toLowerCase().includes(query) ||
+                    token.symbol.toLowerCase().includes(query)
+                );
+            }
+            
+            return tokens;
         };
 
         const handleAddWallet = () => {
@@ -645,6 +685,7 @@
             setTrackedWallets(prev => [...prev, newWallet]);
             closeAddWalletModal();
         };
+        
 
         const handleExportWallets = () => {
             const exportData = trackedWallets.map(wallet => ({
@@ -846,6 +887,32 @@
                 </div>
             </div>
         );
+
+        const convertMonitorCurrency = (value: number, fromUSD: boolean = true): number => {
+            if (monitorCurrency === 'USD' && fromUSD) {
+                return value * monUsdPrice;
+            } else if (monitorCurrency === 'MON' && !fromUSD) {
+                return value / monUsdPrice;
+            }
+            return value;
+        };
+
+        const formatMonitorValue = (value: number, decimals: number = 2): string => {
+            const converted = monitorCurrency === 'USD' 
+                ? value * monUsdPrice 
+                : value;
+            
+            if (converted === 0) return '0';
+            const absNum = Math.abs(converted);
+            const sign = converted < 0 ? '-' : '';
+
+            if (absNum >= 1000000) {
+                return `${sign}${(absNum / 1000000).toFixed(decimals)}M`;
+            } else if (absNum >= 1000) {
+                return `${sign}${(absNum / 1000).toFixed(decimals)}K`;
+            }
+            return `${sign}${absNum.toFixed(decimals)}`;
+        };
 
         const handleRemoveAll = () => {
             setTrackedWallets([]);
@@ -1051,8 +1118,12 @@
                                                 <span className="tracker-monitor-emoji">{token.emoji}</span>
                                                 <div className="tracker-monitor-token-names">
                                                     <span className="tracker-monitor-token-name">{token.name}</span>
-                                                    <span className="tracker-monitor-token-symbol">{token.symbol}</span>
-                                                </div>
+                                                    <span className="tracker-monitor-token-symbol">
+                                                        {token.symbol} • {monitorCurrency === 'USD' 
+                                                            ? `$${(token.price * monUsdPrice).toFixed(3)}` 
+                                                            : `${token.price.toFixed(3)} MON`}
+                                                    </span>
+                                                </div>  
                                             </div>
                                             <div className={`tracker-monitor-change ${token.change24h >= 0 ? 'positive' : 'negative'}`}>
                                                 {token.change24h >= 0 ? '+' : ''}{token.change24h}%
@@ -1067,7 +1138,19 @@
                                                 </div>
                                                 <div className="tracker-monitor-trade-stat">
                                                     <span className="stat-label">MC</span>
-                                                    <span className="stat-value">${(token.marketCap / 1000).toFixed(2)}K</span>
+                                                    <span className="stat-value">
+                                                        {monitorCurrency === 'USD' ? '$' : ''}
+                                                        {formatMonitorValue(token.marketCap)}
+                                                        {monitorCurrency === 'MON' ? ' MON' : ''}
+                                                    </span>
+                                                </div>
+                                                <div className="tracker-monitor-trade-stat">
+                                                    <span className="stat-label">L</span>
+                                                    <span className="stat-value">
+                                                        {monitorCurrency === 'USD' ? '$' : ''}
+                                                        {formatMonitorValue(token.volume24h)}
+                                                        {monitorCurrency === 'MON' ? ' MON' : ''}
+                                                    </span>
                                                 </div>
                                                 <div className="tracker-monitor-trade-stat">
                                                     <span className="stat-label">L</span>
@@ -1110,12 +1193,31 @@
                                                             <span className="time-value">{trade.timeInTrade}</span>
                                                         </div>
                                                         <div className="trade-bought">
-                                                            <span className={`amount ${isBlurred ? 'blurred' : ''}`}>${trade.bought}</span>
+                                                            <span className={`amount ${isBlurred ? 'blurred' : ''}`}>
+                                                                {monitorCurrency === 'USD' ? '$' : ''}
+                                                                {formatMonitorValue(trade.bought, 1)}
+                                                                {monitorCurrency === 'MON' ? ' MON' : ''}
+                                                            </span>
                                                             <span className="txns">{trade.boughtTxns} txns</span>
                                                         </div>
                                                         <div className="trade-sold">
-                                                            <span className={`amount ${isBlurred ? 'blurred' : ''}`}>${trade.sold}</span>
+                                                            <span className={`amount ${isBlurred ? 'blurred' : ''}`}>
+                                                                {monitorCurrency === 'USD' ? '$' : ''}
+                                                                {formatMonitorValue(trade.sold, 1)}
+                                                                {monitorCurrency === 'MON' ? ' MON' : ''}
+                                                            </span>
                                                             <span className="txns">{trade.soldTxns} txns</span>
+                                                        </div>
+                                                        <div className={`trade-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}>
+                                                            {trade.pnl >= 0 ? '+' : ''}
+                                                            {monitorCurrency === 'USD' ? '$' : ''}
+                                                            {formatMonitorValue(trade.pnl, 3)}
+                                                            {monitorCurrency === 'MON' ? ' MON' : ''}
+                                                        </div>
+                                                        <div className={`trade-remaining ${isBlurred ? 'blurred' : ''}`}>
+                                                            {monitorCurrency === 'USD' ? '$' : ''}
+                                                            {formatMonitorValue(trade.remaining, 0)}
+                                                            {monitorCurrency === 'MON' ? ' MON' : ''}
                                                         </div>
                                                         <div className={`trade-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}>
                                                             +${trade.pnl.toFixed(3)}
@@ -1250,7 +1352,12 @@
                                     <path d="M3 6h18M7 12h10M10 18h4"/> 
                                 </svg>
                             </button>
-                            <button className="tracker-header-button">USD $</button>
+                            <button 
+                                className="tracker-header-button"
+                                onClick={() => setMonitorCurrency(prev => prev === 'USD' ? 'MON' : 'USD')}
+                            >
+                                {monitorCurrency === 'USD' ? 'USD $' : 'MON'}
+                            </button>
                             <button className="tracker-header-button">P1</button>
                             <button className="tracker-header-button">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1342,274 +1449,11 @@
                 )}
 
                 {showFiltersPopup && (
-                    <div className="live-trades-filters-backdrop" onClick={() => setShowFiltersPopup(false)}>
-                    <div className="live-trades-filters-container" onClick={(e) => e.stopPropagation()}>
-                        <div className="live-trades-filters-header">
-                        <h3 className="live-trades-filters-title">Live Trades Filters</h3>
-                        <button className="live-trades-filters-close" onClick={() => setShowFiltersPopup(false)}>
-                            <img src={closebutton} className="close-button-icon" alt="Close" />
-                        </button>
-                        </div>
-
-                        <div className="live-trades-filters-content">
-                        <div className="live-trades-filters-section">
-                            <h4 className="live-trades-filters-section-title">Transaction Types</h4>
-                            
-                            <div className="live-trades-filters-checkboxes">
-                            <label className="live-trades-filters-checkbox-label">
-                                <input
-                                type="checkbox"
-                                checked={activeFilters.transactionTypes.buyMore}
-                                onChange={() => setActiveFilters(prev => ({
-                                    ...prev,
-                                    transactionTypes: {
-                                    ...prev.transactionTypes,
-                                    buyMore: !prev.transactionTypes.buyMore,
-                                    },
-                                }))}
-                                className="live-trades-filters-checkbox"
-                                />
-                                <span className="live-trades-filters-checkbox-text">Buy More</span>
-                            </label>
-
-                            <label className="live-trades-filters-checkbox-label">
-                                <input
-                                type="checkbox"
-                                checked={activeFilters.transactionTypes.firstBuy}
-                                onChange={() => setActiveFilters(prev => ({
-                                    ...prev,
-                                    transactionTypes: {
-                                    ...prev.transactionTypes,
-                                    firstBuy: !prev.transactionTypes.firstBuy,
-                                    },
-                                }))}
-                                className="live-trades-filters-checkbox"
-                                />
-                                <span className="live-trades-filters-checkbox-text">First Buy</span>
-                            </label>
-
-                            <label className="live-trades-filters-checkbox-label">
-                                <input
-                                type="checkbox"
-                                checked={activeFilters.transactionTypes.sellPartial}
-                                onChange={() => setActiveFilters(prev => ({
-                                    ...prev,
-                                    transactionTypes: {
-                                    ...prev.transactionTypes,
-                                    sellPartial: !prev.transactionTypes.sellPartial,
-                                    },
-                                }))}
-                                className="live-trades-filters-checkbox"
-                                />
-                                <span className="live-trades-filters-checkbox-text">Sell Partial</span>
-                            </label>
-
-                            <label className="live-trades-filters-checkbox-label">
-                                <input
-                                type="checkbox"
-                                checked={activeFilters.transactionTypes.sellAll}
-                                onChange={() => setActiveFilters(prev => ({
-                                    ...prev,
-                                    transactionTypes: {
-                                    ...prev.transactionTypes,
-                                    sellAll: !prev.transactionTypes.sellAll,
-                                    },
-                                }))}
-                                className="live-trades-filters-checkbox"
-                                />
-                                <span className="live-trades-filters-checkbox-text">Sell All</span>
-                            </label>
-
-                            <label className="live-trades-filters-checkbox-label">
-                                <input
-                                type="checkbox"
-                                checked={activeFilters.transactionTypes.addLiquidity}
-                                onChange={() => setActiveFilters(prev => ({
-                                    ...prev,
-                                    transactionTypes: {
-                                    ...prev.transactionTypes,
-                                    addLiquidity: !prev.transactionTypes.addLiquidity,
-                                    },
-                                }))}
-                                className="live-trades-filters-checkbox"
-                                />
-                                <span className="live-trades-filters-checkbox-text">Add Liquidity</span>
-                            </label>
-
-                            <label className="live-trades-filters-checkbox-label">
-                                <input
-                                type="checkbox"
-                                checked={activeFilters.transactionTypes.removeLiquidity}
-                                onChange={() => setActiveFilters(prev => ({
-                                    ...prev,
-                                    transactionTypes: {
-                                    ...prev.transactionTypes,
-                                    removeLiquidity: !prev.transactionTypes.removeLiquidity,
-                                    },
-                                }))}
-                                className="live-trades-filters-checkbox"
-                                />
-                                <span className="live-trades-filters-checkbox-text">Remove Liquidity</span>
-                            </label>
-                            </div>
-                        </div>
-
-                        <div className="live-trades-filters-section">
-                            <h4 className="live-trades-filters-section-title">Market Cap (USD)</h4>
-                            <div className="live-trades-filters-range">
-                            <div className="live-trades-filters-input-wrapper">
-                                <input
-                                type="text"
-                                placeholder="Min"
-                                value={activeFilters.marketCap.min}
-                                onChange={(e) => setActiveFilters(prev => ({
-                                    ...prev,
-                                    marketCap: {
-                                    ...prev.marketCap,
-                                    min: e.target.value,
-                                    },
-                                }))}
-                                className="live-trades-filters-input"
-                                />
-                                <span className="live-trades-filters-input-suffix">USD</span>
-                            </div>
-                            <div className="live-trades-filters-input-wrapper">
-                                <input
-                                type="text"
-                                placeholder="Max"
-                                value={activeFilters.marketCap.max}
-                                onChange={(e) => setActiveFilters(prev => ({
-                                    ...prev,
-                                    marketCap: {
-                                    ...prev.marketCap,
-                                    max: e.target.value,
-                                    },
-                                }))}
-                                className="live-trades-filters-input"
-                                />
-                                <span className="live-trades-filters-input-suffix">USD</span>
-                            </div>
-                            </div>
-                        </div>
-
-                        <div className="live-trades-filters-section">
-                            <h4 className="live-trades-filters-section-title">Transaction Amount (SOL)</h4>
-                            <div className="live-trades-filters-range">
-                            <div className="live-trades-filters-input-wrapper">
-                                <input
-                                type="text"
-                                placeholder="Min"
-                                value={activeFilters.transactionAmount.min}
-                                onChange={(e) => setActiveFilters(prev => ({
-                                    ...prev,
-                                    transactionAmount: {
-                                    ...prev.transactionAmount,
-                                    min: e.target.value,
-                                    },
-                                }))}
-                                className="live-trades-filters-input"
-                                />
-                                <span className="live-trades-filters-input-suffix">SOL</span>
-                            </div>
-                            <div className="live-trades-filters-input-wrapper">
-                                <input
-                                type="text"
-                                placeholder="Max"
-                                value={activeFilters.transactionAmount.max}
-                                onChange={(e) => setActiveFilters(prev => ({
-                                    ...prev,
-                                    transactionAmount: {
-                                    ...prev.transactionAmount,
-                                    max: e.target.value,
-                                    },
-                                }))}
-                                className="live-trades-filters-input"
-                                />
-                                <span className="live-trades-filters-input-suffix">SOL</span>
-                            </div>
-                            </div>
-                        </div>
-
-                        <div className="live-trades-filters-section">
-                            <h4 className="live-trades-filters-section-title">Token Age (Minutes)</h4>
-                            <div className="live-trades-filters-range">
-                            <div className="live-trades-filters-input-wrapper">
-                                <input
-                                type="text"
-                                placeholder="Min"
-                                value={activeFilters.tokenAge.min}
-                                onChange={(e) => setActiveFilters(prev => ({
-                                    ...prev,
-                                    tokenAge: {
-                                    ...prev.tokenAge,
-                                    min: e.target.value,
-                                    },
-                                }))}
-                                className="live-trades-filters-input"
-                                />
-                                <span className="live-trades-filters-input-suffix">min</span>
-                            </div>
-                            <div className="live-trades-filters-input-wrapper">
-                                <input
-                                type="text"
-                                placeholder="Max"
-                                value={activeFilters.tokenAge.max}
-                                onChange={(e) => setActiveFilters(prev => ({
-                                    ...prev,
-                                    tokenAge: {
-                                    ...prev.tokenAge,
-                                    max: e.target.value,
-                                    },
-                                }))}
-                                className="live-trades-filters-input"
-                                />
-                                <span className="live-trades-filters-input-suffix">min</span>
-                            </div>
-                            </div>
-                        </div>
-                        </div>
-
-                        <div className="live-trades-filters-footer">
-                        <button className="live-trades-filters-reset-button" onClick={() => setActiveFilters({
-                            transactionTypes: {
-                            buyMore: true,
-                            firstBuy: true,
-                            sellPartial: true,
-                            sellAll: true,
-                            addLiquidity: true,
-                            removeLiquidity: true,
-                            },
-                            marketCap: {
-                            min: '',
-                            max: '',
-                            },
-                            transactionAmount: {
-                            min: '',
-                            max: '',
-                            },
-                            tokenAge: {
-                            min: '',
-                            max: '',
-                            },
-                        })}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                            <path d="M21 3v5h-5"/>
-                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                            <path d="M3 21v-5h5"/>
-                            </svg>
-                        </button>
-                        <button className="live-trades-filters-apply-button" onClick={() => {
-                            if (externalOnApplyFilters) {
-                            externalOnApplyFilters(activeFilters);
-                            }
-                            setShowFiltersPopup(false);
-                        }}>
-                            Apply Filters
-                        </button>
-                        </div>
-                    </div>
-                    </div>
+                    <LiveTradesFiltersPopup
+                        onClose={() => setShowFiltersPopup(false)}
+                        onApply={handleApplyFilters}
+                        initialFilters={activeFilters}
+                    />
                 )}
 
                 {/* Delete Confirmation Modal */}
