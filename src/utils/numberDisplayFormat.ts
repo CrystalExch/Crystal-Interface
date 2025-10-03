@@ -120,7 +120,6 @@ export const formatCommas = (value: string) => {
     : formattedInteger;
 };
 
-export function formatRound(num: number, decimals: number): string {
-  const temp = num.toFixed(decimals);
-  return formatCommas(temp);
+export const formatValue = (value: string, toSig: boolean = false, toSubscript: boolean = false, toCommas: boolean = true): string => {
+
 }
