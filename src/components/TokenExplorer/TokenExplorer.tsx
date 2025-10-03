@@ -61,7 +61,6 @@ export interface Token {
   volume24h: number;
   holders: number;
   proTraders: number;
-  kolTraders: number;
   sniperHolding: number;
   devHolding: number;
   bundleHolding: number;
@@ -111,7 +110,6 @@ interface DisplaySettings {
     socials: boolean;
     holders: boolean;
     proTraders: boolean;
-    kols: boolean;
     devMigrations: boolean;
     top10Holders: boolean;
     devHolding: boolean;
@@ -201,7 +199,6 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
     socials: true,
     holders: true,
     proTraders: true,
-    kols: true,
     devMigrations: false,
     top10Holders: true,
     devHolding: true,
@@ -2167,8 +2164,8 @@ const TokenRow = React.memo<{
   }, [hoveredToken, token.id, updateBondingPopupPosition]);
 
   const totalTraders = useMemo(
-    () => token.holders + token.proTraders + token.kolTraders,
-    [token.holders, token.proTraders, token.kolTraders],
+    () => token.holders + token.proTraders,
+    [token.holders, token.proTraders],
   );
 
   const showBonding =
@@ -2527,7 +2524,7 @@ const TokenRow = React.memo<{
                   </Tooltip>
                 )}
 
-                {displaySettings.visibleRows.kols && (
+                {displaySettings.visibleRows.devMigrations && (
                   <Tooltip content="Dev Migrations ">
                     <div className="explorer-stat-item">
                       <svg
@@ -3912,13 +3909,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         t.proTraders < +fil.proTradersMin
       )
         return false;
-      if (
-        fil.kolTradersMin !== undefined &&
-        fil.kolTradersMin !== '' &&
-        t.kolTraders < +fil.kolTradersMin
-      )
-        return false;
-
       return true;
     });
   }, []);
