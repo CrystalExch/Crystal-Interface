@@ -2582,6 +2582,9 @@
   margin-top: 10px;
   padding: 0 10px;
 }
+.extras-display-section {
+  margin-top: 10px;
+}
 
 .display-section:last-child {
   margin-bottom: 0;
@@ -3826,35 +3829,13 @@
 }
 
 .second-quickbuy-controls {
-  border-top: 1px solid rgba(179, 184, 249, 0.1);
-  margin-top: 16px;
-  padding-top: 16px;
-}
-
-.color-input-container {
-  align-items: center;
   display: flex;
-  gap: 4px;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
 }
 
-.color-input {
-  background: transparent;
-  border: 1.5px solid rgba(179, 184, 249, 0.2);
-  border-radius: 6px;
-  cursor: pointer;
-  height: 30px;
-  transition: all 0.2s ease;
-  width: 40px;
-}
 
-.color-input:hover {
-  border-color: rgba(179, 184, 249, 0.4);
-}
-
-.color-label {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.85rem;
-}
 
 /* Second Quick Buy Button */
 .explorer-quick-buy-btn.second-button {
@@ -4120,4 +4101,150 @@
 
 .explorer-image-preview * {
   pointer-events: none;
+}
+
+.explorer-quickbuy-container-second {
+  align-items: center;
+  border: 1px solid rgba(179, 184, 249, .12);
+  border-radius: 20px;
+  display: flex;
+  gap: .3rem;
+  height: 32px;
+  padding: 0 .5rem;
+  padding-right: 0.15rem;
+  position: relative;
+  font-size: 0.85rem;
+}
+
+
+.explorer-second-quickbuy-label{
+  font-size: 0.9rem;
+  color: #ffffff98;
+  margin-right: 5px;
+}
+.explorer-quickbuy-input-second {
+  background: 0 0;
+  border: none;
+  color: #ffffffbd;
+  flex: 1;
+  font-size: .85rem;
+  letter-spacing: -.3px;
+  min-width: 0;
+  outline: 0;
+  transform: scaleX(1.1);
+}
+
+.explorer-quickbuy-input-second::-moz-placeholder {
+  color: #ffffff4d
+}
+
+.explorer-quickbuy-input-second::placeholder {
+  color: #ffffff4d
+}
+.explorer-preset-pill-second {
+  align-items: center;
+  border: none;
+  border-radius: 3px;
+  color: #7f808d;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.8rem;
+  justify-content: center;
+  min-width: 20px;
+  outline: none;
+  padding: 1.5px 3px;
+  transition: all 0.2s ease;
+}
+
+.explorer-preset-pill-second:last-child {
+  border-radius: 0 20px 20px 0px;
+  margin-right: 0;
+  padding-right: 5px;
+}
+
+.explorer-preset-pill-second:hover {
+  background-color: #7f808d17;
+}
+
+.explorer-preset-pill-second.active {
+  color: #d8dcff;
+}
+
+.explorer-preset-pill-second.active:hover {
+  background-color: #9fa5f525;
+}
+
+.color-input-container {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  position: relative;
+  border: 1px solid rgba(179, 184, 249, .12);
+  padding: 0 .5rem;
+  padding-right: 0.15rem;
+  border-radius: 20px;
+  height: 28px;
+  width: 100%;
+}
+
+.color-preview {
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.quickbuy-hex-input {
+  background: 0 0;
+  border: none;
+  color: #ffffffbd;
+  flex: 1;
+  font-size: .85rem;
+  letter-spacing: -.3px;
+  min-width: 0;
+  outline: 0;
+  height: 28px;
+  padding: 0 6px;
+  text-transform: uppercase;
+}
+
+.hex-input::placeholder {
+  color: #ffffff4d;
+}
+
+.hex-input::-moz-placeholder {
+  color: #ffffff4d;
+}
+
+.hex-input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.refresh-button {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+  padding: 0;
+  height: 20px;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.refresh-button:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.refresh-button svg {
+  width: 14px;
+  height: 14px;
 }
