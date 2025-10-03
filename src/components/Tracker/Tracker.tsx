@@ -8,7 +8,8 @@
     import trash from '../../assets/trash.svg';
     import { settings } from '../../settings';
     import ImportWalletsPopup from './ImportWalletsPopup';
-    import LiveTradesFiltersPopup from './LiveTradesFiltersPopup/LiveTradesFIltersPopup';
+    import MonitorFiltersPopup, { MonitorFilterState } from './MonitorFiltersPopup/MonitorFiltersPopup';
+    import settingsicon from '../../assets/settings.svg';
     import './Tracker.css';
     'src/assets/settings'
 
@@ -190,6 +191,22 @@
     const Tracker: React.FC<TrackerProps> = ({ isBlurred, setpopup, onApplyFilters: externalOnApplyFilters, activeFilters: externalActiveFilters}) => {
         const [walletSortField, setWalletSortField] = useState<'balance' | 'lastActive' | null>(null);
         const [walletSortDirection, setWalletSortDirection] = useState<SortDirection>('desc');
+        const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
+        const [monitorFilters, setMonitorFilters] = useState<MonitorFilterState>({
+            general: {
+                lastTransaction: '',
+                tokenAgeMin: '',
+                tokenAgeMax: '',
+            },
+            market: {
+                marketCapMin: '',
+                marketCapMax: '',
+                liquidityMin: '',
+                liquidityMax: '',
+                holdersMin: '',
+                holdersMax: '',
+            },
+        });
 
         const [tradeSortField, setTradeSortField] = useState<'dateCreated' | 'amount' | 'marketCap' | null>(null);
         const [tradeSortDirection, setTradeSortDirection] = useState<SortDirection>('desc');
@@ -724,6 +741,10 @@
                 externalOnApplyFilters(filters);
             }
         };
+
+        const handleApplyMonitorFilters = (filters: MonitorFilterState) => {
+            setMonitorFilters(filters);
+        };
         
 
         const renderWalletItem = (wallet: TrackedWallet) => (
@@ -1185,10 +1206,11 @@
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
-                            <button className="tracker-header-button" onClick={() => setShowFiltersPopup(true)}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M3 6h18M7 12h10M10 18h4"/>
-                                </svg>
+                            <button className="tracker-header-button" onClick={() => setpopup(33)}>
+                                <img
+                                    className="tracker-settings-image"
+                                    src={settingsicon}
+                                />
                             </button>
                             <button className="tracker-header-button" onClick={() => setShowFiltersPopup(true)}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1218,14 +1240,14 @@
                                 />
                             </div>
                             <button className="tracker-header-button">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M3 6h18M7 12h10M10 18h4"/>
-                                </svg>
+                                <img
+                                    className="tracker-settings-image"
+                                    src={settingsicon}
+                                />
                             </button>
-                            <button className="tracker-header-button">
+                            <button className="tracker-header-button" onClick={() => setShowMonitorFiltersPopup(true)}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <circle cx="11" cy="11" r="8"/>
-                                    <path d="m21 21-4.35-4.35"/>
+                                    <path d="M3 6h18M7 12h10M10 18h4"/> 
                                 </svg>
                             </button>
                             <button className="tracker-header-button">USD $</button>
@@ -1625,11 +1647,11 @@
                     />
                 )}
 
-                {showFiltersPopup && (
-                    <LiveTradesFiltersPopup
-                        onClose={() => setShowImportPopup(false)}
-                        onApply={handleApplyFilters}
-                        initialFilters={activeFilters}
+                {showMonitorFiltersPopup && (
+                    <MonitorFiltersPopup
+                        onClose={() => setShowMonitorFiltersPopup(false)}
+                        onApply={handleApplyMonitorFilters}
+                        initialFilters={monitorFilters}
                     />
                 )}
             </div>
