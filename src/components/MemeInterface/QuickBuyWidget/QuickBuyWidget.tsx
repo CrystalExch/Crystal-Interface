@@ -1065,13 +1065,15 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     if (!isFinite(totalMon) || totalMon <= 0) return;
     const totalWei = BigInt(Math.round(totalMon * 1e18));
 
-    const targets: string[] =
-      selectedWallets.size > 0
-        ? Array.from(selectedWallets)
-        : (account?.address ? [account.address] : []);
-
+    const targets: string[] = Array.from(selectedWallets);
     if (targets.length === 0) {
-      setpopup?.(4);
+      const txId = `quickbuy-error-${Date.now()}`;
+      updatePopup?.(txId, {
+        title: 'Insufficient Balance',
+        subtitle: 'No wallets selected with funds to use',
+        variant: 'error',
+        isLoading: false,
+      });
       return;
     }
 
@@ -1165,14 +1167,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       ).length;
 
       terminalRefetch();
+      const totalMonBought = Number(totalWei) / 1e18;
       updatePopup?.(txId, {
-        title: 'Batch buy completed',
-        subtitle:
-          `Succeeded: ${successfulTransfers}/${plan.filter(p => p.amount > 0n).length}` +
-          (remaining > 0n ? ` • Remaining unspent: ${Number(remaining) / 1e18} MON` : ''),
+        title: `Bought ${totalMonBought} MON Worth`,
+        subtitle: `Distributed across ${successfulTransfers} wallet${successfulTransfers !== 1 ? 's' : ''}`,
         variant: 'success',
         isLoading: false,
       });
+
     } catch (error: any) {
       updatePopup?.(txId, {
         title: 'Batch buy failed',
@@ -1194,21 +1196,23 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       setChain?.();
       return;
     }
-
-    const targets: string[] =
-      selectedWallets.size > 0
-        ? Array.from(selectedWallets)
-        : (account?.address ? [account.address] : []);
-
+    const targets: string[] = Array.from(selectedWallets);
     if (targets.length === 0) {
-      setpopup?.(4);
+      const txId = `quicksell-error-${Date.now()}`;
+      updatePopup?.(txId, {
+        title: 'Insufficient Balance',
+        subtitle: 'No wallets selected with tokens to sell',
+        variant: 'error',
+        isLoading: false,
+      });
       return;
     }
+
 
     const txId = `quicksell-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     showLoadingPopup?.(txId, {
       title: 'Sending batch sell...',
-      subtitle: `Selling ${sellMode === 'percent' ? value + '%' : value + ' MON'} of ${tokenSymbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
+      subtitle: `Selling ${sellMode === 'percent' ? value + '' : value + ' MON'} of ${tokenSymbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
       amount: value,
       amountUnit: sellMode === 'percent' ? '%' : 'MON',
       tokenImage,
@@ -1312,15 +1316,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         result.status === 'fulfilled' && result.value === true
       ).length;
       terminalRefetch()
+      const sellLabel = sellMode === 'percent' ? `${value} of Position` : `${value} MON`;
       updatePopup?.(txId, {
-        title: 'Batch sell completed',
-        subtitle:
-          `Succeeded: ${successfulTransfers}/${targets.length}` +
-          (skippedZero ? ` • Skipped (zero) : ${skippedZero}` : '') +
-          (skippedInsufficient ? ` • Skipped (insufficient/keys): ${skippedInsufficient}` : ''),
+        title: `Sold ${sellLabel}`,
+        subtitle: `Across ${successfulTransfers} wallet${successfulTransfers !== 1 ? 's' : ''}`,
         variant: 'success',
         isLoading: false,
       });
+
     } catch (error: any) {
       updatePopup?.(txId, {
         title: 'Batch sell failed',
