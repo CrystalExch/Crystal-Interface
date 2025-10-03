@@ -1968,16 +1968,16 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
     return null;
   }, [markets, tradesByMarket]);
 
-const saveSubWallets = useCallback((wallets: { address: string; privateKey: string; }[] | ((prevState: { address: string; privateKey: string; }[]) => { address: string; privateKey: string; }[])) => {
-  setSubWallets((prevWallets) => {
-    const newWallets = typeof wallets === 'function' ? wallets(prevWallets) : wallets;
-    
-    const deduplicated = deduplicateWallets(newWallets);
-    
-    localStorage.setItem('crystal_sub_wallets', JSON.stringify(deduplicated));
-    return deduplicated;
-  });
-}, []);
+  const saveSubWallets = useCallback((wallets: { address: string; privateKey: string; }[] | ((prevState: { address: string; privateKey: string; }[]) => { address: string; privateKey: string; }[])) => {
+    setSubWallets((prevWallets) => {
+      const newWallets = typeof wallets === 'function' ? wallets(prevWallets) : wallets;
+      
+      const deduplicated = deduplicateWallets(newWallets);
+      
+      localStorage.setItem('crystal_sub_wallets', JSON.stringify(deduplicated));
+      return deduplicated;
+    });
+  }, []);
   // on market select
   const onMarketSelect = useCallback((market: { quoteAddress: any; baseAddress: any; }) => {
     if (!['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
@@ -3018,13 +3018,15 @@ const saveSubWallets = useCallback((wallets: { address: string; privateKey: stri
   
     return { bids, asks };
   }
-useEffect(() => {
-  const cleaned = deduplicateWallets(subWallets);
-  if (cleaned.length !== subWallets.length) {
-    console.log(`Removed ${subWallets.length - cleaned.length} duplicate wallets on startup`);
-    saveSubWallets(cleaned);
-  }
-}, []); 
+
+  useEffect(() => {
+    const cleaned = deduplicateWallets(subWallets);
+    if (cleaned.length !== subWallets.length) {
+      console.log(`Removed ${subWallets.length - cleaned.length} duplicate wallets on startup`);
+      saveSubWallets(cleaned);
+    }
+  }, []); 
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isVertDragging) return;
@@ -3421,7 +3423,7 @@ useEffect(() => {
         let temphighestBid = orderdata[2] < ammPrice ? ammPrice : orderdata[2]
         sethighestBid(temphighestBid || BigInt(0));
         temphighestBid = Number(temphighestBid);
-        ammPrice = orderdata[1] == 0n ? 0 : ((BigInt(orderdata[0]) * activeMarket.scaleFactor * 10000n * activeMarket.makerRebate) / (BigInt(orderdata[1]) * 9975n * 100000n));
+        ammPrice = orderdata[1] == 0n ? Infinity : ((BigInt(orderdata[0]) * activeMarket.scaleFactor * 10000n * activeMarket.makerRebate) / (BigInt(orderdata[1]) * 9975n * 100000n));
         let templowestAsk = orderdata[3] > ammPrice ? ammPrice : orderdata[3]
         setlowestAsk(templowestAsk || BigInt(0));
         templowestAsk = Number(templowestAsk);
@@ -3470,6 +3472,7 @@ useEffect(() => {
 
             temphighestBid /= Number(activeMarket.priceFactor)
             templowestAsk /= Number(activeMarket.priceFactor)
+
             const spread = {
               spread:
                 temphighestBid !== undefined && templowestAsk !== undefined
@@ -3964,9 +3967,9 @@ useEffect(() => {
         const hash = trade[5];
         return [
           isBuy,
-          formatCommas(
-            price.toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(price ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
-          ),
+          activeMarket?.marketType != 0 ? formatSig(
+            price.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor))))
+          ) : formatCommas(price.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor))))),
           formatSubscript(customRound(tradeValue, 3)),
           time,
           hash,
@@ -4382,9 +4385,9 @@ useEffect(() => {
                       volume: formatCommas(
                         (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
                       ),
-                      currentPrice: formatSig(
+                      currentPrice: market.marketType != 0 ? formatSig(
                         (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
-                      ),
+                      ) : (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))),
                       priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
                       priceChangeAmount: currentPriceRaw - firstKlineOpen,
                       ...(high != null && {
@@ -5256,9 +5259,9 @@ useEffect(() => {
                         volume: formatCommas(
                           (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
                         ),
-                        currentPrice: formatSig(
+                        currentPrice: market.marketType != 0 ? formatSig(
                           (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
-                        ),
+                        ) : (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))),
                         priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
                         priceChangeAmount: currentPriceRaw - firstKlineOpen,
                         ...(high != null && {
@@ -5916,7 +5919,7 @@ useEffect(() => {
             }
           }
         }
-
+        console.log(rows)
         settradesByMarket(temptradesByMarket);
         setMarketsData(rows);
         settradesloading(false);

@@ -506,18 +506,15 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         'volume.volume.color.1': 'rgba(131, 251, 145, 0.4)',
         'volume.volume.transparency': 10,
       },
-      custom_formatters: activeMarketRef.current?.marketType != null &&
-        activeMarketRef.current?.marketType !== 0
-        ? {
-            priceFormatterFactory: (_symbolInfo: any, _minTick: number) => {
-              return {
-                format: (price: string) => {
-                  return formatSig(price);
-                },
-              };
+      custom_formatters: {
+        priceFormatterFactory: (_symbolInfo: any, _minTick: number) => {
+          return {
+            format: (price: number) => {
+              return activeMarketRef.current?.marketType != 0 ? formatSig(price.toFixed(Math.floor(Math.log10(Number(activeMarketRef.current?.priceFactor))))) : formatDisplay(price.toFixed(Math.floor(Math.log10(Number(activeMarketRef.current?.priceFactor)))));
             },
-          }
-        : undefined,
+          };
+        },
+      },
       save_load_adapter: localAdapterRef.current,
 
       datafeed: {
