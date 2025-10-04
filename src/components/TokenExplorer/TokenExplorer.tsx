@@ -100,6 +100,7 @@ interface DisplaySettings {
   spacedTables: boolean;
   colorRows: boolean;
   columnOrder: Array<ColumnKey>;
+  hiddenColumns?: Array<ColumnKey>;
   quickBuyClickBehavior: 'nothing' | 'openPage' | 'openNewTab';
   secondQuickBuyEnabled: boolean;
   secondQuickBuyColor: string;
@@ -189,6 +190,7 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
   spacedTables: false,
   colorRows: false,
   columnOrder: ['new', 'graduating', 'graduated'],
+  hiddenColumns: [],
   quickBuyClickBehavior: 'nothing',
   secondQuickBuyEnabled: false,
   secondQuickBuyColor: '#50f08dc0',
@@ -208,7 +210,7 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
     insiders: true,
     dexPaid: false,
   },
-  metricColoring: false,
+  metricColoring: true,
   metricColors: {
     marketCap: { range1: '#d8dcff', range2: '#eab308', range3: '#14b8a6' },
     volume: { range1: '#ffffff', range2: '#ffffff', range3: '#ffffff' },
@@ -227,50 +229,61 @@ const ALERT_DEFAULTS: AlertSettings = {
 };
 
 const BLACKLIST_DEFAULTS: BlacklistSettings = { items: [] };
-
-const getMetricColorClass = (
+const getMetricColorClasses = (
   token: Token | undefined,
   display: DisplaySettings,
 ) => {
   if (!token || !display?.metricColors || !display?.metricColoring) return null;
-  if (typeof token.marketCap !== 'number' || isNaN(token.marketCap))
-    return null;
 
-  if (token.marketCap < 30000) {
-    return {
-      class: 'market-cap-range1',
-      color: display.metricColors.marketCap.range1,
-    };
-  } else if (token.marketCap < 150000) {
-    return {
-      class: 'market-cap-range2',
-      color: display.metricColors.marketCap.range2,
-    };
-  } else {
-    return {
-      class: 'market-cap-range3',
-      color: display.metricColors.marketCap.range3,
-    };
+  const classes: string[] = [];
+  const cssVars: Record<string, string> = {};
+
+  if (typeof token.marketCap === 'number' && !isNaN(token.marketCap)) {
+    if (token.marketCap < 30000) {
+      classes.push('market-cap-range1');
+      cssVars['--metric-market-cap-range1'] = display.metricColors.marketCap.range1;
+    } else if (token.marketCap < 150000) {
+      classes.push('market-cap-range2');
+      cssVars['--metric-market-cap-range2'] = display.metricColors.marketCap.range2;
+    } else {
+      classes.push('market-cap-range3');
+      cssVars['--metric-market-cap-range3'] = display.metricColors.marketCap.range3;
+    }
   }
+
+  // Volume coloring
+  if (typeof token.volume24h === 'number' && !isNaN(token.volume24h)) {
+    if (token.volume24h < 1000) {
+      classes.push('volume-range1');
+      cssVars['--metric-volume-range1'] = display.metricColors.volume.range1;
+    } else if (token.volume24h < 2000) {
+      classes.push('volume-range2');
+      cssVars['--metric-volume-range2'] = display.metricColors.volume.range2;
+    } else {
+      classes.push('volume-range3');
+      cssVars['--metric-volume-range3'] = display.metricColors.volume.range3;
+    }
+  }
+
+  // Holders coloring
+  if (typeof token.holders === 'number' && !isNaN(token.holders)) {
+    if (token.holders < 10) {
+      classes.push('holders-range1');
+      cssVars['--metric-holders-range1'] = display.metricColors.holders.range1;
+    } else if (token.holders < 50) {
+      classes.push('holders-range2');
+      cssVars['--metric-holders-range2'] = display.metricColors.holders.range2;
+    } else {
+      classes.push('holders-range3');
+      cssVars['--metric-holders-range3'] = display.metricColors.holders.range3;
+    }
+  }
+
+  return classes.length > 0 ? { classes: classes.join(' '), cssVars } : null;
 };
 
 const hasMetricColoring = (displaySettings: DisplaySettings | undefined) => {
-  if (!displaySettings?.metricColoring || !displaySettings?.metricColors)
-    return false;
-  try {
-    return Object.values(displaySettings.metricColors).some(
-      (ranges) =>
-        ranges &&
-        Object.values(ranges).some(
-          (color) =>
-            color &&
-            typeof color === 'string' &&
-            color.toLowerCase() !== '#ffffff',
-        ),
-    );
-  } catch {
-    return false;
-  }
+  return displaySettings?.metricColoring === true;
 };
 
 const getBondingColorClass = (percentage: number) => {
@@ -597,7 +610,7 @@ const BlacklistPopup: React.FC<{
                   width="18"
                   height="18"
                   viewBox="0 0 30 30"
-                  fill="rgb(95, 99, 105)"
+                  fill="#7f808d"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
@@ -1294,14 +1307,21 @@ const DisplayDropdown: React.FC<{
       setDraggedIndex(null);
       setDragOverIndex(null);
     };
+    const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(
+      () => new Set(settings.hiddenColumns || [])
+    );
 
-    const handleHide = (e: React.MouseEvent, dropIndex: number) => {
+    const handleHide = (e: React.MouseEvent, column: ColumnKey) => {
       e.preventDefault();
-      if (dropIndex === null) return;
-      const newOrder = [...safeOrder];
-      newOrder.splice(dropIndex, 1);
-
-      onSettingsChange({ ...settings, columnOrder: newOrder });
+      e.stopPropagation();
+      const newHidden = new Set(hiddenColumns);
+      if (newHidden.has(column)) {
+        newHidden.delete(column);
+      } else {
+        newHidden.add(column);
+      }
+      setHiddenColumns(newHidden);
+      onSettingsChange({ ...settings, hiddenColumns: Array.from(newHidden) });
     };
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -1681,7 +1701,7 @@ const DisplayDropdown: React.FC<{
               {activeTab === 'metrics' && (
                 <div>
                   {(['marketCap', 'volume', 'holders'] as const).map((metric) => (
-                    <div className="display-section" key={metric}>
+                    <div className="metrics-display-section" key={metric}>
                       <h4 className="display-section-title">
                         {metric === 'marketCap'
                           ? 'Market Cap'
@@ -1694,7 +1714,7 @@ const DisplayDropdown: React.FC<{
                           (range, idx) => (
                             <div className="metric-color-option">
                               <div className="metric-color-item" key={range}>
-                                <div className="metric-value">
+                                <div className="display-metric-value">
                                   {metric === 'marketCap'
                                     ? idx === 0
                                       ? '30000'
@@ -1831,13 +1851,13 @@ const DisplayDropdown: React.FC<{
                       {safeOrder.map((column, index) => (
                         <div
                           key={column}
-                          className="column-drag-item"
+                          className={`column-drag-item ${hiddenColumns.has(column) ? 'column-hidden' : ''} ${dragOverIndex === index && draggedIndex !== index ? 'drag-over' : ''}`}
                           draggable
                           onDragStart={(e) => handleDragStart(e, index)}
                           onDragOver={(e) => handleDragOver(e, index)}
                           onDrop={(e) => handleDrop(e, index)}
                           onDragEnd={handleDragEnd}
-                          onClick={(e) => handleHide(e, index)}
+                          onClick={(e) => handleHide(e, column)}
                         >
                           {column === 'new'
                             ? 'New Pairs'
@@ -2072,7 +2092,7 @@ type Action =
   | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
   | { type: 'HIDE_TOKEN'; id: string }
   | { type: 'SHOW_TOKEN'; id: string }
-  | { type: 'SET_LOADING'; id: string; loading: boolean };
+  | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' };
 
 const initialState: State = {
   tokensByStatus: { new: [], graduating: [], graduated: [] },
@@ -2132,7 +2152,8 @@ function reducer(state: State, action: Action): State {
     }
     case 'SET_LOADING': {
       const l = new Set(state.loading);
-      action.loading ? l.add(action.id) : l.delete(action.id);
+      const key = action.buttonType ? `${action.id}-${action.buttonType}` : action.id;
+      action.loading ? l.add(key) : l.delete(key);
       return { ...state, loading: l };
     }
     case 'SHOW_TOKEN': {
@@ -2144,13 +2165,14 @@ function reducer(state: State, action: Action): State {
       return state;
   }
 }
-
 const TokenRow = React.memo<{
   token: Token;
   quickbuyAmount: string;
+  quickbuyAmountSecond: string;
   onHideToken: (tokenId: string) => void;
   onBlacklistToken: (token: Token) => void;
-  isLoading: boolean;
+  isLoadingPrimary: boolean;
+  isLoadingSecondary: boolean;
   hoveredToken: string | null;
   hoveredImage: string | null;
   onTokenHover: (id: string) => void;
@@ -2158,7 +2180,7 @@ const TokenRow = React.memo<{
   onImageHover: (tokenId: string) => void;
   onImageLeave: () => void;
   onTokenClick: (token: Token) => void;
-  onQuickBuy: (token: Token, amount: string) => void;
+  onQuickBuy: (token: Token, amount: string, buttonType: 'primary' | 'secondary') => void;
   onCopyToClipboard: (text: string) => void;
   displaySettings: DisplaySettings;
   isHidden: boolean;
@@ -2169,9 +2191,11 @@ const TokenRow = React.memo<{
   const {
     token,
     quickbuyAmount,
+    quickbuyAmountSecond,
     onHideToken,
     onBlacklistToken,
-    isLoading,
+    isLoadingPrimary,
+    isLoadingSecondary,
     hoveredToken,
     hoveredImage,
     onTokenHover,
@@ -2349,12 +2373,10 @@ const TokenRow = React.memo<{
     [token.sellTransactions, totalTransactions],
   );
 
-  const metricInfo = hasMetricColoring(displaySettings)
-    ? getMetricColorClass(token, displaySettings)
+  const metricData = hasMetricColoring(displaySettings)
+    ? getMetricColorClasses(token, displaySettings)
     : null;
-  const cssVariables: CSSVars = metricInfo
-    ? { [`--metric-${metricInfo.class}`]: metricInfo.color }
-    : {};
+  const cssVariables: CSSVars = metricData?.cssVars || {};
 
   return (
     <>
@@ -2363,7 +2385,7 @@ const TokenRow = React.memo<{
         className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${displaySettings.colorRows && token.status !== 'graduated'
           ? `colored-row ${getBondingColorClass(bondingPercentage)}`
           : ''
-          } ${metricInfo ? `metric-colored ${metricInfo.class}` : ''} ${token.status === 'graduated' ? 'graduated' : ''}`}
+          } ${metricData ? `metric-colored ${metricData.classes}` : ''} ${token.status === 'graduated' ? 'graduated' : ''}`}
         style={cssVariables}
         onMouseEnter={() => onTokenHover(token.id)}
         onMouseLeave={onTokenLeave}
@@ -2493,9 +2515,7 @@ const TokenRow = React.memo<{
                       style={{
                         width: '220px',
                         height: '220px',
-                        borderRadius: displaySettings.squareImages
-                          ? '6px'
-                          : '50%',
+                        borderRadius: '6px',
                         objectFit: 'cover',
                         display: 'block',
                       }}
@@ -2748,6 +2768,35 @@ const TokenRow = React.memo<{
                 </div>
               </Tooltip>
             )}
+            {displaySettings.visibleRows.devHolding && (
+              <Tooltip content="Developer Holding">
+                <div className="explorer-holding-item">
+                  <svg
+                    className="holding-icon"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 30 30"
+                    fill={
+                      token.devHolding * 100 > 25 ? '#eb7070ff' : 'rgb(67, 254, 154)'
+                    }
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
+                  </svg>{' '}
+                  <span
+                    className="explorer-holding-value"
+                    style={{
+                      color:
+                        token.devHolding * 100 > 25
+                          ? '#eb7070ff'
+                          : 'rgb(67, 254, 154)',
+                    }}
+                  >
+                    {(token.devHolding * 100).toFixed(2)}%
+                  </span>
+                </div>
+              </Tooltip>
+            )}
             {displaySettings.visibleRows.snipers && (
               <Tooltip content="Sniper Holding">
                 <div className="explorer-holding-item">
@@ -2780,35 +2829,6 @@ const TokenRow = React.memo<{
               </Tooltip>
             )}
 
-            {displaySettings.visibleRows.devHolding && (
-              <Tooltip content="Developer Holding">
-                <div className="explorer-holding-item">
-                  <svg
-                    className="holding-icon"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 30 30"
-                    fill={
-                      token.devHolding * 100 > 25 ? '#eb7070ff' : 'rgb(67, 254, 154)'
-                    }
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
-                  </svg>{' '}
-                  <span
-                    className="explorer-holding-value"
-                    style={{
-                      color:
-                        token.devHolding * 100 > 25
-                          ? '#eb7070ff'
-                          : 'rgb(67, 254, 154)',
-                    }}
-                  >
-                    {(token.devHolding * 100).toFixed(2)}%
-                  </span>
-                </div>
-              </Tooltip>
-            )}
 
             {displaySettings.visibleRows.insiders && (
               <Tooltip content="Insider Holding">
@@ -2845,31 +2865,17 @@ const TokenRow = React.memo<{
         </div>
 
         <div
-          className={`explorer-third-row metrics-size-${displaySettings.metricSize} ${displaySettings.quickBuySize === 'large' ? 'large-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'mega' ? 'mega-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'ultra' ? `ultra-quickbuy-mode ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}` : ''}`}
+          className={`explorer-third-row metrics-size-${displaySettings.metricSize} ${displaySettings.quickBuySize === 'large' ? 'large-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'mega' ? 'mega-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'ultra' ? `ultra-quickbuy-mode ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}` : ''} ${displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled ? 'ultra-dual-buttons' : ''}`}
           onClick={
-            displaySettings.quickBuySize === 'ultra'
+            displaySettings.quickBuySize === 'ultra' && !displaySettings.secondQuickBuyEnabled
               ? (e) => {
                 e.stopPropagation();
-                onQuickBuy(token, quickbuyAmount);
+                onQuickBuy(token, quickbuyAmount, 'primary');
               }
               : undefined
           }
         >
           <div className="explorer-metrics-container">
-            {displaySettings.visibleRows.marketCap && (
-              <Tooltip content="Market Cap">
-                <div className="explorer-market-cap">
-                  <span className="mc-label">MC</span>
-                  <span className="explorer-market-cap">
-                    {formatPrice(
-                      token.marketCap * monUsdPrice,
-                      displaySettings.noDecimals,
-                    )}
-                  </span>
-                </div>
-              </Tooltip>
-            )}
-
             {displaySettings.visibleRows.volume && (
               <Tooltip content="Volume">
                 <div className="explorer-volume">
@@ -2883,6 +2889,21 @@ const TokenRow = React.memo<{
                 </div>
               </Tooltip>
             )}
+            {displaySettings.visibleRows.marketCap && (
+              <Tooltip content="Market Cap">
+                <div className="explorer-market-cap">
+                  <span className="mc-label">MC</span>
+                  <span className="mc-value">
+                    {formatPrice(
+                      token.marketCap * monUsdPrice,
+                      displaySettings.noDecimals,
+                    )}
+                  </span>
+                </div>
+              </Tooltip>
+            )}
+
+
           </div>
 
           <div className="explorer-third-row-section">
@@ -2949,9 +2970,8 @@ const TokenRow = React.memo<{
                 <button
                   className={buttonClass}
                   onClick={(e) => {
-                    if (displaySettings.quickBuySize !== 'ultra') {
+                    if (displaySettings.quickBuySize !== 'ultra' || displaySettings.secondQuickBuyEnabled) {
                       e.stopPropagation();
-
                       if (
                         displaySettings.quickBuyClickBehavior === 'openPage'
                       ) {
@@ -2961,13 +2981,13 @@ const TokenRow = React.memo<{
                       ) {
                         window.open(`/meme/${token.tokenAddress}`, '_blank');
                       } else {
-                        onQuickBuy(token, quickbuyAmount);
+                        onQuickBuy(token, quickbuyAmount, 'primary');
                       }
                     }
                   }}
-                  disabled={isLoading}
+                  disabled={isLoadingPrimary}
                 >
-                  {isLoading ? (
+                  {isLoadingPrimary ? (
                     <div className="quickbuy-loading-spinner" />
                   ) : (
                     <>
@@ -2992,11 +3012,11 @@ const TokenRow = React.memo<{
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onQuickBuy(token, quickbuyAmount);
+                  onQuickBuy(token, quickbuyAmountSecond, 'secondary');
                 }}
-                disabled={isLoading}
+                disabled={isLoadingSecondary}
               >
-                {isLoading ? (
+                {isLoadingSecondary ? (
                   <div className="quickbuy-loading-spinner" />
                 ) : (
                   <>
@@ -3004,7 +3024,7 @@ const TokenRow = React.memo<{
                       className="explorer-quick-buy-icon"
                       src={lightning}
                     />
-                    {quickbuyAmount} MON
+                    {quickbuyAmountSecond} MON
                   </>
                 )}
               </button>
@@ -3114,6 +3134,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             Array.isArray(parsed?.columnOrder) && parsed.columnOrder.length
               ? parsed.columnOrder
               : DISPLAY_DEFAULTS.columnOrder,
+          hiddenColumns: Array.isArray(parsed?.hiddenColumns)
+            ? parsed.hiddenColumns
+            : [],
           visibleRows: {
             ...DISPLAY_DEFAULTS.visibleRows,
             ...(parsed?.visibleRows || {}),
@@ -3636,12 +3659,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   }, []);
 
   const handleQuickBuy = useCallback(
-    async (token: Token, amt: string) => {
+    async (token: Token, amt: string, buttonType: 'primary' | 'secondary') => {
       const val = BigInt(amt || '0') * 10n ** 18n;
       if (val === 0n) return;
 
       const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      dispatch({ type: 'SET_LOADING', id: token.id, loading: true });
+      dispatch({ type: 'SET_LOADING', id: token.id, loading: true, buttonType });
 
       try {
         if (showLoadingPopup) {
@@ -3701,7 +3724,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           });
         }
       } finally {
-        dispatch({ type: 'SET_LOADING', id: token.id, loading: false });
+        dispatch({ type: 'SET_LOADING', id: token.id, loading: false, buttonType });
       }
     },
     [routerAddress, sendUserOperationAsync],
@@ -4159,6 +4182,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           >
             <Bell size={18} />
           </button>
+          
           <button
             className="alerts-popup-trigger"
             onClick={() => setShowBlacklistPopup(true)}
@@ -4168,7 +4192,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               width="18"
               height="18"
               viewBox="0 0 30 30"
-              fill="rgb(95, 99, 105)"
+              fill="#7f808d"
               xmlns="http://www.w3.org/2000/svg"
             >
               <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
@@ -4193,7 +4217,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         />
 
         <div className="explorer-columns">
-          {renderOrder.map((columnType) => (
+          {renderOrder.filter(col => !displaySettings.hiddenColumns?.includes(col)).map((columnType) => (
             <div
               key={columnType}
               className={`explorer-column ${activeMobileTab === columnType ? 'mobile-active' : ''}`}
@@ -4249,6 +4273,15 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           ))}
                         </div>
                       </div>
+                      
+                                {alertSettings.soundAlertsEnabled && (
+          <button
+            className="alerts-popup-trigger"
+            onClick={() => setShowAlertsPopup(true)}
+          >
+            <Bell size={18} />
+          </button>
+          )}
                       <button
                         className={`column-filter-icon ${appliedFilters?.new ? 'active' : ''}`}
                         onClick={() => onOpenFiltersForColumn('new')}
@@ -4323,9 +4356,11 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           key={t.id}
                           token={t}
                           quickbuyAmount={quickAmounts.new}
+                          quickbuyAmountSecond={quickAmountsSecond.new}
                           onHideToken={hideToken}
                           onBlacklistToken={handleBlacklistToken}
-                          isLoading={loading.has(t.id)}
+                          isLoadingPrimary={loading.has(`${t.id}-primary`)}
+                          isLoadingSecondary={loading.has(`${t.id}-secondary`)}
                           hoveredToken={hoveredToken}
                           hoveredImage={hoveredImage}
                           onTokenHover={handleTokenHover}
@@ -4399,6 +4434,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           ))}
                         </div>
                       </div>
+                                {alertSettings.soundAlertsEnabled && (
+          <button
+            className="alerts-popup-trigger"
+            onClick={() => setShowAlertsPopup(true)}
+          >
+            <Bell size={18} />
+          </button>
+          )}
                       <button
                         className={`column-filter-icon ${appliedFilters?.graduating ? 'active' : ''}`}
                         onClick={() => onOpenFiltersForColumn('graduating')}
@@ -4472,10 +4515,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                         <TokenRow
                           key={t.id}
                           token={t}
-                          quickbuyAmount={quickAmounts.graduating}
+                          quickbuyAmount={quickAmounts.new}
+                          quickbuyAmountSecond={quickAmountsSecond.new}
                           onHideToken={hideToken}
                           onBlacklistToken={handleBlacklistToken}
-                          isLoading={loading.has(t.id)}
+                          isLoadingPrimary={loading.has(`${t.id}-primary`)}
+                          isLoadingSecondary={loading.has(`${t.id}-secondary`)}
                           hoveredToken={hoveredToken}
                           hoveredImage={hoveredImage}
                           onTokenHover={handleTokenHover}
@@ -4549,6 +4594,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           ))}
                         </div>
                       </div>
+                                {alertSettings.soundAlertsEnabled && (
+          <button
+            className="alerts-popup-trigger"
+            onClick={() => setShowAlertsPopup(true)}
+          >
+            <Bell size={18} />
+          </button>
+          )}
                       <button
                         className={`column-filter-icon ${appliedFilters?.graduated ? 'active' : ''}`}
                         onClick={() => onOpenFiltersForColumn('graduated')}
@@ -4622,10 +4675,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                         <TokenRow
                           key={t.id}
                           token={t}
-                          quickbuyAmount={quickAmounts.graduated}
+                          quickbuyAmount={quickAmounts.new}
+                          quickbuyAmountSecond={quickAmountsSecond.new}
                           onHideToken={hideToken}
                           onBlacklistToken={handleBlacklistToken}
-                          isLoading={loading.has(t.id)}
+                          isLoadingPrimary={loading.has(`${t.id}-primary`)}
+                          isLoadingSecondary={loading.has(`${t.id}-secondary`)}
                           hoveredToken={hoveredToken}
                           hoveredImage={hoveredImage}
                           onTokenHover={handleTokenHover}

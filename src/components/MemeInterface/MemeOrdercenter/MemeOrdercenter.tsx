@@ -304,11 +304,11 @@ const SellPopup: React.FC<SellPopupProps> = ({
                   {sellSliderPercent}%
                 </div>
 
-                <div className="meme-balance-slider-marks">
+                <div className="oc-meme-balance-slider-marks">
                   {[0, 25, 50, 75, 100].map((markPercent) => (
                     <span
                       key={markPercent}
-                      className="meme-balance-slider-mark sell"
+                      className="oc-meme-balance-slider-mark sell"
                       data-active={sellSliderPercent >= markPercent}
                       data-percentage={markPercent}
                       onClick={() => handleMarkClick(markPercent)}

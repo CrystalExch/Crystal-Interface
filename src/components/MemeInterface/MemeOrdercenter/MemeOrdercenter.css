@@ -1222,7 +1222,7 @@
   visibility: visible;
 }
 
-.alerts-popup .meme-balance-slider-marks {
+.alerts-popup .oc-meme-balance-slider-marks {
   color: #ffffff7b;
   display: flex;
   font-size: 0.75rem;
@@ -1233,7 +1233,7 @@
   z-index: 1;
 }
 
-.alerts-popup .meme-balance-slider-mark {
+.alerts-popup .oc-meme-balance-slider-mark {
   background-color: black;
   border-radius: 4px;
   cursor: pointer;
@@ -1246,7 +1246,7 @@
 
 }
 
-.alerts-popup .meme-balance-slider-mark::before {
+.alerts-popup .oc-meme-balance-slider-mark::before {
   background-color: black;
   content: '';
   height: 4px;
@@ -1257,20 +1257,20 @@
   width: 5px;
 }
 
-.alerts-popup .meme-balance-slider-mark[data-percentage='0']::before,
-.alerts-popup .meme-balance-slider-mark[data-percentage='100']::before {
+.alerts-popup .oc-meme-balance-slider-mark[data-percentage='0']::before,
+.alerts-popup .oc-meme-balance-slider-mark[data-percentage='100']::before {
   display: none;
 }
 
-.alerts-popup .meme-balance-slider-mark:hover {
+.alerts-popup .oc-meme-balance-slider-mark:hover {
   color: #ffffff93;
 }
 
-.meme-balance-slider-mark.sell[data-active='true']:not(:first-child):not(:last-child)::before {
+.oc-meme-balance-slider-mark.sell[data-active='true']:not(:first-child):not(:last-child)::before {
   background-color: rgb(235, 112, 112) !important;
 }
 
-.meme-balance-slider-mark.sell[data-active='false']:not(:first-child):not(:last-child)::before {
+.oc-meme-balance-slider-mark.sell[data-active='false']:not(:first-child):not(:last-child)::before {
   background-color: rgb(6, 6, 6);
 }
 

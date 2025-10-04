@@ -1176,10 +1176,10 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
           <button
             className={`add-liquidity-button ${!account.connected ? 'disabled' : ''}`}
             onClick={() => {
-                  if (!account.connected) {
+                  if (account.connected) {
                     setShowAddLiquidity(true);
                   } else {
-                    setpopup(29); 
+                    setpopup(4); 
                   }
                 }}
                 disabled={!account.connected}

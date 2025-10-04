@@ -548,10 +548,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [similarTokens, setSimilarTokens] = useState<any[]>([]);
   const { activechain } = useSharedContext();
 
-
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
   const explorer = settings.chainConfig[activechain]?.explorer;
   const userAddr = address ?? account?.address ?? '';
+
+  const pushRealtimeTickRef = useRef<(p:number, v:number)=>void>(()=>{});
 
   useEffect(() => {
     if (editingPresetIndex !== null && presetInputRef.current) {
@@ -1059,63 +1060,42 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     return Number(balance) / 10 ** Number(decimals);
   }, [account?.address, walletTokenBalances, token.id, tokendict]);
 
-  const pushRealtimeTick = useCallback(
-    (lastPrice: number, volNative: number) => {
-      if (!lastPrice || lastPrice <= 0) return;
-      const resSecs = RESOLUTION_SECS[selectedInterval] ?? 60;
-      const now = Date.now();
-      const bucketMs = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
+  useEffect(() => { pushRealtimeTickRef.current = (lastPrice, volNative) => {
+    const sel = selectedInterval;
+    const resSecs = RESOLUTION_SECS[sel] ?? 60;
 
-      const seriesKey = toSeriesKey(token.symbol, selectedInterval);
-      const cb = realtimeCallbackRef.current?.[seriesKey];
+    const now = Date.now();
+    const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
 
-      setChartData((prev: any) => {
-        if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
-        const [bars, key, flag] = prev;
+    setChartData((prev: any) => {
+      if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
+      const [bars, key, flag] = prev;
+      const updated = [...bars];
+      const last = updated[updated.length - 1];
 
-        const updated = Array.isArray(bars) ? [...bars] : [];
-        const last = updated[updated.length - 1];
-        const prevBar = updated[updated.length - 2];
-        const prevClose = prevBar?.close ?? last?.close ?? lastPrice;
-
-        if (!last || typeof last.time !== 'number' || last.time < bucketMs) {
-          const open = prevClose;
-          const high = Math.max(open, lastPrice);
-          const low = Math.min(open, lastPrice);
-
-          const newBar = {
-            time: bucketMs,
-            open,
-            high,
-            low,
-            close: lastPrice,
-            volume: volNative || 0,
-          };
-
-          updated.push(newBar);
-          if (typeof cb === 'function') cb(newBar);
-        } else {
-          const cur = { ...last };
-
-          cur.open = prevClose;
-          if (cur.high < cur.open) cur.high = cur.open;
-          if (cur.low > cur.open) cur.low = cur.open;
-
-          cur.high = Math.max(cur.high, lastPrice);
-          cur.low = Math.min(cur.low, lastPrice);
-          cur.close = lastPrice;
-          cur.volume = (cur.volume || 0) + (volNative || 0);
-
-          updated[updated.length - 1] = cur;
-          if (typeof cb === 'function') cb(cur);
-        }
-
-        if (updated.length > 1200) updated.splice(0, updated.length - 1200);
-        return [updated, key, flag];
-      });
-    },
-    [selectedInterval, token.symbol],
-  );
+      if (!last || last.time < bucket) {
+        const prevClose = (last?.close ?? lastPrice);
+        const open = prevClose;
+        const high = Math.max(open, lastPrice);
+        const low  = Math.min(open, lastPrice);
+        const newBar = { time: bucket, open, high, low, close: lastPrice, volume: volNative || 0 };
+        updated.push(newBar);
+        const cb = realtimeCallbackRef.current?.[toSeriesKey(token.symbol, sel)];
+        if (cb) cb(newBar);
+      } else {
+        const cur = { ...last };
+        cur.high = Math.max(cur.high, lastPrice);
+        cur.low  = Math.min(cur.low, lastPrice);
+        cur.close = lastPrice;
+        cur.volume = (cur.volume || 0) + (volNative || 0);
+        updated[updated.length - 1] = cur;
+        const cb = realtimeCallbackRef.current?.[toSeriesKey(token.symbol, sel)];
+        if (cb) cb(cur);
+      }
+      if (updated.length > 1200) updated.splice(0, updated.length - 1200);
+      return [updated, key, flag];
+    });
+  }; }, [selectedInterval, token.symbol]);
 
   const toggleTrackedAddress = useCallback((addr: string) => {
     const a = (addr || '').toLowerCase();
@@ -1244,25 +1224,27 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   }, [token.id, token.symbol, token.name, currentPrice, onTokenDataChange]);
 
   useEffect(() => {
-    if (hoveredSimilarTokenImage) {
-      const calculateAndShow = () => {
-        updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage);
-        setTimeout(() => setShowSimilarTokenPreview(true), 10);
-      };
-
-      calculateAndShow();
-
-      const handleResize = () => updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage);
-      window.addEventListener('scroll', () => updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage));
-      window.addEventListener('resize', handleResize);
-
-      return () => {
-        window.removeEventListener('scroll', () => updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage));
-        window.removeEventListener('resize', handleResize);
-      };
-    } else {
+    if (!hoveredSimilarTokenImage) {
       setShowSimilarTokenPreview(false);
+      return;
     }
+
+    const recalc = () => updateSimilarTokenPreviewPosition(hoveredSimilarTokenImage);
+
+    recalc();
+    const showId = setTimeout(() => setShowSimilarTokenPreview(true), 10);
+
+    const onScroll = recalc;
+    const onResize = recalc;
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      clearTimeout(showId);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+    };
   }, [hoveredSimilarTokenImage, updateSimilarTokenPreviewPosition]);
 
   const lastInvalidateRef = useRef(0);
@@ -1434,7 +1416,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             price: price,
             marketCap: price * TOTAL_SUPPLY,
           }));
-          pushRealtimeTick(tradePrice, isBuy ? amountIn : amountOut);
+          pushRealtimeTickRef.current(tradePrice, isBuy ? amountIn : amountOut);
 
           setHolders((prev) => {
             const arr = prev.slice();

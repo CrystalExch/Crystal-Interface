@@ -411,10 +411,9 @@
   font-size: 0.7rem;
   padding: 0.2rem .35rem;
   align-items: center;
-  background: linear-gradient(135deg, #aaaecf 0%, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
+  background: #aaaecf;
   border: none;
   border-radius: 8px;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 -1px 1px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(170, 174, 207, 0.1);
   color: #0f0f12;
   cursor: pointer;
   display: flex;
@@ -542,7 +541,6 @@
   display: flex;
   gap: 4px;
   height: 20px;
-  color: #d8dbf5;
   font-size: 1rem;
   font-weight: 500;
 }
@@ -745,10 +743,10 @@
 
 
 .bonding-amount-display {
-  background: rgb(0, 0, 0);
+  background: rgb(6, 6, 6);
   border: 1px solid #b5bcf81f;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 1);
   color: #e6e7f6;
   font-size: 0.75rem;
   left: 50%;
@@ -1299,8 +1297,8 @@
 
 .explorer-hide-button {
   align-items: center;
-  background: rgba(6, 6, 6);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(15, 15, 15);
+  border: 1px solid rgba(226, 228, 248, 0.1);
   border-radius: 4px;
   cursor: pointer;
   display: flex;
@@ -1349,7 +1347,6 @@
 
 .explorer-quick-buy-btn:disabled {
   cursor: not-allowed;
-  opacity: 0.9;
 }
 
 .explorer-quick-buy-btn:disabled:hover {
@@ -1977,7 +1974,7 @@
   align-items: center;
   background: transparent;
   border-radius: 8px;
-  color: rgb(95, 99, 105);
+  color: #7f808d;
   cursor: pointer;
   display: flex;
   font-size: 0.8rem;
@@ -2468,8 +2465,8 @@
 
 .explorer-blacklist-button {
   align-items: center;
-  background: rgba(6, 6, 6);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(15, 15, 15);
+  border: 1px solid rgba(226, 228, 248, 0.1);
   border-radius: 4px;
   cursor: pointer;
   display: flex;
@@ -2894,7 +2891,6 @@
 
 .explorer-metrics-container {
   align-items: flex-end;
-  background: rgb(6, 6, 6);
   display: flex;
   flex-direction: column;
   padding-left: 5px;
@@ -2908,7 +2904,6 @@
   flex-direction: row;
 }
 
-/* Small size */
 .explorer-quick-buy-btn.size-small {
   font-size: 0.7rem;
   gap: 2px;
@@ -2938,7 +2933,7 @@
 }
 
 .explorer-quick-buy-btn.size-mega {
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 0.8rem;
   padding: 0.75rem 2.5rem;
 }
@@ -2968,6 +2963,8 @@
   transition: all 0.3s ease;
   --mouse-x: 50%;
   --mouse-y: 50%;
+  width: 170px;
+  border: 1px solid transparent;
 }
 
 .explorer-third-row.ultra-quickbuy-mode:hover {
@@ -2977,6 +2974,8 @@
       rgba(170, 174, 207, 0.04) 40%,
       rgba(170, 174, 207, 0.01) 70%,
       transparent 100%);
+  border-left: 1px solid rgba(255, 255, 255, 0.139);
+
 }
 
 .explorer-third-row.ultra-quickbuy-mode .explorer-metrics-container {
@@ -3004,20 +3003,17 @@
   box-shadow: none;
   color: #d8dbf5;
   font-size: 0.9rem;
-  font-weight: 500;
-  gap: 4px;
+  font-weight: 400;
   letter-spacing: -0.3px;
   margin: 0;
   padding: 0;
   pointer-events: none;
-  text-shadow: 0 0 10px #d8dbf5;
-  /* Since parent handles click */
 }
 
 .explorer-quick-buy-btn.size-ultra .explorer-quick-buy-icon {
   filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%);
-  height: 16px;
-  width: 16px;
+  height: 14px;
+  width: 14px;
 }
 
 .explorer-third-row.ultra-quickbuy-mode:hover .explorer-quick-buy-btn.size-ultra {
@@ -3052,12 +3048,10 @@
 
 .explorer-quick-buy-btn.size-large:hover {
   filter: brightness(1.1);
-  transform: scale(1.02);
 }
 
 .explorer-quick-buy-btn.size-mega:hover {
   filter: brightness(1.1);
-  transform: scale(1.03);
 }
 
 .explorer-quick-buy-btn.size-small .quickbuy-loading-spinner {
@@ -3234,11 +3228,8 @@
     radial-gradient(150px circle at var(--mouse-x) var(--mouse-y),
       rgba(170, 174, 207, 0.05) 0%,
       transparent 70%);
-  border: 1.5px solid #c7cbee;
+  border: 1px solid #c7cbee;
   border-radius: 8px;
-  box-shadow:
-    0 0 20px rgba(216, 219, 245, 0.3),
-    inset 0 0 20px rgba(216, 219, 245, 0.1);
   margin: 2px 0;
   transition: all 0.3s ease
 }
@@ -3368,7 +3359,6 @@
 
 .explorer-token-image.circle-mode {
   border-radius: 50%;
-  /* ← Make circular when circle-mode is active */
 }
 
 .explorer-image-overlay.circle-mode {
@@ -3428,8 +3418,8 @@
 }
 
 .explorer-token-row.hidden-token .explorer-hide-button {
-  background: rgba(0, 0, 0, 0.9);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 1);
+  border-color: rgba(255, 255, 255, 0.2);
   opacity: 1;
 }
 
@@ -3498,7 +3488,7 @@
 .metric-color-item {
   align-items: center;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
+  border-radius: 6px;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -3718,38 +3708,54 @@
   border-color: rgba(255, 255, 255, 0.4);
   transform: scale(1.1);
 }
-
-
+.display-metric-value{
+  font-size: 0.8rem;
+  display: flex;
+  align-self: flex-start;
+  padding-left: 8px;
+  padding-top: 3px;
+}
 
 /* Hover effects for metric colored rows */
 .explorer-token-row.metric-colored:hover {
   background: rgba(170, 174, 207, 0.03);
 }
 
-/* Fallback for browsers that don't support color-mix */
-@supports not (background: color-mix(in srgb, red, blue)) {
-  .explorer-token-row.metric-colored.market-cap-range1 {
-    background: rgba(59, 130, 246, 0.08);
-  }
-
-  .explorer-token-row.metric-colored.market-cap-range2 {
-    background: rgba(234, 179, 8, 0.08);
-  }
-
-  .explorer-token-row.metric-colored.market-cap-range3 {
-    background: rgba(20, 184, 166, 0.08);
-  }
-
-  .explorer-token-row.metric-colored.volume-range1,
-  .explorer-token-row.metric-colored.volume-range2,
-  .explorer-token-row.metric-colored.volume-range3,
-  .explorer-token-row.metric-colored.holders-range1,
-  .explorer-token-row.metric-colored.holders-range2,
-  .explorer-token-row.metric-colored.holders-range3 {
-    background: rgba(255, 255, 255, 0.08);
-  }
+.explorer-token-row.metric-colored.market-cap-range1 .explorer-market-cap .mc-value {
+  color: var(--metric-market-cap-range1, #d8dcff) !important;
+}
+.explorer-token-row.metric-colored.market-cap-range2 .explorer-market-cap .explorer-market-cap {
+  color: var(--metric-market-cap-range2, #eab308) !important;
 }
 
+.explorer-token-row.metric-colored.market-cap-range3 .explorer-market-cap .explorer-market-cap {
+  color: var(--metric-market-cap-range3, #14b8a6) !important;
+}
+/* Apply metric colors to volume text */
+.explorer-token-row.metric-colored.volume-range1 .explorer-volume .mc-value {
+  color: var(--metric-volume-range1, #ffffff) !important;
+}
+
+.explorer-token-row.metric-colored.volume-range2 .explorer-volume .mc-value {
+  color: var(--metric-volume-range2, #ffffff) !important;
+}
+
+.explorer-token-row.metric-colored.volume-range3 .explorer-volume .mc-value {
+  color: var(--metric-volume-range3, #ffffff) !important;
+}
+
+/* Apply metric colors to holders text */
+.explorer-token-row.metric-colored.holders-range1 .explorer-stat-item .explorer-stat-value {
+  color: var(--metric-holders-range1, #ffffff) !important;
+}
+
+.explorer-token-row.metric-colored.holders-range2 .explorer-stat-item .explorer-stat-value {
+  color: var(--metric-holders-range2, #ffffff) !important;
+}
+
+.explorer-token-row.metric-colored.holders-range3 .explorer-stat-item .explorer-stat-value {
+  color: var(--metric-holders-range3, #ffffff) !important;
+}
 
 .column-drag-container {
   display: flex;
@@ -3778,12 +3784,17 @@
           user-select: none;
 }
 
-
+.column-drag-item.column-hidden {
+  background: rgba(170, 174, 207, 0.05);
+  border-color: rgba(181, 184, 211, 0.3);
+  color: rgba(216, 220, 255, 0.4);
+  opacity: 0.5;
+}
 
 .column-drag-item.drag-over {
-  background: rgba(170, 174, 207, 0.25);
+  border-style: dashed;
   border-color: #aaaecf;
-  transform: scale(1.05);
+  background: rgba(170, 174, 207, 0.15);
 }
 
 /* Quick Buy Behavior Styles */
@@ -4118,9 +4129,14 @@
 
 
 .explorer-second-quickbuy-label{
+  display: flex;
+  align-items: center;
   font-size: 0.9rem;
   color: #ffffff98;
-  margin-right: 5px;
+  padding-right: 10px;
+  margin-left: 5px;
+  border-right: 1px solid rgba(179, 184, 249, .12);
+  height: 100%;
 }
 .explorer-quickbuy-input-second {
   background: 0 0;
@@ -4132,6 +4148,7 @@
   min-width: 0;
   outline: 0;
   transform: scaleX(1.1);
+  padding-left: 10px;
 }
 
 .explorer-quickbuy-input-second::-moz-placeholder {
@@ -4247,4 +4264,13 @@
 .refresh-button svg {
   width: 14px;
   height: 14px;
+}
+
+
+
+
+
+.metrics-display-section{
+  margin-bottom: -15px;
+  margin-top: 10px;
 }

@@ -2041,7 +2041,7 @@ body {
 }
 
 .layout-settings-background {
-  border-radius: 8px;
+  border-radius: 4px;
   box-shadow: 0 4px 24px rgb(0 0 0/10%);
   display: flex;
   flex-direction: column;
@@ -2102,7 +2102,7 @@ body {
 .layout-option {
   background: rgb(0 0 0/10.7%);
   border: 1px solid rgb(170 174 207/10%);
-  border-radius: 12px;
+  border-radius: 4px;
   cursor: pointer;
   gap: 4px;
   height: 105px;
@@ -2124,7 +2124,7 @@ body {
   align-items: center;
   background: rgb(0 0 0/10.7%);
   border: 1px solid rgb(170 174 207/10%);
-  border-radius: 12px;
+  border-radius: 4px;
   cursor: pointer;
   gap: 4px;
   height: 35px;
@@ -2300,7 +2300,7 @@ body {
 }
 
 .layout-option.active .layout-name {
-  color: #aaaecf !important;
+  color: #d8dcff ;
 }
 
 .layout-language-row {
@@ -2319,7 +2319,7 @@ body {
 
 .language-grid-item {
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
+  border-radius: 4px;
   color: rgb(255, 255, 255, 0.7);
   cursor: pointer;
   font-size: 0.7rem;
@@ -2375,13 +2375,12 @@ body {
 .reset-tab-button{
   align-items: center;
   border: none;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 5px;
-  color: rgba(255, 255, 255, 0.7);
+  border-radius: 20px;
+  color: #d9dae5;
   cursor: pointer;
   display: flex;
   flex: 1;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 300;
   height: 30px;
   justify-content: center;
@@ -2390,21 +2389,21 @@ body {
   width: 100%;
   max-height: 30px;
   box-shadow: 0px 0px 8px 8px rgb(6, 6, 6);
-  background-color: rgb(6, 6, 6);
+  letter-spacing: -0.3px;
+  border: 1px solid #3a3a43;
 }
 
 
 .revert-settings-button {
   align-items: center;
   border: none;
-  border: 1px solid #ff000029;
-  border-radius: 5px;
-  color: #ee3939;
+  border-radius: 20px;
+  color: #e96a6a;
   background-color: #ff000008;
   cursor: pointer;
   display: flex;
   flex: 1;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 300;
   height: 30px;
   justify-content: center;
@@ -2413,18 +2412,9 @@ body {
   width: 100%;
   max-height: 30px;
   box-shadow: 0 -2px 4px 4px rgb(6, 6, 6);
+  letter-spacing: -0.3px;
 }
 
-.revert-settings-button:hover {
-  border: 1px solid #ff000042;
-  color: #f52f2f;
-}
-
-.reset-tab-button:hover {
-  border: 1.5px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.8);
-  background-color: rgba(255, 255, 255, 0.03);
-}
 
 .reset-tab-button:active {
   transform: scale(0.98);
@@ -6785,7 +6775,8 @@ input::-webkit-inner-spin-button {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  max-height:515px;
+  max-height:521px;
+  padding: 5px;
 }
 
 .settings-section-buttons{
@@ -6806,15 +6797,13 @@ input::-webkit-inner-spin-button {
 }
 
 .settings-section-button.active {
-  background: rgb(170 174 207 / 8%);
-  border-color: #aaaecf66;
-  box-shadow: 0 0 0 1px rgba(170, 174, 207, 0.6);
+  background: rgb(170 174 207 / 7%);
 }
 
 
 
 .settings-section-button.active span {
-  color: #d8dcff;
+  color: #d9dae5;
 }
 
 
@@ -6823,7 +6812,7 @@ input::-webkit-inner-spin-button {
   display: flex;
   align-items: center;
   justify-content: left;
-  border-radius: 5px;
+  border-radius: 4px;
   padding: 4px 8px;
   width: 100%;
   border: 1px solid transparent;
@@ -6854,7 +6843,7 @@ input::-webkit-inner-spin-button {
 
 .settings-option-subtitle,
 .settings-section-subtitle {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(230 234 255 / 50%);
   font-size: 0.7rem;
   font-weight: 300;
   line-height: 1;
@@ -6874,11 +6863,11 @@ input::-webkit-inner-spin-button {
 
 .popup-type-settings {
   padding: 0 12px;
-  border-radius: 8px;
+  border-radius: 6px;
   padding-bottom: 8px;
   margin-top: 10px;
-  margin-bottom: 10px;
-  border: 1.5px solid rgba(255, 255, 255, 0.05)
+  margin-bottom: 20px;
+  border:1px solid rgba(179, 184, 249, 0.1)
 }
 
 .popup-type-header {
@@ -7231,7 +7220,7 @@ input::-webkit-inner-spin-button {
 
 .keybind-description {
   font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.6);
+  color:rgb(230 234 255 / 50%);
   line-height: 1;
 }
 
@@ -7239,8 +7228,8 @@ input::-webkit-inner-spin-button {
   min-width: 60px;
   height: 24px;
   padding: 4px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border:1px solid #3a3a43c2;
+  border-radius: 20px;
   color: rgb(255, 255, 255);
   font-size: 0.7rem;
   cursor: pointer;
@@ -7558,7 +7547,7 @@ input::-webkit-inner-spin-button {
 
 .notification-position-option {
   border:1px solid rgb(170 174 207/10%);
-  border-radius: 12px;
+  border-radius: 4px;
   cursor: pointer;
   padding: 12px;
   transition: all 0.2s ease;

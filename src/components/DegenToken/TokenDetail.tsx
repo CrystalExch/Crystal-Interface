@@ -7,6 +7,10 @@ import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { useSharedContext } from '../../contexts/SharedContext';
 import MemeChart from '../MemeInterface/MemeChart/MemeChart';
 import defaultPfp from '../../assets/leaderboard_default.png';
+import {
+  HOLDERS_QUERY,
+} from '../MemeInterface/graphql'
+
 import './TokenDetail.css';
 import {
   setGlobalPopupHandlers,
@@ -61,6 +65,12 @@ interface Holder {
   address: string;
   balance: number;
   percentage: number;
+  amountBought: number;
+  amountSold: number;
+  valueBought: number;
+  valueSold: number;
+  tokenNet: number;
+  valueNet: number;
 }
 
 interface Comment {
@@ -93,6 +103,9 @@ interface TokenDetailProps {
 // const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 const TOTAL_SUPPLY = 1e9;
+const PAGE_SIZE = 100;
+
+
 
 const formatPrice = (p: number) => {
   if (p >= 1e12) return `$${(p / 1e12).toFixed(2)}T`;
@@ -113,6 +126,8 @@ const formatTradeAmount = (amount: number): string => {
   if (amount === 0) return '';
   return amount.toFixed(6).replace(/\.?0+$/, '');
 };
+
+const toPct = (balance: number) => (balance / TOTAL_SUPPLY) * 100;
 
 const CopyableAddress: React.FC<{
   address?: string | null;
@@ -186,10 +201,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   account,
   setChain,
   setpopup,
-  terminalQueryData,
-  terminalToken,
   setTerminalToken,
-  terminalRefetch,
   walletTokenBalances,
   tokenData,
   setTokenData,
@@ -201,8 +213,9 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
   const walletPopup = useWalletPopup();
   const [token, setToken] = useState<any>((tokenData || tokenAddress ? {id: tokenAddress} : null) || null);
-  const [trades, setTrades] = useState<Trade[]>([]);
   const [holders, setHolders] = useState<Holder[]>([]);
+  const [page, setPage] = useState(0);
+  const holdersMapRef = useRef<Map<string, number>>(new Map());
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [tradeAmount, setTradeAmount] = useState('');
@@ -215,7 +228,16 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<'MON' | 'TOKEN'>('MON');
   const ethToken = settings.chainConfig[activechain]?.eth;
+  const [priceStats, setPriceStats] = useState({
+    ath: 0,
+    change5m: 0,
+    change1h: 0,
+    change6h: 0,
+  });
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter as `0x${string}` | undefined;
+
+  const currentPrice = tokenData?.price || token?.price || 0;
+  const GRADUATION_THRESHOLD = 10000;
 
   // get mon balance Ws in the chattttt
   const getCurrentMONBalance = useCallback(() => {
@@ -250,7 +272,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         selectedInterval === '15m' ? '900' :
         selectedInterval === '1h' ? '3600' :
         selectedInterval === '4h' ? '14400':
-          '86400'
+        '86400'
       );
 
       const response = await fetch(SUBGRAPH_URL, {
@@ -294,7 +316,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       const data = (await response.json())?.data;
       console.log(data)
       const klines = data?.launchpadTokens?.[0]?.series?.klines;
-      const positions = data?.launchpadTokens?.[0]?.positions || [];
       
       if (!klines) return;
 
@@ -330,125 +351,60 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
         setTokenData(updatedTokenData);
 
-        const totalSupply = TOTAL_SUPPLY;
-        const bondingCurveSupply = totalSupply * 0.8;
+        const bars = klines
+          .slice()
+          .reverse()
+          .map((c: any) => ({
+            time: Number(c.time) * 1000,
+            open: Number(c.open) / 1e18,
+            high: Number(c.high) / 1e18,
+            low: Number(c.low) / 1e18,
+            close: Number(c.close) / 1e18,
+            volume: Number(c.baseVolume) / 1e18,
+          }));
+
+        const resForChart =
+          selectedInterval === "1d" ? "1D" :
+          selectedInterval === "4h" ? "240" :
+          selectedInterval === "1h" ? "60"  :
+          selectedInterval.endsWith("s")
+            ? selectedInterval.slice(0, -1).toUpperCase() + "S"
+            : selectedInterval.slice(0, -1);
         
-        let processedHolders: Holder[] = [];
-        
-        if (positions.length > 0) {
-          const totalUserTokens = positions.reduce((sum, pos) => sum + Number(pos.tokens) / 1e18, 0);
-          const bondingCurveTokens = Math.max(0, bondingCurveSupply - totalUserTokens);
+        setChartData([bars, resForChart, false]);
+
+        if (bars.length > 0) {
+          const currentPrice = bars[bars.length - 1].close;
+          const ath = Math.max(...bars.map((b: any) => b.high));
           
-          if (bondingCurveTokens > 0) {
-            processedHolders.push({
-              address: 'bonding curve',
-              balance: bondingCurveTokens,
-              percentage: (bondingCurveTokens / totalSupply) * 100
-            });
-          }
+
+          const now = Date.now();
+          const find5mAgo = bars.find((b: any) => now - b.time <= 5 * 60 * 1000);
+          const find1hAgo = bars.find((b: any) => now - b.time <= 60 * 60 * 1000);
+          const find6hAgo = bars.find((b: any) => now - b.time <= 6 * 60 * 60 * 1000);
           
-          const userHolders = positions
-            .map(pos => ({
-              address: pos.account.id,
-              balance: Number(pos.tokens) / 1e18,
-              percentage: (Number(pos.tokens) / 1e18 / totalSupply) * 100
-            }))
-            .filter(holder => holder.balance > 0);
+          const price5mAgo = find5mAgo?.close || currentPrice;
+          const price1hAgo = find1hAgo?.close || currentPrice;
+          const price6hAgo = find6hAgo?.close || currentPrice;
           
-          processedHolders.push(...userHolders);
+          const change5m = price5mAgo !== 0 ? ((currentPrice - price5mAgo) / price5mAgo) * 100 : 0;
+          const change1h = price1hAgo !== 0 ? ((currentPrice - price1hAgo) / price1hAgo) * 100 : 0;
+          const change6h = price6hAgo !== 0 ? ((currentPrice - price6hAgo) / price6hAgo) * 100 : 0;
           
-          // Sort by balance descending
-          processedHolders.sort((a, b) => b.balance - a.balance);
-        } else {
-          // Fallback sample data when no positions available
-          processedHolders = [
-            {
-              address: 'bonding curve',
-              balance: bondingCurveSupply,
-              percentage: 80.0
-            },
-            {
-              address: '0x1234567890123456789012345678901234567890',
-              balance: totalSupply * 0.05,
-              percentage: 5.0
-            },
-            {
-              address: '0x2345678901234567890123456789012345678901',
-              balance: totalSupply * 0.03,
-              percentage: 3.0
-            },
-            {
-              address: '0x3456789012345678901234567890123456789012',
-              balance: totalSupply * 0.025,
-              percentage: 2.5
-            },
-            {
-              address: '0x4567890123456789012345678901234567890123',
-              balance: totalSupply * 0.02,
-              percentage: 2.0
-            },
-            {
-              address: '0x5678901234567890123456789012345678901234',
-              balance: totalSupply * 0.015,
-              percentage: 1.5
-            },
-            {
-              address: '0x6789012345678901234567890123456789012345',
-              balance: totalSupply * 0.01,
-              percentage: 1.0
-            },
-            {
-              address: '0x7890123456789012345678901234567890123456',
-              balance: totalSupply * 0.008,
-              percentage: 0.8
-            },
-            {
-              address: '0x8901234567890123456789012345678901234567',
-              balance: totalSupply * 0.007,
-              percentage: 0.7
-            },
-            {
-              address: '0x9012345678901234567890123456789012345678',
-              balance: totalSupply * 0.006,
-              percentage: 0.6
-            },
-            {
-              address: '0xa123456789012345678901234567890123456789',
-              balance: totalSupply * 0.005,
-              percentage: 0.5
-            }
-          ];
+          setPriceStats({
+            ath,
+            change5m,
+            change1h,
+            change6h,
+          });
         }
-        
-        setHolders(processedHolders.slice(0, 10));
       }
-
-      const bars = klines
-        .slice()
-        .reverse()
-        .map((c: any) => ({
-          time: Number(c.time) * 1000,
-          open: Number(c.open) / 1e18,
-          high: Number(c.high) / 1e18,
-          low: Number(c.low) / 1e18,
-          close: Number(c.close) / 1e18,
-          volume: Number(c.baseVolume) / 1e18,
-        }));
-
-      const resForChart =
-        selectedInterval === "1d" ? "1D" :
-        selectedInterval === "4h" ? "240" :
-        selectedInterval === "1h" ? "60"  :
-        selectedInterval.endsWith("s")
-          ? selectedInterval.slice(0, -1).toUpperCase() + "S"
-          : selectedInterval.slice(0, -1);
-      setChartData([bars, resForChart, false]);
     } catch (error) {
       console.error('Failed to fetch token data:', error);
     } finally {
       setLoading(false);
     }
-  }, [token, selectedInterval]);
+  }, [token, selectedInterval, setTokenData, setChartData, setLoading]);
 
   const handleLikeComment = (commentId: string) => {
     if (!account.connected) {
@@ -510,6 +466,79 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   useEffect(() => {
     fetchTokenData();
   }, [fetchTokenData]);
+
+  useEffect(() => {
+    if (!token?.id || !currentPrice || !routerAddress) return;
+    
+    const price = currentPrice;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const first = PAGE_SIZE;
+        const skip = page * PAGE_SIZE;
+        const m = token.id.toLowerCase();
+
+        const response = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: HOLDERS_QUERY,
+            variables: { m, skip, first },
+          }),
+        });
+
+        const { data } = await response.json();
+        const positions: any[] = data?.launchpadPositions ?? [];
+
+        if (cancelled) return;
+
+        const mapped: Holder[] = positions
+          .filter((p: any) => 
+            p.account?.id.toLowerCase() !== routerAddress.toLowerCase()
+          )
+          .map((p: any) => {
+            const amountBought = Number(p.tokenBought) / 1e18;
+            const amountSold = Number(p.tokenSold) / 1e18;
+            const valueBought = Number(p.nativeSpent) / 1e18;
+            const valueSold = Number(p.nativeReceived) / 1e18;
+            const balance = Number(p.tokens) / 1e18;
+            const realized = valueSold - valueBought;
+            const unrealized = balance * price;
+            const totalPnl = realized + unrealized;
+
+            return {
+              address: p.account.id,
+              balance,
+              percentage: toPct(balance),
+              amountBought,
+              amountSold,
+              valueBought,
+              valueSold,
+              tokenNet: balance,
+              valueNet: totalPnl,
+            };
+          });
+
+        // Sort by balance descending and take top 10
+        const sortedHolders = mapped.sort((a, b) => b.balance - a.balance);
+        setHolders(sortedHolders.slice(0, 10));
+        
+        holdersMapRef.current = new Map(
+          mapped.map((h: Holder, i: number) => [h.address.toLowerCase(), i])
+        );
+      } catch (error) {
+        console.error('Failed to fetch holders:', error);
+        if (!cancelled) {
+          setHolders([]);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token?.id, currentPrice, page, routerAddress]);
 
   const handleCurrencySwitch = () => {
     setSelectedCurrency(prev => prev === 'MON' ? 'TOKEN' : 'MON');
@@ -734,7 +763,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             </div>
             <div className="detail-stat">
               <div className="detail-stat-label">ATH</div>
-              <div className="detail-stat-value">$45.1K</div>
+              <div className="detail-stat-value">{formatPrice((priceStats.ath * TOTAL_SUPPLY) * monUsdPrice)}</div>
             </div>
           </div>
         </div>
@@ -749,6 +778,35 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               realtimeCallbackRef={realtimeCallbackRef}
               monUsdPrice={monUsdPrice}
             />
+          </div>
+
+          <div className="detail-stats-bar">
+            <div className="detail-stat-item">
+              <div className="detail-stat-label">Vol 24h</div>
+              <div className="detail-stat-value">${formatNumber((tokenData?.volume24h || 0) * monUsdPrice)}</div>
+            </div>
+            <div className="detail-stat-item">
+              <div className="detail-stat-label">Price</div>
+              <div className="detail-stat-value">${formatNumber(currentPrice * monUsdPrice)}</div>
+            </div>
+            <div className="detail-stat-item">
+              <div className="detail-stat-label">5m</div>
+              <div className={`detail-stat-value ${priceStats.change5m > 0 ? 'detail-stat-positive' : priceStats.change5m < 0 ? 'detail-stat-negative' : 'detail-stat-neutral'}`}>
+                {priceStats.change5m > 0 ? '+' : ''}{priceStats.change5m.toFixed(2)}%
+              </div>
+            </div>
+            <div className="detail-stat-item">
+              <div className="detail-stat-label">1h</div>
+              <div className={`detail-stat-value ${priceStats.change1h > 0 ? 'detail-stat-positive' : priceStats.change1h < 0 ? 'detail-stat-negative' : 'detail-stat-neutral'}`}>
+                {priceStats.change1h > 0 ? '+' : ''}{priceStats.change1h.toFixed(2)}%
+              </div>
+            </div>
+            <div className="detail-stat-item">
+              <div className="detail-stat-label">6h</div>
+              <div className={`detail-stat-value ${priceStats.change6h > 0 ? 'detail-stat-positive' : priceStats.change6h < 0 ? 'detail-stat-negative' : 'detail-stat-neutral'}`}>
+                {priceStats.change6h > 0 ? '+' : ''}{priceStats.change6h.toFixed(2)}%
+              </div>
+            </div>
           </div>
 
           <div className="detail-info-grid">
@@ -978,37 +1036,13 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               </div>
             ) : (
               <div className="detail-bonding-info">
-                <span>{formatNumber(bondingProgress * 100)} MON in bonding curve</span>
-                <span>${formatNumber(72940)} to graduate</span>
+                <span>{formatNumber(tokenData.marketCap)} MON in bonding curve</span>
+                <span>{formatNumber(GRADUATION_THRESHOLD - tokenData.marketCap)} MON to graduate</span>
               </div>
             )}
           </div>
         </div>
 
-        <div className="detail-trading-panel">
-          <div className="detail-chat-section">
-            <div className="detail-chat-header">
-              <div className="detail-chat-info">
-                <div className="detail-chat-avatar">
-                  <img src={tokenData.image} alt={tokenData.symbol} className="detail-chat-avatar-image" />
-                </div>
-                <div className="detail-chat-text">
-                  <h4 className="detail-chat-title">{tokenData.name} chat</h4>
-                  <span className="detail-chat-members">1 member</span>
-                </div>
-              </div>
-              <button className="detail-chat-join-button" onClick={() => setIsChatModalOpen(true)}>
-                <span className="detail-chat-icon">💬</span>
-                Join chat
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="detail-meme-address">
-          <span className="detail-meme-address-title">CA:</span>{' '}
-          <CopyableAddress address={tokenData.id} className="detail-meme-address-value" truncate={{ start: 20, end: 10 }} />
-        </div>
 
         <div className="detail-info-section">
           <h3>Top Holders</h3>
@@ -1016,30 +1050,22 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             {holders.length > 0 ? (
               holders.slice(0, 10).map((holder, index) => (
                 <div key={holder.address} className="detail-holder-card">
-                  <div className="detail-holder-rank-badge">
-                    #{index + 1}
-                  </div>
                   <div className="detail-holder-info">
                     <div className="detail-holder-address-main">
                       {holder.address === 'bonding curve' ? (
-                        <span className="detail-bonding-curve-label">Bonding Curve</span>
+                        <span>Liquidity pool</span>
                       ) : (
                         <CopyableAddress 
                           address={holder.address} 
                           className="detail-holder-address-copy"
-                          truncate={{ start: 8, end: 6 }}
+                          truncate={{ start: 4, end: 4 }}
                         />
                       )}
                     </div>
-                    <div className="detail-holder-stats">
-                      <span className="detail-holder-balance">
-                        {formatNumber(holder.balance)} {token?.symbol || 'tokens'}
-                      </span>
-                      <span className="detail-holder-percentage-badge">
-                        {holder.percentage.toFixed(2)}%
-                      </span>
-                    </div>
                   </div>
+                  <span className="detail-holder-percentage-badge">
+                    {holder.percentage.toFixed(2)}%
+                  </span>
                 </div>
               ))
             ) : (
