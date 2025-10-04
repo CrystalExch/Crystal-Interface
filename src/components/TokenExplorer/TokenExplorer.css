@@ -1314,7 +1314,9 @@
   width: 26px;
   z-index: 11;
 }
-
+.explorer-token-row:hover{
+  background-color: rgb(17, 17, 21);
+}
 .explorer-token-row:hover .explorer-hide-button {
   opacity: 1;
 }

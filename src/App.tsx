@@ -14160,53 +14160,67 @@ function App() {
                 </div>
               </div>
 
-              <div className="modal-footer">
-                <button 
-                  className="perps-confirm-button" 
-                  disabled={!perpsDepositAmount || parseFloat(perpsDepositAmount) < 1}
-                  style={{
-                    opacity: !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 ? 0.5 : 1,
-                    cursor: !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 ? 'not-allowed' : 'pointer'
-                  }}
-                  onClick={async () => {
-                    if (!perpsDepositAmount || parseFloat(perpsDepositAmount) < 1) return;
-                    
-                    const amount = BigInt(Math.floor(parseFloat(perpsDepositAmount) * 1e6));
-                    
-                    await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: 42161 as any });
-                    await rawSendUserOperationAsync({
-                      uo: {
-                        target: '0x81144d6E7084928830f9694a201E8c1ce6eD0cb2' as `0x${string}`,
-                        data: encodeFunctionData({
-                          abi: [{
-                            inputs: [
-                              { name: "token", type: "address" },
-                              { name: "amount", type: "uint256" },
-                              { name: "starkKey", type: "uint256" },
-                              { name: "accountId", type: "uint256" },
-                              { name: "exchangeData", type: "bytes" }
-                            ],
-                            name: "deposit",
-                            outputs: [],
-                            stateMutability: "nonpayable",
-                            type: "function",
-                          }],
-                          functionName: "deposit",
-                          args: ['0xaf88d065e77c8cC2239327C5EDb3A432268e5831', amount, perpsKeystore.publicKey, 664124834304754100n, '0x00'],
-                        }),
-                        value: 0n,
-                      }
-                    });
-                    handleSetChain();
-                    setPerpsDepositAmount('');
-                    setpopup(0);
-                  }}
-                >
-                  {!perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 
-                    ? 'Minimum deposit: 1 USDC' 
-                    : 'Deposit'}
-                </button>
-              </div>
+ <div className="modal-footer">
+  <button 
+    className={`perps-confirm-button ${isVaultDepositSigning ? 'signing' : ''}`}
+    disabled={!perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning}
+    style={{
+      opacity: !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning ? 0.5 : 1,
+      cursor: !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning ? 'not-allowed' : 'pointer'
+    }}
+    onClick={async () => {
+      if (!perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning) return;
+      
+      try {
+        setIsVaultDepositSigning(true);
+        const amount = BigInt(Math.floor(parseFloat(perpsDepositAmount) * 1e6));
+        
+        await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: 42161 as any });
+        await rawSendUserOperationAsync({
+          uo: {
+            target: '0x81144d6E7084928830f9694a201E8c1ce6eD0cb2' as `0x${string}`,
+            data: encodeFunctionData({
+              abi: [{
+                inputs: [
+                  { name: "token", type: "address" },
+                  { name: "amount", type: "uint256" },
+                  { name: "starkKey", type: "uint256" },
+                  { name: "accountId", type: "uint256" },
+                  { name: "exchangeData", type: "bytes" }
+                ],
+                name: "deposit",
+                outputs: [],
+                stateMutability: "nonpayable",
+                type: "function",
+              }],
+              functionName: "deposit",
+              args: ['0xaf88d065e77c8cC2239327C5EDb3A432268e5831', amount, perpsKeystore.publicKey, 664124834304754100n, '0x00'],
+            }),
+            value: 0n,
+          }
+        });
+        handleSetChain();
+        setPerpsDepositAmount('');
+        setpopup(0);
+      } catch (error) {
+        console.error('Perps deposit error:', error);
+      } finally {
+        setIsVaultDepositSigning(false);
+      }
+    }}
+  >
+    {isVaultDepositSigning ? (
+      <div className="button-content">
+        <div className="loading-spinner" />
+        {validOneCT ? '' : t('signTransaction')}
+      </div>
+    ) : !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 ? (
+      'Minimum deposit: 1 USDC'
+    ) : (
+      'Deposit'
+    )}
+  </button>
+</div>
             </div>
           </div>
         ) : null}
