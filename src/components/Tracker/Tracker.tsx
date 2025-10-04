@@ -9,10 +9,23 @@
     import { settings } from '../../settings';
     import ImportWalletsPopup from './ImportWalletsPopup';
     import LiveTradesFiltersPopup from './LiveTradesFiltersPopup/LiveTradesFiltersPopup';
+    import { useSharedContext } from '../../contexts/SharedContext';
     import MonitorFiltersPopup, { MonitorFilterState } from './MonitorFiltersPopup/MonitorFiltersPopup';
+    import {
+        DEV_TOKENS_QUERY,
+        FILTERED_TRADES_QUERY,
+        GENERIC_TRADES_QUERY,
+        HOLDERS_QUERY,
+        POSITIONS_QUERY,
+        SIMILAR_TOKENS_BY_NAME_QUERY,
+        SIMILAR_TOKENS_BY_SYMBOL_QUERY,
+        TOP_TRADERS_QUERY,
+    } from '../MemeInterface/graphql';
     import settingsicon from '../../assets/settings.svg';
     import './Tracker.css';
-    'src/assets/settings'
+    const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
+
+
 
     export interface FilterState {
     transactionTypes: {
@@ -151,10 +164,12 @@
     interface TrackerProps {
         isBlurred: boolean;
         setpopup: (value: number) => void;
-        onImportWallets?: (walletsText: string, addToSingleGroup: boolean) => void;
+        onImportWallets?: (walletsText: string) => void;
         onApplyFilters?: (filters: FilterState) => void;
         activeFilters?: FilterState;
         monUsdPrice: number;
+        activechain?: string;
+        walletTokenBalances?: { [address: string]: any };
     }
 
     interface MonitorToken {
@@ -192,7 +207,15 @@
     type SortDirection = 'asc' | 'desc';
     
 
-    const Tracker: React.FC<TrackerProps> = ({ isBlurred, setpopup, onApplyFilters: externalOnApplyFilters, activeFilters: externalActiveFilters, monUsdPrice}) => {
+    const Tracker: React.FC<TrackerProps> = ({ 
+        isBlurred, 
+        setpopup, 
+        onApplyFilters: externalOnApplyFilters, 
+        activeFilters: externalActiveFilters, 
+        monUsdPrice,
+        walletTokenBalances = {}
+    }) => {
+        const { activechain } = useSharedContext();
         const [walletSortField, setWalletSortField] = useState<'balance' | 'lastActive' | null>(null);
         const [walletSortDirection, setWalletSortDirection] = useState<SortDirection>('desc');
         const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
@@ -254,34 +277,89 @@
             setSearchQuery('');
         }, [activeTab]);
 
-        const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([
+        const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
+
+        useEffect(() => {
+            if (!activechain) return;
             
+            let cancelled = false;
             
-        {
-            id: '1',
-            address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1',
-            name: 'Whale Hunter',
-            emoji: '🐋',
-            balance: 127.43,
-            lastActive: '5m'
-        },
-        {
-            id: '2',
-            address: '0x8Ba1f109551bD432803012645Ac136ddd64DBA72',
-            name: 'Diamond Hands',
-            emoji: '💎',
-            balance: 89.21,
-            lastActive: '12m'
-        },
-        {
-            id: '3',
-            address: '0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE',
-            name: 'Moon Mission',
-            emoji: '🚀',
-            balance: 45.67,
-            lastActive: '1h'
-        }
-        ]);
+            const fetchTrackedWallets = async () => {
+                try {
+                    // You can modify this query to fetch specific addresses you want to track
+                    // For now, fetching top holders across all tokens as an example
+                    const response = await fetch('https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e', {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify({
+                            query: `
+                                query {
+                                    accounts(first: 100, orderBy: totalValueTraded, orderDirection: desc) {
+                                        id
+                                        totalValueTraded
+                                        lastTradeBlock
+                                    }
+                                }
+                            `,
+                        }),
+                    });
+
+                    const { data } = await response.json();
+                    
+                    
+                    if (cancelled || !data?.accounts) return;
+
+                    const wallets: TrackedWallet[] = data.accounts
+                        .map((account: any, index: number) => {
+                            const firstPosition = account.positions?.[0];
+                            const totalValue = firstPosition 
+                                ? (Number(firstPosition.nativeSpent || 0) + Number(firstPosition.nativeReceived || 0)) / 1e18
+                                : 0;
+                            
+                            const lastTrade = account.trades?.[0];
+                            const lastBlock = lastTrade ? Number(lastTrade.block || 0) : 0;
+                            const now = Date.now() / 1000;
+                            const estimatedTime = Math.max(0, now - lastBlock * 2); // Assuming ~2 sec per block
+                            
+                            let lastActive = '—';
+                            if (estimatedTime < 3600) {
+                                lastActive = `${Math.floor(estimatedTime / 60)}m`;
+                            } else if (estimatedTime < 86400) {
+                                lastActive = `${Math.floor(estimatedTime / 3600)}h`;
+                            } else {
+                                lastActive = `${Math.floor(estimatedTime / 86400)}d`;
+                            }
+
+                            const emojis = ['🐋', '💎', '🚀', '🔥', '⚡', '💰', '🎯', '👑', '🦄', '🐸'];
+                            
+                            return {
+                                id: account.id,
+                                address: account.id,
+                                name: `Trader ${index + 1}`,
+                                emoji: emojis[index % emojis.length],
+                                balance: totalValue * 1000,
+                                lastActive: lastActive,
+                            };
+                        })
+                        .filter((w: TrackedWallet) => w.balance > 0); 
+                    setTrackedWallets(wallets);
+
+                    setTrackedWallets(wallets);
+                } catch (error) {
+                    console.error('Failed to fetch tracked wallets:', error);
+                }
+            };
+
+            fetchTrackedWallets();
+            
+            const interval = setInterval(fetchTrackedWallets, 10000); // lasts 10 second fastest man alive
+            
+            return () => {
+                cancelled = true;
+                clearInterval(interval);
+            };
+        }, [activechain]);
+
         const [liveTrades] = useState<LiveTrade[]>([
         {
             id: '1',
@@ -688,7 +766,78 @@
             return tokens;
         };
 
-        const handleAddWallet = () => {
+        // Function to fetch data for a specific wallet address
+        const fetchWalletData = async (address: string) => {
+            try {
+                const response = await fetch(SUBGRAPH_URL, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                        query: `
+                            query ($address: ID!) {
+                                account(id: $address) {
+                                    id
+                                    positions(first: 1) {
+                                        nativeSpent
+                                        nativeReceived
+                                    }
+                                    trades(first: 1, orderBy: block, orderDirection: desc) {
+                                        block
+                                    }
+                                }
+                            }
+                        `,
+                        variables: {
+                            address: address.toLowerCase()
+                        }
+                    }),
+                });
+
+                const { data } = await response.json();
+                
+                if (!data?.account) {
+                    return {
+                        balance: 0,
+                        lastActive: 'Never'
+                    };
+                }
+
+                const account = data.account;
+                const firstPosition = account.positions?.[0];
+                const totalValue = firstPosition 
+                    ? (Number(firstPosition.nativeSpent || 0) + Number(firstPosition.nativeReceived || 0)) / 1e18
+                    : 0;
+                
+                const lastTrade = account.trades?.[0];
+                const lastBlock = lastTrade ? Number(lastTrade.block || 0) : 0;
+                const now = Date.now() / 1000;
+                const estimatedTime = Math.max(0, now - lastBlock * 2);
+                
+                let lastActive = 'Never';
+                if (lastBlock > 0) {
+                    if (estimatedTime < 3600) {
+                        lastActive = `${Math.floor(estimatedTime / 60)}m`;
+                    } else if (estimatedTime < 86400) {
+                        lastActive = `${Math.floor(estimatedTime / 3600)}h`;
+                    } else {
+                        lastActive = `${Math.floor(estimatedTime / 86400)}d`;
+                    }
+                }
+
+                return {
+                    balance: totalValue * 1000,
+                    lastActive: lastActive
+                };
+            } catch (error) {
+                console.error('Failed to fetch wallet data:', error);
+                return {
+                    balance: 0,
+                    lastActive: 'Never'
+                };
+            }
+        };
+
+        const handleAddWallet = async () => {
             setAddWalletError('');
 
             if (!newWalletAddress.trim()) {
@@ -712,13 +861,15 @@
                 return;
             }
 
+            const walletData = await fetchWalletData(newWalletAddress.trim());
+
             const newWallet: TrackedWallet = {
                 id: Date.now().toString(),
                 address: newWalletAddress.trim(),
                 name: newWalletName.trim(),
                 emoji: newWalletEmoji,
-                balance: 0,
-                lastActive: 'Never'
+                balance: walletData.balance,      
+                lastActive: walletData.lastActive 
             };
 
             setTrackedWallets(prev => [...prev, newWallet]);
@@ -742,7 +893,7 @@
             navigator.clipboard.writeText(jsonString);
         };
 
-        const handleImportWallets = (walletsText: string, addToSingleGroup: boolean) => {
+        const handleImportWallets = async (walletsText: string) => {
             try {
                 const importedData = JSON.parse(walletsText);
                 
@@ -751,22 +902,29 @@
                     return;
                 }
                 
-                const newWallets: TrackedWallet[] = importedData
-                    .filter(item => {
-                        // Check if wallet already exists
-                        const exists = trackedWallets.some(
-                            w => w.address.toLowerCase() === item.trackedWalletAddress.toLowerCase()
-                        );
-                        return !exists && item.trackedWalletAddress;
+                // Filter out existing wallets
+                const walletsToImport = importedData.filter(item => {
+                    const exists = trackedWallets.some(
+                        w => w.address.toLowerCase() === item.trackedWalletAddress.toLowerCase()
+                    );
+                    return !exists && item.trackedWalletAddress;
+                });
+
+                // Fetch data for each wallet
+                const newWallets: TrackedWallet[] = await Promise.all(
+                    walletsToImport.map(async (item) => {
+                        const walletData = await fetchWalletData(item.trackedWalletAddress);
+                        
+                        return {
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                            address: item.trackedWalletAddress,
+                            name: item.name || 'Imported Wallet',
+                            emoji: item.emoji || '👻',
+                            balance: walletData.balance,
+                            lastActive: walletData.lastActive
+                        };
                     })
-                    .map(item => ({
-                        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-                        address: item.trackedWalletAddress,
-                        name: item.name || 'Imported Wallet',
-                        emoji: item.emoji || '👻',
-                        balance: 0,
-                        lastActive: 'Never'
-                    }));
+                );
                 
                 if (newWallets.length > 0) {
                     setTrackedWallets(prev => [...prev, ...newWallets]);
@@ -887,8 +1045,22 @@
 
 
                 <div className={`tracker-wallet-balance ${isBlurred ? 'blurred' : ''}`}>
-                    <img src={monadicon} className="tracker-balance-icon" alt="MON" />
-                    {wallet.balance.toFixed(2)}K
+                    {walletCurrency === 'MON' ? (
+                        <img src={monadicon} className="tracker-balance-icon" alt="MON" />
+                    ) : (
+                        `$`
+                    )}
+
+                    
+                    {(() => {
+                        const realBalance = walletTokenBalances[wallet.address];
+                        if (realBalance && activechain && settings.chainConfig[activechain]?.eth) {
+                            const ethToken = settings.chainConfig[activechain].eth;
+                            const balance = Number(realBalance[ethToken] || 0) / 1e18;
+                            return balance > 0 ? (balance / 1000).toFixed(2) : '0.00';
+                        }
+                        return (wallet.balance / 1000).toFixed(2);
+                    })()}K
                 </div>
 
                 <div className="tracker-wallet-last-active">{wallet.lastActive}</div>
@@ -1319,7 +1491,7 @@
                                 className="tracker-header-button"
                                 onClick={() => setWalletCurrency(prev => prev === 'USD' ? 'MON' : 'USD')}
                             >
-                                {monitorCurrency === 'USD' ? 'USD' : 'MON'}
+                                {walletCurrency === 'USD' ? 'USD' : 'MON'}
                             </button>
                             <button
                                 className="tracker-add-button"

@@ -35,18 +35,6 @@ const ImportWalletsPopup: React.FC<ImportWalletsPopupProps> = ({ onClose, onImpo
             onChange={(e) => setImportText(e.target.value)}
           />
 
-          <div className="import-wallets-toggle-section">
-            <span className="import-wallets-toggle-label">Add to single group</span>
-            <label className="import-wallets-toggle">
-              <input
-                type="checkbox"
-                checked={addToSingleGroup}
-                onChange={(e) => setAddToSingleGroup(e.target.checked)}
-              />
-              <span className="import-wallets-toggle-slider"></span>
-            </label>
-          </div>
-
           <p className="import-wallets-description">
             Ignore wallet groups and add wallets to selected group.
           </p>

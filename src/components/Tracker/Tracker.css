@@ -12,16 +12,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 10px;
-  height: 40px;
+  padding: 10px;
+  min-height: 40px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   background: rgb(6, 6, 6);
+  flex-wrap: wrap;
+  row-gap: 10px;
+  column-gap: 10px;
 }
 
 .tracker-tabs {
   display: flex;
   gap: 5px;
   border-radius: 8px;
+  flex: 0 1 auto;
 }
 
 .tracker-tab {
@@ -34,6 +38,7 @@
   transition: all 0.2s;
   letter-spacing: -0.5px;
   border-bottom: 1.5px solid transparent;
+  white-space: nowrap;
 }
 
 .tracker-tab.active {
@@ -84,6 +89,35 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 0 1 auto;
+}
+
+@media (max-width: 950px) {
+  .tracker-header {
+    justify-content: center;
+  }
+
+  .tracker-tabs {
+    flex: 1 1 100%;
+    width: 100%;
+    justify-content: center;
+    order: -1;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+    margin-bottom: 0;
+  }
+
+  .tracker-tab {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .tracker-header-actions {
+    flex: 1 1 100%;
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 .tracker-header-button {
@@ -982,6 +1016,8 @@
 
   
 }
+
+
 
 
 

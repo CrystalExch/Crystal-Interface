@@ -1042,6 +1042,11 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           </div>
         </div>
 
+        <div className="detail-meme-address">
+          <span className="detail-meme-address-title">CA:</span>{' '}
+          <CopyableAddress address={tokenData.id} className="detail-meme-address-value" truncate={{ start: 6, end: 4 }} />
+        </div>
+
 
         <div className="detail-info-section">
           <h3>Top Holders</h3>

@@ -8002,27 +8002,6 @@ input::-webkit-inner-spin-button {
   color: rgba(255, 255, 255, 0.4);
 }
 
-.import-wallets-toggle-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  margin-bottom: 8px;
-}
-
-.import-wallets-toggle-label {
-  color: #ccccccc3;
-  font-size: 0.9rem;
-  font-weight: 400;
-  letter-spacing: -0.3px;
-}
-
-.import-wallets-toggle {
-  position: relative;
-  display: inline-block;
-  width: 48px;
-  height: 26px;
-}
 
 .import-wallets-toggle input {
   opacity: 0;
@@ -8030,35 +8009,11 @@ input::-webkit-inner-spin-button {
   height: 0;
 }
 
-.import-wallets-toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #3a3a3f;
-  transition: 0.3s;
-  border-radius: 34px;
-}
-
-.import-wallets-toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: 0.3s;
-  border-radius: 50%;
-}
-
-.import-wallets-toggle input:checked + .import-wallets-toggle-slider {
+.import-wallets-toggle input:checked {
   background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
 }
 
-.import-wallets-toggle input:checked + .import-wallets-toggle-slider:before {
+.import-wallets-toggle input:checked{
   transform: translateX(22px);
 }
 

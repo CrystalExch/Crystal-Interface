@@ -203,6 +203,7 @@ const formatTradeAmount = (value: number): string => {
   return value.toFixed(2);
 };
 
+
 const Tooltip: React.FC<{
   content: string;
   children: React.ReactNode;
