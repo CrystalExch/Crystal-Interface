@@ -323,6 +323,11 @@ function App() {
     }
     return null;
   };
+
+  const [activeTradingMode, setActiveTradingMode] = useState<'spot' | 'perps' | 'spectra'>(() => {
+    const saved = localStorage.getItem('crystal_trading_mode');
+    return (saved === 'perps' || saved === 'spectra') ? saved : 'spot';
+  });
   //  const [isWidgetExplorerOpen, setIsWidgetExplorerOpen] = useState(false);
   // const [widgetExplorerSnapSide, setWidgetExplorerSnapSide] = useState<'left' | 'right' | 'none'>('none');
   // const [widgetWidth, setWidgetWidth] = useState(400);
@@ -893,20 +898,64 @@ function App() {
   const [isAudioEnabled, setIsAudioEnabled] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_audio_notifications') || 'false');
   });
-  const [orderbookPosition, setOrderbookPosition] = useState(() => {
-    const savedPosition = localStorage.getItem('crystal_orderbook');
-    return savedPosition || 'right';
-  });
+
   const [obInterval, setOBInterval] = useState<number>(() => {
     const stored = localStorage.getItem(
       `${activeMarket.baseAsset}_ob_interval`,
     );
     return stored !== null ? JSON.parse(stored) : 0.1;
   });
-  const [layoutSettings, setLayoutSettings] = useState(() => {
-    const savedLayout = localStorage.getItem('crystal_layout');
-    return savedLayout || 'default';
+  // Spot settings
+  const [spotOrderbookPosition, setSpotOrderbookPosition] = useState(() => {
+    const saved = localStorage.getItem('crystal_spot_orderbook');
+    return saved === 'left' ? 'left' : 'right';
   });
+
+  const [spotLayoutSettings, setSpotLayoutSettings] = useState(() => {
+    const saved = localStorage.getItem('crystal_spot_layout');
+    return saved === 'alternative' ? 'alternative' : 'default';
+  });
+
+  // Perps settings
+  const [perpsOrderbookPosition, setPerpsOrderbookPosition] = useState(() => {
+    const saved = localStorage.getItem('crystal_perps_orderbook');
+    return saved === 'left' ? 'left' : 'right';
+  });
+
+  const [perpsLayoutSettings, setPerpsLayoutSettings] = useState(() => {
+    const saved = localStorage.getItem('crystal_perps_layout');
+    return saved === 'alternative' ? 'alternative' : 'default';
+  });
+
+  // Spectra settings
+  const [spectraOrderbookPosition, setSpectraOrderbookPosition] = useState(() => {
+    const saved = localStorage.getItem('crystal_spectra_orderbook');
+    return saved === 'left' ? 'left' : 'right';
+  });
+
+  const [spectraLayoutSettings, setSpectraLayoutSettings] = useState(() => {
+    const saved = localStorage.getItem('crystal_spectra_layout');
+    return saved === 'alternative' ? 'alternative' : 'default';
+  });
+
+
+
+  // Helper functions to get active settings
+  const getActiveLayoutSettings = () => {
+    switch (activeTradingMode) {
+      case 'perps': return perpsLayoutSettings;
+      case 'spectra': return spectraLayoutSettings;
+      default: return spotLayoutSettings;
+    }
+  };
+
+  const getActiveOrderbookPosition = () => {
+    switch (activeTradingMode) {
+      case 'perps': return perpsOrderbookPosition;
+      case 'spectra': return spectraOrderbookPosition;
+      default: return spotOrderbookPosition;
+    }
+  };
   const [popup, setpopup] = useState(0);
   const [slippage, setSlippage] = useState(() => {
     const saved = localStorage.getItem('crystal_slippage');
@@ -10125,128 +10174,215 @@ function App() {
                       </div>
                     </div>
                   )}
-
                   {activeSettingsSection === 'layout' && (
                     <div className="settings-section-content">
-                      {!simpleView && (<div className="layout-options">
+                      {/* Trading Mode Selector */}
+                      <div className="layout-options">
                         <div>
                           <div className="layout-section-title">
-                            {t('tradePanelPosition')}
+                            {t('tradingModeSettings')}
                           </div>
                           <div className="settings-section-subtitle">
-                            {t('chooseTradingPanelPosition')}
+                            {t('configureEachModeIndependently')}
                           </div>
-                          <div className="layout-section">
+                          <div className="layout-section" style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
                             <button
-                              className={`layout-option ${layoutSettings === 'alternative' ? 'active' : ''}`}
+                              className={`control-layout-option ${activeTradingMode === 'spot' ? 'active' : ''}`}
                               onClick={() => {
-                                setLayoutSettings('alternative');
-                                localStorage.setItem('crystal_layout', 'alternative');
+                                setActiveTradingMode('spot');
+                                localStorage.setItem('crystal_trading_mode', 'spot');
                               }}
+                              style={{ flex: 1 }}
                             >
-                              <div className="layout-preview-container">
-                                <div className="preview-trade"></div>
-                                <div className="layout-preview-wrapper">
-                                  <div className="layout-preview alternative-layout">
-                                    <div className="preview-chart"></div>
-                                    <div className="preview-orderbook"></div>
-                                  </div>
-                                  <div className="layout-preview-bottom">
-                                    <div className="preview-ordercenter"></div>
-                                  </div>
-                                </div>
-                              </div>
                               <div className="layout-label">
-                                <span className="layout-name">
-                                  {t('left')} {t('panel')}
-                                </span>
+                                <span className="control-layout-name">{t('spot')}</span>
                               </div>
                             </button>
 
                             <button
-                              className={`layout-option ${layoutSettings === 'default' ? 'active' : ''}`}
+                              className={`control-layout-option ${activeTradingMode === 'perps' ? 'active' : ''}`}
                               onClick={() => {
-                                setLayoutSettings('default');
-                                localStorage.setItem('crystal_layout', 'default');
+                                setActiveTradingMode('perps');
+                                localStorage.setItem('crystal_trading_mode', 'perps');
                               }}
+                              style={{ flex: 1 }}
                             >
-                              <div className="layout-preview-container">
-                                <div className="layout-preview-wrapper">
-                                  <div className="layout-preview alternative-layout">
-                                    <div className="preview-chart" />
-                                    <div className="preview-orderbook" />
-                                  </div>
-                                  <div className="layout-preview-bottom">
-                                    <div className="preview-ordercenter" />
-                                  </div>
-                                </div>
-                                <div className="preview-trade" />
-                              </div>
-
                               <div className="layout-label">
-                                <span className="layout-name">
-                                  {t('right')} {t('panel')}
-                                </span>
+                                <span className="control-layout-name">{t('perps')}</span>
+                              </div>
+                            </button>
+
+                            <button
+                              className={`control-layout-option ${activeTradingMode === 'spectra' ? 'active' : ''}`}
+                              onClick={() => {
+                                setActiveTradingMode('spectra');
+                                localStorage.setItem('crystal_trading_mode', 'spectra');
+                              }}
+                              style={{ flex: 1 }}
+                            >
+                              <div className="layout-label">
+                                <span className="control-layout-name">{t('spectra')}</span>
                               </div>
                             </button>
                           </div>
                         </div>
-                        <div>
-                          <div className="layout-section-title">
-                            {t('orderbookPosition')}
-                          </div>
-                          <div className="settings-section-subtitle">
-                            {t('positionOrderbookSide')}
-                          </div>
-                          <div className="layout-section">
-                            <button
-                              className={`layout-option ${orderbookPosition === 'left' ? 'active' : ''}`}
-                              onClick={() => {
-                                setOrderbookPosition('left');
-                                localStorage.setItem('crystal_orderbook', 'left');
-                              }}
-                            >
-                              <div className="ob-layout-preview-container">
-                                <div className="ob-layout-preview alternative-layout">
-                                  <div className="ob-preview-orderbook">
-                                    <div className="ob-preview-sell"></div>
-                                    <div className="ob-preview-buy"></div>
-                                  </div>
-                                  <div className="ob-preview-chart"></div>
-                                </div>
-                              </div>
-                              <div className="layout-label">
-                                <span className="layout-name">
-                                  {t('left')} {t('side')}
-                                </span>
-                              </div>
-                            </button>
+                      </div>
 
-                            <button
-                              className={`layout-option ${orderbookPosition === 'right' ? 'active' : ''}`}
-                              onClick={() => {
-                                setOrderbookPosition('right');
-                                localStorage.setItem('crystal_orderbook', 'right');
-                              }}
-                            >
-                              <div className="ob-layout-preview-container">
-                                <div className="ob-layout-preview alternative-layout">
-                                  <div className="ob-preview-chart"></div>
-                                  <div className="ob-preview-orderbook">
-                                    <div className="ob-preview-sell"></div>
-                                    <div className="ob-preview-buy"></div>
+                      {/* Trade Panel Position - only show for spot/perps, not spectra */}
+                      {!simpleView && activeTradingMode !== 'spectra' && (
+                        <div className="layout-options">
+                          <div>
+                            <div className="layout-section-title">
+                              {t('tradePanelPosition')} ({activeTradingMode === 'spot' ? t('spot') : t('perps')})
+                            </div>
+                            <div className="settings-section-subtitle">
+                              {t('chooseTradingPanelPosition')}
+                            </div>
+                            <div className="layout-section">
+                              <button
+                                className={`layout-option ${getActiveLayoutSettings() === 'alternative' ? 'active' : ''}`}
+                                onClick={() => {
+                                  if (activeTradingMode === 'perps') {
+                                    setPerpsLayoutSettings('alternative');
+                                    localStorage.setItem('crystal_perps_layout', 'alternative');
+                                  } else {
+                                    setSpotLayoutSettings('alternative');
+                                    localStorage.setItem('crystal_spot_layout', 'alternative');
+                                  }
+                                }}
+                              >
+                                <div className="layout-preview-container">
+                                  <div className="preview-trade"></div>
+                                  <div className="layout-preview-wrapper">
+                                    <div className="layout-preview alternative-layout">
+                                      <div className="preview-chart"></div>
+                                      <div className="preview-orderbook"></div>
+                                    </div>
+                                    <div className="layout-preview-bottom">
+                                      <div className="preview-ordercenter"></div>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                              <div className="layout-label">
-                                <span className="layout-name">
-                                  {t('right')} {t('side')}
-                                </span>
-                              </div>
-                            </button>
+                                <div className="layout-label">
+                                  <span className="layout-name">
+                                    {t('left')} {t('panel')}
+                                  </span>
+                                </div>
+                              </button>
+
+                              <button
+                                className={`layout-option ${getActiveLayoutSettings() === 'default' ? 'active' : ''}`}
+                                onClick={() => {
+                                  if (activeTradingMode === 'perps') {
+                                    setPerpsLayoutSettings('default');
+                                    localStorage.setItem('crystal_perps_layout', 'default');
+                                  } else {
+                                    setSpotLayoutSettings('default');
+                                    localStorage.setItem('crystal_spot_layout', 'default');
+                                  }
+                                }}
+                              >
+                                <div className="layout-preview-container">
+                                  <div className="layout-preview-wrapper">
+                                    <div className="layout-preview alternative-layout">
+                                      <div className="preview-chart" />
+                                      <div className="preview-orderbook" />
+                                    </div>
+                                    <div className="layout-preview-bottom">
+                                      <div className="preview-ordercenter" />
+                                    </div>
+                                  </div>
+                                  <div className="preview-trade" />
+                                </div>
+
+                                <div className="layout-label">
+                                  <span className="layout-name">
+                                    {t('right')} {t('panel')}
+                                  </span>
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Orderbook Position */}
+                          <div>
+                            <div className="layout-section-title">
+                              {t('orderbookPosition')} ({activeTradingMode === 'spot' ? t('spot') : t('perps')})
+                            </div>
+                            <div className="settings-section-subtitle">
+                              {t('positionOrderbookSide')}
+                            </div>
+                            <div className="layout-section">
+                              <button
+                                className={`layout-option ${getActiveOrderbookPosition() === 'left' ? 'active' : ''}`}
+                                onClick={() => {
+                                  if (activeTradingMode === 'perps') {
+                                    setPerpsOrderbookPosition('left');
+                                    localStorage.setItem('crystal_perps_orderbook', 'left');
+                                  } else {
+                                    setSpotOrderbookPosition('left');
+                                    localStorage.setItem('crystal_spot_orderbook', 'left');
+                                  }
+                                }}
+                              >
+                                <div className="ob-layout-preview-container">
+                                  <div className="ob-layout-preview alternative-layout">
+                                    <div className="ob-preview-orderbook">
+                                      <div className="ob-preview-sell"></div>
+                                      <div className="ob-preview-buy"></div>
+                                    </div>
+                                    <div className="ob-preview-chart"></div>
+                                  </div>
+                                </div>
+                                <div className="layout-label">
+                                  <span className="layout-name">
+                                    {t('left')} {t('side')}
+                                  </span>
+                                </div>
+                              </button>
+
+                              <button
+                                className={`layout-option ${getActiveOrderbookPosition() === 'right' ? 'active' : ''}`}
+                                onClick={() => {
+                                  if (activeTradingMode === 'perps') {
+                                    setPerpsOrderbookPosition('right');
+                                    localStorage.setItem('crystal_perps_orderbook', 'right');
+                                  } else {
+                                    setSpotOrderbookPosition('right');
+                                    localStorage.setItem('crystal_spot_orderbook', 'right');
+                                  }
+                                }}
+                              >
+                                <div className="ob-layout-preview-container">
+                                  <div className="ob-layout-preview alternative-layout">
+                                    <div className="ob-preview-chart"></div>
+                                    <div className="ob-preview-orderbook">
+                                      <div className="ob-preview-sell"></div>
+                                      <div className="ob-preview-buy"></div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="layout-label">
+                                  <span className="layout-name">
+                                    {t('right')} {t('side')}
+                                  </span>
+                                </div>
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>)}
+                      )}
+
+                      {/* For Spectra, show message that it uses fixed layout */}
+                      {activeTradingMode === 'spectra' && (
+                        <div className="layout-options">
+                          <div className="settings-section-subtitle" style={{ textAlign: 'center', padding: '40px 20px', opacity: 0.7 }}>
+                            {t('spectraUsesFixedLayout')}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Notification Position - show for all modes */}
                       <div>
                         <div className="layout-section-title">
                           {t('notificationPosition')}
@@ -20694,7 +20830,7 @@ function App() {
         className={`main-content-wrapper ${simpleView ? 'simple-view' : ''}`}
         style={{
           flexDirection:
-            layoutSettings === 'alternative' ? 'row-reverse' : 'row',
+            spotLayoutSettings === 'alternative' ? 'row-reverse' : 'row',
         }}
       >
         {simpleView ? (
@@ -20706,8 +20842,8 @@ function App() {
             <div className="chartandorderbookandordercenter">
               <div className="chartandorderbook">
                 <ChartOrderbookPanel
-                  layoutSettings={layoutSettings}
-                  orderbookPosition={orderbookPosition}
+                  layoutSettings={spotLayoutSettings}
+                  orderbookPosition={spotOrderbookPosition}
                   orderdata={{
                     roundedBuyOrders: roundedBuyOrders?.orders,
                     roundedSellOrders: roundedSellOrders?.orders,
@@ -21217,8 +21353,8 @@ function App() {
           <Route path="/perps/:marketKey"
             element={
               <Perps
-                layoutSettings={layoutSettings}
-                orderbookPosition={orderbookPosition}
+                layoutSettings={perpsLayoutSettings}
+                orderbookPosition={perpsOrderbookPosition}
                 windowWidth={windowWidth}
                 mobileView={mobileView}
                 isOrderbookVisible={isOrderbookVisible}
