@@ -9857,10 +9857,10 @@ function App() {
                     setHiddenPopupTypes({});
                     localStorage.setItem('crystal_hidden_popup_types', JSON.stringify({}));
 
-                    setLayoutSettings('default');
+                    setSpotLayoutSettings('default');
                     localStorage.setItem('crystal_layout', 'default');
 
-                    setOrderbookPosition('right');
+                    setSpotOrderbookPosition('right');
                     localStorage.setItem('crystal_orderbook', 'right');
 
                     setIsMarksVisible(true);
@@ -10762,9 +10762,9 @@ function App() {
                         break;
 
                       case 'layout':
-                        setLayoutSettings('default');
+                        setSpotLayoutSettings('default');
                         localStorage.setItem('crystal_layout', 'default');
-                        setOrderbookPosition('right');
+                        setSpotOrderbookPosition('right');
                         localStorage.setItem('crystal_orderbook', 'right');
                         setNotificationPosition('bottom-right');
                         localStorage.setItem('crystal_notification_position', 'bottom-right');

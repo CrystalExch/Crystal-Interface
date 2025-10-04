@@ -24,7 +24,8 @@
 .detail-container {
   display: flex;
   align-self: center;
-  max-width: 1800px;
+  max-width: 1150px;
+  width: 90%;
   min-height: 100vh;
   padding-top: var(--gap-xl);
   color: var(--c-text);
