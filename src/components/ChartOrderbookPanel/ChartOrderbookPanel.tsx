@@ -29,6 +29,7 @@ interface ChartOrderbookPanelProps {
   reserveBase: any;
   isOrderbookLoading?: boolean;
   perps?: boolean;
+  activeTradingMode?: 'spot' | 'perps' | 'spectra';  
 }
 
 const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
@@ -55,7 +56,8 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   reserveQuote,
   reserveBase,
   isOrderbookLoading,
-  perps
+  perps,
+  activeTradingMode,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 const [layoutMode, setLayoutMode] = useState<'tab' | 'stacked' | 'large'>(() => {

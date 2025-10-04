@@ -35,7 +35,13 @@ function formatMemePrice(price: number): string {
   if (abs >= 1_000)
     return neg + (abs / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
 
-  if (abs >= 1e-3) return neg + abs.toFixed(2).replace(/\.00$/, '');
+  if (abs >= 100) return neg + abs.toFixed(0).replace(/\.00$/, '');
+  if (abs >= 10) return neg + abs.toFixed(1).replace(/\.00$/, '');
+  if (abs >= 1) return neg + abs.toFixed(2).replace(/\.00$/, '');
+  if (abs >= 1e-1) return neg + abs.toFixed(3).replace(/\.00$/, '');
+  if (abs >= 1e-2) return neg + abs.toFixed(4).replace(/\.00$/, '');
+  if (abs >= 1e-3) return neg + abs.toFixed(5).replace(/\.00$/, '');
+  if (abs >= 1e-4) return neg + abs.toFixed(6).replace(/\.00$/, '');
 
   const exp = Math.floor(Math.log10(abs));
   let zeros = -exp - 1;
@@ -53,7 +59,7 @@ function formatMemePrice(price: number): string {
   }
 
   const s = t.toString().padStart(1 + tailDigits, '0');
-  const tail2 = s.slice(0, 2);
+  const tail2 = s.slice(0, 3);
 
   return `${neg}0.0${toSub(zeros)}${tail2}`;
 }
