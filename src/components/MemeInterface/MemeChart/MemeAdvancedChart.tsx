@@ -433,12 +433,12 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
             isMarksVisibleRef.current === false
               ? []
               : (Array.isArray(tradeHistoryRef.current)
-                  ? tradeHistoryRef.current
-                  : []
-                ).filter((trade: any) => {
-                  const ts = trade.timestamp ?? trade[6];
-                  return ts >= from && ts <= to;
-                });
+                ? tradeHistoryRef.current
+                : []
+              ).filter((trade: any) => {
+                const ts = trade.timestamp ?? trade[6];
+                return ts >= from && ts <= to;
+              });
 
           const marks = rows.map((trade: any) => {
             const ts = trade.timestamp ?? trade[6];
