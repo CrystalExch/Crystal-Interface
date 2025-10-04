@@ -985,29 +985,11 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           </div>
         </div>
 
-        <div className="detail-trading-panel">
-          <div className="detail-chat-section">
-            <div className="detail-chat-header">
-              <div className="detail-chat-info">
-                <div className="detail-chat-avatar">
-                  <img src={tokenData.image} alt={tokenData.symbol} className="detail-chat-avatar-image" />
-                </div>
-                <div className="detail-chat-text">
-                  <h4 className="detail-chat-title">{tokenData.name} chat</h4>
-                  <span className="detail-chat-members">1 member</span>
-                </div>
-              </div>
-              <button className="detail-chat-join-button" onClick={() => setIsChatModalOpen(true)}>
-                <span className="detail-chat-icon">💬</span>
-                Join chat
-              </button>
-            </div>
-          </div>
-        </div>
+        
 
         <div className="detail-meme-address">
           <span className="detail-meme-address-title">CA:</span>{' '}
-          <CopyableAddress address={tokenData.id} className="detail-meme-address-value" truncate={{ start: 20, end: 10 }} />
+          <CopyableAddress address={tokenData.id} className="detail-meme-address-value" truncate={{ start: 6, end: 4 }} />
         </div>
 
         <div className="detail-info-section">
@@ -1016,30 +998,22 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             {holders.length > 0 ? (
               holders.slice(0, 10).map((holder, index) => (
                 <div key={holder.address} className="detail-holder-card">
-                  <div className="detail-holder-rank-badge">
-                    #{index + 1}
-                  </div>
                   <div className="detail-holder-info">
                     <div className="detail-holder-address-main">
                       {holder.address === 'bonding curve' ? (
-                        <span className="detail-bonding-curve-label">Bonding Curve</span>
+                        <span>Liquidity pool</span>
                       ) : (
                         <CopyableAddress 
                           address={holder.address} 
                           className="detail-holder-address-copy"
-                          truncate={{ start: 8, end: 6 }}
+                          truncate={{ start: 4, end: 4 }}
                         />
                       )}
                     </div>
-                    <div className="detail-holder-stats">
-                      <span className="detail-holder-balance">
-                        {formatNumber(holder.balance)} {token?.symbol || 'tokens'}
-                      </span>
-                      <span className="detail-holder-percentage-badge">
-                        {holder.percentage.toFixed(2)}%
-                      </span>
-                    </div>
                   </div>
+                  <span className="detail-holder-percentage-badge">
+                    {holder.percentage.toFixed(2)}%
+                  </span>
                 </div>
               ))
             ) : (
