@@ -226,6 +226,7 @@
         const [searchQuery, setSearchQuery] = useState('');
         const [showFiltersPopup, setShowFiltersPopup] = useState(false);
         const [monitorCurrency, setMonitorCurrency] = useState<'USD' | 'MON'>('USD');
+        const [walletCurrency, setWalletCurrency] = useState<'USD' | 'MON'>('USD');
         const [activeFilters, setActiveFilters] = useState<FilterState>(externalActiveFilters || {
             transactionTypes: {
                 buyMore: true,
@@ -876,6 +877,10 @@
                             }}
                             style={{ cursor: 'pointer' }}
                         />
+                        {walletCurrency === 'USD' 
+                            ? `$${(wallet.balance * monUsdPrice).toFixed(2)}K`
+                            : `${wallet.balance.toFixed(2)}K`
+                        }
                     </div>
                     </div>
                 </div>
@@ -1309,6 +1314,12 @@
                                 disabled={trackedWallets.length === 0}
                             >
                                 Export
+                            </button>
+                            <button 
+                                className="tracker-header-button"
+                                onClick={() => setWalletCurrency(prev => prev === 'USD' ? 'MON' : 'USD')}
+                            >
+                                {monitorCurrency === 'USD' ? 'USD' : 'MON'}
                             </button>
                             <button
                                 className="tracker-add-button"
