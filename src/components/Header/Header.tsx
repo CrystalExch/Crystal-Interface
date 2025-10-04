@@ -6,7 +6,7 @@ import SideMenuOverlay from './SideMenuOverlay/SideMenuOverlay';
 import TransactionHistoryMenu from '../TransactionHistoryMenu/TransactionHistoryMenu';
 import ChartHeader from '../Header/ChartHeader/ChartHeader';
 import MemeSearch from '../MemeSearch/MemeSearch';
-import { formatCommas } from '../../utils/numberDisplayFormat';
+import { formatCommas, formatSubscript } from '../../utils/numberDisplayFormat';
 import { formatSig } from '../OrderCenter/utils';
 import { useNavigate } from 'react-router-dom';
 import { encodeFunctionData } from 'viem';
@@ -633,8 +633,8 @@ useEffect(() => {
               marketHeader?.priceChange || 'n/a'
             }
             activeMarket={activeMarket}
-            high24h={formatSig(marketHeader?.high24h) || 'n/a'}
-            low24h={formatSig(marketHeader?.low24h) || 'n/a'}
+            high24h={formatSubscript(marketHeader?.high24h) || 'n/a'}
+            low24h={formatSubscript(marketHeader?.low24h) || 'n/a'}
             volume={isMemeTokenPage && memeTokenData ?
               memeTokenData.volume24h?.toString() || 'n/a' :
               marketHeader?.volume || 'n/a'

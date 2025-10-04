@@ -41,7 +41,6 @@ import {
 } from "@account-kit/react";
 import { Wallet, keccak256 } from 'ethers'
 import { useQuery } from '@tanstack/react-query';
-import { decodeEventLog } from 'viem';
 
 // import css
 import './App.css';
@@ -4391,12 +4390,12 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
                       priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
                       priceChangeAmount: currentPriceRaw - firstKlineOpen,
                       ...(high != null && {
-                        high24h: formatSubscript(
+                        high24h: formatSig(
                           high.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
                         )
                       }),
                       ...(low != null && {
-                        low24h: formatSubscript(
+                        low24h: formatSig(
                           low.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
                         )
                       })
@@ -5265,12 +5264,12 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
                         priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
                         priceChangeAmount: currentPriceRaw - firstKlineOpen,
                         ...(high != null && {
-                          high24h: formatSubscript(
+                          high24h: formatSig(
                             high.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
                           )
                         }),
                         ...(low != null && {
-                          low24h: formatSubscript(
+                          low24h: formatSig(
                             low.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
                           )
                         })
@@ -5852,8 +5851,8 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
               pair: `${cfg.baseAsset}/${cfg.quoteAsset}`,
               mini: miniAsc,
               currentPrice: formatSig(last.toFixed(decs)),
-              high24h: formatSubscript(high24.toFixed(decs)),
-              low24h: formatSubscript(low24.toFixed(decs)),
+              high24h: formatSig(high24.toFixed(decs)),
+              low24h: formatSig(low24.toFixed(decs)),
               volume: volumeDisplay,
               priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
               priceChangeAmount: deltaRaw,
@@ -5908,8 +5907,8 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
                   pair: `${siblingCfg.baseAsset}/${siblingCfg.quoteAsset}`,
                   mini: miniAsc2,
                   currentPrice: formatSig(last2.toFixed(decs2)),
-                  high24h: formatSubscript(Math.max(...miniAsc2.map(p => p.value)).toFixed(decs2)),
-                  low24h: formatSubscript(Math.min(...miniAsc2.map(p => p.value)).toFixed(decs2)),
+                  high24h: formatSig(Math.max(...miniAsc2.map(p => p.value)).toFixed(decs2)),
+                  low24h: formatSig(Math.min(...miniAsc2.map(p => p.value)).toFixed(decs2)),
                   volume: volumeDisplay,
                   priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
                   priceChangeAmount: deltaRaw,
@@ -21196,6 +21195,7 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
                 isBlurred={isBlurred}
                 setpopup={setpopup}
                 onImportWallets={handleImportWallets}
+                monUsdPrice={monUsdPrice}
               />
             } />
           <Route path="/perps" element={<Navigate to="/perps/BTCUSD" replace />} />

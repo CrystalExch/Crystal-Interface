@@ -199,7 +199,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const navigate = useNavigate();
   const { activechain } = useSharedContext();
 
-  const [activeTradeType, setActiveTradeType] = useState<'buy' | 'sell'>('buy');
   const walletPopup = useWalletPopup();
   const [token, setToken] = useState<any>((tokenData || tokenAddress ? {id: tokenAddress} : null) || null);
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -215,7 +214,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const realtimeCallbackRef = useRef<any>({});
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<'MON' | 'TOKEN'>('MON');
-
+  const ethToken = settings.chainConfig[activechain]?.eth;
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter as `0x${string}` | undefined;
 
   // get mon balance Ws in the chattttt
@@ -223,7 +222,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     if (!account?.address) return 0;
     const balances = walletTokenBalances[account.address];
     if (!balances) return 0;
-    const ethToken = settings.chainConfig[activechain]?.eth;
     if (ethToken && balances[ethToken]) {
       return Number(balances[ethToken]) / 1e18;
     }
@@ -286,12 +284,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                   klines(first: 1000, orderBy: time, orderDirection: desc) {
                     time open high low close
                   }
-                }
-                positions(first: 50, orderBy: tokens, orderDirection: desc, where: { tokens_gt: "0" }) {
-                  account {
-                    id
-                  }
-                  tokens
                 }
               }
             }`,
@@ -524,8 +516,8 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     setTradeAmount('');
   };
 
-  const currentCurrency = (tradeType === 'sell') ? (token?.symbol || 'TOKEN') : 
-                          (selectedCurrency === 'MON' ? 'MON' : token?.symbol || 'TOKEN');
+  const currentCurrency = (tradeType === 'sell') ? (tokenData?.symbol || 'TOKEN') : 
+                          (selectedCurrency === 'MON' ? 'MON' : tokenData?.symbol || 'TOKEN');
   const currentBalance = (tradeType === 'sell') ? walletTokenBalance :
                          (selectedCurrency === 'MON' ? walletMonBalance : walletTokenBalance);
 
@@ -580,18 +572,34 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           amount: tradeAmount,
           amountUnit: currentCurrency,
         });
+        let uo;
+        let value;
+        if (currentCurrency == 'MON') {
+          value = BigInt(Math.round(parsedAmount * 1e18));
 
-        const value = BigInt(Math.round(parsedAmount * 1e18));
-
-        const uo = {
-          target: routerAddress as `0x${string}`,
-          data: encodeFunctionData({
-            abi: CrystalRouterAbi,
-            functionName: 'buy',
-            args: [true, tokenData.tokenAddress as `0x${string}`, value, 0n],
-          }),
-          value,
-        };
+          uo = {
+            target: routerAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: CrystalRouterAbi,
+              functionName: 'buy',
+              args: [true, tokenAddress as `0x${string}`, value, 0n],
+            }),
+            value,
+          };
+        }
+        else {
+          const tokenAmount = BigInt(Math.round(parsedAmount * 1e18));
+          value = walletTokenBalances[account.address][ethToken] / 2n
+          uo = {
+            target: routerAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: CrystalRouterAbi,
+              functionName: 'buy',
+              args: [false, tokenAddress as `0x${string}`, value, tokenAmount],
+            }),
+            value,
+          };
+        }
 
         updatePopup(txId, {
           title: 'Confirming transaction...',
@@ -662,7 +670,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
     if (account.chainId !== targetChainId)
       return `${walletPopup.texts.SWITCH_CHAIN} to ${settings.chainConfig[activechain]?.name || 'Monad'}`;
-    return `${activeTradeType === 'buy' ? 'Buy' : 'Sell'} ${tokenData.symbol}`;
+    return `${tradeType === 'buy' ? 'Buy' : 'Sell'} ${tokenData.symbol}`;
   };
 
   const isTradeDisabled = () => {
@@ -699,9 +707,9 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   return (
     <div className="detail-container">
       <div className="detail-main">
-        <button onClick={() => navigate('/board')} className="detail-back-button">
-          ←
-        </button>
+        <div onClick={() => navigate('/board')} className="detail-back-button">
+          ← Back
+        </div>
 
         <div className="detail-header">
           <div className="detail-token-header">
@@ -838,13 +846,12 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           <div className="detail-trade-form">
             <div className="detail-trade-input-group">
               <div className="detail-balance-info">
-                {/* Only show currency switch button for buy mode */}
                 {tradeType === 'buy' && (
                   <button 
                     className="detail-currency-switch-button" 
                     onClick={handleCurrencySwitch}
                   >
-                    Switch to {currentCurrency}
+                    Switch to {(selectedCurrency === 'MON' ? tokenData?.symbol || 'TOKEN' : 'MON')}
                   </button>
                 )}
                 <span>
@@ -863,24 +870,21 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               </div>
 
               {tradeType === 'buy' && selectedCurrency === 'MON' ? (
-              <div className="detail-preset-buttons">
-                {/* Left-aligned button */}
-                <button 
-                  className="detail-preset-button-left" 
-                  onClick={() => {/* your custom action */}}
-                >
-                  Custom
-                </button>
-                
-                {/* Right-aligned group */}
+              <div className="detail-preset-buttons">                
                 <div className="detail-preset-buttons-right">
-                  {['1', '5', '10', '50'].map((amount) => (
+                <button 
+                      className="detail-preset-button-left"
+                      onClick={() => {/* your custom action */}}
+                >
+                  Slippage (%)
+                </button>
+                  {['1', '10', '100'].map((amount) => (
                     <button 
                       key={amount} 
                       onClick={() => setTradeAmount(amount)} 
                       className="detail-preset-button"
                     >
-                      {amount}
+                      {amount} MON
                     </button>
                   ))}
                   <button onClick={handleMaxClick} className="detail-preset-button">
@@ -889,17 +893,14 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                 </div>
               </div>
               ) : (
-                <div className="detail-preset-buttons">
-                  {/* Left-aligned button */}
+                <div className="detail-preset-buttons">                  
+                  <div className="detail-preset-buttons-right">
                   <button 
                     className="detail-preset-button-left" 
                     onClick={() => {/* your custom action */}}
                   >
-                    Custom
+                    Slippage (%)
                   </button>
-                  
-                  {/* Right-aligned group */}
-                  <div className="detail-preset-buttons-right">
                     {['25', '50', '75', '100'].map((percentage) => (
                       <button 
                         key={percentage} 

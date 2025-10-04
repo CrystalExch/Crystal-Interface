@@ -69,49 +69,45 @@ export const formatBalance = (
   return intPart;
 };
 
-export const formatSubscript = (value: string) => {
-  if (value === undefined) {
-    return '';
+export const formatSubscript = (value: string): string => {
+  if (!value) return '';
+
+  const neg = value.startsWith('-') ? '-' : '';
+  let raw = value.replace(/^[+-]/, '').replace(/,/g, '');
+
+  if (/[eE]/.test(raw)) {
+    const [mant, expStr] = raw.toLowerCase().split('e');
+    const exp = parseInt(expStr, 10);
+    const digits = mant.replace('.', '');
+    const dotPos = mant.indexOf('.') === -1 ? mant.length : mant.indexOf('.');
+    if (exp >= 0) {
+      const pos = dotPos + exp;
+      raw =
+        pos >= digits.length
+          ? digits + '0'.repeat(pos - digits.length)
+          : digits.slice(0, pos) + (pos < digits.length ? '.' + digits.slice(pos) : '');
+    } else {
+      raw = '0.' + '0'.repeat(-exp - 1) + digits;
+    }
   }
 
-  let numericValue = parseFloat(value);
-
-  if (numericValue === 0) {
-    return '0.00';
-  }
-
-  if (value.toLowerCase().includes('e')) {
-    value = numericValue.toFixed(10);
-  }
-
-  const [integerPart, fractionalPart = ''] = value.split('.');
+  const [integerPart, fractionalPart = ''] = raw.split('.');
   const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
   if (fractionalPart) {
     let zerosCount = 0;
-    for (const char of fractionalPart) {
-      if (char === '0') {
-        zerosCount++;
-      } else {
-        break;
-      }
+    for (const ch of fractionalPart) {
+      if (ch === '0') zerosCount++; else break;
     }
-
     if (zerosCount > 4) {
       const remainder = fractionalPart.slice(zerosCount);
-      const zerosSubscript = zerosCount
-        .toString()
-        .split('')
-        .map((digit) => subscriptMap[digit] || digit)
-        .join('');
-
-      return `${formattedInteger}.0${zerosSubscript}${remainder}`;
+      const zerosSub = zerosCount.toString().split('').map(d => subscriptMap[d]||d).join('');
+      return `${neg}${formattedInteger}.0${zerosSub}${remainder}`;
     }
-
-    return `${formattedInteger}.${fractionalPart}`;
+    return `${neg}${formattedInteger}.${fractionalPart}`;
   }
 
-  return formattedInteger;
+  return neg + formattedInteger;
 };
 
 export const formatCommas = (value: string) => {
@@ -124,7 +120,6 @@ export const formatCommas = (value: string) => {
     : formattedInteger;
 };
 
-export function formatRound(num: number, decimals: number): string {
-  const temp = num.toFixed(decimals);
-  return formatCommas(temp);
+export const formatValue = (value: string, toSig: boolean = false, toSubscript: boolean = false, toCommas: boolean = true): string => {
+
 }

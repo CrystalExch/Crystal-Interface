@@ -226,7 +226,7 @@ const LiveTradesFiltersPopup: React.FC<LiveTradesFiltersPopupProps> = ({ onClose
                   onChange={(e) => handleRangeChange('transactionAmount', 'min', e.target.value)}
                   className="live-trades-filters-input"
                 />
-                <span className="live-trades-filters-input-suffix">SOL</span>
+                <span className="live-trades-filters-input-suffix">MON</span>
               </div>
               <div className="live-trades-filters-input-wrapper">
                 <input
@@ -236,7 +236,7 @@ const LiveTradesFiltersPopup: React.FC<LiveTradesFiltersPopupProps> = ({ onClose
                   onChange={(e) => handleRangeChange('transactionAmount', 'max', e.target.value)}
                   className="live-trades-filters-input"
                 />
-                <span className="live-trades-filters-input-suffix">SOL</span>
+                <span className="live-trades-filters-input-suffix">MON</span>
               </div>
             </div>
           </div>

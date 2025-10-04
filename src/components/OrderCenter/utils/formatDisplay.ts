@@ -17,15 +17,16 @@ export const formatDisplay = (value: string) => {
 export const formatSig = (value: string): string => {
   const addCommas = (s: string) => s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-  if (value === undefined || value === null) return '0.00000';
+  if (value === undefined || value === null) return value;
   const num = Number(value);
-  if (!Number.isFinite(num)) return '0.00000';
-  if (num === 0) return '0.00000';
+  if (!Number.isFinite(num)) return value;
+  if (num === 0) return value;
 
   const neg = num < 0;
   const signStr = neg ? '-' : '';
 
-  let rounded = Math.abs(num).toPrecision(5);
+  const sigFigs = (s: string) => (s.includes('e')||s.includes('E')?Number(s).toString():s).replace(/^-?0*\.?0*/, '').replace('.', '').length;
+  let rounded = sigFigs(value) <= 5 ? value.replace('-', '') : Math.abs(num).toPrecision(5);
 
   const toDecimalFromExp = (s: string) => {
     if (!/[eE]/.test(s)) return s;
@@ -46,11 +47,6 @@ export const formatSig = (value: string): string => {
   rounded = toDecimalFromExp(rounded);
 
   let [intRaw, fracRaw = ''] = rounded.split('.');
-
-  const sigCount = intRaw.replace(/^0+/, '').length + fracRaw.length;
-  if (sigCount < 5) {
-    fracRaw = fracRaw.padEnd(fracRaw.length + (5 - sigCount), '0');
-  }
 
   return fracRaw ? `${signStr}${addCommas(intRaw)}.${fracRaw}` : signStr + addCommas(intRaw);
 };
