@@ -3303,10 +3303,10 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     return num.toFixed(Math.min(decimals, 8));
   };
 
-const currentWallet = getCurrentWalletInfo();
+  const currentWallet = getCurrentWalletInfo();
   const displayAddress = currentWallet ? currentWallet.address : account.address;
   const selectedSet = useMemo(() => new Set<string>(), []);
-  
+
   const totalSelectedBalance = useMemo(() => {
     if (selectedWallets.size === 0) return 0;
     let total = 0;
@@ -3315,7 +3315,7 @@ const currentWallet = getCurrentWalletInfo();
     });
     return total;
   }, [selectedWallets, walletTokenBalances, tokenList]);
-  
+
   const navigate = useNavigate();
   const routerAddress =
     appSettings.chainConfig[activechain].launchpadRouter.toLowerCase();
@@ -4434,11 +4434,13 @@ const currentWallet = getCurrentWalletInfo();
                     <span className="subwallet-total-balance">
                       {selectedWallets.size > 0 ? (
                         <>
-                          <img src={monadicon} className="wallet-dropdown-mon-icon" style={{ width: '14px', height: '14px', marginRight: '4px' }} />
+                          <img src={monadicon} className="wallet-dropdown-mon-icon" style={{ width: '15px', height: '15px', marginRight: '4px' }} />
                           {formatNumberWithCommas(totalSelectedBalance, 2)}
                         </>
                       ) : (
-                        displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'
+                        <>
+                                                  <img src={monadicon} className="wallet-dropdown-mon-icon" style={{ width: '15px', height: '15px', marginRight: '4px' }} /> <span>0</span>
+                                                  </>
                       )}
                     </span>
                     <svg
@@ -4457,7 +4459,7 @@ const currentWallet = getCurrentWalletInfo();
               </div>
             </button>
             {account.connected && (
-    <div className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
+              <div className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
                 <div className="wallet-dropdown-header">
                   <div className="wallet-dropdown-actions">
                     <button
