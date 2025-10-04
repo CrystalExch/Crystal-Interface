@@ -541,7 +541,6 @@
   display: flex;
   gap: 4px;
   height: 20px;
-  color: #d8dbf5;
   font-size: 1rem;
   font-weight: 500;
 }
@@ -1298,8 +1297,8 @@
 
 .explorer-hide-button {
   align-items: center;
-  background: rgba(6, 6, 6);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(15, 15, 15);
+  border: 1px solid rgba(226, 228, 248, 0.1);
   border-radius: 4px;
   cursor: pointer;
   display: flex;
@@ -2466,8 +2465,8 @@
 
 .explorer-blacklist-button {
   align-items: center;
-  background: rgba(6, 6, 6);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(15, 15, 15);
+  border: 1px solid rgba(226, 228, 248, 0.1);
   border-radius: 4px;
   cursor: pointer;
   display: flex;
@@ -3419,8 +3418,8 @@
 }
 
 .explorer-token-row.hidden-token .explorer-hide-button {
-  background: rgba(0, 0, 0, 0.9);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 1);
+  border-color: rgba(255, 255, 255, 0.2);
   opacity: 1;
 }
 
@@ -3489,7 +3488,7 @@
 .metric-color-item {
   align-items: center;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
+  border-radius: 6px;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -3709,38 +3708,54 @@
   border-color: rgba(255, 255, 255, 0.4);
   transform: scale(1.1);
 }
-
-
+.display-metric-value{
+  font-size: 0.8rem;
+  display: flex;
+  align-self: flex-start;
+  padding-left: 8px;
+  padding-top: 3px;
+}
 
 /* Hover effects for metric colored rows */
 .explorer-token-row.metric-colored:hover {
   background: rgba(170, 174, 207, 0.03);
 }
 
-/* Fallback for browsers that don't support color-mix */
-@supports not (background: color-mix(in srgb, red, blue)) {
-  .explorer-token-row.metric-colored.market-cap-range1 {
-    background: rgba(59, 130, 246, 0.08);
-  }
-
-  .explorer-token-row.metric-colored.market-cap-range2 {
-    background: rgba(234, 179, 8, 0.08);
-  }
-
-  .explorer-token-row.metric-colored.market-cap-range3 {
-    background: rgba(20, 184, 166, 0.08);
-  }
-
-  .explorer-token-row.metric-colored.volume-range1,
-  .explorer-token-row.metric-colored.volume-range2,
-  .explorer-token-row.metric-colored.volume-range3,
-  .explorer-token-row.metric-colored.holders-range1,
-  .explorer-token-row.metric-colored.holders-range2,
-  .explorer-token-row.metric-colored.holders-range3 {
-    background: rgba(255, 255, 255, 0.08);
-  }
+.explorer-token-row.metric-colored.market-cap-range1 .explorer-market-cap .mc-value {
+  color: var(--metric-market-cap-range1, #d8dcff) !important;
+}
+.explorer-token-row.metric-colored.market-cap-range2 .explorer-market-cap .explorer-market-cap {
+  color: var(--metric-market-cap-range2, #eab308) !important;
 }
 
+.explorer-token-row.metric-colored.market-cap-range3 .explorer-market-cap .explorer-market-cap {
+  color: var(--metric-market-cap-range3, #14b8a6) !important;
+}
+/* Apply metric colors to volume text */
+.explorer-token-row.metric-colored.volume-range1 .explorer-volume .mc-value {
+  color: var(--metric-volume-range1, #ffffff) !important;
+}
+
+.explorer-token-row.metric-colored.volume-range2 .explorer-volume .mc-value {
+  color: var(--metric-volume-range2, #ffffff) !important;
+}
+
+.explorer-token-row.metric-colored.volume-range3 .explorer-volume .mc-value {
+  color: var(--metric-volume-range3, #ffffff) !important;
+}
+
+/* Apply metric colors to holders text */
+.explorer-token-row.metric-colored.holders-range1 .explorer-stat-item .explorer-stat-value {
+  color: var(--metric-holders-range1, #ffffff) !important;
+}
+
+.explorer-token-row.metric-colored.holders-range2 .explorer-stat-item .explorer-stat-value {
+  color: var(--metric-holders-range2, #ffffff) !important;
+}
+
+.explorer-token-row.metric-colored.holders-range3 .explorer-stat-item .explorer-stat-value {
+  color: var(--metric-holders-range3, #ffffff) !important;
+}
 
 .column-drag-container {
   display: flex;
@@ -3769,12 +3784,17 @@
           user-select: none;
 }
 
-
+.column-drag-item.column-hidden {
+  background: rgba(170, 174, 207, 0.05);
+  border-color: rgba(181, 184, 211, 0.3);
+  color: rgba(216, 220, 255, 0.4);
+  opacity: 0.5;
+}
 
 .column-drag-item.drag-over {
-  background: rgba(170, 174, 207, 0.25);
+  border-style: dashed;
   border-color: #aaaecf;
-  transform: scale(1.05);
+  background: rgba(170, 174, 207, 0.15);
 }
 
 /* Quick Buy Behavior Styles */
@@ -4246,3 +4266,11 @@
   height: 14px;
 }
 
+
+
+
+
+.metrics-display-section{
+  margin-bottom: -15px;
+  margin-top: 10px;
+}

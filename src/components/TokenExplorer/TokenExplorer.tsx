@@ -100,6 +100,7 @@ interface DisplaySettings {
   spacedTables: boolean;
   colorRows: boolean;
   columnOrder: Array<ColumnKey>;
+  hiddenColumns?: Array<ColumnKey>;
   quickBuyClickBehavior: 'nothing' | 'openPage' | 'openNewTab';
   secondQuickBuyEnabled: boolean;
   secondQuickBuyColor: string;
@@ -189,6 +190,7 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
   spacedTables: false,
   colorRows: false,
   columnOrder: ['new', 'graduating', 'graduated'],
+  hiddenColumns: [],
   quickBuyClickBehavior: 'nothing',
   secondQuickBuyEnabled: false,
   secondQuickBuyColor: '#50f08dc0',
@@ -208,7 +210,7 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
     insiders: true,
     dexPaid: false,
   },
-  metricColoring: false,
+  metricColoring: true,
   metricColors: {
     marketCap: { range1: '#d8dcff', range2: '#eab308', range3: '#14b8a6' },
     volume: { range1: '#ffffff', range2: '#ffffff', range3: '#ffffff' },
@@ -227,50 +229,61 @@ const ALERT_DEFAULTS: AlertSettings = {
 };
 
 const BLACKLIST_DEFAULTS: BlacklistSettings = { items: [] };
-
-const getMetricColorClass = (
+const getMetricColorClasses = (
   token: Token | undefined,
   display: DisplaySettings,
 ) => {
   if (!token || !display?.metricColors || !display?.metricColoring) return null;
-  if (typeof token.marketCap !== 'number' || isNaN(token.marketCap))
-    return null;
 
-  if (token.marketCap < 30000) {
-    return {
-      class: 'market-cap-range1',
-      color: display.metricColors.marketCap.range1,
-    };
-  } else if (token.marketCap < 150000) {
-    return {
-      class: 'market-cap-range2',
-      color: display.metricColors.marketCap.range2,
-    };
-  } else {
-    return {
-      class: 'market-cap-range3',
-      color: display.metricColors.marketCap.range3,
-    };
+  const classes: string[] = [];
+  const cssVars: Record<string, string> = {};
+
+  if (typeof token.marketCap === 'number' && !isNaN(token.marketCap)) {
+    if (token.marketCap < 30000) {
+      classes.push('market-cap-range1');
+      cssVars['--metric-market-cap-range1'] = display.metricColors.marketCap.range1;
+    } else if (token.marketCap < 150000) {
+      classes.push('market-cap-range2');
+      cssVars['--metric-market-cap-range2'] = display.metricColors.marketCap.range2;
+    } else {
+      classes.push('market-cap-range3');
+      cssVars['--metric-market-cap-range3'] = display.metricColors.marketCap.range3;
+    }
   }
+
+  // Volume coloring
+  if (typeof token.volume24h === 'number' && !isNaN(token.volume24h)) {
+    if (token.volume24h < 1000) {
+      classes.push('volume-range1');
+      cssVars['--metric-volume-range1'] = display.metricColors.volume.range1;
+    } else if (token.volume24h < 2000) {
+      classes.push('volume-range2');
+      cssVars['--metric-volume-range2'] = display.metricColors.volume.range2;
+    } else {
+      classes.push('volume-range3');
+      cssVars['--metric-volume-range3'] = display.metricColors.volume.range3;
+    }
+  }
+
+  // Holders coloring
+  if (typeof token.holders === 'number' && !isNaN(token.holders)) {
+    if (token.holders < 10) {
+      classes.push('holders-range1');
+      cssVars['--metric-holders-range1'] = display.metricColors.holders.range1;
+    } else if (token.holders < 50) {
+      classes.push('holders-range2');
+      cssVars['--metric-holders-range2'] = display.metricColors.holders.range2;
+    } else {
+      classes.push('holders-range3');
+      cssVars['--metric-holders-range3'] = display.metricColors.holders.range3;
+    }
+  }
+
+  return classes.length > 0 ? { classes: classes.join(' '), cssVars } : null;
 };
 
 const hasMetricColoring = (displaySettings: DisplaySettings | undefined) => {
-  if (!displaySettings?.metricColoring || !displaySettings?.metricColors)
-    return false;
-  try {
-    return Object.values(displaySettings.metricColors).some(
-      (ranges) =>
-        ranges &&
-        Object.values(ranges).some(
-          (color) =>
-            color &&
-            typeof color === 'string' &&
-            color.toLowerCase() !== '#ffffff',
-        ),
-    );
-  } catch {
-    return false;
-  }
+  return displaySettings?.metricColoring === true;
 };
 
 const getBondingColorClass = (percentage: number) => {
@@ -1294,14 +1307,21 @@ const DisplayDropdown: React.FC<{
       setDraggedIndex(null);
       setDragOverIndex(null);
     };
+    const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(
+      () => new Set(settings.hiddenColumns || [])
+    );
 
-    const handleHide = (e: React.MouseEvent, dropIndex: number) => {
+    const handleHide = (e: React.MouseEvent, column: ColumnKey) => {
       e.preventDefault();
-      if (dropIndex === null) return;
-      const newOrder = [...safeOrder];
-      newOrder.splice(dropIndex, 1);
-
-      onSettingsChange({ ...settings, columnOrder: newOrder });
+      e.stopPropagation();
+      const newHidden = new Set(hiddenColumns);
+      if (newHidden.has(column)) {
+        newHidden.delete(column);
+      } else {
+        newHidden.add(column);
+      }
+      setHiddenColumns(newHidden);
+      onSettingsChange({ ...settings, hiddenColumns: Array.from(newHidden) });
     };
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -1681,7 +1701,7 @@ const DisplayDropdown: React.FC<{
               {activeTab === 'metrics' && (
                 <div>
                   {(['marketCap', 'volume', 'holders'] as const).map((metric) => (
-                    <div className="display-section" key={metric}>
+                    <div className="metrics-display-section" key={metric}>
                       <h4 className="display-section-title">
                         {metric === 'marketCap'
                           ? 'Market Cap'
@@ -1694,7 +1714,7 @@ const DisplayDropdown: React.FC<{
                           (range, idx) => (
                             <div className="metric-color-option">
                               <div className="metric-color-item" key={range}>
-                                <div className="metric-value">
+                                <div className="display-metric-value">
                                   {metric === 'marketCap'
                                     ? idx === 0
                                       ? '30000'
@@ -1831,13 +1851,13 @@ const DisplayDropdown: React.FC<{
                       {safeOrder.map((column, index) => (
                         <div
                           key={column}
-                          className="column-drag-item"
+                          className={`column-drag-item ${hiddenColumns.has(column) ? 'column-hidden' : ''} ${dragOverIndex === index && draggedIndex !== index ? 'drag-over' : ''}`}
                           draggable
                           onDragStart={(e) => handleDragStart(e, index)}
                           onDragOver={(e) => handleDragOver(e, index)}
                           onDrop={(e) => handleDrop(e, index)}
                           onDragEnd={handleDragEnd}
-                          onClick={(e) => handleHide(e, index)}
+                          onClick={(e) => handleHide(e, column)}
                         >
                           {column === 'new'
                             ? 'New Pairs'
@@ -2072,7 +2092,7 @@ type Action =
   | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
   | { type: 'HIDE_TOKEN'; id: string }
   | { type: 'SHOW_TOKEN'; id: string }
-  | { type: 'SET_LOADING'; id: string; loading: boolean };
+  | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' };
 
 const initialState: State = {
   tokensByStatus: { new: [], graduating: [], graduated: [] },
@@ -2132,7 +2152,8 @@ function reducer(state: State, action: Action): State {
     }
     case 'SET_LOADING': {
       const l = new Set(state.loading);
-      action.loading ? l.add(action.id) : l.delete(action.id);
+      const key = action.buttonType ? `${action.id}-${action.buttonType}` : action.id;
+      action.loading ? l.add(key) : l.delete(key);
       return { ...state, loading: l };
     }
     case 'SHOW_TOKEN': {
@@ -2150,7 +2171,8 @@ const TokenRow = React.memo<{
   quickbuyAmountSecond: string;
   onHideToken: (tokenId: string) => void;
   onBlacklistToken: (token: Token) => void;
-  isLoading: boolean;
+  isLoadingPrimary: boolean;
+  isLoadingSecondary: boolean;
   hoveredToken: string | null;
   hoveredImage: string | null;
   onTokenHover: (id: string) => void;
@@ -2158,7 +2180,7 @@ const TokenRow = React.memo<{
   onImageHover: (tokenId: string) => void;
   onImageLeave: () => void;
   onTokenClick: (token: Token) => void;
-  onQuickBuy: (token: Token, amount: string) => void;
+  onQuickBuy: (token: Token, amount: string, buttonType: 'primary' | 'secondary') => void;
   onCopyToClipboard: (text: string) => void;
   displaySettings: DisplaySettings;
   isHidden: boolean;
@@ -2172,7 +2194,8 @@ const TokenRow = React.memo<{
     quickbuyAmountSecond,
     onHideToken,
     onBlacklistToken,
-    isLoading,
+    isLoadingPrimary,
+    isLoadingSecondary,
     hoveredToken,
     hoveredImage,
     onTokenHover,
@@ -2350,12 +2373,10 @@ const TokenRow = React.memo<{
     [token.sellTransactions, totalTransactions],
   );
 
-  const metricInfo = hasMetricColoring(displaySettings)
-    ? getMetricColorClass(token, displaySettings)
+  const metricData = hasMetricColoring(displaySettings)
+    ? getMetricColorClasses(token, displaySettings)
     : null;
-  const cssVariables: CSSVars = metricInfo
-    ? { [`--metric-${metricInfo.class}`]: metricInfo.color }
-    : {};
+  const cssVariables: CSSVars = metricData?.cssVars || {};
 
   return (
     <>
@@ -2364,7 +2385,7 @@ const TokenRow = React.memo<{
         className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${displaySettings.colorRows && token.status !== 'graduated'
           ? `colored-row ${getBondingColorClass(bondingPercentage)}`
           : ''
-          } ${metricInfo ? `metric-colored ${metricInfo.class}` : ''} ${token.status === 'graduated' ? 'graduated' : ''}`}
+          } ${metricData ? `metric-colored ${metricData.classes}` : ''} ${token.status === 'graduated' ? 'graduated' : ''}`}
         style={cssVariables}
         onMouseEnter={() => onTokenHover(token.id)}
         onMouseLeave={onTokenLeave}
@@ -2849,26 +2870,12 @@ const TokenRow = React.memo<{
             displaySettings.quickBuySize === 'ultra' && !displaySettings.secondQuickBuyEnabled
               ? (e) => {
                 e.stopPropagation();
-                onQuickBuy(token, quickbuyAmount);
+                onQuickBuy(token, quickbuyAmount, 'primary');
               }
               : undefined
           }
         >
           <div className="explorer-metrics-container">
-            {displaySettings.visibleRows.marketCap && (
-              <Tooltip content="Market Cap">
-                <div className="explorer-market-cap">
-                  <span className="mc-label">MC</span>
-                  <span className="explorer-market-cap">
-                    {formatPrice(
-                      token.marketCap * monUsdPrice,
-                      displaySettings.noDecimals,
-                    )}
-                  </span>
-                </div>
-              </Tooltip>
-            )}
-
             {displaySettings.visibleRows.volume && (
               <Tooltip content="Volume">
                 <div className="explorer-volume">
@@ -2882,6 +2889,21 @@ const TokenRow = React.memo<{
                 </div>
               </Tooltip>
             )}
+            {displaySettings.visibleRows.marketCap && (
+              <Tooltip content="Market Cap">
+                <div className="explorer-market-cap">
+                  <span className="mc-label">MC</span>
+                  <span className="mc-value">
+                    {formatPrice(
+                      token.marketCap * monUsdPrice,
+                      displaySettings.noDecimals,
+                    )}
+                  </span>
+                </div>
+              </Tooltip>
+            )}
+
+
           </div>
 
           <div className="explorer-third-row-section">
@@ -2959,13 +2981,13 @@ const TokenRow = React.memo<{
                       ) {
                         window.open(`/meme/${token.tokenAddress}`, '_blank');
                       } else {
-                        onQuickBuy(token, quickbuyAmount);
+                        onQuickBuy(token, quickbuyAmount, 'primary');
                       }
                     }
                   }}
-                  disabled={isLoading}
+                  disabled={isLoadingPrimary}
                 >
-                  {isLoading ? (
+                  {isLoadingPrimary ? (
                     <div className="quickbuy-loading-spinner" />
                   ) : (
                     <>
@@ -2990,11 +3012,11 @@ const TokenRow = React.memo<{
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onQuickBuy(token, quickbuyAmountSecond);
+                  onQuickBuy(token, quickbuyAmountSecond, 'secondary');
                 }}
-                disabled={isLoading}
+                disabled={isLoadingSecondary}
               >
-                {isLoading ? (
+                {isLoadingSecondary ? (
                   <div className="quickbuy-loading-spinner" />
                 ) : (
                   <>
@@ -3112,6 +3134,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             Array.isArray(parsed?.columnOrder) && parsed.columnOrder.length
               ? parsed.columnOrder
               : DISPLAY_DEFAULTS.columnOrder,
+          hiddenColumns: Array.isArray(parsed?.hiddenColumns)
+            ? parsed.hiddenColumns
+            : [],
           visibleRows: {
             ...DISPLAY_DEFAULTS.visibleRows,
             ...(parsed?.visibleRows || {}),
@@ -3634,12 +3659,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   }, []);
 
   const handleQuickBuy = useCallback(
-    async (token: Token, amt: string) => {
+    async (token: Token, amt: string, buttonType: 'primary' | 'secondary') => {
       const val = BigInt(amt || '0') * 10n ** 18n;
       if (val === 0n) return;
 
       const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      dispatch({ type: 'SET_LOADING', id: token.id, loading: true });
+      dispatch({ type: 'SET_LOADING', id: token.id, loading: true, buttonType });
 
       try {
         if (showLoadingPopup) {
@@ -3699,7 +3724,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           });
         }
       } finally {
-        dispatch({ type: 'SET_LOADING', id: token.id, loading: false });
+        dispatch({ type: 'SET_LOADING', id: token.id, loading: false, buttonType });
       }
     },
     [routerAddress, sendUserOperationAsync],
@@ -4191,7 +4216,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         />
 
         <div className="explorer-columns">
-          {renderOrder.map((columnType) => (
+          {renderOrder.filter(col => !displaySettings.hiddenColumns?.includes(col)).map((columnType) => (
             <div
               key={columnType}
               className={`explorer-column ${activeMobileTab === columnType ? 'mobile-active' : ''}`}
@@ -4324,7 +4349,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           quickbuyAmountSecond={quickAmountsSecond.new}
                           onHideToken={hideToken}
                           onBlacklistToken={handleBlacklistToken}
-                          isLoading={loading.has(t.id)}
+                          isLoadingPrimary={loading.has(`${t.id}-primary`)}
+                          isLoadingSecondary={loading.has(`${t.id}-secondary`)}
                           hoveredToken={hoveredToken}
                           hoveredImage={hoveredImage}
                           onTokenHover={handleTokenHover}
@@ -4468,14 +4494,15 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                       ))
                     ) : graduatingTokens.length ? (
                       graduatingTokens.map((t) => (
-                      <TokenRow
+                        <TokenRow
                           key={t.id}
                           token={t}
                           quickbuyAmount={quickAmounts.new}
                           quickbuyAmountSecond={quickAmountsSecond.new}
                           onHideToken={hideToken}
                           onBlacklistToken={handleBlacklistToken}
-                          isLoading={loading.has(t.id)}
+                          isLoadingPrimary={loading.has(`${t.id}-primary`)}
+                          isLoadingSecondary={loading.has(`${t.id}-secondary`)}
                           hoveredToken={hoveredToken}
                           hoveredImage={hoveredImage}
                           onTokenHover={handleTokenHover}
@@ -4626,7 +4653,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           quickbuyAmountSecond={quickAmountsSecond.new}
                           onHideToken={hideToken}
                           onBlacklistToken={handleBlacklistToken}
-                          isLoading={loading.has(t.id)}
+                          isLoadingPrimary={loading.has(`${t.id}-primary`)}
+                          isLoadingSecondary={loading.has(`${t.id}-secondary`)}
                           hoveredToken={hoveredToken}
                           hoveredImage={hoveredImage}
                           onTokenHover={handleTokenHover}
