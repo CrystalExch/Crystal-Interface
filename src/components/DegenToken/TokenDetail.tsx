@@ -289,6 +289,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                 sellTxs
                 name
                 symbol
+                migrated
                 metadataCID
                 creator {
                   id
@@ -348,6 +349,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           buyTransactions: Number(m.buyTxs || 0),
           sellTransactions: Number(m.sellTxs || 0),
           created: m.timestamp,
+          status: m.migrated ? 'graduated' : 'new' as const,
         };
 
         setTokenData(updatedTokenData);
@@ -733,7 +735,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   }
 
   const bondingProgress = Math.min((tokenData.marketCap / 10000) * 100, 100);
-
+  console.log(tokenData)
   return (
     <div className="detail-container">
       <div className="detail-main">
@@ -743,7 +745,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
         <div className="detail-header">
           <div className="detail-token-header">
-            <img src={tokenData.image} alt={tokenData.name} className="detail-token-image" />
+            <img src={tokenData.image} className="detail-token-image" />
             <div className="detail-token-info">
               <h1 className="detail-token-name">{tokenData.name}</h1>
               <div className="detail-token-symbol">{tokenData.symbol}</div>

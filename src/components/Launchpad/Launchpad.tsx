@@ -169,11 +169,11 @@ const Launchpad: React.FC<LaunchpadProps> = ({
     <div className="launchpad-container">
       <div className="launchpad-content">
 
-         <button className="launchpad-back-button" onClick={() => navigate('/board')}>
-          ←
-        </button>
+         <div className="launchpad-back-button" onClick={() => navigate('/board')}>
+          ← Back
+        </div>
         <div className="launchpad-form-wrapper">
-          <h1 className="launchpad-title">Launch your token</h1>
+          <h1 className="launchpad-title">Create a new coin</h1>
 
           <div className="launchpad-form">
             <div className="launchpad-token-info">
