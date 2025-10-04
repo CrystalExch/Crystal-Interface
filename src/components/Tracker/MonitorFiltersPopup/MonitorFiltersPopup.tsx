@@ -16,6 +16,14 @@ export interface MonitorFilterState {
     holdersMin: string;
     holdersMax: string;
   };
+  transactions: {
+    transactionCountMin: string;
+    transactionCountMax: string;
+    inflowVolumeMin: string;
+    inflowVolumeMax: string;
+    outflowVolumeMin: string;
+    outflowVolumeMax: string;
+  };
 }
 
 interface MonitorFiltersPopupProps {
@@ -31,21 +39,29 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'market' | 'transactions'>('market');
   const [filters, setFilters] = useState<MonitorFilterState>(
-    initialFilters || {
-      general: {
-        lastTransaction: '',
-        tokenAgeMin: '',
-        tokenAgeMax: '',
-      },
-      market: {
-        marketCapMin: '',
-        marketCapMax: '',
-        liquidityMin: '',
-        liquidityMax: '',
-        holdersMin: '',
-        holdersMax: '',
-      },
-    }
+      initialFilters || {
+        general: {
+          lastTransaction: '',
+          tokenAgeMin: '',
+          tokenAgeMax: '',
+        },
+        market: {
+          marketCapMin: '',
+          marketCapMax: '',
+          liquidityMin: '',
+          liquidityMax: '',
+          holdersMin: '',
+          holdersMax: '',
+        },
+        transactions: {
+          transactionCountMin: '',
+          transactionCountMax: '',
+          inflowVolumeMin: '',
+          inflowVolumeMax: '',
+          outflowVolumeMin: '',
+          outflowVolumeMax: '',
+        },
+      }
   );
 
   const handleReset = () => {
@@ -62,6 +78,14 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
         liquidityMax: '',
         holdersMin: '',
         holdersMax: '',
+      },
+      transactions: {
+        transactionCountMin: '',
+        transactionCountMax: '',
+        inflowVolumeMin: '',
+        inflowVolumeMax: '',
+        outflowVolumeMin: '',
+        outflowVolumeMax: '',
       },
     });
   };
@@ -174,7 +198,7 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
                       }
                       className="monitor-filter-input"
                     />
-                    <span className="monitor-filter-input-suffix">SOL</span>
+                    <span className="monitor-filter-input-suffix">MON</span>
                   </div>
                   <div className="monitor-filter-input-wrapper">
                     <input
@@ -189,7 +213,7 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
                       }
                       className="monitor-filter-input"
                     />
-                    <span className="monitor-filter-input-suffix">SOL</span>
+                    <span className="monitor-filter-input-suffix">MON</span>
                   </div>
                 </div>
               </div>
@@ -210,7 +234,7 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
                       }
                       className="monitor-filter-input"
                     />
-                    <span className="monitor-filter-input-suffix">SOL</span>
+                    <span className="monitor-filter-input-suffix">MON</span>
                   </div>
                   <div className="monitor-filter-input-wrapper">
                     <input
@@ -225,7 +249,7 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
                       }
                       className="monitor-filter-input"
                     />
-                    <span className="monitor-filter-input-suffix">SOL</span>
+                    <span className="monitor-filter-input-suffix">MON</span>
                   </div>
                 </div>
               </div>
@@ -260,6 +284,116 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
                       }
                       className="monitor-filter-input"
                     />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'transactions' && (
+            <>
+              <div className="monitor-filter-group">
+                <label className="monitor-filter-label">Transaction Count</label>
+                <div className="monitor-filter-range">
+                  <div className="monitor-filter-input-wrapper">
+                    <input
+                      type="text"
+                      placeholder="Min"
+                      value={filters.transactions.transactionCountMin}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          transactions: { ...prev.transactions, transactionCountMin: e.target.value },
+                        }))
+                      }
+                      className="monitor-filter-input"
+                    />
+                  </div>
+                  <div className="monitor-filter-input-wrapper">
+                    <input
+                      type="text"
+                      placeholder="Max"
+                      value={filters.transactions.transactionCountMax}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          transactions: { ...prev.transactions, transactionCountMax: e.target.value },
+                        }))
+                      }
+                      className="monitor-filter-input"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="monitor-filter-group">
+                <label className="monitor-filter-label">Inflow Volume</label>
+                <div className="monitor-filter-range">
+                  <div className="monitor-filter-input-wrapper">
+                    <input
+                      type="text"
+                      placeholder="Min"
+                      value={filters.transactions.inflowVolumeMin}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          transactions: { ...prev.transactions, inflowVolumeMin: e.target.value },
+                        }))
+                      }
+                      className="monitor-filter-input"
+                    />
+                    <span className="monitor-filter-input-suffix">MON</span>
+                  </div>
+                  <div className="monitor-filter-input-wrapper">
+                    <input
+                      type="text"
+                      placeholder="Max"
+                      value={filters.transactions.inflowVolumeMax}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          transactions: { ...prev.transactions, inflowVolumeMax: e.target.value },
+                        }))
+                      }
+                      className="monitor-filter-input"
+                    />
+                    <span className="monitor-filter-input-suffix">MON</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="monitor-filter-group">
+                <label className="monitor-filter-label">Outflow Volume</label>
+                <div className="monitor-filter-range">
+                  <div className="monitor-filter-input-wrapper">
+                    <input
+                      type="text"
+                      placeholder="Min"
+                      value={filters.transactions.outflowVolumeMin}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          transactions: { ...prev.transactions, outflowVolumeMin: e.target.value },
+                        }))
+                      }
+                      className="monitor-filter-input"
+                    />
+                    <span className="monitor-filter-input-suffix">MON</span>
+                  </div>
+                  <div className="monitor-filter-input-wrapper">
+                    <input
+                      type="text"
+                      placeholder="Max"
+                      value={filters.transactions.outflowVolumeMax}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          transactions: { ...prev.transactions, outflowVolumeMax: e.target.value },
+                        }))
+                      }
+                      className="monitor-filter-input"
+                    />
+                    <span className="monitor-filter-input-suffix">MON</span>
                   </div>
                 </div>
               </div>

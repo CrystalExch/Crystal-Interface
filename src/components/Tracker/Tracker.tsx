@@ -192,7 +192,7 @@
     type SortDirection = 'asc' | 'desc';
     
 
-    const Tracker: React.FC<TrackerProps> = ({ isBlurred, setpopup, onApplyFilters: externalOnApplyFilters, activeFilters: externalActiveFilters, monUsdPrice = 1}) => {
+    const Tracker: React.FC<TrackerProps> = ({ isBlurred, setpopup, onApplyFilters: externalOnApplyFilters, activeFilters: externalActiveFilters, monUsdPrice}) => {
         const [walletSortField, setWalletSortField] = useState<'balance' | 'lastActive' | null>(null);
         const [walletSortDirection, setWalletSortDirection] = useState<SortDirection>('desc');
         const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
@@ -210,6 +210,14 @@
                 holdersMin: '',
                 holdersMax: '',
             },
+            transactions: {
+                transactionCountMin: '',
+                transactionCountMax: '',
+                inflowVolumeMin: '',
+                inflowVolumeMax: '',
+                outflowVolumeMin: '',
+                outflowVolumeMax: '',
+            }
         });
 
         const [tradeSortField, setTradeSortField] = useState<'dateCreated' | 'amount' | 'marketCap' | null>(null);
@@ -594,6 +602,7 @@
             const now = new Date();
             
             let tokens = monitorTokens.filter(token => {
+                // Existing filters...
                 if (monitorFilters.general.lastTransaction) {
                     const lastTxTime = new Date(token.lastTransaction);
                     const secondsAgo = (now.getTime() - lastTxTime.getTime()) / 1000;
@@ -626,11 +635,40 @@
                     return false;
                 }
                 
-                // Holders filter
                 if (monitorFilters.market.holdersMin && token.holders < parseFloat(monitorFilters.market.holdersMin)) {
                     return false;
                 }
                 if (monitorFilters.market.holdersMax && token.holders > parseFloat(monitorFilters.market.holdersMax)) {
+                    return false;
+                }
+                
+                // NEW: Transaction filters
+                const totalTransactions = token.trades.reduce((sum, t) => sum + t.boughtTxns + t.soldTxns, 0);
+                
+                if (monitorFilters.transactions.transactionCountMin && totalTransactions < parseFloat(monitorFilters.transactions.transactionCountMin)) {
+                    return false;
+                }
+                if (monitorFilters.transactions.transactionCountMax && totalTransactions > parseFloat(monitorFilters.transactions.transactionCountMax)) {
+                    return false;
+                }
+                
+                // Calculate total inflow (buy) volume
+                const inflowVolume = token.trades.reduce((sum, t) => sum + t.bought, 0);
+                
+                if (monitorFilters.transactions.inflowVolumeMin && inflowVolume < parseFloat(monitorFilters.transactions.inflowVolumeMin)) {
+                    return false;
+                }
+                if (monitorFilters.transactions.inflowVolumeMax && inflowVolume > parseFloat(monitorFilters.transactions.inflowVolumeMax)) {
+                    return false;
+                }
+                
+                // Calculate total outflow (sell) volume
+                const outflowVolume = token.trades.reduce((sum, t) => sum + t.sold, 0);
+                
+                if (monitorFilters.transactions.outflowVolumeMin && outflowVolume < parseFloat(monitorFilters.transactions.outflowVolumeMin)) {
+                    return false;
+                }
+                if (monitorFilters.transactions.outflowVolumeMax && outflowVolume > parseFloat(monitorFilters.transactions.outflowVolumeMax)) {
                     return false;
                 }
                 
@@ -888,15 +926,6 @@
             </div>
         );
 
-        const convertMonitorCurrency = (value: number, fromUSD: boolean = true): number => {
-            if (monitorCurrency === 'USD' && fromUSD) {
-                return value * monUsdPrice;
-            } else if (monitorCurrency === 'MON' && !fromUSD) {
-                return value / monUsdPrice;
-            }
-            return value;
-        };
-
         const formatMonitorValue = (value: number, decimals: number = 2): string => {
             const converted = monitorCurrency === 'USD' 
                 ? value * monUsdPrice 
@@ -1005,7 +1034,7 @@
                                 className={`tracker-header-cell sortable ${tradeSortField === 'dateCreated' ? 'active' : ''}`}
                                 onClick={() => handleTradeSort('dateCreated')}
                             >
-                                Date Created
+                                Time
                                 {tradeSortField === 'dateCreated' && (
                                     <span className={`tracker-sort-arrow ${tradeSortDirection}`}>
                                         <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -1219,12 +1248,6 @@
                                                             {formatMonitorValue(trade.remaining, 0)}
                                                             {monitorCurrency === 'MON' ? ' MON' : ''}
                                                         </div>
-                                                        <div className={`trade-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}>
-                                                            +${trade.pnl.toFixed(3)}
-                                                        </div>
-                                                        <div className={`trade-remaining ${isBlurred ? 'blurred' : ''}`}>
-                                                            ${trade.remaining}
-                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1356,7 +1379,7 @@
                                 className="tracker-header-button"
                                 onClick={() => setMonitorCurrency(prev => prev === 'USD' ? 'MON' : 'USD')}
                             >
-                                {monitorCurrency === 'USD' ? 'USD $' : 'MON'}
+                                {monitorCurrency === 'USD' ? 'USD' : 'MON'}
                             </button>
                             <button className="tracker-header-button">P1</button>
                             <button className="tracker-header-button">

@@ -21195,6 +21195,7 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
                 isBlurred={isBlurred}
                 setpopup={setpopup}
                 onImportWallets={handleImportWallets}
+                monUsdPrice={monUsdPrice}
               />
             } />
           <Route path="/perps" element={<Navigate to="/perps/BTCUSD" replace />} />
