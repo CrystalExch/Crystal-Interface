@@ -1701,7 +1701,7 @@ const DisplayDropdown: React.FC<{
               {activeTab === 'metrics' && (
                 <div>
                   {(['marketCap', 'volume', 'holders'] as const).map((metric) => (
-                    <div className="display-section" key={metric}>
+                    <div className="metrics-display-section" key={metric}>
                       <h4 className="display-section-title">
                         {metric === 'marketCap'
                           ? 'Market Cap'
