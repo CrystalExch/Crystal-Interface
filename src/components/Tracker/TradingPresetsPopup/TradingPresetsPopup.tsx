@@ -28,7 +28,7 @@ const TradingPresetsPopup: React.FC<TradingPresetsPopupProps> = ({ onClose }) =>
         </div>
 
         <div className="trading-presets-content">
-          <div className="trading-presets-tabs">
+          <div className="trading-presets-tabs" data-active={activePreset}>
             {[1, 2, 3].map((preset) => (
               <button
                 key={preset}
