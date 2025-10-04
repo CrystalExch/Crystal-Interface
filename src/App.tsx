@@ -1967,9 +1967,9 @@ function App() {
   const saveSubWallets = useCallback((wallets: { address: string; privateKey: string; }[] | ((prevState: { address: string; privateKey: string; }[]) => { address: string; privateKey: string; }[])) => {
     setSubWallets((prevWallets) => {
       const newWallets = typeof wallets === 'function' ? wallets(prevWallets) : wallets;
-      
+
       const deduplicated = deduplicateWallets(newWallets);
-      
+
       localStorage.setItem('crystal_sub_wallets', JSON.stringify(deduplicated));
       return deduplicated;
     });
@@ -2914,23 +2914,23 @@ function App() {
     quoteDecimals: number
   ): { bids: Order[]; asks: Order[] } {
     if (reserve1Raw == 0 || reserve2Raw == 0 || interval <= 0) return { bids: [], asks: [] };
-  
+
     const UNI_V2_FEE_BIPS = 25;
     const fee = Math.max(0, UNI_V2_FEE_BIPS) / 10_000;
     const oneMinusFee = Math.max(1e-12, 1 - fee);
-  
+
     const toHuman = (raw: number | bigint, decimals: number) => {
       const n = typeof raw === 'bigint' ? Number(raw) : raw;
       return n / Math.pow(10, decimals);
     };
-  
+
     const x0 = Math.max(1e-18, toHuman(reserve1Raw, baseDecimals));
     const y0 = Math.max(1e-18, toHuman(reserve2Raw, quoteDecimals));
     const k = x0 * y0;
     const pMid = y0 / x0;
-  
+
     const xFromP = (p: number) => Math.sqrt(k * Math.max(p, 1e-18));
-  
+
     const intervalToScale = (iv: number) => {
       const s = iv.toString();
       let dec: number;
@@ -2947,32 +2947,32 @@ function App() {
       const intervalTicks = Math.max(1, Math.round(iv * SCALE));
       return { SCALE, intervalTicks };
     };
-  
+
     const { SCALE, intervalTicks } = intervalToScale(interval);
     const toTicks = (p: number) => Math.round(p * SCALE);
     const fromTicks = (t: number) => t / SCALE;
-  
+
     const bids: any[] = [];
     const asks: any[] = [];
     const MAX_LEVELS_PER_SIDE = 2000;
-  
+
     {
       let tMid = toTicks(pMid);
       let tHere = Math.floor(tMid / intervalTicks) * intervalTicks;
       for (let i = 0; i < MAX_LEVELS_PER_SIDE; i++) {
         const tLow = tHere - intervalTicks;
         if (tLow <= 0) break;
-  
+
         const pLow = fromTicks(tLow);
         const pHere = fromTicks(tHere);
-  
+
         const xLow = xFromP(pLow);
         const xHi = xFromP(pHere);
         const dxEff = Math.max(0, xHi - xLow);
-  
+
         const baseIn = dxEff / oneMinusFee;
         if (baseIn <= 0) break;
-  
+
         const effectivePrice = pLow * (1 - fee);
         bids.push({
           price: effectivePrice,
@@ -2981,11 +2981,11 @@ function App() {
           shouldFlash: false,
           userPrice: false,
         });
-  
+
         tHere = tLow;
       }
     }
-  
+
     {
       let tMid = toTicks(pMid);
       let tHere = Math.ceil(tMid / intervalTicks) * intervalTicks;
@@ -2993,12 +2993,12 @@ function App() {
         const tHigh = tHere + intervalTicks;
         const pHere = fromTicks(tHere);
         const pHigh = fromTicks(tHigh);
-  
+
         const xA = xFromP(pHere);
         const xN = xFromP(pHigh);
         const baseOut = Math.max(0, xN - xA);
         if (baseOut <= 0) break;
-  
+
         const effectivePrice = pHigh * (1 + fee);
         asks.push({
           price: effectivePrice,
@@ -3007,11 +3007,11 @@ function App() {
           shouldFlash: false,
           userPrice: false,
         });
-  
+
         tHere = tHigh;
       }
     }
-  
+
     return { bids, asks };
   }
 
@@ -3021,7 +3021,7 @@ function App() {
       console.log(`Removed ${subWallets.length - cleaned.length} duplicate wallets on startup`);
       saveSubWallets(cleaned);
     }
-  }, []); 
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -3497,16 +3497,16 @@ function App() {
             }
 
             const interval = localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
-            ? Number(
-              localStorage.getItem(
-                `${activeMarket.baseAsset}_ob_interval`,
-              ),
-            )
-            : 1 / (activeMarket?.marketType != 0 && spread?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor))
+              ? Number(
+                localStorage.getItem(
+                  `${activeMarket.baseAsset}_ob_interval`,
+                ),
+              )
+              : 1 / (activeMarket?.marketType != 0 && spread?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor))
 
             const { bids, asks } = v2ToOrderbook(orderdata[1], orderdata[0], interval, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals));
 
-            setSpreadData({spread: `${((spread?.spread / spread?.averagePrice) * 100).toFixed(2)}%`, averagePrice: formatSubscript(formatSig(spread?.averagePrice.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket?.marketType != 0))});
+            setSpreadData({ spread: `${((spread?.spread / spread?.averagePrice) * 100).toFixed(2)}%`, averagePrice: formatSubscript(formatSig(spread?.averagePrice.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket?.marketType != 0)) });
             setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
             setRoundedSellOrders({ orders: roundedSell.concat(asks as any), key: activeMarketKey, amountsQuote });
             setLiquidityBuyOrders({ orders: liquidityBuy, market: activeMarket.address });
@@ -14008,7 +14008,7 @@ function App() {
                         createVaultForm.quoteAsset.toLowerCase() == eth.toLowerCase() ? amountQuote :
                           createVaultForm.baseAsset.toLowerCase() == eth.toLowerCase() ? amountBase : 0n;
 
-                          const deployUo = {
+                      const deployUo = {
                         target: crystalVaults,
                         data: encodeFunctionData({
                           abi: CrystalVaultsAbi,
@@ -14070,7 +14070,7 @@ function App() {
             </div>
           </div>
         ) : null}
-{popup === 30 ? ( // perps-deposit-popup
+        {popup === 30 ? ( // perps-deposit-popup
           <div className="modal-overlay">
             <div className="modal-content" ref={popupref}>
               <div className="modal-header">
@@ -14096,7 +14096,7 @@ function App() {
                         <div className="">
                           <span>Balance: </span>
                           <span>0.00</span>
-                          <button 
+                          <button
                             className="perps-max-button"
                             onClick={() => {
                               const usdcBalance = tokenBalances['0xaf88d065e77c8cC2239327C5EDb3A432268e5831'] || 0n;
@@ -14160,67 +14160,67 @@ function App() {
                 </div>
               </div>
 
- <div className="modal-footer">
-  <button 
-    className={`perps-confirm-button ${isVaultDepositSigning ? 'signing' : ''}`}
-    disabled={!perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning}
-    style={{
-      opacity: !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning ? 0.5 : 1,
-      cursor: !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning ? 'not-allowed' : 'pointer'
-    }}
-    onClick={async () => {
-      if (!perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning) return;
-      
-      try {
-        setIsVaultDepositSigning(true);
-        const amount = BigInt(Math.floor(parseFloat(perpsDepositAmount) * 1e6));
-        
-        await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: 42161 as any });
-        await rawSendUserOperationAsync({
-          uo: {
-            target: '0x81144d6E7084928830f9694a201E8c1ce6eD0cb2' as `0x${string}`,
-            data: encodeFunctionData({
-              abi: [{
-                inputs: [
-                  { name: "token", type: "address" },
-                  { name: "amount", type: "uint256" },
-                  { name: "starkKey", type: "uint256" },
-                  { name: "accountId", type: "uint256" },
-                  { name: "exchangeData", type: "bytes" }
-                ],
-                name: "deposit",
-                outputs: [],
-                stateMutability: "nonpayable",
-                type: "function",
-              }],
-              functionName: "deposit",
-              args: ['0xaf88d065e77c8cC2239327C5EDb3A432268e5831', amount, perpsKeystore.publicKey, 664124834304754100n, '0x00'],
-            }),
-            value: 0n,
-          }
-        });
-        handleSetChain();
-        setPerpsDepositAmount('');
-        setpopup(0);
-      } catch (error) {
-        console.error('Perps deposit error:', error);
-      } finally {
-        setIsVaultDepositSigning(false);
-      }
-    }}
-  >
-    {isVaultDepositSigning ? (
-      <div className="button-content">
-        <div className="loading-spinner" />
-        {validOneCT ? '' : t('signTransaction')}
-      </div>
-    ) : !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 ? (
-      'Minimum deposit: 1 USDC'
-    ) : (
-      'Deposit'
-    )}
-  </button>
-</div>
+              <div className="modal-footer">
+                <button
+                  className={`perps-confirm-button ${isVaultDepositSigning ? 'signing' : ''}`}
+                  disabled={!perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning}
+                  style={{
+                    opacity: !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning ? 0.5 : 1,
+                    cursor: !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning ? 'not-allowed' : 'pointer'
+                  }}
+                  onClick={async () => {
+                    if (!perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning) return;
+
+                    try {
+                      setIsVaultDepositSigning(true);
+                      const amount = BigInt(Math.floor(parseFloat(perpsDepositAmount) * 1e6));
+
+                      await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: 42161 as any });
+                      await rawSendUserOperationAsync({
+                        uo: {
+                          target: '0x81144d6E7084928830f9694a201E8c1ce6eD0cb2' as `0x${string}`,
+                          data: encodeFunctionData({
+                            abi: [{
+                              inputs: [
+                                { name: "token", type: "address" },
+                                { name: "amount", type: "uint256" },
+                                { name: "starkKey", type: "uint256" },
+                                { name: "accountId", type: "uint256" },
+                                { name: "exchangeData", type: "bytes" }
+                              ],
+                              name: "deposit",
+                              outputs: [],
+                              stateMutability: "nonpayable",
+                              type: "function",
+                            }],
+                            functionName: "deposit",
+                            args: ['0xaf88d065e77c8cC2239327C5EDb3A432268e5831', amount, perpsKeystore.publicKey, 664124834304754100n, '0x00'],
+                          }),
+                          value: 0n,
+                        }
+                      });
+                      handleSetChain();
+                      setPerpsDepositAmount('');
+                      setpopup(0);
+                    } catch (error) {
+                      console.error('Perps deposit error:', error);
+                    } finally {
+                      setIsVaultDepositSigning(false);
+                    }
+                  }}
+                >
+                  {isVaultDepositSigning ? (
+                    <div className="button-content">
+                      <div className="loading-spinner" />
+                      {validOneCT ? '' : t('signTransaction')}
+                    </div>
+                  ) : !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 ? (
+                    'Minimum deposit: 1 USDC'
+                  ) : (
+                    'Deposit'
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         ) : null}
@@ -14320,11 +14320,11 @@ function App() {
         ) : null}
 
         {popup === 34 ? ( // Live Trades Presets Settings
-            <div ref={popupref}>
-                <TradingPresetsPopup
-                    onClose={() => setpopup(0)}
-                />
-            </div>
+          <div ref={popupref}>
+            <TradingPresetsPopup
+              onClose={() => setpopup(0)}
+            />
+          </div>
         ) : null}
 
 
@@ -14376,7 +14376,7 @@ function App() {
                       value={parseFloat(perpsLeverage) || 10}
                       onChange={(e) => {
                         const value = e.target.value;
-                        setPerpsLeverage(value );
+                        setPerpsLeverage(value);
 
                         const container = e.target.parentElement;
                         if (container) {
@@ -17489,7 +17489,7 @@ function App() {
                   ? Math.max(0, marketPrice * 0.99)
                   : marketPrice * 1.01;
 
-                  updateLimitAmount(newPrice, Number(activeMarket.priceFactor), activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1) : Number(activeMarket.priceFactor));
+                updateLimitAmount(newPrice, Number(activeMarket.priceFactor), activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1) : Number(activeMarket.priceFactor));
               }}
             >
               {tokenIn === activeMarket?.quoteAddress ? "-1%" : "+1%"}
@@ -17520,7 +17520,7 @@ function App() {
                   ? Math.max(0, marketPrice * 0.9)
                   : marketPrice * 1.1;
 
-                  updateLimitAmount(newPrice, Number(activeMarket.priceFactor), activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1) : Number(activeMarket.priceFactor));
+                updateLimitAmount(newPrice, Number(activeMarket.priceFactor), activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1) : Number(activeMarket.priceFactor));
               }}
             >
               {tokenIn === activeMarket?.quoteAddress ? "-10%" : "+10%"}
@@ -20942,6 +20942,23 @@ function App() {
                 terminalRefetch={terminalRefetch}
                 setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
+                subWallets={subWallets}
+                walletTokenBalances={walletTokenBalances}
+                activeWalletPrivateKey={oneCTSigner}
+                setOneCTSigner={setOneCTSigner}
+                refetch={refetch}
+                tokenList={memoizedTokenList}
+                activechain={activechain}
+                logout={logout}
+                lastRefGroupFetch={lastRefGroupFetch}
+                lastNonceGroupFetch={lastNonceGroupFetch}
+                currentWalletIcon={currentWalletIcon}
+                isBlurred={isBlurred}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: userchain,
+                }}
               />
             } />
           <Route path="/meme/:tokenAddress"

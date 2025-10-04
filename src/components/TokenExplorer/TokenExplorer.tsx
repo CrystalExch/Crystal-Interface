@@ -48,7 +48,7 @@ import tweet from '../../assets/tweet.png';
 import { TwitterHover } from '../TwitterHover/TwitterHover';
 import './TokenExplorer.css';
 import { HexColorPicker } from 'react-colorful';
-
+import walleticon from '../../assets/wallet_icon.png';
 export interface Token {
   id: string;
   tokenAddress: string;
@@ -165,7 +165,25 @@ interface TokenExplorerProps {
   terminalRefetch: any;
   setTokenData: any;
   monUsdPrice: number;
+  subWallets?: Array<{ address: string, privateKey: string }>;
+  walletTokenBalances?: { [address: string]: any };
+  activeWalletPrivateKey?: string;
+  setOneCTSigner: (privateKey: string) => void;
+  refetch: () => void;
+  tokenList?: any[];
+  activechain: number;
+  logout: () => void;
+  lastRefGroupFetch: any;
+  lastNonceGroupFetch: any;
+  currentWalletIcon?: string;
+  isBlurred?: boolean;
+  account: {
+    connected: boolean;
+    address?: string;
+    chainId?: number;
+  };
 }
+
 
 const MAX_PER_COLUMN = 30;
 const TOTAL_SUPPLY = 1e9;
@@ -3062,6 +3080,20 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   terminalRefetch,
   setTokenData,
   monUsdPrice,
+  setpopup,
+  subWallets = [],
+  walletTokenBalances = {},
+  activeWalletPrivateKey,
+  setOneCTSigner,
+  refetch,
+  tokenList = [],
+  activechain,
+  logout,
+  lastRefGroupFetch,
+  lastNonceGroupFetch,
+  currentWalletIcon,
+  isBlurred = false,
+  account,
 }) => {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [quickAmountsSecond, setQuickAmountsSecond] = useState<Record<Token['status'], string>>(() => ({
@@ -3082,6 +3114,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     },
     [],
   );
+  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
+
   const [activePresetsSecond, setActivePresetsSecond] = useState<Record<Token['status'], number>>(() => ({
     new: parseInt(localStorage.getItem('explorer-preset-second-new') ?? '1'),
     graduating: parseInt(localStorage.getItem('explorer-preset-second-graduating') ?? '1'),
@@ -3103,12 +3137,186 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       return `${Math.floor(ageSec / 604800)}w`;
     }
   };
+  const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
+  const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
+  const walletDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Load wallet names from localStorage
+  useEffect(() => {
+    const storedWalletNames = localStorage.getItem('crystal_wallet_names');
+    if (storedWalletNames) {
+      try {
+        setWalletNames(JSON.parse(storedWalletNames));
+      } catch (error) {
+        console.error('Error loading wallet names:', error);
+      }
+    }
+
+    const handleWalletNamesUpdate = (event: CustomEvent) => {
+      setWalletNames(event.detail);
+    };
+
+    window.addEventListener('walletNamesUpdated', handleWalletNamesUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('walletNamesUpdated', handleWalletNamesUpdate as EventListener);
+    };
+  }, []);
+
+  // Sync active wallet from localStorage
+  useEffect(() => {
+    const storedActiveWalletPrivateKey = localStorage.getItem('crystal_active_wallet_private_key');
+
+    if (storedActiveWalletPrivateKey && subWallets.length > 0) {
+      const isValidWallet = subWallets.some(wallet => wallet.privateKey === storedActiveWalletPrivateKey);
+
+      if (isValidWallet) {
+        if (activeWalletPrivateKey !== storedActiveWalletPrivateKey) {
+          setOneCTSigner(storedActiveWalletPrivateKey);
+        }
+      } else {
+        localStorage.removeItem('crystal_active_wallet_private_key');
+      }
+    }
+  }, [subWallets, setOneCTSigner, activeWalletPrivateKey]);
+
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (walletDropdownRef.current && !walletDropdownRef.current.contains(event.target as Node)) {
+        setIsWalletDropdownOpen(false);
+      }
+    };
+
+    if (isWalletDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isWalletDropdownOpen]);
+
+  // Wallet helper functions
+  const getWalletTokenCount = (address: string) => {
+    const balances = walletTokenBalances[address];
+    if (!balances) return 0;
+
+    const ethAddress = appSettings.chainConfig[activechain]?.eth;
+    let count = 0;
+
+    for (const [tokenAddr, balance] of Object.entries(balances)) {
+      if (tokenAddr !== ethAddress && balance && BigInt(balance.toString()) > 0n) {
+        count++;
+      }
+    }
+
+    return count;
+  };
+
+  const getWalletBalance = (address: string) => {
+    const balances = walletTokenBalances[address];
+    if (!balances || !tokenList.length) return 0;
+
+    const ethToken = tokenList.find(t => t.address === appSettings.chainConfig[activechain]?.eth);
+    if (ethToken && balances[ethToken.address]) {
+      return Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals);
+    }
+    return 0;
+  };
+
+  const getWalletName = (address: string, index: number) => {
+    return walletNames[address] || `Wallet ${index + 1}`;
+  };
+
+  const isWalletActive = (privateKey: string) => {
+    return activeWalletPrivateKey === privateKey;
+  };
+  const toggleWalletSelection = useCallback((address: string) => {
+    setSelectedWallets(prev => {
+      const next = new Set(prev);
+      next.has(address) ? next.delete(address) : next.add(address);
+      return next;
+    });
+  }, []);
+
+  const selectAllWallets = useCallback(() => {
+    setSelectedWallets(new Set(subWallets.map(w => w.address)));
+  }, [subWallets]);
+
+  const unselectAllWallets = useCallback(() => {
+    setSelectedWallets(new Set());
+  }, []);
+
+  const selectAllWithBalance = useCallback(() => {
+    const walletsWithBalance = subWallets.filter(wallet =>
+      getWalletBalance(wallet.address) > 0
+    );
+    setSelectedWallets(new Set(walletsWithBalance.map(w => w.address)));
+  }, [subWallets]);
+
+  const handleSetActiveWallet = (privateKey: string) => {
+    if (!isWalletActive(privateKey)) {
+      localStorage.setItem('crystal_active_wallet_private_key', privateKey);
+      setOneCTSigner(privateKey);
+      lastRefGroupFetch.current = 0;
+      lastNonceGroupFetch.current = 0;
+      setTimeout(() => refetch(), 0);
+      if (terminalRefetch) {
+        setTimeout(() => terminalRefetch(), 0);
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    if (setOneCTSigner) {
+      setOneCTSigner('');
+      localStorage.removeItem('crystal_active_wallet_private_key');
+    }
+    if (logout) {
+      logout();
+    }
+    setIsWalletDropdownOpen(false);
+  };
+
+  const handleOpenPortfolio = () => {
+    if (setpopup) setpopup(4);
+    setIsWalletDropdownOpen(false);
+  };
+
+  const getCurrentWalletInfo = () => {
+    if (!activeWalletPrivateKey) return null;
+    return subWallets.find(w => w.privateKey === activeWalletPrivateKey);
+  };
+
+  const handleWalletButtonClick = () => {
+    if (!account.connected) {
+      if (setpopup) setpopup(4);
+    } else {
+      setIsWalletDropdownOpen(!isWalletDropdownOpen);
+    }
+  };
+
+  const formatNumberWithCommas = (num: number, decimals = 2) => {
+    if (num === 0) return "0";
+    if (num >= 1e9) return `${(num / 1e9).toFixed(decimals)}B`;
+    if (num >= 1e6) return `${(num / 1e6).toFixed(decimals)}M`;
+    if (num >= 1e3) return `${(num / 1e3).toFixed(decimals)}K`;
+    if (num >= 1) return num.toLocaleString("en-US", { maximumFractionDigits: decimals });
+    return num.toFixed(Math.min(decimals, 8));
+  };
+
+const currentWallet = getCurrentWalletInfo();
+  const displayAddress = currentWallet ? currentWallet.address : account.address;
+  const selectedSet = useMemo(() => new Set<string>(), []);
+  
+  const totalSelectedBalance = useMemo(() => {
+    if (selectedWallets.size === 0) return 0;
+    let total = 0;
+    selectedWallets.forEach(address => {
+      total += getWalletBalance(address);
+    });
+    return total;
+  }, [selectedWallets, walletTokenBalances, tokenList]);
+  
   const navigate = useNavigate();
-  const activechain =
-    (appSettings as any).activechain ??
-    (Object.keys(
-      appSettings.chainConfig,
-    )[0] as keyof typeof appSettings.chainConfig);
   const routerAddress =
     appSettings.chainConfig[activechain].launchpadRouter.toLowerCase();
 
@@ -4175,14 +4383,23 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         <div className="explorer-header-left">
           <h1 className="explorer-app-title">Spectra</h1>
         </div>
+
         <div className="explorer-header-right">
+          <DisplayDropdown
+            settings={displaySettings}
+            onSettingsChange={setDisplaySettings}
+            quickAmountsSecond={quickAmountsSecond}
+            setQuickAmountSecond={setQuickAmountSecond}
+            activePresetsSecond={activePresetsSecond}
+            setActivePresetSecond={setActivePresetSecond}
+          />
           <button
             className="alerts-popup-trigger"
             onClick={() => setShowAlertsPopup(true)}
           >
             <Bell size={18} />
           </button>
-          
+
           <button
             className="alerts-popup-trigger"
             onClick={() => setShowBlacklistPopup(true)}
@@ -4198,14 +4415,145 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
             </svg>
           </button>
-          <DisplayDropdown
-            settings={displaySettings}
-            onSettingsChange={setDisplaySettings}
-            quickAmountsSecond={quickAmountsSecond}
-            setQuickAmountSecond={setQuickAmountSecond}
-            activePresetsSecond={activePresetsSecond}
-            setActivePresetSecond={setActivePresetSecond}
-          />
+
+          <div className="wallet-dropdown-container" ref={walletDropdownRef}>
+            <button
+              type="button"
+              className={account.connected ? 'transparent-button wallet-dropdown-button' : 'connect-button'}
+              onClick={handleWalletButtonClick}
+            >
+              <div className="connect-content">
+                {!account.connected ? (
+                  'Connect Wallet'
+                ) : (
+                  <span className="transparent-button-container">
+                    <img src={walleticon} className="img-wallet-icon" />
+                    <span className={`wallet-count ${selectedSet.size ? 'has-active' : ''}`}>
+                      {selectedSet.size}
+                    </span>
+                    <span className="subwallet-total-balance">
+                      {selectedWallets.size > 0 ? (
+                        <>
+                          <img src={monadicon} className="wallet-dropdown-mon-icon" style={{ width: '14px', height: '14px', marginRight: '4px' }} />
+                          {formatNumberWithCommas(totalSelectedBalance, 2)}
+                        </>
+                      ) : (
+                        displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'
+                      )}
+                    </span>
+                    <svg
+                      className={`wallet-dropdown-arrow ${isWalletDropdownOpen ? 'open' : ''}`}
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </span>
+                )}
+              </div>
+            </button>
+            {account.connected && (
+    <div className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
+                <div className="wallet-dropdown-header">
+                  <div className="wallet-dropdown-actions">
+                    <button
+                      className="wallet-action-btn"
+                      onClick={selectedWallets.size === subWallets.length ? unselectAllWallets : selectAllWallets}
+                    >
+                      {selectedWallets.size === subWallets.length ? 'Unselect All' : 'Select All'}
+                    </button>
+                    <button
+                      className="wallet-action-btn"
+                      onClick={selectAllWithBalance}
+                    >
+                      Select All with Balance
+                    </button>
+                  </div>
+                  <button
+                    className="wallet-dropdown-close"
+                    onClick={() => setIsWalletDropdownOpen(false)}
+                  >
+                    <img src={closebutton} className="wallet-dropdown-close-icon" />
+                  </button>
+                </div>
+                <div className="wallet-dropdown-list">
+                  {subWallets.length > 0 ? (
+                    subWallets.map((wallet, index) => {
+                      const balance = getWalletBalance(wallet.address);
+                      const isActive = isWalletActive(wallet.privateKey);
+                      const isSelected = selectedWallets.has(wallet.address);
+
+                      return (
+                        <div
+                          key={wallet.address}
+                          className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                          onClick={() => toggleWalletSelection(wallet.address)}
+                        >
+                          <div className="quickbuy-wallet-checkbox-container">
+                            <input
+                              type="checkbox"
+                              className="quickbuy-wallet-checkbox selection"
+                              checked={isSelected}
+                              readOnly
+                            />
+                          </div>
+                          <div className="wallet-dropdown-info">
+                            <div className="wallet-dropdown-name">
+                              {getWalletName(wallet.address, index)}
+                            </div>
+                            <div className="wallet-dropdown-address">
+                              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                            </div>
+                          </div>
+                          <Tooltip content="MON Balance">
+                            <div className="wallet-dropdown-balance">
+                              <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+                                <img src={monadicon} className="wallet-dropdown-mon-icon" />
+                                {formatNumberWithCommas(balance, 2)}
+                              </div>
+                            </div>
+                          </Tooltip>
+                          <Tooltip content="Tokens">
+                            <div className="wallet-drag-tokens">
+                              <div className="wallet-token-count">
+                                <div className="wallet-token-structure-icons">
+                                  <div className="token1"></div>
+                                  <div className="token2"></div>
+                                  <div className="token3"></div>
+                                </div>
+                                <span className="wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
+                              </div>
+                            </div>
+                          </Tooltip>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="wallet-dropdown-no-subwallets">
+                      <button
+                        className="wallet-dropdown-action-btn 1ct-trading-btn"
+                        onClick={() => {
+                          if (setpopup) setpopup(28);
+                          setIsWalletDropdownOpen(false);
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="wallet-dropdown-action-icon"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
+                        Enable 1CT
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+
+
+
         </div>
       </div>
 
@@ -4273,15 +4621,15 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           ))}
                         </div>
                       </div>
-                      
-                                {alertSettings.soundAlertsEnabled && (
-          <button
-            className="alerts-popup-trigger"
-            onClick={() => setShowAlertsPopup(true)}
-          >
-            <Bell size={18} />
-          </button>
-          )}
+
+                      {alertSettings.soundAlertsEnabled && (
+                        <button
+                          className="alerts-popup-trigger"
+                          onClick={() => setShowAlertsPopup(true)}
+                        >
+                          <Bell size={18} />
+                        </button>
+                      )}
                       <button
                         className={`column-filter-icon ${appliedFilters?.new ? 'active' : ''}`}
                         onClick={() => onOpenFiltersForColumn('new')}
@@ -4434,14 +4782,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           ))}
                         </div>
                       </div>
-                                {alertSettings.soundAlertsEnabled && (
-          <button
-            className="alerts-popup-trigger"
-            onClick={() => setShowAlertsPopup(true)}
-          >
-            <Bell size={18} />
-          </button>
-          )}
+                      {alertSettings.soundAlertsEnabled && (
+                        <button
+                          className="alerts-popup-trigger"
+                          onClick={() => setShowAlertsPopup(true)}
+                        >
+                          <Bell size={18} />
+                        </button>
+                      )}
                       <button
                         className={`column-filter-icon ${appliedFilters?.graduating ? 'active' : ''}`}
                         onClick={() => onOpenFiltersForColumn('graduating')}
@@ -4594,14 +4942,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           ))}
                         </div>
                       </div>
-                                {alertSettings.soundAlertsEnabled && (
-          <button
-            className="alerts-popup-trigger"
-            onClick={() => setShowAlertsPopup(true)}
-          >
-            <Bell size={18} />
-          </button>
-          )}
+                      {alertSettings.soundAlertsEnabled && (
+                        <button
+                          className="alerts-popup-trigger"
+                          onClick={() => setShowAlertsPopup(true)}
+                        >
+                          <Bell size={18} />
+                        </button>
+                      )}
                       <button
                         className={`column-filter-icon ${appliedFilters?.graduated ? 'active' : ''}`}
                         onClick={() => onOpenFiltersForColumn('graduated')}

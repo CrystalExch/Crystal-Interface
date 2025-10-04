@@ -91,7 +91,7 @@
   background: none;
   border: none;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 5px;
+  border-radius: 20px;
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -313,8 +313,8 @@
 }
 
 .img-wallet-icon{
-  height: 17px;
-  width: 17px;
+  height: 19px;
+  width: 19px;
   margin-right: 4px;
   opacity: 0.6;
 }
@@ -361,10 +361,8 @@
 }
 
 .wallet-count {
-  color: #ffffffe6;
-  font-size: 0.85rem;
   border-radius: 4px;
-  margin-right: 6px;
+  margin-right: 12px;
   text-align: center;
   line-height: 1.2;
 }
@@ -598,10 +596,9 @@
 }
 
 .wallet-dropdown-actions {
-  border-top: 1px solid rgba(179, 184, 249, 0.1);
   padding: 3px;
   display: flex;
-  flex-direction: column;
+  gap: 4px;
 }
 
 .wallet-dropdown-action-btn {

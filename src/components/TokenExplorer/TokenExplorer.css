@@ -4276,3 +4276,35 @@
   margin-bottom: -15px;
   margin-top: 10px;
 }
+
+
+
+.wallet-action-btn {
+    display: flex;
+    align-items: center;
+    background: rgba(179, 184, 249, 0.05);
+    border-radius: 20px;
+    color: #ced0df;
+    cursor: pointer;
+    font-size: 0.75rem;
+    letter-spacing: -0.2px;
+    padding: 2px 8px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    user-select: none !important;
+}
+
+.wallet-action-btn:hover:not(:disabled) {
+    background: rgba(179, 184, 249, 0.1);
+    color: #d8dcff;
+}
+
+.wallet-action-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.subwallet-total-balance{
+  display: flex;
+  align-items: center;
+}

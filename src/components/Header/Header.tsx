@@ -759,7 +759,7 @@ useEffect(() => {
                       src={currentWalletIcon || walleticon}
                       className="wallet-icon"
                     />
-                    <span className="header-wallet-address">
+                    <span className="subwallet-total-balance">
                       {displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'}
                     </span>
                     <svg
