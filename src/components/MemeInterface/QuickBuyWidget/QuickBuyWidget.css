@@ -649,14 +649,15 @@
     appearance: none;
     background: transparent;
     border: 1px solid rgba(170, 174, 207, 0.3);
-    border-radius: 3px;
+    border-radius: 5px;
     cursor: pointer;
     flex-shrink: 0;
-    height: 15px;
     margin-top: 2px;
     position: relative;
     transition: all 0.2s ease;
-    width: 15px;
+    width: 16px;
+    height: 16px;
+
 }
 
 .quickbuy-wallet-checkbox:hover {
@@ -665,22 +666,21 @@
 }
 
 .quickbuy-wallet-checkbox:checked {
-    background: linear-gradient(135deg, #aaaecf 0%, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
-    border: none;
-    box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
+    border-color: #d8dcff;
 }
 
-.quickbuy-wallet-checkbox:checked::after {
-    border: solid #0f0f12;
-    border-width: 0 1.5px 1.5px 0;
+
+.quickbuy-wallet-checkbox:checked::after{
+    background-color: #d8dcff;
+    border-radius: 3px;
     content: '';
-    height: 8px;
-    left: 5px;
+    height: 10.5px;
+    width: 10.5px;
     position: absolute;
+    left: 2px;
     top: 2px;
-    transform: rotate(45deg);
-    width: 5px;
 }
+
 
 .quickbuy-wallet-info {
     display: flex;
