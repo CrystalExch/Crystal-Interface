@@ -36,7 +36,6 @@ const NavLinks: React.FC<NavLinksProps> = ({
 
   const handleSideMenuViewChange = useCallback((isSimple: boolean) => {
     setSimpleView(isSimple);
-    localStorage.setItem('crystal_simple_view', JSON.stringify(isSimple));
 
     window.dispatchEvent(new Event('resize'));
     setIsSideMenuTradeOpen(false);

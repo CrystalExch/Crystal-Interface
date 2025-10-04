@@ -31,7 +31,6 @@ const TradeDropdown: React.FC<TradeDropdownProps> = ({
     const isTogglingSameView = (isSimpleView && simpleView) || (!isSimpleView && !simpleView);
     
     setSimpleView(isSimpleView);
-    localStorage.setItem('crystal_simple_view', JSON.stringify(isSimpleView));
     
     window.dispatchEvent(new Event('resize'));
     onTradeDropdownClose();

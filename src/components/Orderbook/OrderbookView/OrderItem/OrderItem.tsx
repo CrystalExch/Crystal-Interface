@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 
-import { formatCommas } from '../../../../utils/numberDisplayFormat';
+import { formatCommas, formatSubscript } from '../../../../utils/numberDisplayFormat';
 
 import './OrderItem.css';
+import { formatSig } from '../../../OrderCenter/utils';
 
 interface OrderItemProps {
   price: number;
@@ -92,7 +93,7 @@ const OrderItem = React.forwardRef<HTMLLIElement, OrderItemProps>(
           <div className="totalSizeBar" style={totalSizeBarStyle} />
           <div className="order-content">
             <span className="order-price" style={{ color }}>
-              {formatCommas(price.toFixed(Math.floor(Math.log10(marketType != 0 && price ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(price ?? 1)) - 1) : Number(priceFactor)))))}
+              {formatSubscript(formatSig(price.toFixed(Math.floor(Math.log10(priceFactor))), marketType != 0))}
               {hasUserOrder && (
                 <span className="user-order-dot">•</span>
               )}

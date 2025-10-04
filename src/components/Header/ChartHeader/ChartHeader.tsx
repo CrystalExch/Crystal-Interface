@@ -196,7 +196,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       const activechain = Object.keys(settings.chainConfig)[0];
       const quotePrice = activeMarket.quoteAsset == 'USDC' ? 1 :
         tradesByMarket[(activeMarket.quoteAsset == settings.chainConfig[activechain]?.wethticker ?
-          settings.chainConfig[activechain]?.ethticker : activeMarket.quoteAsset) + 'USDC']?.[0]?.[3];
+          settings.chainConfig[activechain]?.ethticker : activeMarket.quoteAsset) + 'USDC']?.[0]?.[3] / Number(markets[(activeMarket.quoteAsset == settings.chainConfig[activechain]?.wethticker ? settings.chainConfig[activechain]?.ethticker : activeMarket.quoteAsset) + 'USDC']?.priceFactor);
 
       if ((roundedBuys.length !== 0 || orderdata?.reserveQuote != 0) && quotePrice) {
         const ammBuyLiquidity = Number(orderdata?.reserveQuote) / Number(10n ** activeMarket.quoteDecimals) * quotePrice || 0
@@ -220,7 +220,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
     {
       label: t('dayChange'),
       value: (
-        <span className={`price-change ${parseFloat(priceChangePercent) > 0 ? 'positive' : parseFloat(priceChangePercent) < 0 ? 'negative' : 'neutral'}`}>
+        <span className={`price-change ${parseFloat(priceChangeAmount) > 0 ? 'positive' : parseFloat(priceChangeAmount) < 0 ? 'negative' : 'neutral'}`}>
           {priceChangeAmount !== 'n/a'
             ? `${priceChangeAmount} / ${priceChangePercent}%`
             : 'n/a'}

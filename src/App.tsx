@@ -272,6 +272,7 @@ function App() {
               minSize: getMarket(path.at(-2), path.at(-1)).minSize,
               maxPrice: getMarket(path.at(-2), path.at(-1)).maxPrice,
               fee: fee,
+              makerRebate: getMarket(path.at(-2), path.at(-1)).makerRebate,
               image: getMarket(path.at(-2), path.at(-1)).image,
               website: getMarket(path.at(-2), path.at(-1)).website,
             };
@@ -291,6 +292,7 @@ function App() {
             minSize: getMarket(path.at(0), path.at(1)).minSize,
             maxPrice: getMarket(path.at(0), path.at(1)).maxPrice,
             fee: fee,
+            makerRebate: getMarket(path.at(-2), path.at(-1)).makerRebate,
             image: getMarket(path.at(0), path.at(1)).image,
             website: getMarket(path.at(0), path.at(1)).website,
           };
@@ -402,9 +404,9 @@ function App() {
   };
   const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : scaAddress as `0x${string}`
   const connected = address != undefined
-const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>(
-  loadWalletsFromStorage()
-);
+  const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>(
+    loadWalletsFromStorage()
+  );
 
   const getWalletIcon = () => {
     const connectorName = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.name || 'Unknown';
@@ -733,10 +735,7 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
   const [usedRefAddress, setUsedRefAddress] = useState(
     '0x0000000000000000000000000000000000000000' as `0x${string}`,
   );
-  const [simpleView, setSimpleView] = useState(() => {
-    const savedSimpleView = localStorage.getItem('crystal_simple_view');
-    return savedSimpleView ? JSON.parse(savedSimpleView) : false;
-  });
+  const [simpleView, setSimpleView] = useState(false);
   const [hideNotificationPopups, setHideNotificationPopups] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_hide_notification_popups') || 'false');
   });
@@ -1411,9 +1410,7 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
     ? orderSizeString
     : (originalOrderSize === 0 ? '' : originalOrderSize.toString());
   const [hasEditedPrice, setHasEditedPrice] = useState(false);
-  const displayLimitPrice = hasEditedPrice
-    ? limitPriceString
-    : (currentLimitPrice === 0 ? '' : currentLimitPrice.toString());
+  const displayLimitPrice = (currentLimitPrice === 0 ? '' : currentLimitPrice.toString());
   type AudioGroups = 'swap' | 'order' | 'transfer' | 'approve';
 
   interface AudioGroupSettings {
@@ -2011,7 +2008,7 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
 
   // update limit amount
   const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
-    let newPrice = BigInt(Math.round(Number(price) * priceFactor));
+    let newPrice = BigInt(Math.round(Number(price.toFixed(Math.floor(Math.log10(displayPriceFactor ? displayPriceFactor : priceFactor)))) * priceFactor));
     setlimitPrice(newPrice);
     setlimitPriceString(price.toFixed(Math.floor(Math.log10(displayPriceFactor ? displayPriceFactor : priceFactor))));
     setlimitChase(false);
@@ -2280,7 +2277,7 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
           abi: CrystalDataHelperAbi,
           functionName: 'getPrices',
           args: [
-            router, [activeMarket?.address]
+            router, Array.from(new Set(Object.values(markets).map((m: any) => m.address)))
           ]
         },
         ...(isStake && tokenIn === eth && (tokendict[tokenOut] as any)?.lst && (switched ? amountOutSwap : amountIn) > maxUint256
@@ -3479,12 +3476,7 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
                   : NaN,
               averagePrice:
                 temphighestBid !== undefined && templowestAsk !== undefined
-                  ? Number(
-                    ((temphighestBid + templowestAsk) / 2).toFixed(
-                      Math.floor(Math.log10(Number(activeMarket.priceFactor))) + 1,
-                    ),
-                  )
-                  : NaN,
+                  ? ((temphighestBid + templowestAsk) / 2) : NaN,
             };
 
             const prevBuyMap = new Map(roundedBuyOrders?.orders?.map((o, i) => [`${o.price}_${o.size}`, i]));
@@ -3514,7 +3506,7 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
 
             const { bids, asks } = v2ToOrderbook(orderdata[1], orderdata[0], interval, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals));
 
-            setSpreadData(spread);
+            setSpreadData({spread: `${((spread?.spread / spread?.averagePrice) * 100).toFixed(2)}%`, averagePrice: formatSubscript(formatSig(spread?.averagePrice.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket?.marketType != 0))});
             setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
             setRoundedSellOrders({ orders: roundedSell.concat(asks as any), key: activeMarketKey, amountsQuote });
             setLiquidityBuyOrders({ orders: liquidityBuy, market: activeMarket.address });
@@ -3645,7 +3637,7 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
         setAveragePrice(
           multihop
             ? `${customRound(estPrice, 2)}`
-            : `${estPrice.toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 && estPrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(estPrice ?? 1)) - 1) : Number(activeMarket.priceFactor))))}`,
+            : `${formatSubscript(formatSig(estPrice.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket?.marketType != 0))}`,
         );
         setPriceImpact(() => {
           let temppriceimpact;
@@ -3966,9 +3958,9 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
         const hash = trade[5];
         return [
           isBuy,
-          activeMarket?.marketType != 0 ? formatSig(
-            price.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor))))
-          ) : formatCommas(price.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor))))),
+          formatSubscript(formatSig(
+            price.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket.marketType != 0
+          )),
           formatSubscript(customRound(tradeValue, 3)),
           time,
           hash,
@@ -4384,19 +4376,19 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
                       volume: formatCommas(
                         (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
                       ),
-                      currentPrice: market.marketType != 0 ? formatSig(
-                        (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
-                      ) : (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))),
+                      currentPrice: formatSig(
+                        (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+                      ),
                       priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
                       priceChangeAmount: currentPriceRaw - firstKlineOpen,
                       ...(high != null && {
                         high24h: formatSig(
-                          high.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                          high.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
                         )
                       }),
                       ...(low != null && {
                         low24h: formatSig(
-                          low.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                          low.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
                         )
                       })
                     };
@@ -5258,19 +5250,19 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
                         volume: formatCommas(
                           (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
                         ),
-                        currentPrice: market.marketType != 0 ? formatSig(
-                          (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
-                        ) : (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))),
+                        currentPrice: formatSig(
+                          (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+                        ),
                         priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
                         priceChangeAmount: currentPriceRaw - firstKlineOpen,
                         ...(high != null && {
                           high24h: formatSig(
-                            high.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                            high.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
                           )
                         }),
                         ...(low != null && {
                           low24h: formatSig(
-                            low.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                            low.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
                           )
                         })
                       };
@@ -5850,9 +5842,9 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
               ...cfg,
               pair: `${cfg.baseAsset}/${cfg.quoteAsset}`,
               mini: miniAsc,
-              currentPrice: formatSig(last.toFixed(decs)),
-              high24h: formatSig(high24.toFixed(decs)),
-              low24h: formatSig(low24.toFixed(decs)),
+              currentPrice: formatSig(last.toFixed(decs), m.marketType != 0),
+              high24h: formatSig(high24.toFixed(decs), m.marketType != 0),
+              low24h: formatSig(low24.toFixed(decs), m.marketType != 0),
               volume: volumeDisplay,
               priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
               priceChangeAmount: deltaRaw,
@@ -5906,9 +5898,9 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
                   ...siblingCfg,
                   pair: `${siblingCfg.baseAsset}/${siblingCfg.quoteAsset}`,
                   mini: miniAsc2,
-                  currentPrice: formatSig(last2.toFixed(decs2)),
-                  high24h: formatSig(Math.max(...miniAsc2.map(p => p.value)).toFixed(decs2)),
-                  low24h: formatSig(Math.min(...miniAsc2.map(p => p.value)).toFixed(decs2)),
+                  currentPrice: formatSig(last2.toFixed(decs2), m.marketType != 0),
+                  high24h: formatSig(Math.max(...miniAsc2.map(p => p.value)).toFixed(decs2), m.marketType != 0),
+                  low24h: formatSig(Math.min(...miniAsc2.map(p => p.value)).toFixed(decs2), m.marketType != 0),
                   volume: volumeDisplay,
                   priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
                   priceChangeAmount: deltaRaw,
@@ -5918,7 +5910,7 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
             }
           }
         }
-        console.log(rows)
+
         settradesByMarket(temptradesByMarket);
         setMarketsData(rows);
         settradesloading(false);
@@ -7106,7 +7098,6 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
         event.preventDefault();
         const newSimpleView = !simpleView;
         setSimpleView(newSimpleView);
-        localStorage.setItem('crystal_simple_view', JSON.stringify(newSimpleView));
 
         if (newSimpleView) {
           navigate('/swap');
@@ -17491,7 +17482,7 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
                   ? Math.max(0, marketPrice * 0.99)
                   : marketPrice * 1.01;
 
-                updateLimitAmount(newPrice, Number(activeMarket.priceFactor), activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1) : Number(activeMarket.priceFactor));
+                  updateLimitAmount(newPrice, Number(activeMarket.priceFactor), activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1) : Number(activeMarket.priceFactor));
               }}
             >
               {tokenIn === activeMarket?.quoteAddress ? "-1%" : "+1%"}
@@ -17522,7 +17513,7 @@ const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey
                   ? Math.max(0, marketPrice * 0.9)
                   : marketPrice * 1.1;
 
-                updateLimitAmount(newPrice, Number(activeMarket.priceFactor), activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1) : Number(activeMarket.priceFactor));
+                  updateLimitAmount(newPrice, Number(activeMarket.priceFactor), activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1) : Number(activeMarket.priceFactor));
               }}
             >
               {tokenIn === activeMarket?.quoteAddress ? "-10%" : "+10%"}

@@ -3426,18 +3426,6 @@ body:has(.right-column.show) .blur-background-popups {
   display: flex;
 }
 
-.market-icon {
-  border-radius: 50%;
-  height: 22px;
-  margin-right: 8px;
-  width: 22px;
-}
-
-.market-info {
-  display: flex;
-  flex-direction: column;
-}
-
 .search-market-pair {
   color: #d9dbdf;
   font-size: 0.775rem;

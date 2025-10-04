@@ -13,7 +13,6 @@ const LayoutToggle: React.FC<LayoutToggleProps> = ({
   const handleLayoutChange = (layout: 'lite' | 'pro') => {
     const isSimpleView = layout === 'lite';
     setSimpleView(isSimpleView);
-    localStorage.setItem('crystal_simple_view', JSON.stringify(isSimpleView));
     window.dispatchEvent(new Event('resize'));
   };
 

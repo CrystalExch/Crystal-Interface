@@ -623,14 +623,17 @@ const Perps: React.FC<PerpsProps> = ({
 
       const highestBid = processedBids[0]?.price
       const lowestAsk = processedAsks[0]?.price
+      const averagePrice = highestBid !== undefined && lowestAsk !== undefined
+      ? (highestBid + lowestAsk) / 2
+      : NaN;
       const spread = {
         spread:
           highestBid !== undefined && lowestAsk !== undefined
-            ? lowestAsk - highestBid
+            ? `${(((lowestAsk - highestBid) / averagePrice) * 100).toFixed(2)}%`
             : NaN,
         averagePrice:
           highestBid !== undefined && lowestAsk !== undefined
-            ? (highestBid + lowestAsk) / 2
+            ? formatCommas(((highestBid + lowestAsk) / 2).toFixed(Math.floor(Math.log10(1 / Number(activeMarket.tickSize)))))
             : NaN,
       }
       if (prevAmountsQuote.current == amountsQuote) {

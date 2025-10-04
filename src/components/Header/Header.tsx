@@ -620,7 +620,7 @@ useEffect(() => {
             out_icon={tokendict[activeMarket.quoteAddress].image}
             price={isMemeTokenPage && memeTokenData ?
               (memeTokenData.price || 0.000001)?.toString() || 'n/a' :
-              marketHeader?.currentPrice || 'n/a'
+              formatSubscript(marketHeader?.currentPrice) || 'n/a'
             }
             priceChangeAmount={isMemeTokenPage && memeTokenData ?
               memeTokenData.change24h?.toString() || 'n/a' :

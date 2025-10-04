@@ -11,6 +11,7 @@ import { formatDisplay } from '../../OrderCenter/utils';
 import { overrides } from './overrides';
 
 import './AdvancedTradingChart.css';
+import { formatSubscript } from '../../../utils/numberDisplayFormat';
 
 interface ChartCanvasProps {
   data: any;
@@ -122,15 +123,18 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         .createOrderLine()
         .setPrice(priceInDisplayUnits)
         .setText(`${orderTypeText}${divider}${formattedPrice}`)
-        .setQuantity('\u200B')
-        .setQuantityBackgroundColor('rgba(0,0,0,0)')
-        .setQuantityBorderColor('rgba(0,0,0,0)')
-        .setQuantityTextColor('rgba(0,0,0,0)')
+        .setQuantity(formatSubscript(formatDisplay(
+          quantityDisplay,
+        )))
+        .setQuantityBackgroundColor('#D8DCFF')
+        .setQuantityBorderColor('#D8DCFF')
+        .setQuantityTextColor('rgb(6,6,6)')
         .setLineColor('rgb(209, 209, 250)')
         .setBodyBackgroundColor('rgba(6,6,6,0.9)')
         .setBodyTextColor('#D8DCFF')
         .setBodyBorderColor('#D8DCFF')
         .setBodyFont('10px Funnel Display')
+        .setQuantityFont('bold 10px Funnel Display')
         .setLineStyle(1)
         .setCancellable(false)
         .onMove(() => {
@@ -298,16 +302,16 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                 .createOrderLine()
                 .setPrice(order[0] / Number(markets[order[4]].priceFactor))
                 .setQuantity(
-                  formatDisplay(
+                  formatSubscript(formatDisplay(
                     customRound(
                       (order[2] - order[7]) /
                         10 ** Number(markets[order[4]].baseDecimals),
                       3,
                     ),
-                  ),
+                  )),
                 )
                 .setText(
-                  `Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(order[0] / Number(markets[order[4]].priceFactor))) - 1))))}`,
+                  `Limit: ${formatSubscript(formatSig((order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(Number(markets[order[4]].priceFactor)))), markets[order[4]].marketType != 0))}`,
                 )
                 .setLineColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
                 .setQuantityBackgroundColor(
@@ -337,11 +341,11 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                 .onMove(async () => {
                   orderLine.setCancellable(false);
                   orderLine.setText(
-                    `Limit: ${orderLine.getPrice().toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(orderLine.getPrice() ?? 1)) - 1))))}`,
+                    `Limit: ${formatSubscript(formatSig(orderLine.getPrice().toFixed(Math.floor(Math.log10(Number(markets[order[4]].priceFactor)))), markets[order[4]].marketType != 0))}`,
                   );
                   if (order[3] == 1) {
                     orderLine.setQuantity(
-                      formatDisplay(
+                      formatSubscript(formatDisplay(
                         customRound(
                           ((order[2] - order[7]) * order[0]) /
                             orderLine.getPrice() /
@@ -349,7 +353,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                             10 ** Number(markets[order[4]].baseDecimals),
                           3,
                         ),
-                      ),
+                      )),
                     );
                   }
                   try {
@@ -394,18 +398,18 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                       order[0] / Number(markets[order[4]].priceFactor),
                     );
                     orderLine.setText(
-                      `Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(order[0] / Number(markets[order[4]].priceFactor))) - 1))))}`,
+                      `Limit: ${formatSubscript(formatSig((order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(Number(markets[order[4]].priceFactor)))), markets[order[4]].marketType != 0))}`,
                     );
                     if (order[3] == 1) {
                       orderLine.setQuantity(
-                        formatDisplay(
+                        formatSubscript(formatDisplay(
                           customRound(
                             (order[2] - order[7]) /
                               10 ** Number(markets[order[4]].baseDecimals),
                             3,
                           ),
                         ),
-                      );
+                      ));
                     }
                   }
                 })
@@ -510,7 +514,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         priceFormatterFactory: (_symbolInfo: any, _minTick: number) => {
           return {
             format: (price: number) => {
-              return activeMarketRef.current?.marketType != 0 ? formatSig(price.toFixed(Math.floor(Math.log10(Number(activeMarketRef.current?.priceFactor))))) : formatDisplay(price.toFixed(Math.floor(Math.log10(Number(activeMarketRef.current?.priceFactor)))));
+              return formatSubscript(formatSig(price.toFixed(Math.floor(Math.log10(Number(activeMarketRef.current?.priceFactor)))), activeMarketRef.current?.marketType != 0));
             },
           };
         },
@@ -860,16 +864,16 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                     .createOrderLine()
                     .setPrice(order[0] / Number(markets[order[4]].priceFactor))
                     .setQuantity(
-                      formatDisplay(
+                      formatSubscript(formatDisplay(
                         customRound(
                           (order[2] - order[7]) /
                             10 ** Number(markets[order[4]].baseDecimals),
                           3,
                         ),
-                      ),
+                      )),
                     )
                     .setText(
-                      `Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(order[0] / Number(markets[order[4]].priceFactor))) - 1))))}`,
+                      `Limit: ${formatSubscript(formatSig((order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(Number(markets[order[4]].priceFactor)))), markets[order[4]].marketType != 0))}`,
                     )
                     .setLineColor(
                       order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)',
@@ -901,11 +905,11 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                     .onMove(async () => {
                       orderLine.setCancellable(false);
                       orderLine.setText(
-                        `Limit: ${orderLine.getPrice().toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(orderLine.getPrice() ?? 1)) - 1))))}`,
+                        `Limit: ${formatSubscript(formatSig(orderLine.getPrice().toFixed(Math.floor(Math.log10(Number(markets[order[4]].priceFactor)))), markets[order[4]].marketType != 0))}`,
                       );
                       if (order[3] == 1) {
                         orderLine.setQuantity(
-                          formatDisplay(
+                          formatSubscript(formatDisplay(
                             customRound(
                               ((order[2] - order[7]) * order[0]) /
                                 orderLine.getPrice() /
@@ -913,7 +917,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                                 10 ** Number(markets[order[4]].baseDecimals),
                               3,
                             ),
-                          ),
+                          )),
                         );
                       }
                       try {
@@ -958,10 +962,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                           order[0] / Number(markets[order[4]].priceFactor),
                         );
                         orderLine.setText(
-                          `Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(markets[order[4]].marketType == 0 ? Number(markets[order[4]].priceFactor) : 10 ** Math.max(0, 5 - Math.floor(Math.log10(order[0] / Number(markets[order[4]].priceFactor))) - 1))))}`,
+                          `Limit: ${formatSubscript(formatSig((order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(Number(markets[order[4]].priceFactor)))), markets[order[4]].marketType != 0))}`,
                         );
                         if (order[3] == 1) {
-                          orderLine.setQuantity(
+                          orderLine.setQuantity(formatSubscript(
                             formatDisplay(
                               customRound(
                                 (order[2] - order[7]) /
@@ -969,7 +973,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                                 3,
                               ),
                             ),
-                          );
+                          ));
                         }
                       }
                     })

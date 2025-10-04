@@ -1,33 +1,29 @@
 import React from 'react';
 
-import { formatCommas } from '../../../../utils/numberDisplayFormat';
-
 import './SpreadDisplay.css';
 
 interface SpreadDisplayProps {
-  averagePrice: number;
-  spread: number;
-  priceFactor: number;
+  averagePrice: string;
+  spread: string;
 }
 
 const SpreadDisplay: React.FC<SpreadDisplayProps> = ({
   averagePrice,
   spread,
-  priceFactor,
 }) => {
   return (
     <div className="ob-spread">
       <div className="ob-spread-inner">
         <span>
           {t('mid')}:{' '}
-          {!isNaN(averagePrice) && priceFactor != 0
-            ? formatCommas(averagePrice.toFixed(Math.floor(Math.log10(priceFactor))))
+          {!!averagePrice
+            ? averagePrice
             : t('N/A')}
         </span>
         <span>
           {t('Spread')}:{' '}
-          {averagePrice && !isNaN(spread)
-            ? `${((spread / averagePrice) * 100).toFixed(2)}%`
+          {!!spread
+            ? spread
             : t('N/A')}
         </span>
       </div>

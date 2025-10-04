@@ -6,7 +6,7 @@ import ViewButton from '../ExplorerViewButton/ExplorerViewButton';
 import { settings } from '../../../settings.ts';
 import { useSharedContext } from '../../../contexts/SharedContext';
 import customRound from '../../../utils/customRound';
-import { formatBalance } from '../../../utils/numberDisplayFormat';
+import { formatBalance, formatSubscript } from '../../../utils/numberDisplayFormat';
 import { formatDateAndTime, formatDisplay, formatSig } from '../utils';
 
 import './TradeHistoryItem.css';
@@ -87,20 +87,18 @@ const TradeHistoryItem: React.FC<TradeHistoryItemProps> = ({
           )}
         </span>
         <div className="amount">
-          {formatDisplay(
+          {formatSubscript(formatDisplay(
             customRound(
               (trade[2] === 0 ? trade[0] : trade[1]) / 10 ** baseDecimals,
               3,
             ),
-          )}
+          ))}
           <span className="oc-market-ticker"> {market.baseAsset}</span>
         </div>
       </div>
 
       <div className="oc-cell trigger-price">
-        {formatSig(
-          (trade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor)))
-        )}
+        {formatSubscript(formatSig((trade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))), market.marketType != 0))}
       </div>
       <span className="oc-cell status">
         {trade[7] === 0

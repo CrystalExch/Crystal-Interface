@@ -99,7 +99,8 @@ export const formatSubscript = (value: string): string => {
     for (const ch of fractionalPart) {
       if (ch === '0') zerosCount++; else break;
     }
-    if (zerosCount > 4) {
+    const remainder = fractionalPart.slice(zerosCount);
+    if (zerosCount > 4 && remainder) {
       const remainder = fractionalPart.slice(zerosCount);
       const zerosSub = zerosCount.toString().split('').map(d => subscriptMap[d]||d).join('');
       return `${neg}${formattedInteger}.0${zerosSub}${remainder}`;
@@ -119,7 +120,3 @@ export const formatCommas = (value: string) => {
     ? `${formattedInteger}.${fractionalPart}`
     : formattedInteger;
 };
-
-export const formatValue = (value: string, toSig: boolean = false, toSubscript: boolean = false, toCommas: boolean = true): string => {
-
-}

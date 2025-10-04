@@ -14,19 +14,19 @@ export const formatDisplay = (value: string) => {
     : formattedInteger;
 };
 
-export const formatSig = (value: string): string => {
+export const formatSig = (value: string, toSig: boolean = false): string => {
   const addCommas = (s: string) => s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-  if (value === undefined || value === null) return value;
+  if (value === undefined || value === null) return (toSig ? '0.0000' : value);
   const num = Number(value);
-  if (!Number.isFinite(num)) return value;
-  if (num === 0) return value;
+  if (!Number.isFinite(num)) return (toSig ? '0.0000' : value);
+  if (num === 0) return (toSig ? '0.0000' : value);
 
   const neg = num < 0;
   const signStr = neg ? '-' : '';
 
   const sigFigs = (s: string) => (s.includes('e')||s.includes('E')?Number(s).toString():s).replace(/^-?0*\.?0*/, '').replace('.', '').length;
-  let rounded = sigFigs(value) <= 5 ? value.replace('-', '') : Math.abs(num).toPrecision(5);
+  let rounded = (sigFigs(value) <= 5 || !toSig) ? value.replace('-', '') : Math.abs(num).toPrecision(5);
 
   const toDecimalFromExp = (s: string) => {
     if (!/[eE]/.test(s)) return s;

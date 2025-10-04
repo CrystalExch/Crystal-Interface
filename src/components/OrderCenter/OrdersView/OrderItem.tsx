@@ -8,6 +8,7 @@ import customRound from '../../../utils/customRound';
 import { fetchLatestPrice } from '../../../utils/getPrice';
 import {
   formatBalance,
+  formatSubscript,
 } from '../../../utils/numberDisplayFormat.ts';
 import { formatDateAndTime, formatDisplay, getPriceGap, formatSig } from '../utils';
 
@@ -60,6 +61,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
     limitPrice,
     currentPrice,
     priceFactor,
+    market.marketType,
   );
 
   const tokenAddress =
@@ -120,13 +122,13 @@ const OrderItem: React.FC<OrderItemProps> = ({
           </div>
         </div>
         <div className="amount">
-          {formatDisplay(customRound(amount, 3))}
+          {formatSubscript(formatDisplay(customRound(amount, 3)))}
           <span className="oc-market-ticker"> {market.baseAsset}</span>
         </div>
       </div>
       <div className="oc-cell limit-price">
         <div className="open-order-price-level">
-          {formatSig(limitPrice.toFixed(Math.floor(Math.log10(priceFactor))))}
+          {formatSubscript(formatSig(limitPrice.toFixed(Math.floor(Math.log10(priceFactor))), market.marketType != 0))}
           <div className="edit-limit-price-button"
                onClick={(e) => {
                  e.stopPropagation();

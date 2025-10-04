@@ -2351,7 +2351,7 @@ useEffect(() => {
                         }`}
                     >
                       {portChartLoading ? (
-                        <div className="port-loading" style={{ width: 80 }} />
+                        <div className="port-loading" style={{ width: 55 }} />
                       ) : (
                         `${percentage >= 0 ? '+' : ''}${percentage.toFixed(2)}%`
                       )}
@@ -2395,7 +2395,7 @@ useEffect(() => {
                       {portChartLoading ? (
                         <div className="port-loading" style={{ width: 80 }} />
                       ) : (
-                        `${formatCommas(getActiveAddress() ? low.toFixed(2) : '0.00')}`
+                        `$${formatCommas(getActiveAddress() ? low.toFixed(2) : '0.00')}`
                       )}
                     </span>
                   </div>

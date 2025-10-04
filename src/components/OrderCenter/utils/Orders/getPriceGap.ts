@@ -1,3 +1,4 @@
+import { formatSubscript } from '../../../../utils/numberDisplayFormat';
 import { formatSig } from '../formatDisplay';
 
 export interface PriceGapResult {
@@ -9,6 +10,7 @@ export function getPriceGap(
   triggerPrice: number,
   currentPrice: number,
   priceFactor: number,
+  marketType: number,
 ): PriceGapResult {
   if (currentPrice === 0) {
     return { formattedGap: 'N/A', gapColor: 'grey' };
@@ -24,7 +26,7 @@ export function getPriceGap(
   const formattedPriceGap = `${gapSign}${priceGap.toFixed(Math.floor(Math.log10(Number(priceFactor))))}`;
   const formattedGapPercentage = `${gapSign}${gapPercentage.toFixed(2)}%`;
 
-  const formattedGap = `${formatSig(formattedPriceGap)} / ${formattedGapPercentage}`;
+  const formattedGap = `${formatSubscript(formatSig(formattedPriceGap, marketType != 0))} / ${formattedGapPercentage}`;
 
   return { formattedGap, gapColor };
 }

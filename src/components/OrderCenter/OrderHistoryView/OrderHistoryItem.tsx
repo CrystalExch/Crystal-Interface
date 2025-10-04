@@ -6,7 +6,7 @@ import SegmentedProgressBar from '../SegmentedProgressBar/SegmentedProgressBar.t
 
 import { useSharedContext } from '../../../contexts/SharedContext';
 import customRound from '../../../utils/customRound';
-import { formatBalance } from '../../../utils/numberDisplayFormat.ts';
+import { formatBalance, formatSubscript } from '../../../utils/numberDisplayFormat.ts';
 import { formatDateAndTime, formatDisplay, formatSig } from '../utils';
 
 import './OrderHistoryItem.css';
@@ -84,14 +84,12 @@ const OrderHistoryItem: React.FC<OrderHistoryItemProps> = ({
           {formatBalance(amount * quotePrice * (order[0] / priceFactor), 'usd')}
         </span>
         <div className="amount">
-          {formatDisplay(customRound(amount, 3))}
+          {formatSubscript(formatDisplay(customRound(amount, 3)))}
           <span className="oc-market-ticker"> {market.baseAsset}</span>
         </div>
       </div>
       <div className="oc-cell price">
-        {formatSig(
-          (order[0] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))),
-        )}
+        {formatSubscript(formatSig((order[0] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))), market.marketType != 0))}
       </div>
       <div className="oc-cell amount-filled-cell">
         <div className="amount-filled-container">

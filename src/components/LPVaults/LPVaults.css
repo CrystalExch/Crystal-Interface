@@ -1891,7 +1891,6 @@
 }
 .form-group{
     margin-top: 1rem;
-    margin-bottom:1rem
 }
 .form-group label{
     display:block;
@@ -1973,7 +1972,6 @@
     justify-content:flex-end;
     gap:1rem;
     padding:1rem;
-    padding-top:0
 }
 .vault-cancel-button{
     background:0 0;
