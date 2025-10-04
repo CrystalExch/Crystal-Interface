@@ -139,6 +139,8 @@ const Perps: React.FC<PerpsProps> = ({
   const [inputString, setInputString] = useState('');
   const [limitPriceString, setlimitPriceString] = useState('');
   const [limitChase, setlimitChase] = useState(true);
+  const [balance, setBalance] = useState('0.00');
+  const [accountEquity, setAccountEquity] = useState('0.00');
   const [amountIn, setAmountIn] = useState(BigInt(0));
   const [limitPrice, setlimitPrice] = useState(BigInt(0));
   const [sliderPercent, setSliderPercent] = useState(0);
@@ -550,10 +552,9 @@ const Perps: React.FC<PerpsProps> = ({
 
   const handleSliderChange = useCallback((percent: number) => {
     setSliderPercent(percent);
-    // You can add logic here to calculate trade amount based on balance and percentage
-    // const calculatedAmount = (totalBalance * percent) / 100;
-    // setTradeAmount(calculatedAmount.toString());
     positionPopup(percent);
+    setInputString((Number(balance) * Number(leverage) * percent / 100).toString())
+    setAmountIn(BigInt(Number(balance) * Number(leverage) * percent / 100))
   }, [positionPopup]);
 
   const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
@@ -1065,137 +1066,10 @@ const Perps: React.FC<PerpsProps> = ({
         console.log(message)
         if (message?.content?.data) {
           const msg = message?.content?.data;
-          if (message.content.channel.startsWith('depth')) {
-            if (msg[0].depthType == 'SNAPSHOT') {
-              setorderdata([
-                msg[0].bids.map((i: any) => ({ ...i, price: Number(i.price), size: Number(i.size) })),
-                msg[0].asks.map((i: any) => ({ ...i, price: Number(i.price), size: Number(i.size) }))
-              ])
+          if (message.type == 'trade-event') {
+            if (message.content.event == 'Snapshot') {
+              setBalance(msg.collateral[0].amount)
             }
-            else {
-              setorderdata((prev: any) => {
-                const temporders = [[...prev[0]], [...prev[1]]]
-
-                msg[0].bids.forEach((i: any) => {
-                  const price = Number(i.price)
-                  const size = Number(i.size)
-                  const idx = temporders[0].findIndex(o => o.price === price)
-
-                  if (size === 0 && idx !== -1) {
-                    temporders[0].splice(idx, 1)
-                  } else if (idx !== -1) {
-                    temporders[0][idx].size = size
-                  } else if (size > 0) {
-                    let insertAt = temporders[0].findIndex(o => o.price < price)
-                    if (insertAt === -1) insertAt = temporders[0].length
-                    temporders[0].splice(insertAt, 0, { ...i, price, size })
-                  }
-                })
-
-                msg[0].asks.forEach((i: any) => {
-                  const price = Number(i.price)
-                  const size = Number(i.size)
-                  const idx = temporders[1].findIndex(o => o.price === price)
-
-                  if (size === 0 && idx !== -1) {
-                    temporders[1].splice(idx, 1)
-                  } else if (idx !== -1) {
-                    temporders[1][idx].size = size
-                  } else if (size > 0) {
-                    let insertAt = temporders[1].findIndex(o => o.price > price)
-                    if (insertAt === -1) insertAt = temporders[1].length
-                    temporders[1].splice(insertAt, 0, { ...i, price, size })
-                  }
-                })
-
-                return temporders
-              })
-            }
-          }
-          else if (message.content.channel.startsWith('trades')) {
-            if (message.content.dataType == 'Snapshot') {
-              const trades = msg.map((t: any) => {
-                const isBuy = !t.isBuyerMaker
-                const priceFormatted = formatCommas(t.price)
-                const tradeValue = Number(t.value)
-                const time = formatTime(Number(t.time))
-                return [isBuy, priceFormatted, tradeValue, time]
-              })
-              setTrades(trades)
-            }
-            else {
-              const trades = msg.map((t: any) => {
-                const isBuy = t.isBuyerMaker
-                const priceFormatted = formatCommas(t.price)
-                const tradeValue = Number(t.value)
-                const time = formatTime(Number(t.time) / 1000)
-                return [isBuy, priceFormatted, tradeValue, time]
-              })
-
-              setTrades(prev => [...trades, ...prev].slice(0, 100))
-            }
-          }
-          else if (message.content.channel.startsWith('kline')) {
-            if (message.content.dataType == 'Snapshot') {
-              const key = msg?.[0].contractName + (msg?.[0].klineType === 'DAY_1'
-                ? '1D'
-                : msg?.[0].klineType === 'HOUR_4'
-                  ? '240'
-                  : msg?.[0].klineType === 'HOUR_1'
-                    ? '60'
-                    : msg?.[0].klineType.startsWith('MINUTE_')
-                      ? msg?.[0].klineType.slice('MINUTE_'.length)
-                      : msg?.[0].klineType)
-
-              if (realtimeCallbackRef.current[key]) {
-                const mapKlines = (klines: any[]) =>
-                  klines.map(candle => ({
-                    time: Number(candle.klineTime),
-                    open: Number(candle.open),
-                    high: Number(candle.high),
-                    low: Number(candle.low),
-                    close: Number(candle.close),
-                    volume: Number(candle.value),
-                  }))
-                realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
-              }
-            }
-            else {
-              const key = msg?.[0].contractName + (msg?.[0].klineType === 'DAY_1'
-                ? '1D'
-                : msg?.[0].klineType === 'HOUR_4'
-                  ? '240'
-                  : msg?.[0].klineType === 'HOUR_1'
-                    ? '60'
-                    : msg?.[0].klineType.startsWith('MINUTE_')
-                      ? msg?.[0].klineType.slice('MINUTE_'.length)
-                      : msg?.[0].klineType)
-              if (realtimeCallbackRef.current[key]) {
-                const mapKlines = (klines: any[]) =>
-                  klines.map(candle => ({
-                    time: Number(candle.klineTime),
-                    open: Number(candle.open),
-                    high: Number(candle.high),
-                    low: Number(candle.low),
-                    close: Number(candle.close),
-                    volume: Number(candle.value),
-                  }))
-                realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
-              }
-            }
-          }
-          else if (message.content.channel.startsWith('ticker')) {
-            setPerpsMarketsData((prev: any) =>
-              Object.fromEntries(
-                Object.entries(prev).map(([name, market]: any) => {
-                  const update = message.content.data.find((d: any) => d.contractName === name)
-                  return [
-                    name,
-                    update ? { ...market, ...update } : market
-                  ]
-                })
-              )
-            )
           }
         }
       }
@@ -1461,7 +1335,7 @@ const Perps: React.FC<PerpsProps> = ({
                 <div className="perps-current-position-container">{t('Available to Trade')}</div>
               </div>
               <div className="value-container">
-                0.00
+                {Number(balance).toFixed(2)}
               </div>
             </div>
             <div className="perps-available-to-trade">
@@ -1476,7 +1350,7 @@ const Perps: React.FC<PerpsProps> = ({
               <div className="perps-balance-container">
                 <img className="perps-wallet-icon" src={walleticon} />
                 <div className="balance-value-container">
-                  0.00
+                  {Number(balance).toFixed(2)}
                 </div>
               </div>
               <button
@@ -1748,7 +1622,7 @@ const Perps: React.FC<PerpsProps> = ({
                   />
                 </div>
                 <div className="value-container">
-                  $0.00
+                  ${Number(inputString).toFixed(2)}
                 </div>
               </div>
               <div className="price-impact">
@@ -1766,7 +1640,7 @@ const Perps: React.FC<PerpsProps> = ({
                   />
                 </div>
                 <div className="value-container">
-                  $0.00
+                  ${(Number(inputString) / Number(leverage)).toFixed(2)}
                 </div>
               </div>
               <div className="price-impact">
@@ -1887,7 +1761,7 @@ const Perps: React.FC<PerpsProps> = ({
                 Total Equity
               </span>
               <span className="perps-account-subtitle">
-                $0.00
+                ${Number(accountEquity).toFixed(2)}
               </span>
             </div>
             <div className="perps-account-row">
@@ -1895,7 +1769,7 @@ const Perps: React.FC<PerpsProps> = ({
                 Balance
               </span>
               <span className="perps-account-subtitle">
-                $0.00
+                ${Number(balance).toFixed(2)}
               </span>
             </div>
             <div className="perps-account-row">

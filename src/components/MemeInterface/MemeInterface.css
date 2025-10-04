@@ -484,18 +484,15 @@
   width: 16px;
 }
 
-
-
 .meme-trade-action-button.buy:hover:not(:disabled) {
-  filter: brightness(1.1)
+  box-shadow: inset 0 0 12px 4px rgba(67, 254, 154, 0.3);
 }
 
 .meme-trade-action-button.sell {
     border: 1px solid rgb(235, 112, 112, 0.5);
-    box-shadow: inset 0 0 4px 4px rgb(235, 112, 112, 0.2);
+    box-shadow: inset 0 0 6px 4px rgb(235, 112, 112, 0.2);
     color: rgb(235, 112, 112);
 }
-
 
 .meme-trade-action-button.sell .meme-button-spinner {
   animation: spin 1s linear infinite;
@@ -507,7 +504,7 @@
 }
 
 .meme-trade-action-button.sell:hover:not(:disabled) {
-  filter: brightness(1.1)
+  box-shadow: inset 0 0 12px 4px rgb(235, 112, 112, 0.3);
 }
 
 .meme-trade-action-button:disabled {

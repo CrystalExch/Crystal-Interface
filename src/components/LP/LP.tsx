@@ -508,10 +508,8 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
     try {
       const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultInputStrings.quote) * Number(10n ** tokendict[selectedVaultData?.quoteAddress]?.decimals)));
       const amountBaseDesired = BigInt(Math.round(parseFloat(vaultInputStrings.base) * Number(10n ** tokendict[selectedVaultData?.baseAddress]?.decimals)));
-      const firstTokenBalance = getTokenBalance(selectedVaultData.baseAsset);
-      const secondTokenBalance = getTokenBalance(selectedVaultData.quoteAsset);
 
-      if (firstTokenBalance < amountQuoteDesired) {
+      if (selectedVaultData?.quoteAddress != settings.chainConfig[activechain]?.eth) {
         const approveFirstUo = {
           target: selectedVaultData?.quoteAddress as `0x${string}`,
           data: encodeFunctionData({
@@ -530,10 +528,10 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
           }),
           value: 0n,
         };
-        const approveFirstOp = await sendUserOperationAsync({ uo: approveFirstUo });
+        await sendUserOperationAsync({ uo: approveFirstUo });
       }
 
-      if (secondTokenBalance < amountBaseDesired) {
+      if (selectedVaultData?.baseAddress != settings.chainConfig[activechain]?.eth) {
         const approveSecondUo = {
           target: selectedVaultData?.baseAddress as `0x${string}`,
           data: encodeFunctionData({
@@ -552,7 +550,7 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
           }),
           value: 0n,
         };
-        const approveSecondOp = await sendUserOperationAsync({ uo: approveSecondUo });
+        await sendUserOperationAsync({ uo: approveSecondUo });
       }
 
       const depositUo = {

@@ -13961,8 +13961,7 @@ function App() {
                         throw new Error(`Insufficient ${baseAssetData.ticker} balance. Required: ${createVaultForm.amountBase}, Available: ${formatBalance(baseBalance, baseDecimals)}`);
                       }
 
-                      if (createVaultForm.quoteAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
-                        console.log('Approving quote token...');
+                      if (createVaultForm.quoteAsset.toLowerCase() != eth.toLowerCase()) {
                         const approveQuoteUo = {
                           target: createVaultForm.quoteAsset,
                           data: encodeFunctionData({
@@ -13981,11 +13980,9 @@ function App() {
                           }),
                           value: 0n,
                         };
-                        const approveQuoteOp = await sendUserOperationAsync({ uo: approveQuoteUo });
-                        console.log('Quote token approved');
+                        await sendUserOperationAsync({ uo: approveQuoteUo });
                       }
-                      if (createVaultForm.baseAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
-                        console.log('Approving base token...');
+                      if (createVaultForm.baseAsset.toLowerCase() != eth.toLowerCase()) {
                         const approveBaseUo = {
                           target: createVaultForm.baseAsset,
                           data: encodeFunctionData({
@@ -14004,24 +14001,21 @@ function App() {
                           }),
                           value: 0n,
                         };
-                        const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
-                        console.log('Base token approved');
+                        await sendUserOperationAsync({ uo: approveBaseUo });
                       }
 
                       const ethValue =
-                        createVaultForm.quoteAsset.toLowerCase() === settings.chainConfig[activechain].eth ? amountQuote :
-                          createVaultForm.baseAsset.toLowerCase() === settings.chainConfig[activechain].eth ? amountBase : 0n;
+                        createVaultForm.quoteAsset.toLowerCase() == eth.toLowerCase() ? amountQuote :
+                          createVaultForm.baseAsset.toLowerCase() == eth.toLowerCase() ? amountBase : 0n;
 
-                      console.log('Deploying vault with ETH value:', ethValue.toString());
-
-                      const deployUo = {
+                          const deployUo = {
                         target: crystalVaults,
                         data: encodeFunctionData({
                           abi: CrystalVaultsAbi,
                           functionName: "deploy",
                           args: [
-                            (createVaultForm.quoteAsset == settings.chainConfig[activechain].eth ? settings.chainConfig[activechain].weth : createVaultForm.quoteAsset),
-                            (createVaultForm.baseAsset == settings.chainConfig[activechain].eth ? settings.chainConfig[activechain].weth : createVaultForm.baseAsset),
+                            createVaultForm.quoteAsset as `0x${string}`,
+                            createVaultForm.baseAsset as `0x${string}`,
                             amountQuote,
                             amountBase,
                             0n,
@@ -14368,9 +14362,8 @@ function App() {
                       value={parseFloat(perpsLeverage) || 10}
                       onChange={(e) => {
                         const value = e.target.value;
-                        setPerpsLeverage(value + '.0');
+                        setPerpsLeverage(value );
 
-                        // Update popup position
                         const container = e.target.parentElement;
                         if (container) {
                           const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
@@ -14416,7 +14409,7 @@ function App() {
                           className="leverage-mark"
                           data-active={parseFloat(perpsLeverage) >= mark}
                           onClick={() => {
-                            setPerpsLeverage(mark.toString() + '.0');
+                            setPerpsLeverage(mark.toString());
                             const sliderContainer = document.querySelector('.leverage-slider-container');
                             if (sliderContainer) {
                               const input = sliderContainer.querySelector('.leverage-slider-input') as HTMLInputElement;

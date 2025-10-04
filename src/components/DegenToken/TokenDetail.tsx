@@ -172,7 +172,6 @@ const CopyableAddress: React.FC<{
         onMouseEnter={() => !copyTooltipVisible && setShowHoverTooltip(true)}
         onMouseLeave={() => setShowHoverTooltip(false)} 
         className={className ? `${className} copyable-address` : 'copyable-address'}
-        title={copied ? 'Copied!' : 'Click to copy full address'}
         aria-label="Copy address to clipboard"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
