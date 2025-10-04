@@ -493,7 +493,7 @@
 }
 .detail-bonding-info {
   display: flex; justify-content: space-between;
-  font-size: .8rem; color: var(--c-muted);
+  font-size: .75rem; color: var(--c-muted);
 }
 
 .detail-loading,
@@ -572,7 +572,7 @@
 }
 
 .wallet-popup-copy-tooltip {
-  color: var(--c-buy);
+  color: var(--c-muted);
 }
 
 .wallet-popup-hover-tooltip {

@@ -1308,7 +1308,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">Price</span>
                 <span className="meme-interface-metric-value meme-price-large">
-                  $<FormattedNumberDisplay formatted={formatSubscript((Number(price) * monUsdPrice).toFixed(7))} />
+                  $<FormattedNumberDisplay formatted={formatSubscript((Number(price) * monUsdPrice).toString())} />
                 </span>
               </div>
 

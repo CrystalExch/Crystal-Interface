@@ -16,6 +16,8 @@ import {
   setGlobalPopupHandlers,
   useWalletPopup,
 } from '../MemeTransactionPopup/useWalletPopup';
+import customRound from '../../utils/customRound';
+import { formatSubscript } from '../../utils/numberDisplayFormat';
 
 interface Token {
   id: string;
@@ -112,7 +114,7 @@ const formatPrice = (p: number) => {
   if (p >= 1e9) return `$${(p / 1e9).toFixed(2)}B`;
   if (p >= 1e6) return `$${(p / 1e6).toFixed(2)}M`;
   if (p >= 1e3) return `$${(p / 1e3).toFixed(2)}K`;
-  return `$${p.toFixed(6)}`;
+  return `$${p.toFixed(2)}`;
 };
 
 const formatNumber = (n: number) => {
@@ -786,7 +788,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             </div>
             <div className="detail-stat-item">
               <div className="detail-stat-label">Price</div>
-              <div className="detail-stat-value">${formatNumber(currentPrice * monUsdPrice)}</div>
+              <div className="detail-stat-value">${formatSubscript(customRound(currentPrice * monUsdPrice, 3))}</div>
             </div>
             <div className="detail-stat-item">
               <div className="detail-stat-label">5m</div>
@@ -1009,17 +1011,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                 {formatNumber(walletTokenBalance)} {tokenData.symbol}
               </span>
             </div>
-
-            <div className="progress-bar-container">
-              <div className="detail-progress-bar">
-                <div className="progress-indicator" style={{ left: '50%' }} />
-              </div>
-            </div>
-
-            <div className="detail-stat-row">
-              <span>Profit indicator</span>
-              <span className="detail-profit">Profit/Loss</span>
-            </div>
           </div>
         </div>
 
@@ -1035,7 +1026,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               </div>
             ) : (
               <div className="detail-bonding-info">
-                <span>{formatNumber(tokenData.marketCap)} MON in bonding curve</span>
+                <span>{formatNumber(tokenData.marketCap)} MON in curve</span>
                 <span>{formatNumber(GRADUATION_THRESHOLD - tokenData.marketCap)} MON to graduate</span>
               </div>
             )}

@@ -36,7 +36,7 @@ export const formatSubscript = (value: string): FormattedNumber => {
     }
 
 if (zerosCount > 3) {
-  const remainder = fractionalPart.slice(zerosCount, zerosCount + 1);
+  const remainder = fractionalPart.slice(zerosCount, zerosCount + 2);
   return {
     type: 'subscript',
     text: `${formattedInteger}.0${remainder}`,
