@@ -3865,8 +3865,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       }
     }
   }, []);
-
-  const handleQuickBuy = useCallback(
+const handleQuickBuy = useCallback(
     async (token: Token, amt: string, buttonType: 'primary' | 'secondary') => {
       const val = BigInt(amt || '0') * 10n ** 18n;
       if (val === 0n) return;
@@ -3877,8 +3876,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       try {
         if (showLoadingPopup) {
           showLoadingPopup(txId, {
-            title: 'Sending transaction...',
-            subtitle: `${amt} MON worth of ${token.symbol}`,
+            title: 'Sending buy...',
+            subtitle: `Buying ${amt} MON of ${token.symbol}`,
             amount: amt,
             amountUnit: 'MON',
             tokenImage: token.image,
@@ -3895,21 +3894,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           value: val,
         };
 
-        if (updatePopup) {
-          updatePopup(txId, {
-            title: 'Confirming transaction...',
-            subtitle: `${amt} MON worth of ${token.symbol}`,
-            variant: 'info',
-            tokenImage: token.image,
-          });
-        }
-
         await sendUserOperationAsync({ uo });
         terminalRefetch();
         if (updatePopup) {
           updatePopup(txId, {
-            title: 'Quick Buy Complete',
-            subtitle: `Successfully bought ${token.symbol} with ${amt} MON`,
+            title: `Bought ${amt} MON Worth`,
+            subtitle: `Successfully purchased ${token.symbol}`,
             variant: 'success',
             confirmed: true,
             isLoading: false,
@@ -3923,8 +3913,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           updatePopup(txId, {
             title: msg.toLowerCase().includes('insufficient')
               ? 'Insufficient Balance'
-              : 'Quick Buy Failed',
-            subtitle: msg || 'Please try again.',
+              : 'Buy Failed',
+            subtitle: msg || 'Transaction failed',
             variant: 'error',
             confirmed: true,
             isLoading: false,
@@ -4429,7 +4419,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                   <span className="transparent-button-container">
                     <img src={walleticon} className="img-wallet-icon" />
                     <span className={`wallet-count ${selectedSet.size ? 'has-active' : ''}`}>
-                      {selectedSet.size}
+                      {selectedWallets.size}
                     </span>
                     <span className="subwallet-total-balance">
                       {selectedWallets.size > 0 ? (
