@@ -7,24 +7,23 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 101;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  z-index: 1000;
   animation: fadeIn 0.2s ease-out;
 }
 
 .live-trades-filters-container {
   position: relative;
-  background-color: rgb(6, 6, 6);
-  backdrop-filter: blur(10px);
-  transform: translateX(-0%);
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 12px;
+  background: none;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 16px;
   width: 90%;
   max-width: 500px;
   max-height: 90vh;
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-  animation: slideInMain 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  animation: modalSlideIn 0.3s ease-out;
   display: flex;
   flex-direction: column;
 }
@@ -34,34 +33,38 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1.5px solid rgba(179, 184, 249, 0.1);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   flex-shrink: 0;
 }
 
 .live-trades-filters-title {
   color: #fff;
   font-size: 1rem;
+  font-weight: 300;
+  letter-spacing: -0.3px;
   margin: 0;
-  letter-spacing: -0.5px;
-  font-weight: 100;
 }
 
 .live-trades-filters-close {
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-  padding: 0;
-  width: 24px;
-  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s ease;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  line-height: 1;
+  font-size: 28px;
+  color: #ffffff54;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .live-trades-filters-close:hover {
   color: #fff;
+  background: rgba(179, 184, 249, 0.1);
 }
 
 .live-trades-filters-content {
@@ -73,6 +76,19 @@
   gap: 24px;
 }
 
+.live-trades-filters-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.live-trades-filters-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.live-trades-filters-content::-webkit-scrollbar-thumb {
+  background: rgba(179, 184, 249, 0.2);
+  border-radius: 3px;
+}
+
 .live-trades-filters-section {
   display: flex;
   flex-direction: column;
@@ -80,7 +96,7 @@
 }
 
 .live-trades-filters-section-title {
-  color: rgba(255, 255, 255, 0.7);
+  color: #fff;
   font-size: 0.9rem;
   font-weight: 300;
   letter-spacing: -0.3px;
@@ -103,36 +119,41 @@
 
 .live-trades-filters-checkbox {
   appearance: none;
-  width: 20px;
-  height: 20px;
-  border: 1.5px solid rgba(179, 184, 249, 0.3);
-  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(170, 174, 207, 0.3);
+  border-radius: 5px;
   background: transparent;
   cursor: pointer;
   position: relative;
   transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.live-trades-filters-checkbox:hover {
+  background: rgba(170, 174, 207, 0.05);
+  border-color: rgba(170, 174, 207, 0.6);
 }
 
 .live-trades-filters-checkbox:checked {
-  background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
-  border-color: transparent;
+  border-color: #d8dcff;
 }
 
 .live-trades-filters-checkbox:checked::after {
+  background-color: #d8dcff;
+  border-radius: 3px;
   content: '';
+  height: 12px;
+  width: 12px;
   position: absolute;
-  left: 6px;
+  left: 2px;
   top: 2px;
-  width: 5px;
-  height: 10px;
-  border: solid #000;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
 }
 
 .live-trades-filters-checkbox-text {
-  color: rgba(255, 255, 255, 0.9);
+  color: #fff;
   font-size: 0.85rem;
+  font-weight: 300;
   letter-spacing: -0.3px;
 }
 
@@ -156,8 +177,9 @@
   padding: 10px 50px 10px 12px;
   color: #fff;
   font-size: 0.85rem;
+  font-weight: 300;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
   letter-spacing: -0.3px;
 }
 
@@ -167,14 +189,16 @@
 }
 
 .live-trades-filters-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: #ffffff4d;
+  font-weight: 300;
 }
 
 .live-trades-filters-input-suffix {
   position: absolute;
   right: 12px;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.85rem;
+  color: #ffffff79;
+  font-size: 0.75rem;
+  font-weight: 300;
   letter-spacing: -0.3px;
   pointer-events: none;
 }
@@ -183,28 +207,34 @@
   display: flex;
   gap: 12px;
   padding: 16px 20px;
-  border-top: 1.5px solid rgba(179, 184, 249, 0.1);
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
   flex-shrink: 0;
 }
 
 .live-trades-filters-reset-button {
-  background: transparent;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  padding: 12px 16px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 12px;
+  color: #fff;
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  font-weight: 300;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 48px;
 }
 
 .live-trades-filters-reset-button:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(179, 184, 249, 0.05);
   border-color: rgba(179, 184, 249, 0.2);
-  color: #fff;
+}
+
+.live-trades-filters-reset-button svg {
+  width: 16px;
+  height: 16px;
 }
 
 .live-trades-filters-apply-button {
@@ -235,13 +265,13 @@
   }
 }
 
-@keyframes slideInMain {
+@keyframes modalSlideIn {
   from {
     opacity: 0;
-    transform: translateX(0) scale(0.95) translateY(-20px);
+    transform: scale(0.95) translateY(-20px);
   }
   to {
     opacity: 1;
-    transform: translateX(0) scale(1) translateY(0);
+    transform: scale(1) translateY(0);
   }
 }
