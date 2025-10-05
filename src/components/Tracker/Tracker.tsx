@@ -170,6 +170,13 @@
         monUsdPrice: number;
         activechain?: string;
         walletTokenBalances?: { [address: string]: any };
+
+        connected?: boolean;
+        address?: string | null;
+        getWalletIcon?: () => string;      //x
+        onDepositClick?: () => void;       
+        onDisconnect?: () => void;         
+        t?: (k: string) => string; 
     }
 
     interface MonitorToken {
@@ -219,6 +226,8 @@
         const [walletSortField, setWalletSortField] = useState<'balance' | 'lastActive' | null>(null);
         const [walletSortDirection, setWalletSortDirection] = useState<SortDirection>('desc');
         const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
+        const [trackedWalletTrades, setTrackedWalletTrades] = useState<LiveTrade[]>([]);
+        const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
         const [monitorFilters, setMonitorFilters] = useState<MonitorFilterState>({
             general: {
                 lastTransaction: '',
@@ -277,163 +286,146 @@
             setSearchQuery('');
         }, [activeTab]);
 
-        const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
-
         useEffect(() => {
-            if (!activechain) return;
-            
+            if (trackedWallets.length === 0) {
+                setTrackedWalletTrades([]);
+                return;
+            }
+
             let cancelled = false;
-            
-            const fetchTrackedWallets = async () => {
+
+            const fetchTrackedWalletTrades = async () => {
                 try {
-                    // You can modify this query to fetch specific addresses you want to track
-                    // For now, fetching top holders across all tokens as an example
-                    const response = await fetch('https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e', {
+                    const walletAddresses = trackedWallets.map(w => w.address.toLowerCase());
+
+                    const response = await fetch(SUBGRAPH_URL, {
                         method: 'POST',
                         headers: { 'content-type': 'application/json' },
                         body: JSON.stringify({
                             query: `
-                                query {
-                                    accounts(first: 100, orderBy: totalValueTraded, orderDirection: desc) {
-                                        id
-                                        totalValueTraded
-                                        lastTradeBlock
+                                query ($accounts: [ID!]!) {
+                                    launchpadPositions(
+                                        first: 1000,
+                                        where: { account_in: $accounts }
+                                    ) {
+                                        account {
+                                            id
+                                        }
+                                        token {
+                                            id
+                                            symbol
+                                            name
+                                            trades(
+                                                first: 100,
+                                                orderBy: block,
+                                                orderDirection: desc,
+                                                where: { account_in: $accounts }
+                                            ) {
+                                                id
+                                                block
+                                                isBuy
+                                                account {
+                                                    id
+                                                }
+                                                priceNativePerTokenWad
+                                                amountIn
+                                                amountOut
+                                                transaction {
+                                                    id
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             `,
+                            variables: {
+                                accounts: walletAddresses
+                            }
                         }),
                     });
 
                     const { data } = await response.json();
+                    const positions: any[] = data?.launchpadPositions ?? [];
                     
-                    
-                    if (cancelled || !data?.accounts) return;
+                    if (cancelled) return;
 
-                    const wallets: TrackedWallet[] = data.accounts
-                        .map((account: any, index: number) => {
-                            const firstPosition = account.positions?.[0];
-                            const totalValue = firstPosition 
-                                ? (Number(firstPosition.nativeSpent || 0) + Number(firstPosition.nativeReceived || 0)) / 1e18
-                                : 0;
-                            
-                            const lastTrade = account.trades?.[0];
-                            const lastBlock = lastTrade ? Number(lastTrade.block || 0) : 0;
-                            const now = Date.now() / 1000;
-                            const estimatedTime = Math.max(0, now - lastBlock * 2); // Assuming ~2 sec per block
-                            
-                            let lastActive = '—';
-                            if (estimatedTime < 3600) {
-                                lastActive = `${Math.floor(estimatedTime / 60)}m`;
-                            } else if (estimatedTime < 86400) {
-                                lastActive = `${Math.floor(estimatedTime / 3600)}h`;
-                            } else {
-                                lastActive = `${Math.floor(estimatedTime / 86400)}d`;
+                    const allTrades: any[] = [];
+                    for (const position of positions) {
+                        if (position.token?.trades) {
+                            for (const trade of position.token.trades) {
+                                allTrades.push({
+                                    ...trade,
+                                    tokenSymbol: position.token.symbol,
+                                    tokenName: position.token.name
+                                });
                             }
+                        }
+                    }
 
-                            const emojis = ['🐋', '💎', '🚀', '🔥', '⚡', '💰', '🎯', '👑', '🦄', '🐸'];
-                            
-                            return {
-                                id: account.id,
-                                address: account.id,
-                                name: `Trader ${index + 1}`,
-                                emoji: emojis[index % emojis.length],
-                                balance: totalValue * 1000,
-                                lastActive: lastActive,
-                            };
-                        })
-                        .filter((w: TrackedWallet) => w.balance > 0); 
-                    setTrackedWallets(wallets);
+                    const mapped: LiveTrade[] = allTrades.map((trade: any) => {
+                        const trackedWallet = trackedWallets.find(
+                            w => w.address.toLowerCase() === trade.account.id.toLowerCase()
+                        );
+                        
+                        const isBuy = !!trade.isBuy;
+                        const tokenAmount = Number(isBuy ? trade.amountOut : trade.amountIn) / 1e18;
+                        const nativeAmount = Number(isBuy ? trade.amountIn : trade.amountOut) / 1e18;
+                        const price = Number(trade.priceNativePerTokenWad) / 1e18;
+                        
+                        const TOTAL_SUPPLY = 1e9;
+                        const marketCap = price * TOTAL_SUPPLY;
+                        
+                        const now = Date.now() / 1000;
+                        const blockTime = Number(trade.block);
+                        const secondsAgo = Math.max(0, now - blockTime * 2);
+                        
+                        let timeAgo = 'now';
+                        if (secondsAgo < 60) {
+                            timeAgo = `${Math.floor(secondsAgo)}s`;
+                        } else if (secondsAgo < 3600) {
+                            timeAgo = `${Math.floor(secondsAgo / 60)}m`;
+                        } else if (secondsAgo < 86400) {
+                            timeAgo = `${Math.floor(secondsAgo / 3600)}h`;
+                        } else {
+                            timeAgo = `${Math.floor(secondsAgo / 86400)}d`;
+                        }
+                        
+                        return {
+                            id: trade.id,
+                            walletName: trackedWallet?.name || 'Unknown',
+                            emoji: trackedWallet?.emoji || '👻',
+                            token: trade.tokenSymbol || 'Unknown',
+                            amount: nativeAmount,
+                            marketCap: marketCap / 1000,
+                            time: timeAgo,
+                            txHash: trade.transaction?.id || trade.id,
+                            type: isBuy ? 'buy' : 'sell',
+                            createdAt: new Date(blockTime * 1000).toISOString()
+                        };
+                    });
 
-                    setTrackedWallets(wallets);
+                    mapped.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+                    if (!cancelled) {
+                        setTrackedWalletTrades(mapped);
+                    }
                 } catch (error) {
-                    console.error('Failed to fetch tracked wallets:', error);
+                    console.error('Failed to fetch tracked wallet trades:', error);
+                    if (!cancelled) {
+                        setTrackedWalletTrades([]);
+                    }
                 }
             };
 
-            fetchTrackedWallets();
+            fetchTrackedWalletTrades();
             
-            const interval = setInterval(fetchTrackedWallets, 10000); // lasts 10 second fastest man alive
+            const interval = setInterval(fetchTrackedWalletTrades, 10000);
             
             return () => {
                 cancelled = true;
                 clearInterval(interval);
             };
-        }, [activechain]);
-
-        const [liveTrades] = useState<LiveTrade[]>([
-        {
-            id: '1',
-            walletName: 'random demon',
-            emoji: '😈',
-            token: 'Girthc...',
-            amount: 6.073,
-            marketCap: 74400,
-            time: '4m',
-            txHash: '0xabc123...',
-            type: 'buy',
-            createdAt: '2025-09-29T10:23:00'
-        },
-        {
-            id: '2',
-            walletName: 'random demon',
-            emoji: '😈',
-            token: 'Girthc...',
-            amount: 8.073,
-            marketCap: 74400,
-            time: '4m',
-            txHash: '0xabc124...',
-            type: 'sell',
-            createdAt: '2025-09-29T10:19:00'
-        },
-        {
-            id: '3',
-            walletName: 'random demon',
-            emoji: '😈',
-            token: 'Girthc...',
-            amount: 6.073,
-            marketCap: 74400,
-            time: '4m',
-            txHash: '0xabc125...',
-            type: 'buy',
-            createdAt: '2025-09-29T10:15:00'
-        },
-        {
-            id: '4',
-            walletName: 'random demon',
-            emoji: '😈',
-            token: 'Girthc...',
-            amount: 6.073,
-            marketCap: 74400,
-            time: '4m',
-            txHash: '0xabc126...',
-            type: 'sell',
-            createdAt: '2025-09-29T10:10:00'
-        },
-        {
-            id: '5',
-            walletName: 'random demon',
-            emoji: '😈',
-            token: 'Girthc...',
-            amount: 6.073,
-            marketCap: 74400,
-            time: '4m',
-            txHash: '0xabc127...',
-            type: 'buy',
-            createdAt: '2025-09-29T10:05:00'
-        },
-        {
-            id: '6',
-            walletName: 'random demon',
-            emoji: '😈',
-            token: 'Girthc...',
-            amount: 6.073,
-            marketCap: 74400,
-            time: '4m',
-            txHash: '0xabc128...',
-            type: 'buy',
-            createdAt: '2025-09-29T10:00:00'
-        }
-        ]);
+        }, [trackedWallets]);
 
         const [monitorTokens] = useState<MonitorToken[]>([
             {
@@ -587,9 +579,9 @@
         };
 
         const getSortedTrades = () => {
-            if (!tradeSortField) return liveTrades;
+            if (!tradeSortField) return trackedWalletTrades;
             
-            return [...liveTrades].sort((a, b) => {
+            return [...trackedWalletTrades].sort((a, b) => {
                 let comparison = 0;
                 
                 if (tradeSortField === 'dateCreated') {
@@ -616,7 +608,7 @@
         };
 
         const getFilteredTrades = () => {
-            let trades = liveTrades.filter(trade => {
+            let trades = trackedWalletTrades.filter(trade => {
 
                 const isBuy = trade.type === 'buy';
                 const isSell = trade.type === 'sell';
@@ -846,12 +838,7 @@
             }
 
             if (!isValidAddress(newWalletAddress.trim())) {
-                setAddWalletError('Invalid wallet address format');
-                return;
-            }
-
-            if (!newWalletName.trim()) {
-                setAddWalletError('Please enter a wallet name');
+                setAddWalletError('Invalid wallet address');
                 return;
             }
 
@@ -862,11 +849,17 @@
             }
 
             const walletData = await fetchWalletData(newWalletAddress.trim());
+            
+
+            const defaultName = newWalletName.trim() || 
+                `${newWalletAddress.slice(0, 6)}...${newWalletAddress.slice(-4)}`;
+
+            const cappedName = defaultName.slice(0, 20);
 
             const newWallet: TrackedWallet = {
                 id: Date.now().toString(),
                 address: newWalletAddress.trim(),
-                name: newWalletName.trim(),
+                name: defaultName,
                 emoji: newWalletEmoji,
                 balance: walletData.balance,      
                 lastActive: walletData.lastActive 
@@ -914,11 +907,12 @@
                 const newWallets: TrackedWallet[] = await Promise.all(
                     walletsToImport.map(async (item) => {
                         const walletData = await fetchWalletData(item.trackedWalletAddress);
+                        const walletName = (item.name || 'Imported Wallet').slice(0, 20);
                         
                         return {
                             id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
                             address: item.trackedWalletAddress,
-                            name: item.name || 'Imported Wallet',
+                            name: walletName,
                             emoji: item.emoji || '👻',
                             balance: walletData.balance,
                             lastActive: walletData.lastActive
@@ -955,6 +949,9 @@
         };
 
         const saveWalletName = (id: string) => {
+
+            const trimmedName = editingName.trim();
+            const cappedName = trimmedName.slice(0, 20);
             setTrackedWallets(prev =>
                 prev.map(w => w.id === id ? { ...w, name: editingName.trim() || w.name } : w)
             );
@@ -1059,7 +1056,7 @@
                             const balance = Number(realBalance[ethToken] || 0) / 1e18;
                             return balance > 0 ? (balance / 1000).toFixed(2) : '0.00';
                         }
-                        return (wallet.balance / 1000).toFixed(2);
+                        return wallet.balance.toFixed(2);
                     })()}K
                 </div>
 
@@ -1526,12 +1523,28 @@
                                 </svg>
                             </button>
                             <button className="tracker-header-button" onClick={() => setpopup(34)}>P1</button>
-                            <button className="tracker-header-button">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <div style={{ display: 'flex' }}>
+                                <button className="tracker-header-button flash-button">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                                </svg>
-                            </button>
-                            <button className="tracker-header-button">0.0</button>
+                                    </svg>
+                                </button>
+                                <div className="tracker-header-button counter-button">
+                                    <div className="tracker-counter-wrapper">
+                                    <input 
+                                        type="text" 
+                                        className="tracker-counter-input"
+                                        placeholder="0.0"
+                                        onFocus={(e) => e.target.placeholder = ''}
+                                        onBlur={(e) => {
+                                        if (e.target.value === '') {
+                                            e.target.placeholder = '0.0';
+                                        }
+                                        }}
+                                    />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -1565,12 +1578,28 @@
                                 {monitorCurrency === 'USD' ? 'USD' : 'MON'}
                             </button>
                             <button className="tracker-header-button">P1</button>
-                            <button className="tracker-header-button">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <div style={{ display: 'flex' }}>
+                                <button className="tracker-header-button flash-button">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                                </svg>
-                            </button>
-                            <button className="tracker-header-button">0.0</button>
+                                    </svg>
+                                </button>
+                                <div className="tracker-header-button counter-button">
+                                    <div className="tracker-counter-wrapper">
+                                    <input 
+                                        type="text" 
+                                        className="tracker-counter-input"
+                                        placeholder="0.0"
+                                        onFocus={(e) => e.target.placeholder = ''}
+                                        onBlur={(e) => {
+                                        if (e.target.value === '') {
+                                            e.target.placeholder = '0.0';
+                                        }
+                                        }}
+                                    />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -1616,6 +1645,7 @@
                                             setAddWalletError('');
                                         }}
                                         placeholder="Enter a name for this wallet"
+                                        maxLength={20}
                                     />
                                 </div>
 
@@ -1644,7 +1674,7 @@
                                     <button
                                         className="tracker-confirm-button"
                                         onClick={handleAddWallet}
-                                        disabled={!newWalletAddress.trim() || !newWalletName.trim()}
+                                        disabled={!newWalletAddress.trim()}
                                     >
                                         Add Wallet
                                     </button>
