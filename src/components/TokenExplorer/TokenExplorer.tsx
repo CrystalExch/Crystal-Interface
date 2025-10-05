@@ -4067,7 +4067,7 @@ const handleQuickBuy = useCallback(
         const tokens: Token[] = await Promise.all(
           rawMarkets.map(async (m: any) => {
             const price =
-              Number(m.lastPriceNativePerTokenWad) / 1e18 ||
+              Number(m.lastPriceNativePerTokenWad) / 1e9 ||
               defaultMetrics.price;
 
             let meta: any = {};

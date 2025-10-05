@@ -88,7 +88,6 @@ const MemeChart: React.FC<MemeChartProps> = ({
   isMarksVisible,
 }) => {
   const [overlayVisible, setLocalOverlayVisible] = useState(true);
-
   const useAdvancedChart = settings.useAdv !== false;
 
   const handleOverlayChange = (visible: boolean) => {

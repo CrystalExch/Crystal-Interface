@@ -300,7 +300,7 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
       if (!data.data?.launchpadTokens) return;
 
       const tokenPromises = data.data.launchpadTokens.map(async (market: any) => {
-        const price = Number(market.lastPriceNativePerTokenWad) / 1e18 || defaultMetrics.price;
+        const price = Number(market.lastPriceNativePerTokenWad) / 1e9 || defaultMetrics.price;
 
         let metadata: any = {};
         try {
@@ -402,7 +402,7 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
           for (let i = 0; i < hex.length; i += 64) {
             words.push(hex.slice(i, i + 64));
           }
-
+          console.log(words)
           const priceRaw = BigInt('0x' + words[2]);
           const price = Number(priceRaw) / 1e18;
           const marketCap = price * TOTAL_SUPPLY;

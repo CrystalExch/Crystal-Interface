@@ -343,8 +343,8 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           symbol: m.symbol || token.symbol || "UNKNOWN",
           image: imageUrl,
           creator: m.creator.id || "",
-          price: Number(m.lastPriceNativePerTokenWad || 0) / 1e18,
-          marketCap: (Number(m.lastPriceNativePerTokenWad || 0) / 1e18) * TOTAL_SUPPLY,
+          price: Number(m.lastPriceNativePerTokenWad || 0) / 1e9,
+          marketCap: (Number(m.lastPriceNativePerTokenWad || 0) / 1e9) * TOTAL_SUPPLY,
           volume24h: Number(m.volumeNative || 0) / 1e18,
           buyTransactions: Number(m.buyTxs || 0),
           sellTransactions: Number(m.sellTxs || 0),
@@ -359,10 +359,10 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           .reverse()
           .map((c: any) => ({
             time: Number(c.time) * 1000,
-            open: Number(c.open) / 1e18,
-            high: Number(c.high) / 1e18,
-            low: Number(c.low) / 1e18,
-            close: Number(c.close) / 1e18,
+            open: Number(c.open) / 1e9,
+            high: Number(c.high) / 1e9,
+            low: Number(c.low) / 1e9,
+            close: Number(c.close) / 1e9,
             volume: Number(c.baseVolume) / 1e18,
           }));
 

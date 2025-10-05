@@ -1154,7 +1154,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             id: tt.id,
             timestamp: Number(tt.block),
             isBuy: !!tt.isBuy,
-            price: Number(tt.priceNativePerTokenWad) / 1e18,
+            price: Number(tt.priceNativePerTokenWad) / 1e9,
             tokenAmount: Number(tt.isBuy ? tt.amountOut : tt.amountIn) / 1e18,
             nativeAmount: Number(tt.isBuy ? tt.amountIn : tt.amountOut) / 1e18,
             caller: tt.account.id,
@@ -1191,7 +1191,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           id: tt.id,
           timestamp: Number(tt.block),
           isBuy: !!tt.isBuy,
-          price: Number(tt.priceNativePerTokenWad) / 1e18,
+          price: Number(tt.priceNativePerTokenWad) / 1e9,
           tokenAmount: Number(tt.isBuy ? tt.amountOut : tt.amountIn) / 1e18,
           nativeAmount: Number(tt.isBuy ? tt.amountIn : tt.amountOut) / 1e18,
           caller: tt.account.id,
@@ -1760,9 +1760,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             symbol: m.symbol || token.symbol || 'UNKNOWN',
             image: imageUrl,
             dev: m.creator.id || '',
-            price: Number(m.lastPriceNativePerTokenWad || 0) / 1e18,
+            price: Number(m.lastPriceNativePerTokenWad || 0) / 1e9,
             marketCap:
-              (Number(m.lastPriceNativePerTokenWad || 0) / 1e18) * TOTAL_SUPPLY,
+              (Number(m.lastPriceNativePerTokenWad || 0) / 1e9) * TOTAL_SUPPLY,
             volume24h: Number(m.volumeNative || 0) / 1e18,
             buyTransactions: Number(m.buyTxs || 0),
             sellTransactions: Number(m.sellTxs || 0),
@@ -1792,7 +1792,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             id: t.id,
             timestamp: Number(t.block),
             isBuy: t.isBuy,
-            price: Number(t.priceNativePerTokenWad) / 1e18,
+            price: Number(t.priceNativePerTokenWad) / 1e9,
             tokenAmount: Number(t.isBuy ? t.amountOut : t.amountIn) / 1e18,
             nativeAmount: Number(t.isBuy ? t.amountIn : t.amountOut) / 1e18,
             caller: t.account.id,
@@ -1809,10 +1809,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             .reverse()
             .map((c: any) => ({
               time: Number(c.time) * 1000,
-              open: Number(c.open) / 1e18,
-              high: Number(c.high) / 1e18,
-              low: Number(c.low) / 1e18,
-              close: Number(c.close) / 1e18,
+              open: Number(c.open) / 1e9,
+              high: Number(c.high) / 1e9,
+              low: Number(c.low) / 1e9,
+              close: Number(c.close) / 1e9,
               volume: Number(c.baseVolume) / 1e18,
             }));
 
@@ -2018,7 +2018,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               }
             } catch { }
           }
-          const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e18;
+          const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
           out.push({
             id: t.id,
             symbol: t.symbol,
@@ -2257,7 +2257,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 }
               } catch { }
             }
-            const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e18;
+            const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
             return {
               id: t.id,
               name: t.name,
@@ -2394,7 +2394,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             const soldTokens = Number(p.tokenSold) / 1e18;
             const spentNative = Number(p.nativeSpent) / 1e18;
             const receivedNative = Number(p.nativeReceived) / 1e18;
-            const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e18;
+            const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e9;
             const balance = Number(p.tokens) / 1e18;
 
             // Aggregate into map
