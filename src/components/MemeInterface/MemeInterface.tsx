@@ -3100,20 +3100,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           </button>
         </div>
         <div className="meme-trade-panel-content">
-          <div className="meme-order-types">
-            <button
-              className={`meme-order-type-button ${activeOrderType === 'market' ? 'active' : 'inactive'}`}
-              onClick={() => setActiveOrderType('market')}
-            >
-              Market
-            </button>
-            <button
-              className={`meme-order-type-button ${activeOrderType === 'Limit' ? 'active' : 'inactive'}`}
-              onClick={() => setActiveOrderType('Limit')}
-            >
-              Limit
-            </button>
-          </div>
+  
           <div className="meme-amount-header">
             <div className="meme-amount-header-left">
               <span className="meme-amount-label">Amount</span>
