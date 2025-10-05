@@ -570,7 +570,7 @@ const Perps: React.FC<PerpsProps> = ({
   useEffect(() => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
     if (!activeMarket?.contractId) return
-
+    setLeverage(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage)
     const subs = [
       `depth.${activeMarket.contractId}.200`,
       `trades.${activeMarket.contractId}`,
@@ -1016,16 +1016,16 @@ const Perps: React.FC<PerpsProps> = ({
         ])
         if (liveStreamCancelled) return
         console.log(metaRes)
-
+        return metaRes.data.user.id
       } catch (e) {
         console.log(e)
       }
     };
 
-    const connectWebSocket = () => {
+    const connectWebSocket = async () => {
       if (liveStreamCancelled) return;
+      const accountId = await fetchData();
       const ts = Date.now().toString()
-      const accountId = "664124834304754100";
       const path = "/api/v1/private/ws";
       const qs = `accountId=${accountId}&timestamp=${ts}`;
       const endpoint = `wss://quote.edgex.exchange${path}?${qs}`;
@@ -1057,8 +1057,6 @@ const Perps: React.FC<PerpsProps> = ({
         subs.forEach((channel: any) => {
           accwsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }));
         });
-
-        fetchData();
       };
 
       accwsRef.current.onmessage = (event) => {

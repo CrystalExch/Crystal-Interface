@@ -245,6 +245,7 @@ onFilterYou?: (addresses?: string[]) => void;
   onClearTracked?: () => void;
   isLoadingTrades?: boolean;
   subWallets?: Array<{ address: string; privateKey: string }>;
+  marketsData: any;
 }
 
 export default function MemeTradesComponent({
@@ -269,6 +270,7 @@ export default function MemeTradesComponent({
   onClearTracked,
   isLoadingTrades = false,
   subWallets = [],
+  marketsData
 }: Props) {
   const [amountMode, setAmountMode] = useState<AmountMode>('MON');
   const [mcMode, setMcMode] = useState<MCMode>('MC');
@@ -982,7 +984,7 @@ const allYouAddresses = [
           traderAddress={popupAddr}
           onClose={() => setPopupAddr(null)}
           tokenList={tokenList}
-          marketsData={[]}
+          marketsData={marketsData}
           onMarketSelect={onMarketSelect}
           setSendTokenIn={setSendTokenIn}
           setpopup={setpopup}

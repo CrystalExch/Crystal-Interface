@@ -144,30 +144,6 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
-  // Loading skeleton components
-  const ValueSkeleton = () => (
-    <div className="trader-skeleton trader-skeleton-value"></div>
-  );
-
-  const PercentageSkeleton = () => (
-    <div className="trader-skeleton trader-skeleton-percentage"></div>
-  );
-
-  const AssetsLoadingSkeleton = () => (
-    <div className="trader-loading-assets">
-      {[...Array(4)].map((_, index) => (
-        <div key={index} className="trader-loading-asset-row">
-          <div className="trader-skeleton trader-loading-asset-icon"></div>
-          <div className="trader-loading-asset-info">
-            <div className="trader-skeleton trader-loading-asset-name"></div>
-            <div className="trader-skeleton trader-loading-asset-symbol"></div>
-          </div>
-          <div className="trader-skeleton trader-loading-asset-balance"></div>
-        </div>
-      ))}
-    </div>
-  );
-
   return (
     <div className="trader-popup-backdrop" onClick={handleBackdropClick}>
       <div className="trader-popup-container">
@@ -213,7 +189,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                     className={`trader-value ${isBlurred ? 'blurred' : ''}`}
                   >
                     {balancesLoading ? (
-                      <ValueSkeleton />
+                      <div className="trader-skeleton trader-skeleton-value"></div>
                     ) : (
                       `$${formatCommas(typeof totalAccountValue === 'number' ? totalAccountValue.toFixed(2) : '0.00')}`
                     )}
@@ -227,7 +203,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                         className={`trader-percentage ${isBlurred ? 'blurred' : ''} ${percentage >= 0 ? 'positive' : 'negative'}`}
                       >
                         {portfolioData.portChartLoading || balancesLoading ? (
-                          <PercentageSkeleton />
+                          <div className="trader-skeleton trader-skeleton-percentage"></div>
                         ) : (
                           `${percentage >= 0 ? '+' : ''}${percentage.toFixed(2)}%`
                         )}
@@ -243,7 +219,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                     className={`trader-value ${isBlurred ? 'blurred' : ''}`}
                   >
                     {balancesLoading ? (
-                      <ValueSkeleton />
+                      <div className="trader-skeleton trader-skeleton-value"></div>
                     ) : (
                       `$${formatCommas(typeof totalAccountValue === 'number' ? totalAccountValue.toFixed(2) : '0.00')}`
                     )}
@@ -310,7 +286,18 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
 
             <div className="trader-assets-list">
               {balancesLoading ? (
-                <AssetsLoadingSkeleton />
+                <div className="trader-loading-assets">
+                  {[...Array(3)].map((_, index) => (
+                    <div key={index} className="trader-loading-asset-row">
+                      <div className="trader-skeleton trader-loading-asset-icon"></div>
+                      <div className="trader-loading-asset-info">
+                        <div className="trader-skeleton trader-loading-asset-name"></div>
+                        <div className="trader-skeleton trader-loading-asset-symbol"></div>
+                      </div>
+                      <div className="trader-skeleton trader-loading-asset-balance"></div>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <BalancesContent
                   tokenList={tokenList}

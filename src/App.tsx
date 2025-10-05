@@ -4798,7 +4798,7 @@ function App() {
         isAddressInfoFetching = true;
         try {
           // const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
-          const endpoint = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
+          const endpoint = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/deployments/id/Qme4KkvZY4YcC3ozvWPjrDPJbSk9UDLGDkWUaozQTxqhSs';
           const query = `
             query {
               account(id: "${address}") {
@@ -5694,7 +5694,7 @@ function App() {
         settradesloading(true);
 
         // const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
-        const endpoint = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
+        const endpoint = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/deployments/id/Qme4KkvZY4YcC3ozvWPjrDPJbSk9UDLGDkWUaozQTxqhSs';
         const query = `
           query {
             markets(first: 100, orderBy: volume, orderDirection: desc, where: {isCanonical:true}) {
@@ -14489,7 +14489,7 @@ function App() {
                       ref={(el) => {
                         if (el && popup === 35) {
                           const leverageValue = parseFloat(perpsLeverage) || 10;
-                          const percent = ((leverageValue - 1) / 19) * 100;
+                          const percent = ((leverageValue - 1) / Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage)) * 100;
                           const thumbW = 16;
                           const container = el.parentElement;
                           if (container) {
@@ -14507,7 +14507,7 @@ function App() {
                       }}
                       type="range"
                       min="1"
-                      max="20"
+                      max={perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage}
                       step="1"
                       value={parseFloat(perpsLeverage) || 10}
                       onChange={(e) => {
@@ -14518,7 +14518,8 @@ function App() {
                         if (container) {
                           const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
                           if (popup) {
-                            const percent = ((parseInt(value) - 1) / 19) * 100; const thumbW = 16;
+                            const percent = ((parseInt(value) - 1) / Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage)) * 100; 
+                            const thumbW = 16;
                             const containerRect = container.getBoundingClientRect();
                             const inputRect = e.target.getBoundingClientRect();
                             const inputLeft = inputRect.left - containerRect.left;
@@ -14544,7 +14545,7 @@ function App() {
                       }}
                       className="leverage-slider-input"
                       style={{
-                        background: `linear-gradient(to right, #aaaecf ${((parseFloat(perpsLeverage) || 10) - 1) / 19 * 100}%, #2a2a2f ${((parseFloat(perpsLeverage) || 10) - 1) / 19 * 100}%)`
+                        background: `linear-gradient(to right, #aaaecf ${((parseFloat(perpsLeverage) || 10) - 1) / Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) * 100}%, #2a2a2f ${((parseFloat(perpsLeverage) || 10) - 1) / Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) * 100}%)`
                       }}
                     />
 
@@ -14553,7 +14554,7 @@ function App() {
                     </div>
 
                     <div className="leverage-marks">
-                      {[1, 5, 10, 15, 20].map((mark) => (
+                      {[1, Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) / 4, Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) / 2, Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) / 4 * 3, Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage)].map((mark) => (
                         <span
                           key={mark}
                           className="leverage-mark"
@@ -14565,7 +14566,7 @@ function App() {
                               const input = sliderContainer.querySelector('.leverage-slider-input') as HTMLInputElement;
                               const popup = sliderContainer.querySelector('.leverage-value-popup') as HTMLElement;
                               if (input && popup) {
-                                const percent = ((mark - 1) / 19) * 100;
+                                const percent = ((mark - 1) / Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage)) * 100;
                                 const thumbW = 16;
                                 const containerRect = sliderContainer.getBoundingClientRect();
                                 const inputRect = input.getBoundingClientRect();

@@ -193,7 +193,7 @@ const ROUTER_EVENT =
 const MARKET_UPDATE_EVENT =
   '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
 // const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/deployments/id/Qme4KkvZY4YcC3ozvWPjrDPJbSk9UDLGDkWUaozQTxqhSs';
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
   quickBuySize: 'small',

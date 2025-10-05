@@ -514,7 +514,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         priceFormatterFactory: (_symbolInfo: any, _minTick: number) => {
           return {
             format: (price: number) => {
-              return formatSubscript(formatSig(price.toFixed(Math.floor(Math.log10(Number(activeMarketRef.current?.priceFactor)))), !perps && activeMarketRef.current?.marketType != 0));
+              return formatSubscript(formatSig(price.toFixed(Math.floor(Math.log10(Number(perps ? 1 / Number(activeMarketRef.current?.tickSize) : activeMarketRef.current?.priceFactor)))), !perps && activeMarketRef.current?.marketType != 0));
             },
           };
         },
