@@ -49,6 +49,7 @@ import { TwitterHover } from '../TwitterHover/TwitterHover';
 import './TokenExplorer.css';
 import { HexColorPicker } from 'react-colorful';
 import walleticon from '../../assets/wallet_icon.png';
+import communities from '../../assets/community.png'
 export interface Token {
   id: string;
   tokenAddress: string;
@@ -2596,34 +2597,41 @@ const TokenRow = React.memo<{
                 <span className="explorer-time-created">
                   {formatTimeAgo(token.created)}
                 </span>
-
-                {displaySettings.visibleRows.socials && (
-                  <>
-                    {!!token.twitterHandle && (
-                      <TwitterHover url={token.twitterHandle}>
-                        <a
-                          className="explorer-avatar-btn"
-                          href={token.twitterHandle}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <img
-                            src={
-                              token.twitterHandle.includes('/status/')
-                                ? tweet
-                                : avatar
-                            }
-                            alt="Twitter"
-                            className={
-                              token.twitterHandle.includes('/status/')
-                                ? 'tweet-icon'
-                                : 'avatar-icon'
-                            }
-                          />
-                        </a>
-                      </TwitterHover>
-                    )}
+{displaySettings.visibleRows.socials && (
+  <>
+    {!!token.twitterHandle && (
+      <TwitterHover url={token.twitterHandle}>
+        <a
+          className="explorer-avatar-btn"
+          href={token.twitterHandle}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <img
+            src={
+              token.twitterHandle.includes('/i/communities/')
+                ? communities
+                : token.twitterHandle.includes('/status/')
+                  ? tweet
+                  : avatar
+            }
+            alt={
+              token.twitterHandle.includes('/i/communities/')
+                ? 'Community'
+                : 'Twitter'
+            }
+            className={
+              token.twitterHandle.includes('/i/communities/')
+                ? 'community-icon'
+                : token.twitterHandle.includes('/status/')
+                  ? 'tweet-icon'
+                  : 'avatar-icon'
+            }
+          />
+        </a>
+      </TwitterHover>
+    )}
 
                     {!!token.website && (
                       <a

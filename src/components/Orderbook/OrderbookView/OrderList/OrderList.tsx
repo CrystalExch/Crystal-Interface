@@ -29,6 +29,7 @@ interface OrderListProps {
   orderbookPosition: string;
   updateLimitAmount: any;
   marketType: any;
+  perps?: boolean;
 }
 
 const OrderList: React.FC<OrderListProps> = ({
@@ -45,6 +46,7 @@ const OrderList: React.FC<OrderListProps> = ({
   orderbookPosition,
   updateLimitAmount,
   marketType,
+  perps = false,
 }) => {
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({
     x: 0,
@@ -66,6 +68,9 @@ const OrderList: React.FC<OrderListProps> = ({
 
   const maxDecimals = useMemo(() => {
     if (amountsQuote === 'Quote') {
+      if (perps) {
+        return 0;
+      }
       return 2;
     }
     
@@ -186,7 +191,7 @@ const OrderList: React.FC<OrderListProps> = ({
             containerRef={containerRef}
             priceFactor={priceFactor}
             marketType={marketType}
-            maxDecimals={maxDecimals}
+            maxDecimals={perps ? 0 : 2}
           />
         )}
       </ul>

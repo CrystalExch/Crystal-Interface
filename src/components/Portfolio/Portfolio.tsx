@@ -3235,6 +3235,10 @@ useEffect(() => {
                       {(() => {
                         const year = currentCalendarDate.getFullYear();
                         const month = currentCalendarDate.getMonth();
+                        const today = new Date();
+                        const todayYear = today.getFullYear();
+                        const todayMonth = today.getMonth();
+                        const todayDay = today.getDate();
 
                         const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -3251,8 +3255,17 @@ useEffect(() => {
                         }
 
                         for (let day = 1; day <= daysInMonth; day++) {
+                          const isPastOrToday = (
+                            year < todayYear ||
+                            (year === todayYear && month < todayMonth) ||
+                            (year === todayYear && month === todayMonth && day <= todayDay)
+                          );
+
                           days.push(
-                            <div key={`day-${day}`} className="pnl-calendar-day">
+                            <div 
+                              key={`day-${day}`} 
+                              className={`pnl-calendar-day ${isPastOrToday ? 'past-or-today' : ''}`}
+                            >
                               <div className="pnl-calendar-day-number">{day}</div>
                               <div className="pnl-calendar-day-pnl">$0</div>
                             </div>

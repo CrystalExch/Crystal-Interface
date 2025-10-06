@@ -678,8 +678,10 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
+      "back"
       "header"
       "chart"
+      "stats"
       "trading"
       "comments";
     gap: var(--gap-xl);
@@ -694,12 +696,20 @@
     display: contents;
   }
   
+  .detail-back-button {
+    grid-area: back;
+  }
+  
   .detail-header {
     grid-area: header;
   }
   
   .detail-chart-section {
     grid-area: chart;
+  }
+  
+  .detail-stats-bar {
+    grid-area: stats;
   }
   
   .detail-trading-panel-container {

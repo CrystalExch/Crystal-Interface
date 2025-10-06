@@ -1521,12 +1521,6 @@ const Tracker: React.FC<TrackerProps> = ({
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button className="tracker-header-button">
-              <img
-                className="tracker-settings-image"
-                src={settingsicon}
-              />
-            </button>
             <button className="tracker-header-button" onClick={() => setShowMonitorFiltersPopup(true)}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 6h18M7 12h10M10 18h4" />

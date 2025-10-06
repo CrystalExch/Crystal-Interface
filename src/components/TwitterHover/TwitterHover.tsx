@@ -14,7 +14,6 @@ import {
 } from '@floating-ui/react';
 import './TwitterHover.css';
 import type { Placement } from '@floating-ui/react';
-import verified from '../../assets/verified.png';
 import twitter from '../../assets/twitter-dark.svg'
 type Media = { type: 'photo' | 'video' | 'animated_gif'; url: string; width?: number; height?: number };
 
@@ -47,18 +46,50 @@ type Preview =
       metrics: Record<string, number>;
       possibly_sensitive: boolean;
       media?: Media[];
+      is_reply?: boolean;
+      in_reply_to_username?: string;
+      in_reply_to_user_id?: string;
     };
-    author: { 
-      id: string; 
-      name: string; 
-      username: string; 
-      avatar: string; 
-      verified: boolean; 
+    author: {
+      id: string;
+      name: string;
+      username: string;
+      avatar: string;
+      verified: boolean;
       verified_type?: string | null;
       created_at: string;
       followers: number | null;
       following: number | null;
     } | null;
+    url: string;
+    _stale?: boolean;
+  }
+    | {
+  kind: 'community';
+  community: {
+    name: string;
+    description: string;
+    member_count: number;
+    created_at: string;
+    primary_topic?: { name: string } | null;
+    banner_url?: string | null;
+    creator: {  // ✅ Nullable
+      name: string;
+      username: string;
+      description?: string;
+      banner?: string | null;
+      avatar: string;
+      verified: boolean;
+      verified_type?: string | null;
+      followers: number;
+      following: number;
+    } | null;  // Add | null here
+      members_preview?: Array<{
+        avatar: string;
+        verified: boolean;
+        followers: number;
+      }>;
+    };
     url: string;
     _stale?: boolean;
   };
@@ -167,8 +198,8 @@ function getTimeAgoColor(dateString: string): string {
   if (hours < 6) return '#00ff41'; // green - very recent (< 6 hours)
   if (hours < 24) return '#7cfc00'; // light green (< 1 day)
   if (hours < 72) return '#ffa500'; // orange (< 3 days)
-  if (hours < 168) return '#ff6347'; // red-orange (< 1 week)
-  return '#ff0000'; // red - old (> 1 week)
+  if (hours < 168) return 'rgb(235, 112, 112)';
+  return 'rgb(235, 112, 112)'; // red - old (> 1 week)
 }
 
 export function TwitterHover({ url, children, openDelayMs = 180, placement = 'top', portal = true }: Props) {
@@ -237,7 +268,7 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
       const req = fetch(apiUrl, {
         signal: abortRef.current!.signal,
       });
-      
+
       INFLIGHT.set(key, req);
       const r = await req;
 
@@ -283,20 +314,21 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
     return () => abortRef.current?.abort();
   }, []);
 
-  const card = open ? (
-    <div
-      ref={refs.setFloating}
-      style={{ ...(floatingStyles as React.CSSProperties), maxHeight: maxHeight ? `${maxHeight}px` : undefined }}
-      {...getFloatingProps()}
-      className="twitter-hover-card"
-    >
-      <div ref={arrowRef} className="twitter-hover-arrow" />
-      {loading && <div className="twitter-hover-skeleton" />}
-      {error && <div className="twitter-hover-error">{error}</div>}
-      {!loading && !error && data?.kind === 'user' && <UserCard {...data.user} />}
-      {!loading && !error && data?.kind === 'tweet' && <TweetCard {...data} />}
-    </div>
-  ) : null;
+const card = open ? (
+  <div
+    ref={refs.setFloating}
+    style={{ ...(floatingStyles as React.CSSProperties), maxHeight: maxHeight ? `${maxHeight}px` : undefined }}
+    {...getFloatingProps()}
+    className="twitter-hover-card"
+  >
+    <div ref={arrowRef} className="twitter-hover-arrow" />
+    {loading && <div className="twitter-hover-skeleton" />}
+    {error && <div className="twitter-hover-error">{error}</div>}
+    {!loading && !error && data?.kind === 'user' && <UserCard {...data.user} />}
+    {!loading && !error && data?.kind === 'tweet' && <TweetCard {...data} />}
+    {!loading && !error && data?.kind === 'community' && <CommunityCard {...data} />}
+  </div>
+) : null;
 
   const canPortal = typeof document !== 'undefined' && portal;
 
@@ -312,7 +344,7 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
 
 function VerifiedBadge({ type }: { type?: string | null }) {
   const isBusiness = type === 'business';
-  
+
   return (
     <svg
       width="20"
@@ -356,7 +388,7 @@ function UserCard(props: {
         </div>
       )}
       <div className="twitter-hover-body">
-        <div className="twitter-hover-top-row">
+<div className="twitter-hover-top-row">
         <div className="twitter-hover-header">
           <img 
             src={props.avatar} 
@@ -380,9 +412,15 @@ function UserCard(props: {
             </a>
           </div>
         </div>
-        <img className="twitter-hover-icon" src={twitter}/>
+        <a
+          href={profileUrl}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <img className="twitter-hover-icon" src={twitter}/>
+        </a>
         </div>
-
         {props.description && <p className="twitter-hover-desc">{parseTextWithMentions(props.description, false)}</p>}
 
         <div className="twitter-hover-details">
@@ -423,21 +461,102 @@ function UserCard(props: {
     </div>
   );
 }
+function CommunityCard(props: {
+  community: {
+    name: string;
+    description: string;
+    member_count: number;
+    created_at: string;
+    primary_topic?: { name: string } | null;
+    banner_url?: string | null;
+    creator: {
+      name: string;
+      username: string;
+      description?: string;
+      banner?: string | null;
+      avatar: string;
+      verified: boolean;
+      verified_type?: string | null;
+      followers: number;
+      following: number;
+    } | null;
+    members_preview?: Array<{
+      avatar: string;
+      verified: boolean;
+      followers: number;
+    }>;
+  };
+  url: string;
+}) {
+  const { community } = props;
+  const communityUrl = props.url;
 
+  return (
+    <div className="twitter-hover-communitycard">
+      {community.banner_url && (
+        <div className="twitter-hover-banner">
+          <img src={community.banner_url} alt="" className="twitter-hover-banner-image" />
+        </div>
+      )}
+      <div className="twitter-hover-body">
+        <div className="twitter-hover-top-row">
+          <div className="twitter-hover-community-header">
+            <div className="twitter-hover-header-text">
+              <div className="verify-name">
+                <span className="twitter-hover-name">{community.name}</span>
+              </div>
+              <span className="twitter-hover-community-members">
+                {Intl.NumberFormat('en', { notation: 'compact' }).format(community.member_count)} Members
+              </span>
+            </div>
+          </div>
+          <a
+            href={communityUrl}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img className="twitter-hover-icon" src={twitter}/>
+          </a>
+        </div>
+
+        {community.description && (
+          <p className="twitter-hover-desc">{community.description}</p>
+        )}
+
+        <div className="twitter-hover-details">
+          <span className="twitter-hover-join-date">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="twitter-hover-calendar-icon">
+              <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c-1.1 0-2-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
+            </svg>
+            Created {new Date(community.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </span>
+        </div>
+
+        <div className="twitter-hover-link">
+          <a href={communityUrl} target="_blank" rel="noreferrer" className="twitter-link">
+            View Community on X
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
 function TweetCard(payload: {
-  tweet: { id: string; text: string; created_at: string; metrics: Record<string, number>; possibly_sensitive: boolean; media?: Media[] };
-  author: { 
-    id: string; 
-    name: string; 
-    username: string; 
-    avatar: string; 
-    verified: boolean; 
+  tweet: { id: string; text: string; created_at: string; metrics: Record<string, number>; possibly_sensitive: boolean; media?: Media[]; is_reply?: boolean;in_reply_to_username?: string; in_reply_to_user_id?: string;};
+  author: {
+    id: string;
+    name: string;
+    username: string;
+    avatar: string;
+    verified: boolean;
     verified_type?: string | null;
     created_at: string;
     followers: number | null;
     following: number | null;
   } | null;
   url: string;
+
 }) {
   const a = payload.author;
   const allMedia = payload.tweet.media ?? [];
@@ -449,12 +568,13 @@ function TweetCard(payload: {
   return (
     <div className="twitter-hover-tweetcard">
       <div className="twitter-hover-body">
+
         {a && (
           <div className="twitter-hover-top-row">
             <div className="twitter-hover-header">
-              <img 
-                src={a.avatar} 
-                alt="" 
+              <img
+                src={a.avatar}
+                alt=""
                 className="twitter-hover-avatar"
                 style={{ borderRadius: isBusiness ? '6px' : '50%' }}
               />
@@ -473,9 +593,16 @@ function TweetCard(payload: {
                   @{a.username}
                 </a>
               </div>
-            </div>
+          </div>
             <div className="twitter-top-right-section">
-              <img className="twitter-hover-icon" src={twitter} />
+              <a
+                href={`https://x.com/${a.username}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img className="twitter-hover-icon" src={twitter} />
+              </a>
               <div className="twitter-hover-time-ago" style={{ color: getTimeAgoColor(payload.tweet.created_at) }}>
                 <span>{formatTimeAgo(payload.tweet.created_at)}</span>
               </div>
@@ -499,6 +626,23 @@ function TweetCard(payload: {
         )}
 
         <div className="twitter-hover-text-container-new">
+                      {payload.tweet.is_reply && payload.tweet.in_reply_to_username && (
+          <div className="twitter-reply-indicator">
+            <div className="twitter-reply-line"></div>
+            <div className="twitter-reply-text">
+              Replying to{' '}
+              <a
+                href={`https://x.com/${payload.tweet.in_reply_to_username}`}
+                target="_blank"
+                rel="noreferrer"
+                className="twitter-reply-mention"
+                onClick={(e) => e.stopPropagation()}
+              >
+                @{payload.tweet.in_reply_to_username}
+              </a>
+            </div>
+          </div>
+        )}
           <p className="twitter-hover-text">{parseTextWithMentions(payload.tweet.text, hasAnyMedia)}</p>
 
           {photos.length > 0 && (
@@ -539,13 +683,13 @@ function TweetCard(payload: {
         </div>
 
         <div className="twitter-hover-meta">
-          <span>{new Date(payload.tweet.created_at).toLocaleString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
-            year: 'numeric', 
-            hour: 'numeric', 
+          <span>{new Date(payload.tweet.created_at).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
             minute: '2-digit',
-            hour12: true 
+            hour12: true
           })}</span>
           <div className="bookmark-stat">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="bookmark-icon">
@@ -559,25 +703,25 @@ function TweetCard(payload: {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="comment-engagement-icon">
               <path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01z" />
             </svg>
-            <span>{payload.tweet.metrics.reply_count >= 0 ? Intl.NumberFormat().format(payload.tweet.metrics.reply_count) : ''}</span>
+            <span className="engagement-state-value">{payload.tweet.metrics.reply_count >= 0 ? Intl.NumberFormat().format(payload.tweet.metrics.reply_count) : ''}</span>
           </div>
           <div className="repost-engagement-stat">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="repost-engagement-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="repost-engagement-icon">
               <path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 20.12L12.068 16l1.364-1.46L16.5 16.45V8c0-1.1-.896-2-2-2H11V4h3.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.12z" />
             </svg>
-            <span>{payload.tweet.metrics.retweet_count >= 0 ? Intl.NumberFormat().format(payload.tweet.metrics.retweet_count) : ''}</span>
+            <span className="engagement-state-value">{payload.tweet.metrics.retweet_count >= 0 ? Intl.NumberFormat().format(payload.tweet.metrics.retweet_count) : ''}</span>
           </div>
           <div className="like-engagement-stat">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="like-engagement-icon">
               <path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z" />
             </svg>
-            <span>{payload.tweet.metrics.like_count >= 0 ? Intl.NumberFormat().format(payload.tweet.metrics.like_count) : ''}</span>
+            <span className="engagement-state-value">{payload.tweet.metrics.like_count >= 0 ? Intl.NumberFormat().format(payload.tweet.metrics.like_count) : ''}</span>
           </div>
         </div>
 
         <div className="twitter-hover-link">
           <a href={payload.url} target="_blank" rel="noreferrer" className="twitter-link">
-            Open on X
+            Read More on X
           </a>
         </div>
       </div>
