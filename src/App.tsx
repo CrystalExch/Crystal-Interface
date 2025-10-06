@@ -170,7 +170,180 @@ import { sMonAbi } from './abis/sMonAbi.ts';
 
 const clearlogo = '/CrystalLogo.png';
 
-function App() {
+const Loader = () => {
+  const [ready, setReady] = useState(false);
+  const [stateloading, setstateloading] = useState(true);
+  const [addressinfoloading, setaddressinfoloading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
+        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
+        const query = `
+          query {
+            markets(first: 100, orderBy: volume, orderDirection: desc, where: {isCanonical:true}) {
+              id
+              baseAsset
+              quoteAsset
+              baseDecimals
+              quoteDecimals
+              baseTicker
+              quoteTicker
+              baseName
+              quoteName
+              marketType
+              scaleFactor
+              tickSize
+              minSize
+              maxPrice
+              takerFee
+              makerRebate
+              volume
+              latestPrice
+              miniPoints(first: 24, orderBy: time, orderDirection: desc) {
+                price
+                time
+              }
+              trades(first: 100, orderBy: timestamp, orderDirection: desc) {
+                id
+                amountIn
+                amountOut
+                isBuy
+                timestamp
+                tx
+                endPrice
+              }
+            }
+          }
+        `;
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        });
+        const json = await res.json();
+        const list = Array.isArray(json?.data?.markets) ? [...json.data.markets].reverse() : []
+
+        const ETH_ADDR = settings.chainConfig[activechain].eth;
+        const WETH_ADDR = settings.chainConfig[activechain].weth;
+        const ETH_TICKER = settings.chainConfig[activechain].ethticker;
+        const WETH_TICKER = settings.chainConfig[activechain].wethticker;
+        const tokendict: { [key: string]: any } =
+        settings.chainConfig[activechain].tokendict;
+        const newMarkets: Record<string, any> = settings.chainConfig[activechain].markets;
+        for (const m of list) {
+          const baseAddr0 = getAddress(String(m.baseAsset || ''));
+          const quoteAddr0 = getAddress(String(m.quoteAsset || ''));
+          if (!tokendict[baseAddr0]) {
+            tokendict[baseAddr0] = {
+              address: baseAddr0,
+              decimals: BigInt(Number(m.baseDecimals ?? 18)),
+              image: '',
+              name: m.baseName,
+              ticker: m.baseTicker,
+              website: '',
+              autofetched: true,
+            }
+          }
+          if (!tokendict[quoteAddr0]) {
+            tokendict[quoteAddr0] = {
+              address: quoteAddr0,
+              decimals: BigInt(Number(m.quoteDecimals ?? 18)),
+              image: '',
+              name: m.quoteName,
+              ticker: m.quoteTicker,
+              website: '',
+              autofetched: true,
+            }
+          }
+          const scaleExp = (m.scaleFactor == '21' && m.quoteDecimals == '18') ? 9 : Number(m.scaleFactor ?? 0);
+          const scaleFactor = (BigInt(10) ** BigInt(scaleExp));
+          const baseDec = Number(m.baseDecimals ?? 18);
+          const quoteDec = Number(m.quoteDecimals ?? 18);
+          const pfExp = Math.max(0, quoteDec + scaleExp - baseDec);
+          const priceFactor = (BigInt(10) ** BigInt(pfExp));
+
+          const common = {
+            address: String(m.id ?? '').toLowerCase(),
+            marketType: Number(m.marketType ?? 0),
+            precision: 5,
+            scaleFactor,
+            priceFactor,
+            tickSize: BigInt(m.tickSize ?? 1),
+            minSize: BigInt(m.minSize ?? 0),
+            maxPrice: BigInt(m.maxPrice ?? 0),
+            fee: BigInt(m.takerFee ?? 100000),
+            makerRebate: BigInt(m.makerRebate ?? 100000),
+            baseDecimals: BigInt(baseDec),
+            quoteDecimals: BigInt(quoteDec),
+          };
+
+          const baseIsEthish = baseAddr0 === ETH_ADDR || baseAddr0 === WETH_ADDR;
+          const quoteIsEthish = quoteAddr0 === ETH_ADDR || quoteAddr0 === WETH_ADDR;
+
+          const variants: Array<{ baseAddr: string; quoteAddr: string, baseAsset: string, quoteAsset: string }> = [];
+          if (baseIsEthish) {
+            variants.push({ baseAddr: ETH_ADDR, quoteAddr: quoteAddr0, baseAsset: ETH_TICKER, quoteAsset: m.quoteTicker });
+            variants.push({ baseAddr: WETH_ADDR, quoteAddr: quoteAddr0, baseAsset: WETH_TICKER, quoteAsset: m.quoteTicker });
+          } else if (quoteIsEthish) {
+            variants.push({ baseAddr: baseAddr0, quoteAddr: ETH_ADDR, baseAsset: m.baseTicker, quoteAsset: ETH_TICKER });
+            variants.push({ baseAddr: baseAddr0, quoteAddr: WETH_ADDR, baseAsset: m.baseTicker, quoteAsset: WETH_TICKER });
+          } else {
+            variants.push({ baseAddr: baseAddr0, quoteAddr: quoteAddr0, baseAsset: m.baseTicker, quoteAsset: m.quoteTicker });
+          }
+
+          for (const v of variants) {
+            const bTok = tokendict[v.baseAddr];
+
+            const marketKey = `${v.baseAsset}${v.quoteAsset}`;
+            const image = (bTok?.image ?? settings.chainConfig[activechain].image ?? null);
+            const website = (bTok?.website ?? '');
+            newMarkets[marketKey] = {
+              baseAsset: v.baseAsset,
+              quoteAsset: v.quoteAsset,
+              baseAddress: v.baseAddr,
+              quoteAddress: v.quoteAddr,
+              path: [v.quoteAddr, v.baseAddr],
+              image,
+              website,
+              marketKey,
+              ...common,
+            };
+          }
+        }
+        settings.chainConfig[activechain].markets = newMarkets;
+        const newAddrToMarket: Record<string, string> = {};
+        Object.values(newMarkets).reverse().forEach((m: any) => {
+          if (m?.address) newAddrToMarket[String(m.address).toLowerCase()] = m.marketKey;
+        });
+        settings.chainConfig[activechain].addresstomarket = newAddrToMarket;
+
+        const temptradesByMarket: Record<string, any[]> = {};
+        Object.keys(newMarkets).forEach((k) => { temptradesByMarket[k] = []; });
+
+        const addrToKey: Record<string, string> = {};
+        Object.values(newMarkets).forEach((m: any) => {
+          if (m?.address) addrToKey[String(m.address).toLowerCase()] = m.marketKey;
+        });
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+      finally {
+        setReady(true)
+      }
+    })();
+  }, []);
+
+  return (
+    <>
+      {<FullScreenOverlay isVisible={(stateloading || addressinfoloading)} />}
+      {ready && <App stateloading={stateloading} setstateloading={setstateloading} addressinfoloading={addressinfoloading} setaddressinfoloading={setaddressinfoloading} />}
+    </>
+  );
+}
+
+function App({ stateloading, setstateloading,addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
   // constants
   useEffect(() => {
     if (!localStorage.getItem("noSSR")) {
@@ -1142,9 +1315,7 @@ function App() {
   const [scaleButtonDisabled, setScaleButtonDisabled] = useState(true)
   const [isBlurred, setIsBlurred] = useState(false);
   const [prevOrderData, setPrevOrderData] = useState<any[]>([])
-  const [stateloading, setstateloading] = useState(true);
   const [tradesloading, settradesloading] = useState(true);
-  const [addressinfoloading, setaddressinfoloading] = useState(true);
   const [chartDays, setChartDays] = useState<number>(1);
   const [marketsData, setMarketsData] = useState<any[]>([]);
   const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', showChartOutliers]);
@@ -4800,6 +4971,7 @@ function App() {
         setrecipient('');
         isAddressInfoFetching = true;
         try {
+          // const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
           const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
           const query = `
             query {
@@ -5695,6 +5867,7 @@ function App() {
       try {
         settradesloading(true);
 
+        // const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
         const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
         const query = `
           query {
@@ -20938,7 +21111,6 @@ function App() {
   return (
     <div className="app-wrapper" key={language}>
       <NavigationProgress location={location} />
-      <FullScreenOverlay isVisible={loading} />
       <MemeTransactionPopupManager />
 
       {Modals}
@@ -21497,4 +21669,4 @@ function App() {
   );
 }
 
-export default App;
+export default Loader;

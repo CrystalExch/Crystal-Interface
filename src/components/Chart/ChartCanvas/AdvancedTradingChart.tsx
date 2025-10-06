@@ -511,13 +511,22 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         'volume.volume.transparency': 10,
       },
       custom_formatters: {
-        priceFormatterFactory: (_symbolInfo: any, _minTick: number) => {
+        priceFormatterFactory: () => {
           return {
             format: (price: number) => {
               return formatSubscript(formatSig(price.toFixed(Math.floor(Math.log10(Number(perps ? 1 / Number(activeMarketRef.current?.tickSize) : activeMarketRef.current?.priceFactor)))), !perps && activeMarketRef.current?.marketType != 0));
             },
           };
         },
+        ...(perps ? {} : {
+          studyFormatterFactory: () => {
+            return {
+              format: (value: number) => {
+                return formatSig(customRound(value, 3), false);
+              },
+            };
+          },
+        }),
       },
       save_load_adapter: localAdapterRef.current,
 
