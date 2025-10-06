@@ -107,7 +107,7 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
         </div>
 
         <div className="monitor-filters-content">
-          <div className="monitor-filters-view-tabs">
+          <div className="monitor-filters-view-tabs" data-mode={viewMode}>
             <button
               className={`monitor-filter-view-tab ${viewMode === 'simple' ? 'active' : ''}`}
               onClick={() => setViewMode('simple')}
@@ -239,7 +239,7 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
                 </div>
               </div>
 
-              <div className="monitor-filters-tabs">
+              <div className="monitor-filters-tabs" data-tab={activeTab}>
                 <button
                   className={`monitor-filter-tab ${activeTab === 'market' ? 'active' : ''}`}
                   onClick={() => setActiveTab('market')}

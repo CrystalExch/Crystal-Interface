@@ -25,12 +25,6 @@
   flex-direction: column;
 }
 
-.monitor-filters-content {
-  padding: 1.5rem;
-  overflow-y: auto;
-  flex: 1;
-}
-
 .monitor-filters-header {
   display: flex;
   justify-content: space-between;
@@ -130,15 +124,36 @@
 }
 
 .monitor-filters-tabs {
+  position: relative;
   display: flex;
-  gap: 0.5rem;
+  gap: 4px;
   margin-bottom: 1.5rem;
   border: 1.5px solid rgba(179, 184, 249, 0.1);
   border-radius: 12px;
   padding: 4px;
+  overflow: hidden;
+}
+
+.monitor-filters-tabs::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  height: calc(100% - 8px);
+  width: calc(50% - 4px);
+  border-radius: 8px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+  background-color: rgba(201, 194, 243, 0.05);
+}
+
+.monitor-filters-tabs[data-tab="transactions"]::before {
+  transform: translateX(100%);
 }
 
 .monitor-filter-tab {
+  position: relative;
+  z-index: 2;
   flex: 1;
   background: transparent;
   border: none;
@@ -146,7 +161,7 @@
   font-size: 0.85rem;
   font-weight: 300;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.3s ease;
   padding: 0.5rem 1rem;
   text-align: center;
   border-radius: 8px;
@@ -154,13 +169,12 @@
 
 .monitor-filter-tab:hover {
   color: #fff;
-  background-color: #ffffff05;
 }
 
 .monitor-filter-tab.active {
   color: #fff;
-  background-color: rgba(201, 194, 243, 0.05);
 }
+
 
 .monitor-filters-footer {
   display: flex;
@@ -256,15 +270,36 @@
 }
 
 .monitor-filters-view-tabs {
+  position: relative;
   display: flex;
-  gap: 0.5rem;
+  gap: 4px;
   margin-bottom: 1.5rem;
   border: 1.5px solid rgba(179, 184, 249, 0.1);
   border-radius: 12px;
   padding: 4px;
+  overflow: hidden;
+}
+
+.monitor-filters-view-tabs::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  height: calc(100% - 8px);
+  width: calc(50% - 4px);
+  border-radius: 8px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+  background-color: rgba(201, 194, 243, 0.05);
+}
+
+.monitor-filters-view-tabs[data-mode="advanced"]::before {
+  transform: translateX(100%);
 }
 
 .monitor-filter-view-tab {
+  position: relative;
+  z-index: 2;
   flex: 1;
   background: transparent;
   border: none;
@@ -272,19 +307,17 @@
   font-size: 0.85rem;
   font-weight: 300;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.3s ease;
   padding: 0.5rem 1rem;
   border-radius: 8px;
 }
 
 .monitor-filter-view-tab:hover {
   color: #fff;
-  background-color: #ffffff05;
 }
 
 .monitor-filter-view-tab.active {
   color: #fff;
-  background-color: rgba(201, 194, 243, 0.05);
 }
 
 .monitor-filters-simple-list {

@@ -136,6 +136,7 @@ const CopyableAddress: React.FC<{
   truncate?: { start: number; end: number };
   labelPrefix?: string;
 }> = ({ address, className, truncate = { start: 6, end: 4 }, labelPrefix }) => {
+  
   const [copied, setCopied] = useState(false);
   const [copyTooltipVisible, setCopyTooltipVisible] = useState(false);
   const [showHoverTooltip, setShowHoverTooltip] = useState(false);
@@ -785,11 +786,15 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           <div className="detail-stats-bar">
             <div className="detail-stat-item">
               <div className="detail-stat-label">Vol 24h</div>
-              <div className="detail-stat-value">${formatNumber((tokenData?.volume24h || 0) * monUsdPrice)}</div>
+              <div className={`detail-stat-value ${((tokenData?.volume24h || 0) === 0) ? 'detail-stat-neutral' : ''}`}>
+                ${formatNumber((tokenData?.volume24h || 0) * monUsdPrice)}
+              </div>
             </div>
             <div className="detail-stat-item">
               <div className="detail-stat-label">Price</div>
-              <div className="detail-stat-value">${formatSubscript(customRound(currentPrice * monUsdPrice, 3))}</div>
+              <div className={`detail-stat-value ${(currentPrice === 0) ? 'detail-stat-neutral' : ''}`}>
+                ${formatSubscript(customRound(currentPrice * monUsdPrice, 3))}
+              </div>
             </div>
             <div className="detail-stat-item">
               <div className="detail-stat-label">5m</div>
