@@ -136,11 +136,11 @@
 }
 
 .live-trades-filters-checkbox:checked {
-  border-color: #d8dcff;
+  border-color: #aeb1cd;
 }
 
 .live-trades-filters-checkbox:checked::after {
-  background-color: #d8dcff;
+  background-color: #a2a5c0;
   border-radius: 3px;
   content: '';
   height: 12px;

@@ -146,12 +146,13 @@ const Tooltip: React.FC<{
               position: 'absolute',
               top: `${tooltipPosition.top - 20}px`,
               left: `${tooltipPosition.left}px`,
-              transform: `${position === 'top' || position === 'bottom'
+              transform: `${
+                position === 'top' || position === 'bottom'
                   ? 'translateX(-50%)'
                   : position === 'left' || position === 'right'
                     ? 'translateY(-50%)'
                     : 'none'
-                } scale(${isVisible ? 1 : 0})`,
+              } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
               pointerEvents: 'none',
@@ -218,12 +219,12 @@ interface Props {
   trades: RawTrade[];
   tokenList?: any[];
   market?:
-  | {
-    baseAsset?: string;
-    quoteAsset?: string;
-    quoteAddress?: string;
-  }
-  | any;
+    | {
+        baseAsset?: string;
+        quoteAsset?: string;
+        quoteAddress?: string;
+      }
+    | any;
   tradesByMarket?: any;
   markets?: any;
   tokendict?: any;
@@ -241,7 +242,7 @@ interface Props {
   monUsdPrice: number;
   trackedAddresses?: string[];
   onFilterDev?: () => void;
-onFilterYou?: (addresses?: string[]) => void;
+  onFilterYou?: (addresses?: string[]) => void;
   onClearTracked?: () => void;
   isLoadingTrades?: boolean;
   subWallets?: Array<{ address: string; privateKey: string }>;
@@ -270,7 +271,7 @@ export default function MemeTradesComponent({
   onClearTracked,
   isLoadingTrades = false,
   subWallets = [],
-  marketsData
+  marketsData,
 }: Props) {
   const [amountMode, setAmountMode] = useState<AmountMode>('MON');
   const [mcMode, setMcMode] = useState<MCMode>('MC');
@@ -293,10 +294,11 @@ export default function MemeTradesComponent({
   const you = norm(currentUserAddress);
 
   // Create a set of all "you" addresses (main wallet + sub wallets)
-  const youSet = new Set([
-    you,
-    ...(subWallets || []).map(w => norm(w.address))
-  ].filter(addr => addr !== ''));
+  const youSet = new Set(
+    [you, ...(subWallets || []).map((w) => norm(w.address))].filter(
+      (addr) => addr !== '',
+    ),
+  );
 
   const devEqualsYou = dev !== '' && youSet.has(dev);
 
@@ -318,7 +320,7 @@ export default function MemeTradesComponent({
     }
   } else {
     // Check if all tracked addresses are "you" addresses
-    const allYou = Array.from(trackedSet).every(addr => youSet.has(addr));
+    const allYou = Array.from(trackedSet).every((addr) => youSet.has(addr));
     if (allYou) {
       youActive = true;
     } else {
@@ -477,11 +479,12 @@ export default function MemeTradesComponent({
       const devAddressLower = devAddress?.toLowerCase();
 
       const subWalletSet = new Set(
-        (subWallets || []).map(w => w.address.toLowerCase())
+        (subWallets || []).map((w) => w.address.toLowerCase()),
       );
 
       const isCurrentUser =
-        (currentUserAddress && callerLower === currentUserAddress.toLowerCase()) ||
+        (currentUserAddress &&
+          callerLower === currentUserAddress.toLowerCase()) ||
         subWalletSet.has(callerLower);
       const isTopHolder = top10HolderAddresses.has(callerLower);
       const isDev = Boolean(devAddressLower && callerLower === devAddressLower);
@@ -709,31 +712,31 @@ export default function MemeTradesComponent({
     </div>
   );
 
-const handleFilterClick = (filterType: 'dev' | 'you' | 'tracked') => {
-  switch (filterType) {
-    case 'dev':
-      if (devActive) {
+  const handleFilterClick = (filterType: 'dev' | 'you' | 'tracked') => {
+    switch (filterType) {
+      case 'dev':
+        if (devActive) {
+          onClearTracked?.();
+        } else {
+          onFilterDev?.();
+        }
+        break;
+      case 'you':
+        if (youActive) {
+          onClearTracked?.();
+        } else {
+          const allYouAddresses = [
+            currentUserAddress,
+            ...(subWallets || []).map((w) => w.address),
+          ].filter((addr): addr is string => addr !== undefined && addr !== '');
+          onFilterYou?.(allYouAddresses);
+        }
+        break;
+      case 'tracked':
         onClearTracked?.();
-      } else {
-        onFilterDev?.();
-      }
-      break;
-    case 'you':
-      if (youActive) {
-        onClearTracked?.();
-      } else {
-const allYouAddresses = [
-  currentUserAddress,
-  ...(subWallets || []).map(w => w.address)
-].filter((addr): addr is string => addr !== undefined && addr !== '');
-        onFilterYou?.(allYouAddresses);
-      }
-      break;
-    case 'tracked':
-      onClearTracked?.();
-      break;
-  }
-};
+        break;
+    }
+  };
 
   const renderTraderTags = (
     tags: ('sniper' | 'dev' | 'kol' | 'bundler' | 'insider' | 'topHolder')[],
@@ -933,7 +936,10 @@ const allYouAddresses = [
                       </span>
                     ) : (
                       <span>
-                        $<FormattedNumberDisplay formatted={formatSubscript(t.priceUSD.toString())} />
+                        $
+                        <FormattedNumberDisplay
+                          formatted={formatSubscript(t.priceUSD.toString())}
+                        />
                       </span>
                     )}
                   </div>

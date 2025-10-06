@@ -3,7 +3,7 @@ import { Buffer } from 'buffer';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { WagmiProvider } from 'wagmi';
-import App from './App.tsx';
+import Loader from './App.tsx';
 import { alchemyconfig } from './config.ts';
 import { cookieToInitialState } from "@account-kit/core";
 import { config } from './wagmi.ts'
@@ -49,7 +49,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <SharedContextProvider>
             <LanguageProvider>
               <GlobalInitializer />
-              <App />
+              <Loader />
             </LanguageProvider>
           </SharedContextProvider>
         </Router>

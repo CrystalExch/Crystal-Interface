@@ -34,26 +34,6 @@ const ImportWalletsPopup: React.FC<ImportWalletsPopupProps> = ({ onClose, onImpo
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
           />
-
-          <p className="import-wallets-description">
-            Ignore wallet groups and add wallets to selected group.
-          </p>
-
-          <div className="import-wallets-supported">
-            <div className="import-wallets-supported-item">
-              <span className="import-wallets-icon">🐂</span>
-              <span>BullX wallet imports are supported.</span>
-            </div>
-            <div className="import-wallets-supported-item">
-              <span className="import-wallets-icon">🐸</span>
-              <span>GMGN wallet imports are supported.</span>
-            </div>
-            <div className="import-wallets-supported-item">
-              <span className="import-wallets-icon">🤖</span>
-              <span>RayBot wallet imports are supported.</span>
-            </div>
-          </div>
-
           <div className="import-wallets-button-container">
             <button
                 className="import-wallets-button"

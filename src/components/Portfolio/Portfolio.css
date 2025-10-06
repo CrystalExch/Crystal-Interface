@@ -4482,3 +4482,22 @@
   margin-left: auto;
   gap: 12px;
 }
+
+.pnl-calendar-day.past-or-today {
+  border: 1.5px solid rgba(170, 174, 207, 0.15);
+}
+
+.pnl-calendar-day.past-or-today.positive {
+  background: rgba(0, 255, 136, 0.1);
+  border-color: rgba(170, 174, 207, 0.2);
+}
+
+.pnl-calendar-day.past-or-today.negative {
+  background: rgba(255, 82, 82, 0.1);
+  border-color: rgba(170, 174, 207, 0.2);
+}
+
+.pnl-calendar-day.past-or-today.neutral {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(170, 174, 207, 0.15);
+}

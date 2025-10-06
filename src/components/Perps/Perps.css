@@ -667,6 +667,14 @@
     font-weight: 300;
 }
 
+.value-container.current-position.positive {
+    color: #50f08d;
+}
+
+.value-container.current-position.negative {
+    color: rgb(235, 112, 112);
+}
+
 .perps-tpsl-percent-input {
     width: 60px;
     background: rgba(0, 0, 0, 0.3);

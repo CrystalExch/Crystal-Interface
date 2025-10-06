@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 
 import { formatCommas } from '../../../../utils/numberDisplayFormat';
 import './HighlightPopup.css';
+import customRound from '../../../../utils/customRound';
 
 interface OrderHighlightPopupProps {
   mousePosition: { x: number; y: number };
@@ -67,14 +68,14 @@ const OrderHighlightPopup: React.FC<OrderHighlightPopupProps> = ({
       </div>
       <div>
       <span style={{color: '#ffffffef'}}>{t('total')} {highlightData.unit}: </span>
-        {formatCommas(highlightData.totalAmount.toFixed(2))}
+        {formatCommas(highlightData.totalAmount.toFixed(maxDecimals))}
       </div>
       <div>
         <span style={{color: '#ffffffef'}}>
           {t('total')} ({highlightData.otherUnit}):{' '}
         </span>
         {formatCommas(
-          highlightData.otherTotalAmount.toFixed(maxDecimals)
+          customRound(highlightData.otherTotalAmount, 3)
         )}
       </div>
     </div>,

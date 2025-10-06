@@ -149,13 +149,10 @@
   justify-content: center
 }
 
-
-
 .meme-trading-stats-container {
   border-top: 1px solid rgba(179, 184, 249, 0.1);
   color: #fff;
 }
-
 
 .meme-time-stats-row {
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
@@ -197,13 +194,10 @@
   color: rgb(235, 112, 112);
 }
 
-
-
 .time-value.large {
   font-size: 1rem;
   font-weight: 700;
 }
-
 
 .meme-stat-header {
   border-right: 1px solid rgba(179, 184, 249, 0.1);
@@ -250,7 +244,6 @@
   padding-top: 5px;
   width: 100%;
 }
-
 
 .meme-progress-bar {
   background: rgba(40, 40, 50, 0.8);
@@ -307,14 +300,12 @@
   color: rgb(235, 112, 112);
 }
 
-
 .meme-stat-group {
   display: flex;
   gap: 6px;
   padding: 0 12px;
   width: 100%;
 }
-
 
 .meme-stat-label {
   color: rgba(255, 255, 255, 0.6);
@@ -325,13 +316,10 @@
 .meme-stat-value {
   color: #fff;
   font-size: .85rem;
-
 }
-
 
 .stat-value {
   white-space: nowrap;
-
 }
 
 .stat-subrow {
@@ -340,13 +328,10 @@
   justify-content: space-between;
 }
 
-
-
-
 .meme-buy-button.active {
-    border: 1px solid rgba(67, 254, 154, 0.7);
-    box-shadow: inset 0 0 6px 4px rgba(67, 254, 154, 0.2);
-    color: rgb(67 254 154);
+  border: 1px solid rgba(67, 254, 154, 0.7);
+  box-shadow: inset 0 0 6px 4px rgba(67, 254, 154, 0.2);
+  color: rgb(67 254 154);
 }
 
 .meme-buy-button.inactive {
@@ -356,8 +341,8 @@
 
 .meme-sell-button.active {
   border: 1px solid rgb(235, 112, 112, 0.5);
-    box-shadow: inset 0 0 4px 4px rgb(235, 112, 112, 0.2);
-    color: rgb(235, 112, 112);
+  box-shadow: inset 0 0 4px 4px rgb(235, 112, 112, 0.2);
+  color: rgb(235, 112, 112);
 }
 
 .meme-sell-button.inactive {
@@ -382,8 +367,6 @@
   margin-bottom: 12px;
   padding: 0 12px;
   position: relative;
-
-
 }
 
 .meme-trade-input {
@@ -470,9 +453,9 @@
 }
 
 .meme-trade-action-button.buy {
-    border: 1px solid rgba(67, 254, 154, 0.7);
-    box-shadow: inset 0 0 6px 4px rgba(67, 254, 154, 0.2);
-    color: rgb(67 254 154);
+  border: 1px solid rgba(67, 254, 154, 0.7);
+  box-shadow: inset 0 0 6px 4px rgba(67, 254, 154, 0.2);
+  color: rgb(67 254 154);
 }
 
 .meme-trade-action-button.buy .meme-button-spinner {
@@ -489,9 +472,9 @@
 }
 
 .meme-trade-action-button.sell {
-    border: 1px solid rgb(235, 112, 112, 0.5);
-    box-shadow: inset 0 0 6px 4px rgb(235, 112, 112, 0.2);
-    color: rgb(235, 112, 112);
+  border: 1px solid rgb(235, 112, 112, 0.5);
+  box-shadow: inset 0 0 6px 4px rgb(235, 112, 112, 0.2);
+  color: rgb(235, 112, 112);
 }
 
 .meme-trade-action-button.sell .meme-button-spinner {
@@ -519,8 +502,6 @@
   margin: 0;
 }
 
-
-
 .meme-token-info-footer {
   display: flex;
   flex-direction: column;
@@ -529,7 +510,6 @@
   justify-content: space-between;
   padding: 8px 0 0 0;
 }
-
 
 .meme-address {
   align-items: center;
@@ -556,10 +536,10 @@
 }
 
 .meme-contract-icon {
+  align-self: center;
   height: 14px;
   margin-right: 2px;
   width: 14px;
-  align-self: center;
 }
 
 .meme-address-link {
@@ -592,7 +572,6 @@
   font-size: 0.8rem;
 }
 
-
 .meme-currency-switch-icon {
   cursor: pointer;
   height: 14px;
@@ -606,13 +585,10 @@
   align-items: center;
   display: flex;
   justify-content: space-between;
-  margin-bottom: 2px;
-  padding: 0 12px;
-  margin-top: 12px;
   margin-bottom: 5px;
-
+  margin-top: 12px;
+  padding: 0 12px;
 }
-
 
 .meme-portfolio-stats {
   border-top: 1px solid rgba(179, 184, 249, 0.1);
@@ -709,11 +685,11 @@
 }
 
 .meme-preset-buttons {
-  margin-top: -3px;
   align-items: center;
   display: flex;
   gap: 3px;
   justify-content: center;
+  margin-top: -3px;
 }
 
 .meme-preset-button {
@@ -783,8 +759,8 @@
 
 .meme-balance-amount-slider {
   -webkit-appearance: none;
-     -moz-appearance: none;
-          appearance: none;
+  -moz-appearance: none;
+  appearance: none;
   border-radius: 1px;
   cursor: pointer;
   height: 4px;
@@ -796,7 +772,7 @@
 
 .meme-balance-amount-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-          appearance: none;
+  appearance: none;
   background: #d4d4d4;
   border-radius: 3px;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
@@ -828,7 +804,6 @@
 }
 
 .meme-slider-percentage-popup {
-  left: 0;
   align-items: center;
   background-color: rgb(9, 9, 9);
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -839,6 +814,7 @@
   font-size: 0.7rem;
   font-weight: 300;
   justify-content: center;
+  left: 0;
   max-width: 40px;
   min-width: 30px;
   opacity: 0;
@@ -958,7 +934,6 @@
   height: 12px;
   width: 12px;
 }
-
 
 .meme-settings-value {
   color: #a1a2ab;
@@ -1088,7 +1063,6 @@
   margin: 0;
 }
 
-
 .meme-token-info-header {
   align-items: center;
   display: flex;
@@ -1153,7 +1127,6 @@
   width: 4px;
 }
 
-
 .meme-token-balance {
   align-items: center;
   background: rgba(255, 255, 255, 0.02);
@@ -1176,10 +1149,6 @@
   font-size: 12px;
   font-weight: 500;
 }
-
-
-
-
 
 .meme-settings-mode-toggle {
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -1217,8 +1186,6 @@
   color: rgb(235, 112, 112);
 }
 
-
-
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -1230,8 +1197,6 @@
     transform: translateY(0);
   }
 }
-
-
 
 .meme-amount-header-left {
   align-items: center;
@@ -1252,8 +1217,8 @@
 
 .meme-balance-display {
   align-items: center;
-  display: flex;
   color: rgba(255, 255, 255, 0.5);
+  display: flex;
   font-size: 0.8rem;
 }
 
@@ -1278,7 +1243,6 @@
   width: 16px;
 }
 
-/* Mobile View Styles */
 .meme-mobile-view-toggle {
   backdrop-filter: blur(10px);
   background: rgb(6, 6, 6);
@@ -1386,15 +1350,15 @@
 }
 
 .meme-mobile-trade-btn.active.buy {
-    border: 1px solid rgba(67, 254, 154, 0.7);
-    box-shadow: inset 0 0 6px 4px rgba(67, 254, 154, 0.2);
-    color: rgb(67 254 154);
+  border: 1px solid rgba(67, 254, 154, 0.7);
+  box-shadow: inset 0 0 6px 4px rgba(67, 254, 154, 0.2);
+  color: rgb(67 254 154);
 }
 
 .meme-mobile-trade-btn.active.sell {
-    border: 1px solid rgb(235, 112, 112, 0.5);
-    box-shadow: inset 0 0 4px 4px rgb(235, 112, 112, 0.2);
-    color: rgb(235, 112, 112);
+  border: 1px solid rgb(235, 112, 112, 0.5);
+  box-shadow: inset 0 0 4px 4px rgb(235, 112, 112, 0.2);
+  color: rgb(235, 112, 112);
 }
 
 .meme-mobile-trade-btn:hover:not(.active) {
@@ -1466,7 +1430,6 @@
   margin-right: 3px;
   width: 14px;
 }
-
 
 .meme-currency-monad-icon {
   height: 16px;
@@ -1692,7 +1655,6 @@
   background: rgba(179, 184, 249, 0.05);
 }
 
-
 .meme-mobile-wallet-checkbox-container {
   align-items: center;
   display: flex;
@@ -1786,8 +1748,8 @@
 .meme-mobile-wallet-balance-amount.blurred {
   filter: blur(6px);
   -webkit-user-select: none;
-     -moz-user-select: none;
-          user-select: none;
+  -moz-user-select: none;
+  user-select: none;
 }
 
 .meme-mobile-wallet-mon-icon {
@@ -1804,7 +1766,6 @@
     min-height: 450px;
     padding-bottom: 0;
     padding-top: 55px;
-
   }
 
   .memechartandtradesandordercenter {
@@ -1901,9 +1862,6 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-
-
-
 .meme-advanced-trading-section {
   border-top: 1px solid rgba(179, 184, 249, 0.1);
   margin-top: 8px;
@@ -1982,7 +1940,6 @@
   transition: all 0.2s ease;
 }
 
-
 .meme-advanced-order-header {
   align-items: center;
   display: flex;
@@ -2027,7 +1984,6 @@
   opacity: 1;
 }
 
-
 .meme-advanced-order-inputs {
   display: flex;
   flex-wrap: wrap;
@@ -2052,10 +2008,6 @@
   margin-right: 6px;
   white-space: nowrap;
 }
-
-
-
-
 
 .meme-advanced-order-input {
   background: transparent;
@@ -2113,7 +2065,6 @@
   width: 14px;
 }
 
-
 .meme-advanced-dropdown {
   animation: slideDownFade 0.2s ease;
   background: rgb(10, 10, 12);
@@ -2163,7 +2114,6 @@
   background: rgba(179, 184, 249, 0.05);
 }
 
-
 .meme-advanced-dropdown-icon {
   color: rgba(255, 255, 255, 0.6);
   flex-shrink: 0;
@@ -2175,10 +2125,6 @@
 .meme-advanced-order-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
-}
-
-.meme-advanced-order-input[type=number] {
-  -moz-appearance: textfield;
 }
 
 .advanced-order-type-icon {
@@ -2230,10 +2176,9 @@
   align-items: center;
   display: flex;
   flex-direction: column;
-  position: relative;
   margin: 0 4px;
+  position: relative;
 }
-
 
 .stat-group-vol {
   display: flex;
@@ -2251,22 +2196,18 @@
   font-size: 0.75rem;
   font-weight: 300;
   line-height: 1;
-
 }
-
 
 .stat-group-net-vol {
   align-items: flex-end;
   display: flex;
   flex-direction: column;
   position: relative;
-
 }
 
 .stat-group-net-vol .stat-value {
   color: #ffffff;
   font-size: 0.85rem;
-
 }
 
 .stat-group-net-vol .stat-label {
@@ -2275,7 +2216,6 @@
   font-weight: 300;
   line-height: 1;
   white-space: nowrap;
-
 }
 
 .stat-group-net-vol .stat-value.green {
@@ -2291,7 +2231,6 @@
   font-size: 0.75rem;
   font-weight: 300;
   line-height: 1;
-
 }
 
 .stat-group .stat-value {
@@ -2312,7 +2251,6 @@
   gap: 3px;
   width: 100%;
 }
-
 
 .indicator-line {
   border-radius: 1px;
@@ -2395,8 +2333,6 @@
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(179, 184, 249, 0.2);
 }
-
-
 
 .tf-label {
   font-size: 0.75rem;
@@ -2553,10 +2489,6 @@
   margin: 0;
 }
 
-.meme-preset-edit-input[type=number] {
-  -moz-appearance: textfield;
-}
-
 .meme-preset-edit-container {
   align-items: center;
   display: flex;
@@ -2579,7 +2511,6 @@
   width: 20px;
 }
 
-
 .meme-preset-edit-icon {
   height: 14px;
   margin-top: 1px;
@@ -2596,13 +2527,12 @@
   display: flex;
   gap: 6px;
   margin: 8px 0;
-
 }
 
 .meme-address-content {
   align-items: center;
-  display: flex;
   cursor: pointer;
+  display: flex;
 }
 
 .address-top {
@@ -2630,7 +2560,6 @@
   letter-spacing: -0.3px;
   padding: 2px 8px;
 }
-
 
 .funding-by-wallet-icon {
   height: 14px;
@@ -2705,7 +2634,7 @@
 .meme-similar-token-avatar img {
   height: 100%;
   -o-object-fit: cover;
-     object-fit: cover;
+  object-fit: cover;
   width: 100%;
 }
 
@@ -2744,16 +2673,16 @@
 }
 
 .meme-similar-token-stat {
-  display: flex;
   align-items: center;
-  justify-content: flex-end;
+  display: flex;
   gap: 4px;
+  justify-content: flex-end;
 }
 
 .meme-similar-token-stat .label {
   font-size: 0.75rem;
-  opacity: 0.6;
   margin-top: 2px;
+  opacity: 0.6;
 }
 
 .meme-similar-token-stat .value {
@@ -2765,8 +2694,6 @@
   opacity: 0.6;
   padding: 6px 0;
 }
-
-
 
 .explorer-image-preview.show {
   opacity: 1;

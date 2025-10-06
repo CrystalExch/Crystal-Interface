@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { settings } from '../../../settings';
+
 import Overlay from '../../loading/LoadingComponent';
 import MemeAdvancedChart from './MemeAdvancedChart';
+
+import { settings } from '../../../settings';
 
 import './MemeChart.css';
 

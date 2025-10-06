@@ -2,8 +2,10 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronLeft, Plus, Search, ExternalLink } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { encodeFunctionData, getAddress } from "viem";
+
 import { CrystalVaultsAbi } from '../../abis/CrystalVaultsAbi';
 import { settings } from "../../settings";
+
 import './LPVaults.css'
 
 interface LPVaultsProps {
@@ -11,23 +13,18 @@ interface LPVaultsProps {
   onSelectToken: (token: { symbol: string; icon: string }) => void;
   setOnSelectTokenCallback?: (callback: ((token: { symbol: string; icon: string }) => void) | null) => void;
   tokendict: { [address: string]: any };
-  tokenBalances: Record<string, any>;
   currentRoute?: string;
   onRouteChange?: (route: string) => void;
   connected: boolean;
   account: any;
   setselectedVault: any;
-  isVaultDepositSigning: boolean;
-  setIsVaultDepositSigning: (signing: boolean) => void;
   isVaultWithdrawSigning: boolean;
   setIsVaultWithdrawSigning: (signing: boolean) => void;
   sendUserOperationAsync: any;
   setChain: () => void;
   address: string;
-  refetch?: () => void;
   activechain: number;
   crystalVaultsAddress: any;
-  router: string;
   formatUSDDisplay: any;
   calculateUSDValue: any;
   tradesByMarket: any;
@@ -288,21 +285,16 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, className = '' }
 const LPVaults: React.FC<LPVaultsProps> = ({
   setpopup,
   tokendict,
-  // tokenBalances,
   currentRoute = '/earn/vaults',
   onRouteChange,
   connected,
   account,
   setselectedVault,
-  // isVaultDepositSigning,
-  // setIsVaultDepositSigning,
   sendUserOperationAsync,
   setChain,
   address,
-  // refetch,
   activechain,
   crystalVaultsAddress,
-  // router,
   formatUSDDisplay,
   calculateUSDValue,
   tradesByMarket,
@@ -310,12 +302,11 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 }) => {
   const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  // const [activeVault, setActiveVault] = useState('0x4605D665A253E5c5987E1dF2046B929E187d505C' as `0x${string}`);
   const [vaultList, setVaultList] = useState<any>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
   const [activeVaultTab, setActiveVaultTab] = useState<'all' | 'my-vaults'>('all');
-  const [showManagementMenu, setShowManagementMenu] = useState(false); 
+  const [showManagementMenu, setShowManagementMenu] = useState(false);
   const [activeVaultStrategyTab, setActiveVaultStrategyTab] = useState<'Balances' | 'Open Orders' | 'Depositors' | 'Deposit History'>('Balances');
   const [activeVaultPerformance, _setActiveVaultPerformance] = useState<any>([
     { name: 'Jan', value: 12.4 },
@@ -1305,7 +1296,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

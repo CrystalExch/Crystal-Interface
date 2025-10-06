@@ -24,22 +24,6 @@ const LiveTradesSettingsPopup: React.FC<LiveTradesSettingsPopupProps> = ({ onClo
         </div>
 
         <div className="live-trades-settings-content">
-          <div className="live-trades-settings-tabs">
-            <button
-              className={`live-trades-settings-tab ${activeTab === 'general' ? 'active' : ''}`}
-              onClick={() => setActiveTab('general')}
-            >
-              General
-            </button>
-            <button
-              className={`live-trades-settings-tab ${activeTab === 'toasts' ? 'active' : ''}`}
-              onClick={() => setActiveTab('toasts')}
-            >
-              Toasts
-            </button>
-          </div>
-
-          {activeTab === 'general' && (
             <div className="live-trades-settings-section">
               <div className="live-trades-settings-row">
                 <span className="live-trades-settings-label">Open toast alerts in new tab</span>
@@ -105,7 +89,6 @@ const LiveTradesSettingsPopup: React.FC<LiveTradesSettingsPopupProps> = ({ onClo
                 </div>
               </div>
             </div>
-          )}
         </div>
 
         <div className="live-trades-settings-footer">
