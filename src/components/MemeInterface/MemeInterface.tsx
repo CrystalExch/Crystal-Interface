@@ -1300,10 +1300,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   // metadata n klines
   useEffect(() => {
-    if (!token.id) return;
+    console.log("hi")
+    if (!tokenAddress) {
+      console.log("early return");
+      return;
+    }
     let isCancelled = false;
 
-    const fetchMemeTokenData = async () => {
+    const fetchMemeTokenData = async () => { 
+      console.log("trades n klines")
       try {
         const response = await fetch(SUBGRAPH_URL, {
           method: 'POST',

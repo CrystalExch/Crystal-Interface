@@ -519,10 +519,10 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
         tags: h.tags,
       }));
 
-  const devTokensToShow: DevToken[] =
-    devTokens && devTokens.length > 0
+  const devTokensToShow: DevToken[] = useMemo(() => {
+    const src = (devTokens && devTokens.length > 0)
       ? devTokens
-      : mockDevTokens.map((mt) => ({
+      : mockDevTokens.map(mt => ({
           id: mt.id,
           symbol: mt.symbol,
           name: mt.name,
@@ -532,6 +532,18 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           timestamp: mt.timestamp,
           migrated: mt.migrated,
         }));
+
+    const seen = new Set<string>();
+    const uniq: DevToken[] = [];
+    for (const t of src) {
+      const k = (t.id || '').toLowerCase();
+      if (!seen.has(k)) {
+        seen.add(k);
+        uniq.push(t);
+      }
+    }
+    return uniq;
+  }, [devTokens]);
 
   const topTraderRows = useMemo(() => {
     const rows: LiveHolder[] =

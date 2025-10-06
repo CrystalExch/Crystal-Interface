@@ -22,7 +22,8 @@ import {
   useLocation,
   useNavigate,
   useSearchParams,
-  useParams
+  useParams,
+  matchPath
 } from 'react-router-dom';
 import { TransactionExecutionError, encodeFunctionData, maxUint256, decodeFunctionResult, decodeEventLog } from 'viem';
 import { useLanguage } from './contexts/LanguageContext';
@@ -435,7 +436,6 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
   const { signTypedDataAsync } = useSignTypedData({ client })
   const { signMessageAsync } = useSignMessage({ client })
   const user = useUser();
-  const { tokenAddress } = useParams<{ tokenAddress: string }>()
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -474,6 +474,9 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
     }
     return g;
   })();
+
+  const match = matchPath('/meme/:tokenAddress', location.pathname);
+  const tokenAddress = match?.params?.tokenAddress?.toLowerCase();
 
   const txReceiptResolvers = useRef(new Map<string, () => void>());
   // get market including multihop
@@ -9646,7 +9649,10 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
     };
 
     return () => {
-      try { ws.close(); } catch { }
+      try {
+        console.log("ws closing");
+        ws.close(); 
+      } catch {}
     };
   }, [activechain, tokenAddress, address, terminalRefetch, subWallets, tokenData?.dev, memeLive?.dev]);
 
@@ -21661,72 +21667,79 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                   chainId: userchain,
                 }}
               />
-            } />
-          <Route path="/meme/:tokenAddress"
+            } 
+          />
+          <Route
+            path="/meme/:tokenAddress"
             element={
-              <MemeInterface
-                sliderMode={'spot' === 'spot' ? spotSliderMode : trenchesSliderMode}
-                sliderPresets={'spot' === 'spot' ? spotSliderPresets : trenchesSliderPresets}
-                sliderIncrement={'spot' === 'spot' ? spotSliderIncrement : trenchesSliderIncrement}
-                marketsData={marketsData}
-                onMarketSelect={onMarketSelect}
-                setSendTokenIn={setSendTokenIn}
-                setpopup={setpopup}
-                tokenList={memoizedTokenList}
-                sendUserOperationAsync={sendUserOperationAsync}
-                account={{
-                  connected: connected,
-                  address: address,
-                  chainId: userchain,
-                }}
-                setChain={handleSetChain}
-                address={address}
-                subWallets={subWallets}
-                walletTokenBalances={walletTokenBalances}
-                activeWalletPrivateKey={oneCTSigner}
-                setOneCTSigner={setOneCTSigner}
-                refetch={refetch}
-                isBlurred={isBlurred}
-                tradesByMarket={tradesByMarket}
-                markets={markets}
-                tokendict={tokendict}
-                usdc={usdc}
-                wethticker={wethticker}
-                ethticker={ethticker}
-                terminalQueryData={terminalQueryData}
-                terminalToken={terminalToken}
-                setTerminalToken={setTerminalToken}
-                terminalRefetch={terminalRefetch}
-                tokenData={tokenData}
-                setTokenData={setTokenData}
-                monUsdPrice={monUsdPrice}
-                buyPresets={buyPresets}
-                sellPresets={sellPresets}
-                monPresets={monPresets}
-                setMonPresets={setMonPresets}
-                onPNLDataChange={setCurrentPNLData}
-                onTokenDataChange={setCurrentTokenData}
-                nonces={nonces}
-                tokenAddress={tokenAddress}
-                live={memeLive}
-                setLive={setMemeLive}
-                trades={memeTrades}
-                setTrades={setMemeTrades}
-                holders={memeHolders}
-                setHolders={setMemeHolders}
-                topTraders={memeTopTraders}
-                setTopTraders={setMemeTopTraders}
-                positions={memePositions}
-                setPositions={setMemePositions}
-                devTokens={memeDevTokens}
-                setDevTokens={setMemeDevTokens}
-                top10HoldingPercentage={memeTop10HoldingPct}
-                setTop10HoldingPercentage={setMemeTop10HoldingPct}
-                userStats={memeUserStats}
-                setUserStats={setMemeUserStats}
-                registerRealtimeTick={(fn) => (memePriceTickRef.current = fn)}
-              />
-            } />
+              <MemeRouteBridge>
+                {({ tokenAddress }) => (
+                  <MemeInterface
+                    sliderMode={'spot' === 'spot' ? spotSliderMode : trenchesSliderMode}
+                    sliderPresets={'spot' === 'spot' ? spotSliderPresets : trenchesSliderPresets}
+                    sliderIncrement={'spot' === 'spot' ? spotSliderIncrement : trenchesSliderIncrement}
+                    marketsData={marketsData}
+                    onMarketSelect={onMarketSelect}
+                    setSendTokenIn={setSendTokenIn}
+                    setpopup={setpopup}
+                    tokenList={memoizedTokenList}
+                    sendUserOperationAsync={sendUserOperationAsync}
+                    account={{
+                      connected: connected,
+                      address: address,
+                      chainId: userchain,
+                    }}
+                    setChain={handleSetChain}
+                    address={address}
+                    subWallets={subWallets}
+                    walletTokenBalances={walletTokenBalances}
+                    activeWalletPrivateKey={oneCTSigner}
+                    setOneCTSigner={setOneCTSigner}
+                    refetch={refetch}
+                    isBlurred={isBlurred}
+                    tradesByMarket={tradesByMarket}
+                    markets={markets}
+                    tokendict={tokendict}
+                    usdc={usdc}
+                    wethticker={wethticker}
+                    ethticker={ethticker}
+                    terminalQueryData={terminalQueryData}
+                    terminalToken={terminalToken}
+                    setTerminalToken={setTerminalToken}
+                    terminalRefetch={terminalRefetch}
+                    tokenData={tokenData}
+                    setTokenData={setTokenData}
+                    monUsdPrice={monUsdPrice}
+                    buyPresets={buyPresets}
+                    sellPresets={sellPresets}
+                    monPresets={monPresets}
+                    setMonPresets={setMonPresets}
+                    onPNLDataChange={setCurrentPNLData}
+                    onTokenDataChange={setCurrentTokenData}
+                    nonces={nonces}
+                    tokenAddress={tokenAddress}
+                    live={memeLive}
+                    setLive={setMemeLive}
+                    trades={memeTrades}
+                    setTrades={setMemeTrades}
+                    holders={memeHolders}
+                    setHolders={setMemeHolders}
+                    topTraders={memeTopTraders}
+                    setTopTraders={setMemeTopTraders}
+                    positions={memePositions}
+                    setPositions={setMemePositions}
+                    devTokens={memeDevTokens}
+                    setDevTokens={setMemeDevTokens}
+                    top10HoldingPercentage={memeTop10HoldingPct}
+                    setTop10HoldingPercentage={setMemeTop10HoldingPct}
+                    userStats={memeUserStats}
+                    setUserStats={setMemeUserStats}
+                    registerRealtimeTick={(fn) => (memePriceTickRef.current = fn)}
+                  />
+                )} 
+              </MemeRouteBridge>
+            }
+          />
           <Route path="/board"
             element={
               <TokenBoard
