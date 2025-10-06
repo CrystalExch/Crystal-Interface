@@ -4416,13 +4416,10 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           <div className="wallet-dropdown-container" ref={walletDropdownRef}>
             <button
               type="button"
-              className={account.connected ? 'transparent-button wallet-dropdown-button' : 'connect-button'}
+              className="transparent-button"
               onClick={handleWalletButtonClick}
             >
               <div className="connect-content">
-                {!account.connected ? (
-                  'Connect Wallet'
-                ) : (
                   <span className="transparent-button-container">
                     <img src={walleticon} className="img-wallet-icon" />
                     <span className={`wallet-count ${selectedSet.size ? 'has-active' : ''}`}>
@@ -4452,7 +4449,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                       <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
                   </span>
-                )}
               </div>
             </button>
             {account.connected && (

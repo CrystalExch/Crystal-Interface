@@ -15,6 +15,7 @@ import {
 import './TwitterHover.css';
 import type { Placement } from '@floating-ui/react';
 import twitter from '../../assets/twitter-dark.svg'
+
 type Media = { type: 'photo' | 'video' | 'animated_gif'; url: string; width?: number; height?: number };
 
 type Preview =
@@ -64,32 +65,36 @@ type Preview =
     url: string;
     _stale?: boolean;
   }
-    | {
-  kind: 'community';
-  community: {
+  | {
+    kind: 'community';
+community: {
+  name: string;
+  description: string;
+  member_count: number;
+  created_at: string;
+  banner_url?: string | null;
+  creator?: {
     name: string;
-    description: string;
-    member_count: number;
-    created_at: string;
-    primary_topic?: { name: string } | null;
-    banner_url?: string | null;
-    creator: {  // ✅ Nullable
-      name: string;
-      username: string;
-      description?: string;
-      banner?: string | null;
-      avatar: string;
-      verified: boolean;
-      verified_type?: string | null;
-      followers: number;
-      following: number;
-    } | null;  // Add | null here
-      members_preview?: Array<{
-        avatar: string;
-        verified: boolean;
-        followers: number;
-      }>;
-    };
+    username: string;
+    avatar: string;
+    verified: boolean;
+    verified_type?: string | null;
+    followers: number;
+    following: number;
+  } | null;
+  members_preview?: Array<{
+    id?: string;
+    name?: string;
+    profile_image_url_https?: string;
+    profilePicture?: string;
+  }>;
+  primary_topic?: {
+    id?: string;
+    name?: string;
+  } | null;
+};
+
+
     url: string;
     _stale?: boolean;
   };
@@ -105,9 +110,10 @@ type Props = {
 /** ================= client cache / in-flight ================= */
 const CLIENT_CACHE = new Map<string, { data: Preview; exp: number }>();
 const INFLIGHT = new Map<string, Promise<Response>>();
-
-/** ================= LOCAL DEVELOPMENT ENDPOINT =================
- * Use localhost:3000 for local development
+CLIENT_CACHE.clear();
+INFLIGHT.clear();
+/** ================= API ENDPOINT =================
+ * Updated to use twitterapi.io through your backend
  */
 const ORIGIN_BASE = 'http://localhost:3000';
 const API_PATH = '/api/x';
@@ -121,8 +127,7 @@ function joinUrl(base: string, path: string) {
 function normalizeXInput(s: string) {
   const raw = s.trim();
   if (!raw) return '';
-  if (raw.includes('://')) return raw; // full URL already
-  // bare or @handle
+  if (raw.includes('://')) return raw;
   const h = raw.startsWith('@') ? raw.slice(1) : raw;
   return `@${h}`;
 }
@@ -195,11 +200,11 @@ function getTimeAgoColor(dateString: string): string {
   const date = new Date(dateString);
   const hours = Math.floor((now.getTime() - date.getTime()) / 1000 / 3600);
 
-  if (hours < 6) return '#00ff41'; // green - very recent (< 6 hours)
-  if (hours < 24) return '#7cfc00'; // light green (< 1 day)
-  if (hours < 72) return '#ffa500'; // orange (< 3 days)
+  if (hours < 6) return '#00ff41';
+  if (hours < 24) return '#7cfc00';
+  if (hours < 72) return '#ffa500';
   if (hours < 168) return 'rgb(235, 112, 112)';
-  return 'rgb(235, 112, 112)'; // red - old (> 1 week)
+  return 'rgb(235, 112, 112)';
 }
 
 export function TwitterHover({ url, children, openDelayMs = 180, placement = 'top', portal = true }: Props) {
@@ -241,15 +246,16 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
     }
   }, [open, floatingStyles]);
 
+  const CACHE_TTL_MS = 1000 * 60 * 15;
+
   const fetchPreview = React.useCallback(async () => {
     if (!stableUrl) return;
     if (fetchingRef.current) return;
 
-    const key = stableUrl;
-    const now = Date.now();
-    const hit = CLIENT_CACHE.get(key);
-    if (hit && hit.exp > now) {
-      setData(hit.data);
+    const cacheKey = stableUrl;
+    const cached = CLIENT_CACHE.get(cacheKey);
+    if (cached && cached.exp > Date.now()) {
+      setData(cached.data);
       setHasFetched(true);
       return;
     }
@@ -262,34 +268,31 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
     abortRef.current = new AbortController();
 
     const apiUrl = `${joinUrl(ORIGIN_BASE, API_PATH)}?url=${encodeURIComponent(stableUrl)}`;
-    console.log('Fetching from:', apiUrl); // Debug log
 
     try {
-      const req = fetch(apiUrl, {
-        signal: abortRef.current!.signal,
-      });
-
-      INFLIGHT.set(key, req);
-      const r = await req;
-
-      if (INFLIGHT.get(key) === req) INFLIGHT.delete(key);
-
+      const r = await fetch(apiUrl, { signal: abortRef.current.signal });
+      if (r.status === 429) {
+        console.warn('Rate limit hit — retrying once after 1.5s...');
+        await new Promise((r) => setTimeout(r, 1500));
+        return await fetchPreview(); // retry once
+      }
       if (!r.ok) {
         const txt = await r.text();
-        if (r.status === 429) throw new Error('Rate limited (429). Try again soon.');
         throw new Error(`HTTP ${r.status}: ${txt || 'Upstream error'}`);
       }
 
-      const j = (await r.json()) as Preview;
-      CLIENT_CACHE.set(key, { data: j, exp: now + 60 * 60 * 1000 }); // 1h client cache
+      const j = await r.json();
+
+      if ((j as any).error) {
+        setError((j as any).error);
+        return;
+      }
+
+      CLIENT_CACHE.set(cacheKey, { data: j, exp: Date.now() + CACHE_TTL_MS });
       setData(j);
       setHasFetched(true);
     } catch (e: any) {
-      const isAbort =
-        e?.name === 'AbortError' ||
-        (e instanceof DOMException && e.name === 'AbortError') ||
-        /abort/i.test(String(e?.message));
-      if (!isAbort) {
+      if (e.name !== 'AbortError') {
         console.error('Preview fetch error:', e);
         setError(e?.message || 'Failed to load preview');
       }
@@ -299,9 +302,25 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
     }
   }, [stableUrl]);
 
+
   React.useEffect(() => {
-    if (open && !hasFetched && !loading && !data && !error) fetchPreview();
-  }, [open, hasFetched, loading, data, error, fetchPreview]);
+    if (open) {
+      fetchPreview();
+    }
+  }, [open, fetchPreview]);
+  React.useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    if (!open) {
+      timer = setTimeout(() => {
+        setData(null);
+        setHasFetched(false);
+        setError(null);
+      }, 2000); // 2 seconds
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [open]);
 
   React.useEffect(() => {
     setData(null);
@@ -314,21 +333,22 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
     return () => abortRef.current?.abort();
   }, []);
 
-const card = open ? (
-  <div
-    ref={refs.setFloating}
-    style={{ ...(floatingStyles as React.CSSProperties), maxHeight: maxHeight ? `${maxHeight}px` : undefined }}
-    {...getFloatingProps()}
-    className="twitter-hover-card"
-  >
-    <div ref={arrowRef} className="twitter-hover-arrow" />
-    {loading && <div className="twitter-hover-skeleton" />}
-    {error && <div className="twitter-hover-error">{error}</div>}
-    {!loading && !error && data?.kind === 'user' && <UserCard {...data.user} />}
-    {!loading && !error && data?.kind === 'tweet' && <TweetCard {...data} />}
-    {!loading && !error && data?.kind === 'community' && <CommunityCard {...data} />}
-  </div>
-) : null;
+  const card = open ? (
+    <div
+      ref={refs.setFloating}
+      style={{ ...(floatingStyles as React.CSSProperties), maxHeight: maxHeight ? `${maxHeight}px` : undefined }}
+  {...getFloatingProps({
+    onClick: (e) => e.stopPropagation(), 
+  })}      className="twitter-hover-card"
+    >
+      <div ref={arrowRef} className="twitter-hover-arrow" />
+      {loading && <div className="twitter-hover-skeleton" />}
+      {error && <div className="twitter-hover-error">{error}</div>}
+      {!loading && !error && data?.kind === 'user' && <UserCard {...data.user} />}
+      {!loading && !error && data?.kind === 'tweet' && <TweetCard {...data} />}
+      {!loading && !error && data?.kind === 'community' && <CommunityCard {...data} />}
+    </div>
+  ) : null;
 
   const canPortal = typeof document !== 'undefined' && portal;
 
@@ -388,38 +408,38 @@ function UserCard(props: {
         </div>
       )}
       <div className="twitter-hover-body">
-<div className="twitter-hover-top-row">
-        <div className="twitter-hover-header">
-          <img 
-            src={props.avatar} 
-            alt="" 
-            className="twitter-hover-avatar"
-            style={{ borderRadius: isBusiness ? '6px' : '50%' }}
-          />
-          <div className="twitter-hover-header-text">
-            <div className="verify-name">
-              <span className="twitter-hover-name">{props.name}</span>
-              {props.verified && <VerifiedBadge type={props.verified_type} />}
+        <div className="twitter-hover-top-row">
+          <div className="twitter-hover-header">
+            <img
+              src={props.avatar}
+              alt=""
+              className="twitter-hover-avatar"
+              style={{ borderRadius: isBusiness ? '6px' : '50%' }}
+            />
+            <div className="twitter-hover-header-text">
+              <div className="verify-name">
+                <span className="twitter-hover-name">{props.name}</span>
+                {props.verified && <VerifiedBadge type={props.verified_type} />}
+              </div>
+              <a
+                href={profileUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="twitter-hover-username"
+                onClick={(e) => e.stopPropagation()}
+              >
+                @{props.username}
+              </a>
             </div>
-            <a
-              href={profileUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="twitter-hover-username"
-              onClick={(e) => e.stopPropagation()}
-            >
-              @{props.username}
-            </a>
           </div>
-        </div>
-        <a
-          href={profileUrl}
-          target="_blank"
-          rel="noreferrer"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <img className="twitter-hover-icon" src={twitter}/>
-        </a>
+          <a
+            href={profileUrl}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img className="twitter-hover-icon" src={twitter} />
+          </a>
         </div>
         {props.description && <p className="twitter-hover-desc">{parseTextWithMentions(props.description, false)}</p>}
 
@@ -461,36 +481,40 @@ function UserCard(props: {
     </div>
   );
 }
-function CommunityCard(props: {
-  community: {
+
+function CommunityCard({
+  community,
+  url,
+}: {
+community: {
+  name: string;
+  description: string;
+  member_count: number;
+  created_at: string;
+  banner_url?: string | null;
+  creator?: {
     name: string;
-    description: string;
-    member_count: number;
-    created_at: string;
-    primary_topic?: { name: string } | null;
-    banner_url?: string | null;
-    creator: {
-      name: string;
-      username: string;
-      description?: string;
-      banner?: string | null;
-      avatar: string;
-      verified: boolean;
-      verified_type?: string | null;
-      followers: number;
-      following: number;
-    } | null;
-    members_preview?: Array<{
-      avatar: string;
-      verified: boolean;
-      followers: number;
-    }>;
-  };
+    username: string;
+    avatar: string;
+    verified: boolean;
+    verified_type?: string | null;
+    followers: number;
+    following: number;
+  } | null;
+  members_preview?: Array<{
+    id?: string;
+    name?: string;
+    profile_image_url_https?: string;
+    profilePicture?: string;
+  }>;
+  primary_topic?: {
+    id?: string;
+    name?: string;
+  } | null;
+};
+
   url: string;
 }) {
-  const { community } = props;
-  const communityUrl = props.url;
-
   return (
     <div className="twitter-hover-communitycard">
       {community.banner_url && (
@@ -498,52 +522,192 @@ function CommunityCard(props: {
           <img src={community.banner_url} alt="" className="twitter-hover-banner-image" />
         </div>
       )}
+
       <div className="twitter-hover-body">
         <div className="twitter-hover-top-row">
-          <div className="twitter-hover-community-header">
-            <div className="twitter-hover-header-text">
-              <div className="verify-name">
-                <span className="twitter-hover-name">{community.name}</span>
+          <div className="twitter-hover-header-text">
+            <div className="verify-name">
+              <span className="twitter-hover-name">{community.name}</span>
+              {community.primary_topic?.name && (
+                <span
+                  className="twitter-hover-topic"
+                  style={{
+                    display: 'inline-block',
+                    marginTop: '4px',
+                    padding: '2px 8px',
+                    background: '#1d9bf0',
+                    color: '#fff',
+                    borderRadius: '9999px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  {community.primary_topic.name}
+                </span>
+              )}
+
+            </div>
+
+            <div className="twitter-hover-community-members">
+              <div className="member-avatars">
+                {community.members_preview?.slice(0, 4).map(
+                  (
+                    m: {
+                      id?: string;
+                      name?: string;
+                      profile_image_url_https?: string;
+                      profilePicture?: string;
+                    },
+                    i: number
+                  ) => (
+                    <img
+                      key={m.id || i}
+                      src={m.profile_image_url_https || m.profilePicture || ''}
+                      alt={m.name || ''}
+                      className="member-avatar"
+                      style={{ zIndex: 4 - i }}
+                    />
+                  )
+                )}
               </div>
-              <span className="twitter-hover-community-members">
-                {Intl.NumberFormat('en', { notation: 'compact' }).format(community.member_count)} Members
-              </span>
+              <span>
+                <b className="twitter-hover-metrics-number">
+                  {community.member_count}</b> members</span>
             </div>
           </div>
-          <a
-            href={communityUrl}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img className="twitter-hover-icon" src={twitter}/>
-          </a>
+
+          <div className="twitter-top-right-section">
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img className="twitter-hover-icon" src={twitter} />
+            </a>
+
+            <div
+              className="twitter-hover-time-ago"
+              style={{ color: getTimeAgoColor(community.created_at) }}
+            >
+              <span>{formatTimeAgo(community.created_at)}</span>
+            </div>
+          </div>
         </div>
 
         {community.description && (
           <p className="twitter-hover-desc">{community.description}</p>
         )}
 
-        <div className="twitter-hover-details">
-          <span className="twitter-hover-join-date">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="twitter-hover-calendar-icon">
-              <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c-1.1 0-2-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
-            </svg>
-            Created {new Date(community.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </span>
-        </div>
+        {community.creator && (
+          <div
+            style={{
+              borderTop: '1.5px solid #b5bcf818',
+              marginTop: '0.5rem',
+              paddingTop: '0.75rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+            }}
+          >
+            <span
+              style={{
+                color: '#8098a5',
+                fontSize: '0.85rem',
+                fontWeight: 500,
+              }}
+            >
+              Created by
+            </span>
 
+            <div
+              className="twitter-hover-author-info"
+              style={{ borderBottom: 'none', paddingBottom: 0 }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <img
+                  src={community.creator.avatar}
+                  alt=""
+                  className="twitter-hover-avatar"
+                  style={{
+                    width: '2.75rem',
+                    height: '2.75rem',
+                    borderRadius: '50%',
+                  }}
+                />
+                <div className="twitter-hover-header-text">
+                  <div className="verify-name">
+                    <span className="twitter-hover-name">{community.creator.name}</span>
+                    {community.creator.verified && (
+                      <VerifiedBadge
+                        type={community.creator.verified_type || undefined}
+                      />
+                    )}
+                  </div>
+                  <a
+                    href={`https://x.com/${community.creator.username}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="twitter-hover-username-link"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    @{community.creator.username}
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="twitter-hover-metrics">
+              <span>
+                <b className="twitter-hover-metrics-number">
+                  {Intl.NumberFormat('en', { notation: 'compact' }).format(
+                    community.creator.following
+                  )}
+                </b>{' '}
+                Following
+              </span>
+              <span>
+                <b className="twitter-hover-metrics-number">
+                  {Intl.NumberFormat('en', { notation: 'compact' }).format(
+                    community.creator.followers
+                  )}
+                </b>{' '}
+                Followers
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* ===== View Community Link ===== */}
         <div className="twitter-hover-link">
-          <a href={communityUrl} target="_blank" rel="noreferrer" className="twitter-link">
-            View Community on X
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="twitter-link"
+          >
+            View community on X
           </a>
         </div>
       </div>
     </div>
   );
 }
+
+
+
 function TweetCard(payload: {
-  tweet: { id: string; text: string; created_at: string; metrics: Record<string, number>; possibly_sensitive: boolean; media?: Media[]; is_reply?: boolean;in_reply_to_username?: string; in_reply_to_user_id?: string;};
+  tweet: {
+    id: string;
+    text: string;
+    created_at: string;
+    metrics: Record<string, number>;
+    possibly_sensitive: boolean;
+    media?: Media[];
+    is_reply?: boolean;
+    in_reply_to_username?: string;
+    in_reply_to_user_id?: string;
+  };
   author: {
     id: string;
     name: string;
@@ -556,7 +720,6 @@ function TweetCard(payload: {
     following: number | null;
   } | null;
   url: string;
-
 }) {
   const a = payload.author;
   const allMedia = payload.tweet.media ?? [];
@@ -568,7 +731,6 @@ function TweetCard(payload: {
   return (
     <div className="twitter-hover-tweetcard">
       <div className="twitter-hover-body">
-
         {a && (
           <div className="twitter-hover-top-row">
             <div className="twitter-hover-header">
@@ -593,7 +755,7 @@ function TweetCard(payload: {
                   @{a.username}
                 </a>
               </div>
-          </div>
+            </div>
             <div className="twitter-top-right-section">
               <a
                 href={`https://x.com/${a.username}`}
@@ -612,37 +774,37 @@ function TweetCard(payload: {
 
         {a && (
           <div className="twitter-hover-author-info">
-            {a.followers != null && (
-              <span className="twitter-hover-tweet-metrics-label">
-                <b className="twitter-hover-metrics-number">{Intl.NumberFormat('en', { notation: 'compact' }).format(a.followers)}</b> Followers
-              </span>
-            )}
             {a.created_at && (
               <span className="twitter-hover-join-date">
                 Joined {new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+              </span>
+            )}
+            {a.followers != null && (
+              <span className="twitter-hover-tweet-metrics-label">
+                <b className="twitter-hover-metrics-number">{Intl.NumberFormat('en', { notation: 'compact' }).format(a.followers)}</b> Followers
               </span>
             )}
           </div>
         )}
 
         <div className="twitter-hover-text-container-new">
-                      {payload.tweet.is_reply && payload.tweet.in_reply_to_username && (
-          <div className="twitter-reply-indicator">
-            <div className="twitter-reply-line"></div>
-            <div className="twitter-reply-text">
-              Replying to{' '}
-              <a
-                href={`https://x.com/${payload.tweet.in_reply_to_username}`}
-                target="_blank"
-                rel="noreferrer"
-                className="twitter-reply-mention"
-                onClick={(e) => e.stopPropagation()}
-              >
-                @{payload.tweet.in_reply_to_username}
-              </a>
+          {payload.tweet.is_reply && payload.tweet.in_reply_to_username && (
+            <div className="twitter-reply-indicator">
+              <div className="twitter-reply-line"></div>
+              <div className="twitter-reply-text">
+                Replying to{' '}
+                <a
+                  href={`https://x.com/${payload.tweet.in_reply_to_username}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="twitter-reply-mention"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  @{payload.tweet.in_reply_to_username}
+                </a>
+              </div>
             </div>
-          </div>
-        )}
+          )}
           <p className="twitter-hover-text">{parseTextWithMentions(payload.tweet.text, hasAnyMedia)}</p>
 
           {photos.length > 0 && (
