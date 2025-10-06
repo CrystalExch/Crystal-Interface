@@ -205,6 +205,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
                   orderbookPosition={orderbookPosition}
                   updateLimitAmount={updateLimitAmount}
                   marketType={marketType}
+                  perps={perps}
                 />
                 <SpreadDisplay
                   averagePrice={spreadData.averagePrice}
@@ -224,6 +225,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
                   orderbookPosition={orderbookPosition}
                   updateLimitAmount={updateLimitAmount}
                   marketType={marketType}
+                  perps={perps}
                 />
               </div>
             )}
@@ -243,6 +245,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
                   orderbookPosition={orderbookPosition}
                   updateLimitAmount={updateLimitAmount}
                   marketType={marketType}
+                  perps={perps}
                 />
                 <SpreadDisplay
                   averagePrice={spreadData.averagePrice}
@@ -270,6 +273,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
                   orderbookPosition={orderbookPosition}
                   updateLimitAmount={updateLimitAmount}
                   marketType={marketType}
+                  perps={perps}
                 />
               </div>
             )}

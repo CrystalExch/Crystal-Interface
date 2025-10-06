@@ -2960,7 +2960,8 @@ function App() {
     reserve2Raw: number | bigint,
     interval: number,
     baseDecimals: number,
-    quoteDecimals: number
+    quoteDecimals: number,
+    amountsQuote: string
   ): { bids: Order[]; asks: Order[] } {
     if (reserve1Raw == 0 || reserve2Raw == 0 || interval <= 0) return { bids: [], asks: [] };
 
@@ -3023,10 +3024,11 @@ function App() {
         if (baseIn <= 0) break;
 
         const effectivePrice = pLow * (1 - fee);
+        const size = amountsQuote == 'Quote' ? baseIn * effectivePrice : baseIn
         bids.push({
           price: effectivePrice,
-          size: baseIn,
-          totalSize: baseIn,
+          size: size,
+          totalSize: size,
           shouldFlash: false,
           userPrice: false,
         });
@@ -3049,10 +3051,11 @@ function App() {
         if (baseOut <= 0) break;
 
         const effectivePrice = pHigh * (1 + fee);
+        const size = amountsQuote == 'Quote' ? baseOut * effectivePrice : baseOut
         asks.push({
           price: effectivePrice,
-          size: baseOut,
-          totalSize: baseOut,
+          size: size,
+          totalSize: size,
           shouldFlash: false,
           userPrice: false,
         });
@@ -3290,7 +3293,7 @@ function App() {
 
         const interval = 1 / (activeMarket?.marketType != 0 && (Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)) ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor))
 
-        const { bids, asks } = v2ToOrderbook(prevOrderData[1], prevOrderData[0], interval, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals));
+        const { bids, asks } = v2ToOrderbook(prevOrderData[1], prevOrderData[0], interval, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
 
         setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
         setRoundedSellOrders({ orders: roundedSell.concat(asks as any), key: activeMarketKey, amountsQuote });
@@ -3553,7 +3556,7 @@ function App() {
               )
               : 1 / (activeMarket?.marketType != 0 && spread?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor))
 
-            const { bids, asks } = v2ToOrderbook(orderdata[1], orderdata[0], interval, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals));
+            const { bids, asks } = v2ToOrderbook(orderdata[1], orderdata[0], interval, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
 
             setSpreadData({ spread: `${((spread?.spread / spread?.averagePrice) * 100).toFixed(2)}%`, averagePrice: formatSubscript(formatSig(spread?.averagePrice.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket?.marketType != 0)) });
             setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
@@ -14330,7 +14333,7 @@ function App() {
                               type: "function",
                             }],
                             functionName: "deposit",
-                            args: ['0xaf88d065e77c8cC2239327C5EDb3A432268e5831', amount, perpsKeystore.publicKey, 664124834304754100n, '0x00'],
+                            args: ['0xaf88d065e77c8cC2239327C5EDb3A432268e5831', amount, perpsKeystore.publicKey, BigInt(perpsKeystore.accountId), '0x00'],
                           }),
                           value: 0n,
                         }
@@ -21350,7 +21353,7 @@ function App() {
                 monUsdPrice={monUsdPrice}
               />
             } />
-          <Route path="/perps" element={<Navigate to="/perps/BTCUSD" replace />} />
+          <Route path="/perps" element={<Navigate to={`/perps/${perpsActiveMarketKey}`} replace />} />
           <Route path="/perps/:marketKey"
             element={
               <Perps
