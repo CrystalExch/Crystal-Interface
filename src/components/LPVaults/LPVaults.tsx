@@ -315,7 +315,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
   const [activeVaultTab, setActiveVaultTab] = useState<'all' | 'my-vaults'>('all');
-  const [showManagementMenu, setShowManagementMenu] = useState(false);
+  const [showManagementMenu, setShowManagementMenu] = useState(false); 
   const [activeVaultStrategyTab, setActiveVaultStrategyTab] = useState<'Balances' | 'Open Orders' | 'Depositors' | 'Deposit History'>('Balances');
   const [activeVaultPerformance, _setActiveVaultPerformance] = useState<any>([
     { name: 'Jan', value: 12.4 },
