@@ -220,7 +220,7 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
     socials: true,
     holders: true,
     proTraders: true,
-    devMigrations: false,
+    devMigrations: true,
     top10Holders: true,
     devHolding: true,
     fundingTime: false,

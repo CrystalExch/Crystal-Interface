@@ -132,48 +132,67 @@ function normalizeXInput(s: string) {
   return `@${h}`;
 }
 
-/** remove t.co links if we already show media; preserve mentions and line breaks */
 function parseTextWithMentions(text: string, hasMedia = false) {
   let processedText = text;
-  if (hasMedia) processedText = processedText.replace(/https:\/\/t\.co\/\S+/g, '').trim();
+  if (hasMedia) processedText = processedText.replace(/https?:\/\/t\.co\/[A-Za-z0-9]+/g, '').trim();
 
   const lines = processedText.split('\n');
   const mentionRegex = /@([A-Za-z0-9_]{1,15})\b/g;
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
 
   const processedLines = lines.map((line, lineIndex) => {
     const parts: React.ReactNode[] = [];
     let lastIndex = 0;
+
+    // Merge mentions + URLs
+    const combinedRegex = new RegExp(`${mentionRegex.source}|${urlRegex.source}`, 'g');
     let match: RegExpExecArray | null;
 
-    while ((match = mentionRegex.exec(line)) !== null) {
+    while ((match = combinedRegex.exec(line)) !== null) {
       if (match.index > lastIndex) parts.push(line.slice(lastIndex, match.index));
-      const username = match[1];
-      parts.push(
-        <a
-          key={`mention-${lineIndex}-${match.index}`}
-          href={`https://x.com/${username}`}
-          target="_blank"
-          rel="noreferrer"
-          className="twitter-mention"
-          onClick={(e) => e.stopPropagation()}
-        >
-          @{username}
-        </a>,
-      );
+      if (match[0].startsWith('@')) {
+        const username = match[1];
+        parts.push(
+          <a
+            key={`mention-${lineIndex}-${match.index}`}
+            href={`https://x.com/${username}`}
+            target="_blank"
+            rel="noreferrer"
+            className="twitter-mention"
+            onClick={(e) => e.stopPropagation()}
+          >
+            @{username}
+          </a>,
+        );
+      } else if (match[0].startsWith('http')) {
+        const url = match[0];
+        parts.push(
+          <a
+            key={`link-${lineIndex}-${match.index}`}
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="twitter-link-inline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {url}
+          </a>,
+        );
+      }
       lastIndex = match.index + match[0].length;
     }
+
     if (lastIndex < line.length) parts.push(line.slice(lastIndex));
     return parts.length > 1 ? parts : line;
   });
 
-  const result: React.ReactNode[] = [];
-  processedLines.forEach((line, index) => {
-    result.push(line);
-    if (index < processedLines.length - 1) result.push(<br key={`br-${index}`} />);
-  });
-
-  return result.length > 1 ? result : processedText;
+  return processedLines.reduce<React.ReactNode[]>((acc, line, index) => {
+    acc.push(line);
+    if (index < processedLines.length - 1) acc.push(<br key={`br-${index}`} />);
+    return acc;
+  }, []);
 }
+
 
 /** format time ago (e.g., "1d", "5h", "3m") */
 function formatTimeAgo(dateString: string): string {
@@ -363,7 +382,10 @@ export function TwitterHover({ url, children, openDelayMs = 180, placement = 'to
 }
 
 function VerifiedBadge({ type }: { type?: string | null }) {
-  const isBusiness = type === 'business';
+  const isBusiness =
+    type?.toLowerCase?.() === 'business' ||
+    type?.toLowerCase?.() === 'brand' ||
+    type?.toLowerCase?.() === 'organization';
 
   return (
     <svg
@@ -381,6 +403,7 @@ function VerifiedBadge({ type }: { type?: string | null }) {
     </svg>
   );
 }
+
 
 function UserCard(props: {
   id: string;
