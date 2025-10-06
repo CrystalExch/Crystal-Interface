@@ -559,17 +559,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               exchange: 'crystal.exchange',
               minmov: 1,
               pricescale:
-                activeMarketRef.current?.marketType != null && activeMarketRef.current?.marketType != 0
-                  ? 10 **
-                    Math.max(
-                      0,
-                      5 -
-                        Math.floor(
-                          Math.log10(activeMarketRef.current?.latestPrice ?? 1),
-                        ) -
-                        1,
-                    )
-                  : perps ? getPriceScale(activeMarketRef.current?.tickSize || 1) : Number(activeMarketRef.current.priceFactor),
+                perps ? getPriceScale(activeMarketRef.current?.tickSize || 1) : Number(activeMarketRef.current.priceFactor),
               has_intraday: true,
               has_volume: true,
               supported_resolutions: ['1', '5', '15', '60', '240', '1D'],

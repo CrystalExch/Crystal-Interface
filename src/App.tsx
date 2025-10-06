@@ -201,6 +201,7 @@ const Loader = () => {
               makerRebate
               volume
               latestPrice
+              metadataCID
               miniPoints(first: 24, orderBy: time, orderDirection: desc) {
                 price
                 time
@@ -235,11 +236,19 @@ const Loader = () => {
         for (const m of list) {
           const baseAddr0 = getAddress(String(m.baseAsset || ''));
           const quoteAddr0 = getAddress(String(m.quoteAsset || ''));
+          let meta;
           if (!tokendict[baseAddr0]) {
+            try {
+              const metaRes = await fetch(m.metadataCID);
+              if (metaRes.ok) meta = await metaRes.json();
+            } catch (e) {
+              console.warn('failed to load metadata for', m.metadataCID, e);
+            }
+
             tokendict[baseAddr0] = {
               address: baseAddr0,
               decimals: BigInt(Number(m.baseDecimals ?? 18)),
-              image: '',
+              image: meta?.image ?? '',
               name: m.baseName,
               ticker: m.baseTicker,
               website: '',
@@ -247,10 +256,19 @@ const Loader = () => {
             }
           }
           if (!tokendict[quoteAddr0]) {
+            if (!meta) {
+              try {
+                const metaRes = await fetch(m.metadataCID);
+                if (metaRes.ok) meta = await metaRes.json();
+              } catch (e) {
+                console.warn('failed to load metadata for', m.metadataCID, e);
+              }
+            }
+            
             tokendict[quoteAddr0] = {
               address: quoteAddr0,
               decimals: BigInt(Number(m.quoteDecimals ?? 18)),
-              image: '',
+              image: meta?.image ?? '',
               name: m.quoteName,
               ticker: m.quoteTicker,
               website: '',
