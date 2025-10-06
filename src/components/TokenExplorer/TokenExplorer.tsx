@@ -49,6 +49,7 @@ import { TwitterHover } from '../TwitterHover/TwitterHover';
 import './TokenExplorer.css';
 import { HexColorPicker } from 'react-colorful';
 import walleticon from '../../assets/wallet_icon.png';
+import communities from '../../assets/community.png'
 export interface Token {
   id: string;
   tokenAddress: string;
@@ -192,8 +193,7 @@ const ROUTER_EVENT =
   '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
 const MARKET_UPDATE_EVENT =
   '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-// const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/deployments/id/Qme4KkvZY4YcC3ozvWPjrDPJbSk9UDLGDkWUaozQTxqhSs';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
   quickBuySize: 'small',
@@ -2597,34 +2597,41 @@ const TokenRow = React.memo<{
                 <span className="explorer-time-created">
                   {formatTimeAgo(token.created)}
                 </span>
-
-                {displaySettings.visibleRows.socials && (
-                  <>
-                    {!!token.twitterHandle && (
-                      <TwitterHover url={token.twitterHandle}>
-                        <a
-                          className="explorer-avatar-btn"
-                          href={token.twitterHandle}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <img
-                            src={
-                              token.twitterHandle.includes('/status/')
-                                ? tweet
-                                : avatar
-                            }
-                            alt="Twitter"
-                            className={
-                              token.twitterHandle.includes('/status/')
-                                ? 'tweet-icon'
-                                : 'avatar-icon'
-                            }
-                          />
-                        </a>
-                      </TwitterHover>
-                    )}
+{displaySettings.visibleRows.socials && (
+  <>
+    {!!token.twitterHandle && (
+      <TwitterHover url={token.twitterHandle}>
+        <a
+          className="explorer-avatar-btn"
+          href={token.twitterHandle}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <img
+            src={
+              token.twitterHandle.includes('/i/communities/')
+                ? communities
+                : token.twitterHandle.includes('/status/')
+                  ? tweet
+                  : avatar
+            }
+            alt={
+              token.twitterHandle.includes('/i/communities/')
+                ? 'Community'
+                : 'Twitter'
+            }
+            className={
+              token.twitterHandle.includes('/i/communities/')
+                ? 'community-icon'
+                : token.twitterHandle.includes('/status/')
+                  ? 'tweet-icon'
+                  : 'avatar-icon'
+            }
+          />
+        </a>
+      </TwitterHover>
+    )}
 
                     {!!token.website && (
                       <a
@@ -3865,7 +3872,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       }
     }
   }, []);
-const handleQuickBuy = useCallback(
+  const handleQuickBuy = useCallback(
     async (token: Token, amt: string, buttonType: 'primary' | 'secondary') => {
       const val = BigInt(amt || '0') * 10n ** 18n;
       if (val === 0n) return;
@@ -4429,8 +4436,8 @@ const handleQuickBuy = useCallback(
                         </>
                       ) : (
                         <>
-                                                  <img src={monadicon} className="wallet-dropdown-mon-icon" style={{ width: '15px', height: '15px', marginRight: '4px' }} /> <span>0</span>
-                                                  </>
+                          <img src={monadicon} className="wallet-dropdown-mon-icon" style={{ width: '15px', height: '15px', marginRight: '4px' }} /> <span>0</span>
+                        </>
                       )}
                     </span>
                     <svg

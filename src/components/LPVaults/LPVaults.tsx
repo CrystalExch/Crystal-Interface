@@ -1,16 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronLeft, Plus, Search, ExternalLink } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { readContracts } from '@wagmi/core';
-import { encodeFunctionData } from "viem";
+import { encodeFunctionData, getAddress } from "viem";
 import { CrystalVaultsAbi } from '../../abis/CrystalVaultsAbi';
-import { TokenAbi } from '../../abis/TokenAbi';
 import { settings } from "../../settings";
-import { config } from '../../wagmi';
-import './LPVaults.css';
 import './LPVaults.css'
-import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
-import { CrystalDataHelperAbi } from '../../abis/CrystalDataHelperAbi';
 
 interface LPVaultsProps {
   setpopup: (value: number) => void;
@@ -45,6 +39,195 @@ interface VaultSnapshotProps {
   performance?: any;
   className?: string;
 }
+
+const gql = (s: TemplateStringsArray, ...args: any[]) =>
+  s.reduce((acc, cur, i) => acc + cur + (args[i] ?? ''), '');
+
+const fetchSubgraph = async (endpoint: string, query: string, variables?: Record<string, any>) => {
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!res.ok) throw new Error(`subgraph http ${res.status}`);
+  const json = await res.json();
+  if (json.errors?.length) throw new Error(json.errors.map((e: any) => e.message).join('; '));
+  return json.data;
+};
+
+const toBigIntSafe = (v: any): bigint => {
+  if (v === null || v === undefined) return 0n;
+  if (typeof v === 'bigint') return v;
+  if (typeof v === 'number') return BigInt(Math.trunc(v));
+  return BigInt(String(v));
+};
+
+const VAULTS_QUERY = gql`
+  {
+    vaults(first: 1000, orderBy: lastUpdatedAt, orderDirection: desc) {
+      id
+      owner
+      factory
+      quoteAsset { id symbol name decimals }
+      baseAsset  { id symbol name decimals }
+      symbol
+      name
+      description
+      social1
+      social2
+      social3
+      lockup
+      decreaseOnWithdraw
+      locked
+      closed
+      maxShares
+      totalShares
+      quoteBalance
+      baseBalance
+      depositCount
+      withdrawalCount
+      uniqueDepositors
+      createdAt
+      createdBlock
+      createdTx
+      lastUpdatedAt
+    }
+  }
+`;
+
+const MY_POSITIONS_QUERY = gql`
+  query ($acct: Bytes!) {
+    userVaultPositions(
+      first: 1000,
+      where: { account: $acct },
+      orderBy: updatedAt,
+      orderDirection: desc
+    ) {
+      vault { id }
+      shares
+      depositCount
+      withdrawCount
+      totalDepositedQuote
+      totalDepositedBase
+      totalWithdrawnQuote
+      totalWithdrawnBase
+      lastDepositAt
+      lastWithdrawAt
+      updatedAt
+    }
+  }
+`;
+
+const VAULT_DETAIL_QUERY = gql`
+  query VaultDetail($vault: Bytes!, $acct: ID!) {
+    depositors: userVaultPositions(
+      first: 1000
+      where: { vault: $vault }
+      orderBy: shares
+      orderDirection: desc
+    ) {
+      id
+      account { id }
+      shares
+      depositCount
+      withdrawCount
+      totalDepositedQuote
+      totalDepositedBase
+      totalWithdrawnQuote
+      totalWithdrawnBase
+      lastDepositAt
+      lastWithdrawAt
+      updatedAt
+    }
+
+    deposits: deposits(
+      first: 1000
+      where: { vault: $vault }
+      orderBy: timestamp
+      orderDirection: desc
+    ) {
+      id
+      account { id }
+      shares
+      amountQuote
+      amountBase
+      txHash
+      timestamp
+    }
+
+    withdrawals: withdrawals(
+      first: 1000
+      where: { vault: $vault }
+      orderBy: timestamp
+      orderDirection: desc
+    ) {
+      id
+      account { id }
+      shares
+      amountQuote
+      amountBase
+      txHash
+      timestamp
+    }
+
+    account(id: $acct) {
+      id
+      openOrderMap {
+        shards(first: 1000) {
+          batches(first: 1000) {
+            orders(first: 1000) {
+              id
+              market { id baseAsset quoteAsset }
+              isBuy
+              price
+              originalSize
+              remainingSize
+              status
+              placedAt
+              updatedAt
+              txHash
+            }
+          }
+        }
+      }
+      orderMap {
+        shards(first: 1000) {
+          batches(first: 1000) {
+            orders(first: 1000) {
+              id
+              market { id baseAsset quoteAsset }
+              isBuy
+              price
+              originalSize
+              remainingSize
+              status
+              placedAt
+              updatedAt
+              txHash
+            }
+          }
+        }
+      }
+      tradeMap {
+        shards(first: 1000) {
+          batches(first: 1000) {
+            trades(first: 1000) {
+              id
+              market { id baseAsset quoteAsset }
+              amountIn
+              amountOut
+              startPrice
+              endPrice
+              isBuy
+              timestamp
+              tx
+            }
+          }
+        }
+      }
+    }
+  }
+`;
 
 const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, className = '' }) => {
   const generateMockPerformance = (trend = 'up', volatility = 0.5): { day: number; value: number }[] => {
@@ -102,26 +285,24 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, className = '' }
   );
 };
 
-
-
 const LPVaults: React.FC<LPVaultsProps> = ({
   setpopup,
   tokendict,
-  tokenBalances,
+  // tokenBalances,
   currentRoute = '/earn/vaults',
   onRouteChange,
   connected,
   account,
   setselectedVault,
-  isVaultDepositSigning,
-  setIsVaultDepositSigning,
+  // isVaultDepositSigning,
+  // setIsVaultDepositSigning,
   sendUserOperationAsync,
   setChain,
   address,
-  refetch,
+  // refetch,
   activechain,
   crystalVaultsAddress,
-  router,
+  // router,
   formatUSDDisplay,
   calculateUSDValue,
   tradesByMarket,
@@ -129,15 +310,14 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 }) => {
   const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeVault, _setActiveVault] = useState('0x4605D665A253E5c5987E1dF2046B929E187d505C' as `0x${string}`);
+  // const [activeVault, setActiveVault] = useState('0x4605D665A253E5c5987E1dF2046B929E187d505C' as `0x${string}`);
   const [vaultList, setVaultList] = useState<any>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
   const [activeVaultTab, setActiveVaultTab] = useState<'all' | 'my-vaults'>('all');
-  const [showManagementMenu, setShowManagementMenu] = useState(false);
-
-  const [activeVaultStrategyTab, setActiveVaultStrategyTab] = useState<any>('balances');
-  const [activeVaultPerformance, setActiveVaultPerformance] = useState<any>([
+  const [showManagementMenu, setShowManagementMenu] = useState(false); 
+  const [activeVaultStrategyTab, setActiveVaultStrategyTab] = useState<'Balances' | 'Open Orders' | 'Depositors' | 'Deposit History'>('Balances');
+  const [activeVaultPerformance, _setActiveVaultPerformance] = useState<any>([
     { name: 'Jan', value: 12.4 },
     { name: 'Feb', value: 14.8 },
     { name: 'Mar', value: 18.2 },
@@ -148,61 +328,144 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   ])
   const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<'1D' | '1W' | '1M' | 'All'>('All');
   const [vaultStrategyChartType, setVaultStrategyChartType] = useState<'value' | 'pnl'>('value');
-
-  useEffect(() => {
-    setIsLoading(true);
-
-    (async () => {
-      try {
-        const [vaultDetails, vaultUserBalance] = (await readContracts(config, {
-          contracts: [
-            { abi: CrystalDataHelperAbi as any, address: settings.chainConfig[activechain].balancegetter, functionName: 'getVaultsInfo', args: [crystalVaultsAddress, [activeVault]] },
-            ...(address ? [{
-              abi: TokenAbi,
-              address: activeVault,
-              functionName: 'balanceOf',
-              args: [address as `0x${string}`],
-            }] : [])],
-        })) as any[];
-        if (vaultDetails?.status === "success") {
-          const vaultMetaData = vaultDetails.result[0].metadata;
-          const vaultDict = {
-            address: activeVault,
-            quoteAsset: vaultDetails.result[0].quoteAsset,
-            baseAsset: vaultDetails.result[0].baseAsset,
-            owner: vaultDetails.result[0].owner,
-            totalShares: vaultDetails.result[0].totalShares,
-            maxShares: vaultDetails.result[0].maxShares,
-            lockup: vaultDetails.result[0].lockup,
-            locked: vaultDetails.result[0].locked,
-            closed: vaultDetails.result[0].closed,
-            name: vaultMetaData.name,
-            desc: vaultMetaData.description,
-            social1: vaultMetaData.social1,
-            social2: vaultMetaData.social2,
-            social3: vaultMetaData.social3,
-            type: 'Spot',
-            quoteDecimals: vaultDetails.result[0].quoteDecimals,
-            baseDecimals: vaultDetails.result[0].baseDecimals,
-            quoteBalance: vaultDetails.result[0].quoteBalance,
-            baseBalance: vaultDetails.result[0].baseBalance,
-            userShares: 0n,
-          }
-          if (address) {
-            vaultDict.userShares = vaultUserBalance.result
-          }
-          setVaultList([vaultDict]);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, [activeVault, address]);
+  const [depositors, setDepositors] = useState<any[]>([]);
+  const [depositHistory, setDepositHistory] = useState<any[]>([]);;
+  const [openOrders, setOpenOrders] = useState<any[]>([]);
+  const [_allOrders, setAllOrders] = useState<any[]>([]);
 
   const vaultStrategyIndicatorRef = useRef<HTMLDivElement>(null);
   const vaultStrategyTabsRef = useRef<(HTMLDivElement | null)[]>([]);
+
+  const explorer = settings.chainConfig[activechain]?.explorer ?? '';
+  const subgraphEndpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
+
+  const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
+    const typeMatch = vaultFilter === 'All' || vault.type === vaultFilter;
+    const myVaultsMatch = activeVaultTab === 'all' ||
+      (activeVaultTab === 'my-vaults' && address && vault.owner.toLowerCase() === address.toLowerCase());
+    const searchMatch = searchQuery === '' ||
+      vault.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      vault.owner.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return typeMatch && myVaultsMatch && searchMatch;
+  });
+
+  const selectedVault = selectedVaultStrategy ?
+    filteredVaultStrategies.find((vault: any) => vault.address === selectedVaultStrategy) : null;
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setIsLoading(true);
+      try {
+        const dataVaults = await fetchSubgraph(subgraphEndpoint, VAULTS_QUERY);
+        const rawVaults = (dataVaults?.vaults ?? []) as any[];
+
+        let userSharesMap: Record<string, bigint> = {};
+        if (address) {
+          const dataPos = await fetchSubgraph(subgraphEndpoint, MY_POSITIONS_QUERY, { acct: address.toLowerCase() });
+          const pos = (dataPos?.userVaultPositions ?? []) as any[];
+          userSharesMap = pos.reduce((m: Record<string, bigint>, p: any) => {
+            m[p.vault.id] = toBigIntSafe(p.shares);
+            return m;
+          }, {});
+        }
+
+        const mapped = rawVaults.map((v: any) => {
+          const quoteAsset = getAddress(v.quoteAsset?.id?.toLowerCase?.() ?? v.quoteAsset?.id ?? v.quoteAsset);
+          const baseAsset = getAddress(v.baseAsset?.id?.toLowerCase?.() ?? v.baseAsset?.id ?? v.baseAsset);
+          const quoteTicker = v.quoteAsset.symbol;
+          const baseTicker = v.baseAsset.symbol;
+
+          const quoteDecimals = Number(v.quoteAsset?.decimals ?? tokendict[quoteAsset]?.decimals ?? 18);
+          const baseDecimals = Number(v.baseAsset?.decimals ?? tokendict[baseAsset]?.decimals ?? 18);
+
+          return {
+            id: v.id,
+            address: v.id,
+            owner: (v.owner ?? '').toLowerCase(),
+            quoteAsset,
+            baseAsset,
+            quoteDecimals,
+            baseDecimals,
+            quoteTicker,
+            baseTicker,
+            totalShares: toBigIntSafe(v.totalShares),
+            maxShares: toBigIntSafe(v.maxShares),
+            quoteBalance: toBigIntSafe(v.quoteBalance),
+            baseBalance: toBigIntSafe(v.baseBalance),
+            lockup: Number(v.lockup ?? 0),
+            locked: Boolean(v.locked),
+            closed: Boolean(v.closed),
+            name: v.name || (v.symbol ? `${v.symbol} Vault` : 'Vault'),
+            desc: v.description ?? '',
+            social1: v.social1 ?? '',
+            social2: v.social2 ?? '',
+            social3: v.social3 ?? '',
+            type: 'Spot',
+            userShares: userSharesMap[v.id] ?? 0n,
+            decreaseOnWithdraw: Boolean(v.decreaseOnWithdraw),
+          };
+        });
+
+        if (!cancelled) setVaultList(mapped);
+      } catch (err) {
+        console.error('subgraph fetch failed:', err);
+        if (!cancelled) setVaultList([]);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [address, activechain, subgraphEndpoint, tokendict]);
+
+  const flattenMap = (mapObj: any, key: "orders" | "trades") =>
+    (mapObj?.shards ?? [])
+      .flatMap((s: any) => s?.batches ?? [])
+      .flatMap((b: any) => b?.[key] ?? []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      if (!selectedVault) {
+        setDepositors([]);
+        setDepositHistory([]);
+        setOpenOrders([]);
+        setAllOrders([]);
+        return;
+      }
+
+      try {
+        const variables = {
+          vault: selectedVault.address.toLowerCase(),
+          acct: selectedVault.address.toLowerCase(),
+        };
+
+        const data = await fetchSubgraph(subgraphEndpoint, VAULT_DETAIL_QUERY, variables);
+        if (cancelled) return;
+
+        const acct = data?.account ?? null;
+        const _openOrders = flattenMap(acct?.openOrderMap, "orders") || [];
+        const _allOrders = flattenMap(acct?.orderMap, "orders") || [];
+
+        setDepositors(data?.depositors ?? []);
+        setDepositHistory(data?.deposits ?? []);
+        setOpenOrders(_openOrders);
+        setAllOrders(_allOrders);
+      } catch (e) {
+        console.error("vault detail fetch failed:", e);
+        if (cancelled) return;
+        setDepositors([]);
+        setDepositHistory([]);
+        setOpenOrders([]);
+        setAllOrders([]);
+      }
+    };
+
+    run();
+    return () => { cancelled = true; };
+  }, [selectedVault, subgraphEndpoint]);
 
   const getTokenIcon = (tokenIdentifier: string) => {
     return tokendict[tokenIdentifier]?.image
@@ -225,10 +488,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     const [integerPart, decimalPart] = fixedAmount.split('.');
     const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     return `${formattedInteger}.${decimalPart}`;
-  };
-
-  const getTokenBalance = (tokenAddress: string): bigint => {
-    return tokenBalances[tokenAddress] || 0n;
   };
 
   const calculateTVL = (vault: any) => {
@@ -261,20 +520,9 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     return vault.totalShares ? calculateTVL(vault) * Number(vault.userShares) / Number(vault.totalShares) : 0;
   };
 
-  const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
-    const typeMatch = vaultFilter === 'All' || vault.type === vaultFilter;
-    const myVaultsMatch = activeVaultTab === 'all' ||
-      (activeVaultTab === 'my-vaults' && address && vault.owner.toLowerCase() === address.toLowerCase());
-    const searchMatch = searchQuery === '' ||
-      vault.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      vault.owner.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return typeMatch && myVaultsMatch && searchMatch;
-  });
-
   const showVaultStrategyDetail = (vaultAddress: string) => {
     setSelectedVaultStrategy(vaultAddress);
-    setActiveVaultStrategyTab('balances');
+    setActiveVaultStrategyTab('Balances');
     onRouteChange?.(`/earn/vaults/${vaultAddress}`);
   };
 
@@ -283,9 +531,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     setShowManagementMenu(false);
     onRouteChange?.('/earn/vaults');
   };
-
-  const selectedVault = selectedVaultStrategy ?
-    filteredVaultStrategies.find((vault: any) => vault.address === selectedVaultStrategy) : null;
 
   const handleVaultManagement = async (action: string) => {
     setShowManagementMenu(false);
@@ -333,7 +578,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         break;
     }
 
-    const deployOp = await sendUserOperationAsync({ uo: deployUo });
+    await sendUserOperationAsync({ uo: deployUo });
   };
   const [showTimeRangeDropdown, setShowTimeRangeDropdown] = useState(false);
 
@@ -342,7 +587,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       return;
     }
 
-    const availableTabs = ['balances', 'open Orders', 'depositors', 'deposit History'];
+    const availableTabs = ['Balances', 'Open Orders', 'Depositors', 'Deposit History'];
     const activeTabIndex = availableTabs.findIndex(tab => tab === activeTab);
 
     if (activeTabIndex !== -1) {
@@ -393,7 +638,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         const vault = filteredVaultStrategies.find((v: any) => v.address === vaultAddress);
         if (vault && selectedVaultStrategy !== vault.address) {
           setSelectedVaultStrategy(vault.address);
-          setActiveVaultStrategyTab('balances');
+          setActiveVaultStrategyTab('Balances');
         }
       } else {
         setSelectedVaultStrategy(null);
@@ -413,7 +658,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   if (!account.connected) {
                     setpopup(4);
                   } else {
-                    setpopup(29); 
+                    setpopup(29);
                   }
                 }}
                 disabled={!account.connected}
@@ -668,10 +913,10 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   <div className="vault-strategy-name">{selectedVault.name}</div>
                   <div className="vault-strategy-contract">
                     <span className="contract-label">Vault Address:</span>
-                    <span className="contract-address">{selectedVault.address}</span>
+                    <span className="contract-address">{getAddress(selectedVault.address)}</span>
                     <a className="copy-address-btn" href={`${explorer}/address/${selectedVault.address}`}
-                          target="_blank"
-                          rel="noopener noreferrer">
+                      target="_blank"
+                      rel="noopener noreferrer">
                       <ExternalLink size={14} />
                     </a>
                   </div>
@@ -707,7 +952,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                 <div className="vault-strategy-description">
                   <div className="description-header">
                     <span className="leader-label">Vault Leader</span>
-                    <span className="leader-address">{selectedVault.owner.slice(0, 6)}...{selectedVault.owner.slice(-4)}</span>
+                    <span className="leader-address">{getAddress(selectedVault.owner).slice(0, 6)}...{getAddress(selectedVault.owner).slice(-4)}</span>
                   </div>
                   <span className="vault-description">Description</span>
                   <p className="description-text">{selectedVault.desc}</p>
@@ -860,7 +1105,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
               <div className="vault-strategy-tabs">
                 <div className="vault-strategy-tabs-container">
                   <div className="vault-strategy-types-rectangle">
-                    {(['balances', 'open Orders', 'depositors', 'deposit History'] as const).map((tab, index) => (
+                    {(['Balances', 'Open Orders', 'Depositors', 'Deposit History'] as const).map((tab, index) => (
                       <div
                         key={tab}
                         ref={(el) => (vaultStrategyTabsRef.current[index] = el)}
@@ -874,7 +1119,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   <div ref={vaultStrategyIndicatorRef} className="vault-strategy-sliding-indicator" />
                 </div>
                 <div className="vault-tab-content">
-                  {activeVaultStrategyTab === 'balances' && (
+                  {activeVaultStrategyTab === 'Balances' && (
                     <div className="balances-tab">
                       <div className="vault-holdings">
                         <div className="vault-holdings-table">
@@ -908,9 +1153,151 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                     </div>
                   )}
 
-                  {(activeVaultStrategyTab === 'open Orders' || activeVaultStrategyTab === 'depositors' || activeVaultStrategyTab === 'deposit History') && (
-                    <div className="vault-data-tab">
-                      <p>No data available for {activeVaultStrategyTab}.</p>
+                  {activeVaultStrategyTab === 'Depositors' && (
+                    <div className="balances-tab">
+                      <div className="vault-depositors">
+                        {depositors.length === 0 ? (
+                          <p>No depositors yet.</p>
+                        ) : (
+                          <div className="vault-depositors-table">
+                            <div className="vault-depositors-header">
+                              <div className="vault-depositors-col-header">Account</div>
+                              <div className="vault-depositors-col-header">Shares</div>
+                              <div className="vault-depositors-col-header">Deposits</div>
+                              <div className="vault-depositors-col-header">Withdrawals</div>
+                              <div className="vault-depositors-col-header">Last Deposit</div>
+                              <div className="vault-depositors-col-header">Last Withdraw</div>
+                            </div>
+                            {depositors.map((d) => (
+                              <div key={d.id} className="vault-depositors-row">
+                                <div className="vault-depositors-col">
+                                  {d.account?.id ? `${getAddress(d.account.id).slice(0, 6)}...${getAddress(d.account.id).slice(-4)}` : ''}
+                                </div>
+                                <div className="vault-depositors-col">{String(d.shares)}</div>
+                                <div className="vault-depositors-col">{d.depositCount}</div>
+                                <div className="vault-depositors-col">{d.withdrawCount}</div>
+                                <div className="vault-depositors-col">
+                                  {(() => {
+                                    const ts = d.lastDepositAt == null ? null : Number(d.lastDepositAt);
+                                    if (!ts) return 'N/A';
+                                    const dt = new Date(ts * 1000);
+                                    const pad = (n: number) => n.toString().padStart(2, '0');
+                                    return `${pad(dt.getMonth() + 1)}/${pad(dt.getDate())}, ${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+                                  })()}
+                                </div>
+
+                                <div className="vault-depositors-col">
+                                  {(() => {
+                                    const ts = d.lastWithdrawAt == null ? null : Number(d.lastWithdrawAt);
+                                    if (!ts) return 'N/A';
+                                    const dt = new Date(ts * 1000);
+                                    const pad = (n: number) => n.toString().padStart(2, '0');
+                                    return `${pad(dt.getMonth() + 1)}/${pad(dt.getDate())}, ${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+                                  })()}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeVaultStrategyTab === 'Deposit History' && (
+                    <div className="balances-tab">
+                      <div className="vault-dh">
+                        {depositHistory.length === 0 ? (
+                          <p>No deposits yet.</p>
+                        ) : (
+                          <div className="vault-dh-table">
+                            <div className="vault-dh-header">
+                              <div className="vault-dh-col-header">Time</div>
+                              <div className="vault-dh-col-header">Account</div>
+                              <div className="vault-dh-col-header">Shares</div>
+                              <div className="vault-dh-col-header">Quote</div>
+                              <div className="vault-dh-col-header">Base</div>
+                              <div className="vault-dh-col-header">Tx</div>
+                            </div>
+                            {depositHistory.map((e) => (
+                              <div key={e.id} className="vault-dh-row">
+                                <div className="vault-depositors-col">
+                                  {(() => {
+                                    const ts = e.timestamp == null ? null : Number(e.timestamp);
+                                    if (!ts) return 'N/A';
+                                    const dt = new Date(ts * 1000);
+                                    const pad = (n: number) => n.toString().padStart(2, '0');
+                                    return `${pad(dt.getMonth() + 1)}/${pad(dt.getDate())}, ${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+                                  })()}
+                                </div>
+                                <div className="vault-dh-col">{e.account?.id ? `${getAddress(e.account.id).slice(0, 6)}...${getAddress(e.account.id).slice(-4)}` : ''}</div>
+                                <div className="vault-dh-col">{String(e.shares)}</div>
+                                <div className="vault-dh-col">{String(e.amountQuote / 10 ** selectedVault.quoteDecimals)} {selectedVault.quoteTicker}</div>
+                                <div className="vault-dh-col">{String(e.amountBase / 10 ** selectedVault.baseDecimals)} {selectedVault.baseTicker}</div>
+                                <div className="vault-dh-col">
+                                  <a
+                                    href={`${explorer}/tx/${e.txHash}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    <svg
+                                      className="txn-link"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="13"
+                                      height="13"
+                                      viewBox="0 0 24 24"
+                                      fill="currentColor"
+                                      onMouseEnter={(e) => (e.currentTarget.style.color = '#73758b')}
+                                      onMouseLeave={(e) => (e.currentTarget.style.color = '#b7bad8')}
+                                    >
+                                      <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                                      <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                                    </svg>
+                                  </a>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeVaultStrategyTab === 'Open Orders' && (
+                    <div className="balances-tab">
+                      <div className="vault-holdings">
+                        {openOrders.length === 0 ? (
+                          <p>No open orders.</p>
+                        ) : (
+                          <div className="vault-holdings-table">
+                            <div className="vault-holdings-header">
+                              <div className="vault-holdings-col-header">ID</div>
+                              <div className="vault-holdings-col-header">Market</div>
+                              <div className="vault-holdings-col-header">Side</div>
+                              <div className="vault-holdings-col-header">Price</div>
+                              <div className="vault-holdings-col-header">Original</div>
+                              <div className="vault-holdings-col-header">Remaining</div>
+                              <div className="vault-holdings-col-header">Status</div>
+                              <div className="vault-holdings-col-header">Placed</div>
+                              <div className="vault-holdings-col-header">Tx</div>
+                            </div>
+                            {openOrders.map((o) => (
+                              <div key={o.id} className="vault-holdings-row">
+                                <div className="vault-holdings-col">{o.id.split(':').slice(-1)[0]}</div>
+                                <div className="vault-holdings-col">{o.market?.id}</div>
+                                <div className="vault-holdings-col">{o.isBuy ? 'BUY' : 'SELL'}</div>
+                                <div className="vault-holdings-col">{o.price}</div>
+                                <div className="vault-holdings-col">{o.originalSize}</div>
+                                <div className="vault-holdings-col">{o.remainingSize}</div>
+                                <div className="vault-holdings-col">{String(o.status)}</div>
+                                <div className="vault-holdings-col">{o.placedAt ?? o.updatedAt}</div>
+                                <div className="vault-holdings-col">
+                                  <a href={`${explorer}/tx/${o.txHash}`} target="_blank" rel="noreferrer">view</a>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
