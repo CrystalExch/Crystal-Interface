@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+
 import LP from '../LP/LP';
 import LPVaults from '../LPVaults/LPVaults';
+
 import './Earn.css';
 
 interface EarnProps {
@@ -109,23 +111,18 @@ const Earn: React.FC<EarnProps> = (props) => {
             onSelectToken={props.onSelectToken}
             setOnSelectTokenCallback={props.setOnSelectTokenCallback}
             tokendict={props.tokendict}
-            tokenBalances={props.tokenBalances}
             currentRoute={location.pathname}
             onRouteChange={handleRouteChange}
             connected={props.connected}
             account={props.account}
             setselectedVault={props.setselectedVault}
-            isVaultDepositSigning={props.isVaultDepositSigning}
-            setIsVaultDepositSigning={props.setIsVaultDepositSigning}
             isVaultWithdrawSigning={props.isVaultWithdrawSigning}
             setIsVaultWithdrawSigning={props.setIsVaultWithdrawSigning}
             sendUserOperationAsync={props.sendUserOperationAsync}
             setChain={props.setChain}
             address={props.address}
-            refetch={props.refetch}
             activechain={props.activechain}
             crystalVaultsAddress={props.crystalVaultsAddress}
-            router={props.router}
             formatUSDDisplay={props.formatUSDDisplay}
             calculateUSDValue={props.calculateUSDValue}
             tradesByMarket={props.tradesByMarket}

@@ -302,6 +302,7 @@
 }
 
 .meme-trade-volume-bar {
+  animation: barSlideIn 0.4s ease-out;
   height: 100%;
   left: 0;
   pointer-events: none;
@@ -309,7 +310,6 @@
   top: 0;
   transition: width 0.3s ease;
   z-index: 1;
-  animation: barSlideIn 0.4s ease-out;
 }
 
 .meme-trade-volume-bar.positive {
@@ -384,12 +384,12 @@
   align-items: center;
   display: flex;
 }
+
 .meme-trade-filter-btn.active .filter-cup,
 .meme-trade-filter-btn:hover .filter-cup {
   filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%);
   opacity: 1;
 }
-
 
 .filter-cup {
   cursor: pointer;
@@ -417,12 +417,11 @@
   position: relative;
 }
 
-
 .skeleton-amount {
   background: rgba(189, 189, 235, 0.08);
   border-radius: 2px;
   height: 15px;
-  margin-right:10px;
+  margin-right: 10px;
   position: relative;
   width: 75px;
   z-index: 2;
@@ -439,7 +438,7 @@
 
 .skeleton-trader {
   background: rgba(189, 189, 235, 0.08);
-  border-radius:2px;
+  border-radius: 2px;
   height: 15px;
   width: 50px;
 }
@@ -453,9 +452,11 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.6;
   }
+
   50% {
     opacity: 1;
   }
@@ -484,9 +485,7 @@
   transition: all 0.2s ease;
 }
 
-
-
-.trades-filters-popup-overlay{
+.trades-filters-popup-overlay {
   align-items: center;
   background: rgba(0, 0, 0, 0.6);
   bottom: 0;
@@ -499,34 +498,33 @@
   z-index: 100;
 }
 
-.trades-filters-popup{
-  background-color: rgb(9,9,9);
-    border:1px solid rgba(179, 184, 249, 0.15);
-    border-radius: 6px;
+.trades-filters-popup {
+  background-color: rgb(9, 9, 9);
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 6px;
   height: 240px;
   margin: 0 auto;
   overflow: hidden;
   position: fixed;
   -webkit-user-select: none;
-     -moz-user-select: none;
-          user-select: none;
+  -moz-user-select: none;
+  user-select: none;
   width: 400px;
   z-index: 100;
-
 }
 
-.trades-filter-group{
+.trades-filter-group {
   display: flex;
   gap: 15px;
   margin-top: 15px;
   width: 100%;
 }
 
-.trades-filters-content{
+.trades-filters-content {
   padding: 16px
 }
 
-.trades-reset-button{
+.trades-reset-button {
   align-self: center;
   display: flex;
   font-size: 0.8rem;
@@ -535,19 +533,19 @@
 }
 
 
-.trades-reset-icon{
+.trades-reset-icon {
   height: 18px;
   margin-top: 1px;
   opacity: 0.7;
   width: 18px;
 }
 
-.trades-filter-active-dot{
+.trades-filter-active-dot {
   background: #aaaecf;
   border: 2px solid rgb(6, 6, 6);
   border-radius: 50%;
   height: 10px;
-    position: absolute;
+  position: absolute;
   right: 6px;
   top: 5px;
   width: 10px;

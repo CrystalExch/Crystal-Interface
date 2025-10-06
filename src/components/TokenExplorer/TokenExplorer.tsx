@@ -2225,7 +2225,7 @@ const TokenRow = React.memo<{
     displaySettings,
     isHidden,
     monUsdPrice,
-    blacklistSettings,
+    // blacklistSettings,
     formatTimeAgo,
   } = props;
   const imageContainerRef = useRef<HTMLDivElement>(null);
@@ -3072,7 +3072,7 @@ const TokenRow = React.memo<{
 
 const TokenExplorer: React.FC<TokenExplorerProps> = ({
   appliedFilters,
-  activeFilterTab,
+  // activeFilterTab,
   onOpenFiltersForColumn,
   sendUserOperationAsync,
   setTerminalToken,
@@ -3084,13 +3084,13 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   walletTokenBalances = {},
   activeWalletPrivateKey,
   setOneCTSigner,
-  refetch,
+  // refetch,
   tokenList = [],
   activechain,
-  logout,
-  lastRefGroupFetch,
-  lastNonceGroupFetch,
-  currentWalletIcon,
+  // logout,
+  // lastRefGroupFetch,
+  // lastNonceGroupFetch,
+  // currentWalletIcon,
   isBlurred = false,
   account,
 }) => {
@@ -3251,40 +3251,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     setSelectedWallets(new Set(walletsWithBalance.map(w => w.address)));
   }, [subWallets]);
 
-  const handleSetActiveWallet = (privateKey: string) => {
-    if (!isWalletActive(privateKey)) {
-      localStorage.setItem('crystal_active_wallet_private_key', privateKey);
-      setOneCTSigner(privateKey);
-      lastRefGroupFetch.current = 0;
-      lastNonceGroupFetch.current = 0;
-      setTimeout(() => refetch(), 0);
-      if (terminalRefetch) {
-        setTimeout(() => terminalRefetch(), 0);
-      }
-    }
-  };
-
-  const handleLogout = () => {
-    if (setOneCTSigner) {
-      setOneCTSigner('');
-      localStorage.removeItem('crystal_active_wallet_private_key');
-    }
-    if (logout) {
-      logout();
-    }
-    setIsWalletDropdownOpen(false);
-  };
-
-  const handleOpenPortfolio = () => {
-    if (setpopup) setpopup(4);
-    setIsWalletDropdownOpen(false);
-  };
-
-  const getCurrentWalletInfo = () => {
-    if (!activeWalletPrivateKey) return null;
-    return subWallets.find(w => w.privateKey === activeWalletPrivateKey);
-  };
-
   const handleWalletButtonClick = () => {
     if (!account.connected) {
       if (setpopup) setpopup(4);
@@ -3302,8 +3268,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     return num.toFixed(Math.min(decimals, 8));
   };
 
-  const currentWallet = getCurrentWalletInfo();
-  const displayAddress = currentWallet ? currentWallet.address : account.address;
   const selectedSet = useMemo(() => new Set<string>(), []);
 
   const totalSelectedBalance = useMemo(() => {
@@ -3668,7 +3632,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     [pausedColumn],
   );
 
-  const handleColumnHover = useCallback((columnType: Token['status']) => {
+  const handleColumnHover = useCallback((_columnType: Token['status']) => {
     if (pauseTimeoutRef.current) {
       clearTimeout(pauseTimeoutRef.current);
       pauseTimeoutRef.current = null;
@@ -3798,7 +3762,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   );
 
   const handleConnectionError = useCallback(
-    (errorType: string) => {
+    (_errorType: string) => {
       connectionStateRef.current = 'disconnected';
       consecutiveFailuresRef.current += 1;
       retryCountRef.current += 1;

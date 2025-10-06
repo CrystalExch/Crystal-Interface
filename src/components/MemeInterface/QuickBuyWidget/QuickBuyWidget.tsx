@@ -7,44 +7,27 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { encodeFunctionData } from 'viem';
-import { CrystalRouterAbi } from '../../../abis/CrystalRouterAbi';
-import { CrystalLaunchpadToken } from '../../../abis/CrystalLaunchpadToken';
 
-import closebutton from '../../../assets/close_button.png';
-import editicon from '../../../assets/edit.svg';
-import gas from '../../../assets/gas.svg';
-import monadicon from '../../../assets/monadlogo.svg';
-import slippage from '../../../assets/slippage.svg';
-import merge from '../../../assets/merge.png';
-import circle from '../../../assets/circle_handle.png'
-import switchicon from '../../../assets/switch.svg';
-import walleticon from '../../../assets/wallet_icon.png';
-import { settings } from '../../../settings';
 import {
   showLoadingPopup,
   updatePopup,
 } from '../../MemeTransactionPopup/MemeTransactionPopupManager';
-import './QuickBuyWidget.css';
 
-interface PendingTransaction {
-  id: string;
-  type: 'buy' | 'sell';
-  amount: string;
-  timestamp: number;
-  status: 'pending' | 'confirming' | 'complete' | 'error';
-}
-const ERC20_ABI = [
-  {
-    type: 'function',
-    name: 'transfer',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'to', type: 'address' },
-      { name: 'amount', type: 'uint256' }
-    ],
-    outputs: [{ type: 'bool' }]
-  }
-] as const;
+import { CrystalLaunchpadToken } from '../../../abis/CrystalLaunchpadToken';
+import { CrystalRouterAbi } from '../../../abis/CrystalRouterAbi';
+
+import circle from '../../../assets/circle_handle.png';
+import closebutton from '../../../assets/close_button.png';
+import editicon from '../../../assets/edit.svg';
+import gas from '../../../assets/gas.svg';
+import merge from '../../../assets/merge.png';
+import monadicon from '../../../assets/monadlogo.svg';
+import slippage from '../../../assets/slippage.svg';
+import switchicon from '../../../assets/switch.svg';
+import walleticon from '../../../assets/wallet_icon.png';
+import { settings } from '../../../settings';
+
+import './QuickBuyWidget.css';
 
 interface UserStats {
   balance: number;
@@ -54,6 +37,7 @@ interface UserStats {
   valueSold: number;
   valueNet: number;
 }
+
 interface QuickBuyWidgetProps {
   isOpen: boolean;
   onClose: () => void;
@@ -86,6 +70,7 @@ interface QuickBuyWidgetProps {
   tokenImage?: string;
   nonces: any;
 }
+
 const Tooltip: React.FC<{
   content: string;
   children: React.ReactNode;
@@ -216,12 +201,13 @@ const Tooltip: React.FC<{
               position: 'absolute',
               top: `${tooltipPosition.top - 20}px`,
               left: `${tooltipPosition.left}px`,
-              transform: `${position === 'top' || position === 'bottom'
-                ? 'translateX(-50%)'
-                : position === 'left' || position === 'right'
-                  ? 'translateY(-50%)'
-                  : 'none'
-                } scale(${isVisible ? 1 : 0})`,
+              transform: `${
+                position === 'top' || position === 'bottom'
+                  ? 'translateX(-50%)'
+                  : position === 'left' || position === 'right'
+                    ? 'translateY(-50%)'
+                    : 'none'
+              } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
               pointerEvents: 'none',
@@ -237,6 +223,7 @@ const Tooltip: React.FC<{
     </div>
   );
 };
+
 const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   isOpen,
   onClose,
@@ -272,7 +259,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   showUSD = false,
   onToggleCurrency,
   tokenImage,
-  nonces
+  nonces,
 }) => {
   const [position, setPosition] = useState(() => {
     try {
@@ -302,9 +289,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [tempValue, setTempValue] = useState('');
-  const [pendingTransactions, setPendingTransactions] = useState<
-    PendingTransaction[]
-  >([]);
   const [quickBuyPreset, setQuickBuyPreset] = useState(() => {
     try {
       const saved = localStorage.getItem('crystal_quickbuy_settings');
@@ -408,7 +392,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     out[out.length - 1] = out[out.length - 1] + rem;
     return out;
   };
-  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
+  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(
+    new Set(),
+  );
   const [isConsolidating, setIsConsolidating] = useState(false);
   const [isSplitting, setIsSplitting] = useState(false);
 
@@ -419,12 +405,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     walletTokenBalances?.[account?.address || '']?.[tokenAddress || ''] ?? 0n;
   const currentSellValues =
     sellMode === 'percent' ? sellPercents : sellMONAmounts;
-  const pendingBuyCount = pendingTransactions.filter(
-    (tx) => tx.type === 'buy',
-  ).length;
-  const pendingSellCount = pendingTransactions.filter(
-    (tx) => tx.type === 'sell',
-  ).length;
 
   const walletsPosition = useMemo(() => {
     const walletsPanelWidth = 320;
@@ -628,7 +608,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   };
 
   const toggleWalletSelection = (address: string) => {
-    setSelectedWallets(prev => {
+    setSelectedWallets((prev) => {
       const next = new Set(prev);
       next.has(address) ? next.delete(address) : next.add(address);
       return next;
@@ -636,10 +616,10 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   };
 
   const selectAllWithBalance = () => {
-    const walletsWithBalance = subWallets.filter(wallet =>
-      getWalletBalance(wallet.address) > 0
+    const walletsWithBalance = subWallets.filter(
+      (wallet) => getWalletBalance(wallet.address) > 0,
     );
-    setSelectedWallets(new Set(walletsWithBalance.map(w => w.address)));
+    setSelectedWallets(new Set(walletsWithBalance.map((w) => w.address)));
   };
 
   const handleConsolidateTokens = async () => {
@@ -649,14 +629,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       const txId = `consolidate-error-${Date.now()}`;
       showLoadingPopup?.(txId, {
         title: 'Select one destination wallet',
-        subtitle: 'Check exactly one wallet to receive all tokens'
+        subtitle: 'Check exactly one wallet to receive all tokens',
       });
       setTimeout(() => {
         updatePopup?.(txId, {
           title: 'Select one destination wallet',
           subtitle: 'Check exactly one wallet to receive all tokens',
           variant: 'error',
-          isLoading: false
+          isLoading: false,
         });
       }, 100);
       return;
@@ -667,22 +647,20 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const sourceWallets = subWallets
       .map((w) => w.address)
       .filter((addr) => addr !== destinationAddr)
-      .filter(
-        (addr) => (walletTokenBalances[addr]?.[tokenAddress] ?? 0n) > 0n
-      );
+      .filter((addr) => (walletTokenBalances[addr]?.[tokenAddress] ?? 0n) > 0n);
 
     if (sourceWallets.length === 0) {
       const txId = `consolidate-error-${Date.now()}`;
       showLoadingPopup?.(txId, {
         title: 'Nothing to consolidate',
-        subtitle: `No other wallets hold ${tokenSymbol}`
+        subtitle: `No other wallets hold ${tokenSymbol}`,
       });
       setTimeout(() => {
         updatePopup?.(txId, {
           title: 'Nothing to consolidate',
           subtitle: `No other wallets hold ${tokenSymbol}`,
           variant: 'error',
-          isLoading: false
+          isLoading: false,
         });
       }, 100);
       return;
@@ -693,7 +671,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     showLoadingPopup?.(txId, {
       title: 'Consolidating Tokens',
       subtitle: `Sending ${tokenSymbol} from ${sourceWallets.length} wallets to selected wallet`,
-      tokenImage
+      tokenImage,
     });
 
     try {
@@ -715,33 +693,47 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             }),
             value: 0n,
           };
-          const wallet = nonces.current.get(sourceAddr)
-          const params = [{ uo }, 0n, 0n, false, sourceWallet.privateKey, wallet?.nonce];
-          if (wallet) wallet.nonce += 1
+          const wallet = nonces.current.get(sourceAddr);
+          const params = [
+            { uo },
+            0n,
+            0n,
+            false,
+            sourceWallet.privateKey,
+            wallet?.nonce,
+          ];
+          if (wallet) wallet.nonce += 1;
           wallet?.pendingtxs.push(params);
           const transferPromise = sendUserOperationAsync(...params)
             .then(() => {
-              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p !== params,
+                );
               return true;
-            }).catch(() => {
-              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-              return false
             })
+            .catch(() => {
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p !== params,
+                );
+              return false;
+            });
           transferPromises.push(transferPromise);
         } catch (err) {
           console.error(`Failed to consolidate from ${sourceAddr}:`, err);
         }
       }
       const results = await Promise.allSettled(transferPromises);
-      const successfulTransfers = results.filter(result =>
-        result.status === 'fulfilled' && result.value === true
+      const successfulTransfers = results.filter(
+        (result) => result.status === 'fulfilled' && result.value === true,
       ).length;
-      terminalRefetch()
+      terminalRefetch();
       updatePopup?.(txId, {
         title: 'Consolidation Complete',
         subtitle: `Consolidated ${tokenSymbol} from ${successfulTransfers}/${sourceWallets.length} wallets`,
         variant: 'success',
-        isLoading: false
+        isLoading: false,
       });
 
       setSelectedWallets(new Set([destinationAddr]));
@@ -750,7 +742,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         title: 'Consolidation Failed',
         subtitle: error?.message || 'Failed to consolidate tokens',
         variant: 'error',
-        isLoading: false
+        isLoading: false,
       });
     } finally {
       setIsConsolidating(false);
@@ -759,7 +751,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
   const selectAllWallets = () => {
     const walletsWithToken = subWallets.filter(
-      (w) => getWalletTokenBalance(w.address) > 0
+      (w) => getWalletTokenBalance(w.address) > 0,
     );
 
     if (walletsWithToken.length > 0) {
@@ -773,17 +765,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     setSelectedWallets(new Set());
   };
 
-  const selectAllWalletsWithoutToken = () => {
-    const walletsWithoutToken = subWallets.filter(w => getWalletTokenBalance(w.address) === 0);
-    setSelectedWallets(new Set(walletsWithoutToken.map(w => w.address)));
-  };
-
   const selectAllWithBalanceWithoutToken = () => {
-    const walletsWithoutToken = subWallets.filter(w => getWalletTokenBalance(w.address) === 0);
-    const walletsWithBalance = walletsWithoutToken.filter(wallet =>
-      getWalletBalance(wallet.address) > 0
+    const walletsWithoutToken = subWallets.filter(
+      (w) => getWalletTokenBalance(w.address) === 0,
     );
-    setSelectedWallets(new Set(walletsWithBalance.map(w => w.address)));
+    const walletsWithBalance = walletsWithoutToken.filter(
+      (wallet) => getWalletBalance(wallet.address) > 0,
+    );
+    setSelectedWallets(new Set(walletsWithBalance.map((w) => w.address)));
   };
 
   const handleSplitTokens = async () => {
@@ -793,13 +782,13 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
     // find a wallet that actually has tokens (the "main source")
     const sourceAddr = selected.find(
-      addr => (walletTokenBalances[addr]?.[tokenAddress] ?? 0n) > 0n
+      (addr) => (walletTokenBalances[addr]?.[tokenAddress] ?? 0n) > 0n,
     );
     if (!sourceAddr) {
       const txId = `split-error-${Date.now()}`;
       showLoadingPopup?.(txId, {
         title: 'No Tokens to Split',
-        subtitle: 'None of the selected wallets have tokens to split'
+        subtitle: 'None of the selected wallets have tokens to split',
       });
       setTimeout(
         () =>
@@ -807,9 +796,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             title: 'No Tokens to Split',
             subtitle: 'None of the selected wallets have tokens to split',
             variant: 'error',
-            isLoading: false
+            isLoading: false,
           }),
-        100
+        100,
       );
       return;
     }
@@ -820,7 +809,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       const txId = `split-error-${Date.now()}`;
       showLoadingPopup?.(txId, {
         title: 'Insufficient Source Balance',
-        subtitle: 'Source wallet has 0 tokens'
+        subtitle: 'Source wallet has 0 tokens',
       });
       setTimeout(
         () =>
@@ -828,9 +817,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             title: 'Insufficient Source Balance',
             subtitle: 'Source wallet has 0 tokens',
             variant: 'error',
-            isLoading: false
+            isLoading: false,
           }),
-        100
+        100,
       );
       return;
     }
@@ -839,7 +828,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       const txId = `split-error-${Date.now()}`;
       showLoadingPopup?.(txId, {
         title: 'Need More Wallets',
-        subtitle: 'Select at least 2 wallets to split tokens'
+        subtitle: 'Select at least 2 wallets to split tokens',
       });
       setTimeout(
         () =>
@@ -847,9 +836,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             title: 'Need More Wallets',
             subtitle: 'Select at least 2 wallets to split tokens',
             variant: 'error',
-            isLoading: false
+            isLoading: false,
           }),
-        100
+        100,
       );
       return;
     }
@@ -859,7 +848,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     showLoadingPopup?.(txId, {
       title: 'Splitting Tokens',
       subtitle: `Redistributing ${tokenSymbol} across ${selected.length} wallets (±20%)`,
-      tokenImage
+      tokenImage,
     });
 
     try {
@@ -901,7 +890,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         const txId2 = `split-error-${Date.now()}`;
         showLoadingPopup?.(txId2, {
           title: 'Split amounts are zero',
-          subtitle: 'Try selecting fewer wallets'
+          subtitle: 'Try selecting fewer wallets',
         });
         setTimeout(
           () =>
@@ -909,16 +898,16 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
               title: 'Split amounts are zero',
               subtitle: 'Try selecting fewer wallets',
               variant: 'error',
-              isLoading: false
+              isLoading: false,
             }),
-          100
+          100,
         );
         setIsSplitting(false);
         return;
       }
 
       // send transfers
-      const sourceWalletData = subWallets.find(w => w.address === sourceAddr);
+      const sourceWalletData = subWallets.find((w) => w.address === sourceAddr);
       if (!sourceWalletData) throw new Error('Source wallet not found');
 
       const transferPromises = [];
@@ -929,9 +918,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             data: encodeFunctionData({
               abi: CrystalLaunchpadToken,
               functionName: 'transfer',
-              args: [to as `0x${string}`, amount]
+              args: [to as `0x${string}`, amount],
             }),
-            value: 0n
+            value: 0n,
           };
 
           const wallet = nonces.current.get(sourceAddr);
@@ -941,7 +930,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             0n,
             false,
             sourceWalletData.privateKey,
-            wallet?.nonce
+            wallet?.nonce,
           ];
           if (wallet) wallet.nonce += 1;
           wallet?.pendingtxs.push(params);
@@ -949,14 +938,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             .then(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params
+                  (p: any) => p !== params,
                 );
               return true;
             })
             .catch(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params
+                  (p: any) => p !== params,
                 );
               return false;
             });
@@ -968,7 +957,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
       const results = await Promise.allSettled(transferPromises);
       const successfulTransfers = results.filter(
-        result => result.status === 'fulfilled' && result.value === true
+        (result) => result.status === 'fulfilled' && result.value === true,
       ).length;
 
       terminalRefetch();
@@ -976,7 +965,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         title: 'Split Complete',
         subtitle: `Sent ${tokenSymbol} to ${successfulTransfers}/${plan.length} wallets`,
         variant: 'success',
-        isLoading: false
+        isLoading: false,
       });
 
       setSelectedWallets(new Set());
@@ -985,7 +974,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         title: 'Split Failed',
         subtitle: error?.message || 'Failed to split tokens',
         variant: 'error',
-        isLoading: false
+        isLoading: false,
       });
     } finally {
       setIsSplitting(false);
@@ -1037,7 +1026,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     if (!balances) return 0n;
 
     const ethToken = tokenList.find(
-      t => t.address === settings.chainConfig[activechain].eth,
+      (t) => t.address === settings.chainConfig[activechain].eth,
     );
     if (!ethToken || !balances[ethToken.address]) return 0n;
 
@@ -1131,7 +1120,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       for (const { addr, amount: partWei } of plan) {
         if (partWei <= 0n) continue;
 
-        const wally = subWallets.find(w => w.address === addr);
+        const wally = subWallets.find((w) => w.address === addr);
         const pk = wally?.privateKey ?? activeWalletPrivateKey;
         if (!pk) continue;
 
@@ -1151,11 +1140,17 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         wallet?.pendingtxs.push(params);
         const transferPromise = sendUserOperationAsync(...params)
           .then(() => {
-            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params);
+            if (wallet)
+              wallet.pendingtxs = wallet.pendingtxs.filter(
+                (p: any) => p !== params,
+              );
             return true;
           })
           .catch(() => {
-            if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params);
+            if (wallet)
+              wallet.pendingtxs = wallet.pendingtxs.filter(
+                (p: any) => p !== params,
+              );
             return false;
           });
         transferPromises.push(transferPromise);
@@ -1163,7 +1158,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
       const results = await Promise.allSettled(transferPromises);
       const successfulTransfers = results.filter(
-        result => result.status === 'fulfilled' && result.value === true,
+        (result) => result.status === 'fulfilled' && result.value === true,
       ).length;
 
       terminalRefetch();
@@ -1174,7 +1169,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         variant: 'success',
         isLoading: false,
       });
-
     } catch (error: any) {
       updatePopup?.(txId, {
         title: 'Batch buy failed',
@@ -1208,7 +1202,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       return;
     }
 
-
     const txId = `quicksell-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     showLoadingPopup?.(txId, {
       title: 'Sending batch sell...',
@@ -1225,15 +1218,21 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       if (sellMode === 'percent') {
         const pct = BigInt(parseInt(value.replace('%', ''), 10));
         for (const addr of targets) {
-          const balWei: bigint = walletTokenBalances[addr]?.[tokenAddress] ?? 0n;
-          const amountWei =
-            pct >= 100n ? balWei : (balWei * pct) / 100n;
+          const balWei: bigint =
+            walletTokenBalances[addr]?.[tokenAddress] ?? 0n;
+          const amountWei = pct >= 100n ? balWei : (balWei * pct) / 100n;
 
-          if (amountWei <= 0n) { skippedZero++; continue; }
+          if (amountWei <= 0n) {
+            skippedZero++;
+            continue;
+          }
 
-          const wally = subWallets.find(w => w.address === addr);
+          const wally = subWallets.find((w) => w.address === addr);
           const pk = wally?.privateKey ?? activeWalletPrivateKey;
-          if (!pk) { skippedInsufficient++; continue; }
+          if (!pk) {
+            skippedInsufficient++;
+            continue;
+          }
 
           const uo = {
             target: routerAddress as `0x${string}`,
@@ -1245,24 +1244,36 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             value: 0n,
           };
 
-          const wallet = nonces.current.get(addr)
+          const wallet = nonces.current.get(addr);
           const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
-          if (wallet) wallet.nonce += 1
+          if (wallet) wallet.nonce += 1;
           wallet?.pendingtxs.push(params);
           const transferPromise = sendUserOperationAsync(...params)
             .then(() => {
-              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p !== params,
+                );
               return true;
-            }).catch(() => {
-              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-              return false
             })
+            .catch(() => {
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p !== params,
+                );
+              return false;
+            });
           transferPromises.push(transferPromise);
         }
       } else {
         const totalMon = parseFloat(value || '0');
         if (!isFinite(totalMon) || totalMon <= 0) {
-          updatePopup?.(txId, { title: 'Sell failed', subtitle: 'Invalid MON amount', variant: 'error', isLoading: false });
+          updatePopup?.(txId, {
+            title: 'Sell failed',
+            subtitle: 'Invalid MON amount',
+            variant: 'error',
+            isLoading: false,
+          });
           return;
         }
         const totalMonWei = BigInt(Math.round(totalMon * 1e18));
@@ -1271,9 +1282,13 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         for (let i = 0; i < targets.length; i++) {
           const addr = targets[i];
           const partMonWei = parts[i];
-          if (partMonWei <= 0n) { skippedZero++; continue; }
+          if (partMonWei <= 0n) {
+            skippedZero++;
+            continue;
+          }
 
-          const balWei: bigint = walletTokenBalances[addr]?.[tokenAddress] ?? 0n;
+          const balWei: bigint =
+            walletTokenBalances[addr]?.[tokenAddress] ?? 0n;
           let reqTokenWei = 0n;
           if (tokenPrice > 0) {
             const partMon = Number(partMonWei) / 1e18;
@@ -1281,11 +1296,17 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             reqTokenWei = BigInt(Math.floor(tokens * 1e18));
           }
           const amountWei = reqTokenWei > balWei ? balWei : reqTokenWei;
-          if (amountWei <= 0n) { skippedInsufficient++; continue; }
+          if (amountWei <= 0n) {
+            skippedInsufficient++;
+            continue;
+          }
 
-          const wally = subWallets.find(w => w.address === addr);
+          const wally = subWallets.find((w) => w.address === addr);
           const pk = wally?.privateKey ?? activeWalletPrivateKey;
-          if (!pk) { skippedInsufficient++; continue; }
+          if (!pk) {
+            skippedInsufficient++;
+            continue;
+          }
 
           const uo = {
             target: routerAddress as `0x${string}`,
@@ -1296,34 +1317,41 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             }),
             value: 0n,
           };
-          const wallet = nonces.current.get(addr)
+          const wallet = nonces.current.get(addr);
           const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
-          if (wallet) wallet.nonce += 1
+          if (wallet) wallet.nonce += 1;
           wallet?.pendingtxs.push(params);
           const transferPromise = sendUserOperationAsync(...params)
             .then(() => {
-              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p !== params,
+                );
               return true;
-            }).catch(() => {
-              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
-              return false
             })
+            .catch(() => {
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p !== params,
+                );
+              return false;
+            });
           transferPromises.push(transferPromise);
         }
       }
       const results = await Promise.allSettled(transferPromises);
-      const successfulTransfers = results.filter(result =>
-        result.status === 'fulfilled' && result.value === true
+      const successfulTransfers = results.filter(
+        (result) => result.status === 'fulfilled' && result.value === true,
       ).length;
-      terminalRefetch()
-      const sellLabel = sellMode === 'percent' ? `${value} of Position` : `${value} MON`;
+      terminalRefetch();
+      const sellLabel =
+        sellMode === 'percent' ? `${value} of Position` : `${value} MON`;
       updatePopup?.(txId, {
         title: `Sold ${sellLabel}`,
         subtitle: `Across ${successfulTransfers} wallet${successfulTransfers !== 1 ? 's' : ''}`,
         variant: 'success',
         isLoading: false,
       });
-
     } catch (error: any) {
       updatePopup?.(txId, {
         title: 'Batch sell failed',
@@ -1434,7 +1462,10 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     if (isDragging) {
       const handleMouseUp = () => {
         setIsDragging(false);
-        localStorage.setItem('crystal_quickbuy_widget_position', JSON.stringify(position));
+        localStorage.setItem(
+          'crystal_quickbuy_widget_position',
+          JSON.stringify(position),
+        );
       };
 
       document.addEventListener('mousemove', handleMouseMove);
@@ -1445,7 +1476,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-
   }, [isDragging, position, handleMouseMove]);
 
   useEffect(() => {
@@ -1552,7 +1582,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
     if (selectedWallets.size > 0) {
       const anySelectedHasTokens = Array.from(selectedWallets).some(
-        (a) => (walletTokenBalances[a]?.[tokenAddress] ?? 0n) > 0n
+        (a) => (walletTokenBalances[a]?.[tokenAddress] ?? 0n) > 0n,
       );
       return !anySelectedHasTokens;
     }
@@ -1563,7 +1593,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const requiredTokens = tokenPrice > 0 ? monAmount / tokenPrice : 0;
     return requiredTokens > Number(currentTokenBalance) / 1e18;
   };
-
 
   if (!isOpen) return null;
 
@@ -1634,7 +1663,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
             <div className="quickbuy-controls-right-side">
               {subWallets.length > 0 && (
-                <Tooltip content={`Toggle Wallets • ${selectedWallets.size} active`}>
+                <Tooltip
+                  content={`Toggle Wallets • ${selectedWallets.size} active`}
+                >
                   <button
                     className={`quickbuy-wallets-button ${isWalletsExpanded ? 'active' : ''}`}
                     onClick={() => setIsWalletsExpanded(!isWalletsExpanded)}
@@ -1645,13 +1676,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                       alt="Wallet"
                       className="quickbuy-wallets-icon"
                     />
-                    <span className={`quickbuy-wallets-count ${selectedWallets.size ? 'has-active' : ''}`}>
+                    <span
+                      className={`quickbuy-wallets-count ${selectedWallets.size ? 'has-active' : ''}`}
+                    >
                       {selectedWallets.size}
                     </span>
                   </button>
                 </Tooltip>
               )}
-
 
               <button className="close-btn" onClick={onClose}>
                 <img
@@ -1666,7 +1698,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             <div className="circle-row">
               <img src={circle} className="circle" />
             </div>
-
           </div>
         </div>
 
@@ -1681,11 +1712,13 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                   alt="Order Indicator"
                 />
                 {formatNumberWithCommas(
-                  Array.from(selectedWallets).reduce((sum, addr) => sum + getWalletBalance(addr), 0),
+                  Array.from(selectedWallets).reduce(
+                    (sum, addr) => sum + getWalletBalance(addr),
+                    0,
+                  ),
                   2,
                 )}
               </div>
-
             </div>
 
             <div className="amount-buttons">
@@ -1967,7 +2000,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         </div>
       </div>
 
-
       {isWalletsExpanded && (
         <div
           className={`quickbuy-wallets-panel ${isPanelLeft ? 'left' : 'right'}`}
@@ -1977,16 +2009,22 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           }}
         >
           {(() => {
-            const walletsWithToken = subWallets.filter(w => getWalletTokenBalance(w.address) > 0);
-            const walletsWithoutToken = subWallets.filter(w => getWalletTokenBalance(w.address) === 0);
+            const walletsWithToken = subWallets.filter(
+              (w) => getWalletTokenBalance(w.address) > 0,
+            );
+            const walletsWithoutToken = subWallets.filter(
+              (w) => getWalletTokenBalance(w.address) === 0,
+            );
             const hasTokenHolders = walletsWithToken.length > 0;
             const allSelected = hasTokenHolders
               ? selectedWallets.size === walletsWithToken.length
               : selectedWallets.size === subWallets.length;
-            const walletsWithoutTokenAddrs = walletsWithoutToken.map(w => w.address);
+            const walletsWithoutTokenAddrs = walletsWithoutToken.map(
+              (w) => w.address,
+            );
             const allWithoutSelected =
               walletsWithoutTokenAddrs.length > 0 &&
-              walletsWithoutTokenAddrs.every(a => selectedWallets.has(a));
+              walletsWithoutTokenAddrs.every((a) => selectedWallets.has(a));
 
             const hasExactlyOneSelected = selectedWallets.size === 1;
             const destinationAddr = hasExactlyOneSelected
@@ -1998,7 +2036,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
               subWallets.some(
                 (w) =>
                   w.address !== destinationAddr &&
-                  (walletTokenBalances[w.address]?.[tokenAddress!] ?? 0n) > 0n
+                  (walletTokenBalances[w.address]?.[tokenAddress!] ?? 0n) > 0n,
               );
 
             return (
@@ -2007,10 +2045,20 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                   <div className="quickbuy-wallets-actions">
                     {hasTokenHolders ? (
                       <>
-                        <Tooltip content={allSelected ? 'Unselect all wallets' : 'Select all wallets'}>
+                        <Tooltip
+                          content={
+                            allSelected
+                              ? 'Unselect all wallets'
+                              : 'Select all wallets'
+                          }
+                        >
                           <button
                             className="quickbuy-wallet-action-btn select-all"
-                            onClick={allSelected ? unselectAllWallets : selectAllWallets}
+                            onClick={
+                              allSelected
+                                ? unselectAllWallets
+                                : selectAllWallets
+                            }
                           >
                             {allSelected ? 'Unselect All' : 'Select All'}
                           </button>
@@ -2020,7 +2068,11 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                             <button
                               className="quickbuy-wallet-merge-btn consolidate"
                               onClick={handleConsolidateTokens}
-                              disabled={!hasExactlyOneSelected || !hasSourceWallets || isConsolidating}
+                              disabled={
+                                !hasExactlyOneSelected ||
+                                !hasSourceWallets ||
+                                isConsolidating
+                              }
                             >
                               <img src={merge} className="merge-icon" />
                               Consolidate
@@ -2031,7 +2083,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                               className="quickbuy-wallet-merge-btn split"
                               onClick={handleSplitTokens}
                               disabled={selectedWallets.size < 2 || isSplitting}
-
                             >
                               <img src={merge} className="merge-icon" />
                               Split Tokens
@@ -2041,10 +2092,20 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                       </>
                     ) : (
                       <>
-                        <Tooltip content={allSelected ? 'Unselect all wallets' : 'Select all wallets'}>
+                        <Tooltip
+                          content={
+                            allSelected
+                              ? 'Unselect all wallets'
+                              : 'Select all wallets'
+                          }
+                        >
                           <button
                             className="quickbuy-wallet-action-btn select-all"
-                            onClick={allSelected ? unselectAllWallets : selectAllWallets}
+                            onClick={
+                              allSelected
+                                ? unselectAllWallets
+                                : selectAllWallets
+                            }
                           >
                             {allSelected ? 'Unselect All' : 'Select All'}
                           </button>
@@ -2066,7 +2127,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 <div className="quickbuy-wallets-list">
                   {subWallets.length === 0 ? (
                     <div className="quickbuy-wallets-empty">
-                      <div className="quickbuy-wallets-empty-text">No wallets</div>
+                      <div className="quickbuy-wallets-empty-text">
+                        No wallets
+                      </div>
                       <div className="quickbuy-wallets-empty-subtitle">
                         Create in Portfolio
                       </div>
@@ -2082,7 +2145,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                           <div
                             key={wallet.address}
                             className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
-                            onClick={() => toggleWalletSelection(wallet.address)}
+                            onClick={() =>
+                              toggleWalletSelection(wallet.address)
+                            }
                           >
                             <div className="quickbuy-wallet-checkbox-container">
                               <input
@@ -2091,7 +2156,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 checked={isSelected}
                                 readOnly
                               />
-
                             </div>
 
                             <div
@@ -2103,11 +2167,17 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                             >
                               <div className="quickbuy-wallet-name">
                                 {getWalletName(wallet.address, index)}
-                                {isActive && <span className="quickbuy-active-badge">Active</span>}
+                                {isActive && (
+                                  <span className="quickbuy-active-badge">
+                                    Active
+                                  </span>
+                                )}
                               </div>
                               <div
                                 className="quickbuy-wallet-address"
-                                onClick={(e) => handleCopyAddress(wallet.address, e)}
+                                onClick={(e) =>
+                                  handleCopyAddress(wallet.address, e)
+                                }
                                 style={{ cursor: 'pointer' }}
                               >
                                 {wallet.address.slice(0, 4)}...
@@ -2141,7 +2211,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
                             <div className="quickbuy-wallet-tokens">
                               {(() => {
-                                const tokenBalance = getWalletTokenBalance(wallet.address);
+                                const tokenBalance = getWalletTokenBalance(
+                                  wallet.address,
+                                );
                                 if (tokenBalance > 0) {
                                   return (
                                     <Tooltip content="Tokens">
@@ -2154,12 +2226,16 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                             className="quickbuy-wallet-token-icon"
                                             alt={tokenSymbol}
                                             onError={(e) => {
-                                              e.currentTarget.style.display = 'none';
+                                              e.currentTarget.style.display =
+                                                'none';
                                             }}
                                           />
                                         )}
                                         <span className="quickbuy-wallet-token-balance">
-                                          {formatNumberWithCommas(tokenBalance, 2)}
+                                          {formatNumberWithCommas(
+                                            tokenBalance,
+                                            2,
+                                          )}
                                         </span>
                                       </div>
                                     </Tooltip>
@@ -2173,26 +2249,38 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
                       {hasTokenHolders && walletsWithoutToken.length > 0 && (
                         <div className="quickbuy-wallets-section-label">
-                          <Tooltip content={allWithoutSelected ? 'Unselect wallets without tokens' : 'Select wallets without tokens'}>
+                          <Tooltip
+                            content={
+                              allWithoutSelected
+                                ? 'Unselect wallets without tokens'
+                                : 'Select wallets without tokens'
+                            }
+                          >
                             <button
                               className="quickbuy-wallet-action-btn select-all"
                               onClick={() => {
                                 if (allWithoutSelected) {
-                                  setSelectedWallets(prev => {
+                                  setSelectedWallets((prev) => {
                                     const next = new Set(prev);
-                                    walletsWithoutTokenAddrs.forEach(a => next.delete(a));
+                                    walletsWithoutTokenAddrs.forEach((a) =>
+                                      next.delete(a),
+                                    );
                                     return next;
                                   });
                                 } else {
-                                  setSelectedWallets(prev => {
+                                  setSelectedWallets((prev) => {
                                     const next = new Set(prev);
-                                    walletsWithoutTokenAddrs.forEach(a => next.add(a));
+                                    walletsWithoutTokenAddrs.forEach((a) =>
+                                      next.add(a),
+                                    );
                                     return next;
                                   });
                                 }
                               }}
                             >
-                              {allWithoutSelected ? 'Unselect All' : 'Select All'}
+                              {allWithoutSelected
+                                ? 'Unselect All'
+                                : 'Select All'}
                             </button>
                           </Tooltip>
 
@@ -2216,7 +2304,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                           <div
                             key={wallet.address}
                             className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
-                            onClick={() => toggleWalletSelection(wallet.address)}
+                            onClick={() =>
+                              toggleWalletSelection(wallet.address)
+                            }
                           >
                             <div className="quickbuy-wallet-checkbox-container">
                               <input
@@ -2235,12 +2325,21 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                               }}
                             >
                               <div className="quickbuy-wallet-name">
-                                {getWalletName(wallet.address, index + walletsWithToken.length)}
-                                {isActive && <span className="quickbuy-active-badge">Active</span>}
+                                {getWalletName(
+                                  wallet.address,
+                                  index + walletsWithToken.length,
+                                )}
+                                {isActive && (
+                                  <span className="quickbuy-active-badge">
+                                    Active
+                                  </span>
+                                )}
                               </div>
                               <div
                                 className="quickbuy-wallet-address"
-                                onClick={(e) => handleCopyAddress(wallet.address, e)}
+                                onClick={(e) =>
+                                  handleCopyAddress(wallet.address, e)
+                                }
                                 style={{ cursor: 'pointer' }}
                               >
                                 {wallet.address.slice(0, 4)}...
@@ -2274,7 +2373,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
                             <div className="quickbuy-wallet-tokens">
                               {(() => {
-                                const tokenCount = getWalletTokenCount(wallet.address);
+                                const tokenCount = getWalletTokenCount(
+                                  wallet.address,
+                                );
                                 if (tokenCount > 0) {
                                   return (
                                     <Tooltip content="Tokens">

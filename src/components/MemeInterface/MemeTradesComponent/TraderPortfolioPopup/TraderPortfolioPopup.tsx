@@ -1,11 +1,14 @@
 import { Copy, ExternalLink, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+
+import BalancesContent from '../../../Portfolio/BalancesContent/BalancesContent';
+import PortfolioGraph from '../../../Portfolio/PortfolioGraph/PortfolioGraph';
+
 import { useSharedContext } from '../../../../contexts/SharedContext';
 import { settings } from '../../../../settings';
 import { formatCommas } from '../../../../utils/numberDisplayFormat';
-import BalancesContent from '../../../Portfolio/BalancesContent/BalancesContent';
-import PortfolioGraph from '../../../Portfolio/PortfolioGraph/PortfolioGraph';
 import { usePortfolioData } from '../../../Portfolio/PortfolioGraph/usePortfolioData';
+
 import './TraderPortfolioPopup.css';
 
 interface TraderPortfolioPopupProps {
@@ -39,14 +42,12 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
     direction: 'desc',
   });
 
-  // Real blockchain token balances - starts empty, gets filled by fetchRealBalances
   const [tokenBalances, setTokenBalances] = useState<{ [key: string]: string }>(
     {},
   );
   const [balancesLoading, setBalancesLoading] = useState(false);
   const { activechain } = useSharedContext();
 
-  // Use your existing usePortfolioData hook for real blockchain data
   const portfolioData = usePortfolioData(
     traderAddress,
     tokenList,
@@ -58,7 +59,6 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
     true, // shouldFetchGraph
   );
 
-  // Fetch real token balances from blockchain using your existing infrastructure
   useEffect(() => {
     const fetchRealBalances = async () => {
       if (!traderAddress || !tokenList.length) return;
@@ -132,7 +132,6 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
     }
   };
 
-  // Handle escape key to close popup
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {

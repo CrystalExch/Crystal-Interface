@@ -1,30 +1,20 @@
-import { Eye, Search, Plus, Edit2 } from 'lucide-react';
+import { Search, Edit2 } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import copy from '../../assets/copy.svg'
 import closebutton from '../../assets/close_button.png'
 import monadicon from '../../assets/monadlogo.svg';
-import key from '../../assets/key.svg';
 import trash from '../../assets/trash.svg';
 import { settings } from '../../settings';
 import ImportWalletsPopup from './ImportWalletsPopup';
 import LiveTradesFiltersPopup from './LiveTradesFiltersPopup/LiveTradesFiltersPopup';
 import { useSharedContext } from '../../contexts/SharedContext';
 import MonitorFiltersPopup, { MonitorFilterState } from './MonitorFiltersPopup/MonitorFiltersPopup';
-import {
-  DEV_TOKENS_QUERY,
-  FILTERED_TRADES_QUERY,
-  GENERIC_TRADES_QUERY,
-  HOLDERS_QUERY,
-  POSITIONS_QUERY,
-  SIMILAR_TOKENS_BY_NAME_QUERY,
-  SIMILAR_TOKENS_BY_SYMBOL_QUERY,
-  TOP_TRADERS_QUERY,
-} from '../MemeInterface/graphql';
 import settingsicon from '../../assets/settings.svg';
-import './Tracker.css';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
 
+import './Tracker.css';
+
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
 
 
 export interface FilterState {
@@ -49,7 +39,6 @@ export interface FilterState {
     max: string;
   };
 }
-
 
 const Tooltip: React.FC<{
   content: string;
@@ -164,13 +153,12 @@ interface LiveTrade {
 interface TrackerProps {
   isBlurred: boolean;
   setpopup: (value: number) => void;
-  onImportWallets?: (walletsText: string) => void;
+  onImportWallets?: (walletsText: string, addToSingleGroup: boolean) => void;
   onApplyFilters?: (filters: FilterState) => void;
   activeFilters?: FilterState;
   monUsdPrice: number;
   activechain?: string;
   walletTokenBalances?: { [address: string]: any };
-
   connected?: boolean;
   address?: string | null;
   getWalletIcon?: () => string;      //x
@@ -210,7 +198,6 @@ interface TokenTrade {
 
 
 type TrackerTab = 'wallets' | 'trades' | 'monitor';
-type SortField = 'balance' | 'lastActive' | 'dateCreated' | 'amount' | 'marketCap' | null;
 type SortDirection = 'asc' | 'desc';
 
 
@@ -368,7 +355,6 @@ const Tracker: React.FC<TrackerProps> = ({
           );
 
           const isBuy = !!trade.isBuy;
-          const tokenAmount = Number(isBuy ? trade.amountOut : trade.amountIn) / 1e18;
           const nativeAmount = Number(isBuy ? trade.amountIn : trade.amountOut) / 1e18;
           const price = Number(trade.priceNativePerTokenWad) / 1e18;
 
@@ -575,24 +561,6 @@ const Tracker: React.FC<TrackerProps> = ({
       }
 
       return walletSortDirection === 'desc' ? -comparison : comparison;
-    });
-  };
-
-  const getSortedTrades = () => {
-    if (!tradeSortField) return trackedWalletTrades;
-
-    return [...trackedWalletTrades].sort((a, b) => {
-      let comparison = 0;
-
-      if (tradeSortField === 'dateCreated') {
-        comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      } else if (tradeSortField === 'amount') {
-        comparison = a.amount - b.amount;
-      } else if (tradeSortField === 'marketCap') {
-        comparison = a.marketCap - b.marketCap;
-      }
-
-      return tradeSortDirection === 'desc' ? -comparison : comparison;
     });
   };
 
@@ -849,12 +817,8 @@ const Tracker: React.FC<TrackerProps> = ({
     }
 
     const walletData = await fetchWalletData(newWalletAddress.trim());
-
-
     const defaultName = newWalletName.trim() ||
       `${newWalletAddress.slice(0, 6)}...${newWalletAddress.slice(-4)}`;
-
-    const cappedName = defaultName.slice(0, 20);
 
     const newWallet: TrackedWallet = {
       id: Date.now().toString(),
@@ -949,9 +913,6 @@ const Tracker: React.FC<TrackerProps> = ({
   };
 
   const saveWalletName = (id: string) => {
-
-    const trimmedName = editingName.trim();
-    const cappedName = trimmedName.slice(0, 20);
     setTrackedWallets(prev =>
       prev.map(w => w.id === id ? { ...w, name: editingName.trim() || w.name } : w)
     );
