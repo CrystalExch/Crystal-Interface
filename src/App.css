@@ -8017,30 +8017,6 @@ input::-webkit-inner-spin-button {
   transform: translateX(22px);
 }
 
-.import-wallets-description {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.85rem;
-  margin: 0 0 16px 0;
-  line-height: 1.4;
-  letter-spacing: -0.3px;
-}
-
-.import-wallets-supported {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.import-wallets-supported-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.85rem;
-  letter-spacing: -0.3px;
-}
-
 .import-wallets-icon {
   font-size: 1.2rem;
   display: flex;
