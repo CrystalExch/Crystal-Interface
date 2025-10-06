@@ -1,16 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronLeft, Plus, Search, ExternalLink } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { readContracts } from '@wagmi/core';
-import { encodeFunctionData } from "viem";
+import { encodeFunctionData, getAddress } from "viem";
 import { CrystalVaultsAbi } from '../../abis/CrystalVaultsAbi';
-import { TokenAbi } from '../../abis/TokenAbi';
 import { settings } from "../../settings";
-import { config } from '../../wagmi';
-import './LPVaults.css';
 import './LPVaults.css'
-import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
-import { CrystalDataHelperAbi } from '../../abis/CrystalDataHelperAbi';
 
 interface LPVaultsProps {
   setpopup: (value: number) => void;
@@ -45,6 +39,87 @@ interface VaultSnapshotProps {
   performance?: any;
   className?: string;
 }
+
+const gql = (s: TemplateStringsArray, ...args: any[]) =>
+  s.reduce((acc, cur, i) => acc + cur + (args[i] ?? ''), '');
+
+const fetchSubgraph = async (endpoint: string, query: string, variables?: Record<string, any>) => {
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!res.ok) throw new Error(`subgraph http ${res.status}`);
+  const json = await res.json();
+  if (json.errors?.length) throw new Error(json.errors.map((e: any) => e.message).join('; '));
+  return json.data;
+};
+
+const toBigIntSafe = (v: any): bigint => {
+  if (v === null || v === undefined) return 0n;
+  if (typeof v === 'bigint') return v;
+  if (typeof v === 'number') return BigInt(Math.trunc(v));
+  return BigInt(String(v));
+};
+
+const VAULTS_QUERY = gql`
+  {
+    vaults(first: 1000, orderBy: lastUpdatedAt, orderDirection: desc) {
+      id
+      owner
+      factory
+      quoteAsset { id symbol name decimals }
+      baseAsset  { id symbol name decimals }
+      symbol
+      name
+      description
+      social1
+      social2
+      social3
+      lockup
+      decreaseOnWithdraw
+      locked
+      closed
+      maxShares
+
+      totalShares
+      quoteBalance
+      baseBalance
+
+      depositCount
+      withdrawalCount
+      uniqueDepositors
+
+      createdAt
+      createdBlock
+      createdTx
+      lastUpdatedAt
+    }
+  }
+`;
+
+const MY_POSITIONS_QUERY = gql`
+  query ($acct: Bytes!) {
+    userVaultPositions(
+      first: 1000,
+      where: { account: $acct },
+      orderBy: updatedAt,
+      orderDirection: desc
+    ) {
+      vault { id }
+      shares
+      depositCount
+      withdrawCount
+      totalDepositedQuote
+      totalDepositedBase
+      totalWithdrawnQuote
+      totalWithdrawnBase
+      lastDepositAt
+      lastWithdrawAt
+      updatedAt
+    }
+  }
+`;
 
 const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, className = '' }) => {
   const generateMockPerformance = (trend = 'up', volatility = 0.5): { day: number; value: number }[] => {
@@ -102,8 +177,6 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, className = '' }
   );
 };
 
-
-
 const LPVaults: React.FC<LPVaultsProps> = ({
   setpopup,
   tokendict,
@@ -113,15 +186,15 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   connected,
   account,
   setselectedVault,
-  isVaultDepositSigning,
-  setIsVaultDepositSigning,
+  // isVaultDepositSigning,
+  // setIsVaultDepositSigning,
   sendUserOperationAsync,
   setChain,
   address,
-  refetch,
+  // refetch,
   activechain,
   crystalVaultsAddress,
-  router,
+  // router,
   formatUSDDisplay,
   calculateUSDValue,
   tradesByMarket,
@@ -129,7 +202,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 }) => {
   const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeVault, _setActiveVault] = useState('0x4605D665A253E5c5987E1dF2046B929E187d505C' as `0x${string}`);
+  // const [activeVault, setActiveVault] = useState('0x4605D665A253E5c5987E1dF2046B929E187d505C' as `0x${string}`);
   const [vaultList, setVaultList] = useState<any>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
@@ -149,57 +222,70 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<'1D' | '1W' | '1M' | 'All'>('All');
   const [vaultStrategyChartType, setVaultStrategyChartType] = useState<'value' | 'pnl'>('value');
 
-  useEffect(() => {
-    setIsLoading(true);
+  const explorer = settings.chainConfig[activechain]?.explorer ?? '';
+  const subgraphEndpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
 
+  useEffect(() => {
+    let cancelled = false;
     (async () => {
+      setIsLoading(true);
       try {
-        const [vaultDetails, vaultUserBalance] = (await readContracts(config, {
-          contracts: [
-            { abi: CrystalDataHelperAbi as any, address: settings.chainConfig[activechain].balancegetter, functionName: 'getVaultsInfo', args: [crystalVaultsAddress, [activeVault]] },
-            ...(address ? [{
-              abi: TokenAbi,
-              address: activeVault,
-              functionName: 'balanceOf',
-              args: [address as `0x${string}`],
-            }] : [])],
-        })) as any[];
-        if (vaultDetails?.status === "success") {
-          const vaultMetaData = vaultDetails.result[0].metadata;
-          const vaultDict = {
-            address: activeVault,
-            quoteAsset: vaultDetails.result[0].quoteAsset,
-            baseAsset: vaultDetails.result[0].baseAsset,
-            owner: vaultDetails.result[0].owner,
-            totalShares: vaultDetails.result[0].totalShares,
-            maxShares: vaultDetails.result[0].maxShares,
-            lockup: vaultDetails.result[0].lockup,
-            locked: vaultDetails.result[0].locked,
-            closed: vaultDetails.result[0].closed,
-            name: vaultMetaData.name,
-            desc: vaultMetaData.description,
-            social1: vaultMetaData.social1,
-            social2: vaultMetaData.social2,
-            social3: vaultMetaData.social3,
-            type: 'Spot',
-            quoteDecimals: vaultDetails.result[0].quoteDecimals,
-            baseDecimals: vaultDetails.result[0].baseDecimals,
-            quoteBalance: vaultDetails.result[0].quoteBalance,
-            baseBalance: vaultDetails.result[0].baseBalance,
-            userShares: 0n,
-          }
-          if (address) {
-            vaultDict.userShares = vaultUserBalance.result
-          }
-          setVaultList([vaultDict]);
+        const dataVaults = await fetchSubgraph(subgraphEndpoint, VAULTS_QUERY);
+        const rawVaults = (dataVaults?.vaults ?? []) as any[];
+
+        let userSharesMap: Record<string, bigint> = {};
+        if (address) {
+          const dataPos = await fetchSubgraph(subgraphEndpoint, MY_POSITIONS_QUERY, { acct: address.toLowerCase() });
+          const pos = (dataPos?.userVaultPositions ?? []) as any[];
+          userSharesMap = pos.reduce((m: Record<string, bigint>, p: any) => {
+            m[p.vault.id] = toBigIntSafe(p.shares);
+            return m;
+          }, {});
         }
-      } catch (e) {
-        console.error(e);
+
+        const mapped = rawVaults.map((v: any) => {
+          const quoteAsset = getAddress(v.quoteAsset?.id?.toLowerCase?.() ?? v.quoteAsset?.id ?? v.quoteAsset);
+          const baseAsset = getAddress(v.baseAsset?.id?.toLowerCase?.() ?? v.baseAsset?.id ?? v.baseAsset);
+
+          const quoteDecimals = Number(v.quoteAsset?.decimals ?? tokendict[quoteAsset]?.decimals ?? 18);
+          const baseDecimals  = Number(v.baseAsset?.decimals ?? tokendict[baseAsset]?.decimals  ?? 18);
+
+          return {
+            id: v.id,
+            address: v.id,
+            owner: (v.owner ?? '').toLowerCase(),
+            quoteAsset,
+            baseAsset,
+            quoteDecimals,
+            baseDecimals,
+            totalShares: toBigIntSafe(v.totalShares),
+            maxShares: toBigIntSafe(v.maxShares),
+            quoteBalance: toBigIntSafe(v.quoteBalance),
+            baseBalance: toBigIntSafe(v.baseBalance),
+            lockup: Number(v.lockup ?? 0),
+            locked: Boolean(v.locked),
+            closed: Boolean(v.closed),
+            name: v.name || (v.symbol ? `${v.symbol} Vault` : 'Vault'),
+            desc: v.description ?? '',
+            social1: v.social1 ?? '',
+            social2: v.social2 ?? '',
+            social3: v.social3 ?? '',
+            type: 'Spot',
+            userShares: userSharesMap[v.id] ?? 0n,
+            decreaseOnWithdraw: Boolean(v.decreaseOnWithdraw),
+          };
+        });
+
+        if (!cancelled) setVaultList(mapped);
+      } catch (err) {
+        console.error('subgraph fetch failed:', err);
+        if (!cancelled) setVaultList([]);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     })();
-  }, [activeVault, address]);
+    return () => { cancelled = true; };
+  }, [address, activechain, subgraphEndpoint, tokendict]);
 
   const vaultStrategyIndicatorRef = useRef<HTMLDivElement>(null);
   const vaultStrategyTabsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -225,10 +311,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     const [integerPart, decimalPart] = fixedAmount.split('.');
     const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     return `${formattedInteger}.${decimalPart}`;
-  };
-
-  const getTokenBalance = (tokenAddress: string): bigint => {
-    return tokenBalances[tokenAddress] || 0n;
   };
 
   const calculateTVL = (vault: any) => {
@@ -333,7 +415,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         break;
     }
 
-    const deployOp = await sendUserOperationAsync({ uo: deployUo });
+    await sendUserOperationAsync({ uo: deployUo });
   };
   const [showTimeRangeDropdown, setShowTimeRangeDropdown] = useState(false);
 
@@ -413,7 +495,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   if (!account.connected) {
                     setpopup(4);
                   } else {
-                    setpopup(29); 
+                    setpopup(29);
                   }
                 }}
                 disabled={!account.connected}
@@ -670,8 +752,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                     <span className="contract-label">Vault Address:</span>
                     <span className="contract-address">{selectedVault.address}</span>
                     <a className="copy-address-btn" href={`${explorer}/address/${selectedVault.address}`}
-                          target="_blank"
-                          rel="noopener noreferrer">
+                      target="_blank"
+                      rel="noopener noreferrer">
                       <ExternalLink size={14} />
                     </a>
                   </div>

@@ -102,8 +102,7 @@ interface TokenDetailProps {
   monUsdPrice: any;
 }
 
-// const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/deployments/id/Qme4KkvZY4YcC3ozvWPjrDPJbSk9UDLGDkWUaozQTxqhSs';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
 const TOTAL_SUPPLY = 1e9;
 const PAGE_SIZE = 100;
 
