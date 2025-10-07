@@ -25,6 +25,7 @@ interface EarnProps {
   sendUserOperationAsync: any;
   activechain: number;
   setChain: () => void;
+  selectedVault: any;
   setselectedVault: any;
   isVaultDepositSigning: boolean;
   setIsVaultDepositSigning: (signing: boolean) => void;
@@ -35,6 +36,14 @@ interface EarnProps {
   formatUSDDisplay: any;
   calculateUSDValue: any;
   getMarket: any;
+  vaultList: any;
+  isLoading: any;
+  depositors: any;
+  depositHistory: any;
+  openOrders: any;
+  allOrders: any;
+  selectedVaultStrategy: any;
+  setSelectedVaultStrategy: any;
 }
 
 const Earn: React.FC<EarnProps> = (props) => {
@@ -115,6 +124,7 @@ const Earn: React.FC<EarnProps> = (props) => {
             onRouteChange={handleRouteChange}
             connected={props.connected}
             account={props.account}
+            selectedVault={props.selectedVault}
             setselectedVault={props.setselectedVault}
             isVaultWithdrawSigning={props.isVaultWithdrawSigning}
             setIsVaultWithdrawSigning={props.setIsVaultWithdrawSigning}
@@ -127,6 +137,14 @@ const Earn: React.FC<EarnProps> = (props) => {
             calculateUSDValue={props.calculateUSDValue}
             tradesByMarket={props.tradesByMarket}
             getMarket={props.getMarket}
+            vaultList={props.vaultList}
+            isLoading={props.isLoading}
+            depositors={props.depositors}
+            depositHistory={props.depositHistory}
+            openOrders={props.openOrders}
+            allOrders={props.allOrders}
+            selectedVaultStrategy={props.selectedVaultStrategy}
+            setSelectedVaultStrategy={props.setSelectedVaultStrategy}
           />
         )}
       </div>

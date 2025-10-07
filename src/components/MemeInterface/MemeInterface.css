@@ -1160,7 +1160,7 @@
 .meme-settings-mode-btn {
   background: transparent;
   border: none;
-  border-radius: 5px;
+  border-radius: 3px;
   color: #7f808d;
   cursor: pointer;
   flex: 1;
@@ -1177,12 +1177,12 @@
 }
 
 .meme-settings-mode-btn.active:first-child {
-  background: rgba(67, 254, 154, 0.15);
+  background: rgba(67, 254, 154, 0.075);
   color: rgb(67, 254, 154);
 }
 
 .meme-settings-mode-btn.active:last-child {
-  background: rgba(235, 112, 112, 0.15);
+  background: rgba(235, 112, 112, 0.075);
   color: rgb(235, 112, 112);
 }
 
