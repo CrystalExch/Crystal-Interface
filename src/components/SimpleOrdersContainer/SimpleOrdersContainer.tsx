@@ -165,7 +165,7 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
                     <div className="order-progress-container">
                       <div className="simple-progress-bar">
                         <div
-                          className="progress-fill"
+                          className="order-progress-fill"
                           style={{
                             width: `${filledPercent}%`,
                           }}
