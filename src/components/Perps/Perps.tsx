@@ -10,7 +10,8 @@ import TooltipLabel from '../TooltipLabel/TooltipLabel';
 import { formatTime } from '../../utils/formatTime.ts'
 import { formatCommas } from '../../utils/numberDisplayFormat';
 import walleticon from '../../assets/wallet_icon.png'
-import { SignableOrder, clientIdToNonce } from './edgeXsdk/src/starkex-lib'
+// @ts-ignore
+import { SignableOrder } from './edgeXsdk/src/starkex-lib'
 
 interface PerpsProps {
   layoutSettings: string;

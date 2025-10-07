@@ -213,7 +213,7 @@ export const useWalletPopup = (): UseWalletPopupReturn => {
     if (globalUpdatePopup) {
       const isBuy = id.startsWith('buy-');
       
-      let title = TRANSACTION_TEXTS.TRANSACTION_FAILED;
+      let title: any = TRANSACTION_TEXTS.TRANSACTION_FAILED;
       if (error.toLowerCase().includes('insufficient')) {
         title = TRANSACTION_TEXTS.INSUFFICIENT_BALANCE;
       } else if (isBuy) {
@@ -313,14 +313,12 @@ export const useWalletPopup = (): UseWalletPopupReturn => {
     }
 
     if (globalUpdatePopup) {
-      setTimeout(() => {
-        globalUpdatePopup(id, {
-          title: TRANSACTION_TEXTS.INSUFFICIENT_BALANCE,
-          subtitle: TRANSACTION_SUBTITLES.insufficientBalance(needed, available, unit),
-          variant: 'error',
-          isLoading: false
-        });
-      }, 100);
+      globalUpdatePopup(id, {
+        title: TRANSACTION_TEXTS.INSUFFICIENT_BALANCE,
+        subtitle: TRANSACTION_SUBTITLES.insufficientBalance(needed, available, unit),
+        variant: 'error',
+        isLoading: false
+      });
     }
   }, []);
 

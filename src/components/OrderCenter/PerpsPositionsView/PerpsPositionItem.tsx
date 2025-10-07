@@ -71,7 +71,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
           {formatBalance(position.positionValue, 'usd')}
         </span>
         <div className="amount">
-          {formatDisplay(position.size * position.markPrice, 2)} USD
+          {formatDisplay((position.size * position.markPrice).toFixed(2))} USD
         </div>
       </div>
 

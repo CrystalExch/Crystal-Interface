@@ -6,7 +6,6 @@ import { getPedersenHash } from '../lib/crypto';
 import { decToBn, hexToBn, intToBn } from '../lib/util';
 import { WITHDRAWAL_FIELD_BIT_LENGTHS } from './constants';
 import { StarkSignable } from './stark-signable';
-import metadataManager from '../metadata-manager';
 
 const WITHDRAWAL_PREFIX = 7;
 const WITHDRAWAL_PADDING_BITS = 49;
@@ -32,7 +31,7 @@ export class SignableWithdrawal extends StarkSignable {
     const nonce = withdrawal.nonce;
     // The withdrawal asset is always the collateral asset.
     let quantumsAmount = toQuantumsExact(withdrawal.humanAmount, COLLATERAL_ASSET);
-    const metadata = metadataManager.getState()?.metadata;
+    const metadata = '';
     const currencys = metadata?.coinList;
     const currency_info = currencys.find(item => item.coinId == assetId);
     quantumsAmount = withdrawal.humanAmount

@@ -2,7 +2,6 @@ import BN from 'bn.js';
 import { keccak256 } from 'ethereum-cryptography/keccak';
 import _ from 'lodash';
 import { normalizeHex32 } from './lib/util';
-import metadataManager from './metadata-manager';
 import { Buffer } from 'buffer';
 
 export const TradeAsset = {
@@ -93,7 +92,7 @@ export const ASSET_RESOLUTION = {
 };
 
 export const COLLATERAL_ASSET_ID_BY_NETWORK_ID = token => {
-  const metadata = metadataManager.getState()?.metadata;
+  const metadata = '';
   const coinList = metadata?.coinList;
   const contractList = metadata?.contractList;
 

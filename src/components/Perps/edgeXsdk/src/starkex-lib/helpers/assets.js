@@ -1,7 +1,6 @@
 /**
  * Helper functions for converting asset IDs and amounts.
  */
-import metadataManager from '../metadata-manager';
 import Big from 'big.js';
 import { BigNumber } from 'bignumber.js';
 import { ASSET_QUANTUM_SIZE, COLLATERAL_ASSET_ID_BY_NETWORK_ID } from '../constant';
@@ -65,7 +64,7 @@ export function getStarkwareAmounts(params, networkId) {
   // Determine side and assets.
   const isBuyingSynthetic = side === 'BUY';
   // const assetIdSynthetic = SYNTHETIC_ASSET_ID_MAP[syntheticAsset];
-  const metadata = metadataManager.getState()?.metadata;
+  const metadata = '';
   const symbol_info = metadata?.contractList?.find(i => i.contractName === symbol);
   const quote_info = metadata?.coinList?.find(i => i.coinId === symbol_info?.quoteCoinId);
   let assetIdSynthetic = symbol_info.starkExSyntheticAssetId;
@@ -114,7 +113,7 @@ export function getStarkwareAmounts(params, networkId) {
  */
 export function getStarkwareLimitFeeAmount(limitFee, symbol) {
   // Constrain the limit fee to six decimals of precision. The final fee amount must be rounded up.
-  const metadata = metadataManager.getState()?.metadata;
+  const metadata = '';
   const symbol_info = metadata?.contractList?.find(i => i.contractName === symbol);
   const quote_info = metadata?.coinList?.find(i => i.coinId === symbol_info?.quoteCoinId);
   // quote resolution (usdc/usdt/...)
