@@ -239,8 +239,6 @@ const Loader = () => {
   useEffect(() => {
     (async () => {
       try {
-        // const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
-        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
         const query = `
           query {
             markets(first: 100, orderBy: volume, orderDirection: desc, where: {isCanonical:true}) {
@@ -279,7 +277,7 @@ const Loader = () => {
             }
           }
         `;
-        const res = await fetch(endpoint, {
+        const res = await fetch(SUBGRAPH_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query }),
@@ -421,6 +419,8 @@ const Loader = () => {
     </>
   );
 }
+
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
 
 function App({ stateloading, setstateloading,addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
   // constants
@@ -2284,6 +2284,363 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
     }
   };
 
+  // vaults state management
+  const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
+  const [vaultsSearchQuery, setVaultsSearchQuery] = useState('');
+  const [vaultList, setVaultList] = useState<any>([]);
+  const [isVaultsLoading, setIsVaultsLoading] = useState(true);
+  const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
+  const [activeVaultTab, setActiveVaultTab] = useState<'all' | 'my-vaults'>('all');
+  const [showManagementMenu, setShowManagementMenu] = useState(false);
+  const [activeVaultStrategyTab, setActiveVaultStrategyTab] = useState<'Balances'|'Open Orders'|'Depositors'|'Deposit History'>('Balances');
+  const [activeVaultPerformance, _setActiveVaultPerformance] = useState<any>([
+    { name: 'Jan', value: 12.4 },{ name: 'Feb', value: 14.8 },{ name: 'Mar', value: 18.2 },
+    { name: 'Apr', value: 16.9 },{ name: 'May', value: 21.3 },{ name: 'Jun', value: 22.7 },
+    { name: 'Jul', value: 24.5 },
+  ]);
+  const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<'1D'|'1W'|'1M'|'All'>('All');
+  const [vaultStrategyChartType, setVaultStrategyChartType] = useState<'value'|'pnl'>('value');
+  const [depositors, setDepositors] = useState<any[]>([]);
+  const [depositHistory, setDepositHistory] = useState<any[]>([]);
+  const [openOrders, setOpenOrders] = useState<any[]>([]);
+  const [_allOrders, setAllOrders] = useState<any[]>([]);
+  const [showTimeRangeDropdown, setShowTimeRangeDropdown] = useState(false);
+
+  const fetchSubgraph = async (endpoint: string, query: string, variables?: Record<string, any>) => {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query, variables }),
+    });
+    if (!res.ok) throw new Error(`subgraph http ${res.status}`);
+    const json = await res.json();
+    if (json.errors?.length) throw new Error(json.errors.map((e: any) => e.message).join('; '));
+    return json.data;
+  };
+
+  const toBigIntSafe = (v: any): bigint => {
+    if (v === null || v === undefined) return 0n;
+    if (typeof v === 'bigint') return v;
+    if (typeof v === 'number') return BigInt(Math.trunc(v));
+    return BigInt(String(v));
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setIsVaultsLoading(true);
+
+      const gql = (s: TemplateStringsArray, ...args: any[]) => s.reduce((acc, cur, i) => acc + cur + (args[i] ?? ''), '');
+
+      const VAULTS_QUERY = gql`
+        {
+          vaults(first: 1000, orderBy: lastUpdatedAt, orderDirection: desc) {
+            id
+            owner
+            factory
+            quoteAsset { id symbol name decimals }
+            baseAsset  { id symbol name decimals }
+            symbol
+            name
+            description
+            social1
+            social2
+            social3
+            lockup
+            decreaseOnWithdraw
+            locked
+            closed
+            maxShares
+            totalShares
+            quoteBalance
+            baseBalance
+            depositCount
+            withdrawalCount
+            uniqueDepositors
+            createdAt
+            createdBlock
+            createdTx
+            lastUpdatedAt
+          }
+        }
+      `;
+
+      const MY_POSITIONS_QUERY = gql`
+        query ($acct: Bytes!) {
+          userVaultPositions(
+            first: 1000,
+            where: { account: $acct },
+            orderBy: updatedAt,
+            orderDirection: desc
+          ) {
+            vault { id }
+            shares
+            depositCount
+            withdrawCount
+            totalDepositedQuote
+            totalDepositedBase
+            totalWithdrawnQuote
+            totalWithdrawnBase
+            lastDepositAt
+            lastWithdrawAt
+            updatedAt
+          }
+        }
+      `;
+
+      try {
+        const dataVaults = await fetchSubgraph(SUBGRAPH_URL, VAULTS_QUERY);
+        const rawVaults = (dataVaults?.vaults ?? []) as any[];
+
+        let userSharesMap: Record<string, bigint> = {};
+        if (address) {
+          const dataPos = await fetchSubgraph(SUBGRAPH_URL, MY_POSITIONS_QUERY, { acct: address.toLowerCase() });
+          const pos = (dataPos?.userVaultPositions ?? []) as any[];
+          userSharesMap = pos.reduce((m: Record<string, bigint>, p: any) => {
+            m[p.vault.id] = toBigIntSafe(p.shares);
+            return m;
+          }, {});
+        }
+
+        const mapped = rawVaults.map((v: any) => {
+          const quoteAsset = getAddress(v.quoteAsset?.id?.toLowerCase?.() ?? v.quoteAsset?.id ?? v.quoteAsset);
+          const baseAsset = getAddress(v.baseAsset?.id?.toLowerCase?.() ?? v.baseAsset?.id ?? v.baseAsset);
+          const quoteTicker = v.quoteAsset.symbol;
+          const baseTicker = v.baseAsset.symbol;
+
+          const quoteDecimals = Number(v.quoteAsset?.decimals ?? tokendict[quoteAsset]?.decimals ?? 18);
+          const baseDecimals = Number(v.baseAsset?.decimals ?? tokendict[baseAsset]?.decimals ?? 18);
+
+          return {
+            id: v.id,
+            address: v.id,
+            owner: (v.owner ?? '').toLowerCase(),
+            quoteAsset,
+            baseAsset,
+            quoteDecimals,
+            baseDecimals,
+            quoteTicker,
+            baseTicker,
+            totalShares: toBigIntSafe(v.totalShares),
+            maxShares: toBigIntSafe(v.maxShares),
+            quoteBalance: toBigIntSafe(v.quoteBalance),
+            baseBalance: toBigIntSafe(v.baseBalance),
+            lockup: Number(v.lockup ?? 0),
+            locked: Boolean(v.locked),
+            closed: Boolean(v.closed),
+            name: v.name || (v.symbol ? `${v.symbol} Vault` : 'Vault'),
+            desc: v.description ?? '',
+            social1: v.social1 ?? '',
+            social2: v.social2 ?? '',
+            social3: v.social3 ?? '',
+            type: 'Spot',
+            userShares: userSharesMap[v.id] ?? 0n,
+            decreaseOnWithdraw: Boolean(v.decreaseOnWithdraw),
+          };
+        });
+
+        if (!cancelled) setVaultList(mapped);
+      } catch (err) {
+        console.error('subgraph fetch failed:', err);
+        if (!cancelled) setVaultList([]);
+      } finally {
+        if (!cancelled) setIsVaultsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [address, activechain, tokendict]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      if (!selectedVaultStrategy) {
+        setDepositors([]);
+        setDepositHistory([]);
+        setOpenOrders([]);
+        setAllOrders([]);
+        return;
+      }
+
+      try {
+        const variables = {
+          vault: selectedVaultStrategy,
+          acct: selectedVaultStrategy,
+        };
+
+          const flattenMap = (mapObj: any, key: "orders" | "trades") =>
+            (mapObj?.shards ?? [])
+              .flatMap((s: any) => s?.batches ?? [])
+              .flatMap((b: any) => b?.[key] ?? []);
+
+        const gql = (s: TemplateStringsArray, ...args: any[]) => s.reduce((acc, cur, i) => acc + cur + (args[i] ?? ''), '');
+        const VAULT_DETAIL_QUERY = gql`
+          query VaultDetail($vault: Bytes!, $acct: ID!) {
+            depositors: userVaultPositions(
+              first: 1000
+              where: { vault: $vault }
+              orderBy: shares
+              orderDirection: desc
+            ) {
+              id
+              account { id }
+              shares
+              depositCount
+              withdrawCount
+              totalDepositedQuote
+              totalDepositedBase
+              totalWithdrawnQuote
+              totalWithdrawnBase
+              lastDepositAt
+              lastWithdrawAt
+              updatedAt
+            }
+
+            deposits: deposits(
+              first: 1000
+              where: { vault: $vault }
+              orderBy: timestamp
+              orderDirection: desc
+            ) {
+              id
+              account { id }
+              shares
+              amountQuote
+              amountBase
+              txHash
+              timestamp
+            }
+
+            withdrawals: withdrawals(
+              first: 1000
+              where: { vault: $vault }
+              orderBy: timestamp
+              orderDirection: desc
+            ) {
+              id
+              account { id }
+              shares
+              amountQuote
+              amountBase
+              txHash
+              timestamp
+            }
+
+            account(id: $acct) {
+              id
+              openOrderMap {
+                shards(first: 1000) {
+                  batches(first: 1000) {
+                    orders(first: 1000) {
+                      id
+                      market { id baseAsset quoteAsset }
+                      isBuy
+                      price
+                      originalSize
+                      remainingSize
+                      status
+                      placedAt
+                      updatedAt
+                      txHash
+                    }
+                  }
+                }
+              }
+              orderMap {
+                shards(first: 1000) {
+                  batches(first: 1000) {
+                    orders(first: 1000) {
+                      id
+                      market { id baseAsset quoteAsset }
+                      isBuy
+                      price
+                      originalSize
+                      remainingSize
+                      status
+                      placedAt
+                      updatedAt
+                      txHash
+                    }
+                  }
+                }
+              }
+              tradeMap {
+                shards(first: 1000) {
+                  batches(first: 1000) {
+                    trades(first: 1000) {
+                      id
+                      market { id baseAsset quoteAsset }
+                      amountIn
+                      amountOut
+                      startPrice
+                      endPrice
+                      isBuy
+                      timestamp
+                      tx
+                    }
+                  }
+                }
+              }
+            }
+          }
+        `;
+
+        const data = await fetchSubgraph(SUBGRAPH_URL, VAULT_DETAIL_QUERY, variables);
+        if (cancelled) return;
+
+        const acct = data?.account ?? null;
+        const _openOrders = flattenMap(acct?.openOrderMap, "orders") || [];
+        const _allOrders = flattenMap(acct?.orderMap, "orders") || [];
+
+        setDepositors(data?.depositors ?? []);
+        setDepositHistory(data?.deposits ?? []);
+        setOpenOrders(_openOrders);
+        setAllOrders(_allOrders);
+
+        const baseVault = (vaultList || []).find(
+          (v: any) => (v?.address || '').toLowerCase() === selectedVaultStrategy.toLowerCase()
+        );
+
+        if (baseVault) {
+          let userShares = baseVault.userShares ?? 0n;
+          try {
+            const me = (data?.depositors ?? []).find(
+              (d: any) => (d?.account?.id || '').toLowerCase() === (address || '').toLowerCase()
+            );
+            if (me?.shares != null) {
+              userShares = typeof me.shares === 'bigint' ? me.shares : BigInt(String(me.shares));
+            }
+          } catch {}
+
+          if (!cancelled) {
+            if (
+              !selectedVault ||
+              selectedVault.address !== baseVault.address ||
+              String(selectedVault.userShares ?? '') !== String(userShares ?? '')
+            ) {
+              setselectedVault({
+                ...baseVault,
+                userShares,
+              } as any);
+            }
+          }
+        } else {
+          if (!cancelled) setselectedVault(null);
+        }
+      } catch (e) {
+        console.error("vault detail fetch failed:", e);
+        if (cancelled) return;
+        setDepositors([]);
+        setDepositHistory([]);
+        setOpenOrders([]);
+        setAllOrders([]);
+      }
+    };
+
+    run();
+    return () => { cancelled = true; };
+  }, [selectedVaultStrategy]);
+
   const findMarketForToken = useCallback((tokenAddress: string) => {
     for (const [marketKey, marketData] of Object.entries(markets)) {
       if (marketData.baseAddress === tokenAddress || marketData.quoteAddress === tokenAddress) {
@@ -2303,6 +2660,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
       return deduplicated;
     });
   }, []);
+
   // on market select
   const onMarketSelect = useCallback((market: { quoteAddress: any; baseAddress: any; }) => {
     if (!['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
@@ -3378,7 +3736,6 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
   const MARKET_CREATED_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
   const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
   const TOTAL_SUPPLY = 1e9;
-  const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
 
   const calcDevHoldingPct = (list: Holder[], dev?: string) => {
     if (!dev) return 0;
@@ -4183,6 +4540,25 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
       cancelled = true;
     };
   }, [address, subWallets, tokenAddress, initialMemeFetchDone]);
+
+  // live dev holding
+  useEffect(() => {
+    const dev = (token.dev || (memeLive as any)?.dev || tokenData?.dev || "").toLowerCase();
+    if (!dev) {
+      setMemeLive(p => ({ ...p, devHolding: 0 }));
+      return;
+    }
+
+    const row = memeHolders.find(h => (h.address || "").toLowerCase() === dev);
+    const pct = row ? toPct(Math.max(0, row.balance || 0)) : 0;
+
+    setMemeLive(p => ({ ...p, devHolding: pct }));
+  }, [
+    memeHolders,
+    token.dev,
+    tokenData?.dev,
+    (memeLive as any)?.dev,
+  ]);
 
   // data loop, reuse to have every single rpc call method in this loop
   const { data: terminalQueryData, isLoading: isTerminalDataLoading, dataUpdatedAt: terminalDataUpdatedAt, refetch: terminalRefetch } = useQuery({
@@ -6542,9 +6918,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
         setcanceledorders([]);
         setrecipient('');
         isAddressInfoFetching = true;
-        try {
-          // const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
-          const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
+        try {;
           const query = `
             query {
               account(id: "${address}") {
@@ -6597,7 +6971,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
             }
           `;
 
-          const response = await fetch(endpoint, {
+          const response = await fetch(SUBGRAPH_URL, {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ query }),
@@ -7438,8 +7812,6 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
       try {
         settradesloading(true);
 
-        // const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.4.0';
-        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
         const query = `
           query {
             markets(first: 100, orderBy: volume, orderDirection: desc, where: {isCanonical:true}) {
@@ -7477,7 +7849,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
             }
           }
         `;
-        const res = await fetch(endpoint, {
+        const res = await fetch(SUBGRAPH_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query }),
@@ -22647,6 +23019,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                 sendUserOperationAsync={sendUserOperationAsync}
                 activechain={activechain}
                 setChain={handleSetChain}
+                selectedVault={selectedVault}
                 setselectedVault={setselectedVault}
                 isVaultDepositSigning={isVaultDepositSigning}
                 setIsVaultDepositSigning={setIsVaultDepositSigning}
@@ -22657,6 +23030,14 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                 formatUSDDisplay={formatUSDDisplay}
                 calculateUSDValue={calculateUSDValue}
                 getMarket={getMarket}
+                vaultList={vaultList}
+                isLoading={isVaultsLoading}
+                depositors={depositors}
+                depositHistory={depositHistory}
+                openOrders={openOrders}
+                allOrders={_allOrders}
+                selectedVaultStrategy={selectedVaultStrategy}
+                setSelectedVaultStrategy={setSelectedVaultStrategy}
               />
             } />
           <Route path="/earn/vaults/:vaultAddress"
@@ -22687,6 +23068,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                 sendUserOperationAsync={sendUserOperationAsync}
                 activechain={activechain}
                 setChain={handleSetChain}
+                selectedVault={selectedVault}
                 setselectedVault={setselectedVault}
                 isVaultDepositSigning={isVaultDepositSigning}
                 setIsVaultDepositSigning={setIsVaultDepositSigning}
@@ -22697,6 +23079,14 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                 formatUSDDisplay={formatUSDDisplay}
                 calculateUSDValue={calculateUSDValue}
                 getMarket={getMarket}
+                vaultList={vaultList}
+                isLoading={isVaultsLoading}
+                depositors={depositors}
+                depositHistory={depositHistory}
+                openOrders={openOrders}
+                allOrders={_allOrders}
+                selectedVaultStrategy={selectedVaultStrategy}
+                setSelectedVaultStrategy={setSelectedVaultStrategy}
               />
             } />
           <Route path="/portfolio"
