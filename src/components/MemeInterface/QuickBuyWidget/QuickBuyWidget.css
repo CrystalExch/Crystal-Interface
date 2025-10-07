@@ -527,9 +527,9 @@
 }
 
 .quickbuy-wallets-header {
-  border-radius: 8px 8px 0 0;
   align-items: center;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 8px 8px 0 0;
   display: flex;
   justify-content: space-between;
   padding: 6px 16px;

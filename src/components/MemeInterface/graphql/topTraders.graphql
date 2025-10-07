@@ -1,6 +1,6 @@
 query ($m: Bytes!, $skip: Int!, $first: Int!) {
   launchpadPositions(
-    where: { token: $m, realized_gt: 0 }
+    where: { token: $m }
     orderBy: realized # remaining
     orderDirection: desc
     skip: $skip

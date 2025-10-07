@@ -7,7 +7,6 @@ import TransactionHistoryMenu from '../TransactionHistoryMenu/TransactionHistory
 import ChartHeader from '../Header/ChartHeader/ChartHeader';
 import MemeSearch from '../MemeSearch/MemeSearch';
 import { formatCommas, formatSubscript } from '../../utils/numberDisplayFormat';
-import { formatSig } from '../OrderCenter/utils';
 import { useNavigate } from 'react-router-dom';
 import { encodeFunctionData } from 'viem';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
@@ -27,8 +26,6 @@ interface Language {
   code: string;
   name: string;
 }
-
-
 
 interface HeaderProps {
   setTokenIn: (token: string) => void;
@@ -60,7 +57,7 @@ interface HeaderProps {
   tradesByMarket: any;
   currentWalletIcon?: string;
   subWallets?: Array<{ address: string, privateKey: string }>;
-    selectedWallets?: Set<string> | string[];
+  selectedWallets?: Set<string> | string[];
   onToggleWalletSelected?: (address: string) => void;
   walletTokenBalances?: { [address: string]: any };
   activeWalletPrivateKey?: string;
@@ -303,7 +300,7 @@ const Header: React.FC<HeaderProps> = ({
   externalUserStats,
   lastNonceGroupFetch
 }) => {
-    const selectedSet = useMemo(() => {
+  const selectedSet = useMemo(() => {
     if (!selectedWallets) return new Set<string>();
     return selectedWallets instanceof Set ? selectedWallets : new Set(selectedWallets);
   }, [selectedWallets]);
@@ -420,26 +417,27 @@ const Header: React.FC<HeaderProps> = ({
 
   const isMemeTokenPage = location.pathname.startsWith('/meme/');
 
-useEffect(() => {
-  const storedWalletNames = localStorage.getItem('crystal_wallet_names');
-  if (storedWalletNames) {
-    try {
-      setWalletNames(JSON.parse(storedWalletNames));
-    } catch (error) {
-      console.error('Error loading wallet names:', error);
+  useEffect(() => {
+    const storedWalletNames = localStorage.getItem('crystal_wallet_names');
+    if (storedWalletNames) {
+      try {
+        setWalletNames(JSON.parse(storedWalletNames));
+      } catch (error) {
+        console.error('Error loading wallet names:', error);
+      }
     }
-  }
 
-  const handleWalletNamesUpdate = (event: CustomEvent) => {
-    setWalletNames(event.detail);
-  };
+    const handleWalletNamesUpdate = (event: CustomEvent) => {
+      setWalletNames(event.detail);
+    };
 
-  window.addEventListener('walletNamesUpdated', handleWalletNamesUpdate as EventListener);
+    window.addEventListener('walletNamesUpdated', handleWalletNamesUpdate as EventListener);
 
-  return () => {
-    window.removeEventListener('walletNamesUpdated', handleWalletNamesUpdate as EventListener);
-  };
-}, []);
+    return () => {
+      window.removeEventListener('walletNamesUpdated', handleWalletNamesUpdate as EventListener);
+    };
+  }, []);
+
   useEffect(() => {
     const storedActiveWalletPrivateKey = localStorage.getItem('crystal_active_wallet_private_key');
 
@@ -455,6 +453,7 @@ useEffect(() => {
       }
     }
   }, [subWallets, setOneCTSigner, activeWalletPrivateKey]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (walletDropdownRef.current && !walletDropdownRef.current.contains(event.target as Node)) {
@@ -467,6 +466,7 @@ useEffect(() => {
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isWalletDropdownOpen]);
+
   const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
 
   const memeTokenData = isMemeTokenPage && tokenData ? (() => {
@@ -571,7 +571,7 @@ useEffect(() => {
   };
 
   const handleOpenPortfolio = () => {
-    setpopup(4); 
+    setpopup(4);
     setIsWalletDropdownOpen(false);
   };
 
@@ -615,7 +615,7 @@ useEffect(() => {
           </div>
         </div>
         <div className="left-header">
-         <ChartHeader
+          <ChartHeader
             in_icon={tokendict[activeMarket.baseAddress].image}
             out_icon={tokendict[activeMarket.quoteAddress].image}
             price={isMemeTokenPage && memeTokenData ?
@@ -730,7 +730,7 @@ useEffect(() => {
               setActivePreset={setActivePreset}
               handleInputFocus={handleInputFocus}
               buyPresets={buyPresets}
-              marketsData={marketsData} 
+              marketsData={marketsData}
               tokendict={tokendict}
               onMarketSelect={onMarketSelect}
             />
@@ -751,9 +751,9 @@ useEffect(() => {
                       src={walleticon}
                       className="img-wallet-icon"
                     />
-<span className={`wallet-count ${selectedSet.size ? 'has-active' : ''}`}>
-  {selectedSet.size}
-</span>
+                    <span className={`wallet-count ${selectedSet.size ? 'has-active' : ''}`}>
+                      {selectedSet.size}
+                    </span>
                     <span className="wallet-separator"></span>
                     <img
                       src={currentWalletIcon || walleticon}

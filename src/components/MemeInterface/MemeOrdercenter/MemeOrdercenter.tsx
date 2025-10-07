@@ -520,18 +520,19 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       }));
 
   const devTokensToShow: DevToken[] = useMemo(() => {
-    const src = (devTokens && devTokens.length > 0)
-      ? devTokens
-      : mockDevTokens.map(mt => ({
-          id: mt.id,
-          symbol: mt.symbol,
-          name: mt.name,
-          imageUrl: mt.imageUrl,
-          price: mt.price,
-          marketCap: mt.marketCap,
-          timestamp: mt.timestamp,
-          migrated: mt.migrated,
-        }));
+    const src =
+      devTokens && devTokens.length > 0
+        ? devTokens
+        : mockDevTokens.map((mt) => ({
+            id: mt.id,
+            symbol: mt.symbol,
+            name: mt.name,
+            imageUrl: mt.imageUrl,
+            price: mt.price,
+            marketCap: mt.marketCap,
+            timestamp: mt.timestamp,
+            migrated: mt.migrated,
+          }));
 
     const seen = new Set<string>();
     const uniq: DevToken[] = [];
@@ -980,7 +981,10 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               {[...holderRows]
                 .sort((a, b) => (b.balance ?? 0) - (a.balance ?? 0))
                 .map((row) => (
-                  <div key={row.wallet} className="meme-oc-item">
+                  <div
+                    key={`${row.wallet}-${token.id}`}
+                    className="meme-oc-item"
+                  >
                     <div className="meme-oc-cell">
                       <div className="meme-wallet-info">
                         <span className="meme-wallet-index">{row.rank}</span>

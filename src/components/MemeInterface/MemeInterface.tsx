@@ -20,16 +20,7 @@ import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { useSharedContext } from '../../contexts/SharedContext';
 import { settings } from '../../settings';
 import customRound from '../../utils/customRound';
-import {
-  DEV_TOKENS_QUERY,
-  FILTERED_TRADES_QUERY,
-  GENERIC_TRADES_QUERY,
-  HOLDERS_QUERY,
-  POSITIONS_QUERY,
-  SIMILAR_TOKENS_BY_NAME_QUERY,
-  SIMILAR_TOKENS_BY_SYMBOL_QUERY,
-  TOP_TRADERS_QUERY,
-} from './graphql';
+import { FILTERED_TRADES_QUERY, GENERIC_TRADES_QUERY } from './graphql';
 
 import closebutton from '../../assets/close_button.png';
 import contract from '../../assets/contract.svg';
@@ -41,39 +32,6 @@ import trash from '../../assets/trash.svg';
 import walleticon from '../../assets/wallet_icon.png';
 
 import './MemeInterface.css';
-
-interface Token {
-  id: string;
-  tokenAddress: string;
-  name: string;
-  symbol: string;
-  image: string;
-  price: number;
-  marketCap: number;
-  change24h: number;
-  volume24h: number;
-  holders: number;
-  proTraders: number;
-  kolTraders: number;
-  sniperHolding: number;
-  devHolding: number;
-  bundleHolding: number;
-  insiderHolding: number;
-  top10Holding: number;
-  buyTransactions: number;
-  sellTransactions: number;
-  globalFeesPaid: number;
-  website: string;
-  twitterHandle: string;
-  progress: number;
-  status: 'new' | 'graduating' | 'graduated';
-  description: string;
-  created: number;
-  bondingAmount: number;
-  volumeDelta: number;
-  quote?: number;
-  dev: string;
-}
 
 interface Trade {
   id: string;
@@ -151,19 +109,13 @@ interface MemeInterfaceProps {
   nonces: any;
   tokenAddress?: string;
   live: Partial<any>;
-  setLive: (u: any) => void;
   trades: Trade[];
   setTrades: React.Dispatch<React.SetStateAction<Trade[]>>;
   holders: Holder[];
-  setHolders: (u: any) => void;
   topTraders: Holder[];
-  setTopTraders: (u: any) => void;
   positions: any[];
-  setPositions: (u: any) => void;
   devTokens: any[];
-  setDevTokens: (u: any) => void;
   top10HoldingPercentage: number;
-  setTop10HoldingPercentage: (n: number) => void;
   userStats: {
     balance: number;
     amountBought: number;
@@ -172,13 +124,18 @@ interface MemeInterfaceProps {
     valueSold: number;
     valueNet: number;
   };
-  setUserStats: any;
   registerRealtimeTick: (
     fn: (price: number, volNative: number) => void,
   ) => void;
+  selectedInterval: any;
+  setSelectedInterval: any;
+  chartData: any;
+  setChartData: any;
+  page: any;
+  similarTokens: any;
+  token: any;
 }
 
-const TOTAL_SUPPLY = 1e9;
 const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
 const STATS_WS_BASE = 'wss://crystal-backend.up.railway.app';
 const PAGE_SIZE = 100;
@@ -400,10 +357,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   setOneCTSigner,
   refetch,
   isBlurred = false,
-  setTerminalToken,
   terminalRefetch,
-  tokenData,
-  setTokenData,
   monUsdPrice,
   buyPresets,
   sellPresets,
@@ -414,23 +368,22 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   nonces,
   marketsData,
   tokenAddress,
-  live,
-  setLive,
   trades,
   setTrades,
   holders,
-  setHolders,
   topTraders,
-  setTopTraders,
   positions,
-  setPositions,
   devTokens,
-  setDevTokens,
   top10HoldingPercentage,
-  setTop10HoldingPercentage,
   userStats,
-  setUserStats,
   registerRealtimeTick,
+  selectedInterval,
+  setSelectedInterval,
+  chartData,
+  setChartData,
+  page,
+  similarTokens,
+  token,
 }) => {
   const getSliderPosition = (
     activeView: 'chart' | 'trades' | 'ordercenter',
@@ -513,14 +466,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [activeOrderType, _setActiveOrderType] = useState<'market' | 'Limit'>(
     'market',
   );
-  const [selectedInterval, setSelectedInterval] = useState(
-    () => localStorage.getItem('meme_chart_timeframe') || '1m',
-  );
-  const [chartData, setChartData] = useState<any>(null);
   const realtimeCallbackRef = useRef<any>({});
-  const holdersMapRef = useRef<Map<string, number>>(new Map());
-  const positionsMapRef = useRef<Map<string, number>>(new Map());
-  const devTokenIdsRef = useRef<Set<string>>(new Set());
   const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
   const [buySlippageValue, setBuySlippageValue] = useState('20');
   const [buyPriorityFee, setBuyPriorityFee] = useState('0.01');
@@ -534,8 +480,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     variant?: 'success' | 'error' | 'info';
     visible?: boolean;
   } | null>(null);
-  const [page, _setPage] = useState(0);
-  const topTradersMapRef = useRef<Map<string, number>>(new Map());
   const [advancedTradingEnabled, setAdvancedTradingEnabled] = useState(false);
   const [showAdvancedDropdown, setShowAdvancedDropdown] = useState(false);
   const [advancedOrders, setAdvancedOrders] = useState<
@@ -574,7 +518,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
   const trackedAddressesRef = useRef<string[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(false);
-  const [similarTokens, setSimilarTokens] = useState<any[]>([]);
   const { activechain } = useSharedContext();
 
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
@@ -601,16 +544,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const openInExplorer = (addr: string) =>
     window.open(`${explorer}/address/${addr}`, '_blank');
-
-  const toPct = (balance: number) => (balance / TOTAL_SUPPLY) * 100;
-
-  const calcDevHoldingPct = (list: Holder[], dev?: string) => {
-    if (!dev) return 0;
-    const row = list.find(
-      (h) => (h.address || '').toLowerCase() === dev.toLowerCase(),
-    );
-    return row ? toPct(Math.max(0, row.balance)) : 0;
-  };
 
   const handleBuyPresetSelect = useCallback(
     (preset: number) => {
@@ -1009,61 +942,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     }
   };
 
-  const baseDefaults: Token = {
-    id: tokenAddress || '',
-    tokenAddress: tokenAddress || '',
-    name: 'Unknown Token',
-    symbol: 'UNKNOWN',
-    image: '',
-    price: 0,
-    marketCap: 0,
-    change24h: 0,
-    volume24h: 0,
-    holders: 0,
-    proTraders: 0,
-    kolTraders: 0,
-    sniperHolding: 0,
-    devHolding: 0,
-    bundleHolding: 0,
-    insiderHolding: 0,
-    top10Holding: 0,
-    buyTransactions: 0,
-    sellTransactions: 0,
-    globalFeesPaid: 0,
-    website: '',
-    twitterHandle: '',
-    progress: 0,
-    status: 'new',
-    description: '',
-    created: Math.floor(Date.now() / 1000),
-    bondingAmount: 0,
-    volumeDelta: 0,
-    dev: '',
-  };
-
-  const baseToken: Token = (() => {
-    const fromState = (tokenData ?? {}) as Partial<Token>;
-    const t = tokenList.find(
-      (x) =>
-        x.contractAddress === tokenAddress || x.tokenAddress === tokenAddress,
-    );
-
-    if (t) {
-      return {
-        ...baseDefaults,
-        id: (t.id || t.contractAddress) ?? baseDefaults.id,
-        tokenAddress:
-          (t.contractAddress || t.tokenAddress) ?? baseDefaults.tokenAddress,
-        name: t.name,
-        symbol: t.symbol,
-        image: t.image,
-      };
-    }
-
-    return { ...baseDefaults, ...fromState };
-  })();
-
-  const token: Token = { ...baseToken, ...live } as Token;
   const currentPrice = token.price || 0;
 
   const getCurrentMONBalance = useCallback(() => {
@@ -1291,634 +1169,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     };
   }, [hoveredSimilarTokenImage, updateSimilarTokenPreviewPosition]);
 
-  const currentPriceRef = useRef(0);
-
   const closeNotif = useCallback(() => {
     setNotif((prev) => (prev ? { ...prev, visible: false } : prev));
     setTimeout(() => setNotif(null), 300);
   }, []);
-
-  // metadata n klines
-  useEffect(() => {
-    console.log("hi")
-    if (!tokenAddress) {
-      console.log("early return");
-      return;
-    }
-    let isCancelled = false;
-
-    const fetchMemeTokenData = async () => { 
-      console.log("trades n klines")
-      try {
-        const response = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-              query ($id: ID!) {
-                launchpadTokens: launchpadTokens(where: { id: $id }) {
-                  lastPriceNativePerTokenWad
-                  volumeNative
-                  buyTxs
-                  sellTxs
-                  name
-                  symbol
-                  metadataCID
-                  creator {
-                    id
-                  }
-                  timestamp
-                  trades(first: 50, orderBy: block, orderDirection: desc) {
-                    id
-                    account {id}
-                    block
-                    isBuy
-                    priceNativePerTokenWad
-                    amountIn
-                    amountOut
-                  }
-                  series: ${
-                    'series' +
-                    (selectedInterval === '1s'
-                      ? '1'
-                      : selectedInterval === '5s'
-                        ? '5'
-                        : selectedInterval === '15s'
-                          ? '15'
-                          : selectedInterval === '1m'
-                            ? '60'
-                            : selectedInterval === '5m'
-                              ? '300'
-                              : selectedInterval === '15m'
-                                ? '900'
-                                : selectedInterval === '1h'
-                                  ? '3600'
-                                  : selectedInterval === '4h'
-                                    ? '14400'
-                                    : '86400')
-                  } 
-                    {
-                    klines(first: 1000, orderBy: time, orderDirection: desc) {
-                      time open high low close baseVolume
-                    }
-                  }
-                }
-              }
-            `,
-            variables: {
-              id: token.id.toLowerCase(),
-            },
-          }),
-        });
-
-        const data = (await response.json())?.data;
-        if (isCancelled || !data) return;
-
-        if (data.launchpadTokens?.length) {
-          const m = data.launchpadTokens[0];
-
-          let imageUrl = token.image || '';
-          if (m.metadataCID && !imageUrl) {
-            try {
-              const metaRes = await fetch(m.metadataCID);
-              if (metaRes.ok) {
-                const meta = await metaRes.json();
-                imageUrl = meta.image || '';
-              }
-            } catch (e) {
-              console.warn('Failed to load metadata for token:', token.id, e);
-            }
-          }
-
-          const updatedTokenData = {
-            ...token,
-            name: m.name || token.name || 'Unknown Token',
-            symbol: m.symbol || token.symbol || 'UNKNOWN',
-            image: imageUrl,
-            dev: m.creator.id || '',
-            price: Number(m.lastPriceNativePerTokenWad || 0) / 1e9,
-            marketCap:
-              (Number(m.lastPriceNativePerTokenWad || 0) / 1e9) * TOTAL_SUPPLY,
-            volume24h: Number(m.volumeNative || 0) / 1e18,
-            buyTransactions: Number(m.buyTxs || 0),
-            sellTransactions: Number(m.sellTxs || 0),
-            created: m.timestamp,
-          };
-
-          currentPriceRef.current = updatedTokenData.price;
-
-          setLive((p: any) => ({
-            ...p,
-            name: updatedTokenData.name,
-            symbol: updatedTokenData.symbol,
-            image: updatedTokenData.image,
-            dev: updatedTokenData.dev,
-            price: updatedTokenData.price,
-            marketCap: updatedTokenData.marketCap,
-            volume24h: updatedTokenData.volume24h,
-            buyTransactions: updatedTokenData.buyTransactions,
-            sellTransactions: updatedTokenData.sellTransactions,
-          }));
-          setLimitPrice(updatedTokenData.marketCap.toFixed(0));
-          setTokenData(updatedTokenData);
-        }
-
-        if (data.launchpadTokens?.[0]?.trades?.length) {
-          const mapped = data.launchpadTokens[0].trades.map((t: any) => ({
-            id: t.id,
-            timestamp: Number(t.block),
-            isBuy: t.isBuy,
-            price: Number(t.priceNativePerTokenWad) / 1e9,
-            tokenAmount: Number(t.isBuy ? t.amountOut : t.amountIn) / 1e18,
-            nativeAmount: Number(t.isBuy ? t.amountIn : t.amountOut) / 1e18,
-            caller: t.account.id,
-          }));
-
-          setTrades(mapped);
-        } else {
-          setTrades([]);
-        }
-
-        if (data.launchpadTokens?.[0]?.series?.klines) {
-          const bars = data.launchpadTokens[0].series.klines
-            .slice()
-            .reverse()
-            .map((c: any) => ({
-              time: Number(c.time) * 1000,
-              open: Number(c.open) / 1e9,
-              high: Number(c.high) / 1e9,
-              low: Number(c.low) / 1e9,
-              close: Number(c.close) / 1e9,
-              volume: Number(c.baseVolume) / 1e18,
-            }));
-
-          const resForChart =
-            selectedInterval === '1d'
-              ? '1D'
-              : selectedInterval === '4h'
-                ? '240'
-                : selectedInterval === '1h'
-                  ? '60'
-                  : selectedInterval.endsWith('s')
-                    ? selectedInterval.slice(0, -1).toUpperCase() + 'S'
-                    : selectedInterval.slice(0, -1);
-
-          setChartData([bars, resForChart, false]);
-        }
-      } catch (e) {
-        console.error('Error fetching token data:', e);
-        setLive((p: any) => ({
-          ...p,
-          price: 0,
-          marketCap: 0,
-          volume24h: 0,
-          buyTransactions: 0,
-          sellTransactions: 0,
-        }));
-        setTrades([]);
-        setChartData(null);
-      }
-    };
-
-    fetchMemeTokenData();
-    return () => {
-      isCancelled = true;
-    };
-  }, [tokenAddress, selectedInterval]);
-
-  // by-token oc initial
-  useEffect(() => {
-    if (!token.id) return;
-    const price = Number(currentPriceRef.current);
-    if (!price) return;
-    setTerminalToken(token.id);
-    let cancelled = false;
-
-    (async () => {
-      const first = PAGE_SIZE;
-      const skip = page * PAGE_SIZE;
-      const m = (token.id || '').toLowerCase();
-
-      const holdersPromise = (async () => {
-        const response = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: HOLDERS_QUERY,
-            variables: { m, skip, first },
-          }),
-        });
-
-        const { data } = await response.json();
-
-        const positions: any[] = data?.launchpadPositions ?? [];
-        const mapped: Holder[] = positions
-          .filter(
-            (p: any) =>
-              p.account?.id.toLowerCase() !== routerAddress.toLowerCase(),
-          )
-          .map((p: any) => {
-            const amountBought = Number(p.tokenBought) / 1e18;
-            const amountSold = Number(p.tokenSold) / 1e18;
-            const valueBought = Number(p.nativeSpent) / 1e18;
-            const valueSold = Number(p.nativeReceived) / 1e18;
-            const balance = Number(p.tokens) / 1e18;
-            const realized = valueSold - valueBought;
-            const unrealized = balance * price;
-            const totalPnl = realized + unrealized;
-
-            return {
-              address: p.account.id,
-              balance,
-              amountBought,
-              amountSold,
-              valueBought,
-              valueSold,
-              tokenNet: balance,
-              valueNet: totalPnl,
-            };
-          });
-
-        const top10Pct = toPct(
-          mapped
-            .map((h) => Math.max(0, h.balance))
-            .sort((a, b) => b - a)
-            .slice(0, 10)
-            .reduce((s, n) => s + n, 0),
-        );
-
-        if (!cancelled) {
-          setTop10HoldingPercentage(top10Pct);
-          const devPct = calcDevHoldingPct(mapped, token.dev);
-          setLive((p: any) => ({ ...p, devHolding: devPct }));
-          setHolders(mapped);
-          holdersMapRef.current = new Map(
-            mapped.map((h: Holder, i: number) => [h.address.toLowerCase(), i]),
-          );
-        }
-      })();
-
-      const topTradersPromise = (async () => {
-        const out: Holder[] = [];
-
-        const res = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: TOP_TRADERS_QUERY,
-            variables: { m, skip, first },
-          }),
-        });
-
-        const { data } = await res.json();
-        const rows: any[] = data?.launchpadPositions ?? [];
-
-        for (const p of rows) {
-          if (p.account.id.toLowerCase() != routerAddress.toLowerCase()) {
-            const amountBought = Number(p.tokenBought) / 1e18;
-            const amountSold = Number(p.tokenSold) / 1e18;
-            const valueBought = Number(p.nativeSpent) / 1e18;
-            const valueSold = Number(p.nativeReceived) / 1e18;
-            const balance = Number(p.tokens) / 1e18;
-            const realized = valueSold - valueBought;
-            const unrealized = balance * currentPrice;
-            const pnl = realized + unrealized;
-
-            out.push({
-              address: p.account.id,
-              balance: amountBought - amountSold,
-              tokenNet: amountBought - amountSold,
-              valueNet: pnl,
-              amountBought,
-              amountSold,
-              valueBought,
-              valueSold,
-            });
-          }
-        }
-
-        if (!cancelled) {
-          out.sort((a, b) => b.valueNet - a.valueNet);
-          const trimmed = out.slice(0, 100);
-          setTopTraders(trimmed);
-          topTradersMapRef.current = new Map(
-            trimmed.map((t, i) => [t.address.toLowerCase(), i]),
-          );
-        }
-      })();
-
-      await Promise.all([holdersPromise, topTradersPromise]);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tokenAddress, page, currentPriceRef.current]);
-
-  // dev
-  useEffect(() => {
-    const d = token.dev ? token.dev.toLowerCase() : '';
-    if (!d) {
-      setDevTokens([]);
-      devTokenIdsRef.current = new Set();
-      return;
-    }
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const first = PAGE_SIZE;
-        const skip = page * PAGE_SIZE;
-
-        const res = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: DEV_TOKENS_QUERY,
-            variables: { d, skip, first },
-          }),
-        });
-
-        const { data } = await res.json();
-        const rows: any[] = data?.launchpadTokens ?? [];
-
-        const out = [];
-        for (const t of rows) {
-          let imageUrl = '';
-          if (t.metadataCID) {
-            try {
-              const metaRes = await fetch(t.metadataCID);
-              if (metaRes.ok) {
-                const meta = await metaRes.json();
-                imageUrl = meta.image || '';
-              }
-            } catch {}
-          }
-          const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
-          out.push({
-            id: t.id,
-            symbol: t.symbol,
-            name: t.name,
-            imageUrl,
-            price,
-            marketCap: price * TOTAL_SUPPLY,
-            timestamp: Number(t.timestamp ?? 0),
-            status: t.migrated,
-          });
-        }
-
-        if (!cancelled) {
-          setDevTokens(out);
-          devTokenIdsRef.current = new Set(
-            out.map((t) => String(t.id || '').toLowerCase()),
-          );
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setDevTokens([]);
-          devTokenIdsRef.current = new Set();
-        }
-        console.error('dev tokens fetch failed', e);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [token.dev, page]);
-
-  // similar tokens
-  useEffect(() => {
-    if (!token.id) return;
-
-    const baseName = String(token.name || '').trim();
-    const baseSymbol = String(token.symbol || '').trim();
-
-    if (!baseName && !baseSymbol) {
-      setSimilarTokens([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    const normalize = (s: string) =>
-      s.toLowerCase().replace(/\s+/g, ' ').trim();
-    const tokenize = (s: string) =>
-      normalize(s)
-        .split(/[^a-z0-9]+/i)
-        .filter((w) => w.length >= 3 && !STOPWORDS.has(w))
-        .slice(0, 8);
-    const acronym = (s: string) =>
-      (s.match(/\b([a-zA-Z0-9])/g) || []).join('').toLowerCase();
-    const trigrams = (s: string) => {
-      const t: string[] = [];
-      const x = ` ${normalize(s)} `;
-      for (let i = 0; i < x.length - 2; i++) t.push(x.slice(i, i + 3));
-      return t;
-    };
-    const jaccard = (a: string[], b: string[]) => {
-      const A = new Set(a);
-      const B = new Set(b);
-      let inter = 0;
-      for (const v of A) if (B.has(v)) inter++;
-      const uni = A.size + B.size - inter || 1;
-      return inter / uni;
-    };
-
-    const edit = (a: string, b: string) => {
-      const m = a.length,
-        n = b.length;
-      const dp = Array.from({ length: m + 1 }, (_, _i) =>
-        new Array(n + 1).fill(0),
-      );
-      for (let i = 0; i <= m; i++) dp[i][0] = i;
-      for (let j = 0; j <= n; j++) dp[0][j] = j;
-      for (let i = 1; i <= m; i++) {
-        for (let j = 1; j <= n; j++) {
-          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-          dp[i][j] = Math.min(
-            dp[i - 1][j] + 1,
-            dp[i][j - 1] + 1,
-            dp[i - 1][j - 1] + cost,
-          );
-        }
-      }
-      return dp[m][n];
-    };
-
-    const scoreSimilarity = (
-      qName: string,
-      qSymbol: string,
-      candName: string,
-      candSymbol: string,
-    ) => {
-      const qs = normalize(qName);
-      const cs = normalize(candName);
-      const qTok = tokenize(qs);
-      const cTok = tokenize(cs);
-
-      let score = 0;
-
-      score += 400 * jaccard(qTok, cTok);
-      score += 300 * jaccard(trigrams(qs), trigrams(cs));
-
-      if (cs.startsWith(qs) && qs.length >= 3) score += 200;
-      if (qs.startsWith(cs) && cs.length >= 3) score += 120;
-      if (cs.includes(qs) && qs.length >= 3) score += 120;
-
-      const qa = acronym(qName);
-      const ca = acronym(candName);
-      if (qa && ca && qa === ca) score += 180;
-
-      if (qs && cs) {
-        const dist = edit(qs, cs);
-        const norm = 1 - Math.min(1, dist / Math.max(qs.length, cs.length));
-        score += 200 * norm;
-      }
-
-      const qSym = qSymbol.toLowerCase();
-      const cSym = (candSymbol || '').toLowerCase();
-      if (qSym && cSym) {
-        if (qSym === cSym) score += 350;
-        if (cSym.startsWith(qSym)) score += 220;
-        else if (qSym.startsWith(cSym)) score += 160;
-        else if (cSym.includes(qSym)) score += 140;
-      }
-
-      return score;
-    };
-
-    const STOPWORDS = new Set([
-      'the',
-      'a',
-      'an',
-      'token',
-      'coin',
-      'inu',
-      'doge',
-      'baby',
-      'new',
-      'of',
-      'and',
-      'for',
-      'with',
-      'club',
-      'project',
-    ]);
-
-    (async () => {
-      try {
-        const exclude = token.id.toLowerCase();
-        const nameTerms = tokenize(baseName);
-        const terms = Array.from(new Set(nameTerms)).slice(0, 4);
-        const sym = baseSymbol.trim();
-        const symTerms =
-          sym.length >= 2 ? [sym, sym.slice(0, 3)].filter(Boolean) : [];
-        const requests: Promise<Response>[] = [];
-
-        for (const q of terms) {
-          requests.push(
-            fetch(SUBGRAPH_URL, {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({
-                query: SIMILAR_TOKENS_BY_NAME_QUERY,
-                variables: { q, exclude, first: 100 },
-              }),
-            }),
-          );
-        }
-
-        for (const q of symTerms) {
-          requests.push(
-            fetch(SUBGRAPH_URL, {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({
-                query: SIMILAR_TOKENS_BY_SYMBOL_QUERY,
-                variables: { q, exclude, first: 50 },
-              }),
-            }),
-          );
-        }
-
-        if (requests.length === 0 && baseName) {
-          requests.push(
-            fetch(SUBGRAPH_URL, {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({
-                query: SIMILAR_TOKENS_BY_NAME_QUERY,
-                variables: { q: baseName, exclude, first: 100 },
-              }),
-            }),
-          );
-        }
-
-        const responses = await Promise.all(requests);
-        const jsons = await Promise.all(responses.map((r) => r.json()));
-        const candidates: any[] = [];
-        for (const j of jsons) {
-          const rows = j?.data?.launchpadTokens ?? [];
-          for (const r of rows) candidates.push(r);
-        }
-
-        const mergedMap = new Map<string, any>();
-        for (const r of candidates)
-          mergedMap.set(String(r.id).toLowerCase(), r);
-        const merged = Array.from(mergedMap.values());
-
-        const scored = merged
-          .map((t: any) => ({
-            ...t,
-            _score: scoreSimilarity(
-              baseName,
-              baseSymbol,
-              t.name || '',
-              t.symbol || '',
-            ),
-          }))
-          .sort((a: any, b: any) => b._score - a._score)
-          .slice(0, 5);
-
-        const finalWithImages = await Promise.all(
-          scored.map(async (t: any) => {
-            let imageUrl = '';
-            if (t.metadataCID) {
-              try {
-                const metaRes = await fetch(t.metadataCID);
-                if (metaRes.ok) {
-                  const meta = await metaRes.json();
-                  imageUrl = meta.image || '';
-                }
-              } catch {}
-            }
-            const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
-            return {
-              id: t.id,
-              name: t.name,
-              symbol: t.symbol,
-              imageUrl,
-              price,
-              marketCap: price * TOTAL_SUPPLY,
-              volume24h: Number(t.volumeNative || 0) / 1e18,
-              timestamp: Number(t.timestamp ?? 0),
-              lastUpdatedAt: Number(t.lastUpdatedAt),
-            };
-          }),
-        );
-
-        if (!cancelled) setSimilarTokens(finalWithImages);
-      } catch (e) {
-        if (!cancelled) setSimilarTokens([]);
-        console.error('similar tokens fuzzy fetch failed', e);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tokenAddress]);
 
   // backend ws
   useEffect(() => {
@@ -1975,165 +1229,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       } catch {}
     };
   }, [tokenAddress]);
-
-  // positions - aggregated across all wallets
-  useEffect(() => {
-    // Collect all addresses (main wallet + sub wallets)
-    const allAddresses = [userAddr, ...subWallets.map((w) => w.address)]
-      .filter(Boolean)
-      .map((a) => a.toLowerCase());
-
-    if (allAddresses.length === 0) return;
-
-    let cancelled = false;
-
-    (async () => {
-      const totals = {
-        balance: 0,
-        amountBought: 0,
-        amountSold: 0,
-        valueBought: 0,
-        valueSold: 0,
-        lastPriceNative: 0,
-      };
-
-      // Map to aggregate positions by tokenId
-      const aggregatedMap = new Map<string, any>();
-
-      // Fetch positions for each address
-      for (const addr of allAddresses) {
-        let skip = 0;
-
-        while (true) {
-          const response = await fetch(SUBGRAPH_URL, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              query: POSITIONS_QUERY,
-              variables: {
-                a: addr,
-                skip,
-                first: PAGE_SIZE,
-              },
-            }),
-          });
-
-          const { data } = await response.json();
-          const rows: any[] = data?.launchpadPositions ?? [];
-          if (!rows.length) break;
-
-          for (const p of rows) {
-            const tokenId = p.token.id.toLowerCase();
-            const boughtTokens = Number(p.tokenBought) / 1e18;
-            const soldTokens = Number(p.tokenSold) / 1e18;
-            const spentNative = Number(p.nativeSpent) / 1e18;
-            const receivedNative = Number(p.nativeReceived) / 1e18;
-            const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e9;
-            const balance = Number(p.tokens) / 1e18;
-
-            // Aggregate into map
-            if (!aggregatedMap.has(tokenId)) {
-              let imageUrl = '';
-              if (p.token.metadataCID) {
-                try {
-                  const metaRes = await fetch(p.token.metadataCID);
-                  if (metaRes.ok) {
-                    const meta = await metaRes.json();
-                    imageUrl = meta.image || '';
-                  }
-                } catch (e) {
-                  console.warn(
-                    'Failed to load metadata for token',
-                    p.token.id,
-                    e,
-                  );
-                }
-              }
-
-              aggregatedMap.set(tokenId, {
-                tokenId: p.token.id,
-                symbol: p.token.symbol,
-                name: p.token.name,
-                metadataCID: p.token.metadataCID,
-                imageUrl: imageUrl,
-                boughtTokens: 0,
-                soldTokens: 0,
-                spentNative: 0,
-                receivedNative: 0,
-                remainingTokens: 0,
-                remainingPct: 0,
-                pnlNative: 0,
-                lastPrice: lastPrice,
-              });
-            }
-
-            const existing = aggregatedMap.get(tokenId);
-            existing.boughtTokens += boughtTokens;
-            existing.soldTokens += soldTokens;
-            existing.spentNative += spentNative;
-            existing.receivedNative += receivedNative;
-            existing.remainingTokens += balance;
-            existing.lastPrice = lastPrice || existing.lastPrice;
-
-            // Update totals for current token if it matches tokenAddress
-            if (p.token.id.toLowerCase() === tokenAddress?.toLowerCase()) {
-              totals.amountBought += boughtTokens;
-              totals.amountSold += soldTokens;
-              totals.valueBought += spentNative;
-              totals.valueSold += receivedNative;
-              totals.balance += balance;
-              totals.lastPriceNative = lastPrice || totals.lastPriceNative;
-            }
-          }
-
-          if (rows.length < PAGE_SIZE) break;
-          skip += PAGE_SIZE;
-          if (cancelled) return;
-        }
-      }
-
-      if (cancelled) return;
-
-      // Convert map to array and recalculate derived fields
-      const all = Array.from(aggregatedMap.values()).map((pos) => {
-        const realized = pos.receivedNative - pos.spentNative;
-        const unrealized = pos.remainingTokens * pos.lastPrice;
-        const pnlNative = realized + unrealized;
-        const remainingPct =
-          pos.boughtTokens > 0
-            ? (pos.remainingTokens / pos.boughtTokens) * 100
-            : 0;
-
-        return {
-          ...pos,
-          remainingPct,
-          pnlNative,
-        };
-      });
-
-      const markToMarket = totals.balance * (totals.lastPriceNative || 0);
-      const totalPnL = totals.valueSold + markToMarket - totals.valueBought;
-
-      const sorted = all.sort((a, b) => b.remainingTokens - a.remainingTokens);
-      setPositions(sorted);
-      positionsMapRef.current = new Map(
-        sorted.map((p, i) => [String(p.tokenId).toLowerCase(), i]),
-      );
-
-      setUserStats({
-        balance: totals.balance,
-        amountBought: totals.amountBought,
-        amountSold: totals.amountSold,
-        valueBought: totals.valueBought,
-        valueSold: totals.valueSold,
-        valueNet: totalPnL,
-      });
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [userAddr, subWallets, tokenAddress]);
 
   const handlePresetEditToggle = useCallback(() => {
     setIsPresetEditMode(!isPresetEditMode);
@@ -4392,7 +3487,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               <img
                 src={
                   similarTokens.find(
-                    (t) => String(t.id) === hoveredSimilarTokenImage,
+                    (t: any) => String(t.id) === hoveredSimilarTokenImage,
                   )?.imageUrl || ''
                 }
                 alt="Token preview"
