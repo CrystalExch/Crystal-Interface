@@ -30,6 +30,7 @@ import monadicon from '../../assets/monadlogo.svg';
 import slippage from '../../assets/slippage.svg';
 import trash from '../../assets/trash.svg';
 import walleticon from '../../assets/wallet_icon.png';
+import { loadBuyPresets, loadSellPresets, updateBuyPreset, updateSellPreset } from '../../utils/presetManager';
 
 import './MemeInterface.css';
 
@@ -1030,13 +1031,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setIsLoadingTrades(true);
     setTrackedAddresses(d ? [d] : []);
   }, [token.dev]);
+const setTrackedToYou = useCallback(() => {
+  const allYouAddresses = [
+    (userAddr || '').toLowerCase(),
+    ...(subWallets || []).map((w) => (w.address || '').toLowerCase()),
+  ].filter(Boolean);
 
-  const setTrackedToYou = useCallback(() => {
-    const me = (userAddr || '').toLowerCase();
-    setIsLoadingTrades(true);
-
-    setTrackedAddresses(me ? [me] : []);
-  }, [userAddr]);
+  setIsLoadingTrades(true);
+  setTrackedAddresses(allYouAddresses);
+}, [userAddr, subWallets]);
 
   const clearTracked = useCallback(() => {
     setIsLoadingTrades(true);
@@ -1644,7 +1647,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               realtimeCallbackRef={realtimeCallbackRef}
               monUsdPrice={monUsdPrice}
               tradehistory={trades}
-              isMarksVisible={trackedAddresses.length > 0}
+              isMarksVisible={true}
               address={address}
               devAddress={token.dev}
             />

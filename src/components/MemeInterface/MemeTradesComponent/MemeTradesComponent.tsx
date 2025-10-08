@@ -146,13 +146,12 @@ const Tooltip: React.FC<{
               position: 'absolute',
               top: `${tooltipPosition.top - 20}px`,
               left: `${tooltipPosition.left}px`,
-              transform: `${
-                position === 'top' || position === 'bottom'
+              transform: `${position === 'top' || position === 'bottom'
                   ? 'translateX(-50%)'
                   : position === 'left' || position === 'right'
                     ? 'translateY(-50%)'
                     : 'none'
-              } scale(${isVisible ? 1 : 0})`,
+                } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
               pointerEvents: 'none',
@@ -219,12 +218,12 @@ interface Props {
   trades: RawTrade[];
   tokenList?: any[];
   market?:
-    | {
-        baseAsset?: string;
-        quoteAsset?: string;
-        quoteAddress?: string;
-      }
-    | any;
+  | {
+    baseAsset?: string;
+    quoteAsset?: string;
+    quoteAddress?: string;
+  }
+  | any;
   tradesByMarket?: any;
   markets?: any;
   tokendict?: any;
@@ -419,14 +418,18 @@ export default function MemeTradesComponent({
       filteredTrades = displayTrades.filter((r) => {
         // Filter by maker address
         if (transactionFilters.makerAddress.trim() !== '') {
-          const filterAddress = transactionFilters.makerAddress
+          const filterValues = transactionFilters.makerAddress
             .toLowerCase()
-            .trim();
+            .split(',')
+            .map((v) => v.trim())
+            .filter(Boolean);
+
           const callerAddress = r.caller.toLowerCase();
-          if (!callerAddress.includes(filterAddress)) {
+          if (!filterValues.some((addr) => callerAddress.includes(addr))) {
             return false;
           }
         }
+
 
         // Calculate USD amount for filtering
         let amountUSD = 0;
@@ -725,13 +728,11 @@ export default function MemeTradesComponent({
         if (youActive) {
           onClearTracked?.();
         } else {
-          const allYouAddresses = [
-            currentUserAddress,
-            ...(subWallets || []).map((w) => w.address),
-          ].filter((addr): addr is string => addr !== undefined && addr !== '');
+          const allYouAddresses = Array.from(youSet);
           onFilterYou?.(allYouAddresses);
         }
         break;
+
       case 'tracked':
         onClearTracked?.();
         break;
