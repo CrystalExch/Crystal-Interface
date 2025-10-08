@@ -150,7 +150,7 @@
   overflow: hidden;
 }
 
-.progress-fill {
+.order-progress-fill {
   height: 100%;
   background: linear-gradient(90deg, #aaaecf 0%, #b2b8ef 100%);
   border-radius: 2px;
@@ -166,7 +166,7 @@
 }
 
 .order-details-row {
-  padding: 8px 4px 4px 4px;
+  padding: 8px 4px 8px 4px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   animation: slideDown 0.2s ease-out;
 }

@@ -429,8 +429,6 @@
   filter: brightness(1.1);
 }
 
-
-
 .explorer-additional-data {
   display: flex;
   gap: 0.5rem;
@@ -2278,11 +2276,10 @@
   height: 30px;
   padding: 3px 8px;
   transition: all 0.2s ease;
+  width: 100%;
 }
 
 .blacklist-input:focus {
-  border-color: rgba(170, 174, 207, 0.6);
-  box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.2);
   outline: none;
 }
 
@@ -2326,15 +2323,92 @@
   margin-bottom: 20px;
 }
 
-.blacklist-tabs {
+.blacklist-tabs-container {
+  position: relative;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 0 15px;
   padding-bottom: 15px;
 }
 
+.blacklist-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: hidden;
+  padding: 0 15px;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.blacklist-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.blacklist-tabs-container::before,
+.blacklist-tabs-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 15px;
+  width: 40px;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.blacklist-tabs-container::before {
+  left: 0;
+  background: linear-gradient(90deg, rgb(6, 6, 6) 0%, rgba(6, 6, 6, 0) 100%);
+}
+
+.blacklist-tabs-container::after {
+  right: 0;
+  background: linear-gradient(90deg, rgba(6, 6, 6, 0) 0%, rgb(6, 6, 6) 100%);
+}
+
+.blacklist-tabs-container.show-left-gradient::before {
+  opacity: 1;
+}
+
+.blacklist-tabs-container.show-right-gradient::after {
+  opacity: 1;
+}
+
+.blacklist-tab-arrow {
+  position: absolute;
+  top: calc(50% - 8px);
+  transform: translateY(-50%);
+  width: 20px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.blacklist-tab-arrow.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+
+
+.blacklist-tab-arrow.left {
+  left: 8px;
+}
+
+.blacklist-tab-arrow.right {
+  right: 8px;
+}
+.blacklist-tab-arrow svg {
+  color: rgba(255, 255, 255, 0.7);
+  width: 16px;
+  height: 16px;
+}
 .blacklist-tab {
   border: 1.5px solid rgba(179, 184, 249, 0.1);
   border-radius: 6px;
@@ -2368,13 +2442,26 @@
   display: flex;
   justify-content: space-between;
   padding: 12px 16px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  cursor: pointer;
+  position: relative;
 }
+
+.blacklist-item:hover {
+  background: rgba(240, 238, 248, 0.03);
+}
+.blacklist-item-text:hover {
+  text-decoration: underline;
+}
+
+
 
 .blacklist-item:last-child {
   border-bottom: none;
 }
 
 .blacklist-item-text {
+  display: flex;
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.8rem;
   letter-spacing: -0.3px;
@@ -2382,23 +2469,64 @@
 
 .blacklist-item-type {
   align-items: center;
-  background-color: #d8dcff1a;
+    background: rgba(179, 184, 249, 0.1);
   border-radius: 10px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #d0d2e4;
   display: flex;
   font-size: 0.8rem;
   justify-content: center;
   width: 70px;
 }
 
+.blacklist-item-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.blacklist-copy-btn {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  padding: 4px;
+  transition: all 0.2s ease;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.blacklist-item:hover .blacklist-copy-btn {
+  opacity: 1;
+}
+
+.blacklist-copy-btn svg {
+  color: rgba(255, 255, 255, 0.9);
+  fill: currentColor;
+  transition: color 0.2s ease;
+}
+
+.blacklist-copy-btn:hover svg {
+  color: #d8dbf5;
+}
+
 .blacklist-remove-btn {
   background: transparent;
+  border: none;
   border-radius: 4px;
   cursor: pointer;
   filter: brightness(0) saturate(100%) invert(76%) sepia(62%) saturate(4997%) hue-rotate(319deg) brightness(95%) contrast(94%);
   font-size: 0.7rem;
   transition: all 0.2s ease;
   width: 18px;
+  height: 18px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 
@@ -2434,18 +2562,13 @@
 
 .blacklist-delete-all-btn {
   background: transparent;
-  border: 1.5px solid rgba(239, 68, 68, 0.3);
   border-radius: 20px;
-  color: #ef4444;
-  cursor: pointer;
+  background: rgba(235, 112, 112, 0.075);
+  color: rgb(235, 112, 112);
+    cursor: pointer;
   font-size: 0.8rem;
   padding: 4px 10px;
   transition: all 0.2s ease;
-}
-
-.blacklist-delete-all-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
 }
 
 .blacklist-import-btn,
@@ -4309,4 +4432,92 @@
 .subwallet-total-balance{
   display: flex;
   align-items: center;
+}
+
+
+.blacklist-category-dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  backdrop-filter: blur(8px);
+  border: 1px solid #2a2a2f9d;
+  border-radius: 6px;
+  margin-top: 4px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  padding: 4px
+}
+
+.blacklist-category-option {
+  width: 100%;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  color: #e5e8f1;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  transition: background 0.2s ease;
+  border-radius: 4px;
+  letter-spacing: -0.3px;
+}
+
+.blacklist-category-option:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
+.blacklist-category-option:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.blacklist-category-option.active {
+  background: #aaaecf38;
+  color: #d8dcff;
+}
+
+.blacklist-category-option svg {
+  flex-shrink: 0;
+}
+
+.blacklist-input-section {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.blacklist-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.blacklist-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 6px;
+  background: #aaaecf38;
+  color: #d8dcff;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+
+}
+
+.blacklist-tab.active .blacklist-tab-count {
+  background: #d8dcff;
+  color: black;
 }

@@ -210,10 +210,8 @@ interface Token {
   volume24h: number;
   holders: number;
   proTraders: number;
-  kolTraders: number;
   sniperHolding: number;
   devHolding: number;
-  bundleHolding: number;
   insiderHolding: number;
   top10Holding: number;
   buyTransactions: number;
@@ -420,7 +418,7 @@ const Loader = () => {
   );
 }
 
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 
 function App({ stateloading, setstateloading,addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
   // constants
@@ -3588,14 +3586,11 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
     numOrders: number,
     skew: number,
   ) => {
-    const prices: number[] = Array.from({ length: numOrders }, (_, i) =>
-      Math.round(
-        startPrice +
-        ((endPrice - startPrice) * i) /
-        (numOrders - 1)
-      )
-    );
-
+    const prices: number[] = Array.from({ length: numOrders }, (_, i) => {
+      const p = startPrice + ((endPrice - startPrice) * i) / (numOrders - 1)
+      return activeMarket.marketType !== 0 ? Math.round(Number(p.toPrecision(5))) : Math.round(p)
+    })
+    
     let orderSizes: bigint[];
     let factorSum: number;
 
@@ -3985,10 +3980,8 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
       volume24h: 0,
       holders: 0,
       proTraders: 0,
-      kolTraders: 0,
       sniperHolding: 0,
       devHolding: 0,
-      bundleHolding: 0,
       insiderHolding: 0,
       top10Holding: 0,
       buyTransactions: 0,
@@ -10925,11 +10918,9 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
     ageMin: '', ageMax: '',
     holdersMin: '', holdersMax: '',
     proTradersMin: '', proTradersMax: '',
-    kolTradersMin: '', kolTradersMax: '',
     top10HoldingMin: '', top10HoldingMax: '',
     devHoldingMin: '', devHoldingMax: '',
     sniperHoldingMin: '', sniperHoldingMax: '',
-    bundleHoldingMin: '', bundleHoldingMax: '',
     insiderHoldingMin: '', insiderHoldingMax: '',
     marketCapMin: '', marketCapMax: '',
     volume24hMin: '', volume24hMax: '',
@@ -15033,25 +15024,6 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                     </div>
                   </div>
 
-                  <div className="filter-row">
-                    <span className="filter-label">KOL Traders</span>
-                    <div className="filter-inputs">
-                      <input
-                        type="text"
-                        placeholder="Min"
-                        value={explorerFilters[explorerFiltersActiveTab]?.kolTradersMin || ''}
-                        onChange={(e) => handleExplorerFilterInputChange('kolTradersMin', e.target.value)}
-                        className="filter-input"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Max"
-                        value={explorerFilters[explorerFiltersActiveTab]?.kolTradersMax || ''}
-                        onChange={(e) => handleExplorerFilterInputChange('kolTradersMax', e.target.value)}
-                        className="filter-input"
-                      />
-                    </div>
-                  </div>
 
                   <div className="filter-row">
                     <span className="filter-label">Top 10 Holders %</span>
@@ -15113,25 +15085,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                     </div>
                   </div>
 
-                  <div className="filter-row">
-                    <span className="filter-label">Bundle Holding %</span>
-                    <div className="filter-inputs">
-                      <input
-                        type="text"
-                        placeholder="Min"
-                        value={explorerFilters[explorerFiltersActiveTab]?.bundleHoldingMin || ''}
-                        onChange={(e) => handleExplorerFilterInputChange('bundleHoldingMin', e.target.value)}
-                        className="filter-input"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Max"
-                        value={explorerFilters[explorerFiltersActiveTab]?.bundleHoldingMax || ''}
-                        onChange={(e) => handleExplorerFilterInputChange('bundleHoldingMax', e.target.value)}
-                        className="filter-input"
-                      />
-                    </div>
-                  </div>
+
 
                   <div className="filter-row">
                     <span className="filter-label">Insider Holding %</span>
@@ -22711,7 +22665,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
             />
           </div>
           <ToggleSwitch
-            checked={(addliquidityonly || tokenIn == eth)}
+            checked={addliquidityonly}
             onChange={() => {
               const newValue = !addliquidityonly;
               setAddLiquidityOnly(newValue);
@@ -22720,7 +22674,6 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                 JSON.stringify(newValue),
               );
             }}
-            disabled={tokenIn == eth}
           />
         </div>
         <div className="trade-fee">

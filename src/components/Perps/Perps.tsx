@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo, useCallback, memo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import ChartOrderbookPanel from '../ChartOrderbookPanel/ChartOrderbookPanel';
 import OrderCenter from '../OrderCenter/OrderCenter';
 import ChartComponent from '../Chart/Chart';
@@ -10,6 +10,8 @@ import TooltipLabel from '../TooltipLabel/TooltipLabel';
 import { formatTime } from '../../utils/formatTime.ts'
 import { formatCommas } from '../../utils/numberDisplayFormat';
 import walleticon from '../../assets/wallet_icon.png'
+// @ts-ignore
+import { SignableOrder } from './edgeXsdk/src/starkex-lib'
 
 interface PerpsProps {
   layoutSettings: string;
@@ -130,7 +132,7 @@ const Perps: React.FC<PerpsProps> = ({
   signer,
   setSigner
 }) => {
-  const [exchangeConfig, setExchangeConfig] = useState();
+  const [exchangeConfig, setExchangeConfig] = useState<any>();
   const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
   const [orderdata, setorderdata] = useState<any>([]);
   const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};
@@ -567,52 +569,7 @@ const Perps: React.FC<PerpsProps> = ({
   const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
   }, []);
 
-  function fromOrder(
-    order: {
-      humanSize: string
-      humanPrice: number
-      limitFee: string
-      symbol: string
-      expirationIsoTimestamp: number
-      clientId: string
-      positionId: string
-      side: 'BUY' | 'SELL'
-    },
-    assetIdSynthetic: string,
-    assetIdCollateral: string,
-    baseResolution: number,
-    quoteResolution: number
-  ){
-    const LIMIT_ORDER_WITH_FEES=3n,ORDER_PADDING_BITS=17n,STARK_PRIME=2n**251n+17n*2n**192n+1n
-    const clientIdToNonce=(id:string)=>parseInt(sha256(toUtf8Bytes(id)).slice(2,10),16)
-    const pedersenHash=(a:bigint,b:bigint)=>{const h=a.toString(16).padStart(64,'0')+b.toString(16).padStart(64,'0');const bytes=Uint8Array.from(h.match(/.{1,2}/g)!.map(x=>parseInt(x,16)));return BigInt(sha256(bytes))%STARK_PRIME}
-  
-    const nonce=BigInt(clientIdToNonce(order.clientId))
-    const positionId=BigInt(order.positionId)
-    const isBuying=order.side==='BUY'
-    const assetFee=BigInt(assetIdCollateral)
-  
-    const qSyn=BigInt(Math.round(Number(order.humanSize)*baseResolution))
-    const qCol=BigInt(Math.round(Number(order.humanPrice)*Number(order.humanSize)*quoteResolution))
-    const qFee=BigInt(Math.ceil(Number(order.limitFee)*quoteResolution))
-    const expHrs=BigInt(Math.floor(order.expirationIsoTimestamp/3600000))
-  
-    const [assetSell,assetBuy]=isBuying?[BigInt(assetIdCollateral),BigInt(assetIdSynthetic)]:[BigInt(assetIdSynthetic),BigInt(assetIdCollateral)]
-    const [amtSell,amtBuy]=isBuying?[qCol,qSyn]:[qSyn,qCol]
-  
-    const part1=((((amtSell<<64n)+amtBuy)<<64n)+(qFee)<<64n)+nonce
-  
-    const p2a=((LIMIT_ORDER_WITH_FEES<<64n)+positionId)
-    const p2b=((p2a<<64n)+positionId)
-    const p2c=((p2b<<64n)+positionId)
-    const part2=((p2c<<64n)+expHrs)<<ORDER_PADDING_BITS
-  
-    const assets=pedersenHash(pedersenHash(assetSell,assetBuy),assetFee)
-    const hash=pedersenHash(pedersenHash(assets,part1),part2)
-    return '0x'+hash.toString(16).padStart(64,'0')
-  }
-
-  function generateSignedOrder(
+  async function generateSignedOrder(
     size: number,
     side: 'BUY' | 'SELL',
     type: 'MARKET' | 'LIMIT',
@@ -621,36 +578,51 @@ const Perps: React.FC<PerpsProps> = ({
     contractId: string,
     symbol: string,
     l2PrivateKey: string,
-    activeMarket: any
-  ) {
+    activeMarket: any,
+    userFees: any
+  ): Promise<any> {
     const ts = Date.now().toString()
-    const expireTime = (Date.now() + 30 * 24 * 60 * 60 * 1000).toString()
-    const l2ExpireTime = (Number(expireTime) + 8 * 24 * 60 * 60 * 1000).toString()    // L2 expiration (8 days more)
+    const l2ExpireTime = (Date.now() + 30 * 24 * 60 * 60 * 1000).toString()
+    const l1ExpireTime = (Number(l2ExpireTime) - 9 * 24 * 60 * 60 * 1000).toString()
   
-    const l2Price = type == 'MARKET' ? side == 'BUY' ? (price * 10).toString() : activeMarket?.stepSize : price.toString()
-    const l2Value = (Number(l2Price) * size).toFixed(2)
-    const limitFee = (Number(l2Value) * Number(userFees[0])).toFixed(0)
+    const l2Price = type == 'MARKET'
+      ? side == 'BUY'
+        ? (price * 10)
+        : Number(activeMarket.stepSize)
+      : price
+  
+    const l2Value = l2Price * size
+    const limitFee = Math.ceil(l2Value * Number(userFees[0])).toString()
     const clientOrderId = Math.floor(Math.random() * 1e16).toString()
-    const hashHex = sha256(toUtf8Bytes(clientOrderId)).replace(/^0x/, '')
-    const first8 = hashHex.slice(0, 8)
-    const l2Nonce = parseInt(first8, 16).toString()
+    const l2Nonce = parseInt(sha256(toUtf8Bytes(clientOrderId)).replace(/^0x/, '').slice(0, 8), 16).toString()
   
-    const orderToSign = {
-      humanSize: `${Number(size)}`,
-      humanPrice: l2Price,
-      limitFee,
-      symbol,
-      expirationIsoTimestamp: Number(l2ExpireTime),
+    const baseRes = Number(activeMarket.starkExResolution)
+    const quoteRes = Number(exchangeConfig.global.starkExCollateralCoin.starkExResolution)
+    
+    const quantumsAmountSynthetic = Math.floor(size * baseRes).toString()
+    const quantumsAmountCollateral = Math.floor(l2Price * size * quoteRes).toString()
+    const quantumsAmountFee = Math.ceil(Number(limitFee) * quoteRes).toString()    
+  
+    const orderToSign: any = {
       clientId: clientOrderId,
+      nonce: l2Nonce,
       positionId: accountId,
-      side
+      isBuyingSynthetic: side == 'BUY',
+      limitFee: limitFee,
+      expirationIsoTimestamp: Number(l2ExpireTime),
+      quantumsAmountFee,
+      quantumsAmountSynthetic,
+      quantumsAmountCollateral,
+      assetIdSynthetic: activeMarket.starkExSyntheticAssetId,
+      assetIdCollateral: exchangeConfig.global.starkExCollateralCoin.starkExAssetId,
+      symbol
     }
 
-    const { r, s } = starkSign(fromOrder(orderToSign, activeMarket.starkExSyntheticAssetId, '0x2ce625e94458d39dd0bf3b45a843544dd4a14b8169045a3a3d15aa564b936c5', Number(activeMarket.starkExResolution), Number("0xf4240")), l2PrivateKey)
-    const l2Signature = '0x' + r + s
-
+    const signable = SignableOrder.fromOrderWithNonce(orderToSign, Number(exchangeConfig.global.starkExChainId))
+    const l2Signature = await signable.sign(l2PrivateKey.replace(/^0x/, ''))
+  
     return {
-      price: type == 'MARKET' ? '0' : price.toString(),
+      price: type === 'MARKET' ? '0' : price.toString(),
       size: size.toString(),
       type,
       timeInForce: 'IMMEDIATE_OR_CANCEL',
@@ -664,9 +636,9 @@ const Perps: React.FC<PerpsProps> = ({
       triggerPrice: '',
       triggerPriceType: 'LAST_PRICE',
       clientOrderId,
-      expireTime,
+      expireTime: l1ExpireTime,
       l2Nonce,
-      l2Value,
+      l2Value: l2Value.toFixed(0),
       l2Size: size.toString(),
       l2LimitFee: limitFee,
       l2ExpireTime,
@@ -674,43 +646,13 @@ const Perps: React.FC<PerpsProps> = ({
       extraType: '',
       extraDataJson: '',
       symbol,
-      timestamp: ts,
+      timestamp: ts
     }
   }
 
   const handleTrade = async () => {
     const size = Math.floor(Number(inputString) / Number(perpsMarketsData[perpsActiveMarketKey]?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize)
-    const s = {
-      price: "0",
-      size: size.toFixed((activeMarket?.stepSize.split('.')[1] || '').length),
-      type: "MARKET",
-      timeInForce: "IMMEDIATE_OR_CANCEL",
-      reduceOnly: false,
-      isPositionTpsl: false,
-      isSetOpenTp: false,
-      isSetOpenSl: false,
-      accountId: signer.accountId,
-      contractId: activeMarket.contractId,
-      side: activeTradeType === "long" ? "BUY" : "SELL",
-      triggerPrice: "",
-      triggerPriceType: "LAST_PRICE",
-      clientOrderId: Math.random().toString().slice(2).replace(/^0+/, ''),
-      expireTime: (Date.now() + 5 * 60 * 1000).toString(),
-      l2Nonce: "1615311168",
-      l2Value: "2452.68",
-      l2Size: "0.002",
-      l2LimitFee: "1",
-      l2ExpireTime: (Date.now() + 5 * 60 * 1000).toString(),
-      l2Signature:
-        "05c5c5becce2903ea8472d0600eb0690baac24845e3e0774c8d8eaba3d4d8f14011e79a7a756d37a61ae75eade18ea86fb39dc561711888da3e2cd199d118b8d",
-      extraType: "",
-      extraDataJson: "",
-      symbol: perpsActiveMarketKey,
-      showEqualValInput: false,
-      maxSellQTY: 0.002,
-      maxBuyQTY: 0.002
-    }
-    const payload = generateSignedOrder(size, (activeTradeType === "long" ? "BUY" : "SELL"), "MARKET", Number(perpsMarketsData[perpsActiveMarketKey]?.lastPrice), signer.accountId, activeMarket.contractId, perpsActiveMarketKey, signer.privateKey, activeMarket)
+    const payload = await generateSignedOrder(size, (activeTradeType === "long" ? "BUY" : "SELL"), "MARKET", Number(perpsMarketsData[perpsActiveMarketKey]?.lastPrice), signer.accountId, activeMarket.contractId, perpsActiveMarketKey, signer.privateKey, activeMarket, userFees)
     console.log(payload)
     const ts = Date.now().toString()
     const path = '/api/v1/private/order/createOrder'

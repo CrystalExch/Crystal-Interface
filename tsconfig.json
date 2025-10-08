@@ -17,8 +17,8 @@
 
     /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false, // false
+    "noUnusedParameters": false, // false
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src", "src/global.d.ts"],

@@ -193,7 +193,7 @@ const ROUTER_EVENT =
   '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
 const MARKET_UPDATE_EVENT =
   '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.5.5';
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
   quickBuySize: 'small',
@@ -508,17 +508,75 @@ const BlacklistPopup: React.FC<{
   onClose: () => void;
   settings: BlacklistSettings;
   onSettingsChange: (settings: BlacklistSettings) => void;
-}> = ({ isOpen, onClose, settings, onSettingsChange }) => {
+  onCopyToClipboard: (text: string, type?: 'dev' | 'ca' | 'keyword' | 'website' | 'handle') => void;
+}> = ({ isOpen, onClose, settings, onSettingsChange, onCopyToClipboard }) => {
   const [activeTab, setActiveTab] = useState<BlacklistTab>('all');
   const [inputValue, setInputValue] = useState('');
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<'dev' | 'ca' | 'keyword' | 'website' | 'handle'>('keyword');
 
-  const addToBlacklist = () => {
+  const isValidEthAddress = (address: string) => {
+    return /^0x[a-fA-F0-9]{40}$/.test(address);
+  };
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
+
+  const checkScroll = useCallback(() => {
+    if (!tabsContainerRef.current) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.current;
+    setShowLeftArrow(scrollLeft > 0);
+    setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 1);
+  }, []);
+
+  const scrollTabs = (direction: 'left' | 'right') => {
+    if (!tabsContainerRef.current) return;
+
+    const scrollAmount = 200;
+    const newScrollLeft = direction === 'left'
+      ? tabsContainerRef.current.scrollLeft - scrollAmount
+      : tabsContainerRef.current.scrollLeft + scrollAmount;
+
+    tabsContainerRef.current.scrollTo({
+      left: newScrollLeft,
+      behavior: 'smooth'
+    });
+  };
+
+  useEffect(() => {
+    checkScroll();
+
+    const handleResize = () => checkScroll();
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, [checkScroll, settings.items]);
+
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url.startsWith('http') ? url : `https://${url}`);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const addToBlacklist = (category: 'dev' | 'ca' | 'keyword' | 'website' | 'handle') => {
     if (!inputValue.trim()) return;
+
+    if ((category === 'dev' || category === 'ca') && !isValidEthAddress(inputValue.trim())) {
+      return;
+    }
+
+    if (category === 'website' && !isValidUrl(inputValue.trim())) {
+      return;
+    }
 
     const newItem = {
       id: Date.now().toString(),
       text: inputValue.trim(),
-      type: activeTab === 'all' ? 'keyword' : (activeTab as any),
+      type: category,
     };
 
     onSettingsChange({
@@ -526,8 +584,8 @@ const BlacklistPopup: React.FC<{
     });
 
     setInputValue('');
+    setShowCategoryDropdown(false);
   };
-
   const removeFromBlacklist = (id: string) => {
     onSettingsChange({
       items: settings.items.filter((item) => item.id !== id),
@@ -586,72 +644,199 @@ const BlacklistPopup: React.FC<{
 
         <div className="blacklist-content">
           <div className="blacklist-input-section">
-            <input
-              type="text"
-              className="blacklist-input"
-              placeholder="Enter twitter handle, dev address or keyword"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addToBlacklist()}
-            />
-            <button className="blacklist-add-btn" onClick={addToBlacklist}>
-              Blacklist
+            <div style={{ position: 'relative', flex: 1 }}>
+              <input
+                type="text"
+                className="blacklist-input"
+                placeholder="Enter twitter handle, dev address, contract address or keyword"
+                value={inputValue}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  if (e.target.value.trim()) {
+                    setShowCategoryDropdown(true);
+                  }
+                }}
+                onFocus={() => {
+                  if (inputValue.trim()) {
+                    setShowCategoryDropdown(true);
+                  }
+                }}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    addToBlacklist(selectedCategory);
+                  }
+                }}
+              />
+              {showCategoryDropdown && inputValue.trim() && (
+                <div
+                  className="blacklist-category-dropdown"
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  <button
+                    className={`blacklist-category-option ${selectedCategory === 'dev' ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedCategory('dev');
+                      addToBlacklist('dev');
+                    }}
+                    disabled={!isValidEthAddress(inputValue.trim())}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 30 30" fill="currentColor">
+                      <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
+                    </svg>
+                    Developer Address
+                  </button>
+                  <button
+                    className={`blacklist-category-option ${selectedCategory === 'ca' ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedCategory('ca');
+                      addToBlacklist('ca');
+                    }}
+                    disabled={!isValidEthAddress(inputValue.trim())}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" />
+                    </svg>
+                    Contract Address
+                  </button>
+                  <button
+                    className={`blacklist-category-option ${selectedCategory === 'keyword' ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedCategory('keyword');
+                      addToBlacklist('keyword');
+                    }}
+                  >
+                    <Search size={16} />
+                    Keyword
+                  </button>
+                  <button
+                    className={`blacklist-category-option ${selectedCategory === 'website' ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedCategory('website');
+                      addToBlacklist('website');
+                    }}
+                    disabled={!isValidUrl(inputValue.trim())}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                    </svg>
+                    Website
+                  </button>
+                  <button
+                    className={`blacklist-category-option ${selectedCategory === 'handle' ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedCategory('handle');
+                      addToBlacklist('handle');
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
+                    </svg>
+                    Twitter Profile
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className={`blacklist-tabs-container ${showLeftArrow ? 'show-left-gradient' : ''} ${showRightArrow ? 'show-right-gradient' : ''}`}>
+            <button
+              className={`blacklist-tab-arrow left ${showLeftArrow ? 'visible' : ''}`}
+              onClick={() => scrollTabs('left')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+
+            <div
+              className="blacklist-tabs"
+              ref={tabsContainerRef}
+              onScroll={checkScroll}
+            >
+              {(
+                [
+                  'all',
+                  'dev',
+                  'ca',
+                  'keyword',
+                  'website',
+                  'handle',
+                ] as BlacklistTab[]
+              ).map((tab) => {
+                const count = tab === 'all'
+                  ? settings.items.length
+                  : settings.items.filter(item => item.type === tab).length;
+
+                return (
+                  <button
+                    key={tab}
+                    className={`blacklist-tab ${activeTab === tab ? 'active' : ''}`}
+                    onClick={() => setActiveTab(tab)}
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    {count > 0 && (
+                      <span className="blacklist-tab-count">{count}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              className={`blacklist-tab-arrow right ${showRightArrow ? 'visible' : ''}`}
+              onClick={() => scrollTabs('right')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
             </button>
           </div>
-
-          <div className="blacklist-tabs">
-            {(
-              [
-                'all',
-                'dev',
-                'ca',
-                'keyword',
-                'website',
-                'handle',
-              ] as BlacklistTab[]
-            ).map((tab) => (
-              <button
-                key={tab}
-                className={`blacklist-tab ${activeTab === tab ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
-
           <div className="blacklist-list">
             {filteredItems.length === 0 ? (
               <div className="blacklist-empty">
-                <svg
-                  className="blacklist-dev-icon"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 30 30"
-                  fill="#7f808d"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
-                </svg>
                 <span>No blacklisted items</span>
               </div>
             ) : (
               filteredItems.map((item) => (
-                <div key={item.id} className="blacklist-item">
+                <div key={item.id} className="blacklist-item" onClick={(e) => {
+                  e.stopPropagation();
+                  onCopyToClipboard(item.text, item.type);
+                }}>
                   <div className="blacklist-item-content">
-                    <span className="blacklist-item-text">{item.text}</span>
+                    <span className="blacklist-item-text">{item.text}                     <button
+                      className="blacklist-copy-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCopyToClipboard(item.text, item.type);
+                      }}
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                      </svg>
+                    </button></span>
                     <span className="blacklist-item-type">{item.type}</span>
                   </div>
-                  <button
-                    className="blacklist-remove-btn"
-                    onClick={() => removeFromBlacklist(item.id)}
-                  >
-                    <img
-                      src={trash}
-                      className="blacklist-remove-icon"
-                      alt="Remove"
-                    />
-                  </button>
+                  <div className="blacklist-item-actions">
+
+                    <button
+                      className="blacklist-remove-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFromBlacklist(item.id);
+                      }}
+                    >
+                      <img
+                        src={trash}
+                        className="blacklist-remove-icon"
+                        alt="Remove"
+                      />
+                    </button>
+                  </div>
                 </div>
               ))
             )}
@@ -662,9 +847,6 @@ const BlacklistPopup: React.FC<{
               {settings.items.length} / 1000 blacklists
             </span>
             <div className="blacklist-actions">
-              <button className="blacklist-delete-all-btn" onClick={deleteAll}>
-                Delete All
-              </button>
               <label className="blacklist-import-btn">
                 Import
                 <input
@@ -679,6 +861,9 @@ const BlacklistPopup: React.FC<{
                 onClick={exportBlacklist}
               >
                 Export
+              </button>
+              <button className="blacklist-delete-all-btn" onClick={deleteAll}>
+                Delete All
               </button>
             </div>
           </div>
@@ -2425,28 +2610,7 @@ const TokenRow = React.memo<{
 
           </button>
 
-          <button
-            className="explorer-blacklist-button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onBlacklistToken(token);
-            }}
-            title="Blacklist dev"
-          >
-            <Tooltip content="Blacklist Dev">
 
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 30 30"
-                fill="rgba(255, 255, 255, 0.9)"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
-              </svg>
-            </Tooltip>
-
-          </button>
         </div>
 
         <div className="explorer-token-left" style={!displaySettings.progressBar ? { marginTop: '-3px' } : {}}>
@@ -2597,41 +2761,41 @@ const TokenRow = React.memo<{
                 <span className="explorer-time-created">
                   {formatTimeAgo(token.created)}
                 </span>
-{displaySettings.visibleRows.socials && (
-  <>
-    {!!token.twitterHandle && (
-      <TwitterHover url={token.twitterHandle}>
-        <a
-          className="explorer-avatar-btn"
-          href={token.twitterHandle}
-          target="_blank"
-          rel="noreferrer"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <img
-            src={
-              token.twitterHandle.includes('/i/communities/')
-                ? communities
-                : token.twitterHandle.includes('/status/')
-                  ? tweet
-                  : avatar
-            }
-            alt={
-              token.twitterHandle.includes('/i/communities/')
-                ? 'Community'
-                : 'Twitter'
-            }
-            className={
-              token.twitterHandle.includes('/i/communities/')
-                ? 'community-icon'
-                : token.twitterHandle.includes('/status/')
-                  ? 'tweet-icon'
-                  : 'avatar-icon'
-            }
-          />
-        </a>
-      </TwitterHover>
-    )}
+                {displaySettings.visibleRows.socials && (
+                  <>
+                    {!!token.twitterHandle && (
+                      <TwitterHover url={token.twitterHandle}>
+                        <a
+                          className="explorer-avatar-btn"
+                          href={token.twitterHandle}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <img
+                            src={
+                              token.twitterHandle.includes('/i/communities/')
+                                ? communities
+                                : token.twitterHandle.includes('/status/')
+                                  ? tweet
+                                  : avatar
+                            }
+                            alt={
+                              token.twitterHandle.includes('/i/communities/')
+                                ? 'Community'
+                                : 'Twitter'
+                            }
+                            className={
+                              token.twitterHandle.includes('/i/communities/')
+                                ? 'community-icon'
+                                : token.twitterHandle.includes('/status/')
+                                  ? 'tweet-icon'
+                                  : 'avatar-icon'
+                            }
+                          />
+                        </a>
+                      </TwitterHover>
+                    )}
 
                     {!!token.website && (
                       <a
@@ -3798,19 +3962,48 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     };
   }, []);
 
-  const copyToClipboard = useCallback(async (text: string) => {
+  const copyToClipboard = useCallback(async (text: string, type?: 'dev' | 'ca' | 'keyword' | 'website' | 'handle') => {
     const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
       await navigator.clipboard.writeText(text);
       if (showLoadingPopup && updatePopup) {
+        let title = 'Copied';
+        let subtitle = '';
+
+        if (type === 'dev') {
+          title = 'Developer Address Copied';
+          subtitle = `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`;
+        } else if (type === 'ca') {
+          title = 'Contract Address Copied';
+          subtitle = `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`;
+        } else if (type === 'keyword') {
+          title = 'Keyword Copied';
+          subtitle = `"${text}" copied to clipboard`;
+        } else if (type === 'website') {
+          title = 'Website Copied';
+          subtitle = `${text} copied to clipboard`;
+        } else if (type === 'handle') {
+          title = 'Twitter Handle Copied';
+          subtitle = `${text} copied to clipboard`;
+        } else {
+          // Default for token addresses (when called from token rows without type)
+          // Check if text looks like an Ethereum address
+          if (/^0x[a-fA-F0-9]{40}$/.test(text)) {
+            title = 'Address Copied';
+            subtitle = `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`;
+          } else {
+            title = 'Copied';
+            subtitle = `${text} copied to clipboard`;
+          }
+        }
         showLoadingPopup(txId, {
-          title: 'Address Copied',
-          subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+          title,
+          subtitle,
         });
         setTimeout(() => {
           updatePopup(txId, {
-            title: 'Address Copied',
-            subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+            title,
+            subtitle,
             variant: 'success',
             confirmed: true,
             isLoading: false,
@@ -3822,12 +4015,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       if (showLoadingPopup && updatePopup) {
         showLoadingPopup(txId, {
           title: 'Copy Failed',
-          subtitle: 'Unable to copy address to clipboard',
+          subtitle: 'Unable to copy to clipboard',
         });
         setTimeout(() => {
           updatePopup(txId, {
             title: 'Copy Failed',
-            subtitle: 'Unable to copy address to clipboard',
+            subtitle: 'Unable to copy to clipboard',
             variant: 'error',
             confirmed: true,
             isLoading: false,
@@ -4287,6 +4480,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     });
   }, []);
 
+  // AFTER
   const visibleTokens = useMemo(() => {
     const base = {
       new: displaySettings.hideHiddenTokens
@@ -4300,14 +4494,45 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         : tokensByStatus.graduated,
     } as Record<Token['status'], Token[]>;
 
-    if (!appliedFilters) return base;
+    const filterByBlacklist = (tokens: Token[]) => {
+      return tokens.filter(token => {
+        return !blacklistSettings.items.some(item => {
+          const itemText = item.text.toLowerCase();
+
+          switch (item.type) {
+            case 'dev':
+              return token.dev.toLowerCase() === itemText;
+            case 'ca':
+              return token.tokenAddress.toLowerCase() === itemText;
+            case 'keyword':
+              const searchText = `${token.name} ${token.symbol} ${token.description}`.toLowerCase();
+              return searchText.includes(itemText);
+            case 'website':
+              return token.website.toLowerCase().includes(itemText);
+            case 'handle':
+              return token.twitterHandle.toLowerCase().includes(itemText);
+            default:
+              return false;
+          }
+        });
+      });
+    };
+
+    // Apply blacklist to all categories
+    const blacklisted = {
+      new: filterByBlacklist(base.new),
+      graduating: filterByBlacklist(base.graduating),
+      graduated: filterByBlacklist(base.graduated),
+    };
+
+    if (!appliedFilters) return blacklisted;
 
     return (['new', 'graduating', 'graduated'] as Token['status'][]).reduce(
       (acc, s) => ({
         ...acc,
         [s]: appliedFilters[s]
-          ? applyFilters(base[s], appliedFilters[s])
-          : base[s],
+          ? applyFilters(blacklisted[s], appliedFilters[s])
+          : blacklisted[s],
       }),
       {} as Record<Token['status'], Token[]>,
     );
@@ -4317,8 +4542,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     appliedFilters,
     applyFilters,
     displaySettings.hideHiddenTokens,
+    blacklistSettings,
   ]);
-
   const newTokens = visibleTokens.new;
   const graduatingTokens = visibleTokens.graduating;
   const graduatedTokens = visibleTokens.graduated;
@@ -4384,35 +4609,35 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               onClick={handleWalletButtonClick}
             >
               <div className="connect-content">
-                  <span className="transparent-button-container">
-                    <img src={walleticon} className="img-wallet-icon" />
-                    <span className={`wallet-count ${selectedSet.size ? 'has-active' : ''}`}>
-                      {selectedWallets.size}
-                    </span>
-                    <span className="subwallet-total-balance">
-                      {selectedWallets.size > 0 ? (
-                        <>
-                          <img src={monadicon} className="wallet-dropdown-mon-icon" style={{ width: '15px', height: '15px', marginRight: '4px' }} />
-                          {formatNumberWithCommas(totalSelectedBalance, 2)}
-                        </>
-                      ) : (
-                        <>
-                          <img src={monadicon} className="wallet-dropdown-mon-icon" style={{ width: '15px', height: '15px', marginRight: '4px' }} /> <span>0</span>
-                        </>
-                      )}
-                    </span>
-                    <svg
-                      className={`wallet-dropdown-arrow ${isWalletDropdownOpen ? 'open' : ''}`}
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
+                <span className="transparent-button-container">
+                  <img src={walleticon} className="img-wallet-icon" />
+                  <span className={`wallet-count ${selectedSet.size ? 'has-active' : ''}`}>
+                    {selectedWallets.size}
                   </span>
+                  <span className="subwallet-total-balance">
+                    {selectedWallets.size > 0 ? (
+                      <>
+                        <img src={monadicon} className="wallet-dropdown-mon-icon" style={{ width: '15px', height: '15px', marginRight: '4px' }} />
+                        {formatNumberWithCommas(totalSelectedBalance, 2)}
+                      </>
+                    ) : (
+                      <>
+                        <img src={monadicon} className="wallet-dropdown-mon-icon" style={{ width: '15px', height: '15px', marginRight: '4px' }} /> <span>0</span>
+                      </>
+                    )}
+                  </span>
+                  <svg
+                    className={`wallet-dropdown-arrow ${isWalletDropdownOpen ? 'open' : ''}`}
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
               </div>
             </button>
             {account.connected && (
@@ -5028,6 +5253,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         onClose={() => setShowBlacklistPopup(false)}
         settings={blacklistSettings}
         onSettingsChange={setBlacklistSettings}
+        onCopyToClipboard={copyToClipboard}
       />
     </div>
   );
