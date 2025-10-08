@@ -469,12 +469,27 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   );
   const realtimeCallbackRef = useRef<any>({});
   const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
-  const [buySlippageValue, setBuySlippageValue] = useState('20');
-  const [buyPriorityFee, setBuyPriorityFee] = useState('0.01');
+const [buySlippageValue, setBuySlippageValue] = useState(() => {
+  const presets = loadBuyPresets();
+  return presets[1]?.slippage;
+});
+
+const [buyPriorityFee, setBuyPriorityFee] = useState(() => {
+  const presets = loadBuyPresets();
+  return presets[1]?.priority;
+});
+
+const [sellSlippageValue, setSellSlippageValue] = useState(() => {
+  const presets = loadSellPresets();
+  return presets[1]?.slippage;
+});
+
+const [sellPriorityFee, setSellPriorityFee] = useState(() => {
+  const presets = loadSellPresets();
+  return presets[1]?.priority;
+});
   const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');
   const [selectedSellPreset, setSelectedSellPreset] = useState(1);
-  const [sellSlippageValue, setSellSlippageValue] = useState('15');
-  const [sellPriorityFee, setSellPriorityFee] = useState('0.005');
   const [notif, setNotif] = useState<{
     title: string;
     subtitle?: string;
@@ -546,30 +561,29 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const openInExplorer = (addr: string) =>
     window.open(`${explorer}/address/${addr}`, '_blank');
 
-  const handleBuyPresetSelect = useCallback(
-    (preset: number) => {
-      setSelectedBuyPreset(preset);
-      setMobileQuickBuyPreset(preset);
-      if (buyPresets && buyPresets[preset]) {
-        const presetValues = buyPresets[preset];
-        setBuySlippageValue(presetValues.slippage);
-        setBuyPriorityFee(presetValues.priority);
-      }
-    },
-    [buyPresets],
-  );
-
-  const handleSellPresetSelect = useCallback(
-    (preset: number) => {
-      setSelectedSellPreset(preset);
-      if (sellPresets && sellPresets[preset]) {
-        const presetValues = sellPresets[preset];
-        setSellSlippageValue(presetValues.slippage);
-        setSellPriorityFee(presetValues.priority);
-      }
-    },
-    [sellPresets],
-  );
+const handleBuyPresetSelect = useCallback(
+  (preset: number) => {
+    setSelectedBuyPreset(preset);
+    setMobileQuickBuyPreset(preset);
+    const presets = loadBuyPresets();
+    if (presets[preset]) {
+      setBuySlippageValue(presets[preset].slippage);
+      setBuyPriorityFee(presets[preset].priority);
+    }
+  },
+  [],
+);
+const handleSellPresetSelect = useCallback(
+  (preset: number) => {
+    setSelectedSellPreset(preset);
+    const presets = loadSellPresets();
+    if (presets[preset]) {
+      setSellSlippageValue(presets[preset].slippage);
+      setSellPriorityFee(presets[preset].priority);
+    }
+  },
+  [],
+);
 
   const handleAdvancedOrderAdd = (
     orderType: 'takeProfit' | 'stopLoss' | 'devSell' | 'migration',
@@ -966,7 +980,49 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     const decimals = tokendict?.[token.id]?.decimals || 18;
     return Number(balance) / 10 ** Number(decimals);
   }, [account?.address, walletTokenBalances, token.id, tokendict]);
+useEffect(() => {
+  const handleBuyPresetsUpdate = (event: CustomEvent) => {
+    const newPresets = event.detail;
+    if (newPresets[selectedBuyPreset]) {
+      setBuySlippageValue(newPresets[selectedBuyPreset].slippage);
+      setBuyPriorityFee(newPresets[selectedBuyPreset].priority);
+    }
+  };
 
+  const handleSellPresetsUpdate = (event: CustomEvent) => {
+    const newPresets = event.detail;
+    if (newPresets[selectedSellPreset]) {
+      setSellSlippageValue(newPresets[selectedSellPreset].slippage);
+      setSellPriorityFee(newPresets[selectedSellPreset].priority);
+    }
+  };
+
+  window.addEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+  window.addEventListener('sellPresetsUpdated', handleSellPresetsUpdate as EventListener);
+
+  return () => {
+    window.removeEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+    window.removeEventListener('sellPresetsUpdated', handleSellPresetsUpdate as EventListener);
+  };
+}, [selectedBuyPreset, selectedSellPreset]);
+
+useEffect(() => {
+  if (selectedBuyPreset) {
+    updateBuyPreset(selectedBuyPreset, {
+      slippage: buySlippageValue,
+      priority: buyPriorityFee,
+    });
+  }
+}, [buySlippageValue, buyPriorityFee, selectedBuyPreset]);
+
+useEffect(() => {
+  if (selectedSellPreset) {
+    updateSellPreset(selectedSellPreset, {
+      slippage: sellSlippageValue,
+      priority: sellPriorityFee,
+    });
+  }
+}, [sellSlippageValue, sellPriorityFee, selectedSellPreset]);
   useEffect(() => {
     const fn = (lastPrice: number, volNative: number) => {
       const sel = selectedInterval;

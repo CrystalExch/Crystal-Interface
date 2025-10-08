@@ -21,6 +21,8 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 
+import slippage from '../../assets/slippage.svg';
+import gas from '../../assets/gas.svg';
 import { decodeEventLog, encodeFunctionData } from 'viem';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';
 import { settings as appSettings } from '../../settings';
@@ -50,6 +52,7 @@ import './TokenExplorer.css';
 import { HexColorPicker } from 'react-colorful';
 import walleticon from '../../assets/wallet_icon.png';
 import communities from '../../assets/community.png'
+import { loadBuyPresets, loadSellPresets } from '../../utils/presetManager';
 
 export interface Token {
   id: string;
@@ -353,12 +356,12 @@ const calculateBondingPercentage = (marketCap: number) => {
   const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
   return bondingPercentage;
 };
-
 const Tooltip: React.FC<{
-  content: string;
+  content: string | React.ReactNode;
   children: React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
-}> = ({ content, children, position = 'top' }) => {
+  offset?: number;
+}> = ({ content, children, position = 'top', offset = 10 }) => {
   const [shouldRender, setShouldRender] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -367,7 +370,7 @@ const Tooltip: React.FC<{
   const tooltipRef = useRef<HTMLDivElement>(null);
   const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const updatePosition = useCallback(() => {
+const updatePosition = useCallback(() => {
     if (!containerRef.current || !tooltipRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
@@ -380,20 +383,20 @@ const Tooltip: React.FC<{
 
     switch (position) {
       case 'top':
-        top = rect.top + scrollY - tooltipRect.height - 25;
+        top = rect.top + scrollY - tooltipRect.height - offset;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'bottom':
-        top = rect.bottom + scrollY + 10;
+        top = rect.bottom + scrollY + offset;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'left':
         top = rect.top + scrollY + rect.height / 2;
-        left = rect.left + scrollX - tooltipRect.width - 10;
+        left = rect.left + scrollX - tooltipRect.width - offset;
         break;
       case 'right':
         top = rect.top + scrollY + rect.height / 2;
-        left = rect.right + scrollX + 10;
+        left = rect.right + scrollX + offset;
         break;
     }
 
@@ -414,7 +417,7 @@ const Tooltip: React.FC<{
     }
 
     setTooltipPosition({ top, left });
-  }, [position]);
+  }, [position, offset]);
 
   const handleMouseEnter = useCallback(() => {
     if (fadeTimeoutRef.current) {
@@ -3568,9 +3571,10 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       localStorage.getItem('explorer-preset-graduated') ?? '1',
     ),
   }));
-  const [isLoading, setIsLoading] = useState(true);
+const [isLoading, setIsLoading] = useState(true);
   const [hoveredToken, setHoveredToken] = useState<string | null>(null);
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
+  const [buyPresets, setBuyPresets] = useState(() => loadBuyPresets());
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -3593,12 +3597,24 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       JSON.stringify(alertSettings),
     );
   }, [alertSettings]);
-  useEffect(() => {
+useEffect(() => {
     localStorage.setItem(
       'explorer-blacklist-settings',
       JSON.stringify(blacklistSettings),
     );
   }, [blacklistSettings]);
+
+  useEffect(() => {
+    const handleBuyPresetsUpdate = (event: CustomEvent) => {
+      setBuyPresets(event.detail);
+    };
+
+    window.addEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+    };
+  }, []);
 
   const setQuickAmount = useCallback((s: Token['status'], v: string) => {
     const clean = v.replace(/[^0-9.]/g, '');
@@ -4805,15 +4821,31 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           className="explorer-quickbuy-input"
                         />
                         <img className="quickbuy-monad-icon" src={monadicon} />
-                        <div className="explorer-preset-controls">
+<div className="explorer-preset-controls">
                           {[1, 2, 3].map((p) => (
-                            <button
+                            <Tooltip
                               key={p}
-                              className={`explorer-preset-pill ${activePresets.new === p ? 'active' : ''}`}
-                              onClick={() => setActivePreset('new', p)}
+                              offset={50}
+                              content={
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <img src={slippage} style={{ width: '14px', height: '14px' }} alt="Slippage" />
+                                    <span>{buyPresets[p]?.slippage || '0'}%</span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <img src={gas} style={{ width: '14px', height: '14px' }} alt="sPriority" />
+                                    <span>{buyPresets[p]?.priority || '0'} </span>
+                                  </div>
+                                </div>
+                              }
                             >
-                              P{p}
-                            </button>
+                              <button
+                                className={`explorer-preset-pill ${activePresets.new === p ? 'active' : ''}`}
+                                onClick={() => setActivePreset('new', p)}
+                              >
+                                P{p}
+                              </button>
+                            </Tooltip>
                           ))}
                         </div>
                       </div>
@@ -4966,15 +4998,31 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           className="explorer-quickbuy-input"
                         />
                         <img className="quickbuy-monad-icon" src={monadicon} />
-                        <div className="explorer-preset-controls">
+<div className="explorer-preset-controls">
                           {[1, 2, 3].map((p) => (
-                            <button
+                            <Tooltip
                               key={p}
-                              className={`explorer-preset-pill ${activePresets.graduating === p ? 'active' : ''}`}
-                              onClick={() => setActivePreset('graduating', p)}
+                              offset={50}
+                              content={
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <img src={slippage} style={{ width: '14px', height: '14px' }} alt="Slippage" />
+                                    <span>{buyPresets[p]?.slippage || '0'}%</span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <img src={gas} style={{ width: '14px', height: '14px' }} alt="Priority" />
+                                    <span>{buyPresets[p]?.priority || '0'}</span>
+                                  </div>
+                                </div>
+                              }
                             >
-                              P{p}
-                            </button>
+                              <button
+                                className={`explorer-preset-pill ${activePresets.graduating === p ? 'active' : ''}`}
+                                onClick={() => setActivePreset('graduating', p)}
+                              >
+                                P{p}
+                              </button>
+                            </Tooltip>
                           ))}
                         </div>
                       </div>
@@ -5126,15 +5174,31 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           className="explorer-quickbuy-input"
                         />
                         <img className="quickbuy-monad-icon" src={monadicon} />
-                        <div className="explorer-preset-controls">
+<div className="explorer-preset-controls">
                           {[1, 2, 3].map((p) => (
-                            <button
+                            <Tooltip
                               key={p}
-                              className={`explorer-preset-pill ${activePresets.graduated === p ? 'active' : ''}`}
-                              onClick={() => setActivePreset('graduated', p)}
+                              offset={50}
+                              content={
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <img src={slippage} style={{ width: '14px', height: '14px' }} alt="Slippage" />
+                                    <span>{buyPresets[p]?.slippage || '0'}%</span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <img src={gas} style={{ width: '14px', height: '14px' }} alt="Priority" />
+                                    <span>{buyPresets[p]?.priority || '0'} </span>
+                                  </div>
+                                </div>
+                              }
                             >
-                              P{p}
-                            </button>
+                              <button
+                                className={`explorer-preset-pill ${activePresets.graduated === p ? 'active' : ''}`}
+                                onClick={() => setActivePreset('graduated', p)}
+                              >
+                                P{p}
+                              </button>
+                            </Tooltip>
                           ))}
                         </div>
                       </div>
