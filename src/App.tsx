@@ -210,10 +210,8 @@ interface Token {
   volume24h: number;
   holders: number;
   proTraders: number;
-  kolTraders: number;
   sniperHolding: number;
   devHolding: number;
-  bundleHolding: number;
   insiderHolding: number;
   top10Holding: number;
   buyTransactions: number;
@@ -3757,10 +3755,8 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
       volume24h: 0,
       holders: 0,
       proTraders: 0,
-      kolTraders: 0,
       sniperHolding: 0,
       devHolding: 0,
-      bundleHolding: 0,
       insiderHolding: 0,
       top10Holding: 0,
       buyTransactions: 0,
@@ -10697,11 +10693,9 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
     ageMin: '', ageMax: '',
     holdersMin: '', holdersMax: '',
     proTradersMin: '', proTradersMax: '',
-    kolTradersMin: '', kolTradersMax: '',
     top10HoldingMin: '', top10HoldingMax: '',
     devHoldingMin: '', devHoldingMax: '',
     sniperHoldingMin: '', sniperHoldingMax: '',
-    bundleHoldingMin: '', bundleHoldingMax: '',
     insiderHoldingMin: '', insiderHoldingMax: '',
     marketCapMin: '', marketCapMax: '',
     volume24hMin: '', volume24hMax: '',
@@ -14805,25 +14799,6 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                     </div>
                   </div>
 
-                  <div className="filter-row">
-                    <span className="filter-label">KOL Traders</span>
-                    <div className="filter-inputs">
-                      <input
-                        type="text"
-                        placeholder="Min"
-                        value={explorerFilters[explorerFiltersActiveTab]?.kolTradersMin || ''}
-                        onChange={(e) => handleExplorerFilterInputChange('kolTradersMin', e.target.value)}
-                        className="filter-input"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Max"
-                        value={explorerFilters[explorerFiltersActiveTab]?.kolTradersMax || ''}
-                        onChange={(e) => handleExplorerFilterInputChange('kolTradersMax', e.target.value)}
-                        className="filter-input"
-                      />
-                    </div>
-                  </div>
 
                   <div className="filter-row">
                     <span className="filter-label">Top 10 Holders %</span>
@@ -14885,25 +14860,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                     </div>
                   </div>
 
-                  <div className="filter-row">
-                    <span className="filter-label">Bundle Holding %</span>
-                    <div className="filter-inputs">
-                      <input
-                        type="text"
-                        placeholder="Min"
-                        value={explorerFilters[explorerFiltersActiveTab]?.bundleHoldingMin || ''}
-                        onChange={(e) => handleExplorerFilterInputChange('bundleHoldingMin', e.target.value)}
-                        className="filter-input"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Max"
-                        value={explorerFilters[explorerFiltersActiveTab]?.bundleHoldingMax || ''}
-                        onChange={(e) => handleExplorerFilterInputChange('bundleHoldingMax', e.target.value)}
-                        className="filter-input"
-                      />
-                    </div>
-                  </div>
+
 
                   <div className="filter-row">
                     <span className="filter-label">Insider Holding %</span>
