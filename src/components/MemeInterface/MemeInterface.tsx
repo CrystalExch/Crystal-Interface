@@ -165,7 +165,7 @@ const toSeriesKey = (sym: string, interval: string) =>
           : interval.slice(0, -1));
 
 const fmt = (v: number, d = 6) => {
-  if (v === 0) return '0';
+  if (v === 0) return '0.00';
   if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
   if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
   if (v >= 1e3) return `${(v / 1e3).toFixed(2)}K`;
@@ -1645,6 +1645,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               monUsdPrice={monUsdPrice}
               tradehistory={trades}
               isMarksVisible={trackedAddresses.length > 0}
+              address={address}
+              devAddress={token.dev}
             />
           </div>
           <div

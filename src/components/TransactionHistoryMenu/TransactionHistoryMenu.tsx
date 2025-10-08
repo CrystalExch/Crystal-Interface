@@ -185,6 +185,24 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
       </div>
     );
 
+    if (!tokenIn) {
+      return (
+        <div className="txhistory-inner-failed">
+          <div className="txhistory-error-wrapper">
+            {renderErrorX()}
+            <div className="txhistory-failed-content">
+              <div className="txhistory-title-failed">{t('swapFailed')}
+                <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
+              </div>
+              <a className="txhistory-view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
+                {t('viewOnExplorer')}
+              </a>
+            </div>
+          </div>
+        </div>
+      );
+    }   
+
     if (tx.currentAction === 'swap') {
       return (
         <div className="txhistory-inner">

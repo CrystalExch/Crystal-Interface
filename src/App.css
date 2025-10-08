@@ -454,7 +454,7 @@ html {
   color: #ffffff7b;
   margin-bottom: 0;
   margin-left: 12px;
-  margin-top: 10px;
+  margin-top: 6px;
   text-align: left;
 }
 
@@ -1454,11 +1454,11 @@ body {
   border: none;
   color: #ffffffcf;
   flex-grow: 1;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 400;
   padding-left: 12px;
   outline: 0;
-  padding-bottom: 10px;
+  padding-bottom: 6px;
   width: 0;
 }
 
@@ -2152,7 +2152,6 @@ body {
   width: 100%;
 }
 
-.main-content-wrapper.simple-view .limit-label,
 .ob-layout-preview {
   margin-top: 5px;
 }
@@ -2751,7 +2750,7 @@ body {
 }
 
 .main-content-wrapper.simple-view .limit-order {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
 }
 
 .main-content-wrapper.simple-view .use-market-button {
@@ -4813,7 +4812,6 @@ input[type="email"] {
   justify-content: space-between;
   margin: 0 11px;
   margin-bottom: 8px;
-  margin-top: -4px;
   width: calc(100% - 24px);
   gap: 3px;
 }
@@ -4825,7 +4823,7 @@ input[type="email"] {
   cursor: pointer;
   flex: 1;
   font-size: 0.7rem;
-  padding: 1px 0;
+  padding: 2px 0;
   text-align: center;
   transition: all 0.2s ease;
   position: relative;
@@ -4871,12 +4869,15 @@ input[type="email"] {
 
 
 .main-content-wrapper.simple-view .limit-price-buttons {
-  margin: -2px 13px 6px 13px;
+  margin: 4px 13px 6px 13px;
+}
+
+.main-content-wrapper.simple-view .limit-label {
+  margin-bottom: 2px;
 }
 
 .main-content-wrapper.simple-view .limit-price-button {
   font-size: 0.8rem;
-  padding: 2px 0;
 }
 
 .main-content-wrapper.simple-view .limit-custom-input {

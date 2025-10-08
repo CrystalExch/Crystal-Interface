@@ -183,6 +183,8 @@ interface TokenExplorerProps {
     address?: string;
     chainId?: number;
   };
+  quickAmounts: any;
+  setQuickAmounts: any;
 }
 
 
@@ -3164,10 +3166,12 @@ const TokenRow = React.memo<{
                       if (
                         displaySettings.quickBuyClickBehavior === 'openPage'
                       ) {
+                        onQuickBuy(token, quickbuyAmount, 'primary');
                         onTokenClick(token);
                       } else if (
                         displaySettings.quickBuyClickBehavior === 'openNewTab'
                       ) {
+                        onQuickBuy(token, quickbuyAmount, 'primary');
                         window.open(`/meme/${token.tokenAddress}`, '_blank');
                       } else {
                         onQuickBuy(token, quickbuyAmount, 'primary');
@@ -3201,7 +3205,19 @@ const TokenRow = React.memo<{
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                  if (
+                    displaySettings.quickBuyClickBehavior === 'openPage'
+                  ) {
+                    onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                    onTokenClick(token);
+                  } else if (
+                    displaySettings.quickBuyClickBehavior === 'openNewTab'
+                  ) {
+                    onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                    window.open(`/meme/${token.tokenAddress}`, '_blank');
+                  } else {
+                    onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                  }
                 }}
                 disabled={isLoadingSecondary}
               >
@@ -3265,6 +3281,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   // currentWalletIcon,
   isBlurred = false,
   account,
+  quickAmounts,
+  setQuickAmounts,
 }) => {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [quickAmountsSecond, setQuickAmountsSecond] = useState<Record<Token['status'], string>>(() => ({
@@ -3537,13 +3555,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   );
   const [showAlertsPopup, setShowAlertsPopup] = useState(false);
   const [showBlacklistPopup, setShowBlacklistPopup] = useState(false);
-  const [quickAmounts, setQuickAmounts] = useState<
-    Record<Token['status'], string>
-  >(() => ({
-    new: localStorage.getItem('explorer-quickbuy-new') ?? '1',
-    graduating: localStorage.getItem('explorer-quickbuy-graduating') ?? '1',
-    graduated: localStorage.getItem('explorer-quickbuy-graduated') ?? '1',
-  }));
 
   const [activePresets, setActivePresets] = useState<
     Record<Token['status'], number>
@@ -3590,7 +3601,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const setQuickAmount = useCallback((s: Token['status'], v: string) => {
     const clean = v.replace(/[^0-9.]/g, '');
-    setQuickAmounts((p) => ({ ...p, [s]: clean }));
+    setQuickAmounts((p: any) => ({ ...p, [s]: clean }));
     localStorage.setItem(`explorer-quickbuy-${s}`, clean);
   }, []);
 

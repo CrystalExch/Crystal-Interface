@@ -624,7 +624,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                 <div className="meme-search-bar">
                     <input
                         type="text"
-                        placeholder="Search markets, tokens, name, ticker, or CA..."
+                        placeholder="Search by market, ticker, name, or CA..."
                         value={searchTerm}
                         onChange={handleSearchChange}
                         className="meme-search-input"

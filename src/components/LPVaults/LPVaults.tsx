@@ -1131,7 +1131,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                 Account
                               </div>
                               <div className="vault-depositors-col-header">
-                                Shares
+                                Vault Share
                               </div>
                               <div className="vault-depositors-col-header">
                                 Deposits
@@ -1154,7 +1154,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                     : ''}
                                 </div>
                                 <div className="vault-depositors-col">
-                                  {String(d.shares)}
+                                  {(d.shares * 100 / Number(selectedVault.totalShares)).toFixed(2)}%
                                 </div>
                                 <div className="vault-depositors-col">
                                   {d.depositCount}
@@ -1207,7 +1207,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                             <div className="vault-dh-header">
                               <div className="vault-dh-col-header">Time</div>
                               <div className="vault-dh-col-header">Account</div>
-                              <div className="vault-dh-col-header">Shares</div>
                               <div className="vault-dh-col-header">Quote</div>
                               <div className="vault-dh-col-header">Base</div>
                               <div className="vault-dh-col-header">Tx</div>
@@ -1233,19 +1232,14 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                     : ''}
                                 </div>
                                 <div className="vault-dh-col">
-                                  {String(e.shares)}
-                                </div>
-                                <div className="vault-dh-col">
-                                  {String(
-                                    e.amountQuote /
-                                      10 ** selectedVault.quoteDecimals,
+                                  {formatDisplayValue(
+                                    e.amountQuote, selectedVault.quoteDecimals
                                   )}{' '}
                                   {selectedVault.quoteTicker}
                                 </div>
                                 <div className="vault-dh-col">
-                                  {String(
-                                    e.amountBase /
-                                      10 ** selectedVault.baseDecimals,
+                                  {formatDisplayValue(
+                                    e.amountBase, selectedVault.baseDecimals
                                   )}{' '}
                                   {selectedVault.baseTicker}
                                 </div>

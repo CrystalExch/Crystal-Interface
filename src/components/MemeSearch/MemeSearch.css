@@ -83,9 +83,9 @@
   width: 100%;
   background: none;
   border-radius: 6px;
-  padding: 0px 16px 16px 20px;
+  padding: 0px 16px 12px 20px;
   color: white;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   box-sizing: border-box;
   transition: border-color 0.2s, box-shadow 0.2s;
   letter-spacing: -0.5px;

@@ -3601,17 +3601,17 @@
 
 .vault-holdings-header,
 .vault-holdings-row {
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
 }
 
 .vault-depositors-header,
 .vault-depositors-row {
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
 }
 
 .vault-dh-header,
 .vault-dh-row {
-  grid-template-columns: 1fr 2fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr .11fr;
 }
 
 .vault-oo-header,
@@ -4038,6 +4038,7 @@
   position: absolute;
   right: 0;
   top: 40px;
+  z-index: 1;
 }
 
 .vault-management-option {
