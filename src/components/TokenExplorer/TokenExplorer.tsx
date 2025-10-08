@@ -518,40 +518,40 @@ const BlacklistPopup: React.FC<{
   const isValidEthAddress = (address: string) => {
     return /^0x[a-fA-F0-9]{40}$/.test(address);
   };
-const [showLeftArrow, setShowLeftArrow] = useState(false);
-const [showRightArrow, setShowRightArrow] = useState(false);
-const tabsContainerRef = useRef<HTMLDivElement>(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
 
-const checkScroll = useCallback(() => {
-  if (!tabsContainerRef.current) return;
-  
-  const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.current;
-  setShowLeftArrow(scrollLeft > 0);
-  setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 1);
-}, []);
+  const checkScroll = useCallback(() => {
+    if (!tabsContainerRef.current) return;
 
-const scrollTabs = (direction: 'left' | 'right') => {
-  if (!tabsContainerRef.current) return;
-  
-  const scrollAmount = 200;
-  const newScrollLeft = direction === 'left'
-    ? tabsContainerRef.current.scrollLeft - scrollAmount
-    : tabsContainerRef.current.scrollLeft + scrollAmount;
-  
-  tabsContainerRef.current.scrollTo({
-    left: newScrollLeft,
-    behavior: 'smooth'
-  });
-};
+    const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.current;
+    setShowLeftArrow(scrollLeft > 0);
+    setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 1);
+  }, []);
 
-useEffect(() => {
-  checkScroll();
-  
-  const handleResize = () => checkScroll();
-  window.addEventListener('resize', handleResize);
-  
-  return () => window.removeEventListener('resize', handleResize);
-}, [checkScroll, settings.items]);
+  const scrollTabs = (direction: 'left' | 'right') => {
+    if (!tabsContainerRef.current) return;
+
+    const scrollAmount = 200;
+    const newScrollLeft = direction === 'left'
+      ? tabsContainerRef.current.scrollLeft - scrollAmount
+      : tabsContainerRef.current.scrollLeft + scrollAmount;
+
+    tabsContainerRef.current.scrollTo({
+      left: newScrollLeft,
+      behavior: 'smooth'
+    });
+  };
+
+  useEffect(() => {
+    checkScroll();
+
+    const handleResize = () => checkScroll();
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, [checkScroll, settings.items]);
 
   const isValidUrl = (url: string) => {
     try {
@@ -648,10 +648,19 @@ useEffect(() => {
               <input
                 type="text"
                 className="blacklist-input"
-                placeholder="Enter twitter handle, dev address or keyword"
+                placeholder="Enter twitter handle, dev address, contract address or keyword"
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onFocus={() => setShowCategoryDropdown(true)}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  if (e.target.value.trim()) {
+                    setShowCategoryDropdown(true);
+                  }
+                }}
+                onFocus={() => {
+                  if (inputValue.trim()) {
+                    setShowCategoryDropdown(true);
+                  }
+                }}
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') {
                     addToBlacklist(selectedCategory);
@@ -727,67 +736,61 @@ useEffect(() => {
                 </div>
               )}
             </div>
-            <button
-              className="blacklist-add-btn"
-              onClick={() => addToBlacklist(selectedCategory)}
-            >
-              Blacklist
-            </button>
           </div>
 
-<div className={`blacklist-tabs-container ${showLeftArrow ? 'show-left-gradient' : ''} ${showRightArrow ? 'show-right-gradient' : ''}`}>
-  <button
-    className={`blacklist-tab-arrow left ${showLeftArrow ? 'visible' : ''}`}
-    onClick={() => scrollTabs('left')}
-  >
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="15 18 9 12 15 6"></polyline>
-    </svg>
-  </button>
-  
-  <div 
-    className="blacklist-tabs"
-    ref={tabsContainerRef}
-    onScroll={checkScroll}
-  >
-    {(
-      [
-        'all',
-        'dev',
-        'ca',
-        'keyword',
-        'website',
-        'handle',
-      ] as BlacklistTab[]
-    ).map((tab) => {
-      const count = tab === 'all'
-        ? settings.items.length
-        : settings.items.filter(item => item.type === tab).length;
+          <div className={`blacklist-tabs-container ${showLeftArrow ? 'show-left-gradient' : ''} ${showRightArrow ? 'show-right-gradient' : ''}`}>
+            <button
+              className={`blacklist-tab-arrow left ${showLeftArrow ? 'visible' : ''}`}
+              onClick={() => scrollTabs('left')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
 
-      return (
-        <button
-          key={tab}
-          className={`blacklist-tab ${activeTab === tab ? 'active' : ''}`}
-          onClick={() => setActiveTab(tab)}
-        >
-          {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          {count > 0 && (
-            <span className="blacklist-tab-count">{count}</span>
-          )}
-        </button>
-      );
-    })}
-  </div>
-  
-  <button
-    className={`blacklist-tab-arrow right ${showRightArrow ? 'visible' : ''}`}
-    onClick={() => scrollTabs('right')}
-  >
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="9 18 15 12 9 6"></polyline>
-    </svg>
-  </button>
-</div>
+            <div
+              className="blacklist-tabs"
+              ref={tabsContainerRef}
+              onScroll={checkScroll}
+            >
+              {(
+                [
+                  'all',
+                  'dev',
+                  'ca',
+                  'keyword',
+                  'website',
+                  'handle',
+                ] as BlacklistTab[]
+              ).map((tab) => {
+                const count = tab === 'all'
+                  ? settings.items.length
+                  : settings.items.filter(item => item.type === tab).length;
+
+                return (
+                  <button
+                    key={tab}
+                    className={`blacklist-tab ${activeTab === tab ? 'active' : ''}`}
+                    onClick={() => setActiveTab(tab)}
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    {count > 0 && (
+                      <span className="blacklist-tab-count">{count}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              className={`blacklist-tab-arrow right ${showRightArrow ? 'visible' : ''}`}
+              onClick={() => scrollTabs('right')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
           <div className="blacklist-list">
             {filteredItems.length === 0 ? (
               <div className="blacklist-empty">
@@ -832,7 +835,10 @@ useEffect(() => {
 
                     <button
                       className="blacklist-remove-btn"
-                      onClick={() => removeFromBlacklist(item.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFromBlacklist(item.id);
+                      }}
                     >
                       <img
                         src={trash}
