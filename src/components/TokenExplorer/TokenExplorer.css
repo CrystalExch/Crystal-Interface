@@ -4551,7 +4551,7 @@
   transition: all 0.3s ease;
   --mouse-x: 50%;
   --mouse-y: 50%;
-  width: clamp(80px, 20%, 160px);  
+  width: clamp(80px, 20%, 16yy0px);  
   border: 1px solid transparent;
 }
 
