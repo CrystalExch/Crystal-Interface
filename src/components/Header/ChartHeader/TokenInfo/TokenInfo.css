@@ -859,16 +859,21 @@
 
 .meme-interface-token-name {
   font-size: 1rem;
-  color: rgba(237, 236, 252, 0.4);
+  color: rgb(89, 91, 103);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 200px;
   letter-spacing: -0.5px;
   transition: all 0.3 ease;
-    cursor: pointer;
+  cursor: pointer;
+}
 
-
+.meme-social-buttons{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 1px;
 }
 
 .meme-interface-token-name-container:hover .meme-interface-token-name,
@@ -930,7 +935,7 @@
 .meme-interface-share-btn svg {
   width: 16px;
   height: 16px;
-  color: rgba(237, 236, 252, 0.4);
+  color: rgb(89, 91, 103);
   display: flex;
   align-items: center;
   justify-content: center;

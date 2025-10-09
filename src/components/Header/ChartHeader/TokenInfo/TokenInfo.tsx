@@ -302,7 +302,6 @@ interface TokenInfoProps {
     twitterHandle?: string;
     telegramHandle?: string;
     discordHandle?: string;
-    devMigrations?: string;
   };
   isPerpsToken?: boolean;
   perpsActiveMarketKey: string;
@@ -460,7 +459,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         formattedOI: `$${formatCommas((Number(market.openInterest) * Number(market.lastPrice)).toFixed(2))}`,
         formattedFunding: `${(market.fundingRate * 100).toFixed(4)}%`,
         formattedChange: `${(Number(market.priceChangePercent) >= 0 ? '+' : '') +
-        (market?.priceChange ? formatCommas(market.priceChange) : '') + ' / ' +
+          (market?.priceChange ? formatCommas(market.priceChange) : '') + ' / ' +
           (Number(market.priceChangePercent) >= 0 ? '+' : '') +
           Number(market.priceChangePercent * 100).toFixed(2)}%`,
         fundingClass: market.fundingRate < 0 ? 'negative' : 'positive',
@@ -544,7 +543,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     onClick: handlePerpsMarketSelect,
     toggleFavorite: toggleFavorite,
     favorites: favorites,
-  }), [filteredPerpsMarkets, perpsSelectedIndex, handlePerpsMouseEnter, handlePerpsMarketSelect, toggleFavorite]); 
+  }), [filteredPerpsMarkets, perpsSelectedIndex, handlePerpsMouseEnter, handlePerpsMarketSelect, toggleFavorite]);
   <div className="perps-markets-list-virtualized" style={{ height: '400px', width: '100%' }}>
     <List
       ref={virtualizationListRef}
@@ -645,16 +644,23 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         }, 100);
       }
     } catch (err) {
-      console.error('Failed to copy:', err);
-      if (showLoadingPopup && updatePopup) {
-        showLoadingPopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy to clipboard' });
-        setTimeout(() => {
-          updatePopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy to clipboard', variant: 'error', confirmed: true, isLoading: false });
-        }, 100);
-      }
     }
   };
 
+const linkCopyToClipboard = async (text: string, label = 'Link Copied') => {
+    const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      if (showLoadingPopup && updatePopup) {
+        showLoadingPopup(txId, { title: label});
+        setTimeout(() => {
+          updatePopup(txId, { title: label, subtitle: `Link copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
+        }, 100);
+      }
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+    }
+  };
   useEffect(() => {
     if (isPerpsDropdownVisible && perpsShouldFocus) {
       const focusInput = () => {
@@ -1070,7 +1076,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
     prevPriceRef.current = current
   }, [perpsTokenInfo?.lastPrice])
-  
+
   useEffect(() => {
     if (!perpsTokenInfo?.nextFundingTime) return
     const tick = () => {
@@ -1167,42 +1173,33 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   >
                     {memeTokenData.name}
                   </span>
+                                      <button
+                      className="meme-interface-social-btn"
+                      onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
+                      title="Copy contract address"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                      </svg>
+                    </button>
+                </div>
+                                  <div className="meme-social-buttons">
+                <button
+                    className="meme-interface-share-btn"
+                    onClick={() => linkCopyToClipboard(`app.crystal.exchange/meme/${memeTokenData.tokenAddress}`)}
+                    title="Share link to this pair"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /><line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></svg>
+                  </button>
+
                   <button
-                    className="meme-interface-social-btn"
-                    onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
+                    className="meme-interface-share-btn"
+                    onClick={() => copyToClipboard(memeTokenData.tokenAddress)}
                     title="Copy contract address"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>
                   </button>
-                </div>
-                {/* <button
-                  className="meme-interface-share-btn"
-                  onClick={() => copyToClipboard(`app.crystal.exchange/meme/${memeTokenData.tokenAddress}`)}
-                  title="Copy share link"
-                >
-                  <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" ><path d="M 36.5 5 A 6.5 6.5 0 0 0 30.236328 13.207031 L 30.121094 13.263672 L 16.738281 19.953125 L 16.623047 20.009766 A 6.5 6.5 0 0 0 11.5 17.5 A 6.5 6.5 0 0 0 11.5 30.5 A 6.5 6.5 0 0 0 16.626953 27.990234 L 16.738281 28.046875 L 30.121094 34.736328 L 30.230469 34.791016 A 6.5 6.5 0 0 0 36.5 43 A 6.5 6.5 0 0 0 36.5 30 A 6.5 6.5 0 0 0 31.671875 32.158203 L 31.460938 32.052734 L 18.080078 25.363281 L 17.871094 25.259766 A 6.5 6.5 0 0 0 17.869141 22.742188 L 18.080078 22.636719 L 31.460938 15.947266 L 31.666016 15.84375 A 6.5 6.5 0 0 0 36.5 18 A 6.5 6.5 0 0 0 36.5 5 z" /></svg>
-                </button>
-
-                <button
-                  className="meme-interface-share-btn"
-                  onClick={() => copyToClipboard(memeTokenData.tokenAddress)}
-                  title="Copy contract address"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                  </svg>
-                </button> */}
+                  </div>
                 {hoveredMemeImage &&
                   memeTokenData?.image &&
                   showPreview &&
