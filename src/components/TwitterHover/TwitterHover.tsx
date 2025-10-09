@@ -133,25 +133,36 @@ function normalizeXInput(s: string) {
 }
 
 function parseTextWithMentions(text: string, hasMedia = false) {
+  if (!text) return [];
+
   let processedText = text;
-  if (hasMedia) processedText = processedText.replace(/https?:\/\/t\.co\/[A-Za-z0-9]+/g, '').trim();
+  if (hasMedia)
+    processedText = processedText.replace(/https?:\/\/t\.co\/[A-Za-z0-9]+/gi, '').trim();
 
   const lines = processedText.split('\n');
+
   const mentionRegex = /@([A-Za-z0-9_]{1,15})\b/g;
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const urlRegex = /(https?:\/\/[^\s]+)/gi;
+  const ethRegex = /(0x[a-fA-F0-9]{40})/g;
 
   const processedLines = lines.map((line, lineIndex) => {
     const parts: React.ReactNode[] = [];
     let lastIndex = 0;
 
-    // Merge mentions + URLs
-    const combinedRegex = new RegExp(`${mentionRegex.source}|${urlRegex.source}`, 'g');
-    let match: RegExpExecArray | null;
+    // ✅ combine all patterns robustly
+    const combinedRegex = new RegExp(
+      `${mentionRegex.source}|${urlRegex.source}|${ethRegex.source}`,
+      'gi'
+    );
 
+    let match: RegExpExecArray | null;
     while ((match = combinedRegex.exec(line)) !== null) {
       if (match.index > lastIndex) parts.push(line.slice(lastIndex, match.index));
-      if (match[0].startsWith('@')) {
-        const username = match[1];
+
+      const token = match[0];
+
+      if (token.startsWith('@')) {
+        const username = token.slice(1);
         parts.push(
           <a
             key={`mention-${lineIndex}-${match.index}`}
@@ -162,28 +173,44 @@ function parseTextWithMentions(text: string, hasMedia = false) {
             onClick={(e) => e.stopPropagation()}
           >
             @{username}
-          </a>,
+          </a>
         );
-      } else if (match[0].startsWith('http')) {
-        const url = match[0];
+      } else if (/^https?:\/\//i.test(token)) {
+        // ✅ clickable http/https links
         parts.push(
           <a
-            key={`link-${lineIndex}-${match.index}`}
-            href={url}
+            key={`url-${lineIndex}-${match.index}`}
+            href={token}
             target="_blank"
             rel="noreferrer"
             className="twitter-link-inline"
             onClick={(e) => e.stopPropagation()}
           >
-            {url}
-          </a>,
+            {token}
+          </a>
+        );
+      } else if (/^0x[a-fA-F0-9]{40}$/.test(token)) {
+        // ✅ clickable ETH address → truncated + links to Etherscan
+        const truncated = `${token.slice(0, 6)}...${token.slice(-4)}`;
+        parts.push(
+          <a
+            key={`eth-${lineIndex}-${match.index}`}
+            href={`https://etherscan.io/address/${token}`}
+            target="_blank"
+            rel="noreferrer"
+            className="twitter-eth-address"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {truncated}
+          </a>
         );
       }
-      lastIndex = match.index + match[0].length;
+
+      lastIndex = match.index + token.length;
     }
 
     if (lastIndex < line.length) parts.push(line.slice(lastIndex));
-    return parts.length > 1 ? parts : line;
+    return parts.length > 0 ? parts : line;
   });
 
   return processedLines.reduce<React.ReactNode[]>((acc, line, index) => {
@@ -192,6 +219,7 @@ function parseTextWithMentions(text: string, hasMedia = false) {
     return acc;
   }, []);
 }
+
 
 
 /** format time ago (e.g., "1d", "5h", "3m") */
@@ -618,9 +646,9 @@ community: {
           </div>
         </div>
 
-        {community.description && (
-          <p className="twitter-hover-desc">{community.description}</p>
-        )}
+{community.description && (
+  <p className="twitter-hover-desc">{parseTextWithMentions(community.description, false)}</p>
+)}
 
         {community.creator && (
           <div
