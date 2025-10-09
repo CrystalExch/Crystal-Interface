@@ -302,6 +302,9 @@ interface TokenInfoProps {
     twitterHandle?: string;
     telegramHandle?: string;
     discordHandle?: string;
+    graduatedTokens?: number;
+    launchedTokens?: number;
+    developerAddress?: string;
   };
   isPerpsToken?: boolean;
   perpsActiveMarketKey: string;
@@ -313,6 +316,158 @@ interface TokenInfoProps {
   setperpsActiveMarketKey: any;
 }
 
+const Tooltip: React.FC<{
+  content: string | React.ReactNode;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
+  offset?: number;
+}> = ({ content, children, position = 'top', offset = 10 }) => {
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current || !tooltipRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+    let top = 0;
+    let left = 0;
+
+    switch (position) {
+      case 'top':
+        top = rect.bottom + scrollY + offset;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'bottom':
+        top = rect.bottom + scrollY + offset;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'left':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.left + scrollX - tooltipRect.width - offset;
+        break;
+      case 'right':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.right + scrollX + offset;
+        break;
+    }
+
+    const margin = 10;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    if (position === 'top' || position === 'bottom') {
+      left = Math.min(
+        Math.max(left, margin + tooltipRect.width / 2),
+        viewportWidth - margin - tooltipRect.width / 2,
+      );
+    } else {
+      top = Math.min(
+        Math.max(top, margin),
+        viewportHeight - margin - tooltipRect.height,
+      );
+    }
+
+    setTooltipPosition({ top, left });
+  }, [position, offset]);
+
+  const handleMouseEnter = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    setIsLeaving(false);
+    setShouldRender(true);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+      fadeTimeoutRef.current = null;
+    }, 10);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    setIsLeaving(true);
+    setIsVisible(false);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      setShouldRender(false);
+      setIsLeaving(false);
+      fadeTimeoutRef.current = null;
+    }, 150);
+  }, []);
+
+  useEffect(() => {
+    if (shouldRender && !isLeaving) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [shouldRender, updatePosition, isLeaving]);
+
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="tooltip-container"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {shouldRender &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+            style={{
+              position: 'absolute',
+              top: `${tooltipPosition.top}px`,
+              left: `${tooltipPosition.left}px`,
+              transform: `${position === 'top' || position === 'bottom'
+                  ? 'translateX(-50%)'
+                  : position === 'left' || position === 'right'
+                    ? 'translateY(-50%)'
+                    : 'none'
+                } scale(${isVisible ? 1 : 0})`,
+              opacity: isVisible ? 1 : 0,
+              zIndex: 9999,
+              pointerEvents: 'none',
+              transition:
+                'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+              willChange: 'transform, opacity',
+            }}
+          >
+            <div className="tooltip-content">{content}</div>
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+};
 const TokenInfo: React.FC<TokenInfoProps> = ({
   userAddress,
   externalUserStats,
@@ -647,12 +802,12 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     }
   };
 
-const linkCopyToClipboard = async (text: string, label = 'Link Copied') => {
+  const linkCopyToClipboard = async (text: string, label = 'Link Copied') => {
     const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
       await navigator.clipboard.writeText(text);
       if (showLoadingPopup && updatePopup) {
-        showLoadingPopup(txId, { title: label});
+        showLoadingPopup(txId, { title: label });
         setTimeout(() => {
           updatePopup(txId, { title: label, subtitle: `Link copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
         }, 100);
@@ -1101,7 +1256,6 @@ const linkCopyToClipboard = async (text: string, label = 'Link Copied') => {
     if (!memeTokenData) {
       return <MemeTokenSkeleton />;
     }
-
     return (
       <div
         className="meme-interface-token-info-container-meme"
@@ -1173,18 +1327,18 @@ const linkCopyToClipboard = async (text: string, label = 'Link Copied') => {
                   >
                     {memeTokenData.name}
                   </span>
-                                      <button
-                      className="meme-interface-social-btn"
-                      onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
-                      title="Copy contract address"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                      </svg>
-                    </button>
+                  <button
+                    className="meme-interface-social-btn"
+                    onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
+                    title="Copy contract address"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                    </svg>
+                  </button>
                 </div>
-                                  <div className="meme-social-buttons">
-                <button
+                <div className="meme-social-buttons">
+                  <button
                     className="meme-interface-share-btn"
                     onClick={() => linkCopyToClipboard(`app.crystal.exchange/meme/${memeTokenData.tokenAddress}`)}
                     title="Share link to this pair"
@@ -1194,12 +1348,24 @@ const linkCopyToClipboard = async (text: string, label = 'Link Copied') => {
 
                   <button
                     className="meme-interface-share-btn"
-                    onClick={() => copyToClipboard(memeTokenData.tokenAddress)}
-                    title="Copy contract address"
+                    onClick={() => {
+                      const isCurrentlyFavorited = favorites.includes(memeTokenData.tokenAddress.toLowerCase());
+                      toggleFavorite(memeTokenData.tokenAddress.toLowerCase());
+
+                      const txId = `favorite-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                      if (showLoadingPopup && updatePopup) {
+                        const message = isCurrentlyFavorited ? 'Removed from Watchlist' : 'Added to Watchlist';
+                        showLoadingPopup(txId, { title: message, subtitle: `${memeTokenData.symbol} ${isCurrentlyFavorited ? 'removed from' : 'added to'} your watchlist` });
+                        setTimeout(() => {
+                          updatePopup(txId, { title: message, subtitle: `${memeTokenData.symbol} ${isCurrentlyFavorited ? 'removed from' : 'added to'} your watchlist`, variant: 'success', confirmed: true, isLoading: false });
+                        }, 100);
+                      }
+                    }}
+                    title={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? "Remove from Watchlist" : "Add to Watchlist"}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? '#d8dcff' : 'none'} stroke={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? '#d8dcff' : 'currentColor'} stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>
                   </button>
-                  </div>
+                </div>
                 {hoveredMemeImage &&
                   memeTokenData?.image &&
                   showPreview &&
@@ -1361,6 +1527,41 @@ const linkCopyToClipboard = async (text: string, label = 'Link Copied') => {
                 </div>
 
               )}
+              <div className="meme-interface-token-metric">
+                <span className="meme-interface-metric-label">Supply</span>
+                <span className="meme-interface-metric-value meme-price-large">
+                  1B
+                </span>
+              </div>
+<Tooltip content="Dev Migrations">
+              <div className="meme-interface-token-metric"
+                onClick={() => window.open(`https://testnet.monadscan.com/address/${memeTokenData.developerAddress}`, '_blank', 'noopener,noreferrer')
+              }
+              >
+                <span className="meme-interface-dev-migrations-value" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: "pointer" }}>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                      width: '16px',
+                      height: '16px',
+                      color: (memeTokenData.graduatedTokens || 0) > 0 ? 'rgba(255, 251, 0, 1)' : '#b0b7c8'
+                    }}
+                  >
+                    <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                    <path d="M5 21h14" />
+                  </svg>
+                  <span style={{ color: "#b0b7c8" }}>
+                    {memeTokenData.graduatedTokens || 0}
+                  </span>
+                </span>
+              </div>
+            </Tooltip>
 
               {externalUserStats && externalUserStats.valueBought > 0 && externalUserStats.valueNet !== 0 && (
                 <div className="meme-interface-token-metric">

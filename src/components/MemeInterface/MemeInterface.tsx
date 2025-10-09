@@ -562,7 +562,7 @@ const [sellPriorityFee, setSellPriorityFee] = useState(() => {
   }, []);
 
   const openInExplorer = (addr: string) =>
-    window.open(`${explorer}/address/${addr}`, '_blank');
+    window.open(`${explorer}/token/${addr}`, '_blank');
 
 const handleBuyPresetSelect = useCallback(
   (preset: number) => {
