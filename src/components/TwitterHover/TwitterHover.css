@@ -16,8 +16,8 @@
 .twitter-hover-skeleton {
   height: 7rem;
   border-radius: 0.75rem;
-  background: #242427;
-  animation: pulse 1.5s infinite;
+  background: #26262b;
+  animation: twitter-pulse 1.5s infinite;
 }
 
 .twitter-hover-error {
@@ -681,14 +681,14 @@
 
 .twitter-hover-skeleton-container {
   width: 100%;
-  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: twitter-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .twitter-hover-skeleton-banner {
   height: 6rem;
-  background: rgba(189, 189, 235, 0.08);
+  background: rgba(189, 189, 235, 0.15);
   background-size: none;
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: twitter-pulse 1.5s ease-in-out infinite;
   border-radius: 6px;
   margin: -1rem -1rem 0 -1rem;
 }
@@ -704,9 +704,9 @@
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
- background: rgba(189, 189, 235, 0.08);
+  background: rgba(189, 189, 235, 0.15);
   background-size: none;
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: twitter-pulse 1.5s ease-in-out infinite;
   margin-top: -2rem;
   border: 3px solid #000000c5;
 }
@@ -720,9 +720,9 @@
 
 .twitter-hover-skeleton-line {
   height: 0.875rem;
- background: rgba(189, 189, 235, 0.08);
+  background: rgba(189, 189, 235, 0.15);
   background-size: none;
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: twitter-pulse 1.5s ease-in-out infinite;
   border-radius: 4px;
 }
 
@@ -775,16 +775,16 @@
 
 .twitter-hover-skeleton-button {
   height: 2rem;
- background: rgba(189, 189, 235, 0.08);
+  background: rgba(189, 189, 235, 0.15);
   background-size: none;
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: twitter-pulse 1.5s ease-in-out infinite;
   border-radius: 100px;
   margin-top: 0.5rem;
 }
 
-@keyframes pulse {
+@keyframes twitter-pulse {
   0%, 100% {
-    opacity: 0.6;
+    opacity: 0.7;
   }
   50% {
     opacity: 1;
