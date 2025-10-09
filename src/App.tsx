@@ -2325,7 +2325,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
             owner
             factory
             quoteAsset { id symbol name decimals }
-            baseAsset  { id symbol name decimals }
+            baseAsset { id symbol name decimals }
             symbol
             name
             description
