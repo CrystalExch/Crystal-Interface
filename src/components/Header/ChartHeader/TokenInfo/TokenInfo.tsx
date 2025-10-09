@@ -302,6 +302,7 @@ interface TokenInfoProps {
     twitterHandle?: string;
     telegramHandle?: string;
     discordHandle?: string;
+    devMigrations?: string;
   };
   isPerpsToken?: boolean;
   perpsActiveMarketKey: string;
