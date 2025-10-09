@@ -2292,6 +2292,37 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
   const [depositHistory, setDepositHistory] = useState<any[]>([]);
   const [openOrders, setOpenOrders] = useState<any[]>([]);
   const [_allOrders, setAllOrders] = useState<any[]>([]);
+  const [vaultDetailTick, setVaultDetailTick] = useState(0);
+
+  async function fetchVaultBalances(vaults: { id:`0x${string}` }[]) {
+    const calls = vaults.map(v => ({
+      address: v.id,
+      abi: CrystalVaultsAbi,
+      functionName: 'getBalances' as const,
+      args: [],
+    }));
+
+    const res = await readContracts(config, { contracts: calls });
+    console.log(res);
+    const out: Record<string, {
+      quoteBalance: bigint,
+      baseBalance: bigint,
+      availableQuote: bigint,
+      availableBase: bigint
+    }> = {};
+
+    res.forEach((r, i) => {
+      const key = vaults[i].id.toLowerCase();
+      if (r.status === 'success') {
+        const [q, b, aq, ab] = r.result as readonly [bigint, bigint, bigint, bigint];
+        out[key] = { quoteBalance: q, baseBalance: b, availableQuote: aq, availableBase: ab };
+      } else {
+        out[key] = { quoteBalance: 0n, baseBalance: 0n, availableQuote: 0n, availableBase: 0n };
+      }
+    });
+
+    return out;
+  }
 
   const fetchSubgraph = async (endpoint: string, query: string, variables?: Record<string, any>) => {
     const res = await fetch(endpoint, {
@@ -2313,7 +2344,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
   };
 
   // fetch vaults list
-  useEffect(() => {
+  useEffect(() => { 
     let cancelled = false;
     (async () => {
       setIsVaultsLoading(true);
@@ -2379,6 +2410,13 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
       try {
         const dataVaults = await fetchSubgraph(SUBGRAPH_URL, VAULTS_QUERY);
         const rawVaults = (dataVaults?.vaults ?? []) as any[];
+        const vaultsSlim = rawVaults.map((v: any) => ({
+          id: getAddress(v.id) as `0x${string}`,
+          quoteAsset: getAddress(v.quoteAsset?.id ?? v.quoteAsset) as `0x${string}`,
+          baseAsset: getAddress(v.baseAsset?.id ?? v.baseAsset) as `0x${string}`,
+        }));
+
+        const onchainBalances = await fetchVaultBalances(vaultsSlim);
 
         let userSharesMap: Record<string, bigint> = {};
         if (address) {
@@ -2398,21 +2436,26 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
 
           const quoteDecimals = Number(v.quoteAsset?.decimals ?? tokendict[quoteAsset]?.decimals ?? 18);
           const baseDecimals = Number(v.baseAsset?.decimals ?? tokendict[baseAsset]?.decimals ?? 18);
+          const vid = getAddress(v.id).toLowerCase();
+          const qAddr = getAddress(v.quoteAsset?.id ?? v.quoteAsset) as `0x${string}`;
+          const bAddr = getAddress(v.baseAsset?.id ?? v.baseAsset) as `0x${string}`;
+
+          const oc = onchainBalances[vid] ?? { quoteBalance: 0n, baseBalance: 0n };
 
           return {
             id: v.id,
             address: v.id,
             owner: (v.owner ?? '').toLowerCase(),
-            quoteAsset,
-            baseAsset,
+            quoteAsset: qAddr,
+            baseAsset: bAddr,
             quoteDecimals,
             baseDecimals,
             quoteTicker,
             baseTicker,
             totalShares: toBigIntSafe(v.totalShares),
             maxShares: toBigIntSafe(v.maxShares),
-            quoteBalance: toBigIntSafe(v.quoteBalance),
-            baseBalance: toBigIntSafe(v.baseBalance),
+            quoteBalance: oc.quoteBalance,
+            baseBalance: oc.baseBalance,
             lockup: Number(v.lockup ?? 0),
             locked: Boolean(v.locked),
             closed: Boolean(v.closed),
@@ -2661,184 +2704,55 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
           sendSub(['logs', { address: baseLc, topics: [TRANSFER_TOPIC, vaultTopicLc] }]);
         };
 
-        ws.onmessage = ({ data }) => {
+        ws.onmessage = async ({ data }) => {
           let msg: any; try { msg = JSON.parse(data as any); } catch { return; }
           if (msg?.method !== 'eth_subscription') return;
+
           const log = msg.params?.result;
           if (!log?.topics?.length) return;
+
           const topic0 = (log.topics[0] || '').toLowerCase();
-          const logAddr = (log.address || '').toLowerCase();
 
-          const hex = (log.data || '').startsWith('0x') ? (log.data || '').slice(2) : (log.data || '');
-          const word = (i: number) => {
-            try { return BigInt('0x' + hex.slice(i * 64, i * 64 + 64 || 0)); } catch { return 0n; }
-          };
-          const toAddr = (t: string) => ('0x' + (t || '').slice(26)).toLowerCase();
+          const isVaultEvent =
+            topic0 === DEPOSIT_TOPIC ||
+            topic0 === WITHDRAW_TOPIC ||
+            topic0 === LOCK_TOPIC ||
+            topic0 === UNLOCK_TOPIC ||
+            topic0 === CLOSE_TOPIC;
 
-          if (topic0 === TRANSFER_TOPIC && (logAddr === quoteLc || logAddr === baseLc)) {
-            const from = toAddr(log.topics[1] || '');
-            const to = toAddr(log.topics[2] || '');
-            if (from !== vaultAddrLc && to !== vaultAddrLc) return;
+          const isTokenTransfer = topic0 === TRANSFER_TOPIC;
 
-            let amt = 0n; try { amt = BigInt(log.data || '0x0'); } catch {}
+          const matchesVault =
+            (log.topics?.[1] || '').toLowerCase() === vaultTopicLc ||
+            (log.topics?.[2] || '').toLowerCase() === vaultTopicLc ||
+            (log.topics?.[3] || '').toLowerCase() === vaultTopicLc;
 
-            setselectedVault((prev: any) => {
-              if (!prev || (prev.address || '').toLowerCase() !== vaultAddrLc) return prev;
-              let qb = BigInt(prev.quoteBalance || 0n);
-              let bb = BigInt(prev.baseBalance  || 0n);
+          if (!(isVaultEvent || isTokenTransfer) || !matchesVault) return;
 
-              if (logAddr === quoteLc) {
-                qb = qb + (to === vaultAddrLc ? amt : -amt);
-              } else if (logAddr === baseLc) {
-                bb = bb + (to === vaultAddrLc ? amt : -amt);
-              } else {
-                return prev;
-              }
+          try {
+            setIsVaultsLoading(true);
+            const vaultsSlim = (vaultList || []).map((v: any) => ({
+              id: v.id as `0x${string}`,
+              quoteAsset: v.quoteAsset as `0x${string}`,
+              baseAsset: v.baseAsset as `0x${string}`,
+            }));
+            const oc = await fetchVaultBalances(vaultsSlim);
 
-              if (qb !== BigInt(prev.quoteBalance) || bb !== BigInt(prev.baseBalance)) {
-                return { ...prev, quoteBalance: qb, baseBalance: bb };
-              }
-              return prev;
-            });
-
-            return;
-          }
-
-          const involvesThisVault =
-            logAddr === factoryLc &&
-            Array.isArray(log.topics) &&
-            log.topics[1]?.toLowerCase() === vaultTopicLc;
-          if (!involvesThisVault) return;
-
-          const accountLc = ('0x' + (log.topics[2] || '').slice(26)).toLowerCase();
-
-          const ts =
-            typeof log.timeStamp === 'string'
-              ? Number(BigInt(log.timeStamp))
-              : (Date.now() / 1000) | 0;
-
-          if (topic0 === DEPOSIT_TOPIC) {
-            const shares = word(0);
-            const amountQuote = word(1);
-            const amountBase  = word(2);
-
-            const id = `${log.transactionHash}-${log.logIndex}`;
-            const txHash = log.transactionHash;
-
-            setDepositHistory((prev: any[]) => {
-              if (prev.some((x: any) => x.id === id)) return prev;
-              const row = {
-                id,
-                account: { id: accountLc },
-                shares,
-                amountQuote,
-                amountBase,
-                txHash,
-                timestamp: ts,
-              };
-              const next = [row, ...prev];
-              return next.length > 5000 ? next.slice(0, 5000) : next;
-            });
-
-            setDepositors((prev: any[]) => {
-              let hit = false;
-              const next = prev.map((d: any) => {
-                const idLc = (d?.account?.id || '').toLowerCase();
-                if (idLc !== accountLc) return d;
-                hit = true;
-                const oldShares = typeof d.shares === 'bigint' ? d.shares : BigInt(d.shares || 0);
-                return {
-                  ...d,
-                  shares: oldShares + shares,
-                  depositCount: (d.depositCount || 0) + 1,
-                  totalDepositedQuote: (typeof d.totalDepositedQuote === 'bigint' ? d.totalDepositedQuote : BigInt(d.totalDepositedQuote || 0)) + amountQuote,
-                  totalDepositedBase: (typeof d.totalDepositedBase  === 'bigint' ? d.totalDepositedBase : BigInt(d.totalDepositedBase || 0)) + amountBase,
-                  lastDepositAt: ts,
-                  updatedAt: ts,
-                };
-              });
-              if (!hit) {
-                next.unshift({
-                  id: `${vaultAddrLc}-${accountLc}`,
-                  account: { id: accountLc },
-                  shares,
-                  depositCount: 1,
-                  withdrawCount: 0,
-                  totalDepositedQuote: amountQuote,
-                  totalDepositedBase: amountBase,
-                  totalWithdrawnQuote: 0n,
-                  totalWithdrawnBase: 0n,
-                  lastDepositAt: ts,
-                  lastWithdrawAt: null,
-                  updatedAt: ts,
-                });
-              }
-              next.sort((a: any, b: any) => Number(b.lastDepositAt || 0) - Number(a.lastDepositAt || 0));
-              return next;
-            });
-
-            setselectedVault((prev: any) => {
-              if (!prev || (prev.address || '').toLowerCase() !== vaultAddrLc) return prev;
-              const old = typeof prev.totalShares === 'bigint' ? prev.totalShares : BigInt(prev.totalShares || 0);
-              const nu = old + shares;
-              return nu !== old ? { ...prev, totalShares: nu } : prev;
-            });
-
-            return;
-          }
-
-          if (topic0 === WITHDRAW_TOPIC) {
-            const shares = word(0);
-            const amountQuote = word(1);
-            const amountBase = word(2);
-
-            setDepositors((prev: any[]) => {
-              const next = prev.map((d: any) => {
-                const idLc = (d?.account?.id || '').toLowerCase();
-                if (idLc !== accountLc) return d;
-                const oldShares = typeof d.shares === 'bigint' ? d.shares : BigInt(d.shares || 0);
-                return {
-                  ...d,
-                  shares: oldShares - shares,
-                  withdrawCount: (d.withdrawCount || 0) + 1,
-                  totalWithdrawnQuote: (typeof d.totalWithdrawnQuote === 'bigint' ? d.totalWithdrawnQuote : BigInt(d.totalWithdrawnQuote || 0)) + amountQuote,
-                  totalWithdrawnBase: (typeof d.totalWithdrawnBase === 'bigint' ? d.totalWithdrawnBase : BigInt(d.totalWithdrawnBase || 0)) + amountBase,
-                  lastWithdrawAt: ts,
-                  updatedAt: ts,
-                };
-              });
-              return next;
-            });
-
-            setselectedVault((prev: any) => {
-              if (!prev || (prev.address || '').toLowerCase() !== vaultAddrLc) return prev;
-              const old = typeof prev.totalShares === 'bigint' ? prev.totalShares : BigInt(prev.totalShares || 0);
-              const nu = old - shares;
-              return nu !== old ? { ...prev, totalShares: nu } : prev;
-            });
-
-            return;
-          }
-
-          if (topic0 === LOCK_TOPIC) {
-            setselectedVault((prev: any) =>
-              (!prev || (prev.address || '').toLowerCase() !== vaultAddrLc) ? prev : ({ ...prev, locked: true })
+            setVaultList((prev: any[]) =>
+              prev.map((v: any) => {
+                const b = oc[String(v.id).toLowerCase()];
+                if (!b) return v;
+                return { ...v, quoteBalance: b.quoteBalance, baseBalance: b.baseBalance };
+              })
             );
-            return;
-          }
 
-          if (topic0 === UNLOCK_TOPIC) {
-            setselectedVault((prev: any) =>
-              (!prev || (prev.address || '').toLowerCase() !== vaultAddrLc) ? prev : ({ ...prev, locked: false })
-            );
-            return;
-          }
-          
-          if (topic0 === CLOSE_TOPIC) {
-            setselectedVault((prev: any) =>
-              (!prev || (prev.address || '').toLowerCase() !== vaultAddrLc) ? prev : ({ ...prev, closed: true })
-            );
-            return;
+            if (selectedVaultStrategy) {
+              setVaultDetailTick((t) => t + 1);
+            }
+          } catch (e) {
+            console.warn('ws live update failed', e);
+          } finally {
+            setIsVaultsLoading(false);
           }
         };
 
@@ -2862,7 +2776,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
 
     run();
     return () => { cancelled = true; };
-  }, [selectedVaultStrategy]);
+  }, [selectedVaultStrategy, vaultDetailTick]);
 
   const findMarketForToken = useCallback((tokenAddress: string) => {
     for (const [marketKey, marketData] of Object.entries(markets)) {

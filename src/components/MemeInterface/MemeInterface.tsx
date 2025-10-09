@@ -138,7 +138,7 @@ interface MemeInterfaceProps {
 }
 
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
-const STATS_WS_BASE = 'wss://crystal-backend.up.railway.app';
+const STATS_HTTP_BASE = 'https://api.crystal.exchange';
 const PAGE_SIZE = 100;
 const RESOLUTION_SECS: Record<string, number> = {
   '1s': 1,
@@ -425,8 +425,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [tempPresetValue, setTempPresetValue] = useState('');
   const [statsRaw, setStatsRaw] = useState<Record<string, any> | null>(null);
   const presetInputRef = useRef<HTMLInputElement>(null);
-  const statsWsRef = useRef<WebSocket | null>(null);
-  const reconnectRef = useRef(0);
   const [isWidgetOpen, setIsWidgetOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('crystal_quickbuy_widget_open');
@@ -1233,59 +1231,50 @@ const setTrackedToYou = useCallback(() => {
     setTimeout(() => setNotif(null), 300);
   }, []);
 
-  // backend ws
+  // backend stats
   useEffect(() => {
     if (!tokenAddress) return;
+
     let disposed = false;
+    let inFlight: AbortController | null = null;
 
-    const origin = STATS_WS_BASE.replace(/\/$/, '');
-    const url = `${origin}/ws/stats/${tokenAddress.toLowerCase()}`;
+    const origin = STATS_HTTP_BASE.replace(/\/$/, '');
+    const url = `${origin}/stats/${tokenAddress.toLowerCase()}`;
 
-    const open = () => {
-      const ws = new WebSocket(url);
-      statsWsRef.current = ws;
+    const tick = async () => {
+      if (disposed) return;
+      try {
+        inFlight?.abort();
+        inFlight = new AbortController();
 
-      ws.onopen = () => {
-        reconnectRef.current = 0;
-      };
+        const res = await fetch(url, {
+          signal: inFlight.signal,
+          cache: 'no-store',
+        });
 
-      ws.onmessage = (evt) => {
-        try {
-          const msg = JSON.parse(String(evt.data));
-          if (msg?.type !== 'stats') return;
+        if (!res.ok) return;
 
-          const normalized: Record<string, any> = {};
-          for (const [k, v] of Object.entries(msg)) {
-            normalized[k] =
-              typeof v === 'number' && /volume/i.test(k) ? v / 1e18 : v;
-          }
-          setStatsRaw(normalized);
-        } catch (e) {}
-      };
+        const msg = await res.json();
 
-      ws.onclose = () => {
-        if (disposed) return;
-        const backoff = Math.min(
-          30000,
-          1000 * 2 ** Math.min(6, reconnectRef.current++),
-        );
-        setTimeout(open, backoff);
-      };
+        const src: any = msg?.type === 'stats' ? msg : msg;
 
-      ws.onerror = () => {
-        try {
-          ws.close();
-        } catch {}
-      };
+        const normalized: Record<string, any> = {};
+        for (const [k, v] of Object.entries(src)) {
+          normalized[k] =
+            typeof v === 'number' && /volume/i.test(k) ? (v as number) / 1e18 : v;
+        }
+
+        setStatsRaw(normalized);
+      } catch {}
     };
 
-    open();
+    const handle = setInterval(tick, 400);
+    tick();
 
     return () => {
       disposed = true;
-      try {
-        statsWsRef.current?.close();
-      } catch {}
+      inFlight?.abort();
+      clearInterval(handle);
     };
   }, [tokenAddress]);
 
