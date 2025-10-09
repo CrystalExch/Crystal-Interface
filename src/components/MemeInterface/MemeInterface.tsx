@@ -533,6 +533,7 @@ const [sellPriorityFee, setSellPriorityFee] = useState(() => {
     [address: string]: string;
   }>({});
   const [showUSD, setShowUSD] = useState(false);
+  
   const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
   const trackedAddressesRef = useRef<string[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(false);
