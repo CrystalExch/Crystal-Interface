@@ -2956,242 +2956,245 @@ const TokenRow = React.memo<{
           </div>
         </div>
 
-{displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled && (
-<div
-  className={`explorer-second-ultra-container ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`}
-  style={
-    displaySettings.ultraStyle === 'border'
-      ? {
-          border: `1px solid ${displaySettings.secondQuickBuyColor}`,  
-          boxShadow: `inset 0 0 0 1px ${displaySettings.secondQuickBuyColor}99`,  
-        }
-      : undefined
-  }
-    onClick={(e) => {
-      e.stopPropagation();
-      if (displaySettings.quickBuyClickBehavior === 'openPage') {
-        onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-        onTokenClick(token);
-      } else if (displaySettings.quickBuyClickBehavior === 'openNewTab') {
-        onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-        window.open(`/meme/${token.tokenAddress}`, '_blank');
-      } else {
-        onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-      }
-    }}
-    onMouseMove={(e) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
-      e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
-    }}
-  >
+        {displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled && (
+          <div
+            className={`explorer-second-ultra-container ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`}
+            style={
+              displaySettings.ultraStyle === 'border'
+                ? {
+                  border: `1px solid ${displaySettings.secondQuickBuyColor}`,
+                  boxShadow: `inset 0 0 0 1px ${displaySettings.secondQuickBuyColor}99`,
+                }
+                : undefined
+            }
+            onClick={(e) => {
+              e.stopPropagation();
+              if (displaySettings.quickBuyClickBehavior === 'openPage') {
+                onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                onTokenClick(token);
+              } else if (displaySettings.quickBuyClickBehavior === 'openNewTab') {
+                onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                window.open(`/meme/${token.tokenAddress}`, '_blank');
+              } else {
+                onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+              }
+            }}
+            onMouseMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const x = ((e.clientX - rect.left) / rect.width) * 100;
+              const y = ((e.clientY - rect.top) / rect.height) * 100;
+              e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
+              e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
+            }}
+          >
 
-    <div className="explorer-actions-section">
-      <button
-        className={`explorer-quick-buy-btn size-ultra ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`}
-        style={{ color: displaySettings.secondQuickBuyColor }}
-        disabled={isLoadingSecondary}
-      >
-        {isLoadingSecondary ? (
-          <div className="quickbuy-loading-spinner" />
-        ) : (
-          <>
-                  <svg fill={displaySettings.secondQuickBuyColor} className="second-ultra-quickbuy-icon"xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 72 72" width="64px" height="64px"><path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86	c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833	c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86	c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18	c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z"/></svg>            {quickbuyAmountSecond} MON
-          </>
+            <div className="explorer-actions-section">
+              <button
+                className={`explorer-quick-buy-btn size-ultra ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`}
+                style={{ color: displaySettings.secondQuickBuyColor }}
+                disabled={isLoadingSecondary}
+              >
+                {isLoadingSecondary ? (
+                  <div style={{ border: `1.5px solid ${displaySettings.secondQuickBuyColor}`
+                    , borderTop: `1.5px solid transparent`
+                 }}
+                    className="ultra-quickbuy-loading-spinner" />
+                ) : (
+                  <>
+                    <svg fill={displaySettings.secondQuickBuyColor} className="second-ultra-quickbuy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" width="64px" height="64px"><path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86	c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833	c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86	c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18	c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" /></svg>            {quickbuyAmountSecond} MON
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         )}
-      </button>
-    </div>
-  </div>
-)}
 
-<div
-  className={`explorer-third-row metrics-size-${displaySettings.metricSize} ${displaySettings.quickBuySize === 'large' ? 'large-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'mega' ? 'mega-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'ultra' ? `ultra-quickbuy-mode ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}` : ''} ${displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled ? 'ultra-dual-buttons' : ''}`}
-  onClick={
-    displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled
-      ? (e) => {
-        e.stopPropagation();
-        onQuickBuy(token, quickbuyAmount, 'primary');
-      }
-      : displaySettings.quickBuySize === 'ultra' && !displaySettings.secondQuickBuyEnabled
-      ? (e) => {
-        e.stopPropagation();
-        onQuickBuy(token, quickbuyAmount, 'primary');
-      }
-      : undefined
-  }
-  onMouseMove={
-    displaySettings.quickBuySize === 'ultra'
-      ? (e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
-        e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
-      }
-      : undefined
-  }
->
-  <div className="explorer-metrics-container">
-    {displaySettings.visibleRows.volume && (
-      <Tooltip content="Volume">
-        <div className="explorer-volume">
-          <span className="mc-label">V</span>
-          <span className="mc-value">
-            {formatPrice(
-              token.volume24h * monUsdPrice,
-              displaySettings.noDecimals,
-            )}
-          </span>
-        </div>
-      </Tooltip>
-    )}
-    {displaySettings.visibleRows.marketCap && (
-      <Tooltip content="Market Cap">
-        <div className="explorer-market-cap">
-          <span className="mc-label">MC</span>
-          <span className="mc-value">
-            {formatPrice(
-              token.marketCap * monUsdPrice,
-              displaySettings.noDecimals,
-            )}
-          </span>
-        </div>
-      </Tooltip>
-    )}
-  </div>
-
-  <div className="explorer-third-row-section">
-    {displaySettings.visibleRows.fees && (
-      <Tooltip content="Global Fees Paid">
-        <div className="explorer-stat-item">
-          <span className="explorer-fee-label">F</span>
-          <span className="explorer-fee-total">
-            {formatPrice(token.volume24h * monUsdPrice / 100, displaySettings.noDecimals)}
-          </span>
-        </div>
-      </Tooltip>
-    )}
-
-    {displaySettings.visibleRows.tx && (
-      <Tooltip content="Transactions">
-        <div className="explorer-tx-bar">
-          <div className="explorer-tx-header">
-            <span className="explorer-tx-label">TX</span>
-            <span className="explorer-tx-total">
-              {totalTransactions.toLocaleString()}
-            </span>
-          </div>
-          <div className="explorer-tx-visual-bar">
-            {totalTransactions === 0 ? (
-              <div
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: '#252526ff',
-                  borderRadius: '1px',
-                }}
-              />
-            ) : (
-              <>
-                <div
-                  className="explorer-tx-buy-portion"
-                  style={{ width: `${buyPct}%` }}
-                />
-                <div
-                  className="explorer-tx-sell-portion"
-                  style={{ width: `${sellPct}%` }}
-                />
-              </>
-            )}
-          </div>
-        </div>
-      </Tooltip>
-    )}
-  </div>
-
-  <div
-    className={`explorer-actions-section ${displaySettings.quickBuySize === 'ultra' ? 'ultra-mode' : ''}`}
-  >
-    {(() => {
-      const sizeClass = `size-${displaySettings.quickBuySize}`;
-      const modeClass =
-        displaySettings.quickBuySize !== 'ultra'
-          ? `style-${displaySettings.quickBuyStyle}`
-          : `ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`;
-      const buttonClass = `explorer-quick-buy-btn ${sizeClass} ${modeClass}`;
-
-      return (
-<button
-  className={buttonClass}
-  onClick={(e) => {
-    e.stopPropagation();
-    onQuickBuy(token, quickbuyAmount, 'primary');
-    
-    if (displaySettings.quickBuyClickBehavior === 'openPage') {
-      onTokenClick(token);
-    } else if (displaySettings.quickBuyClickBehavior === 'openNewTab') {
-      window.open(`/meme/${token.tokenAddress}`, '_blank');
-    }
-  }}
-  disabled={isLoadingPrimary}
->
-          {isLoadingPrimary ? (
-            <div className="quickbuy-loading-spinner" />
-          ) : (
-            <>
-              <img
-                className="explorer-quick-buy-icon"
-                src={lightning}
-              />
-              {quickbuyAmount} MON
-            </>
-          )}
-        </button>
-      );
-    })()}
-
-    {displaySettings.secondQuickBuyEnabled && displaySettings.quickBuySize !== 'ultra' && (
-      <button
-        className={`explorer-quick-buy-btn second-button size-${displaySettings.quickBuySize} style-${displaySettings.quickBuyStyle}`}
-        style={{
-          ['--second-quickbuy-color' as any]:
-            displaySettings.secondQuickBuyColor,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (
-            displaySettings.quickBuyClickBehavior === 'openPage'
-          ) {
-            onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-            onTokenClick(token);
-          } else if (
-            displaySettings.quickBuyClickBehavior === 'openNewTab'
-          ) {
-            onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-            window.open(`/meme/${token.tokenAddress}`, '_blank');
-          } else {
-            onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+        <div
+          className={`explorer-third-row metrics-size-${displaySettings.metricSize} ${displaySettings.quickBuySize === 'large' ? 'large-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'mega' ? 'mega-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'ultra' ? `ultra-quickbuy-mode ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}` : ''} ${displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled ? 'ultra-dual-buttons' : ''}`}
+          onClick={
+            displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled
+              ? (e) => {
+                e.stopPropagation();
+                onQuickBuy(token, quickbuyAmount, 'primary');
+              }
+              : displaySettings.quickBuySize === 'ultra' && !displaySettings.secondQuickBuyEnabled
+                ? (e) => {
+                  e.stopPropagation();
+                  onQuickBuy(token, quickbuyAmount, 'primary');
+                }
+                : undefined
           }
-        }}
-        disabled={isLoadingSecondary}
-      >
-        {isLoadingSecondary ? (
-          <div className="quickbuy-loading-spinner" />
-        ) : (
-          <>
-            <img
-              className="explorer-quick-buy-icon"
-              src={lightning}
-            />
-            {quickbuyAmountSecond} MON
-          </>
-        )}
-      </button>
-    )}
-  </div>
-</div>
+          onMouseMove={
+            displaySettings.quickBuySize === 'ultra'
+              ? (e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
+                e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
+              }
+              : undefined
+          }
+        >
+          <div className="explorer-metrics-container">
+            {displaySettings.visibleRows.volume && (
+              <Tooltip content="Volume">
+                <div className="explorer-volume">
+                  <span className="mc-label">V</span>
+                  <span className="mc-value">
+                    {formatPrice(
+                      token.volume24h * monUsdPrice,
+                      displaySettings.noDecimals,
+                    )}
+                  </span>
+                </div>
+              </Tooltip>
+            )}
+            {displaySettings.visibleRows.marketCap && (
+              <Tooltip content="Market Cap">
+                <div className="explorer-market-cap">
+                  <span className="mc-label">MC</span>
+                  <span className="mc-value">
+                    {formatPrice(
+                      token.marketCap * monUsdPrice,
+                      displaySettings.noDecimals,
+                    )}
+                  </span>
+                </div>
+              </Tooltip>
+            )}
+          </div>
+
+          <div className="explorer-third-row-section">
+            {displaySettings.visibleRows.fees && (
+              <Tooltip content="Global Fees Paid">
+                <div className="explorer-stat-item">
+                  <span className="explorer-fee-label">F</span>
+                  <span className="explorer-fee-total">
+                    {formatPrice(token.volume24h * monUsdPrice / 100, displaySettings.noDecimals)}
+                  </span>
+                </div>
+              </Tooltip>
+            )}
+
+            {displaySettings.visibleRows.tx && (
+              <Tooltip content="Transactions">
+                <div className="explorer-tx-bar">
+                  <div className="explorer-tx-header">
+                    <span className="explorer-tx-label">TX</span>
+                    <span className="explorer-tx-total">
+                      {totalTransactions.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="explorer-tx-visual-bar">
+                    {totalTransactions === 0 ? (
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          backgroundColor: '#252526ff',
+                          borderRadius: '1px',
+                        }}
+                      />
+                    ) : (
+                      <>
+                        <div
+                          className="explorer-tx-buy-portion"
+                          style={{ width: `${buyPct}%` }}
+                        />
+                        <div
+                          className="explorer-tx-sell-portion"
+                          style={{ width: `${sellPct}%` }}
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+              </Tooltip>
+            )}
+          </div>
+
+          <div
+            className={`explorer-actions-section ${displaySettings.quickBuySize === 'ultra' ? 'ultra-mode' : ''}`}
+          >
+            {(() => {
+              const sizeClass = `size-${displaySettings.quickBuySize}`;
+              const modeClass =
+                displaySettings.quickBuySize !== 'ultra'
+                  ? `style-${displaySettings.quickBuyStyle}`
+                  : `ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`;
+              const buttonClass = `explorer-quick-buy-btn ${sizeClass} ${modeClass}`;
+
+              return (
+                <button
+                  className={buttonClass}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onQuickBuy(token, quickbuyAmount, 'primary');
+
+                    if (displaySettings.quickBuyClickBehavior === 'openPage') {
+                      onTokenClick(token);
+                    } else if (displaySettings.quickBuyClickBehavior === 'openNewTab') {
+                      window.open(`/meme/${token.tokenAddress}`, '_blank');
+                    }
+                  }}
+                  disabled={isLoadingPrimary}
+                >
+                  {isLoadingPrimary ? (
+                    <div className="quickbuy-loading-spinner" />
+                  ) : (
+                    <>
+                      <img
+                        className="explorer-quick-buy-icon"
+                        src={lightning}
+                      />
+                      {quickbuyAmount} MON
+                    </>
+                  )}
+                </button>
+              );
+            })()}
+
+            {displaySettings.secondQuickBuyEnabled && displaySettings.quickBuySize !== 'ultra' && (
+              <button
+                className={`explorer-quick-buy-btn second-button size-${displaySettings.quickBuySize} style-${displaySettings.quickBuyStyle}`}
+                style={{
+                  ['--second-quickbuy-color' as any]:
+                    displaySettings.secondQuickBuyColor,
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (
+                    displaySettings.quickBuyClickBehavior === 'openPage'
+                  ) {
+                    onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                    onTokenClick(token);
+                  } else if (
+                    displaySettings.quickBuyClickBehavior === 'openNewTab'
+                  ) {
+                    onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                    window.open(`/meme/${token.tokenAddress}`, '_blank');
+                  } else {
+                    onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                  }
+                }}
+                disabled={isLoadingSecondary}
+              >
+                {isLoadingSecondary ? (
+                  <div className="quickbuy-loading-spinner" />
+                ) : (
+                  <>
+                    <img
+                      className="explorer-quick-buy-icon"
+                      src={lightning}
+                    />
+                    {quickbuyAmountSecond} MON
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
       {showBonding &&
         createPortal(

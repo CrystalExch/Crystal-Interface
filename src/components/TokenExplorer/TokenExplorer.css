@@ -1341,6 +1341,15 @@
   margin: 1.5px;
   width: 14px;
 }
+.ultra-quickbuy-loading-spinner{
+  animation: spin 1s linear infinite;
+  border-radius: 50%;
+    border: 1.5px solid rgb(6, 6, 6);
+  border-top: 1.5px solid transparent;
+  height: 14px;
+  margin: 1.5px;
+  width: 14px;
+}
 
 @keyframes spin {
   0% {
