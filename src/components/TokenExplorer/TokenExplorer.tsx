@@ -19,40 +19,40 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { HexColorPicker } from 'react-colorful';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
+import { encodeFunctionData } from 'viem';
 
-import slippage from '../../assets/slippage.svg';
-import gas from '../../assets/gas.svg';
-import { decodeEventLog, encodeFunctionData } from 'viem';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';
 import { settings as appSettings } from '../../settings';
+import { loadBuyPresets } from '../../utils/presetManager';
 import {
   showLoadingPopup,
   updatePopup,
 } from '../MemeTransactionPopup/MemeTransactionPopupManager';
-import { defaultMetrics } from './TokenData';
 
-import { useNavigate } from 'react-router-dom';
 import avatar from '../../assets/avatar.png';
 import camera from '../../assets/camera.svg';
 import closebutton from '../../assets/close_button.png';
+import communities from '../../assets/community.png';
 import discord from '../../assets/discord1.svg';
 import empty from '../../assets/empty.svg';
 import filter from '../../assets/filter.svg';
 import lightning from '../../assets/flash.png';
+import gas from '../../assets/gas.svg';
 import kaching from '../../assets/ka-ching.mp3';
 import monadicon from '../../assets/monadlogo.svg';
 import reset from '../../assets/reset.svg';
+import slippage from '../../assets/slippage.svg';
 import stepaudio from '../../assets/step_audio.mp3';
 import telegram from '../../assets/telegram.png';
 import trash from '../../assets/trash.svg';
 import tweet from '../../assets/tweet.png';
-import { TwitterHover } from '../TwitterHover/TwitterHover';
-import './TokenExplorer.css';
-import { HexColorPicker } from 'react-colorful';
 import walleticon from '../../assets/wallet_icon.png';
-import communities from '../../assets/community.png'
-import { loadBuyPresets, loadSellPresets } from '../../utils/presetManager';
+import { TwitterHover } from '../TwitterHover/TwitterHover';
+
+import './TokenExplorer.css';
 
 export interface Token {
   id: string;
@@ -91,271 +91,6 @@ export interface Token {
 
 type ColumnKey = 'new' | 'graduating' | 'graduated';
 
-interface DisplaySettings {
-  metricSize: 'small' | 'large';
-  quickBuySize: 'small' | 'large' | 'mega' | 'ultra';
-  quickBuyStyle: 'color' | 'grey';
-  ultraStyle: 'default' | 'glowing' | 'border';
-  ultraColor: 'color' | 'grey';
-  hideSearchBar: boolean;
-  noDecimals: boolean;
-  hideHiddenTokens: boolean;
-  squareImages: boolean;
-  progressBar: boolean;
-  spacedTables: boolean;
-  colorRows: boolean;
-  columnOrder: Array<ColumnKey>;
-  hiddenColumns?: Array<ColumnKey>;
-  quickBuyClickBehavior: 'nothing' | 'openPage' | 'openNewTab';
-  secondQuickBuyEnabled: boolean;
-  secondQuickBuyColor: string;
-  visibleRows: {
-    marketCap: boolean;
-    volume: boolean;
-    fees: boolean;
-    tx: boolean;
-    socials: boolean;
-    holders: boolean;
-    proTraders: boolean;
-    devMigrations: boolean;
-    top10Holders: boolean;
-    devHolding: boolean;
-    fundingTime: boolean;
-    snipers: boolean;
-    insiders: boolean;
-    dexPaid: boolean;
-  };
-  metricColoring: boolean;
-  metricColors: {
-    marketCap: { range1: string; range2: string; range3: string };
-    volume: { range1: string; range2: string; range3: string };
-    holders: { range1: string; range2: string; range3: string };
-  };
-}
-
-interface AlertSettings {
-  soundAlertsEnabled: boolean;
-  volume: number;
-  sounds: {
-    newPairs: string;
-    pairMigrating: string;
-    migrated: string;
-  };
-}
-
-interface BlacklistSettings {
-  items: Array<{
-    id: string;
-    text: string;
-    type: 'dev' | 'ca' | 'keyword' | 'website' | 'handle';
-  }>;
-}
-
-type BlacklistTab = 'all' | 'dev' | 'ca' | 'keyword' | 'website' | 'handle';
-interface TabFilters {
-  new: any;
-  graduating: any;
-  graduated: any;
-}
-
-interface TokenExplorerProps {
-  setpopup?: (popup: number) => void;
-  appliedFilters?: TabFilters;
-  onOpenFiltersForColumn: (c: Token['status']) => void;
-  activeFilterTab?: Token['status'];
-  sendUserOperationAsync: any;
-  terminalQueryData: any;
-  terminalToken: any;
-  setTerminalToken: any;
-  terminalRefetch: any;
-  setTokenData: any;
-  monUsdPrice: number;
-  subWallets?: Array<{ address: string, privateKey: string }>;
-  walletTokenBalances?: { [address: string]: any };
-  activeWalletPrivateKey?: string;
-  setOneCTSigner: (privateKey: string) => void;
-  refetch: () => void;
-  tokenList?: any[];
-  activechain: number;
-  logout: () => void;
-  lastRefGroupFetch: any;
-  lastNonceGroupFetch: any;
-  currentWalletIcon?: string;
-  isBlurred?: boolean;
-  account: {
-    connected: boolean;
-    address?: string;
-    chainId?: number;
-  };
-  quickAmounts: any;
-  setQuickAmounts: any;
-}
-
-
-const MAX_PER_COLUMN = 30;
-const TOTAL_SUPPLY = 1e9;
-
-const ROUTER_EVENT =
-  '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
-const MARKET_UPDATE_EVENT =
-  '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
-const DISPLAY_DEFAULTS: DisplaySettings = {
-  metricSize: 'small',
-  quickBuySize: 'small',
-  quickBuyStyle: 'color',
-  ultraStyle: 'default',
-  ultraColor: 'color',
-  hideSearchBar: false,
-  noDecimals: false,
-  hideHiddenTokens: false,
-  squareImages: true,
-  progressBar: true,
-  spacedTables: false,
-  colorRows: false,
-  columnOrder: ['new', 'graduating', 'graduated'],
-  hiddenColumns: [],
-  quickBuyClickBehavior: 'nothing',
-  secondQuickBuyEnabled: false,
-  secondQuickBuyColor: '#aaaecf',
-  visibleRows: {
-    marketCap: true,
-    volume: true,
-    fees: true,
-    tx: true,
-    socials: true,
-    holders: true,
-    proTraders: true,
-    devMigrations: true,
-    top10Holders: true,
-    devHolding: true,
-    fundingTime: false,
-    snipers: true,
-    insiders: true,
-    dexPaid: false,
-  },
-  metricColoring: true,
-  metricColors: {
-    marketCap: { range1: '#d8dcff', range2: '#eab308', range3: '#14b8a6' },
-    volume: { range1: '#ffffff', range2: '#ffffff', range3: '#ffffff' },
-    holders: { range1: '#ffffff', range2: '#ffffff', range3: '#ffffff' },
-  },
-};
-
-const ALERT_DEFAULTS: AlertSettings = {
-  soundAlertsEnabled: true,
-  volume: 100,
-  sounds: {
-    newPairs: stepaudio,
-    pairMigrating: stepaudio,
-    migrated: stepaudio,
-  },
-};
-
-const BLACKLIST_DEFAULTS: BlacklistSettings = { items: [] };
-const getMetricColorClasses = (
-  token: Token | undefined,
-  display: DisplaySettings,
-) => {
-  if (!token || !display?.metricColors || !display?.metricColoring) return null;
-
-  const classes: string[] = [];
-  const cssVars: Record<string, string> = {};
-
-  if (typeof token.marketCap === 'number' && !isNaN(token.marketCap)) {
-    if (token.marketCap < 30000) {
-      classes.push('market-cap-range1');
-      cssVars['--metric-market-cap-range1'] = display.metricColors.marketCap.range1;
-    } else if (token.marketCap < 150000) {
-      classes.push('market-cap-range2');
-      cssVars['--metric-market-cap-range2'] = display.metricColors.marketCap.range2;
-    } else {
-      classes.push('market-cap-range3');
-      cssVars['--metric-market-cap-range3'] = display.metricColors.marketCap.range3;
-    }
-  }
-
-  // Volume coloring
-  if (typeof token.volume24h === 'number' && !isNaN(token.volume24h)) {
-    if (token.volume24h < 1000) {
-      classes.push('volume-range1');
-      cssVars['--metric-volume-range1'] = display.metricColors.volume.range1;
-    } else if (token.volume24h < 2000) {
-      classes.push('volume-range2');
-      cssVars['--metric-volume-range2'] = display.metricColors.volume.range2;
-    } else {
-      classes.push('volume-range3');
-      cssVars['--metric-volume-range3'] = display.metricColors.volume.range3;
-    }
-  }
-
-  // Holders coloring
-  if (typeof token.holders === 'number' && !isNaN(token.holders)) {
-    if (token.holders < 10) {
-      classes.push('holders-range1');
-      cssVars['--metric-holders-range1'] = display.metricColors.holders.range1;
-    } else if (token.holders < 50) {
-      classes.push('holders-range2');
-      cssVars['--metric-holders-range2'] = display.metricColors.holders.range2;
-    } else {
-      classes.push('holders-range3');
-      cssVars['--metric-holders-range3'] = display.metricColors.holders.range3;
-    }
-  }
-
-  return classes.length > 0 ? { classes: classes.join(' '), cssVars } : null;
-};
-
-const hasMetricColoring = (displaySettings: DisplaySettings | undefined) => {
-  return displaySettings?.metricColoring === true;
-};
-
-const getBondingColorClass = (percentage: number) => {
-  if (percentage < 25) return 'bonding-0-25';
-  if (percentage < 50) return 'bonding-25-50';
-  if (percentage < 75) return 'bonding-50-75';
-  return 'bonding-75-100';
-};
-
-const getBondingColor = (b: number) => {
-  if (b < 25) return '#ee5b5bff';
-  if (b < 50) return '#f59e0b';
-  if (b < 75) return '#eab308';
-  return '#43e17dff';
-};
-
-const createColorGradient = (base: string) => {
-  const hex = base.replace('#', '');
-  const [r, g, b] = [
-    parseInt(hex.slice(0, 2), 16),
-    parseInt(hex.slice(2, 4), 16),
-    parseInt(hex.slice(4, 6), 16),
-  ];
-  const lighter = (x: number) => Math.min(255, Math.round(x + (255 - x) * 0.3));
-  const darker = (x: number) => Math.round(x * 0.7);
-  return {
-    start: `rgb(${darker(r)}, ${darker(g)}, ${darker(b)})`,
-    mid: base,
-    end: `rgb(${lighter(r)}, ${lighter(g)}, ${lighter(b)})`,
-  };
-};
-
-const formatPrice = (p: number, noDecimals = false) => {
-  if (p >= 1e12)
-    return `$${noDecimals ? Math.round(p / 1e12) : (p / 1e12).toFixed(1)}T`;
-  if (p >= 1e9)
-    return `$${noDecimals ? Math.round(p / 1e9) : (p / 1e9).toFixed(1)}B`;
-  if (p >= 1e6)
-    return `$${noDecimals ? Math.round(p / 1e6) : (p / 1e6).toFixed(1)}M`;
-  if (p >= 1e3)
-    return `$${noDecimals ? Math.round(p / 1e3) : (p / 1e3).toFixed(1)}K`;
-  return `$${noDecimals ? Math.round(p) : p.toFixed(2)}`;
-};
-
-const calculateBondingPercentage = (marketCap: number) => {
-  const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
-  return bondingPercentage;
-};
 const Tooltip: React.FC<{
   content: string | React.ReactNode;
   children: React.ReactNode;
@@ -487,12 +222,13 @@ const Tooltip: React.FC<{
               position: 'absolute',
               top: `${tooltipPosition.top}px`,
               left: `${tooltipPosition.left}px`,
-              transform: `${position === 'top' || position === 'bottom'
-                ? 'translateX(-50%)'
-                : position === 'left' || position === 'right'
-                  ? 'translateY(-50%)'
-                  : 'none'
-                } scale(${isVisible ? 1 : 0})`,
+              transform: `${
+                position === 'top' || position === 'bottom'
+                  ? 'translateX(-50%)'
+                  : position === 'left' || position === 'right'
+                    ? 'translateY(-50%)'
+                    : 'none'
+              } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
               pointerEvents: 'none',
@@ -509,17 +245,32 @@ const Tooltip: React.FC<{
   );
 };
 
+interface BlacklistSettings {
+  items: Array<{
+    id: string;
+    text: string;
+    type: 'dev' | 'ca' | 'keyword' | 'website' | 'handle';
+  }>;
+}
+
+type BlacklistTab = 'all' | 'dev' | 'ca' | 'keyword' | 'website' | 'handle';
+
 const BlacklistPopup: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   settings: BlacklistSettings;
   onSettingsChange: (settings: BlacklistSettings) => void;
-  onCopyToClipboard: (text: string, type?: 'dev' | 'ca' | 'keyword' | 'website' | 'handle') => void;
+  onCopyToClipboard: (
+    text: string,
+    type?: 'dev' | 'ca' | 'keyword' | 'website' | 'handle',
+  ) => void;
 }> = ({ isOpen, onClose, settings, onSettingsChange, onCopyToClipboard }) => {
   const [activeTab, setActiveTab] = useState<BlacklistTab>('all');
   const [inputValue, setInputValue] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<'dev' | 'ca' | 'keyword' | 'website' | 'handle'>('keyword');
+  const [selectedCategory, setSelectedCategory] = useState<
+    'dev' | 'ca' | 'keyword' | 'website' | 'handle'
+  >('keyword');
 
   const isValidEthAddress = (address: string) => {
     return /^0x[a-fA-F0-9]{40}$/.test(address);
@@ -540,13 +291,14 @@ const BlacklistPopup: React.FC<{
     if (!tabsContainerRef.current) return;
 
     const scrollAmount = 200;
-    const newScrollLeft = direction === 'left'
-      ? tabsContainerRef.current.scrollLeft - scrollAmount
-      : tabsContainerRef.current.scrollLeft + scrollAmount;
+    const newScrollLeft =
+      direction === 'left'
+        ? tabsContainerRef.current.scrollLeft - scrollAmount
+        : tabsContainerRef.current.scrollLeft + scrollAmount;
 
     tabsContainerRef.current.scrollTo({
       left: newScrollLeft,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   };
 
@@ -568,10 +320,15 @@ const BlacklistPopup: React.FC<{
     }
   };
 
-  const addToBlacklist = (category: 'dev' | 'ca' | 'keyword' | 'website' | 'handle') => {
+  const addToBlacklist = (
+    category: 'dev' | 'ca' | 'keyword' | 'website' | 'handle',
+  ) => {
     if (!inputValue.trim()) return;
 
-    if ((category === 'dev' || category === 'ca') && !isValidEthAddress(inputValue.trim())) {
+    if (
+      (category === 'dev' || category === 'ca') &&
+      !isValidEthAddress(inputValue.trim())
+    ) {
       return;
     }
 
@@ -686,7 +443,12 @@ const BlacklistPopup: React.FC<{
                     }}
                     disabled={!isValidEthAddress(inputValue.trim())}
                   >
-                    <svg width="16" height="16" viewBox="0 0 30 30" fill="currentColor">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 30 30"
+                      fill="currentColor"
+                    >
                       <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
                     </svg>
                     Developer Address
@@ -699,7 +461,12 @@ const BlacklistPopup: React.FC<{
                     }}
                     disabled={!isValidEthAddress(inputValue.trim())}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
                       <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" />
                     </svg>
                     Contract Address
@@ -722,7 +489,12 @@ const BlacklistPopup: React.FC<{
                     }}
                     disabled={!isValidUrl(inputValue.trim())}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
                     </svg>
                     Website
@@ -734,7 +506,12 @@ const BlacklistPopup: React.FC<{
                       addToBlacklist('handle');
                     }}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
                     </svg>
                     Twitter Profile
@@ -744,12 +521,19 @@ const BlacklistPopup: React.FC<{
             </div>
           </div>
 
-          <div className={`blacklist-tabs-container ${showLeftArrow ? 'show-left-gradient' : ''} ${showRightArrow ? 'show-right-gradient' : ''}`}>
+          <div
+            className={`blacklist-tabs-container ${showLeftArrow ? 'show-left-gradient' : ''} ${showRightArrow ? 'show-right-gradient' : ''}`}
+          >
             <button
               className={`blacklist-tab-arrow left ${showLeftArrow ? 'visible' : ''}`}
               onClick={() => scrollTabs('left')}
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
             </button>
@@ -769,9 +553,10 @@ const BlacklistPopup: React.FC<{
                   'handle',
                 ] as BlacklistTab[]
               ).map((tab) => {
-                const count = tab === 'all'
-                  ? settings.items.length
-                  : settings.items.filter(item => item.type === tab).length;
+                const count =
+                  tab === 'all'
+                    ? settings.items.length
+                    : settings.items.filter((item) => item.type === tab).length;
 
                 return (
                   <button
@@ -792,7 +577,12 @@ const BlacklistPopup: React.FC<{
               className={`blacklist-tab-arrow right ${showRightArrow ? 'visible' : ''}`}
               onClick={() => scrollTabs('right')}
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </button>
@@ -804,31 +594,37 @@ const BlacklistPopup: React.FC<{
               </div>
             ) : (
               filteredItems.map((item) => (
-                <div key={item.id} className="blacklist-item" onClick={(e) => {
-                  e.stopPropagation();
-                  onCopyToClipboard(item.text, item.type);
-                }}>
+                <div
+                  key={item.id}
+                  className="blacklist-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCopyToClipboard(item.text, item.type);
+                  }}
+                >
                   <div className="blacklist-item-content">
-                    <span className="blacklist-item-text">{item.text}                     <button
-                      className="blacklist-copy-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onCopyToClipboard(item.text, item.type);
-                      }}
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
+                    <span className="blacklist-item-text">
+                      {item.text}{' '}
+                      <button
+                        className="blacklist-copy-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCopyToClipboard(item.text, item.type);
+                        }}
                       >
-                        <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                      </svg>
-                    </button></span>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                        </svg>
+                      </button>
+                    </span>
                     <span className="blacklist-item-type">{item.type}</span>
                   </div>
                   <div className="blacklist-item-actions">
-
                     <button
                       className="blacklist-remove-btn"
                       onClick={(e) => {
@@ -878,6 +674,16 @@ const BlacklistPopup: React.FC<{
     </div>
   );
 };
+
+interface AlertSettings {
+  soundAlertsEnabled: boolean;
+  volume: number;
+  sounds: {
+    newPairs: string;
+    pairMigrating: string;
+    migrated: string;
+  };
+}
 
 const AlertsPopup: React.FC<{
   isOpen: boolean;
@@ -1230,6 +1036,203 @@ const AlertsPopup: React.FC<{
   );
 };
 
+interface DisplaySettings {
+  metricSize: 'small' | 'large';
+  quickBuySize: 'small' | 'large' | 'mega' | 'ultra';
+  quickBuyStyle: 'color' | 'grey';
+  ultraStyle: 'default' | 'glowing' | 'border';
+  ultraColor: 'color' | 'grey';
+  hideSearchBar: boolean;
+  noDecimals: boolean;
+  hideHiddenTokens: boolean;
+  squareImages: boolean;
+  progressBar: boolean;
+  spacedTables: boolean;
+  colorRows: boolean;
+  columnOrder: Array<ColumnKey>;
+  hiddenColumns?: Array<ColumnKey>;
+  quickBuyClickBehavior: 'nothing' | 'openPage' | 'openNewTab';
+  secondQuickBuyEnabled: boolean;
+  secondQuickBuyColor: string;
+  visibleRows: {
+    marketCap: boolean;
+    volume: boolean;
+    fees: boolean;
+    tx: boolean;
+    socials: boolean;
+    holders: boolean;
+    proTraders: boolean;
+    devMigrations: boolean;
+    top10Holders: boolean;
+    devHolding: boolean;
+    fundingTime: boolean;
+    snipers: boolean;
+    insiders: boolean;
+    dexPaid: boolean;
+  };
+  metricColoring: boolean;
+  metricColors: {
+    marketCap: { range1: string; range2: string; range3: string };
+    volume: { range1: string; range2: string; range3: string };
+    holders: { range1: string; range2: string; range3: string };
+  };
+}
+
+interface TabFilters {
+  new: any;
+  graduating: any;
+  graduated: any;
+}
+
+const DISPLAY_DEFAULTS: DisplaySettings = {
+  metricSize: 'small',
+  quickBuySize: 'small',
+  quickBuyStyle: 'color',
+  ultraStyle: 'default',
+  ultraColor: 'color',
+  hideSearchBar: false,
+  noDecimals: false,
+  hideHiddenTokens: false,
+  squareImages: true,
+  progressBar: true,
+  spacedTables: false,
+  colorRows: false,
+  columnOrder: ['new', 'graduating', 'graduated'],
+  hiddenColumns: [],
+  quickBuyClickBehavior: 'nothing',
+  secondQuickBuyEnabled: false,
+  secondQuickBuyColor: '#aaaecf',
+  visibleRows: {
+    marketCap: true,
+    volume: true,
+    fees: true,
+    tx: true,
+    socials: true,
+    holders: true,
+    proTraders: true,
+    devMigrations: true,
+    top10Holders: true,
+    devHolding: true,
+    fundingTime: false,
+    snipers: true,
+    insiders: true,
+    dexPaid: false,
+  },
+  metricColoring: true,
+  metricColors: {
+    marketCap: { range1: '#d8dcff', range2: '#eab308', range3: '#14b8a6' },
+    volume: { range1: '#ffffff', range2: '#ffffff', range3: '#ffffff' },
+    holders: { range1: '#ffffff', range2: '#ffffff', range3: '#ffffff' },
+  },
+};
+const BLACKLIST_DEFAULTS: BlacklistSettings = { items: [] };
+
+const getMetricColorClasses = (
+  token: Token | undefined,
+  display: DisplaySettings,
+) => {
+  if (!token || !display?.metricColors || !display?.metricColoring) return null;
+
+  const classes: string[] = [];
+  const cssVars: Record<string, string> = {};
+
+  if (typeof token.marketCap === 'number' && !isNaN(token.marketCap)) {
+    if (token.marketCap < 30000) {
+      classes.push('market-cap-range1');
+      cssVars['--metric-market-cap-range1'] =
+        display.metricColors.marketCap.range1;
+    } else if (token.marketCap < 150000) {
+      classes.push('market-cap-range2');
+      cssVars['--metric-market-cap-range2'] =
+        display.metricColors.marketCap.range2;
+    } else {
+      classes.push('market-cap-range3');
+      cssVars['--metric-market-cap-range3'] =
+        display.metricColors.marketCap.range3;
+    }
+  }
+
+  // Volume coloring
+  if (typeof token.volume24h === 'number' && !isNaN(token.volume24h)) {
+    if (token.volume24h < 1000) {
+      classes.push('volume-range1');
+      cssVars['--metric-volume-range1'] = display.metricColors.volume.range1;
+    } else if (token.volume24h < 2000) {
+      classes.push('volume-range2');
+      cssVars['--metric-volume-range2'] = display.metricColors.volume.range2;
+    } else {
+      classes.push('volume-range3');
+      cssVars['--metric-volume-range3'] = display.metricColors.volume.range3;
+    }
+  }
+
+  // Holders coloring
+  if (typeof token.holders === 'number' && !isNaN(token.holders)) {
+    if (token.holders < 10) {
+      classes.push('holders-range1');
+      cssVars['--metric-holders-range1'] = display.metricColors.holders.range1;
+    } else if (token.holders < 50) {
+      classes.push('holders-range2');
+      cssVars['--metric-holders-range2'] = display.metricColors.holders.range2;
+    } else {
+      classes.push('holders-range3');
+      cssVars['--metric-holders-range3'] = display.metricColors.holders.range3;
+    }
+  }
+
+  return classes.length > 0 ? { classes: classes.join(' '), cssVars } : null;
+};
+
+const hasMetricColoring = (displaySettings: DisplaySettings | undefined) => {
+  return displaySettings?.metricColoring === true;
+};
+
+const getBondingColorClass = (percentage: number) => {
+  if (percentage < 25) return 'bonding-0-25';
+  if (percentage < 50) return 'bonding-25-50';
+  if (percentage < 75) return 'bonding-50-75';
+  return 'bonding-75-100';
+};
+
+const getBondingColor = (b: number) => {
+  if (b < 25) return '#ee5b5bff';
+  if (b < 50) return '#f59e0b';
+  if (b < 75) return '#eab308';
+  return '#43e17dff';
+};
+
+const createColorGradient = (base: string) => {
+  const hex = base.replace('#', '');
+  const [r, g, b] = [
+    parseInt(hex.slice(0, 2), 16),
+    parseInt(hex.slice(2, 4), 16),
+    parseInt(hex.slice(4, 6), 16),
+  ];
+  const lighter = (x: number) => Math.min(255, Math.round(x + (255 - x) * 0.3));
+  const darker = (x: number) => Math.round(x * 0.7);
+  return {
+    start: `rgb(${darker(r)}, ${darker(g)}, ${darker(b)})`,
+    mid: base,
+    end: `rgb(${lighter(r)}, ${lighter(g)}, ${lighter(b)})`,
+  };
+};
+
+const formatPrice = (p: number, noDecimals = false) => {
+  if (p >= 1e12)
+    return `$${noDecimals ? Math.round(p / 1e12) : (p / 1e12).toFixed(1)}T`;
+  if (p >= 1e9)
+    return `$${noDecimals ? Math.round(p / 1e9) : (p / 1e9).toFixed(1)}B`;
+  if (p >= 1e6)
+    return `$${noDecimals ? Math.round(p / 1e6) : (p / 1e6).toFixed(1)}M`;
+  if (p >= 1e3)
+    return `$${noDecimals ? Math.round(p / 1e3) : (p / 1e3).toFixed(1)}K`;
+  return `$${noDecimals ? Math.round(p) : p.toFixed(2)}`;
+};
+
+const calculateBondingPercentage = (marketCap: number) => {
+  const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
+  return bondingPercentage;
+};
 
 const DisplayDropdown: React.FC<{
   settings: DisplaySettings;
@@ -1246,916 +1249,971 @@ const DisplayDropdown: React.FC<{
   activePresetsSecond,
   setActivePresetSecond,
 }) => {
-    const [showSecondButtonColorPicker, setShowSecondButtonColorPicker] = useState(false);
-    const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
-    const [showMetricColorPicker, setShowMetricColorPicker] = useState(false);
-    const [metricPickerPosition, setMetricPickerPosition] = useState({ top: 0, left: 0 });
-    const [hexInputValue, setHexInputValue] = useState(settings.secondQuickBuyColor.replace('#', '').toUpperCase());
-    useEffect(() => {
-      setHexInputValue(settings.secondQuickBuyColor.replace('#', '').toUpperCase());
-    }, [settings.secondQuickBuyColor]);
-    const [activeMetricPicker, setActiveMetricPicker] = useState<{
-      metric: 'marketCap' | 'volume' | 'holders';
-      range: 'range1' | 'range2' | 'range3';
-    } | null>(null);
-    const handleColorPickerClick = (event: React.MouseEvent) => {
-      event.stopPropagation();
+  const [showSecondButtonColorPicker, setShowSecondButtonColorPicker] =
+    useState(false);
+  const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
+  const [showMetricColorPicker, setShowMetricColorPicker] = useState(false);
+  const [metricPickerPosition, setMetricPickerPosition] = useState({
+    top: 0,
+    left: 0,
+  });
+  const [hexInputValue, setHexInputValue] = useState(
+    settings.secondQuickBuyColor.replace('#', '').toUpperCase(),
+  );
+  useEffect(() => {
+    setHexInputValue(
+      settings.secondQuickBuyColor.replace('#', '').toUpperCase(),
+    );
+  }, [settings.secondQuickBuyColor]);
+  const [activeMetricPicker, setActiveMetricPicker] = useState<{
+    metric: 'marketCap' | 'volume' | 'holders';
+    range: 'range1' | 'range2' | 'range3';
+  } | null>(null);
+  const handleColorPickerClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+
+    if (showSecondButtonColorPicker) {
+      setShowSecondButtonColorPicker(false);
+      return;
+    }
+
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const pickerWidth = 200;
+    const pickerHeight = 250;
+
+    let left = rect.right + 10;
+    let top = rect.top;
+
+    if (left + pickerWidth > viewportWidth) {
+      left = rect.left - pickerWidth - 10;
+    }
+    if (top + pickerHeight > viewportHeight) {
+      top = viewportHeight - pickerHeight - 20;
+    }
+    if (top < 20) {
+      top = 20;
+    }
+
+    setPickerPosition({ top, left });
+    setShowSecondButtonColorPicker(true);
+  };
+
+  const handleMetricColorPickerClick = (
+    event: React.MouseEvent,
+    metric: 'marketCap' | 'volume' | 'holders',
+    range: 'range1' | 'range2' | 'range3',
+  ) => {
+    event.stopPropagation();
+
+    if (
+      showMetricColorPicker &&
+      activeMetricPicker?.metric === metric &&
+      activeMetricPicker?.range === range
+    ) {
+      setShowMetricColorPicker(false);
+      setActiveMetricPicker(null);
+      return;
+    }
+
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const pickerWidth = 200;
+    const pickerHeight = 250;
+
+    let left = rect.right + 10;
+    let top = rect.top;
+
+    if (left + pickerWidth > viewportWidth) {
+      left = rect.left - pickerWidth - 10;
+    }
+    if (top + pickerHeight > viewportHeight) {
+      top = viewportHeight - pickerHeight - 20;
+    }
+    if (top < 20) {
+      top = 20;
+    }
+
+    setMetricPickerPosition({ top, left });
+    setActiveMetricPicker({ metric, range });
+    setShowMetricColorPicker(true);
+  };
+  const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    'layout' | 'metrics' | 'row' | 'extras'
+  >('layout');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const safeOrder: Array<ColumnKey> =
+    Array.isArray(settings?.columnOrder) && settings.columnOrder.length
+      ? settings.columnOrder
+      : (['new', 'graduating', 'graduated'] as Array<ColumnKey>);
+
+  const handleToggle = useCallback(() => {
+    if (isOpen) {
+      setIsVisible(false);
+      setTimeout(() => {
+        setIsOpen(false);
+      }, 200);
+    } else {
+      setIsOpen(true);
+      requestAnimationFrame(() => {
+        setIsVisible(true);
+      });
+    }
+  }, [isOpen]);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) return;
+
+    const newOrder = [...safeOrder];
+    const draggedItem = newOrder[draggedIndex];
+    newOrder.splice(draggedIndex, 1);
+    newOrder.splice(dropIndex, 0, draggedItem);
+
+    onSettingsChange({ ...settings, columnOrder: newOrder });
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+  const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(
+    () => new Set(settings.hiddenColumns || []),
+  );
+
+  const handleHide = (e: React.MouseEvent, column: ColumnKey) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newHidden = new Set(hiddenColumns);
+    if (newHidden.has(column)) {
+      newHidden.delete(column);
+    } else {
+      newHidden.add(column);
+    }
+    setHiddenColumns(newHidden);
+    onSettingsChange({ ...settings, hiddenColumns: Array.from(newHidden) });
+  };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+        if (isOpen) {
+          setIsVisible(false);
+          setTimeout(() => {
+            setIsOpen(false);
+          }, 200);
+        }
+      }
 
       if (showSecondButtonColorPicker) {
-        setShowSecondButtonColorPicker(false);
-        return;
-      }
-
-      const rect = (event.target as HTMLElement).getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const pickerWidth = 200;
-      const pickerHeight = 250;
-
-      let left = rect.right + 10;
-      let top = rect.top;
-
-      if (left + pickerWidth > viewportWidth) {
-        left = rect.left - pickerWidth - 10;
-      }
-      if (top + pickerHeight > viewportHeight) {
-        top = viewportHeight - pickerHeight - 20;
-      }
-      if (top < 20) {
-        top = 20;
-      }
-
-      setPickerPosition({ top, left });
-      setShowSecondButtonColorPicker(true);
-    };
-
-    const handleMetricColorPickerClick = (
-      event: React.MouseEvent,
-      metric: 'marketCap' | 'volume' | 'holders',
-      range: 'range1' | 'range2' | 'range3'
-    ) => {
-      event.stopPropagation();
-
-      if (showMetricColorPicker && activeMetricPicker?.metric === metric && activeMetricPicker?.range === range) {
-        setShowMetricColorPicker(false);
-        setActiveMetricPicker(null);
-        return;
-      }
-
-      const rect = (event.target as HTMLElement).getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const pickerWidth = 200;
-      const pickerHeight = 250;
-
-      let left = rect.right + 10;
-      let top = rect.top;
-
-      if (left + pickerWidth > viewportWidth) {
-        left = rect.left - pickerWidth - 10;
-      }
-      if (top + pickerHeight > viewportHeight) {
-        top = viewportHeight - pickerHeight - 20;
-      }
-      if (top < 20) {
-        top = 20;
-      }
-
-      setMetricPickerPosition({ top, left });
-      setActiveMetricPicker({ metric, range });
-      setShowMetricColorPicker(true);
-    };
-    const [isOpen, setIsOpen] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
-    const [activeTab, setActiveTab] = useState<
-      'layout' | 'metrics' | 'row' | 'extras'
-    >('layout');
-    const dropdownRef = useRef<HTMLDivElement>(null);
-    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-
-    const safeOrder: Array<ColumnKey> =
-      Array.isArray(settings?.columnOrder) && settings.columnOrder.length
-        ? settings.columnOrder
-        : (['new', 'graduating', 'graduated'] as Array<ColumnKey>);
-
-    const handleToggle = useCallback(() => {
-      if (isOpen) {
-        setIsVisible(false);
-        setTimeout(() => {
-          setIsOpen(false);
-        }, 200);
-      } else {
-        setIsOpen(true);
-        requestAnimationFrame(() => {
-          setIsVisible(true);
-        });
-      }
-    }, [isOpen]);
-
-    const handleDragStart = (e: React.DragEvent, index: number) => {
-      setDraggedIndex(index);
-      e.dataTransfer.effectAllowed = 'move';
-    };
-
-    const handleDragOver = (e: React.DragEvent, index: number) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      setDragOverIndex(index);
-    };
-
-    const handleDrop = (e: React.DragEvent, dropIndex: number) => {
-      e.preventDefault();
-      if (draggedIndex === null || draggedIndex === dropIndex) return;
-
-      const newOrder = [...safeOrder];
-      const draggedItem = newOrder[draggedIndex];
-      newOrder.splice(draggedIndex, 1);
-      newOrder.splice(dropIndex, 0, draggedItem);
-
-      onSettingsChange({ ...settings, columnOrder: newOrder });
-      setDraggedIndex(null);
-      setDragOverIndex(null);
-    };
-
-    const handleDragEnd = () => {
-      setDraggedIndex(null);
-      setDragOverIndex(null);
-    };
-    const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(
-      () => new Set(settings.hiddenColumns || [])
-    );
-
-    const handleHide = (e: React.MouseEvent, column: ColumnKey) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const newHidden = new Set(hiddenColumns);
-      if (newHidden.has(column)) {
-        newHidden.delete(column);
-      } else {
-        newHidden.add(column);
-      }
-      setHiddenColumns(newHidden);
-      onSettingsChange({ ...settings, hiddenColumns: Array.from(newHidden) });
-    };
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target as HTMLElement;
-
         if (
-          dropdownRef.current &&
-          !dropdownRef.current.contains(target)
+          !target.closest('.color-picker-dropdown') &&
+          !target.closest('.color-preview')
         ) {
-          if (isOpen) {
-            setIsVisible(false);
-            setTimeout(() => {
-              setIsOpen(false);
-            }, 200);
-          }
+          setShowSecondButtonColorPicker(false);
         }
-
-        if (showSecondButtonColorPicker) {
-          if (!target.closest('.color-picker-dropdown') && !target.closest('.color-preview')) {
-            setShowSecondButtonColorPicker(false);
-          }
-        }
-
-        if (showMetricColorPicker) {
-          if (!target.closest('.metric-color-picker-dropdown') && !target.closest('.metric-color-square')) {
-            setShowMetricColorPicker(false);
-            setActiveMetricPicker(null);
-          }
-        }
-      };
-
-      if (isOpen || showSecondButtonColorPicker || showMetricColorPicker) {
-        document.addEventListener('mousedown', handleClickOutside);
       }
 
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isOpen, showSecondButtonColorPicker, showMetricColorPicker]);
-    const updateSetting = <K extends keyof DisplaySettings>(
-      key: K,
-      value: DisplaySettings[K],
-    ) => onSettingsChange({ ...settings, [key]: value });
+      if (showMetricColorPicker) {
+        if (
+          !target.closest('.metric-color-picker-dropdown') &&
+          !target.closest('.metric-color-square')
+        ) {
+          setShowMetricColorPicker(false);
+          setActiveMetricPicker(null);
+        }
+      }
+    };
 
-    const updateMetricColor = (
-      metric: 'marketCap' | 'volume' | 'holders',
-      range: 'range1' | 'range2' | 'range3',
-      color: string,
-    ) => {
-      onSettingsChange({
-        ...settings,
-        metricColors: {
-          ...settings.metricColors,
-          [metric]: {
-            ...settings.metricColors?.[metric],
-            [range]: color,
-          },
+    if (isOpen || showSecondButtonColorPicker || showMetricColorPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen, showSecondButtonColorPicker, showMetricColorPicker]);
+  const updateSetting = <K extends keyof DisplaySettings>(
+    key: K,
+    value: DisplaySettings[K],
+  ) => onSettingsChange({ ...settings, [key]: value });
+
+  const updateMetricColor = (
+    metric: 'marketCap' | 'volume' | 'holders',
+    range: 'range1' | 'range2' | 'range3',
+    color: string,
+  ) => {
+    onSettingsChange({
+      ...settings,
+      metricColors: {
+        ...settings.metricColors,
+        [metric]: {
+          ...settings.metricColors?.[metric],
+          [range]: color,
         },
-      });
-    };
+      },
+    });
+  };
 
-    const updateRowSetting = (
-      key: keyof DisplaySettings['visibleRows'],
-      value: boolean,
-    ) => {
-      onSettingsChange({
-        ...settings,
-        visibleRows: { ...settings.visibleRows, [key]: value },
-      });
-    };
+  const updateRowSetting = (
+    key: keyof DisplaySettings['visibleRows'],
+    value: boolean,
+  ) => {
+    onSettingsChange({
+      ...settings,
+      visibleRows: { ...settings.visibleRows, [key]: value },
+    });
+  };
 
-    return (
-      <div className="display-dropdown" ref={dropdownRef}>
-        <button
-          className={`display-dropdown-trigger ${isOpen ? 'active' : ''}`}
-          onClick={handleToggle}
+  return (
+    <div className="display-dropdown" ref={dropdownRef}>
+      <button
+        className={`display-dropdown-trigger ${isOpen ? 'active' : ''}`}
+        onClick={handleToggle}
+      >
+        <span>Display</span>
+        <ChevronDown
+          size={16}
+          className={`display-dropdown-arrow ${isOpen ? 'open' : ''}`}
+          aria-hidden="true"
+        />
+      </button>
+
+      {isOpen && (
+        <div
+          className={`display-dropdown-content ${isVisible ? 'visible' : ''}`}
         >
-          <span>Display</span>
-          <ChevronDown
-            size={16}
-            className={`display-dropdown-arrow ${isOpen ? 'open' : ''}`}
-            aria-hidden="true"
-          />
-        </button>
+          <div className="display-section">
+            <h4 className="display-section-title">Metrics</h4>
+            <div className="metrics-size-options">
+              <button
+                className={`small-size-option ${settings.metricSize === 'small' ? 'active' : ''}`}
+                onClick={() => updateSetting('metricSize', 'small')}
+              >
+                MC 123K
+                <br />
+                <span className="size-label">Small</span>
+              </button>
+              <button
+                className={`large-size-option ${settings.metricSize === 'large' ? 'active' : ''}`}
+                onClick={() => updateSetting('metricSize', 'large')}
+              >
+                MC 123K
+                <br />
+                <span className="size-label">Large</span>
+              </button>
+            </div>
+          </div>
 
-        {isOpen && (
-          <div
-            className={`display-dropdown-content ${isVisible ? 'visible' : ''}`}
-          >
-            <div className="display-section">
-              <h4 className="display-section-title">Metrics</h4>
-              <div className="metrics-size-options">
-                <button
-                  className={`small-size-option ${settings.metricSize === 'small' ? 'active' : ''}`}
-                  onClick={() => updateSetting('metricSize', 'small')}
+          <div className="display-section">
+            <h4 className="display-section-title">Quick Buy</h4>
+            <div className="quickbuy-size-options">
+              <button
+                className={`quickbuy-option ${settings.quickBuySize === 'small' ? 'active' : ''}`}
+                onClick={() => updateSetting('quickBuySize', 'small')}
+              >
+                <div
+                  className={`quickbuy-preview-button-small ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
                 >
-                  MC 123K
-                  <br />
-                  <span className="size-label">Small</span>
-                </button>
-                <button
-                  className={`large-size-option ${settings.metricSize === 'large' ? 'active' : ''}`}
-                  onClick={() => updateSetting('metricSize', 'large')}
+                  <img
+                    className="quickbuy-preview-button-lightning-small"
+                    src={lightning}
+                    alt=""
+                  />
+                  7
+                </div>
+                Small
+              </button>
+              <button
+                className={`quickbuy-option ${settings.quickBuySize === 'large' ? 'active' : ''}`}
+                onClick={() => updateSetting('quickBuySize', 'large')}
+              >
+                <div
+                  className={`quickbuy-preview-button-large ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
                 >
-                  MC 123K
-                  <br />
-                  <span className="size-label">Large</span>
-                </button>
-              </div>
+                  <img
+                    className="quickbuy-preview-button-lightning-large"
+                    src={lightning}
+                    alt=""
+                  />
+                  7
+                </div>
+                Large
+              </button>
+              <button
+                className={`quickbuy-option ${settings.quickBuySize === 'mega' ? 'active' : ''}`}
+                onClick={() => updateSetting('quickBuySize', 'mega')}
+              >
+                <div
+                  className={`quickbuy-preview-button-mega ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
+                >
+                  <img
+                    className="quickbuy-preview-button-lightning-mega"
+                    src={lightning}
+                    alt=""
+                  />
+                  7
+                </div>
+                Mega
+              </button>
+              <button
+                className={`quickbuy-option ${settings.quickBuySize === 'ultra' ? 'active' : ''}`}
+                onClick={() => updateSetting('quickBuySize', 'ultra')}
+              >
+                <div
+                  className={`quickbuy-preview-button-ultra ultra-${settings.ultraStyle} ultra-text-${settings.ultraColor}`}
+                >
+                  <img
+                    className="quickbuy-preview-button-lightning-ultra"
+                    src={lightning}
+                    alt=""
+                  />
+                  7
+                </div>
+                Ultra
+              </button>
             </div>
 
-            <div className="display-section">
-              <h4 className="display-section-title">Quick Buy</h4>
-              <div className="quickbuy-size-options">
-                <button
-                  className={`quickbuy-option ${settings.quickBuySize === 'small' ? 'active' : ''}`}
-                  onClick={() => updateSetting('quickBuySize', 'small')}
-                >
-                  <div
-                    className={`quickbuy-preview-button-small ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
-                  >
-                    <img
-                      className="quickbuy-preview-button-lightning-small"
-                      src={lightning}
-                      alt=""
-                    />
-                    7
+            {(settings.quickBuySize === 'small' ||
+              settings.quickBuySize === 'large' ||
+              settings.quickBuySize === 'mega') && (
+              <div className="quickbuy-style-toggles">
+                <div className="style-toggle-row">
+                  <span className="style-toggle-label">Style</span>
+                  <div className="style-toggle-buttons">
+                    <button
+                      className={`style-toggle-btn ${settings.quickBuyStyle === 'color' ? 'active' : ''}`}
+                      onClick={() => updateSetting('quickBuyStyle', 'color')}
+                    >
+                      Color
+                    </button>
+                    <button
+                      className={`style-toggle-btn ${settings.quickBuyStyle === 'grey' ? 'active' : ''}`}
+                      onClick={() => updateSetting('quickBuyStyle', 'grey')}
+                    >
+                      Grey
+                    </button>
                   </div>
-                  Small
-                </button>
-                <button
-                  className={`quickbuy-option ${settings.quickBuySize === 'large' ? 'active' : ''}`}
-                  onClick={() => updateSetting('quickBuySize', 'large')}
-                >
-                  <div
-                    className={`quickbuy-preview-button-large ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
-                  >
-                    <img
-                      className="quickbuy-preview-button-lightning-large"
-                      src={lightning}
-                      alt=""
-                    />
-                    7
-                  </div>
-                  Large
-                </button>
-                <button
-                  className={`quickbuy-option ${settings.quickBuySize === 'mega' ? 'active' : ''}`}
-                  onClick={() => updateSetting('quickBuySize', 'mega')}
-                >
-                  <div
-                    className={`quickbuy-preview-button-mega ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
-                  >
-                    <img
-                      className="quickbuy-preview-button-lightning-mega"
-                      src={lightning}
-                      alt=""
-                    />
-                    7
-                  </div>
-                  Mega
-                </button>
-                <button
-                  className={`quickbuy-option ${settings.quickBuySize === 'ultra' ? 'active' : ''}`}
-                  onClick={() => updateSetting('quickBuySize', 'ultra')}
-                >
-                  <div
-                    className={`quickbuy-preview-button-ultra ultra-${settings.ultraStyle} ultra-text-${settings.ultraColor}`}
-                  >
-                    <img
-                      className="quickbuy-preview-button-lightning-ultra"
-                      src={lightning}
-                      alt=""
-                    />
-                    7
-                  </div>
-                  Ultra
-                </button>
+                </div>
               </div>
+            )}
 
-              {(settings.quickBuySize === 'small' ||
-                settings.quickBuySize === 'large' ||
-                settings.quickBuySize === 'mega') && (
-                  <div className="quickbuy-style-toggles">
-                    <div className="style-toggle-row">
-                      <span className="style-toggle-label">Style</span>
-                      <div className="style-toggle-buttons">
-                        <button
-                          className={`style-toggle-btn ${settings.quickBuyStyle === 'color' ? 'active' : ''}`}
-                          onClick={() => updateSetting('quickBuyStyle', 'color')}
-                        >
-                          Color
-                        </button>
-                        <button
-                          className={`style-toggle-btn ${settings.quickBuyStyle === 'grey' ? 'active' : ''}`}
-                          onClick={() => updateSetting('quickBuyStyle', 'grey')}
-                        >
-                          Grey
-                        </button>
-                      </div>
+            {settings.quickBuySize === 'ultra' && (
+              <div className="ultra-style-controls">
+                <div className="style-toggle-row">
+                  <span className="style-toggle-label">Ultra Style:</span>
+                  <div className="style-toggle-buttons">
+                    <button
+                      className={`style-toggle-btn ${settings.ultraStyle === 'default' ? 'active' : ''}`}
+                      onClick={() => updateSetting('ultraStyle', 'default')}
+                    >
+                      Default
+                    </button>
+                    <button
+                      className={`style-toggle-btn ${settings.ultraStyle === 'glowing' ? 'active' : ''}`}
+                      onClick={() => updateSetting('ultraStyle', 'glowing')}
+                    >
+                      Glowing
+                    </button>
+                    <button
+                      className={`style-toggle-btn ${settings.ultraStyle === 'border' ? 'active' : ''}`}
+                      onClick={() => updateSetting('ultraStyle', 'border')}
+                    >
+                      Border
+                    </button>
+                  </div>
+                </div>
+                <div className="style-toggle-row">
+                  <span className="style-toggle-label">Text Color:</span>
+                  <div className="style-toggle-buttons">
+                    <button
+                      className={`style-toggle-btn ${settings.ultraColor === 'color' ? 'active' : ''}`}
+                      onClick={() => updateSetting('ultraColor', 'color')}
+                    >
+                      Color
+                    </button>
+                    <button
+                      className={`style-toggle-btn ${settings.ultraColor === 'grey' ? 'active' : ''}`}
+                      onClick={() => updateSetting('ultraColor', 'grey')}
+                    >
+                      Grey
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="display-tabs">
+            <button
+              className={`display-tab ${activeTab === 'layout' ? 'active' : ''}`}
+              onClick={() => setActiveTab('layout')}
+            >
+              Layout
+            </button>
+            <button
+              className={`display-tab ${activeTab === 'metrics' ? 'active' : ''}`}
+              onClick={() => setActiveTab('metrics')}
+            >
+              Metrics
+            </button>
+            <button
+              className={`display-tab ${activeTab === 'row' ? 'active' : ''}`}
+              onClick={() => setActiveTab('row')}
+            >
+              Row
+            </button>
+            <button
+              className={`display-tab ${activeTab === 'extras' ? 'active' : ''}`}
+              onClick={() => setActiveTab('extras')}
+            >
+              Extras
+            </button>
+          </div>
+
+          <div className="display-content">
+            {activeTab === 'layout' && (
+              <div>
+                <div className="display-toggles">
+                  <div className="toggle-item">
+                    <label className="toggle-label">
+                      <Hash size={16} />
+                      No Decimals
+                    </label>
+                    <div
+                      className={`toggle-switch ${settings.noDecimals ? 'active' : ''}`}
+                      onClick={() =>
+                        updateSetting('noDecimals', !settings.noDecimals)
+                      }
+                    >
+                      <div className="toggle-slider" />
                     </div>
                   </div>
-                )}
 
-              {settings.quickBuySize === 'ultra' && (
-                <div className="ultra-style-controls">
-                  <div className="style-toggle-row">
-                    <span className="style-toggle-label">Ultra Style:</span>
-                    <div className="style-toggle-buttons">
-                      <button
-                        className={`style-toggle-btn ${settings.ultraStyle === 'default' ? 'active' : ''}`}
-                        onClick={() => updateSetting('ultraStyle', 'default')}
-                      >
-                        Default
-                      </button>
-                      <button
-                        className={`style-toggle-btn ${settings.ultraStyle === 'glowing' ? 'active' : ''}`}
-                        onClick={() => updateSetting('ultraStyle', 'glowing')}
-                      >
-                        Glowing
-                      </button>
-                      <button
-                        className={`style-toggle-btn ${settings.ultraStyle === 'border' ? 'active' : ''}`}
-                        onClick={() => updateSetting('ultraStyle', 'border')}
-                      >
-                        Border
-                      </button>
+                  <div className="toggle-item">
+                    <label className="toggle-label">
+                      <EyeOff size={16} />
+                      Hide Hidden Tokens
+                    </label>
+                    <div
+                      className={`toggle-switch ${settings.hideHiddenTokens ? 'active' : ''}`}
+                      onClick={() =>
+                        updateSetting(
+                          'hideHiddenTokens',
+                          !settings.hideHiddenTokens,
+                        )
+                      }
+                    >
+                      <div className="toggle-slider" />
                     </div>
                   </div>
-                  <div className="style-toggle-row">
-                    <span className="style-toggle-label">Text Color:</span>
-                    <div className="style-toggle-buttons">
-                      <button
-                        className={`style-toggle-btn ${settings.ultraColor === 'color' ? 'active' : ''}`}
-                        onClick={() => updateSetting('ultraColor', 'color')}
-                      >
-                        Color
-                      </button>
-                      <button
-                        className={`style-toggle-btn ${settings.ultraColor === 'grey' ? 'active' : ''}`}
-                        onClick={() => updateSetting('ultraColor', 'grey')}
-                      >
-                        Grey
-                      </button>
+
+                  <div className="toggle-item">
+                    <label className="toggle-label">
+                      <Image size={16} />
+                      Square Images
+                    </label>
+                    <div
+                      className={`toggle-switch ${settings.squareImages ? 'active' : ''}`}
+                      onClick={() =>
+                        updateSetting('squareImages', !settings.squareImages)
+                      }
+                    >
+                      <div className="toggle-slider" />
+                    </div>
+                  </div>
+
+                  <div className="toggle-item">
+                    <label className="toggle-label">
+                      <BarChart3 size={16} />
+                      Progress Ring
+                    </label>
+                    <div
+                      className={`toggle-switch ${settings.progressBar ? 'active' : ''}`}
+                      onClick={() =>
+                        updateSetting('progressBar', !settings.progressBar)
+                      }
+                    >
+                      <div className="toggle-slider" />
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
 
-            <div className="display-tabs">
-              <button
-                className={`display-tab ${activeTab === 'layout' ? 'active' : ''}`}
-                onClick={() => setActiveTab('layout')}
-              >
-                Layout
-              </button>
-              <button
-                className={`display-tab ${activeTab === 'metrics' ? 'active' : ''}`}
-                onClick={() => setActiveTab('metrics')}
-              >
-                Metrics
-              </button>
-              <button
-                className={`display-tab ${activeTab === 'row' ? 'active' : ''}`}
-                onClick={() => setActiveTab('row')}
-              >
-                Row
-              </button>
-              <button
-                className={`display-tab ${activeTab === 'extras' ? 'active' : ''}`}
-                onClick={() => setActiveTab('extras')}
-              >
-                Extras
-              </button>
-            </div>
-
-            <div className="display-content">
-              {activeTab === 'layout' && (
-                <div>
-                  <div className="display-toggles">
-                    <div className="toggle-item">
-                      <label className="toggle-label">
-                        <Hash size={16} />
-                        No Decimals
-                      </label>
+                <div className="customize-section">
+                  <h4 className="display-section-title">Customize rows</h4>
+                  <div className="row-toggles">
+                    {(
+                      [
+                        ['marketCap', 'Market Cap'],
+                        ['volume', 'Volume'],
+                        ['fees', 'Fees'],
+                        ['tx', 'TX'],
+                        ['socials', 'Socials'],
+                        ['holders', 'Holders'],
+                        ['proTraders', 'Pro Traders'],
+                        ['devMigrations', 'Dev Migrations'],
+                        ['top10Holders', 'Top 10 Holders'],
+                        ['devHolding', 'Dev Holding'],
+                        ['snipers', 'Snipers'],
+                        ['insiders', 'Insiders'],
+                      ] as Array<[keyof DisplaySettings['visibleRows'], string]>
+                    ).map(([k, label]) => (
                       <div
-                        className={`toggle-switch ${settings.noDecimals ? 'active' : ''}`}
+                        key={k}
+                        className={`row-toggle ${settings.visibleRows[k] ? 'active' : ''}`}
                         onClick={() =>
-                          updateSetting('noDecimals', !settings.noDecimals)
+                          updateRowSetting(k, !settings.visibleRows[k])
                         }
                       >
-                        <div className="toggle-slider" />
+                        <span className="row-toggle-label">{label}</span>
                       </div>
-                    </div>
-
-                    <div className="toggle-item">
-                      <label className="toggle-label">
-                        <EyeOff size={16} />
-                        Hide Hidden Tokens
-                      </label>
-                      <div
-                        className={`toggle-switch ${settings.hideHiddenTokens ? 'active' : ''}`}
-                        onClick={() =>
-                          updateSetting(
-                            'hideHiddenTokens',
-                            !settings.hideHiddenTokens,
-                          )
-                        }
-                      >
-                        <div className="toggle-slider" />
-                      </div>
-                    </div>
-
-                    <div className="toggle-item">
-                      <label className="toggle-label">
-                        <Image size={16} />
-                        Square Images
-                      </label>
-                      <div
-                        className={`toggle-switch ${settings.squareImages ? 'active' : ''}`}
-                        onClick={() =>
-                          updateSetting('squareImages', !settings.squareImages)
-                        }
-                      >
-                        <div className="toggle-slider" />
-                      </div>
-                    </div>
-
-                    <div className="toggle-item">
-                      <label className="toggle-label">
-                        <BarChart3 size={16} />
-                        Progress Ring
-                      </label>
-                      <div
-                        className={`toggle-switch ${settings.progressBar ? 'active' : ''}`}
-                        onClick={() =>
-                          updateSetting('progressBar', !settings.progressBar)
-                        }
-                      >
-                        <div className="toggle-slider" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="customize-section">
-                    <h4 className="display-section-title">Customize rows</h4>
-                    <div className="row-toggles">
-                      {(
-                        [
-                          ['marketCap', 'Market Cap'],
-                          ['volume', 'Volume'],
-                          ['fees', 'Fees'],
-                          ['tx', 'TX'],
-                          ['socials', 'Socials'],
-                          ['holders', 'Holders'],
-                          ['proTraders', 'Pro Traders'],
-                          ['devMigrations', 'Dev Migrations'],
-                          ['top10Holders', 'Top 10 Holders'],
-                          ['devHolding', 'Dev Holding'],
-                          ['snipers', 'Snipers'],
-                          ['insiders', 'Insiders'],
-                        ] as Array<[keyof DisplaySettings['visibleRows'], string]>
-                      ).map(([k, label]) => (
-                        <div
-                          key={k}
-                          className={`row-toggle ${settings.visibleRows[k] ? 'active' : ''}`}
-                          onClick={() =>
-                            updateRowSetting(k, !settings.visibleRows[k])
-                          }
-                        >
-                          <span className="row-toggle-label">{label}</span>
-                        </div>
-                      ))}
-                    </div>
+                    ))}
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {activeTab === 'metrics' && (
-                <div>
-                  {(['marketCap', 'volume', 'holders'] as const).map((metric) => (
-                    <div className="metrics-display-section" key={metric}>
-                      <h4 className="display-section-title">
-                        {metric === 'marketCap'
-                          ? 'Market Cap'
-                          : metric === 'volume'
-                            ? 'Volume'
-                            : 'Holders'}
-                      </h4>
-                      <div className="metric-color-options">
-                        {(['range1', 'range2', 'range3'] as const).map(
-                          (range, idx) => (
-                            <div className="metric-color-option">
-                              <div className="metric-color-item" key={range}>
-                                <div className="display-metric-value">
-                                  {metric === 'marketCap'
-                                    ? idx === 0
-                                      ? '30000'
-                                      : idx === 1
-                                        ? '150000'
-                                        : 'Above'
-                                    : metric === 'volume'
-                                      ? idx === 0
-                                        ? '1000'
-                                        : idx === 1
-                                          ? '2000'
-                                          : 'Above'
-                                      : idx === 0
-                                        ? '10'
-                                        : idx === 1
-                                          ? '50'
-                                          : 'Above'}
-                                </div>
-                                <div className="metric-color-controls">
-                                  <button
-                                    className="metric-color-square"
-                                    style={{
-                                      backgroundColor:
-                                        (settings.metricColors as any)?.[
-                                        metric
-                                        ]?.[range] || '#ffffff',
-                                    }}
-                                    onClick={(e) => handleMetricColorPickerClick(e, metric, range)}
-                                  />
-                                  <button
-                                    className="metric-reset-btn"
-                                    onClick={() =>
-                                      updateMetricColor(
-                                        metric,
-                                        range,
-                                        metric === 'marketCap'
-                                          ? range === 'range1'
-                                            ? '#d8dcff'
-                                            : range === 'range2'
-                                              ? '#eab308'
-                                              : '#14b8a6'
-                                          : '#ffffff',
-                                      )
-                                    }
-                                  >
-                                    <img
-                                      src={reset}
-                                      alt="Reset"
-                                      className="reset-icon"
-                                    />
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="metric-range-label">
+            {activeTab === 'metrics' && (
+              <div>
+                {(['marketCap', 'volume', 'holders'] as const).map((metric) => (
+                  <div className="metrics-display-section" key={metric}>
+                    <h4 className="display-section-title">
+                      {metric === 'marketCap'
+                        ? 'Market Cap'
+                        : metric === 'volume'
+                          ? 'Volume'
+                          : 'Holders'}
+                    </h4>
+                    <div className="metric-color-options">
+                      {(['range1', 'range2', 'range3'] as const).map(
+                        (range, idx) => (
+                          <div className="metric-color-option">
+                            <div className="metric-color-item" key={range}>
+                              <div className="display-metric-value">
                                 {metric === 'marketCap'
                                   ? idx === 0
-                                    ? '0 - 30K'
+                                    ? '30000'
                                     : idx === 1
-                                      ? '30K - 150K'
-                                      : '150K+'
+                                      ? '150000'
+                                      : 'Above'
                                   : metric === 'volume'
                                     ? idx === 0
-                                      ? '0 - 1K'
+                                      ? '1000'
                                       : idx === 1
-                                        ? '1K - 2K'
-                                        : '2K+'
+                                        ? '2000'
+                                        : 'Above'
                                     : idx === 0
-                                      ? '0 - 10'
+                                      ? '10'
                                       : idx === 1
-                                        ? '10 - 50'
-                                        : '50+'}
+                                        ? '50'
+                                        : 'Above'}
+                              </div>
+                              <div className="metric-color-controls">
+                                <button
+                                  className="metric-color-square"
+                                  style={{
+                                    backgroundColor:
+                                      (settings.metricColors as any)?.[
+                                        metric
+                                      ]?.[range] || '#ffffff',
+                                  }}
+                                  onClick={(e) =>
+                                    handleMetricColorPickerClick(
+                                      e,
+                                      metric,
+                                      range,
+                                    )
+                                  }
+                                />
+                                <button
+                                  className="metric-reset-btn"
+                                  onClick={() =>
+                                    updateMetricColor(
+                                      metric,
+                                      range,
+                                      metric === 'marketCap'
+                                        ? range === 'range1'
+                                          ? '#d8dcff'
+                                          : range === 'range2'
+                                            ? '#eab308'
+                                            : '#14b8a6'
+                                        : '#ffffff',
+                                    )
+                                  }
+                                >
+                                  <img
+                                    src={reset}
+                                    alt="Reset"
+                                    className="reset-icon"
+                                  />
+                                </button>
                               </div>
                             </div>
-                          ),
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                </div>
-              )}
-
-              {activeTab === 'row' && (
-                <div>
-                  <div className="display-section">
-                    <div className="display-toggles">
-                      <div className="toggle-item">
-                        <label className="toggle-label">
-                          <BarChart3 size={16} />
-                          Color Rows
-                        </label>
-                        <div
-                          className={`toggle-switch ${settings.colorRows ? 'active' : ''}`}
-                          onClick={() =>
-                            updateSetting('colorRows', !settings.colorRows)
-                          }
-                        >
-                          <div className="toggle-slider" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'extras' && (
-                <div>
-                  <div className="extras-display-section">
-                    <h4 className="display-section-title">Table Layout</h4>
-                    <div className="column-drag-container">
-                      {safeOrder.map((column, index) => (
-                        <div
-                          key={column}
-                          className={`column-drag-item ${hiddenColumns.has(column) ? 'column-hidden' : ''} ${dragOverIndex === index && draggedIndex !== index ? 'drag-over' : ''}`}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, index)}
-                          onDragOver={(e) => handleDragOver(e, index)}
-                          onDrop={(e) => handleDrop(e, index)}
-                          onDragEnd={handleDragEnd}
-                          onClick={(e) => handleHide(e, column)}
-                        >
-                          {column === 'new'
-                            ? 'New Pairs'
-                            : column === 'graduating'
-                              ? 'Final Stretch'
-                              : 'Migrated'}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="extras-display-section">
-                    <h4 className="display-section-title">
-                      Click Quick Buy Behavior
-                    </h4>
-                    <div className="quickbuy-behavior-options">
-                      {(['nothing', 'openPage', 'openNewTab'] as const).map(
-                        (mode) => (
-                          <div
-                            key={mode}
-                            className={`behavior-option ${settings.quickBuyClickBehavior === mode ? 'active' : ''}`}
-                            onClick={() =>
-                              updateSetting('quickBuyClickBehavior', mode)
-                            }
-                          >
-                            <span className="behavior-label">
-                              {mode === 'nothing'
-                                ? 'Nothing'
-                                : mode === 'openPage'
-                                  ? 'Open Page'
-                                  : 'Open in New Tab'}
-                            </span>
+                            <div className="metric-range-label">
+                              {metric === 'marketCap'
+                                ? idx === 0
+                                  ? '0 - 30K'
+                                  : idx === 1
+                                    ? '30K - 150K'
+                                    : '150K+'
+                                : metric === 'volume'
+                                  ? idx === 0
+                                    ? '0 - 1K'
+                                    : idx === 1
+                                      ? '1K - 2K'
+                                      : '2K+'
+                                  : idx === 0
+                                    ? '0 - 10'
+                                    : idx === 1
+                                      ? '10 - 50'
+                                      : '50+'}
+                            </div>
                           </div>
                         ),
                       )}
                     </div>
                   </div>
+                ))}
+              </div>
+            )}
 
-                  <div className="extras-display-section">
+            {activeTab === 'row' && (
+              <div>
+                <div className="display-section">
+                  <div className="display-toggles">
                     <div className="toggle-item">
                       <label className="toggle-label">
-                        Second Quick Buy Button
+                        <BarChart3 size={16} />
+                        Color Rows
                       </label>
                       <div
-                        className={`toggle-switch ${settings.secondQuickBuyEnabled ? 'active' : ''}`}
+                        className={`toggle-switch ${settings.colorRows ? 'active' : ''}`}
                         onClick={() =>
-                          updateSetting(
-                            'secondQuickBuyEnabled',
-                            !settings.secondQuickBuyEnabled,
-                          )
+                          updateSetting('colorRows', !settings.colorRows)
                         }
                       >
                         <div className="toggle-slider" />
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
-                    {settings.secondQuickBuyEnabled && (
-                      <div className="second-quickbuy-controls">
-                        <div className="explorer-quickbuy-container-second">
-                          <span className="explorer-second-quickbuy-label">
-                            Quick Buy
-                          </span>
-                          <input
-                            type="text"
-                            placeholder="0.0"
-                            value={quickAmountsSecond.new}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setQuickAmountSecond('new', value);
-                              setQuickAmountSecond('graduating', value);
-                              setQuickAmountSecond('graduated', value);
-                            }}
-                            className="explorer-quickbuy-input-second"
-                          />
-                          <img className="quickbuy-monad-icon" src={monadicon} />
-                          <div className="explorer-preset-controls">
-                            {[1, 2, 3].map((p) => (
-                              <button
-                                key={p}
-                                className={`explorer-preset-pill-second ${activePresetsSecond.new === p ? 'active' : ''}`}
-                                onClick={() => {
-                                  setActivePresetSecond('new', p);
-                                  setActivePresetSecond('graduating', p);
-                                  setActivePresetSecond('graduated', p);
-                                }}
-                              >
-                                P{p}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="color-input-row">
-                          <div className="color-input-container">
-                            <div
-                              className="color-preview"
-                              style={{ backgroundColor: settings.secondQuickBuyColor }}
-                              onClick={handleColorPickerClick}
-                            />
-<input
-                              type="text"
-                              value={hexInputValue}
-                              onChange={(e) => {
-                                const value = e.target.value.replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
-                                setHexInputValue(value);
-
-                                if (value.length === 6) {
-                                  updateSetting('secondQuickBuyColor', `#${value}`);
-                                }
-                              }}
-                              onBlur={() => {
-                                if (hexInputValue.length === 3) {
-                                  const expanded = hexInputValue.split('').map(c => c + c).join('');
-                                  updateSetting('secondQuickBuyColor', `#${expanded}`);
-                                  setHexInputValue(expanded);
-                                } else if (hexInputValue.length !== 6) {
-                                  setHexInputValue(settings.secondQuickBuyColor.replace('#', '').toUpperCase());
-                                }
-                              }}
-                              onFocus={(e) => e.target.select()}
-                              className="quickbuy-hex-input"
-                              placeholder="FFFFFF"
-                              maxLength={6}
-                            />
-                            <button
-                              className="refresh-button"
-                              onClick={() => updateSetting('secondQuickBuyColor', '#aaaecf')}
-                              title="Reset to default"
-                              type="button"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-
+            {activeTab === 'extras' && (
+              <div>
+                <div className="extras-display-section">
+                  <h4 className="display-section-title">Table Layout</h4>
+                  <div className="column-drag-container">
+                    {safeOrder.map((column, index) => (
+                      <div
+                        key={column}
+                        className={`column-drag-item ${hiddenColumns.has(column) ? 'column-hidden' : ''} ${dragOverIndex === index && draggedIndex !== index ? 'drag-over' : ''}`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, index)}
+                        onDragOver={(e) => handleDragOver(e, index)}
+                        onDrop={(e) => handleDrop(e, index)}
+                        onDragEnd={handleDragEnd}
+                        onClick={(e) => handleHide(e, column)}
+                      >
+                        {column === 'new'
+                          ? 'New Pairs'
+                          : column === 'graduating'
+                            ? 'Final Stretch'
+                            : 'Migrated'}
                       </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="extras-display-section">
+                  <h4 className="display-section-title">
+                    Click Quick Buy Behavior
+                  </h4>
+                  <div className="quickbuy-behavior-options">
+                    {(['nothing', 'openPage', 'openNewTab'] as const).map(
+                      (mode) => (
+                        <div
+                          key={mode}
+                          className={`behavior-option ${settings.quickBuyClickBehavior === mode ? 'active' : ''}`}
+                          onClick={() =>
+                            updateSetting('quickBuyClickBehavior', mode)
+                          }
+                        >
+                          <span className="behavior-label">
+                            {mode === 'nothing'
+                              ? 'Nothing'
+                              : mode === 'openPage'
+                                ? 'Open Page'
+                                : 'Open in New Tab'}
+                          </span>
+                        </div>
+                      ),
                     )}
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
 
-        )}
-        {showSecondButtonColorPicker && (
-          <div
-            className="color-picker-dropdown"
-            style={{
-              top: `${pickerPosition.top}px`,
-              left: `${pickerPosition.left}px`,
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <HexColorPicker
-              color={settings.secondQuickBuyColor}
-              onChange={(color) => updateSetting('secondQuickBuyColor', color)}
-            />
-            <div className="rgb-inputs">
-              {['R', 'G', 'B'].map((channel, i) => {
-                const currentColor = settings.secondQuickBuyColor;
-                const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
-                const value = parseInt(slice, 16) || 0;
-
-                return (
-                  <div className="rgb-input-group" key={channel}>
-                    <label>{channel}</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="255"
-                      value={value}
-                      onChange={(e) => {
-                        const rgb = [0, 0, 0].map((_, idx) =>
-                          idx === i
-                            ? Math.max(0, Math.min(255, Number(e.target.value)))
-                            : parseInt(currentColor.slice(1 + idx * 2, 3 + idx * 2), 16)
-                        );
-                        const newColor = `#${rgb
-                          .map((c) => c.toString(16).padStart(2, '0'))
-                          .join('')}`;
-                        updateSetting('secondQuickBuyColor', newColor);
-                      }}
-                    />
+                <div className="extras-display-section">
+                  <div className="toggle-item">
+                    <label className="toggle-label">
+                      Second Quick Buy Button
+                    </label>
+                    <div
+                      className={`toggle-switch ${settings.secondQuickBuyEnabled ? 'active' : ''}`}
+                      onClick={() =>
+                        updateSetting(
+                          'secondQuickBuyEnabled',
+                          !settings.secondQuickBuyEnabled,
+                        )
+                      }
+                    >
+                      <div className="toggle-slider" />
+                    </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  {settings.secondQuickBuyEnabled && (
+                    <div className="second-quickbuy-controls">
+                      <div className="explorer-quickbuy-container-second">
+                        <span className="explorer-second-quickbuy-label">
+                          Quick Buy
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="0.0"
+                          value={quickAmountsSecond.new}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setQuickAmountSecond('new', value);
+                            setQuickAmountSecond('graduating', value);
+                            setQuickAmountSecond('graduated', value);
+                          }}
+                          className="explorer-quickbuy-input-second"
+                        />
+                        <img className="quickbuy-monad-icon" src={monadicon} />
+                        <div className="explorer-preset-controls">
+                          {[1, 2, 3].map((p) => (
+                            <button
+                              key={p}
+                              className={`explorer-preset-pill-second ${activePresetsSecond.new === p ? 'active' : ''}`}
+                              onClick={() => {
+                                setActivePresetSecond('new', p);
+                                setActivePresetSecond('graduating', p);
+                                setActivePresetSecond('graduated', p);
+                              }}
+                            >
+                              P{p}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="color-input-row">
+                        <div className="color-input-container">
+                          <div
+                            className="color-preview"
+                            style={{
+                              backgroundColor: settings.secondQuickBuyColor,
+                            }}
+                            onClick={handleColorPickerClick}
+                          />
+                          <input
+                            type="text"
+                            value={hexInputValue}
+                            onChange={(e) => {
+                              const value = e.target.value
+                                .replace(/[^0-9A-Fa-f]/g, '')
+                                .toUpperCase();
+                              setHexInputValue(value);
+
+                              if (value.length === 6) {
+                                updateSetting(
+                                  'secondQuickBuyColor',
+                                  `#${value}`,
+                                );
+                              }
+                            }}
+                            onBlur={() => {
+                              if (hexInputValue.length === 3) {
+                                const expanded = hexInputValue
+                                  .split('')
+                                  .map((c) => c + c)
+                                  .join('');
+                                updateSetting(
+                                  'secondQuickBuyColor',
+                                  `#${expanded}`,
+                                );
+                                setHexInputValue(expanded);
+                              } else if (hexInputValue.length !== 6) {
+                                setHexInputValue(
+                                  settings.secondQuickBuyColor
+                                    .replace('#', '')
+                                    .toUpperCase(),
+                                );
+                              }
+                            }}
+                            onFocus={(e) => e.target.select()}
+                            className="quickbuy-hex-input"
+                            placeholder="FFFFFF"
+                            maxLength={6}
+                          />
+                          <button
+                            className="refresh-button"
+                            onClick={() =>
+                              updateSetting('secondQuickBuyColor', '#aaaecf')
+                            }
+                            title="Reset to default"
+                            type="button"
+                          >
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-        )}
-        {showMetricColorPicker && activeMetricPicker && (
-          <div
-            className="color-picker-dropdown"
-            style={{
-              top: `${metricPickerPosition.top}px`,
-              left: `${metricPickerPosition.left}px`,
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <HexColorPicker
-              color={(settings.metricColors as any)?.[activeMetricPicker.metric]?.[activeMetricPicker.range] || '#ffffff'}
-              onChange={(color) => updateMetricColor(activeMetricPicker.metric, activeMetricPicker.range, color)}
-            />
-            <div className="rgb-inputs">
-              {['R', 'G', 'B'].map((channel, i) => {
-                const currentColor = settings.secondQuickBuyColor;
-                const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
-                const value = parseInt(slice, 16) || 0;
+        </div>
+      )}
+      {showSecondButtonColorPicker && (
+        <div
+          className="color-picker-dropdown"
+          style={{
+            top: `${pickerPosition.top}px`,
+            left: `${pickerPosition.left}px`,
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <HexColorPicker
+            color={settings.secondQuickBuyColor}
+            onChange={(color) => updateSetting('secondQuickBuyColor', color)}
+          />
+          <div className="rgb-inputs">
+            {['R', 'G', 'B'].map((channel, i) => {
+              const currentColor = settings.secondQuickBuyColor;
+              const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
+              const value = parseInt(slice, 16) || 0;
 
-                return (
-                  <div className="rgb-input-group" key={channel}>
-                    <label>{channel}</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="255"
-                      value={value}
-                      onChange={(e) => {
-                        const rgb = [0, 0, 0].map((_, idx) =>
-                          idx === i
-                            ? Math.max(0, Math.min(255, Number(e.target.value)))
-                            : parseInt(currentColor.slice(1 + idx * 2, 3 + idx * 2), 16)
-                        );
-                        const newColor = `#${rgb
-                          .map((c) => c.toString(16).padStart(2, '0'))
-                          .join('')}`;
-                        updateSetting('secondQuickBuyColor', newColor);
-                      }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
+              return (
+                <div className="rgb-input-group" key={channel}>
+                  <label>{channel}</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="255"
+                    value={value}
+                    onChange={(e) => {
+                      const rgb = [0, 0, 0].map((_, idx) =>
+                        idx === i
+                          ? Math.max(0, Math.min(255, Number(e.target.value)))
+                          : parseInt(
+                              currentColor.slice(1 + idx * 2, 3 + idx * 2),
+                              16,
+                            ),
+                      );
+                      const newColor = `#${rgb
+                        .map((c) => c.toString(16).padStart(2, '0'))
+                        .join('')}`;
+                      updateSetting('secondQuickBuyColor', newColor);
+                    }}
+                  />
+                </div>
+              );
+            })}
           </div>
-        )}
+        </div>
+      )}
+      {showMetricColorPicker && activeMetricPicker && (
+        <div
+          className="color-picker-dropdown"
+          style={{
+            top: `${metricPickerPosition.top}px`,
+            left: `${metricPickerPosition.left}px`,
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <HexColorPicker
+            color={
+              (settings.metricColors as any)?.[activeMetricPicker.metric]?.[
+                activeMetricPicker.range
+              ] || '#ffffff'
+            }
+            onChange={(color) =>
+              updateMetricColor(
+                activeMetricPicker.metric,
+                activeMetricPicker.range,
+                color,
+              )
+            }
+          />
+          <div className="rgb-inputs">
+            {['R', 'G', 'B'].map((channel, i) => {
+              const currentColor = settings.secondQuickBuyColor;
+              const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
+              const value = parseInt(slice, 16) || 0;
 
-      </div>
-
-    );
-
-  };
-
-
+              return (
+                <div className="rgb-input-group" key={channel}>
+                  <label>{channel}</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="255"
+                    value={value}
+                    onChange={(e) => {
+                      const rgb = [0, 0, 0].map((_, idx) =>
+                        idx === i
+                          ? Math.max(0, Math.min(255, Number(e.target.value)))
+                          : parseInt(
+                              currentColor.slice(1 + idx * 2, 3 + idx * 2),
+                              16,
+                            ),
+                      );
+                      const newColor = `#${rgb
+                        .map((c) => c.toString(16).padStart(2, '0'))
+                        .join('')}`;
+                      updateSetting('secondQuickBuyColor', newColor);
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const MobileTabSelector: React.FC<{
   activeTab: Token['status'];
@@ -2187,91 +2245,6 @@ const MobileTabSelector: React.FC<{
   );
 };
 
-type State = {
-  tokensByStatus: Record<Token['status'], Token[]>;
-  hidden: Set<string>;
-  loading: Set<string>;
-};
-
-type Action =
-  | { type: 'INIT'; tokens: Token[] }
-  | { type: 'ADD_MARKET'; token: Token }
-  | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
-  | { type: 'HIDE_TOKEN'; id: string }
-  | { type: 'SHOW_TOKEN'; id: string }
-  | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' };
-
-const initialState: State = {
-  tokensByStatus: { new: [], graduating: [], graduated: [] },
-  hidden: new Set(),
-  loading: new Set(),
-};
-
-function reducer(state: State, action: Action): State {
-  switch (action.type) {
-    case 'INIT': {
-      const buckets: State['tokensByStatus'] = {
-        new: [],
-        graduating: [],
-        graduated: [],
-      };
-      action.tokens.forEach((t) => buckets[t.status].push(t));
-      return { ...state, tokensByStatus: buckets };
-    }
-    case 'ADD_MARKET': {
-      const { token } = action;
-      const list = [token, ...state.tokensByStatus[token.status]].slice(
-        0,
-        MAX_PER_COLUMN,
-      );
-      return {
-        ...state,
-        tokensByStatus: { ...state.tokensByStatus, [token.status]: list },
-      };
-    }
-    case 'UPDATE_MARKET': {
-      const buckets = { ...state.tokensByStatus };
-      (Object.keys(buckets) as Token['status'][]).forEach((s) => {
-        buckets[s] = buckets[s].map((t) => {
-          if (t.id.toLowerCase() !== action.id.toLowerCase()) return t;
-
-          const {
-            volumeDelta = 0,
-            buyTransactions = 0,
-            sellTransactions = 0,
-            ...rest
-          } = action.updates;
-
-          return {
-            ...t,
-            ...rest,
-            volume24h: t.volume24h + volumeDelta,
-            buyTransactions: t.buyTransactions + buyTransactions,
-            sellTransactions: t.sellTransactions + sellTransactions,
-          };
-        });
-      });
-      return { ...state, tokensByStatus: buckets };
-    }
-    case 'HIDE_TOKEN': {
-      const h = new Set(state.hidden).add(action.id);
-      return { ...state, hidden: h };
-    }
-    case 'SET_LOADING': {
-      const l = new Set(state.loading);
-      const key = action.buttonType ? `${action.id}-${action.buttonType}` : action.id;
-      action.loading ? l.add(key) : l.delete(key);
-      return { ...state, loading: l };
-    }
-    case 'SHOW_TOKEN': {
-      const h = new Set(state.hidden);
-      h.delete(action.id);
-      return { ...state, hidden: h };
-    }
-    default:
-      return state;
-  }
-}
 const TokenRow = React.memo<{
   token: Token;
   quickbuyAmount: string;
@@ -2287,7 +2260,11 @@ const TokenRow = React.memo<{
   onImageHover: (tokenId: string) => void;
   onImageLeave: () => void;
   onTokenClick: (token: Token) => void;
-  onQuickBuy: (token: Token, amount: string, buttonType: 'primary' | 'secondary') => void;
+  onQuickBuy: (
+    token: Token,
+    amount: string,
+    buttonType: 'primary' | 'secondary',
+  ) => void;
   onCopyToClipboard: (text: string) => void;
   displaySettings: DisplaySettings;
   isHidden: boolean;
@@ -2489,10 +2466,11 @@ const TokenRow = React.memo<{
     <>
       <div
         ref={tokenRowRef}
-        className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${displaySettings.colorRows && token.status !== 'graduated'
-          ? `colored-row ${getBondingColorClass(bondingPercentage)}`
-          : ''
-          } ${metricData ? `metric-colored ${metricData.classes}` : ''} ${token.status === 'graduated' ? 'graduated' : ''}`}
+        className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${
+          displaySettings.colorRows && token.status !== 'graduated'
+            ? `colored-row ${getBondingColorClass(bondingPercentage)}`
+            : ''
+        } ${metricData ? `metric-colored ${metricData.classes}` : ''} ${token.status === 'graduated' ? 'graduated' : ''}`}
         style={cssVariables}
         onMouseEnter={() => onTokenHover(token.id)}
         onMouseLeave={onTokenLeave}
@@ -2507,16 +2485,15 @@ const TokenRow = React.memo<{
             }}
           >
             <Tooltip content={isHidden ? 'Show Token' : 'Hide Token'}>
-
               {isHidden ? <Eye size={16} /> : <EyeOff size={16} />}
             </Tooltip>
-
           </button>
-
-
         </div>
 
-        <div className="explorer-token-left" style={!displaySettings.progressBar ? { marginTop: '-3px' } : {}}>
+        <div
+          className="explorer-token-left"
+          style={!displaySettings.progressBar ? { marginTop: '-3px' } : {}}
+        >
           <div
             ref={imageContainerRef}
             className={`explorer-token-image-container ${token.status === 'graduated' ? 'graduated' : ''} ${!displaySettings.squareImages ? 'circle-mode' : ''} ${!displaySettings.progressBar ? 'no-progress-ring' : ''}`}
@@ -2814,7 +2791,11 @@ const TokenRow = React.memo<{
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         className="graduated-icon"
-                        style={token.graduatedTokens > 0 ? { color: "rgba(255, 251, 0, 1)" } : undefined}
+                        style={
+                          token.graduatedTokens > 0
+                            ? { color: 'rgba(255, 251, 0, 1)' }
+                            : undefined
+                        }
                       >
                         <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
                         <path d="M5 21h14" />
@@ -2845,7 +2826,9 @@ const TokenRow = React.memo<{
                     height="16"
                     viewBox="0 0 32 32"
                     fill={
-                      token.top10Holding > 25 ? '#eb7070ff' : 'rgb(67, 254, 154)'
+                      token.top10Holding > 25
+                        ? '#eb7070ff'
+                        : 'rgb(67, 254, 154)'
                     }
                     xmlns="http://www.w3.org/2000/svg"
                   >
@@ -2874,7 +2857,9 @@ const TokenRow = React.memo<{
                     height="16"
                     viewBox="0 0 30 30"
                     fill={
-                      token.devHolding * 100 > 25 ? '#eb7070ff' : 'rgb(67, 254, 154)'
+                      token.devHolding * 100 > 25
+                        ? '#eb7070ff'
+                        : 'rgb(67, 254, 154)'
                     }
                     xmlns="http://www.w3.org/2000/svg"
                   >
@@ -2926,7 +2911,6 @@ const TokenRow = React.memo<{
               </Tooltip>
             )}
 
-
             {displaySettings.visibleRows.insiders && (
               <Tooltip content="Insider Holding">
                 <div className="explorer-holding-item">
@@ -2961,83 +2945,100 @@ const TokenRow = React.memo<{
           </div>
         </div>
 
-        {displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled && (
-          <div
-            className={`explorer-second-ultra-container ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`}
-            style={
-              displaySettings.ultraStyle === 'border'
-                ? {
-                  border: `1px solid ${displaySettings.secondQuickBuyColor}`,
-                  boxShadow: `inset 0 0 0 1px ${displaySettings.secondQuickBuyColor}99`,
-                }
-                : undefined
-            }
-            onClick={(e) => {
-              e.stopPropagation();
-              if (displaySettings.quickBuyClickBehavior === 'openPage') {
-                onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-                onTokenClick(token);
-              } else if (displaySettings.quickBuyClickBehavior === 'openNewTab') {
-                onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-                window.open(`/meme/${token.tokenAddress}`, '_blank');
-              } else {
-                onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+        {displaySettings.quickBuySize === 'ultra' &&
+          displaySettings.secondQuickBuyEnabled && (
+            <div
+              className={`explorer-second-ultra-container ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`}
+              style={
+                displaySettings.ultraStyle === 'border'
+                  ? {
+                      border: `1px solid ${displaySettings.secondQuickBuyColor}`,
+                      boxShadow: `inset 0 0 0 1px ${displaySettings.secondQuickBuyColor}99`,
+                    }
+                  : undefined
               }
-            }}
-            onMouseMove={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              const x = ((e.clientX - rect.left) / rect.width) * 100;
-              const y = ((e.clientY - rect.top) / rect.height) * 100;
-              e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
-              e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
-            }}
-          >
-
-            <div className="explorer-actions-section">
-              <button
-                className={`explorer-quick-buy-btn size-ultra ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`}
-                style={{ color: displaySettings.secondQuickBuyColor }}
-                disabled={isLoadingSecondary}
-              >
-                {isLoadingSecondary ? (
-                  <div style={{ border: `1.5px solid ${displaySettings.secondQuickBuyColor}`
-                    , borderTop: `1.5px solid transparent`
-                 }}
-                    className="ultra-quickbuy-loading-spinner" />
-                ) : (
-                  <>
-                    <svg fill={displaySettings.secondQuickBuyColor} className="second-ultra-quickbuy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" width="64px" height="64px"><path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86	c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833	c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86	c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18	c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" /></svg>            {quickbuyAmountSecond} MON
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div
-          className={`explorer-third-row metrics-size-${displaySettings.metricSize} ${displaySettings.quickBuySize === 'large' ? 'large-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'mega' ? 'mega-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'ultra' ? `ultra-quickbuy-mode ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}` : ''} ${displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled ? 'ultra-dual-buttons' : ''}`}
-          onClick={
-            displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled
-              ? (e) => {
+              onClick={(e) => {
                 e.stopPropagation();
-                onQuickBuy(token, quickbuyAmount, 'primary');
-              }
-              : displaySettings.quickBuySize === 'ultra' && !displaySettings.secondQuickBuyEnabled
-                ? (e) => {
-                  e.stopPropagation();
-                  onQuickBuy(token, quickbuyAmount, 'primary');
+                if (displaySettings.quickBuyClickBehavior === 'openPage') {
+                  onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                  onTokenClick(token);
+                } else if (
+                  displaySettings.quickBuyClickBehavior === 'openNewTab'
+                ) {
+                  onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                  window.open(`/meme/${token.tokenAddress}`, '_blank');
+                } else {
+                  onQuickBuy(token, quickbuyAmountSecond, 'secondary');
                 }
-                : undefined
-          }
-          onMouseMove={
-            displaySettings.quickBuySize === 'ultra'
-              ? (e) => {
+              }}
+              onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const x = ((e.clientX - rect.left) / rect.width) * 100;
                 const y = ((e.clientY - rect.top) / rect.height) * 100;
                 e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
                 e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
-              }
+              }}
+            >
+              <div className="explorer-actions-section">
+                <button
+                  className={`explorer-quick-buy-btn size-ultra ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`}
+                  style={{ color: displaySettings.secondQuickBuyColor }}
+                  disabled={isLoadingSecondary}
+                >
+                  {isLoadingSecondary ? (
+                    <div
+                      style={{
+                        border: `1.5px solid ${displaySettings.secondQuickBuyColor}`,
+                        borderTop: `1.5px solid transparent`,
+                      }}
+                      className="ultra-quickbuy-loading-spinner"
+                    />
+                  ) : (
+                    <>
+                      <svg
+                        fill={displaySettings.secondQuickBuyColor}
+                        className="second-ultra-quickbuy-icon"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 72 72"
+                        width="64px"
+                        height="64px"
+                      >
+                        <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86	c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833	c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86	c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18	c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
+                      </svg>{' '}
+                      {quickbuyAmountSecond} MON
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+        <div
+          className={`explorer-third-row metrics-size-${displaySettings.metricSize} ${displaySettings.quickBuySize === 'large' ? 'large-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'mega' ? 'mega-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'ultra' ? `ultra-quickbuy-mode ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}` : ''} ${displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled ? 'ultra-dual-buttons' : ''}`}
+          onClick={
+            displaySettings.quickBuySize === 'ultra' &&
+            displaySettings.secondQuickBuyEnabled
+              ? (e) => {
+                  e.stopPropagation();
+                  onQuickBuy(token, quickbuyAmount, 'primary');
+                }
+              : displaySettings.quickBuySize === 'ultra' &&
+                  !displaySettings.secondQuickBuyEnabled
+                ? (e) => {
+                    e.stopPropagation();
+                    onQuickBuy(token, quickbuyAmount, 'primary');
+                  }
+                : undefined
+          }
+          onMouseMove={
+            displaySettings.quickBuySize === 'ultra'
+              ? (e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = ((e.clientX - rect.left) / rect.width) * 100;
+                  const y = ((e.clientY - rect.top) / rect.height) * 100;
+                  e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
+                  e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
+                }
               : undefined
           }
         >
@@ -3076,7 +3077,10 @@ const TokenRow = React.memo<{
                 <div className="explorer-stat-item">
                   <span className="explorer-fee-label">F</span>
                   <span className="explorer-fee-total">
-                    {formatPrice(token.volume24h * monUsdPrice / 100, displaySettings.noDecimals)}
+                    {formatPrice(
+                      (token.volume24h * monUsdPrice) / 100,
+                      displaySettings.noDecimals,
+                    )}
                   </span>
                 </div>
               </Tooltip>
@@ -3139,7 +3143,9 @@ const TokenRow = React.memo<{
 
                     if (displaySettings.quickBuyClickBehavior === 'openPage') {
                       onTokenClick(token);
-                    } else if (displaySettings.quickBuyClickBehavior === 'openNewTab') {
+                    } else if (
+                      displaySettings.quickBuyClickBehavior === 'openNewTab'
+                    ) {
                       window.open(`/meme/${token.tokenAddress}`, '_blank');
                     }
                   }}
@@ -3151,9 +3157,9 @@ const TokenRow = React.memo<{
                       <img
                         className="explorer-quick-buy-icon"
                         src={lightning}
-                        style={{opacity: 0}}
+                        style={{ opacity: 0 }}
                       />
-                      <span style={{opacity: 0}}>{quickbuyAmount} MON</span>
+                      <span style={{ opacity: 0 }}>{quickbuyAmount} MON</span>
                     </>
                   ) : (
                     <>
@@ -3168,52 +3174,53 @@ const TokenRow = React.memo<{
               );
             })()}
 
-            {displaySettings.secondQuickBuyEnabled && displaySettings.quickBuySize !== 'ultra' && (
-              <button
-                className={`explorer-quick-buy-btn second-button size-${displaySettings.quickBuySize} style-${displaySettings.quickBuyStyle}`}
-                style={{
-                  ['--second-quickbuy-color' as any]:
-                    displaySettings.secondQuickBuyColor,
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (
-                    displaySettings.quickBuyClickBehavior === 'openPage'
-                  ) {
-                    onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-                    onTokenClick(token);
-                  } else if (
-                    displaySettings.quickBuyClickBehavior === 'openNewTab'
-                  ) {
-                    onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-                    window.open(`/meme/${token.tokenAddress}`, '_blank');
-                  } else {
-                    onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-                  }
-                }}
-                disabled={isLoadingSecondary}
-              >
-                {isLoadingSecondary ? (
-                  <>
-                    <div className="quickbuy-loading-spinner" />
-                    <img
-                      className="explorer-quick-buy-icon"
-                      src={lightning}
-                      style={{opacity: 0}}
-                    />
-                    <span style={{opacity: 0}}>{quickbuyAmountSecond} MON</span>
-                  </>
-                ) : (
-                  <>
-                    <img
-                      className="explorer-quick-buy-icon"
-                      src={lightning}
-                    />
-                    {quickbuyAmountSecond} MON
-                  </>
-                )}
-              </button>
-            )}
+            {displaySettings.secondQuickBuyEnabled &&
+              displaySettings.quickBuySize !== 'ultra' && (
+                <button
+                  className={`explorer-quick-buy-btn second-button size-${displaySettings.quickBuySize} style-${displaySettings.quickBuyStyle}`}
+                  style={{
+                    ['--second-quickbuy-color' as any]:
+                      displaySettings.secondQuickBuyColor,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (displaySettings.quickBuyClickBehavior === 'openPage') {
+                      onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                      onTokenClick(token);
+                    } else if (
+                      displaySettings.quickBuyClickBehavior === 'openNewTab'
+                    ) {
+                      onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                      window.open(`/meme/${token.tokenAddress}`, '_blank');
+                    } else {
+                      onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                    }
+                  }}
+                  disabled={isLoadingSecondary}
+                >
+                  {isLoadingSecondary ? (
+                    <>
+                      <div className="quickbuy-loading-spinner" />
+                      <img
+                        className="explorer-quick-buy-icon"
+                        src={lightning}
+                        style={{ opacity: 0 }}
+                      />
+                      <span style={{ opacity: 0 }}>
+                        {quickbuyAmountSecond} MON
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <img
+                        className="explorer-quick-buy-icon"
+                        src={lightning}
+                      />
+                      {quickbuyAmountSecond} MON
+                    </>
+                  )}
+                </button>
+              )}
           </div>
         </div>
       </div>
@@ -3237,6 +3244,49 @@ const TokenRow = React.memo<{
     </>
   );
 });
+
+interface TokenExplorerProps {
+  setpopup?: (popup: number) => void;
+  appliedFilters?: TabFilters;
+  onOpenFiltersForColumn: (c: Token['status']) => void;
+  activeFilterTab?: Token['status'];
+  sendUserOperationAsync: any;
+  terminalQueryData: any;
+  terminalToken: any;
+  setTerminalToken: any;
+  terminalRefetch: any;
+  setTokenData: any;
+  monUsdPrice: number;
+  subWallets?: Array<{ address: string; privateKey: string }>;
+  walletTokenBalances?: { [address: string]: any };
+  activeWalletPrivateKey?: string;
+  setOneCTSigner: (privateKey: string) => void;
+  refetch: () => void;
+  tokenList?: any[];
+  activechain: number;
+  logout: () => void;
+  lastRefGroupFetch: any;
+  lastNonceGroupFetch: any;
+  currentWalletIcon?: string;
+  isBlurred?: boolean;
+  account: {
+    connected: boolean;
+    address?: string;
+    chainId?: number;
+  };
+  quickAmounts: any;
+  setQuickAmounts: any;
+  openWebsocket: any;
+  pausedColumn: any;
+  setPausedColumn: any;
+  dispatch: any;
+  hidden: any;
+  tokensByStatus: any;
+  alertSettings: any;
+  setAlertSettings: any;
+  loading: any;
+  isLoading: any;
+}
 
 const TokenExplorer: React.FC<TokenExplorerProps> = ({
   appliedFilters,
@@ -3263,12 +3313,26 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   account,
   quickAmounts,
   setQuickAmounts,
+  openWebsocket,
+  pausedColumn,
+  setPausedColumn,
+  dispatch,
+  hidden,
+  tokensByStatus,
+  alertSettings,
+  setAlertSettings,
+  loading,
+  isLoading,
 }) => {
   const [currentTime, setCurrentTime] = useState(Date.now());
-  const [quickAmountsSecond, setQuickAmountsSecond] = useState<Record<Token['status'], string>>(() => ({
+  const [quickAmountsSecond, setQuickAmountsSecond] = useState<
+    Record<Token['status'], string>
+  >(() => ({
     new: localStorage.getItem('explorer-quickbuy-second-new') ?? '1',
-    graduating: localStorage.getItem('explorer-quickbuy-second-graduating') ?? '1',
-    graduated: localStorage.getItem('explorer-quickbuy-second-graduated') ?? '1',
+    graduating:
+      localStorage.getItem('explorer-quickbuy-second-graduating') ?? '1',
+    graduated:
+      localStorage.getItem('explorer-quickbuy-second-graduated') ?? '1',
   }));
   const setQuickAmountSecond = useCallback((s: Token['status'], v: string) => {
     const clean = v.replace(/[^0-9.]/g, '');
@@ -3279,16 +3343,27 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const setActivePresetSecond = useCallback(
     (status: Token['status'], preset: number) => {
       setActivePresetsSecond((p) => ({ ...p, [status]: preset }));
-      localStorage.setItem(`explorer-preset-second-${status}`, preset.toString());
+      localStorage.setItem(
+        `explorer-preset-second-${status}`,
+        preset.toString(),
+      );
     },
     [],
   );
-  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
+  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(
+    new Set(),
+  );
 
-  const [activePresetsSecond, setActivePresetsSecond] = useState<Record<Token['status'], number>>(() => ({
+  const [activePresetsSecond, setActivePresetsSecond] = useState<
+    Record<Token['status'], number>
+  >(() => ({
     new: parseInt(localStorage.getItem('explorer-preset-second-new') ?? '1'),
-    graduating: parseInt(localStorage.getItem('explorer-preset-second-graduating') ?? '1'),
-    graduated: parseInt(localStorage.getItem('explorer-preset-second-graduated') ?? '1'),
+    graduating: parseInt(
+      localStorage.getItem('explorer-preset-second-graduating') ?? '1',
+    ),
+    graduated: parseInt(
+      localStorage.getItem('explorer-preset-second-graduated') ?? '1',
+    ),
   }));
   const formatTimeAgo = (createdTimestamp: number) => {
     const now = Math.floor(currentTime / 1000);
@@ -3307,7 +3382,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     }
   };
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
-  const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
+  const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(
+    {},
+  );
   const walletDropdownRef = useRef<HTMLDivElement>(null);
 
   // Load wallet names from localStorage
@@ -3325,19 +3402,29 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       setWalletNames(event.detail);
     };
 
-    window.addEventListener('walletNamesUpdated', handleWalletNamesUpdate as EventListener);
+    window.addEventListener(
+      'walletNamesUpdated',
+      handleWalletNamesUpdate as EventListener,
+    );
 
     return () => {
-      window.removeEventListener('walletNamesUpdated', handleWalletNamesUpdate as EventListener);
+      window.removeEventListener(
+        'walletNamesUpdated',
+        handleWalletNamesUpdate as EventListener,
+      );
     };
   }, []);
 
   // Sync active wallet from localStorage
   useEffect(() => {
-    const storedActiveWalletPrivateKey = localStorage.getItem('crystal_active_wallet_private_key');
+    const storedActiveWalletPrivateKey = localStorage.getItem(
+      'crystal_active_wallet_private_key',
+    );
 
     if (storedActiveWalletPrivateKey && subWallets.length > 0) {
-      const isValidWallet = subWallets.some(wallet => wallet.privateKey === storedActiveWalletPrivateKey);
+      const isValidWallet = subWallets.some(
+        (wallet) => wallet.privateKey === storedActiveWalletPrivateKey,
+      );
 
       if (isValidWallet) {
         if (activeWalletPrivateKey !== storedActiveWalletPrivateKey) {
@@ -3352,14 +3439,18 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (walletDropdownRef.current && !walletDropdownRef.current.contains(event.target as Node)) {
+      if (
+        walletDropdownRef.current &&
+        !walletDropdownRef.current.contains(event.target as Node)
+      ) {
         setIsWalletDropdownOpen(false);
       }
     };
 
     if (isWalletDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      return () =>
+        document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isWalletDropdownOpen]);
 
@@ -3372,7 +3463,11 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     let count = 0;
 
     for (const [tokenAddr, balance] of Object.entries(balances)) {
-      if (tokenAddr !== ethAddress && balance && BigInt(balance.toString()) > 0n) {
+      if (
+        tokenAddr !== ethAddress &&
+        balance &&
+        BigInt(balance.toString()) > 0n
+      ) {
         count++;
       }
     }
@@ -3384,9 +3479,13 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     const balances = walletTokenBalances[address];
     if (!balances || !tokenList.length) return 0;
 
-    const ethToken = tokenList.find(t => t.address === appSettings.chainConfig[activechain]?.eth);
+    const ethToken = tokenList.find(
+      (t) => t.address === appSettings.chainConfig[activechain]?.eth,
+    );
     if (ethToken && balances[ethToken.address]) {
-      return Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals);
+      return (
+        Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals)
+      );
     }
     return 0;
   };
@@ -3399,7 +3498,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     return activeWalletPrivateKey === privateKey;
   };
   const toggleWalletSelection = useCallback((address: string) => {
-    setSelectedWallets(prev => {
+    setSelectedWallets((prev) => {
       const next = new Set(prev);
       next.has(address) ? next.delete(address) : next.add(address);
       return next;
@@ -3407,7 +3506,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   }, []);
 
   const selectAllWallets = useCallback(() => {
-    setSelectedWallets(new Set(subWallets.map(w => w.address)));
+    setSelectedWallets(new Set(subWallets.map((w) => w.address)));
   }, [subWallets]);
 
   const unselectAllWallets = useCallback(() => {
@@ -3415,10 +3514,10 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   }, []);
 
   const selectAllWithBalance = useCallback(() => {
-    const walletsWithBalance = subWallets.filter(wallet =>
-      getWalletBalance(wallet.address) > 0
+    const walletsWithBalance = subWallets.filter(
+      (wallet) => getWalletBalance(wallet.address) > 0,
     );
-    setSelectedWallets(new Set(walletsWithBalance.map(w => w.address)));
+    setSelectedWallets(new Set(walletsWithBalance.map((w) => w.address)));
   }, [subWallets]);
 
   const handleWalletButtonClick = () => {
@@ -3430,11 +3529,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   };
 
   const formatNumberWithCommas = (num: number, decimals = 2) => {
-    if (num === 0) return "0";
+    if (num === 0) return '0';
     if (num >= 1e9) return `${(num / 1e9).toFixed(decimals)}B`;
     if (num >= 1e6) return `${(num / 1e6).toFixed(decimals)}M`;
     if (num >= 1e3) return `${(num / 1e3).toFixed(decimals)}K`;
-    if (num >= 1) return num.toLocaleString("en-US", { maximumFractionDigits: decimals });
+    if (num >= 1)
+      return num.toLocaleString('en-US', { maximumFractionDigits: decimals });
     return num.toFixed(Math.min(decimals, 8));
   };
 
@@ -3443,7 +3543,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const totalSelectedBalance = useMemo(() => {
     if (selectedWallets.size === 0) return 0;
     let total = 0;
-    selectedWallets.forEach(address => {
+    selectedWallets.forEach((address) => {
       total += getWalletBalance(address);
     });
     return total;
@@ -3453,15 +3553,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const routerAddress =
     appSettings.chainConfig[activechain].launchpadRouter.toLowerCase();
 
-  const [{ tokensByStatus, hidden, loading }, dispatch] = useReducer(
-    reducer,
-    initialState,
-  );
   const [activeMobileTab, setActiveMobileTab] =
     useState<Token['status']>('new');
-  const [pausedColumn, setPausedColumn] = useState<Token['status'] | null>(
-    null,
-  );
   const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(
     () => {
       const saved = localStorage.getItem('explorer-display-settings');
@@ -3503,20 +3596,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     },
   );
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
-  const [alertSettings, setAlertSettings] = useState<AlertSettings>(() => {
-    const saved = localStorage.getItem('explorer-alert-settings');
-    if (!saved) return ALERT_DEFAULTS;
-    try {
-      const parsed = JSON.parse(saved);
-      return {
-        ...ALERT_DEFAULTS,
-        ...parsed,
-        sounds: { ...ALERT_DEFAULTS.sounds, ...(parsed?.sounds || {}) },
-      };
-    } catch {
-      return ALERT_DEFAULTS;
-    }
-  });
   const [blacklistSettings, setBlacklistSettings] = useState<BlacklistSettings>(
     () => {
       const saved = localStorage.getItem('explorer-blacklist-settings');
@@ -3547,7 +3626,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       localStorage.getItem('explorer-preset-graduated') ?? '1',
     ),
   }));
-  const [isLoading, setIsLoading] = useState(true);
   const [hoveredToken, setHoveredToken] = useState<string | null>(null);
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
   const [buyPresets, setBuyPresets] = useState(() => loadBuyPresets());
@@ -3567,12 +3645,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       JSON.stringify(displaySettings),
     );
   }, [displaySettings]);
+
   useEffect(() => {
     localStorage.setItem(
       'explorer-alert-settings',
       JSON.stringify(alertSettings),
     );
   }, [alertSettings]);
+
   useEffect(() => {
     localStorage.setItem(
       'explorer-blacklist-settings',
@@ -3585,10 +3665,16 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       setBuyPresets(event.detail);
     };
 
-    window.addEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+    window.addEventListener(
+      'buyPresetsUpdated',
+      handleBuyPresetsUpdate as EventListener,
+    );
 
     return () => {
-      window.removeEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+      window.removeEventListener(
+        'buyPresetsUpdated',
+        handleBuyPresetsUpdate as EventListener,
+      );
     };
   }, []);
 
@@ -3662,152 +3748,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     [],
   );
 
-  const subscribe = useCallback(
-    (ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
-      const reqId = subIdRef.current++;
-      ws.send(
-        JSON.stringify({
-          id: reqId,
-          jsonrpc: '2.0',
-          method: 'eth_subscribe',
-          params,
-        }),
-      );
-      if (!onAck) return;
-      const handler = (evt: MessageEvent) => {
-        const msg = JSON.parse(evt.data);
-        if (msg.id === reqId && msg.result) {
-          onAck(msg.result);
-          ws.removeEventListener('message', handler);
-        }
-      };
-      ws.addEventListener('message', handler);
-    },
-    [],
-  );
-
-  const addMarket = useCallback(
-    async (log: any) => {
-      if (pausedColumn !== null) {
-        return;
-      }
-      const { args } = decodeEventLog({
-        abi: CrystalRouterAbi,
-        data: log.data,
-        topics: log.topics,
-      }) as any;
-
-      let meta: any = {};
-      try {
-        const res = await fetch(args.metadataCID);
-        if (res.ok) meta = await res.json();
-      } catch (e) {
-        console.warn('failed to load metadata', e);
-      }
-
-      const socials = [args.social1, args.social2, args.social3].map((s) =>
-        s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
-      );
-      const twitter = socials.find(
-        (s) =>
-          s?.startsWith('https://x.com') ||
-          s?.startsWith('https://twitter.com'),
-      );
-      if (twitter) {
-        socials.splice(socials.indexOf(twitter), 1);
-      }
-      const telegram = socials.find((s) => s?.startsWith('https://t.me'));
-      if (telegram) {
-        socials.splice(socials.indexOf(telegram), 1);
-      }
-      const discord = socials.find(
-        (s) =>
-          s?.startsWith('https://discord.gg') ||
-          s?.startsWith('https://discord.com'),
-      );
-      if (discord) {
-        socials.splice(socials.indexOf(discord), 1);
-      }
-
-      const token: Token = {
-        ...defaultMetrics,
-        id: args.token,
-        tokenAddress: args.token,
-        name: args.name,
-        symbol: args.symbol,
-        image: meta?.image || null,
-        description: args.description ?? '',
-        twitterHandle: twitter ?? '',
-        website: meta?.website ?? '',
-        status: 'new',
-        marketCap: defaultMetrics.price * TOTAL_SUPPLY,
-        created: Math.floor(Date.now() / 1000),
-        volumeDelta: 0,
-        telegramHandle: telegram ?? '',
-        discordHandle: discord ?? '',
-        dev: args.creator,
-        launchedTokens: 0,
-        graduatedTokens: 0,
-      };
-
-      dispatch({ type: 'ADD_MARKET', token });
-
-      if (alertSettings.soundAlertsEnabled) {
-        try {
-          const audio = new Audio(alertSettings.sounds.newPairs);
-          audio.volume = alertSettings.volume / 100;
-          audio.play().catch(console.error);
-        } catch (error) {
-          console.error('Failed to play new pairs sound:', error);
-        }
-      }
-    },
-    [
-      subscribe,
-      alertSettings.soundAlertsEnabled,
-      alertSettings.sounds.newPairs,
-      alertSettings.volume,
-      pausedColumn,
-    ],
-  );
-
-  const updateMarket = useCallback(
-    (log: any) => {
-      if (log.topics?.[0] !== MARKET_UPDATE_EVENT) return;
-      if (pausedColumn !== null) return;
-
-      const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
-
-      const hex = log.data.replace(/^0x/, '');
-      const words: string[] = [];
-      for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
-
-      const isBuy = BigInt('0x' + words[0]);
-      const amountIn = BigInt('0x' + words[1]);
-      const amountOut = BigInt('0x' + words[2]);
-      const virtualNativeReserve = BigInt('0x' + words[3]);
-      const virtualTokenReserve = BigInt('0x' + words[4]);
-      const price =
-        virtualTokenReserve == 0n
-          ? 0
-          : Number(virtualNativeReserve) / Number(virtualTokenReserve);
-
-      dispatch({
-        type: 'UPDATE_MARKET',
-        id: tokenAddr,
-        updates: {
-          price: price,
-          marketCap: price * TOTAL_SUPPLY,
-          buyTransactions: isBuy ? 1 : 0,
-          sellTransactions: isBuy ? 0 : 1,
-          volumeDelta:
-            isBuy > 0 ? Number(amountIn) / 1e18 : Number(amountOut) / 1e18,
-        },
-      });
-    },
-    [pausedColumn],
-  );
-
   const handleColumnHover = useCallback((_columnType: Token['status']) => {
     if (pauseTimeoutRef.current) {
       clearTimeout(pauseTimeoutRef.current);
@@ -3815,139 +3755,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     }
     // setPausedColumn(columnType);
   }, []);
-
-  const openWebsocket = useCallback(
-    (initialMarkets: string[]): void => {
-      if (
-        connectionStateRef.current === 'connecting' ||
-        connectionStateRef.current === 'connected'
-      ) {
-        return;
-      }
-
-      initialMarkets.forEach((addr) =>
-        trackedMarketsRef.current.add(addr.toLowerCase()),
-      );
-      lastConnectionAttemptRef.current = Date.now();
-      connectionAttemptsRef.current += 1;
-
-      if (wsRef.current) {
-        const oldWs = wsRef.current;
-        wsRef.current = null;
-
-        oldWs.onopen = null;
-        oldWs.onmessage = null;
-        oldWs.onerror = null;
-        oldWs.onclose = null;
-
-        if (
-          oldWs.readyState === WebSocket.OPEN ||
-          oldWs.readyState === WebSocket.CONNECTING
-        ) {
-          oldWs.close(1000, 'reconnecting');
-        }
-      }
-
-      connectionStateRef.current = 'connecting';
-
-      try {
-        const ws = new WebSocket(appSettings.chainConfig[activechain].wssurl);
-        wsRef.current = ws;
-
-        const connectionTimeout = setTimeout(() => {
-          if (ws.readyState === WebSocket.CONNECTING) {
-            ws.close(1000, 'connection timeout');
-            handleConnectionError('timeout');
-          }
-        }, 10000);
-
-        ws.onopen = () => {
-          clearTimeout(connectionTimeout);
-          connectionStateRef.current = 'connected';
-          retryCountRef.current = 0;
-          consecutiveFailuresRef.current = 0;
-
-          subscribe(ws, [
-            'logs',
-            { address: routerAddress, topics: [[ROUTER_EVENT]] },
-          ]);
-          subscribe(ws, [
-            'logs',
-            { address: routerAddress, topics: [[MARKET_UPDATE_EVENT]] },
-          ]);
-        };
-
-        ws.onmessage = ({ data }) => {
-          try {
-            const msg = JSON.parse(data);
-            if (msg.method !== 'eth_subscription' || !msg.params?.result)
-              return;
-            const log = msg.params.result;
-            if (log.topics?.[0] === ROUTER_EVENT) addMarket(log);
-            else if (log.topics?.[0] === MARKET_UPDATE_EVENT) updateMarket(log);
-          } catch (parseError) {
-            console.warn('Failed to parse WebSocket message:', parseError);
-          }
-        };
-
-        ws.onerror = (event) => {
-          clearTimeout(connectionTimeout);
-          console.warn('WebSocket error:', event);
-          handleConnectionError('error');
-        };
-
-        ws.onclose = (event) => {
-          clearTimeout(connectionTimeout);
-          connectionStateRef.current = 'disconnected';
-
-          const isNormalClose = event.code === 1000;
-          const isServerError = event.code >= 1011 && event.code <= 1014;
-          const isNetworkError = event.code === 1006;
-
-          if (!isNormalClose) {
-            consecutiveFailuresRef.current += 1;
-            retryCountRef.current += 1;
-
-            console.warn(
-              `WebSocket closed (${event.code}): ${event.reason || 'No reason'}`,
-            );
-
-            if (isServerError && consecutiveFailuresRef.current > 3) {
-              retryCountRef.current += 2;
-            } else if (isNetworkError && consecutiveFailuresRef.current > 2) {
-              retryCountRef.current += 1;
-            }
-
-            const markets = [
-              ...tokensByStatus.new,
-              ...tokensByStatus.graduating,
-              ...tokensByStatus.graduated,
-            ].map((t) => t.id);
-
-            scheduleReconnect(
-              markets.length ? markets : Array.from(trackedMarketsRef.current),
-            );
-          }
-        };
-      } catch (error) {
-        console.error('Failed to create WebSocket:', error);
-        handleConnectionError('creation');
-      }
-    },
-    [routerAddress, subscribe, addMarket, updateMarket, scheduleReconnect],
-  );
-
-  const handleConnectionError = useCallback(
-    (_errorType: string) => {
-      connectionStateRef.current = 'disconnected';
-      consecutiveFailuresRef.current += 1;
-      retryCountRef.current += 1;
-
-      const markets = Array.from(trackedMarketsRef.current);
-      scheduleReconnect(markets);
-    },
-    [scheduleReconnect],
-  );
 
   const handleColumnLeave = useCallback(() => {
     if (pauseTimeoutRef.current) {
@@ -3966,80 +3773,92 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     };
   }, []);
 
-  const copyToClipboard = useCallback(async (text: string, type?: 'dev' | 'ca' | 'keyword' | 'website' | 'handle') => {
-    const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    try {
-      await navigator.clipboard.writeText(text);
-      if (showLoadingPopup && updatePopup) {
-        let title = 'Copied';
-        let subtitle = '';
+  const copyToClipboard = useCallback(
+    async (
+      text: string,
+      type?: 'dev' | 'ca' | 'keyword' | 'website' | 'handle',
+    ) => {
+      const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      try {
+        await navigator.clipboard.writeText(text);
+        if (showLoadingPopup && updatePopup) {
+          let title = 'Copied';
+          let subtitle = '';
 
-        if (type === 'dev') {
-          title = 'Developer Address Copied';
-          subtitle = `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`;
-        } else if (type === 'ca') {
-          title = 'Contract Address Copied';
-          subtitle = `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`;
-        } else if (type === 'keyword') {
-          title = 'Keyword Copied';
-          subtitle = `"${text}" copied to clipboard`;
-        } else if (type === 'website') {
-          title = 'Website Copied';
-          subtitle = `${text} copied to clipboard`;
-        } else if (type === 'handle') {
-          title = 'Twitter Handle Copied';
-          subtitle = `${text} copied to clipboard`;
-        } else {
-          // Default for token addresses (when called from token rows without type)
-          // Check if text looks like an Ethereum address
-          if (/^0x[a-fA-F0-9]{40}$/.test(text)) {
-            title = 'Address Copied';
+          if (type === 'dev') {
+            title = 'Developer Address Copied';
             subtitle = `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`;
-          } else {
-            title = 'Copied';
+          } else if (type === 'ca') {
+            title = 'Contract Address Copied';
+            subtitle = `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`;
+          } else if (type === 'keyword') {
+            title = 'Keyword Copied';
+            subtitle = `"${text}" copied to clipboard`;
+          } else if (type === 'website') {
+            title = 'Website Copied';
             subtitle = `${text} copied to clipboard`;
+          } else if (type === 'handle') {
+            title = 'Twitter Handle Copied';
+            subtitle = `${text} copied to clipboard`;
+          } else {
+            // Default for token addresses (when called from token rows without type)
+            // Check if text looks like an Ethereum address
+            if (/^0x[a-fA-F0-9]{40}$/.test(text)) {
+              title = 'Address Copied';
+              subtitle = `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`;
+            } else {
+              title = 'Copied';
+              subtitle = `${text} copied to clipboard`;
+            }
           }
-        }
-        showLoadingPopup(txId, {
-          title,
-          subtitle,
-        });
-        setTimeout(() => {
-          updatePopup(txId, {
+          showLoadingPopup(txId, {
             title,
             subtitle,
-            variant: 'success',
-            confirmed: true,
-            isLoading: false,
           });
-        }, 100);
-      }
-    } catch (err) {
-      console.error('Copy failed', err);
-      if (showLoadingPopup && updatePopup) {
-        showLoadingPopup(txId, {
-          title: 'Copy Failed',
-          subtitle: 'Unable to copy to clipboard',
-        });
-        setTimeout(() => {
-          updatePopup(txId, {
+          setTimeout(() => {
+            updatePopup(txId, {
+              title,
+              subtitle,
+              variant: 'success',
+              confirmed: true,
+              isLoading: false,
+            });
+          }, 100);
+        }
+      } catch (err) {
+        console.error('Copy failed', err);
+        if (showLoadingPopup && updatePopup) {
+          showLoadingPopup(txId, {
             title: 'Copy Failed',
             subtitle: 'Unable to copy to clipboard',
-            variant: 'error',
-            confirmed: true,
-            isLoading: false,
           });
-        }, 100);
+          setTimeout(() => {
+            updatePopup(txId, {
+              title: 'Copy Failed',
+              subtitle: 'Unable to copy to clipboard',
+              variant: 'error',
+              confirmed: true,
+              isLoading: false,
+            });
+          }, 100);
+        }
       }
-    }
-  }, []);
+    },
+    [],
+  );
+
   const handleQuickBuy = useCallback(
     async (token: Token, amt: string, buttonType: 'primary' | 'secondary') => {
       const val = BigInt(amt || '0') * 10n ** 18n;
       if (val === 0n) return;
 
       const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      dispatch({ type: 'SET_LOADING', id: token.id, loading: true, buttonType });
+      dispatch({
+        type: 'SET_LOADING',
+        id: token.id,
+        loading: true,
+        buttonType,
+      });
 
       try {
         if (showLoadingPopup) {
@@ -4090,7 +3909,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           });
         }
       } finally {
-        dispatch({ type: 'SET_LOADING', id: token.id, loading: false, buttonType });
+        dispatch({
+          type: 'SET_LOADING',
+          id: token.id,
+          loading: false,
+          buttonType,
+        });
       }
     },
     [routerAddress, sendUserOperationAsync],
@@ -4124,251 +3948,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     };
     setBlacklistSettings((prev) => ({ items: [...prev.items, newItem] }));
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function bootstrap() {
-      try {
-        const res = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-          {
-            active: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:false}) {
-              id
-              creator {
-                id
-                tokensLaunched
-                tokensGraduated
-              }
-              name
-              symbol
-              metadataCID
-              description
-              social1
-              social2
-              social3	
-              social4
-              decimals
-              initialSupply
-              timestamp
-              migrated
-              migratedAt
-              migratedMarket {
-                id
-              }
-              volumeNative
-              volumeToken
-              buyTxs
-              sellTxs
-              distinctBuyers
-              distinctSellers
-              lastPriceNativePerTokenWad
-              lastUpdatedAt
-              trades {
-                id
-                amountIn
-                amountOut
-              }
-              totalHolders
-              devHoldingAmount
-              holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
-                account { id }
-                tokens
-              }
-            }
-            migrated: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:true}) {
-              id
-              creator {
-                id
-                tokensLaunched
-                tokensGraduated
-              }
-              name
-              symbol
-              metadataCID
-              description
-              social1
-              social2
-              social3	
-              social4
-              decimals
-              initialSupply
-              timestamp
-              migrated
-              migratedAt
-              migratedMarket {
-                id
-              }
-              volumeNative
-              volumeToken
-              buyTxs
-              sellTxs
-              distinctBuyers
-              distinctSellers
-              lastPriceNativePerTokenWad
-              lastUpdatedAt
-              trades {
-                id
-                amountIn
-                amountOut
-              }
-              totalHolders
-              devHoldingAmount
-              holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
-                account { id }
-                tokens
-              }
-            }
-          }`,
-          }),
-        });
-        const json = await res.json();
-        console.log(json);
-        const rawMarkets = [
-          ...(json.data?.active ?? []),
-          ...(json.data?.migrated ?? []),
-        ];
-
-        const tokens: Token[] = await Promise.all(
-          rawMarkets.map(async (m: any) => {
-            const price =
-              Number(m.lastPriceNativePerTokenWad) / 1e9 ||
-              defaultMetrics.price;
-
-            let meta: any = {};
-            try {
-              const metaRes = await fetch(m.metadataCID);
-              if (metaRes.ok) meta = await metaRes.json();
-            } catch (e) {
-              console.warn('failed to load metadata for', m.metadataCID, e);
-            }
-
-            let createdTimestamp = Number(m.timestamp);
-            if (createdTimestamp > 1e10) {
-              createdTimestamp = Math.floor(createdTimestamp / 1000);
-            }
-            const socials = [m.social1, m.social2, m.social3].map((s) =>
-              s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
-            );
-            const twitter = socials.find(
-              (s) =>
-                s?.startsWith('https://x.com') ||
-                s?.startsWith('https://twitter.com'),
-            );
-            if (twitter) {
-              socials.splice(socials.indexOf(twitter), 1);
-            }
-            const telegram = socials.find((s) => s?.startsWith('https://t.me'));
-            if (telegram) {
-              socials.splice(socials.indexOf(telegram), 1);
-            }
-            const discord = socials.find(
-              (s) =>
-                s?.startsWith('https://discord.gg') ||
-                s?.startsWith('https://discord.com'),
-            );
-            if (discord) {
-              socials.splice(socials.indexOf(discord), 1);
-            }
-            const website = socials[0];
-
-            return {
-              ...defaultMetrics,
-              id: m.id.toLowerCase(),
-              tokenAddress: m.id.toLowerCase(),
-              dev: m.creator.id,
-              name: m.name,
-              symbol: m.symbol,
-              image: meta.image || null,
-              description: meta.description ?? '',
-              twitterHandle: twitter ?? '',
-              website: website ?? '',
-              status: m.migrated
-                ? 'graduated'
-                : price * TOTAL_SUPPLY > 12500
-                  ? 'graduating'
-                  : 'new',
-              created: createdTimestamp,
-              price,
-              marketCap: price * TOTAL_SUPPLY,
-              buyTransactions: Number(m.buyTxs),
-              sellTransactions: Number(m.sellTxs),
-              volume24h: Number(m.volumeNative) / 1e18,
-              volumeDelta: 0,
-              discordHandle: discord ?? '',
-              telegramHandle: telegram ?? '',
-              launchedTokens: m.creator.tokensLaunched ?? '',
-              graduatedTokens: m.creator.tokensGraduated ?? '',
-              holders: m.totalHolders - 1,
-              devHolding: m.devHoldingAmount / 1e27,
-              top10Holding: Number(
-                (m.holders ?? [])
-                  .filter((h: { account?: { id?: string } }) => (h.account?.id?.toLowerCase() ?? '') !== (routerAddress ?? '').toLowerCase())
-                  .slice(0, 10)
-                  .reduce((sum: bigint, h: { tokens: string }) => sum + BigInt(h.tokens || '0'), 0n)
-              ) / 1e25,
-            } as Token;
-          }),
-        );
-
-        console.log(tokens);
-
-        dispatch({ type: 'INIT', tokens });
-        const all = tokens.map((t) => t.id);
-        trackedMarketsRef.current = new Set(all.map((x) => x.toLowerCase()));
-        openWebsocket(all);
-      } catch (err) {
-        console.error('initial subgraph fetch failed', err);
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    bootstrap();
-    return () => {
-      cancelled = true;
-      connectionStateRef.current = 'disconnected';
-
-      if (reconnectTimerRef.current) {
-        window.clearTimeout(reconnectTimerRef.current);
-        reconnectTimerRef.current = null;
-      }
-
-      if (pauseTimeoutRef.current) {
-        clearTimeout(pauseTimeoutRef.current);
-        pauseTimeoutRef.current = null;
-      }
-
-      if (wsRef.current) {
-        const ws = wsRef.current;
-        wsRef.current = null;
-
-        ws.onopen = null;
-        ws.onmessage = null;
-        ws.onerror = null;
-        ws.onclose = null;
-
-        if (
-          ws.readyState === WebSocket.OPEN ||
-          ws.readyState === WebSocket.CONNECTING
-        ) {
-          try {
-            ws.close(1000, 'component unmount');
-          } catch (error) {
-            console.warn('Error closing WebSocket on unmount:', error);
-          }
-        }
-      }
-
-      connectionAttemptsRef.current = 0;
-      retryCountRef.current = 0;
-      consecutiveFailuresRef.current = 0;
-      trackedMarketsRef.current.clear();
-    };
-  }, [openWebsocket]);
 
   const applyFilters = useCallback((list: Token[], fil: any) => {
     if (!fil) return list;
@@ -4484,23 +4063,22 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     });
   }, []);
 
-  // AFTER
   const visibleTokens = useMemo(() => {
     const base = {
       new: displaySettings.hideHiddenTokens
-        ? tokensByStatus.new.filter((t) => !hidden.has(t.id))
+        ? tokensByStatus.new.filter((t: any) => !hidden.has(t.id))
         : tokensByStatus.new,
       graduating: displaySettings.hideHiddenTokens
-        ? tokensByStatus.graduating.filter((t) => !hidden.has(t.id))
+        ? tokensByStatus.graduating.filter((t: any) => !hidden.has(t.id))
         : tokensByStatus.graduating,
       graduated: displaySettings.hideHiddenTokens
-        ? tokensByStatus.graduated.filter((t) => !hidden.has(t.id))
+        ? tokensByStatus.graduated.filter((t: any) => !hidden.has(t.id))
         : tokensByStatus.graduated,
     } as Record<Token['status'], Token[]>;
 
     const filterByBlacklist = (tokens: Token[]) => {
-      return tokens.filter(token => {
-        return !blacklistSettings.items.some(item => {
+      return tokens.filter((token) => {
+        return !blacklistSettings.items.some((item) => {
           const itemText = item.text.toLowerCase();
 
           switch (item.type) {
@@ -4509,7 +4087,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             case 'ca':
               return token.tokenAddress.toLowerCase() === itemText;
             case 'keyword':
-              const searchText = `${token.name} ${token.symbol} ${token.description}`.toLowerCase();
+              const searchText =
+                `${token.name} ${token.symbol} ${token.description}`.toLowerCase();
               return searchText.includes(itemText);
             case 'website':
               return token.website.toLowerCase().includes(itemText);
@@ -4563,7 +4142,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const renderOrder: Array<ColumnKey> =
     Array.isArray(displaySettings?.columnOrder) &&
-      displaySettings.columnOrder.length
+    displaySettings.columnOrder.length
       ? displaySettings.columnOrder
       : (['new', 'graduating', 'graduated'] as Array<ColumnKey>);
 
@@ -4615,18 +4194,37 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               <div className="connect-content">
                 <span className="transparent-button-container">
                   <img src={walleticon} className="img-wallet-icon" />
-                  <span className={`wallet-count ${selectedSet.size ? 'has-active' : ''}`}>
+                  <span
+                    className={`wallet-count ${selectedSet.size ? 'has-active' : ''}`}
+                  >
                     {selectedWallets.size}
                   </span>
                   <span className="subwallet-total-balance">
                     {selectedWallets.size > 0 ? (
                       <>
-                        <img src={monadicon} className="wallet-dropdown-mon-icon" style={{ width: '15px', height: '15px', marginRight: '4px' }} />
+                        <img
+                          src={monadicon}
+                          className="wallet-dropdown-mon-icon"
+                          style={{
+                            width: '15px',
+                            height: '15px',
+                            marginRight: '4px',
+                          }}
+                        />
                         {formatNumberWithCommas(totalSelectedBalance, 2)}
                       </>
                     ) : (
                       <>
-                        <img src={monadicon} className="wallet-dropdown-mon-icon" style={{ width: '15px', height: '15px', marginRight: '4px' }} /> <span>0</span>
+                        <img
+                          src={monadicon}
+                          className="wallet-dropdown-mon-icon"
+                          style={{
+                            width: '15px',
+                            height: '15px',
+                            marginRight: '4px',
+                          }}
+                        />{' '}
+                        <span>0</span>
                       </>
                     )}
                   </span>
@@ -4645,14 +4243,22 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               </div>
             </button>
             {account.connected && (
-              <div className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
+              <div
+                className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}
+              >
                 <div className="wallet-dropdown-header">
                   <div className="wallet-dropdown-actions">
                     <button
                       className="wallet-action-btn"
-                      onClick={selectedWallets.size === subWallets.length ? unselectAllWallets : selectAllWallets}
+                      onClick={
+                        selectedWallets.size === subWallets.length
+                          ? unselectAllWallets
+                          : selectAllWallets
+                      }
                     >
-                      {selectedWallets.size === subWallets.length ? 'Unselect All' : 'Select All'}
+                      {selectedWallets.size === subWallets.length
+                        ? 'Unselect All'
+                        : 'Select All'}
                     </button>
                     <button
                       className="wallet-action-btn"
@@ -4665,7 +4271,10 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                     className="wallet-dropdown-close"
                     onClick={() => setIsWalletDropdownOpen(false)}
                   >
-                    <img src={closebutton} className="wallet-dropdown-close-icon" />
+                    <img
+                      src={closebutton}
+                      className="wallet-dropdown-close-icon"
+                    />
                   </button>
                 </div>
                 <div className="wallet-dropdown-list">
@@ -4694,13 +4303,19 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                               {getWalletName(wallet.address, index)}
                             </div>
                             <div className="wallet-dropdown-address">
-                              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                              {wallet.address.slice(0, 6)}...
+                              {wallet.address.slice(-4)}
                             </div>
                           </div>
                           <Tooltip content="MON Balance">
                             <div className="wallet-dropdown-balance">
-                              <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
-                                <img src={monadicon} className="wallet-dropdown-mon-icon" />
+                              <div
+                                className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}
+                              >
+                                <img
+                                  src={monadicon}
+                                  className="wallet-dropdown-mon-icon"
+                                />
                                 {formatNumberWithCommas(balance, 2)}
                               </div>
                             </div>
@@ -4713,7 +4328,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                                   <div className="token2"></div>
                                   <div className="token3"></div>
                                 </div>
-                                <span className="wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
+                                <span className="wallet-total-tokens">
+                                  {getWalletTokenCount(wallet.address)}
+                                </span>
                               </div>
                             </div>
                           </Tooltip>
@@ -4729,7 +4346,18 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           setIsWalletDropdownOpen(false);
                         }}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="wallet-dropdown-action-icon"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          className="wallet-dropdown-action-icon"
+                        >
+                          <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
+                        </svg>
                         Enable 1CT
                       </button>
                     </div>
@@ -4738,10 +4366,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               </div>
             )}
           </div>
-
-
-
-
         </div>
       </div>
 
@@ -4753,545 +4377,680 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         />
 
         <div className="explorer-columns">
-          {renderOrder.filter(col => !displaySettings.hiddenColumns?.includes(col)).map((columnType) => (
-            <div
-              key={columnType}
-              className={`explorer-column ${activeMobileTab === columnType ? 'mobile-active' : ''}`}
-              onMouseEnter={() => handleColumnHover(columnType)}
-              onMouseLeave={handleColumnLeave}
-            >
-              {' '}
-              {columnType === 'new' && (
-                <>
-                  <div className="explorer-column-header">
-                    <div className="explorer-column-title-section">
-                      <h2 className="explorer-column-title">New Pairs</h2>
-                    </div>
-                    <div className="explorer-column-title-right">
-                      <div
-                        className={`column-pause-icon ${pausedColumn === 'new' ? 'visible' : ''}`}
-                      >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                        >
-                          <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
-                        </svg>
+          {renderOrder
+            .filter((col) => !displaySettings.hiddenColumns?.includes(col))
+            .map((columnType) => (
+              <div
+                key={columnType}
+                className={`explorer-column ${activeMobileTab === columnType ? 'mobile-active' : ''}`}
+                onMouseEnter={() => handleColumnHover(columnType)}
+                onMouseLeave={handleColumnLeave}
+              >
+                {' '}
+                {columnType === 'new' && (
+                  <>
+                    <div className="explorer-column-header">
+                      <div className="explorer-column-title-section">
+                        <h2 className="explorer-column-title">New Pairs</h2>
                       </div>
-                      <div className="explorer-quickbuy-container">
-                        <img
-                          className="explorer-quick-buy-search-icon"
-                          src={lightning}
-                          alt=""
-                        />
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          value={quickAmounts.new}
-                          onChange={(e) =>
-                            setQuickAmount('new', e.target.value)
-                          }
-                          onFocus={handleInputFocus}
-                          className="explorer-quickbuy-input"
-                        />
-                        <img className="quickbuy-monad-icon" src={monadicon} />
-                        <div className="explorer-preset-controls">
-                          {[1, 2, 3].map((p) => (
-                            <Tooltip
-                              key={p}
-                              offset={35}
-                              content={
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <img src={slippage} style={{ width: '14px', height: '14px' }} alt="Slippage" />
-                                    <span>{buyPresets[p]?.slippage || '0'}%</span>
-                                  </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <img src={gas} style={{ width: '14px', height: '14px' }} alt="sPriority" />
-                                    <span>{buyPresets[p]?.priority || '0'} </span>
-                                  </div>
-                                </div>
-                              }
-                            >
-                              <button
-                                className={`explorer-preset-pill ${activePresets.new === p ? 'active' : ''}`}
-                                onClick={() => setActivePreset('new', p)}
-                              >
-                                P{p}
-                              </button>
-                            </Tooltip>
-                          ))}
-                        </div>
-                      </div>
-
-                      {alertSettings.soundAlertsEnabled && (
-                        <button
-                          className="alerts-popup-trigger"
-                          onClick={() => setShowAlertsPopup(true)}
-                        >
-                          <Bell size={18} />
-                        </button>
-                      )}
-                      <button
-                        className={`column-filter-icon ${appliedFilters?.new ? 'active' : ''}`}
-                        onClick={() => onOpenFiltersForColumn('new')}
-                        title="filter new pairs"
-                      >
-                        <img className="filter-icon" src={filter} />
-                        {appliedFilters?.new && (
-                          <span className="filter-active-dot" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="explorer-tokens-list">
-                    {isLoading ? (
-                      Array.from({ length: 14 }).map((_, index) => (
+                      <div className="explorer-column-title-right">
                         <div
-                          key={`skeleton-new-${index}`}
-                          className="explorer-token-row loading"
+                          className={`column-pause-icon ${pausedColumn === 'new' ? 'visible' : ''}`}
                         >
-                          <div className="explorer-token-left">
-                            <div className="explorer-token-image-container">
-                              <div className="explorer-progress-spacer">
-                                <div className="explorer-image-wrapper">
-                                  <img
-                                    className="explorer-token-image"
-                                    alt="loading"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                            <span className="explorer-contract-address">
-                              Loading...
-                            </span>
-                          </div>
-                          <div className="explorer-token-details">
-                            <div className="explorer-detail-section">
-                              <div className="explorer-top-row">
-                                <div className="explorer-token-info">
-                                  <h3 className="explorer-token-symbol">
-                                    LOAD
-                                  </h3>
-                                  <p className="explorer-token-name">
-                                    Loading Token
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="explorer-second-row">
-                                <div className="explorer-stat-item">
-                                  <span className="explorer-stat-value">0</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="explorer-holdings-section" />
-                          </div>
-                          <div className="explorer-third-row">
-                            <div className="explorer-market-cap">
-                              <span className="mc-label"></span>
-                              <span className="mc-label"></span>
-                            </div>
-                            <div className="explorer-actions-section">
-                              <button className="explorer-quick-buy-btn">
-                                Loading
-                              </button>
-                            </div>
-                          </div>
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                          >
+                            <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                          </svg>
                         </div>
-                      ))
-                    ) : newTokens.length ? (
-                      newTokens.map((t) => (
-                        <TokenRow
-                          key={t.id}
-                          token={t}
-                          quickbuyAmount={quickAmounts.new}
-                          quickbuyAmountSecond={quickAmountsSecond.new}
-                          onHideToken={hideToken}
-                          onBlacklistToken={handleBlacklistToken}
-                          isLoadingPrimary={loading.has(`${t.id}-primary`)}
-                          isLoadingSecondary={loading.has(`${t.id}-secondary`)}
-                          hoveredToken={hoveredToken}
-                          hoveredImage={hoveredImage}
-                          onTokenHover={handleTokenHover}
-                          onTokenLeave={handleTokenLeave}
-                          onImageHover={handleImageHover}
-                          onImageLeave={handleImageLeave}
-                          onTokenClick={handleTokenClick}
-                          onQuickBuy={handleQuickBuy}
-                          onCopyToClipboard={copyToClipboard}
-                          displaySettings={displaySettings}
-                          isHidden={hidden.has(t.id)}
-                          monUsdPrice={monUsdPrice}
-                          blacklistSettings={blacklistSettings}
-                          formatTimeAgo={formatTimeAgo}
-                        />
-                      ))
-                    ) : (
-                      <div className="no-tokens-message">
-                        <img src={empty} className="empty-icon" />
-                        No tokens match the current filters
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-              {columnType === 'graduating' && (
-                <>
-                  <div className="explorer-column-header">
-                    <div className="explorer-column-title-section">
-                      <h2 className="explorer-column-title">Final Stretch</h2>
-                    </div>
-                    <div className="explorer-column-title-right">
-                      <div
-                        className={`column-pause-icon ${pausedColumn === 'graduating' ? 'visible' : ''}`}
-                      >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                        >
-                          <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
-                        </svg>
-                      </div>
-                      <div className="explorer-quickbuy-container">
-                        <img
-                          className="explorer-quick-buy-search-icon"
-                          src={lightning}
-                          alt=""
-                        />
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          value={quickAmounts.graduating}
-                          onChange={(e) =>
-                            setQuickAmount('graduating', e.target.value)
-                          }
-                          onFocus={handleInputFocus}
-                          className="explorer-quickbuy-input"
-                        />
-                        <img className="quickbuy-monad-icon" src={monadicon} />
-                        <div className="explorer-preset-controls">
-                          {[1, 2, 3].map((p) => (
-                            <Tooltip
-                              key={p}
-                              offset={35}
-                              content={
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <img src={slippage} style={{ width: '14px', height: '14px' }} alt="Slippage" />
-                                    <span>{buyPresets[p]?.slippage || '0'}%</span>
+                        <div className="explorer-quickbuy-container">
+                          <img
+                            className="explorer-quick-buy-search-icon"
+                            src={lightning}
+                            alt=""
+                          />
+                          <input
+                            type="text"
+                            placeholder="0.0"
+                            value={quickAmounts.new}
+                            onChange={(e) =>
+                              setQuickAmount('new', e.target.value)
+                            }
+                            onFocus={handleInputFocus}
+                            className="explorer-quickbuy-input"
+                          />
+                          <img
+                            className="quickbuy-monad-icon"
+                            src={monadicon}
+                          />
+                          <div className="explorer-preset-controls">
+                            {[1, 2, 3].map((p) => (
+                              <Tooltip
+                                key={p}
+                                offset={35}
+                                content={
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '4px',
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                      }}
+                                    >
+                                      <img
+                                        src={slippage}
+                                        style={{
+                                          width: '14px',
+                                          height: '14px',
+                                        }}
+                                        alt="Slippage"
+                                      />
+                                      <span>
+                                        {buyPresets[p]?.slippage || '0'}%
+                                      </span>
+                                    </div>
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                      }}
+                                    >
+                                      <img
+                                        src={gas}
+                                        style={{
+                                          width: '14px',
+                                          height: '14px',
+                                        }}
+                                        alt="sPriority"
+                                      />
+                                      <span>
+                                        {buyPresets[p]?.priority || '0'}{' '}
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <img src={gas} style={{ width: '14px', height: '14px' }} alt="Priority" />
-                                    <span>{buyPresets[p]?.priority || '0'}</span>
-                                  </div>
-                                </div>
-                              }
-                            >
-                              <button
-                                className={`explorer-preset-pill ${activePresets.graduating === p ? 'active' : ''}`}
-                                onClick={() => setActivePreset('graduating', p)}
+                                }
                               >
-                                P{p}
-                              </button>
-                            </Tooltip>
-                          ))}
+                                <button
+                                  className={`explorer-preset-pill ${activePresets.new === p ? 'active' : ''}`}
+                                  onClick={() => setActivePreset('new', p)}
+                                >
+                                  P{p}
+                                </button>
+                              </Tooltip>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      {alertSettings.soundAlertsEnabled && (
-                        <button
-                          className="alerts-popup-trigger"
-                          onClick={() => setShowAlertsPopup(true)}
-                        >
-                          <Bell size={18} />
-                        </button>
-                      )}
-                      <button
-                        className={`column-filter-icon ${appliedFilters?.graduating ? 'active' : ''}`}
-                        onClick={() => onOpenFiltersForColumn('graduating')}
-                        title="Filter graduating tokens"
-                      >
-                        <img className="filter-icon" src={filter} />
-                        {appliedFilters?.graduating && (
-                          <span className="filter-active-dot" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
 
-                  <div className="explorer-tokens-list">
-                    {isLoading ? (
-                      Array.from({ length: 14 }).map((_, index) => (
-                        <div
-                          key={`skeleton-graduating-${index}`}
-                          className="explorer-token-row loading"
+                        {alertSettings.soundAlertsEnabled && (
+                          <button
+                            className="alerts-popup-trigger"
+                            onClick={() => setShowAlertsPopup(true)}
+                          >
+                            <Bell size={18} />
+                          </button>
+                        )}
+                        <button
+                          className={`column-filter-icon ${appliedFilters?.new ? 'active' : ''}`}
+                          onClick={() => onOpenFiltersForColumn('new')}
+                          title="filter new pairs"
                         >
-                          <div className="explorer-token-left">
-                            <div className="explorer-token-image-container">
-                              <div className="explorer-progress-spacer">
-                                <div className="explorer-image-wrapper">
-                                  <img
-                                    className="explorer-token-image"
-                                    alt="loading"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                            <span className="explorer-contract-address">
-                              Loading...
-                            </span>
-                          </div>
-                          <div className="explorer-token-details">
-                            <div className="explorer-detail-section">
-                              <div className="explorer-top-row">
-                                <div className="explorer-token-info">
-                                  <h3 className="explorer-token-symbol">
-                                    LOAD
-                                  </h3>
-                                  <p className="explorer-token-name">
-                                    Loading Token
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="explorer-second-row">
-                                <div className="explorer-stat-item">
-                                  <span className="explorer-stat-value">0</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="explorer-holdings-section" />
-                          </div>
-                          <div className="explorer-third-row">
-                            <div className="explorer-market-cap">
-                              <span className="mc-label"></span>
-                              <span className="mc-label"></span>
-                            </div>
-                            <div className="explorer-actions-section">
-                              <button className="explorer-quick-buy-btn">
-                                Loading
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : graduatingTokens.length ? (
-                      graduatingTokens.map((t) => (
-                        <TokenRow
-                          key={t.id}
-                          token={t}
-                          quickbuyAmount={quickAmounts.new}
-                          quickbuyAmountSecond={quickAmountsSecond.new}
-                          onHideToken={hideToken}
-                          onBlacklistToken={handleBlacklistToken}
-                          isLoadingPrimary={loading.has(`${t.id}-primary`)}
-                          isLoadingSecondary={loading.has(`${t.id}-secondary`)}
-                          hoveredToken={hoveredToken}
-                          hoveredImage={hoveredImage}
-                          onTokenHover={handleTokenHover}
-                          onTokenLeave={handleTokenLeave}
-                          onImageHover={handleImageHover}
-                          onImageLeave={handleImageLeave}
-                          onTokenClick={handleTokenClick}
-                          onQuickBuy={handleQuickBuy}
-                          onCopyToClipboard={copyToClipboard}
-                          displaySettings={displaySettings}
-                          isHidden={hidden.has(t.id)}
-                          monUsdPrice={monUsdPrice}
-                          blacklistSettings={blacklistSettings}
-                          formatTimeAgo={formatTimeAgo}
-                        />
-                      ))
-                    ) : (
-                      <div className="no-tokens-message">
-                        <img src={empty} className="empty-icon" />
-                        No tokens match the current filters
+                          <img className="filter-icon" src={filter} />
+                          {appliedFilters?.new && (
+                            <span className="filter-active-dot" />
+                          )}
+                        </button>
                       </div>
-                    )}
-                  </div>
-                </>
-              )}
-              {columnType === 'graduated' && (
-                <>
-                  <div className="explorer-column-header">
-                    <div className="explorer-column-title-section">
-                      <h2 className="explorer-column-title">Graduated</h2>
                     </div>
-                    <div className="explorer-column-title-right">
-                      <div
-                        className={`column-pause-icon ${pausedColumn === 'graduated' ? 'visible' : ''}`}
-                      >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                        >
-                          <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
-                        </svg>
-                      </div>
-                      <div className="explorer-quickbuy-container">
-                        <img
-                          className="explorer-quick-buy-search-icon"
-                          src={lightning}
-                          alt=""
-                        />
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          value={quickAmounts.graduated}
-                          onChange={(e) =>
-                            setQuickAmount('graduated', e.target.value)
-                          }
-                          onFocus={handleInputFocus}
-                          className="explorer-quickbuy-input"
-                        />
-                        <img className="quickbuy-monad-icon" src={monadicon} />
-                        <div className="explorer-preset-controls">
-                          {[1, 2, 3].map((p) => (
-                            <Tooltip
-                              key={p}
-                              offset={35}
-                              content={
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <img src={slippage} style={{ width: '14px', height: '14px' }} alt="Slippage" />
-                                    <span>{buyPresets[p]?.slippage || '0'}%</span>
-                                  </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <img src={gas} style={{ width: '14px', height: '14px' }} alt="Priority" />
-                                    <span>{buyPresets[p]?.priority || '0'} </span>
+
+                    <div className="explorer-tokens-list">
+                      {isLoading ? (
+                        Array.from({ length: 14 }).map((_, index) => (
+                          <div
+                            key={`skeleton-new-${index}`}
+                            className="explorer-token-row loading"
+                          >
+                            <div className="explorer-token-left">
+                              <div className="explorer-token-image-container">
+                                <div className="explorer-progress-spacer">
+                                  <div className="explorer-image-wrapper">
+                                    <img
+                                      className="explorer-token-image"
+                                      alt="loading"
+                                    />
                                   </div>
                                 </div>
-                              }
-                            >
-                              <button
-                                className={`explorer-preset-pill ${activePresets.graduated === p ? 'active' : ''}`}
-                                onClick={() => setActivePreset('graduated', p)}
+                              </div>
+                              <span className="explorer-contract-address">
+                                Loading...
+                              </span>
+                            </div>
+                            <div className="explorer-token-details">
+                              <div className="explorer-detail-section">
+                                <div className="explorer-top-row">
+                                  <div className="explorer-token-info">
+                                    <h3 className="explorer-token-symbol">
+                                      LOAD
+                                    </h3>
+                                    <p className="explorer-token-name">
+                                      Loading Token
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="explorer-second-row">
+                                  <div className="explorer-stat-item">
+                                    <span className="explorer-stat-value">
+                                      0
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="explorer-holdings-section" />
+                            </div>
+                            <div className="explorer-third-row">
+                              <div className="explorer-market-cap">
+                                <span className="mc-label"></span>
+                                <span className="mc-label"></span>
+                              </div>
+                              <div className="explorer-actions-section">
+                                <button className="explorer-quick-buy-btn">
+                                  Loading
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : newTokens.length ? (
+                        newTokens.map((t) => (
+                          <TokenRow
+                            key={t.id}
+                            token={t}
+                            quickbuyAmount={quickAmounts.new}
+                            quickbuyAmountSecond={quickAmountsSecond.new}
+                            onHideToken={hideToken}
+                            onBlacklistToken={handleBlacklistToken}
+                            isLoadingPrimary={loading.has(`${t.id}-primary`)}
+                            isLoadingSecondary={loading.has(
+                              `${t.id}-secondary`,
+                            )}
+                            hoveredToken={hoveredToken}
+                            hoveredImage={hoveredImage}
+                            onTokenHover={handleTokenHover}
+                            onTokenLeave={handleTokenLeave}
+                            onImageHover={handleImageHover}
+                            onImageLeave={handleImageLeave}
+                            onTokenClick={handleTokenClick}
+                            onQuickBuy={handleQuickBuy}
+                            onCopyToClipboard={copyToClipboard}
+                            displaySettings={displaySettings}
+                            isHidden={hidden.has(t.id)}
+                            monUsdPrice={monUsdPrice}
+                            blacklistSettings={blacklistSettings}
+                            formatTimeAgo={formatTimeAgo}
+                          />
+                        ))
+                      ) : (
+                        <div className="no-tokens-message">
+                          <img src={empty} className="empty-icon" />
+                          No tokens match the current filters
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+                {columnType === 'graduating' && (
+                  <>
+                    <div className="explorer-column-header">
+                      <div className="explorer-column-title-section">
+                        <h2 className="explorer-column-title">Final Stretch</h2>
+                      </div>
+                      <div className="explorer-column-title-right">
+                        <div
+                          className={`column-pause-icon ${pausedColumn === 'graduating' ? 'visible' : ''}`}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                          >
+                            <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                          </svg>
+                        </div>
+                        <div className="explorer-quickbuy-container">
+                          <img
+                            className="explorer-quick-buy-search-icon"
+                            src={lightning}
+                            alt=""
+                          />
+                          <input
+                            type="text"
+                            placeholder="0.0"
+                            value={quickAmounts.graduating}
+                            onChange={(e) =>
+                              setQuickAmount('graduating', e.target.value)
+                            }
+                            onFocus={handleInputFocus}
+                            className="explorer-quickbuy-input"
+                          />
+                          <img
+                            className="quickbuy-monad-icon"
+                            src={monadicon}
+                          />
+                          <div className="explorer-preset-controls">
+                            {[1, 2, 3].map((p) => (
+                              <Tooltip
+                                key={p}
+                                offset={35}
+                                content={
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '4px',
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                      }}
+                                    >
+                                      <img
+                                        src={slippage}
+                                        style={{
+                                          width: '14px',
+                                          height: '14px',
+                                        }}
+                                        alt="Slippage"
+                                      />
+                                      <span>
+                                        {buyPresets[p]?.slippage || '0'}%
+                                      </span>
+                                    </div>
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                      }}
+                                    >
+                                      <img
+                                        src={gas}
+                                        style={{
+                                          width: '14px',
+                                          height: '14px',
+                                        }}
+                                        alt="Priority"
+                                      />
+                                      <span>
+                                        {buyPresets[p]?.priority || '0'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                }
                               >
-                                P{p}
-                              </button>
-                            </Tooltip>
-                          ))}
+                                <button
+                                  className={`explorer-preset-pill ${activePresets.graduating === p ? 'active' : ''}`}
+                                  onClick={() =>
+                                    setActivePreset('graduating', p)
+                                  }
+                                >
+                                  P{p}
+                                </button>
+                              </Tooltip>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      {alertSettings.soundAlertsEnabled && (
-                        <button
-                          className="alerts-popup-trigger"
-                          onClick={() => setShowAlertsPopup(true)}
-                        >
-                          <Bell size={18} />
-                        </button>
-                      )}
-                      <button
-                        className={`column-filter-icon ${appliedFilters?.graduated ? 'active' : ''}`}
-                        onClick={() => onOpenFiltersForColumn('graduated')}
-                        title="filter graduated tokens"
-                      >
-                        <img className="filter-icon" src={filter} />
-                        {appliedFilters?.graduated && (
-                          <span className="filter-active-dot" />
+                        {alertSettings.soundAlertsEnabled && (
+                          <button
+                            className="alerts-popup-trigger"
+                            onClick={() => setShowAlertsPopup(true)}
+                          >
+                            <Bell size={18} />
+                          </button>
                         )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="explorer-tokens-list">
-                    {isLoading ? (
-                      Array.from({ length: 14 }).map((_, index) => (
-                        <div
-                          key={`skeleton-graduated-${index}`}
-                          className="explorer-token-row loading"
+                        <button
+                          className={`column-filter-icon ${appliedFilters?.graduating ? 'active' : ''}`}
+                          onClick={() => onOpenFiltersForColumn('graduating')}
+                          title="Filter graduating tokens"
                         >
-                          <div className="explorer-token-left">
-                            <div className="explorer-token-image-container">
-                              <div className="explorer-progress-spacer">
-                                <div className="explorer-image-wrapper">
-                                  <img
-                                    className="explorer-token-image"
-                                    alt="loading"
-                                  />
+                          <img className="filter-icon" src={filter} />
+                          {appliedFilters?.graduating && (
+                            <span className="filter-active-dot" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="explorer-tokens-list">
+                      {isLoading ? (
+                        Array.from({ length: 14 }).map((_, index) => (
+                          <div
+                            key={`skeleton-graduating-${index}`}
+                            className="explorer-token-row loading"
+                          >
+                            <div className="explorer-token-left">
+                              <div className="explorer-token-image-container">
+                                <div className="explorer-progress-spacer">
+                                  <div className="explorer-image-wrapper">
+                                    <img
+                                      className="explorer-token-image"
+                                      alt="loading"
+                                    />
+                                  </div>
                                 </div>
                               </div>
+                              <span className="explorer-contract-address">
+                                Loading...
+                              </span>
                             </div>
-                            <span className="explorer-contract-address">
-                              Loading...
-                            </span>
+                            <div className="explorer-token-details">
+                              <div className="explorer-detail-section">
+                                <div className="explorer-top-row">
+                                  <div className="explorer-token-info">
+                                    <h3 className="explorer-token-symbol">
+                                      LOAD
+                                    </h3>
+                                    <p className="explorer-token-name">
+                                      Loading Token
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="explorer-second-row">
+                                  <div className="explorer-stat-item">
+                                    <span className="explorer-stat-value">
+                                      0
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="explorer-holdings-section" />
+                            </div>
+                            <div className="explorer-third-row">
+                              <div className="explorer-market-cap">
+                                <span className="mc-label"></span>
+                                <span className="mc-label"></span>
+                              </div>
+                              <div className="explorer-actions-section">
+                                <button className="explorer-quick-buy-btn">
+                                  Loading
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                          <div className="explorer-token-details">
-                            <div className="explorer-detail-section">
-                              <div className="explorer-top-row">
-                                <div className="explorer-token-info">
-                                  <h3 className="explorer-token-symbol">
-                                    LOAD
-                                  </h3>
-                                  <p className="explorer-token-name">
-                                    Loading Token
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="explorer-second-row">
-                                <div className="explorer-stat-item">
-                                  <span className="explorer-stat-value">0</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="explorer-holdings-section" />
-                          </div>
-                          <div className="explorer-third-row">
-                            <div className="explorer-market-cap">
-                              <span className="mc-label"></span>
-                              <span className="mc-label"></span>
-                            </div>
-                            <div className="explorer-actions-section">
-                              <button className="explorer-quick-buy-btn">
-                                Loading
-                              </button>
-                            </div>
+                        ))
+                      ) : graduatingTokens.length ? (
+                        graduatingTokens.map((t) => (
+                          <TokenRow
+                            key={t.id}
+                            token={t}
+                            quickbuyAmount={quickAmounts.new}
+                            quickbuyAmountSecond={quickAmountsSecond.new}
+                            onHideToken={hideToken}
+                            onBlacklistToken={handleBlacklistToken}
+                            isLoadingPrimary={loading.has(`${t.id}-primary`)}
+                            isLoadingSecondary={loading.has(
+                              `${t.id}-secondary`,
+                            )}
+                            hoveredToken={hoveredToken}
+                            hoveredImage={hoveredImage}
+                            onTokenHover={handleTokenHover}
+                            onTokenLeave={handleTokenLeave}
+                            onImageHover={handleImageHover}
+                            onImageLeave={handleImageLeave}
+                            onTokenClick={handleTokenClick}
+                            onQuickBuy={handleQuickBuy}
+                            onCopyToClipboard={copyToClipboard}
+                            displaySettings={displaySettings}
+                            isHidden={hidden.has(t.id)}
+                            monUsdPrice={monUsdPrice}
+                            blacklistSettings={blacklistSettings}
+                            formatTimeAgo={formatTimeAgo}
+                          />
+                        ))
+                      ) : (
+                        <div className="no-tokens-message">
+                          <img src={empty} className="empty-icon" />
+                          No tokens match the current filters
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+                {columnType === 'graduated' && (
+                  <>
+                    <div className="explorer-column-header">
+                      <div className="explorer-column-title-section">
+                        <h2 className="explorer-column-title">Graduated</h2>
+                      </div>
+                      <div className="explorer-column-title-right">
+                        <div
+                          className={`column-pause-icon ${pausedColumn === 'graduated' ? 'visible' : ''}`}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                          >
+                            <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                          </svg>
+                        </div>
+                        <div className="explorer-quickbuy-container">
+                          <img
+                            className="explorer-quick-buy-search-icon"
+                            src={lightning}
+                            alt=""
+                          />
+                          <input
+                            type="text"
+                            placeholder="0.0"
+                            value={quickAmounts.graduated}
+                            onChange={(e) =>
+                              setQuickAmount('graduated', e.target.value)
+                            }
+                            onFocus={handleInputFocus}
+                            className="explorer-quickbuy-input"
+                          />
+                          <img
+                            className="quickbuy-monad-icon"
+                            src={monadicon}
+                          />
+                          <div className="explorer-preset-controls">
+                            {[1, 2, 3].map((p) => (
+                              <Tooltip
+                                key={p}
+                                offset={35}
+                                content={
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '4px',
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                      }}
+                                    >
+                                      <img
+                                        src={slippage}
+                                        style={{
+                                          width: '14px',
+                                          height: '14px',
+                                        }}
+                                        alt="Slippage"
+                                      />
+                                      <span>
+                                        {buyPresets[p]?.slippage || '0'}%
+                                      </span>
+                                    </div>
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                      }}
+                                    >
+                                      <img
+                                        src={gas}
+                                        style={{
+                                          width: '14px',
+                                          height: '14px',
+                                        }}
+                                        alt="Priority"
+                                      />
+                                      <span>
+                                        {buyPresets[p]?.priority || '0'}{' '}
+                                      </span>
+                                    </div>
+                                  </div>
+                                }
+                              >
+                                <button
+                                  className={`explorer-preset-pill ${activePresets.graduated === p ? 'active' : ''}`}
+                                  onClick={() =>
+                                    setActivePreset('graduated', p)
+                                  }
+                                >
+                                  P{p}
+                                </button>
+                              </Tooltip>
+                            ))}
                           </div>
                         </div>
-                      ))
-                    ) : graduatedTokens.length ? (
-                      graduatedTokens.map((t) => (
-                        <TokenRow
-                          key={t.id}
-                          token={t}
-                          quickbuyAmount={quickAmounts.new}
-                          quickbuyAmountSecond={quickAmountsSecond.new}
-                          onHideToken={hideToken}
-                          onBlacklistToken={handleBlacklistToken}
-                          isLoadingPrimary={loading.has(`${t.id}-primary`)}
-                          isLoadingSecondary={loading.has(`${t.id}-secondary`)}
-                          hoveredToken={hoveredToken}
-                          hoveredImage={hoveredImage}
-                          onTokenHover={handleTokenHover}
-                          onTokenLeave={handleTokenLeave}
-                          onImageHover={handleImageHover}
-                          onImageLeave={handleImageLeave}
-                          onTokenClick={handleTokenClick}
-                          onQuickBuy={handleQuickBuy}
-                          onCopyToClipboard={copyToClipboard}
-                          displaySettings={displaySettings}
-                          isHidden={hidden.has(t.id)}
-                          monUsdPrice={monUsdPrice}
-                          blacklistSettings={blacklistSettings}
-                          formatTimeAgo={formatTimeAgo}
-                        />
-                      ))
-                    ) : (
-                      <div className="no-tokens-message">
-                        <img src={empty} className="empty-icon" />
-                        No tokens match the current filters
+                        {alertSettings.soundAlertsEnabled && (
+                          <button
+                            className="alerts-popup-trigger"
+                            onClick={() => setShowAlertsPopup(true)}
+                          >
+                            <Bell size={18} />
+                          </button>
+                        )}
+                        <button
+                          className={`column-filter-icon ${appliedFilters?.graduated ? 'active' : ''}`}
+                          onClick={() => onOpenFiltersForColumn('graduated')}
+                          title="filter graduated tokens"
+                        >
+                          <img className="filter-icon" src={filter} />
+                          {appliedFilters?.graduated && (
+                            <span className="filter-active-dot" />
+                          )}
+                        </button>
                       </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
+                    </div>
+
+                    <div className="explorer-tokens-list">
+                      {isLoading ? (
+                        Array.from({ length: 14 }).map((_, index) => (
+                          <div
+                            key={`skeleton-graduated-${index}`}
+                            className="explorer-token-row loading"
+                          >
+                            <div className="explorer-token-left">
+                              <div className="explorer-token-image-container">
+                                <div className="explorer-progress-spacer">
+                                  <div className="explorer-image-wrapper">
+                                    <img
+                                      className="explorer-token-image"
+                                      alt="loading"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="explorer-contract-address">
+                                Loading...
+                              </span>
+                            </div>
+                            <div className="explorer-token-details">
+                              <div className="explorer-detail-section">
+                                <div className="explorer-top-row">
+                                  <div className="explorer-token-info">
+                                    <h3 className="explorer-token-symbol">
+                                      LOAD
+                                    </h3>
+                                    <p className="explorer-token-name">
+                                      Loading Token
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="explorer-second-row">
+                                  <div className="explorer-stat-item">
+                                    <span className="explorer-stat-value">
+                                      0
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="explorer-holdings-section" />
+                            </div>
+                            <div className="explorer-third-row">
+                              <div className="explorer-market-cap">
+                                <span className="mc-label"></span>
+                                <span className="mc-label"></span>
+                              </div>
+                              <div className="explorer-actions-section">
+                                <button className="explorer-quick-buy-btn">
+                                  Loading
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : graduatedTokens.length ? (
+                        graduatedTokens.map((t) => (
+                          <TokenRow
+                            key={t.id}
+                            token={t}
+                            quickbuyAmount={quickAmounts.new}
+                            quickbuyAmountSecond={quickAmountsSecond.new}
+                            onHideToken={hideToken}
+                            onBlacklistToken={handleBlacklistToken}
+                            isLoadingPrimary={loading.has(`${t.id}-primary`)}
+                            isLoadingSecondary={loading.has(
+                              `${t.id}-secondary`,
+                            )}
+                            hoveredToken={hoveredToken}
+                            hoveredImage={hoveredImage}
+                            onTokenHover={handleTokenHover}
+                            onTokenLeave={handleTokenLeave}
+                            onImageHover={handleImageHover}
+                            onImageLeave={handleImageLeave}
+                            onTokenClick={handleTokenClick}
+                            onQuickBuy={handleQuickBuy}
+                            onCopyToClipboard={copyToClipboard}
+                            displaySettings={displaySettings}
+                            isHidden={hidden.has(t.id)}
+                            monUsdPrice={monUsdPrice}
+                            blacklistSettings={blacklistSettings}
+                            formatTimeAgo={formatTimeAgo}
+                          />
+                        ))
+                      ) : (
+                        <div className="no-tokens-message">
+                          <img src={empty} className="empty-icon" />
+                          No tokens match the current filters
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
         </div>
       </div>
       <AlertsPopup

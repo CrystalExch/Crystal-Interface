@@ -3297,15 +3297,15 @@ useEffect(() => {
               Spot
             </span>
             <span
-              className="portfolio-tab-title perpetuals"
-            >
-              Perpetuals
-            </span>
-            <span
               className={`portfolio-tab-title ${activeTab === 'wallets' ? 'active' : 'nonactive'}`}
               onClick={() => setActiveTab('wallets')}
             >
               Wallets
+            </span>
+            <span
+              className="portfolio-tab-title perpetuals"
+            >
+              Perpetuals
             </span>
             <span
               className={`portfolio-tab-title ${activeTab === 'trenches' ? 'active' : 'nonactive'}`}
@@ -3351,20 +3351,20 @@ useEffect(() => {
             >
               Spot
             </span>
-            <span
-              className="portfolio-tab-title perpetuals"
-            >
-              Perpetuals
-            </span>
-            <span
+                        <span
               className={`portfolio-tab-title ${activeTab === 'wallets' ? 'active' : 'nonactive'}`}
               onClick={() => setActiveTab('wallets')}
             >
               Wallets
             </span>
             <span
-              className={`portfolio-tab-title ${activeTab === 'trenches' ? 'active' : 'nonactive'}`}
-              onClick={() => setActiveTab('trenches')}
+              className="portfolio-tab-title perpetuals"
+            >
+              Perpetuals
+            </span>
+            <span
+              className="portfolio-tab-title perpetuals"
+              // onClick={() => setActiveTab('trenches')}
             >
               Trenches
             </span>

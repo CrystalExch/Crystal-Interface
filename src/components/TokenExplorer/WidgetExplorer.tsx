@@ -27,6 +27,7 @@ import filter from '../../assets/filter.svg';
 import lightning from '../../assets/flash.png';
 import monadicon from '../../assets/monadlogo.svg';
 import telegram from '../../assets/telegram.png';
+
 import './WidgetExplorer.css';
 
 export interface Token {
@@ -116,7 +117,8 @@ const ROUTER_EVENT =
   '0xfe210c99153843bc67efa2e9a61ec1d63c505e379b9dcf05a9520e84e36e6063';
 const MARKET_UPDATE_EVENT =
   '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
+const SUBGRAPH_URL =
+  'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 
 type State = {
   tokensByStatus: Record<Token['status'], Token[]>;
