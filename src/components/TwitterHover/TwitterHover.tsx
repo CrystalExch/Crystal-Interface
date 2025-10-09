@@ -278,26 +278,30 @@ export function TwitterHover({
 
   const stableUrl = useMemo(() => normalizeXInput(url || ''), [url]);
 
-  const { refs, floatingStyles, context } = useFloating({
-    open,
-    onOpenChange: setOpen,
-    placement,
-    whileElementsMounted: autoUpdate,
-    middleware: [
-      offset(8),
-      flip(),
-      shift({ padding: 8 }),
-      size({
-        apply({ availableHeight, elements }) {
-          Object.assign(elements.floating.style, {
-            maxHeight: `${Math.min(availableHeight - 16, 500)}px`,
-          });
-        },
-        padding: 8,
-      }),
-      arrow({ element: arrowRef }),
-    ],
-  });
+const { refs, floatingStyles, context } = useFloating({
+  open,
+  onOpenChange: setOpen,
+  placement,
+  whileElementsMounted: autoUpdate,
+  middleware: [
+    offset(8),
+    flip({
+      fallbackPlacements: ['bottom', 'top', 'bottom-start', 'bottom-end'],
+      padding: 8,
+      fallbackAxisSideDirection: 'end',
+    }),
+    shift({ padding: 8 }),
+    size({
+      apply({ availableHeight, elements }) {
+        Object.assign(elements.floating.style, {
+          maxHeight: `${Math.min(availableHeight - 16, 500)}px`,
+        });
+      },
+      padding: 8,
+    }),
+    arrow({ element: arrowRef }),
+  ],
+});
   const hover = useHover(context, { delay: { open: openDelayMs, close: 250 } });
   const role = useRole(context, { role: 'dialog' });
   const dismiss = useDismiss(context);

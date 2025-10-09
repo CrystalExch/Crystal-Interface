@@ -69,6 +69,8 @@ interface QuickBuyWidgetProps {
   updatePopup?: (id: string, config: any) => void;
   tokenImage?: string;
   nonces: any;
+  selectedWallets: Set<string>;
+  setSelectedWallets: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
 const Tooltip: React.FC<{
@@ -260,6 +262,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   onToggleCurrency,
   tokenImage,
   nonces,
+  selectedWallets,
+  setSelectedWallets,
 }) => {
   const [position, setPosition] = useState(() => {
     try {
@@ -392,13 +396,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     out[out.length - 1] = out[out.length - 1] + rem;
     return out;
   };
-  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(
-    new Set(
-      subWallets
-        .filter(w => w.privateKey == activeWalletPrivateKey)
-        .map(w => w.address)
-    )
-  );
+
   const [isConsolidating, setIsConsolidating] = useState(false);
   const [isSplitting, setIsSplitting] = useState(false);
 
@@ -611,14 +609,17 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     }
   };
 
-  const toggleWalletSelection = (address: string) => {
-    setSelectedWallets((prev) => {
-      const next = new Set(prev);
-      next.has(address) ? next.delete(address) : next.add(address);
-      return next;
-    });
-  };
-
+const toggleWalletSelection = useCallback((address: string) => {
+  setSelectedWallets((prev) => {
+    const next = new Set(prev);
+    if (next.has(address)) {
+      next.delete(address);
+    } else {
+      next.add(address);
+    }
+    return next;
+  });
+}, [setSelectedWallets]);
   const selectAllWithBalance = () => {
     const walletsWithBalance = subWallets.filter(
       (wallet) => getWalletBalance(wallet.address) > 0,
@@ -752,39 +753,37 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       setIsConsolidating(false);
     }
   };
+const selectAllWallets = useCallback(() => {
+  const walletsWithToken = subWallets.filter(
+    (w) => getWalletTokenBalance(w.address) > 0,
+  );
 
-  const selectAllWallets = () => {
-    const walletsWithToken = subWallets.filter(
-      (w) => getWalletTokenBalance(w.address) > 0,
-    );
+  if (walletsWithToken.length > 0) {
+    setSelectedWallets(new Set(walletsWithToken.map((w) => w.address)));
+  } else {
+    setSelectedWallets(new Set(subWallets.map((w) => w.address)));
+  }
+}, [subWallets, setSelectedWallets, getWalletTokenBalance]);
 
-    if (walletsWithToken.length > 0) {
-      setSelectedWallets(new Set(walletsWithToken.map((w) => w.address)));
-    } else {
-      setSelectedWallets(new Set(subWallets.map((w) => w.address)));
-    }
-  };
+const unselectAllWallets = useCallback(() => {
+  setSelectedWallets(new Set());
+}, [setSelectedWallets]);
 
-  const unselectAllWallets = () => {
-    setSelectedWallets(new Set());
-  };
 
-  const selectAllWithBalanceWithoutToken = () => {
-    const walletsWithoutToken = subWallets.filter(
-      (w) => getWalletTokenBalance(w.address) === 0,
-    );
-    const walletsWithBalance = walletsWithoutToken.filter(
-      (wallet) => getWalletBalance(wallet.address) > 0,
-    );
-    setSelectedWallets(new Set(walletsWithBalance.map((w) => w.address)));
-  };
-
+const selectAllWithBalanceWithoutToken = useCallback(() => {
+  const walletsWithoutToken = subWallets.filter(
+    (w) => getWalletTokenBalance(w.address) === 0,
+  );
+  const walletsWithBalance = walletsWithoutToken.filter(
+    (wallet) => getWalletBalance(wallet.address) > 0,
+  );
+  setSelectedWallets(new Set(walletsWithBalance.map((w) => w.address)));
+}, [subWallets, setSelectedWallets, getWalletTokenBalance, getWalletBalance]);
   const handleSplitTokens = async () => {
     if (selectedWallets.size === 0 || !tokenAddress) return;
 
     const selected = Array.from(selectedWallets);
 
-    // find a wallet that actually has tokens (the "main source")
     const sourceAddr = selected.find(
       (addr) => (walletTokenBalances[addr]?.[tokenAddress] ?? 0n) > 0n,
     );

@@ -222,13 +222,12 @@ const Tooltip: React.FC<{
               position: 'absolute',
               top: `${tooltipPosition.top}px`,
               left: `${tooltipPosition.left}px`,
-              transform: `${
-                position === 'top' || position === 'bottom'
+              transform: `${position === 'top' || position === 'bottom'
                   ? 'translateX(-50%)'
                   : position === 'left' || position === 'right'
                     ? 'translateY(-50%)'
                     : 'none'
-              } scale(${isVisible ? 1 : 0})`,
+                } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
               pointerEvents: 'none',
@@ -1249,971 +1248,971 @@ const DisplayDropdown: React.FC<{
   activePresetsSecond,
   setActivePresetSecond,
 }) => {
-  const [showSecondButtonColorPicker, setShowSecondButtonColorPicker] =
-    useState(false);
-  const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
-  const [showMetricColorPicker, setShowMetricColorPicker] = useState(false);
-  const [metricPickerPosition, setMetricPickerPosition] = useState({
-    top: 0,
-    left: 0,
-  });
-  const [hexInputValue, setHexInputValue] = useState(
-    settings.secondQuickBuyColor.replace('#', '').toUpperCase(),
-  );
-  useEffect(() => {
-    setHexInputValue(
+    const [showSecondButtonColorPicker, setShowSecondButtonColorPicker] =
+      useState(false);
+    const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
+    const [showMetricColorPicker, setShowMetricColorPicker] = useState(false);
+    const [metricPickerPosition, setMetricPickerPosition] = useState({
+      top: 0,
+      left: 0,
+    });
+    const [hexInputValue, setHexInputValue] = useState(
       settings.secondQuickBuyColor.replace('#', '').toUpperCase(),
     );
-  }, [settings.secondQuickBuyColor]);
-  const [activeMetricPicker, setActiveMetricPicker] = useState<{
-    metric: 'marketCap' | 'volume' | 'holders';
-    range: 'range1' | 'range2' | 'range3';
-  } | null>(null);
-  const handleColorPickerClick = (event: React.MouseEvent) => {
-    event.stopPropagation();
-
-    if (showSecondButtonColorPicker) {
-      setShowSecondButtonColorPicker(false);
-      return;
-    }
-
-    const rect = (event.target as HTMLElement).getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const pickerWidth = 200;
-    const pickerHeight = 250;
-
-    let left = rect.right + 10;
-    let top = rect.top;
-
-    if (left + pickerWidth > viewportWidth) {
-      left = rect.left - pickerWidth - 10;
-    }
-    if (top + pickerHeight > viewportHeight) {
-      top = viewportHeight - pickerHeight - 20;
-    }
-    if (top < 20) {
-      top = 20;
-    }
-
-    setPickerPosition({ top, left });
-    setShowSecondButtonColorPicker(true);
-  };
-
-  const handleMetricColorPickerClick = (
-    event: React.MouseEvent,
-    metric: 'marketCap' | 'volume' | 'holders',
-    range: 'range1' | 'range2' | 'range3',
-  ) => {
-    event.stopPropagation();
-
-    if (
-      showMetricColorPicker &&
-      activeMetricPicker?.metric === metric &&
-      activeMetricPicker?.range === range
-    ) {
-      setShowMetricColorPicker(false);
-      setActiveMetricPicker(null);
-      return;
-    }
-
-    const rect = (event.target as HTMLElement).getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const pickerWidth = 200;
-    const pickerHeight = 250;
-
-    let left = rect.right + 10;
-    let top = rect.top;
-
-    if (left + pickerWidth > viewportWidth) {
-      left = rect.left - pickerWidth - 10;
-    }
-    if (top + pickerHeight > viewportHeight) {
-      top = viewportHeight - pickerHeight - 20;
-    }
-    if (top < 20) {
-      top = 20;
-    }
-
-    setMetricPickerPosition({ top, left });
-    setActiveMetricPicker({ metric, range });
-    setShowMetricColorPicker(true);
-  };
-  const [isOpen, setIsOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    'layout' | 'metrics' | 'row' | 'extras'
-  >('layout');
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-
-  const safeOrder: Array<ColumnKey> =
-    Array.isArray(settings?.columnOrder) && settings.columnOrder.length
-      ? settings.columnOrder
-      : (['new', 'graduating', 'graduated'] as Array<ColumnKey>);
-
-  const handleToggle = useCallback(() => {
-    if (isOpen) {
-      setIsVisible(false);
-      setTimeout(() => {
-        setIsOpen(false);
-      }, 200);
-    } else {
-      setIsOpen(true);
-      requestAnimationFrame(() => {
-        setIsVisible(true);
-      });
-    }
-  }, [isOpen]);
-
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverIndex(index);
-  };
-
-  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === dropIndex) return;
-
-    const newOrder = [...safeOrder];
-    const draggedItem = newOrder[draggedIndex];
-    newOrder.splice(draggedIndex, 1);
-    newOrder.splice(dropIndex, 0, draggedItem);
-
-    onSettingsChange({ ...settings, columnOrder: newOrder });
-    setDraggedIndex(null);
-    setDragOverIndex(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-    setDragOverIndex(null);
-  };
-  const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(
-    () => new Set(settings.hiddenColumns || []),
-  );
-
-  const handleHide = (e: React.MouseEvent, column: ColumnKey) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const newHidden = new Set(hiddenColumns);
-    if (newHidden.has(column)) {
-      newHidden.delete(column);
-    } else {
-      newHidden.add(column);
-    }
-    setHiddenColumns(newHidden);
-    onSettingsChange({ ...settings, hiddenColumns: Array.from(newHidden) });
-  };
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-
-      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
-        if (isOpen) {
-          setIsVisible(false);
-          setTimeout(() => {
-            setIsOpen(false);
-          }, 200);
-        }
-      }
+    useEffect(() => {
+      setHexInputValue(
+        settings.secondQuickBuyColor.replace('#', '').toUpperCase(),
+      );
+    }, [settings.secondQuickBuyColor]);
+    const [activeMetricPicker, setActiveMetricPicker] = useState<{
+      metric: 'marketCap' | 'volume' | 'holders';
+      range: 'range1' | 'range2' | 'range3';
+    } | null>(null);
+    const handleColorPickerClick = (event: React.MouseEvent) => {
+      event.stopPropagation();
 
       if (showSecondButtonColorPicker) {
-        if (
-          !target.closest('.color-picker-dropdown') &&
-          !target.closest('.color-preview')
-        ) {
-          setShowSecondButtonColorPicker(false);
-        }
+        setShowSecondButtonColorPicker(false);
+        return;
       }
 
-      if (showMetricColorPicker) {
-        if (
-          !target.closest('.metric-color-picker-dropdown') &&
-          !target.closest('.metric-color-square')
-        ) {
-          setShowMetricColorPicker(false);
-          setActiveMetricPicker(null);
-        }
+      const rect = (event.target as HTMLElement).getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const pickerWidth = 200;
+      const pickerHeight = 250;
+
+      let left = rect.right + 10;
+      let top = rect.top;
+
+      if (left + pickerWidth > viewportWidth) {
+        left = rect.left - pickerWidth - 10;
       }
+      if (top + pickerHeight > viewportHeight) {
+        top = viewportHeight - pickerHeight - 20;
+      }
+      if (top < 20) {
+        top = 20;
+      }
+
+      setPickerPosition({ top, left });
+      setShowSecondButtonColorPicker(true);
     };
 
-    if (isOpen || showSecondButtonColorPicker || showMetricColorPicker) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    const handleMetricColorPickerClick = (
+      event: React.MouseEvent,
+      metric: 'marketCap' | 'volume' | 'holders',
+      range: 'range1' | 'range2' | 'range3',
+    ) => {
+      event.stopPropagation();
 
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, showSecondButtonColorPicker, showMetricColorPicker]);
-  const updateSetting = <K extends keyof DisplaySettings>(
-    key: K,
-    value: DisplaySettings[K],
-  ) => onSettingsChange({ ...settings, [key]: value });
+      if (
+        showMetricColorPicker &&
+        activeMetricPicker?.metric === metric &&
+        activeMetricPicker?.range === range
+      ) {
+        setShowMetricColorPicker(false);
+        setActiveMetricPicker(null);
+        return;
+      }
 
-  const updateMetricColor = (
-    metric: 'marketCap' | 'volume' | 'holders',
-    range: 'range1' | 'range2' | 'range3',
-    color: string,
-  ) => {
-    onSettingsChange({
-      ...settings,
-      metricColors: {
-        ...settings.metricColors,
-        [metric]: {
-          ...settings.metricColors?.[metric],
-          [range]: color,
+      const rect = (event.target as HTMLElement).getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const pickerWidth = 200;
+      const pickerHeight = 250;
+
+      let left = rect.right + 10;
+      let top = rect.top;
+
+      if (left + pickerWidth > viewportWidth) {
+        left = rect.left - pickerWidth - 10;
+      }
+      if (top + pickerHeight > viewportHeight) {
+        top = viewportHeight - pickerHeight - 20;
+      }
+      if (top < 20) {
+        top = 20;
+      }
+
+      setMetricPickerPosition({ top, left });
+      setActiveMetricPicker({ metric, range });
+      setShowMetricColorPicker(true);
+    };
+    const [isOpen, setIsOpen] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+    const [activeTab, setActiveTab] = useState<
+      'layout' | 'metrics' | 'row' | 'extras'
+    >('layout');
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+    const safeOrder: Array<ColumnKey> =
+      Array.isArray(settings?.columnOrder) && settings.columnOrder.length
+        ? settings.columnOrder
+        : (['new', 'graduating', 'graduated'] as Array<ColumnKey>);
+
+    const handleToggle = useCallback(() => {
+      if (isOpen) {
+        setIsVisible(false);
+        setTimeout(() => {
+          setIsOpen(false);
+        }, 200);
+      } else {
+        setIsOpen(true);
+        requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      }
+    }, [isOpen]);
+
+    const handleDragStart = (e: React.DragEvent, index: number) => {
+      setDraggedIndex(index);
+      e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      setDragOverIndex(index);
+    };
+
+    const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+      e.preventDefault();
+      if (draggedIndex === null || draggedIndex === dropIndex) return;
+
+      const newOrder = [...safeOrder];
+      const draggedItem = newOrder[draggedIndex];
+      newOrder.splice(draggedIndex, 1);
+      newOrder.splice(dropIndex, 0, draggedItem);
+
+      onSettingsChange({ ...settings, columnOrder: newOrder });
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+    };
+
+    const handleDragEnd = () => {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+    };
+    const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(
+      () => new Set(settings.hiddenColumns || []),
+    );
+
+    const handleHide = (e: React.MouseEvent, column: ColumnKey) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const newHidden = new Set(hiddenColumns);
+      if (newHidden.has(column)) {
+        newHidden.delete(column);
+      } else {
+        newHidden.add(column);
+      }
+      setHiddenColumns(newHidden);
+      onSettingsChange({ ...settings, hiddenColumns: Array.from(newHidden) });
+    };
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+
+        if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+          if (isOpen) {
+            setIsVisible(false);
+            setTimeout(() => {
+              setIsOpen(false);
+            }, 200);
+          }
+        }
+
+        if (showSecondButtonColorPicker) {
+          if (
+            !target.closest('.color-picker-dropdown') &&
+            !target.closest('.color-preview')
+          ) {
+            setShowSecondButtonColorPicker(false);
+          }
+        }
+
+        if (showMetricColorPicker) {
+          if (
+            !target.closest('.metric-color-picker-dropdown') &&
+            !target.closest('.metric-color-square')
+          ) {
+            setShowMetricColorPicker(false);
+            setActiveMetricPicker(null);
+          }
+        }
+      };
+
+      if (isOpen || showSecondButtonColorPicker || showMetricColorPicker) {
+        document.addEventListener('mousedown', handleClickOutside);
+      }
+
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen, showSecondButtonColorPicker, showMetricColorPicker]);
+    const updateSetting = <K extends keyof DisplaySettings>(
+      key: K,
+      value: DisplaySettings[K],
+    ) => onSettingsChange({ ...settings, [key]: value });
+
+    const updateMetricColor = (
+      metric: 'marketCap' | 'volume' | 'holders',
+      range: 'range1' | 'range2' | 'range3',
+      color: string,
+    ) => {
+      onSettingsChange({
+        ...settings,
+        metricColors: {
+          ...settings.metricColors,
+          [metric]: {
+            ...settings.metricColors?.[metric],
+            [range]: color,
+          },
         },
-      },
-    });
-  };
+      });
+    };
 
-  const updateRowSetting = (
-    key: keyof DisplaySettings['visibleRows'],
-    value: boolean,
-  ) => {
-    onSettingsChange({
-      ...settings,
-      visibleRows: { ...settings.visibleRows, [key]: value },
-    });
-  };
+    const updateRowSetting = (
+      key: keyof DisplaySettings['visibleRows'],
+      value: boolean,
+    ) => {
+      onSettingsChange({
+        ...settings,
+        visibleRows: { ...settings.visibleRows, [key]: value },
+      });
+    };
 
-  return (
-    <div className="display-dropdown" ref={dropdownRef}>
-      <button
-        className={`display-dropdown-trigger ${isOpen ? 'active' : ''}`}
-        onClick={handleToggle}
-      >
-        <span>Display</span>
-        <ChevronDown
-          size={16}
-          className={`display-dropdown-arrow ${isOpen ? 'open' : ''}`}
-          aria-hidden="true"
-        />
-      </button>
-
-      {isOpen && (
-        <div
-          className={`display-dropdown-content ${isVisible ? 'visible' : ''}`}
+    return (
+      <div className="display-dropdown" ref={dropdownRef}>
+        <button
+          className={`display-dropdown-trigger ${isOpen ? 'active' : ''}`}
+          onClick={handleToggle}
         >
-          <div className="display-section">
-            <h4 className="display-section-title">Metrics</h4>
-            <div className="metrics-size-options">
-              <button
-                className={`small-size-option ${settings.metricSize === 'small' ? 'active' : ''}`}
-                onClick={() => updateSetting('metricSize', 'small')}
-              >
-                MC 123K
-                <br />
-                <span className="size-label">Small</span>
-              </button>
-              <button
-                className={`large-size-option ${settings.metricSize === 'large' ? 'active' : ''}`}
-                onClick={() => updateSetting('metricSize', 'large')}
-              >
-                MC 123K
-                <br />
-                <span className="size-label">Large</span>
-              </button>
-            </div>
-          </div>
+          <span>Display</span>
+          <ChevronDown
+            size={16}
+            className={`display-dropdown-arrow ${isOpen ? 'open' : ''}`}
+            aria-hidden="true"
+          />
+        </button>
 
-          <div className="display-section">
-            <h4 className="display-section-title">Quick Buy</h4>
-            <div className="quickbuy-size-options">
-              <button
-                className={`quickbuy-option ${settings.quickBuySize === 'small' ? 'active' : ''}`}
-                onClick={() => updateSetting('quickBuySize', 'small')}
-              >
-                <div
-                  className={`quickbuy-preview-button-small ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
+        {isOpen && (
+          <div
+            className={`display-dropdown-content ${isVisible ? 'visible' : ''}`}
+          >
+            <div className="display-section">
+              <h4 className="display-section-title">Metrics</h4>
+              <div className="metrics-size-options">
+                <button
+                  className={`small-size-option ${settings.metricSize === 'small' ? 'active' : ''}`}
+                  onClick={() => updateSetting('metricSize', 'small')}
                 >
-                  <img
-                    className="quickbuy-preview-button-lightning-small"
-                    src={lightning}
-                    alt=""
-                  />
-                  7
-                </div>
-                Small
-              </button>
-              <button
-                className={`quickbuy-option ${settings.quickBuySize === 'large' ? 'active' : ''}`}
-                onClick={() => updateSetting('quickBuySize', 'large')}
-              >
-                <div
-                  className={`quickbuy-preview-button-large ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
+                  MC 123K
+                  <br />
+                  <span className="size-label">Small</span>
+                </button>
+                <button
+                  className={`large-size-option ${settings.metricSize === 'large' ? 'active' : ''}`}
+                  onClick={() => updateSetting('metricSize', 'large')}
                 >
-                  <img
-                    className="quickbuy-preview-button-lightning-large"
-                    src={lightning}
-                    alt=""
-                  />
-                  7
-                </div>
-                Large
-              </button>
-              <button
-                className={`quickbuy-option ${settings.quickBuySize === 'mega' ? 'active' : ''}`}
-                onClick={() => updateSetting('quickBuySize', 'mega')}
-              >
-                <div
-                  className={`quickbuy-preview-button-mega ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
-                >
-                  <img
-                    className="quickbuy-preview-button-lightning-mega"
-                    src={lightning}
-                    alt=""
-                  />
-                  7
-                </div>
-                Mega
-              </button>
-              <button
-                className={`quickbuy-option ${settings.quickBuySize === 'ultra' ? 'active' : ''}`}
-                onClick={() => updateSetting('quickBuySize', 'ultra')}
-              >
-                <div
-                  className={`quickbuy-preview-button-ultra ultra-${settings.ultraStyle} ultra-text-${settings.ultraColor}`}
-                >
-                  <img
-                    className="quickbuy-preview-button-lightning-ultra"
-                    src={lightning}
-                    alt=""
-                  />
-                  7
-                </div>
-                Ultra
-              </button>
+                  MC 123K
+                  <br />
+                  <span className="size-label">Large</span>
+                </button>
+              </div>
             </div>
 
-            {(settings.quickBuySize === 'small' ||
-              settings.quickBuySize === 'large' ||
-              settings.quickBuySize === 'mega') && (
-              <div className="quickbuy-style-toggles">
-                <div className="style-toggle-row">
-                  <span className="style-toggle-label">Style</span>
-                  <div className="style-toggle-buttons">
-                    <button
-                      className={`style-toggle-btn ${settings.quickBuyStyle === 'color' ? 'active' : ''}`}
-                      onClick={() => updateSetting('quickBuyStyle', 'color')}
-                    >
-                      Color
-                    </button>
-                    <button
-                      className={`style-toggle-btn ${settings.quickBuyStyle === 'grey' ? 'active' : ''}`}
-                      onClick={() => updateSetting('quickBuyStyle', 'grey')}
-                    >
-                      Grey
-                    </button>
+            <div className="display-section">
+              <h4 className="display-section-title">Quick Buy</h4>
+              <div className="quickbuy-size-options">
+                <button
+                  className={`quickbuy-option ${settings.quickBuySize === 'small' ? 'active' : ''}`}
+                  onClick={() => updateSetting('quickBuySize', 'small')}
+                >
+                  <div
+                    className={`quickbuy-preview-button-small ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
+                  >
+                    <img
+                      className="quickbuy-preview-button-lightning-small"
+                      src={lightning}
+                      alt=""
+                    />
+                    7
                   </div>
-                </div>
+                  Small
+                </button>
+                <button
+                  className={`quickbuy-option ${settings.quickBuySize === 'large' ? 'active' : ''}`}
+                  onClick={() => updateSetting('quickBuySize', 'large')}
+                >
+                  <div
+                    className={`quickbuy-preview-button-large ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
+                  >
+                    <img
+                      className="quickbuy-preview-button-lightning-large"
+                      src={lightning}
+                      alt=""
+                    />
+                    7
+                  </div>
+                  Large
+                </button>
+                <button
+                  className={`quickbuy-option ${settings.quickBuySize === 'mega' ? 'active' : ''}`}
+                  onClick={() => updateSetting('quickBuySize', 'mega')}
+                >
+                  <div
+                    className={`quickbuy-preview-button-mega ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
+                  >
+                    <img
+                      className="quickbuy-preview-button-lightning-mega"
+                      src={lightning}
+                      alt=""
+                    />
+                    7
+                  </div>
+                  Mega
+                </button>
+                <button
+                  className={`quickbuy-option ${settings.quickBuySize === 'ultra' ? 'active' : ''}`}
+                  onClick={() => updateSetting('quickBuySize', 'ultra')}
+                >
+                  <div
+                    className={`quickbuy-preview-button-ultra ultra-${settings.ultraStyle} ultra-text-${settings.ultraColor}`}
+                  >
+                    <img
+                      className="quickbuy-preview-button-lightning-ultra"
+                      src={lightning}
+                      alt=""
+                    />
+                    7
+                  </div>
+                  Ultra
+                </button>
               </div>
-            )}
 
-            {settings.quickBuySize === 'ultra' && (
-              <div className="ultra-style-controls">
-                <div className="style-toggle-row">
-                  <span className="style-toggle-label">Ultra Style:</span>
-                  <div className="style-toggle-buttons">
-                    <button
-                      className={`style-toggle-btn ${settings.ultraStyle === 'default' ? 'active' : ''}`}
-                      onClick={() => updateSetting('ultraStyle', 'default')}
-                    >
-                      Default
-                    </button>
-                    <button
-                      className={`style-toggle-btn ${settings.ultraStyle === 'glowing' ? 'active' : ''}`}
-                      onClick={() => updateSetting('ultraStyle', 'glowing')}
-                    >
-                      Glowing
-                    </button>
-                    <button
-                      className={`style-toggle-btn ${settings.ultraStyle === 'border' ? 'active' : ''}`}
-                      onClick={() => updateSetting('ultraStyle', 'border')}
-                    >
-                      Border
-                    </button>
-                  </div>
-                </div>
-                <div className="style-toggle-row">
-                  <span className="style-toggle-label">Text Color:</span>
-                  <div className="style-toggle-buttons">
-                    <button
-                      className={`style-toggle-btn ${settings.ultraColor === 'color' ? 'active' : ''}`}
-                      onClick={() => updateSetting('ultraColor', 'color')}
-                    >
-                      Color
-                    </button>
-                    <button
-                      className={`style-toggle-btn ${settings.ultraColor === 'grey' ? 'active' : ''}`}
-                      onClick={() => updateSetting('ultraColor', 'grey')}
-                    >
-                      Grey
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="display-tabs">
-            <button
-              className={`display-tab ${activeTab === 'layout' ? 'active' : ''}`}
-              onClick={() => setActiveTab('layout')}
-            >
-              Layout
-            </button>
-            <button
-              className={`display-tab ${activeTab === 'metrics' ? 'active' : ''}`}
-              onClick={() => setActiveTab('metrics')}
-            >
-              Metrics
-            </button>
-            <button
-              className={`display-tab ${activeTab === 'row' ? 'active' : ''}`}
-              onClick={() => setActiveTab('row')}
-            >
-              Row
-            </button>
-            <button
-              className={`display-tab ${activeTab === 'extras' ? 'active' : ''}`}
-              onClick={() => setActiveTab('extras')}
-            >
-              Extras
-            </button>
-          </div>
-
-          <div className="display-content">
-            {activeTab === 'layout' && (
-              <div>
-                <div className="display-toggles">
-                  <div className="toggle-item">
-                    <label className="toggle-label">
-                      <Hash size={16} />
-                      No Decimals
-                    </label>
-                    <div
-                      className={`toggle-switch ${settings.noDecimals ? 'active' : ''}`}
-                      onClick={() =>
-                        updateSetting('noDecimals', !settings.noDecimals)
-                      }
-                    >
-                      <div className="toggle-slider" />
-                    </div>
-                  </div>
-
-                  <div className="toggle-item">
-                    <label className="toggle-label">
-                      <EyeOff size={16} />
-                      Hide Hidden Tokens
-                    </label>
-                    <div
-                      className={`toggle-switch ${settings.hideHiddenTokens ? 'active' : ''}`}
-                      onClick={() =>
-                        updateSetting(
-                          'hideHiddenTokens',
-                          !settings.hideHiddenTokens,
-                        )
-                      }
-                    >
-                      <div className="toggle-slider" />
-                    </div>
-                  </div>
-
-                  <div className="toggle-item">
-                    <label className="toggle-label">
-                      <Image size={16} />
-                      Square Images
-                    </label>
-                    <div
-                      className={`toggle-switch ${settings.squareImages ? 'active' : ''}`}
-                      onClick={() =>
-                        updateSetting('squareImages', !settings.squareImages)
-                      }
-                    >
-                      <div className="toggle-slider" />
-                    </div>
-                  </div>
-
-                  <div className="toggle-item">
-                    <label className="toggle-label">
-                      <BarChart3 size={16} />
-                      Progress Ring
-                    </label>
-                    <div
-                      className={`toggle-switch ${settings.progressBar ? 'active' : ''}`}
-                      onClick={() =>
-                        updateSetting('progressBar', !settings.progressBar)
-                      }
-                    >
-                      <div className="toggle-slider" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="customize-section">
-                  <h4 className="display-section-title">Customize rows</h4>
-                  <div className="row-toggles">
-                    {(
-                      [
-                        ['marketCap', 'Market Cap'],
-                        ['volume', 'Volume'],
-                        ['fees', 'Fees'],
-                        ['tx', 'TX'],
-                        ['socials', 'Socials'],
-                        ['holders', 'Holders'],
-                        ['proTraders', 'Pro Traders'],
-                        ['devMigrations', 'Dev Migrations'],
-                        ['top10Holders', 'Top 10 Holders'],
-                        ['devHolding', 'Dev Holding'],
-                        ['snipers', 'Snipers'],
-                        ['insiders', 'Insiders'],
-                      ] as Array<[keyof DisplaySettings['visibleRows'], string]>
-                    ).map(([k, label]) => (
-                      <div
-                        key={k}
-                        className={`row-toggle ${settings.visibleRows[k] ? 'active' : ''}`}
-                        onClick={() =>
-                          updateRowSetting(k, !settings.visibleRows[k])
-                        }
-                      >
-                        <span className="row-toggle-label">{label}</span>
+              {(settings.quickBuySize === 'small' ||
+                settings.quickBuySize === 'large' ||
+                settings.quickBuySize === 'mega') && (
+                  <div className="quickbuy-style-toggles">
+                    <div className="style-toggle-row">
+                      <span className="style-toggle-label">Style</span>
+                      <div className="style-toggle-buttons">
+                        <button
+                          className={`style-toggle-btn ${settings.quickBuyStyle === 'color' ? 'active' : ''}`}
+                          onClick={() => updateSetting('quickBuyStyle', 'color')}
+                        >
+                          Color
+                        </button>
+                        <button
+                          className={`style-toggle-btn ${settings.quickBuyStyle === 'grey' ? 'active' : ''}`}
+                          onClick={() => updateSetting('quickBuyStyle', 'grey')}
+                        >
+                          Grey
+                        </button>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'metrics' && (
-              <div>
-                {(['marketCap', 'volume', 'holders'] as const).map((metric) => (
-                  <div className="metrics-display-section" key={metric}>
-                    <h4 className="display-section-title">
-                      {metric === 'marketCap'
-                        ? 'Market Cap'
-                        : metric === 'volume'
-                          ? 'Volume'
-                          : 'Holders'}
-                    </h4>
-                    <div className="metric-color-options">
-                      {(['range1', 'range2', 'range3'] as const).map(
-                        (range, idx) => (
-                          <div className="metric-color-option">
-                            <div className="metric-color-item" key={range}>
-                              <div className="display-metric-value">
-                                {metric === 'marketCap'
-                                  ? idx === 0
-                                    ? '30000'
-                                    : idx === 1
-                                      ? '150000'
-                                      : 'Above'
-                                  : metric === 'volume'
-                                    ? idx === 0
-                                      ? '1000'
-                                      : idx === 1
-                                        ? '2000'
-                                        : 'Above'
-                                    : idx === 0
-                                      ? '10'
-                                      : idx === 1
-                                        ? '50'
-                                        : 'Above'}
-                              </div>
-                              <div className="metric-color-controls">
-                                <button
-                                  className="metric-color-square"
-                                  style={{
-                                    backgroundColor:
-                                      (settings.metricColors as any)?.[
-                                        metric
-                                      ]?.[range] || '#ffffff',
-                                  }}
-                                  onClick={(e) =>
-                                    handleMetricColorPickerClick(
-                                      e,
-                                      metric,
-                                      range,
-                                    )
-                                  }
-                                />
-                                <button
-                                  className="metric-reset-btn"
-                                  onClick={() =>
-                                    updateMetricColor(
-                                      metric,
-                                      range,
-                                      metric === 'marketCap'
-                                        ? range === 'range1'
-                                          ? '#d8dcff'
-                                          : range === 'range2'
-                                            ? '#eab308'
-                                            : '#14b8a6'
-                                        : '#ffffff',
-                                    )
-                                  }
-                                >
-                                  <img
-                                    src={reset}
-                                    alt="Reset"
-                                    className="reset-icon"
-                                  />
-                                </button>
-                              </div>
-                            </div>
-                            <div className="metric-range-label">
-                              {metric === 'marketCap'
-                                ? idx === 0
-                                  ? '0 - 30K'
-                                  : idx === 1
-                                    ? '30K - 150K'
-                                    : '150K+'
-                                : metric === 'volume'
-                                  ? idx === 0
-                                    ? '0 - 1K'
-                                    : idx === 1
-                                      ? '1K - 2K'
-                                      : '2K+'
-                                  : idx === 0
-                                    ? '0 - 10'
-                                    : idx === 1
-                                      ? '10 - 50'
-                                      : '50+'}
-                            </div>
-                          </div>
-                        ),
-                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                )}
 
-            {activeTab === 'row' && (
-              <div>
-                <div className="display-section">
+              {settings.quickBuySize === 'ultra' && (
+                <div className="ultra-style-controls">
+                  <div className="style-toggle-row">
+                    <span className="style-toggle-label">Ultra Style:</span>
+                    <div className="style-toggle-buttons">
+                      <button
+                        className={`style-toggle-btn ${settings.ultraStyle === 'default' ? 'active' : ''}`}
+                        onClick={() => updateSetting('ultraStyle', 'default')}
+                      >
+                        Default
+                      </button>
+                      <button
+                        className={`style-toggle-btn ${settings.ultraStyle === 'glowing' ? 'active' : ''}`}
+                        onClick={() => updateSetting('ultraStyle', 'glowing')}
+                      >
+                        Glowing
+                      </button>
+                      <button
+                        className={`style-toggle-btn ${settings.ultraStyle === 'border' ? 'active' : ''}`}
+                        onClick={() => updateSetting('ultraStyle', 'border')}
+                      >
+                        Border
+                      </button>
+                    </div>
+                  </div>
+                  <div className="style-toggle-row">
+                    <span className="style-toggle-label">Text Color:</span>
+                    <div className="style-toggle-buttons">
+                      <button
+                        className={`style-toggle-btn ${settings.ultraColor === 'color' ? 'active' : ''}`}
+                        onClick={() => updateSetting('ultraColor', 'color')}
+                      >
+                        Color
+                      </button>
+                      <button
+                        className={`style-toggle-btn ${settings.ultraColor === 'grey' ? 'active' : ''}`}
+                        onClick={() => updateSetting('ultraColor', 'grey')}
+                      >
+                        Grey
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="display-tabs">
+              <button
+                className={`display-tab ${activeTab === 'layout' ? 'active' : ''}`}
+                onClick={() => setActiveTab('layout')}
+              >
+                Layout
+              </button>
+              <button
+                className={`display-tab ${activeTab === 'metrics' ? 'active' : ''}`}
+                onClick={() => setActiveTab('metrics')}
+              >
+                Metrics
+              </button>
+              <button
+                className={`display-tab ${activeTab === 'row' ? 'active' : ''}`}
+                onClick={() => setActiveTab('row')}
+              >
+                Row
+              </button>
+              <button
+                className={`display-tab ${activeTab === 'extras' ? 'active' : ''}`}
+                onClick={() => setActiveTab('extras')}
+              >
+                Extras
+              </button>
+            </div>
+
+            <div className="display-content">
+              {activeTab === 'layout' && (
+                <div>
                   <div className="display-toggles">
                     <div className="toggle-item">
                       <label className="toggle-label">
-                        <BarChart3 size={16} />
-                        Color Rows
+                        <Hash size={16} />
+                        No Decimals
                       </label>
                       <div
-                        className={`toggle-switch ${settings.colorRows ? 'active' : ''}`}
+                        className={`toggle-switch ${settings.noDecimals ? 'active' : ''}`}
                         onClick={() =>
-                          updateSetting('colorRows', !settings.colorRows)
+                          updateSetting('noDecimals', !settings.noDecimals)
+                        }
+                      >
+                        <div className="toggle-slider" />
+                      </div>
+                    </div>
+
+                    <div className="toggle-item">
+                      <label className="toggle-label">
+                        <EyeOff size={16} />
+                        Hide Hidden Tokens
+                      </label>
+                      <div
+                        className={`toggle-switch ${settings.hideHiddenTokens ? 'active' : ''}`}
+                        onClick={() =>
+                          updateSetting(
+                            'hideHiddenTokens',
+                            !settings.hideHiddenTokens,
+                          )
+                        }
+                      >
+                        <div className="toggle-slider" />
+                      </div>
+                    </div>
+
+                    <div className="toggle-item">
+                      <label className="toggle-label">
+                        <Image size={16} />
+                        Square Images
+                      </label>
+                      <div
+                        className={`toggle-switch ${settings.squareImages ? 'active' : ''}`}
+                        onClick={() =>
+                          updateSetting('squareImages', !settings.squareImages)
+                        }
+                      >
+                        <div className="toggle-slider" />
+                      </div>
+                    </div>
+
+                    <div className="toggle-item">
+                      <label className="toggle-label">
+                        <BarChart3 size={16} />
+                        Progress Ring
+                      </label>
+                      <div
+                        className={`toggle-switch ${settings.progressBar ? 'active' : ''}`}
+                        onClick={() =>
+                          updateSetting('progressBar', !settings.progressBar)
                         }
                       >
                         <div className="toggle-slider" />
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            )}
 
-            {activeTab === 'extras' && (
-              <div>
-                <div className="extras-display-section">
-                  <h4 className="display-section-title">Table Layout</h4>
-                  <div className="column-drag-container">
-                    {safeOrder.map((column, index) => (
-                      <div
-                        key={column}
-                        className={`column-drag-item ${hiddenColumns.has(column) ? 'column-hidden' : ''} ${dragOverIndex === index && draggedIndex !== index ? 'drag-over' : ''}`}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, index)}
-                        onDragOver={(e) => handleDragOver(e, index)}
-                        onDrop={(e) => handleDrop(e, index)}
-                        onDragEnd={handleDragEnd}
-                        onClick={(e) => handleHide(e, column)}
-                      >
-                        {column === 'new'
-                          ? 'New Pairs'
-                          : column === 'graduating'
-                            ? 'Final Stretch'
-                            : 'Migrated'}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="extras-display-section">
-                  <h4 className="display-section-title">
-                    Click Quick Buy Behavior
-                  </h4>
-                  <div className="quickbuy-behavior-options">
-                    {(['nothing', 'openPage', 'openNewTab'] as const).map(
-                      (mode) => (
+                  <div className="customize-section">
+                    <h4 className="display-section-title">Customize rows</h4>
+                    <div className="row-toggles">
+                      {(
+                        [
+                          ['marketCap', 'Market Cap'],
+                          ['volume', 'Volume'],
+                          ['fees', 'Fees'],
+                          ['tx', 'TX'],
+                          ['socials', 'Socials'],
+                          ['holders', 'Holders'],
+                          ['proTraders', 'Pro Traders'],
+                          ['devMigrations', 'Dev Migrations'],
+                          ['top10Holders', 'Top 10 Holders'],
+                          ['devHolding', 'Dev Holding'],
+                          ['snipers', 'Snipers'],
+                          ['insiders', 'Insiders'],
+                        ] as Array<[keyof DisplaySettings['visibleRows'], string]>
+                      ).map(([k, label]) => (
                         <div
-                          key={mode}
-                          className={`behavior-option ${settings.quickBuyClickBehavior === mode ? 'active' : ''}`}
+                          key={k}
+                          className={`row-toggle ${settings.visibleRows[k] ? 'active' : ''}`}
                           onClick={() =>
-                            updateSetting('quickBuyClickBehavior', mode)
+                            updateRowSetting(k, !settings.visibleRows[k])
                           }
                         >
-                          <span className="behavior-label">
-                            {mode === 'nothing'
-                              ? 'Nothing'
-                              : mode === 'openPage'
-                                ? 'Open Page'
-                                : 'Open in New Tab'}
-                          </span>
+                          <span className="row-toggle-label">{label}</span>
                         </div>
-                      ),
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'metrics' && (
+                <div>
+                  {(['marketCap', 'volume', 'holders'] as const).map((metric) => (
+                    <div className="metrics-display-section" key={metric}>
+                      <h4 className="display-section-title">
+                        {metric === 'marketCap'
+                          ? 'Market Cap'
+                          : metric === 'volume'
+                            ? 'Volume'
+                            : 'Holders'}
+                      </h4>
+                      <div className="metric-color-options">
+                        {(['range1', 'range2', 'range3'] as const).map(
+                          (range, idx) => (
+                            <div className="metric-color-option">
+                              <div className="metric-color-item" key={range}>
+                                <div className="display-metric-value">
+                                  {metric === 'marketCap'
+                                    ? idx === 0
+                                      ? '30000'
+                                      : idx === 1
+                                        ? '150000'
+                                        : 'Above'
+                                    : metric === 'volume'
+                                      ? idx === 0
+                                        ? '1000'
+                                        : idx === 1
+                                          ? '2000'
+                                          : 'Above'
+                                      : idx === 0
+                                        ? '10'
+                                        : idx === 1
+                                          ? '50'
+                                          : 'Above'}
+                                </div>
+                                <div className="metric-color-controls">
+                                  <button
+                                    className="metric-color-square"
+                                    style={{
+                                      backgroundColor:
+                                        (settings.metricColors as any)?.[
+                                        metric
+                                        ]?.[range] || '#ffffff',
+                                    }}
+                                    onClick={(e) =>
+                                      handleMetricColorPickerClick(
+                                        e,
+                                        metric,
+                                        range,
+                                      )
+                                    }
+                                  />
+                                  <button
+                                    className="metric-reset-btn"
+                                    onClick={() =>
+                                      updateMetricColor(
+                                        metric,
+                                        range,
+                                        metric === 'marketCap'
+                                          ? range === 'range1'
+                                            ? '#d8dcff'
+                                            : range === 'range2'
+                                              ? '#eab308'
+                                              : '#14b8a6'
+                                          : '#ffffff',
+                                      )
+                                    }
+                                  >
+                                    <img
+                                      src={reset}
+                                      alt="Reset"
+                                      className="reset-icon"
+                                    />
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="metric-range-label">
+                                {metric === 'marketCap'
+                                  ? idx === 0
+                                    ? '0 - 30K'
+                                    : idx === 1
+                                      ? '30K - 150K'
+                                      : '150K+'
+                                  : metric === 'volume'
+                                    ? idx === 0
+                                      ? '0 - 1K'
+                                      : idx === 1
+                                        ? '1K - 2K'
+                                        : '2K+'
+                                    : idx === 0
+                                      ? '0 - 10'
+                                      : idx === 1
+                                        ? '10 - 50'
+                                        : '50+'}
+                              </div>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activeTab === 'row' && (
+                <div>
+                  <div className="display-section">
+                    <div className="display-toggles">
+                      <div className="toggle-item">
+                        <label className="toggle-label">
+                          <BarChart3 size={16} />
+                          Color Rows
+                        </label>
+                        <div
+                          className={`toggle-switch ${settings.colorRows ? 'active' : ''}`}
+                          onClick={() =>
+                            updateSetting('colorRows', !settings.colorRows)
+                          }
+                        >
+                          <div className="toggle-slider" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'extras' && (
+                <div>
+                  <div className="extras-display-section">
+                    <h4 className="display-section-title">Table Layout</h4>
+                    <div className="column-drag-container">
+                      {safeOrder.map((column, index) => (
+                        <div
+                          key={column}
+                          className={`column-drag-item ${hiddenColumns.has(column) ? 'column-hidden' : ''} ${dragOverIndex === index && draggedIndex !== index ? 'drag-over' : ''}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, index)}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDrop={(e) => handleDrop(e, index)}
+                          onDragEnd={handleDragEnd}
+                          onClick={(e) => handleHide(e, column)}
+                        >
+                          {column === 'new'
+                            ? 'New Pairs'
+                            : column === 'graduating'
+                              ? 'Final Stretch'
+                              : 'Migrated'}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="extras-display-section">
+                    <h4 className="display-section-title">
+                      Click Quick Buy Behavior
+                    </h4>
+                    <div className="quickbuy-behavior-options">
+                      {(['nothing', 'openPage', 'openNewTab'] as const).map(
+                        (mode) => (
+                          <div
+                            key={mode}
+                            className={`behavior-option ${settings.quickBuyClickBehavior === mode ? 'active' : ''}`}
+                            onClick={() =>
+                              updateSetting('quickBuyClickBehavior', mode)
+                            }
+                          >
+                            <span className="behavior-label">
+                              {mode === 'nothing'
+                                ? 'Nothing'
+                                : mode === 'openPage'
+                                  ? 'Open Page'
+                                  : 'Open in New Tab'}
+                            </span>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="extras-display-section">
+                    <div className="toggle-item">
+                      <label className="toggle-label">
+                        Second Quick Buy Button
+                      </label>
+                      <div
+                        className={`toggle-switch ${settings.secondQuickBuyEnabled ? 'active' : ''}`}
+                        onClick={() =>
+                          updateSetting(
+                            'secondQuickBuyEnabled',
+                            !settings.secondQuickBuyEnabled,
+                          )
+                        }
+                      >
+                        <div className="toggle-slider" />
+                      </div>
+                    </div>
+
+                    {settings.secondQuickBuyEnabled && (
+                      <div className="second-quickbuy-controls">
+                        <div className="explorer-quickbuy-container-second">
+                          <span className="explorer-second-quickbuy-label">
+                            Quick Buy
+                          </span>
+                          <input
+                            type="text"
+                            placeholder="0.0"
+                            value={quickAmountsSecond.new}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setQuickAmountSecond('new', value);
+                              setQuickAmountSecond('graduating', value);
+                              setQuickAmountSecond('graduated', value);
+                            }}
+                            className="explorer-quickbuy-input-second"
+                          />
+                          <img className="quickbuy-monad-icon" src={monadicon} />
+                          <div className="explorer-preset-controls">
+                            {[1, 2, 3].map((p) => (
+                              <button
+                                key={p}
+                                className={`explorer-preset-pill-second ${activePresetsSecond.new === p ? 'active' : ''}`}
+                                onClick={() => {
+                                  setActivePresetSecond('new', p);
+                                  setActivePresetSecond('graduating', p);
+                                  setActivePresetSecond('graduated', p);
+                                }}
+                              >
+                                P{p}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="color-input-row">
+                          <div className="color-input-container">
+                            <div
+                              className="color-preview"
+                              style={{
+                                backgroundColor: settings.secondQuickBuyColor,
+                              }}
+                              onClick={handleColorPickerClick}
+                            />
+                            <input
+                              type="text"
+                              value={hexInputValue}
+                              onChange={(e) => {
+                                const value = e.target.value
+                                  .replace(/[^0-9A-Fa-f]/g, '')
+                                  .toUpperCase();
+                                setHexInputValue(value);
+
+                                if (value.length === 6) {
+                                  updateSetting(
+                                    'secondQuickBuyColor',
+                                    `#${value}`,
+                                  );
+                                }
+                              }}
+                              onBlur={() => {
+                                if (hexInputValue.length === 3) {
+                                  const expanded = hexInputValue
+                                    .split('')
+                                    .map((c) => c + c)
+                                    .join('');
+                                  updateSetting(
+                                    'secondQuickBuyColor',
+                                    `#${expanded}`,
+                                  );
+                                  setHexInputValue(expanded);
+                                } else if (hexInputValue.length !== 6) {
+                                  setHexInputValue(
+                                    settings.secondQuickBuyColor
+                                      .replace('#', '')
+                                      .toUpperCase(),
+                                  );
+                                }
+                              }}
+                              onFocus={(e) => e.target.select()}
+                              className="quickbuy-hex-input"
+                              placeholder="FFFFFF"
+                              maxLength={6}
+                            />
+                            <button
+                              className="refresh-button"
+                              onClick={() =>
+                                updateSetting('secondQuickBuyColor', '#aaaecf')
+                              }
+                              title="Reset to default"
+                              type="button"
+                            >
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
+              )}
+            </div>
+          </div>
+        )}
+        {showSecondButtonColorPicker && (
+          <div
+            className="color-picker-dropdown"
+            style={{
+              top: `${pickerPosition.top}px`,
+              left: `${pickerPosition.left}px`,
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <HexColorPicker
+              color={settings.secondQuickBuyColor}
+              onChange={(color) => updateSetting('secondQuickBuyColor', color)}
+            />
+            <div className="rgb-inputs">
+              {['R', 'G', 'B'].map((channel, i) => {
+                const currentColor = settings.secondQuickBuyColor;
+                const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
+                const value = parseInt(slice, 16) || 0;
 
-                <div className="extras-display-section">
-                  <div className="toggle-item">
-                    <label className="toggle-label">
-                      Second Quick Buy Button
-                    </label>
-                    <div
-                      className={`toggle-switch ${settings.secondQuickBuyEnabled ? 'active' : ''}`}
-                      onClick={() =>
-                        updateSetting(
-                          'secondQuickBuyEnabled',
-                          !settings.secondQuickBuyEnabled,
-                        )
-                      }
-                    >
-                      <div className="toggle-slider" />
-                    </div>
+                return (
+                  <div className="rgb-input-group" key={channel}>
+                    <label>{channel}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="255"
+                      value={value}
+                      onChange={(e) => {
+                        const rgb = [0, 0, 0].map((_, idx) =>
+                          idx === i
+                            ? Math.max(0, Math.min(255, Number(e.target.value)))
+                            : parseInt(
+                              currentColor.slice(1 + idx * 2, 3 + idx * 2),
+                              16,
+                            ),
+                        );
+                        const newColor = `#${rgb
+                          .map((c) => c.toString(16).padStart(2, '0'))
+                          .join('')}`;
+                        updateSetting('secondQuickBuyColor', newColor);
+                      }}
+                    />
                   </div>
-
-                  {settings.secondQuickBuyEnabled && (
-                    <div className="second-quickbuy-controls">
-                      <div className="explorer-quickbuy-container-second">
-                        <span className="explorer-second-quickbuy-label">
-                          Quick Buy
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          value={quickAmountsSecond.new}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            setQuickAmountSecond('new', value);
-                            setQuickAmountSecond('graduating', value);
-                            setQuickAmountSecond('graduated', value);
-                          }}
-                          className="explorer-quickbuy-input-second"
-                        />
-                        <img className="quickbuy-monad-icon" src={monadicon} />
-                        <div className="explorer-preset-controls">
-                          {[1, 2, 3].map((p) => (
-                            <button
-                              key={p}
-                              className={`explorer-preset-pill-second ${activePresetsSecond.new === p ? 'active' : ''}`}
-                              onClick={() => {
-                                setActivePresetSecond('new', p);
-                                setActivePresetSecond('graduating', p);
-                                setActivePresetSecond('graduated', p);
-                              }}
-                            >
-                              P{p}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="color-input-row">
-                        <div className="color-input-container">
-                          <div
-                            className="color-preview"
-                            style={{
-                              backgroundColor: settings.secondQuickBuyColor,
-                            }}
-                            onClick={handleColorPickerClick}
-                          />
-                          <input
-                            type="text"
-                            value={hexInputValue}
-                            onChange={(e) => {
-                              const value = e.target.value
-                                .replace(/[^0-9A-Fa-f]/g, '')
-                                .toUpperCase();
-                              setHexInputValue(value);
-
-                              if (value.length === 6) {
-                                updateSetting(
-                                  'secondQuickBuyColor',
-                                  `#${value}`,
-                                );
-                              }
-                            }}
-                            onBlur={() => {
-                              if (hexInputValue.length === 3) {
-                                const expanded = hexInputValue
-                                  .split('')
-                                  .map((c) => c + c)
-                                  .join('');
-                                updateSetting(
-                                  'secondQuickBuyColor',
-                                  `#${expanded}`,
-                                );
-                                setHexInputValue(expanded);
-                              } else if (hexInputValue.length !== 6) {
-                                setHexInputValue(
-                                  settings.secondQuickBuyColor
-                                    .replace('#', '')
-                                    .toUpperCase(),
-                                );
-                              }
-                            }}
-                            onFocus={(e) => e.target.select()}
-                            className="quickbuy-hex-input"
-                            placeholder="FFFFFF"
-                            maxLength={6}
-                          />
-                          <button
-                            className="refresh-button"
-                            onClick={() =>
-                              updateSetting('secondQuickBuyColor', '#aaaecf')
-                            }
-                            title="Reset to default"
-                            type="button"
-                          >
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
-      {showSecondButtonColorPicker && (
-        <div
-          className="color-picker-dropdown"
-          style={{
-            top: `${pickerPosition.top}px`,
-            left: `${pickerPosition.left}px`,
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <HexColorPicker
-            color={settings.secondQuickBuyColor}
-            onChange={(color) => updateSetting('secondQuickBuyColor', color)}
-          />
-          <div className="rgb-inputs">
-            {['R', 'G', 'B'].map((channel, i) => {
-              const currentColor = settings.secondQuickBuyColor;
-              const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
-              const value = parseInt(slice, 16) || 0;
-
-              return (
-                <div className="rgb-input-group" key={channel}>
-                  <label>{channel}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="255"
-                    value={value}
-                    onChange={(e) => {
-                      const rgb = [0, 0, 0].map((_, idx) =>
-                        idx === i
-                          ? Math.max(0, Math.min(255, Number(e.target.value)))
-                          : parseInt(
-                              currentColor.slice(1 + idx * 2, 3 + idx * 2),
-                              16,
-                            ),
-                      );
-                      const newColor = `#${rgb
-                        .map((c) => c.toString(16).padStart(2, '0'))
-                        .join('')}`;
-                      updateSetting('secondQuickBuyColor', newColor);
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      {showMetricColorPicker && activeMetricPicker && (
-        <div
-          className="color-picker-dropdown"
-          style={{
-            top: `${metricPickerPosition.top}px`,
-            left: `${metricPickerPosition.left}px`,
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <HexColorPicker
-            color={
-              (settings.metricColors as any)?.[activeMetricPicker.metric]?.[
+        )}
+        {showMetricColorPicker && activeMetricPicker && (
+          <div
+            className="color-picker-dropdown"
+            style={{
+              top: `${metricPickerPosition.top}px`,
+              left: `${metricPickerPosition.left}px`,
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <HexColorPicker
+              color={
+                (settings.metricColors as any)?.[activeMetricPicker.metric]?.[
                 activeMetricPicker.range
-              ] || '#ffffff'
-            }
-            onChange={(color) =>
-              updateMetricColor(
-                activeMetricPicker.metric,
-                activeMetricPicker.range,
-                color,
-              )
-            }
-          />
-          <div className="rgb-inputs">
-            {['R', 'G', 'B'].map((channel, i) => {
-              const currentColor = settings.secondQuickBuyColor;
-              const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
-              const value = parseInt(slice, 16) || 0;
+                ] || '#ffffff'
+              }
+              onChange={(color) =>
+                updateMetricColor(
+                  activeMetricPicker.metric,
+                  activeMetricPicker.range,
+                  color,
+                )
+              }
+            />
+            <div className="rgb-inputs">
+              {['R', 'G', 'B'].map((channel, i) => {
+                const currentColor = settings.secondQuickBuyColor;
+                const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
+                const value = parseInt(slice, 16) || 0;
 
-              return (
-                <div className="rgb-input-group" key={channel}>
-                  <label>{channel}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="255"
-                    value={value}
-                    onChange={(e) => {
-                      const rgb = [0, 0, 0].map((_, idx) =>
-                        idx === i
-                          ? Math.max(0, Math.min(255, Number(e.target.value)))
-                          : parseInt(
+                return (
+                  <div className="rgb-input-group" key={channel}>
+                    <label>{channel}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="255"
+                      value={value}
+                      onChange={(e) => {
+                        const rgb = [0, 0, 0].map((_, idx) =>
+                          idx === i
+                            ? Math.max(0, Math.min(255, Number(e.target.value)))
+                            : parseInt(
                               currentColor.slice(1 + idx * 2, 3 + idx * 2),
                               16,
                             ),
-                      );
-                      const newColor = `#${rgb
-                        .map((c) => c.toString(16).padStart(2, '0'))
-                        .join('')}`;
-                      updateSetting('secondQuickBuyColor', newColor);
-                    }}
-                  />
-                </div>
-              );
-            })}
+                        );
+                        const newColor = `#${rgb
+                          .map((c) => c.toString(16).padStart(2, '0'))
+                          .join('')}`;
+                        updateSetting('secondQuickBuyColor', newColor);
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
+        )}
+      </div>
+    );
+  };
 
 const MobileTabSelector: React.FC<{
   activeTab: Token['status'];
@@ -2462,15 +2461,15 @@ const TokenRow = React.memo<{
     : null;
   const cssVariables: CSSVars = metricData?.cssVars || {};
 
+
   return (
     <>
       <div
         ref={tokenRowRef}
-        className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${
-          displaySettings.colorRows && token.status !== 'graduated'
+        className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${displaySettings.colorRows && token.status !== 'graduated'
             ? `colored-row ${getBondingColorClass(bondingPercentage)}`
             : ''
-        } ${metricData ? `metric-colored ${metricData.classes}` : ''} ${token.status === 'graduated' ? 'graduated' : ''}`}
+          } ${metricData ? `metric-colored ${metricData.classes}` : ''} ${token.status === 'graduated' ? 'graduated' : ''}`}
         style={cssVariables}
         onMouseEnter={() => onTokenHover(token.id)}
         onMouseLeave={onTokenLeave}
@@ -2605,9 +2604,9 @@ const TokenRow = React.memo<{
               <div className="explorer-token-info">
                 <h3 className="explorer-token-symbol">{token.symbol}</h3>
                 <div className="explorer-token-name-container" onClick={(e) => {
-                    e.stopPropagation();
-                    onCopyToClipboard(token.tokenAddress);
-                  }}
+                  e.stopPropagation();
+                  onCopyToClipboard(token.tokenAddress);
+                }}
                   style={{ cursor: 'pointer' }}>
                   <Tooltip content="Click to copy address">
                     <p
@@ -2952,9 +2951,9 @@ const TokenRow = React.memo<{
               style={
                 displaySettings.ultraStyle === 'border'
                   ? {
-                      border: `1px solid ${displaySettings.secondQuickBuyColor}`,
-                      boxShadow: `inset 0 0 0 1px ${displaySettings.secondQuickBuyColor}99`,
-                    }
+                    border: `1px solid ${displaySettings.secondQuickBuyColor}`,
+                    boxShadow: `inset 0 0 0 1px ${displaySettings.secondQuickBuyColor}99`,
+                  }
                   : undefined
               }
               onClick={(e) => {
@@ -3017,28 +3016,28 @@ const TokenRow = React.memo<{
           className={`explorer-third-row metrics-size-${displaySettings.metricSize} ${displaySettings.quickBuySize === 'large' ? 'large-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'mega' ? 'mega-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'ultra' ? `ultra-quickbuy-mode ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}` : ''} ${displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled ? 'ultra-dual-buttons' : ''}`}
           onClick={
             displaySettings.quickBuySize === 'ultra' &&
-            displaySettings.secondQuickBuyEnabled
+              displaySettings.secondQuickBuyEnabled
               ? (e) => {
+                e.stopPropagation();
+                onQuickBuy(token, quickbuyAmount, 'primary');
+              }
+              : displaySettings.quickBuySize === 'ultra' &&
+                !displaySettings.secondQuickBuyEnabled
+                ? (e) => {
                   e.stopPropagation();
                   onQuickBuy(token, quickbuyAmount, 'primary');
                 }
-              : displaySettings.quickBuySize === 'ultra' &&
-                  !displaySettings.secondQuickBuyEnabled
-                ? (e) => {
-                    e.stopPropagation();
-                    onQuickBuy(token, quickbuyAmount, 'primary');
-                  }
                 : undefined
           }
           onMouseMove={
             displaySettings.quickBuySize === 'ultra'
               ? (e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const x = ((e.clientX - rect.left) / rect.width) * 100;
-                  const y = ((e.clientY - rect.top) / rect.height) * 100;
-                  e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
-                  e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
-                }
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
+                e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
+              }
               : undefined
           }
         >
@@ -3286,6 +3285,10 @@ interface TokenExplorerProps {
   setAlertSettings: any;
   loading: any;
   isLoading: any;
+  nonces: any;
+  selectedWallets: Set<string>;
+  setSelectedWallets: React.Dispatch<React.SetStateAction<Set<string>>>;
+
 }
 
 const TokenExplorer: React.FC<TokenExplorerProps> = ({
@@ -3323,7 +3326,30 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   setAlertSettings,
   loading,
   isLoading,
+  nonces,
+  selectedWallets,
+  setSelectedWallets,
 }) => {
+  const getMaxSpendableWei = useCallback(
+    (addr: string): bigint => {
+      const balances = walletTokenBalances[addr];
+      if (!balances) return 0n;
+
+      const ethToken = tokenList.find(
+        (t) => t.address === appSettings.chainConfig[activechain].eth,
+      );
+      if (!ethToken || !balances[ethToken.address]) return 0n;
+
+      let raw = balances[ethToken.address];
+      if (raw <= 0n) return 0n;
+
+      const gasReserve = BigInt(appSettings.chainConfig[activechain].gasamount ?? 0);
+      const safe = raw > gasReserve ? raw - gasReserve : 0n;
+
+      return safe;
+    },
+    [walletTokenBalances, tokenList, activechain],
+  );
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [quickAmountsSecond, setQuickAmountsSecond] = useState<
     Record<Token['status'], string>
@@ -3350,9 +3376,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     },
     [],
   );
-  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(
-    new Set(),
-  );
+
 
   const [activePresetsSecond, setActivePresetsSecond] = useState<
     Record<Token['status'], number>
@@ -3497,28 +3521,32 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const isWalletActive = (privateKey: string) => {
     return activeWalletPrivateKey === privateKey;
   };
-  const toggleWalletSelection = useCallback((address: string) => {
-    setSelectedWallets((prev) => {
-      const next = new Set(prev);
-      next.has(address) ? next.delete(address) : next.add(address);
-      return next;
-    });
-  }, []);
+const toggleWalletSelection = useCallback((address: string) => {
+  setSelectedWallets((prev) => {
+    const next = new Set(prev);
+    if (next.has(address)) {
+      next.delete(address);
+    } else {
+      next.add(address);
+    }
+    return next;
+  });
+}, [setSelectedWallets]);
 
-  const selectAllWallets = useCallback(() => {
-    setSelectedWallets(new Set(subWallets.map((w) => w.address)));
-  }, [subWallets]);
+const selectAllWallets = useCallback(() => {
+  setSelectedWallets(new Set(subWallets.map((w) => w.address)));
+}, [subWallets, setSelectedWallets]);
 
-  const unselectAllWallets = useCallback(() => {
-    setSelectedWallets(new Set());
-  }, []);
 
-  const selectAllWithBalance = useCallback(() => {
-    const walletsWithBalance = subWallets.filter(
-      (wallet) => getWalletBalance(wallet.address) > 0,
-    );
-    setSelectedWallets(new Set(walletsWithBalance.map((w) => w.address)));
-  }, [subWallets]);
+const unselectAllWallets = useCallback(() => {
+  setSelectedWallets(new Set());
+}, [setSelectedWallets]);
+const selectAllWithBalance = useCallback(() => {
+  const walletsWithBalance = subWallets.filter(
+    (wallet) => getWalletBalance(wallet.address) > 0,
+  );
+  setSelectedWallets(new Set(walletsWithBalance.map((w) => w.address)));
+}, [subWallets, setSelectedWallets, getWalletBalance]);
 
   const handleWalletButtonClick = () => {
     if (!account.connected) {
@@ -3852,7 +3880,28 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       const val = BigInt(amt || '0') * 10n ** 18n;
       if (val === 0n) return;
 
-      const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const targets: string[] = Array.from(selectedWallets);
+
+      // If no wallets selected, fall back to current account
+      if (targets.length === 0) {
+        const currentAddr = account?.address;
+        if (!currentAddr) {
+          const txId = `quickbuy-error-${Date.now()}`;
+          if (updatePopup) {
+            updatePopup(txId, {
+              title: 'No wallet selected',
+              subtitle: 'Please select at least one wallet',
+              variant: 'error',
+              isLoading: false,
+            });
+          }
+          return;
+        }
+        targets.push(currentAddr);
+      }
+
+      const txId = `quickbuy-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
       dispatch({
         type: 'SET_LOADING',
         id: token.id,
@@ -3863,30 +3912,114 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       try {
         if (showLoadingPopup) {
           showLoadingPopup(txId, {
-            title: 'Sending buy...',
-            subtitle: `Buying ${amt} MON of ${token.symbol}`,
+            title: 'Sending batch buy...',
+            subtitle: `Buying ${amt} MON of ${token.symbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
             amount: amt,
             amountUnit: 'MON',
             tokenImage: token.image,
           });
         }
 
-        const uo = {
-          target: routerAddress,
-          data: encodeFunctionData({
-            abi: CrystalRouterAbi,
-            functionName: 'buy',
-            args: [true, token.tokenAddress as `0x${string}`, val, 0n],
-          }),
-          value: val,
-        };
+        // Build distribution plan with redistribution
+        let remaining = val;
+        const plan: { addr: string; amount: bigint }[] = [];
 
-        await sendUserOperationAsync({ uo });
+        // First pass: allocate fair share capped by wallet balance
+        for (const addr of targets) {
+          const maxWei = getMaxSpendableWei(addr);
+          const fairShare = val / BigInt(targets.length);
+          const allocation = fairShare > maxWei ? maxWei : fairShare;
+          if (allocation > 0n) {
+            plan.push({ addr, amount: allocation });
+            remaining -= allocation;
+          } else {
+            plan.push({ addr, amount: 0n });
+          }
+        }
+
+        // Second pass: redistribute remaining among wallets with spare balance
+        for (const entry of plan) {
+          if (remaining <= 0n) break;
+          const maxWei = getMaxSpendableWei(entry.addr);
+          const room = maxWei - entry.amount;
+          if (room > 0n) {
+            const add = remaining > room ? room : remaining;
+            entry.amount += add;
+            remaining -= add;
+          }
+        }
+
+        if (remaining > 0n) {
+          if (updatePopup) {
+            updatePopup(txId, {
+              title: 'Batch buy failed',
+              subtitle: 'Not enough MON balance across selected wallets',
+              variant: 'error',
+              isLoading: false,
+            });
+          }
+          dispatch({
+            type: 'SET_LOADING',
+            id: token.id,
+            loading: false,
+            buttonType,
+          });
+          return;
+        }
+
+        // Execute transfers
+        const transferPromises = [];
+        for (const { addr, amount: partWei } of plan) {
+          if (partWei <= 0n) continue;
+
+          const wally = subWallets.find((w) => w.address === addr);
+          const pk = wally?.privateKey ?? activeWalletPrivateKey;
+          if (!pk) continue;
+
+          const uo = {
+            target: routerAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: CrystalRouterAbi,
+              functionName: 'buy',
+              args: [true, token.tokenAddress as `0x${string}`, partWei, 0n],
+            }),
+            value: partWei,
+          };
+
+          const wallet = nonces.current.get(addr);
+          const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
+          if (wallet) wallet.nonce += 1;
+          wallet?.pendingtxs.push(params);
+
+          const transferPromise = sendUserOperationAsync(...params)
+            .then(() => {
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p !== params,
+                );
+              return true;
+            })
+            .catch(() => {
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p !== params,
+                );
+              return false;
+            });
+          transferPromises.push(transferPromise);
+        }
+
+        const results = await Promise.allSettled(transferPromises);
+        const successfulTransfers = results.filter(
+          (result) => result.status === 'fulfilled' && result.value === true,
+        ).length;
+
         terminalRefetch();
+
         if (updatePopup) {
           updatePopup(txId, {
             title: `Bought ${amt} MON Worth`,
-            subtitle: `Successfully purchased ${token.symbol}`,
+            subtitle: `Distributed across ${successfulTransfers} wallet${successfulTransfers !== 1 ? 's' : ''}`,
             variant: 'success',
             confirmed: true,
             isLoading: false,
@@ -3917,7 +4050,17 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         });
       }
     },
-    [routerAddress, sendUserOperationAsync],
+    [
+      routerAddress,
+      sendUserOperationAsync,
+      selectedWallets,
+      subWallets,
+      activeWalletPrivateKey,
+      getMaxSpendableWei,
+      account,
+      nonces,
+      terminalRefetch,
+    ],
   );
 
   const handleTokenClick = useCallback(
@@ -4142,7 +4285,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const renderOrder: Array<ColumnKey> =
     Array.isArray(displaySettings?.columnOrder) &&
-    displaySettings.columnOrder.length
+      displaySettings.columnOrder.length
       ? displaySettings.columnOrder
       : (['new', 'graduating', 'graduated'] as Array<ColumnKey>);
 

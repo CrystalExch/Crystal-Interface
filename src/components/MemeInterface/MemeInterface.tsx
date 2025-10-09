@@ -135,6 +135,8 @@ interface MemeInterfaceProps {
   page: any;
   similarTokens: any;
   token: any;
+  selectedWallets: Set<string>;
+  setSelectedWallets: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
@@ -385,6 +387,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   page,
   similarTokens,
   token,
+  selectedWallets,
+  setSelectedWallets,
 }) => {
   const getSliderPosition = (
     activeView: 'chart' | 'trades' | 'ordercenter',
@@ -3482,42 +3486,44 @@ const setTrackedToYou = useCallback(() => {
           </div>
         )}
       </div>
-      <QuickBuyWidget
-        isOpen={isWidgetOpen}
-        onClose={() => {
-          localStorage.setItem(
-            'crystal_quickbuy_widget_open',
-            JSON.stringify(false),
-          );
-          setIsWidgetOpen(false);
-        }}
-        tokenSymbol={token.symbol}
-        tokenAddress={tokenAddress}
-        tokenPrice={currentPrice}
-        buySlippageValue={buySlippageValue}
-        buyPriorityFee={buyPriorityFee}
-        sellSlippageValue={sellSlippageValue}
-        sellPriorityFee={sellPriorityFee}
-        sendUserOperationAsync={sendUserOperationAsync}
-        account={account}
-        setChain={setChain}
-        activechain={activechain}
-        routerAddress={routerAddress}
-        setpopup={setpopup}
-        subWallets={subWallets}
-        walletTokenBalances={walletTokenBalances}
-        activeWalletPrivateKey={activeWalletPrivateKey}
-        setOneCTSigner={setOneCTSigner}
-        tokenList={tokenList}
-        isBlurred={isBlurred}
-        terminalRefetch={terminalRefetch}
-        userStats={userStats}
-        monUsdPrice={monUsdPrice}
-        showUSD={showUSD}
-        onToggleCurrency={handleToggleCurrency}
-        tokenImage={token.image}
-        nonces={nonces}
-      />
+     <QuickBuyWidget
+  isOpen={isWidgetOpen}
+  onClose={() => {
+    localStorage.setItem(
+      'crystal_quickbuy_widget_open',
+      JSON.stringify(false),
+    );
+    setIsWidgetOpen(false);
+  }}
+  tokenSymbol={token.symbol}
+  tokenAddress={tokenAddress}
+  tokenPrice={currentPrice}
+  buySlippageValue={buySlippageValue}
+  buyPriorityFee={buyPriorityFee}
+  sellSlippageValue={sellSlippageValue}
+  sellPriorityFee={sellPriorityFee}
+  sendUserOperationAsync={sendUserOperationAsync}
+  account={account}
+  setChain={setChain}
+  activechain={activechain}
+  routerAddress={routerAddress}
+  setpopup={setpopup}
+  subWallets={subWallets}
+  walletTokenBalances={walletTokenBalances}
+  activeWalletPrivateKey={activeWalletPrivateKey}
+  setOneCTSigner={setOneCTSigner}
+  tokenList={tokenList}
+  isBlurred={isBlurred}
+  terminalRefetch={terminalRefetch}
+  userStats={userStats}
+  monUsdPrice={monUsdPrice}
+  showUSD={showUSD}
+  onToggleCurrency={handleToggleCurrency}
+  tokenImage={token.image}
+  nonces={nonces}
+  selectedWallets={selectedWallets}
+  setSelectedWallets={setSelectedWallets}
+/>
 
       {hoveredSimilarTokenImage &&
         showSimilarTokenPreview &&

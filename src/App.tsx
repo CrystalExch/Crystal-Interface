@@ -659,6 +659,34 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
     const saved = localStorage.getItem('crystal_active_wallet_private_key');
     return saved ? saved : '';
   });
+const [selectedWallets, setSelectedWallets] = useState<Set<string>>(() => {
+  try {
+    // Try to load from localStorage first
+    const saved = localStorage.getItem('crystal_selected_wallets');
+    if (saved) {
+      const addresses = JSON.parse(saved);
+      if (Array.isArray(addresses) && addresses.length > 0) {
+        return new Set(addresses);
+      }
+    }
+  } catch (error) {
+    console.error('Error loading selected wallets:', error);
+  }
+  
+  // Default: return empty set
+  return new Set<string>();
+});
+
+useEffect(() => {
+  try {
+    localStorage.setItem(
+      'crystal_selected_wallets',
+      JSON.stringify(Array.from(selectedWallets))
+    );
+  } catch (error) {
+    console.error('Error saving selected wallets:', error);
+  }
+}, [selectedWallets]);
   const validOneCT = !!oneCTSigner
   const oneCTNonceRef = useRef<number>(0);
   const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
@@ -23724,6 +23752,9 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                 setAlertSettings={setAlertSettings}
                 loading={teLoading}
                 isLoading={isTokenExplorerLoading}
+                nonces={nonces}
+                selectedWallets={selectedWallets}
+                setSelectedWallets={setSelectedWallets}
               />
             } 
           />
@@ -23793,6 +23824,9 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                     page={page}
                     similarTokens={memeSimilarTokens}
                     token={token}
+                    selectedWallets={selectedWallets}
+                    setSelectedWallets={setSelectedWallets}
+          
                   />
                 )} 
               </MemeRouteBridge>
