@@ -2998,8 +2998,7 @@ const TokenRow = React.memo<{
           <div className="quickbuy-loading-spinner" />
         ) : (
           <>
-            <img className="explorer-quick-buy-icon" src={lightning} />
-            {quickbuyAmountSecond} MON
+                  <svg fill={displaySettings.secondQuickBuyColor} className="second-ultra-quickbuy-icon"xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 72 72" width="64px" height="64px"><path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86	c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833	c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86	c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18	c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z"/></svg>            {quickbuyAmountSecond} MON
           </>
         )}
       </button>
@@ -3145,7 +3144,6 @@ const TokenRow = React.memo<{
               <img
                 className="explorer-quick-buy-icon"
                 src={lightning}
-                alt="⚡"
               />
               {quickbuyAmount} MON
             </>

@@ -4599,3 +4599,8 @@
     0 0 30px rgba(170, 174, 207, 0.08);
 }
 
+.second-ultra-quickbuy-icon{
+  width: 17px;
+  height: 17px;
+  transitioN: 0.3s ease all;
+}
