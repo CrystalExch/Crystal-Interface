@@ -1340,7 +1340,9 @@
   height: 14px;
   margin: 1.5px;
   width: 14px;
+  position: absolute;
 }
+
 .ultra-quickbuy-loading-spinner{
   animation: spin 1s linear infinite;
   border-radius: 50%;
