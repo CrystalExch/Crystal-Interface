@@ -128,6 +128,20 @@ const formatTradeAmount = (amount: number): string => {
   return amount.toFixed(6).replace(/\.?0+$/, '');
 };
 
+const formatScientificPrice = (price: number): string => {
+  if (price === 0) return '$0';
+  
+  if (price >= 0.001) {
+    return `$${price.toFixed(6).replace(/\.?0+$/, '')}`;
+  }
+  
+  const exponent = Math.floor(Math.log10(price));
+  
+  const coefficient = price / Math.pow(10, exponent);
+  
+  return `$${coefficient.toFixed(2)} × 10^${exponent}`;
+};
+
 const toPct = (balance: number) => (balance / TOTAL_SUPPLY) * 100;
 
 const CopyableAddress: React.FC<{
@@ -215,6 +229,8 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const walletPopup = useWalletPopup();
   const [tradesSortField, setTradesSortField] = useState<'type' | 'amount' | 'tokenAmount' | 'time' | null>(null);
   const [tradesSortDirection, setTradesSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [tradesFilterEnabled, setTradesFilterEnabled] = useState(true);
+  const [tradesFilterThreshold, setTradesFilterThreshold] = useState('1');
   const [activeTab, setActiveTab] = useState<'comments' | 'trades'>('comments');
   const [trades, setTrades] = useState<Trade[]>([]);
   const explorer = settings.chainConfig[activechain]?.explorer;
@@ -748,7 +764,10 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   }
 
   const getSortedTrades = () => {
-    const filteredTrades = trades.filter(trade => trade.nativeAmount >= 0.05);
+    const threshold = parseFloat(tradesFilterThreshold) || 0;
+    const filteredTrades = tradesFilterEnabled 
+      ? trades.filter(trade => trade.nativeAmount >= threshold)
+      : trades;
     
     if (!tradesSortField) return filteredTrades;
 
@@ -757,7 +776,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
       switch (tradesSortField) {
         case 'type':
-          // Sort by buy/sell (buy first)
           comparison = a.isBuy === b.isBuy ? 0 : a.isBuy ? -1 : 1;
           break;
         case 'amount':
@@ -775,6 +793,21 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
       return tradesSortDirection === 'desc' ? -comparison : comparison;
     });
+    };
+
+    const formatTimeAgo = (timestamp: number): string => {
+    const now = Date.now() / 1000;
+    const secondsAgo = Math.max(0, now - timestamp);
+    
+    if (secondsAgo < 60) {
+      return `${Math.floor(secondsAgo)}s ago`;
+    } else if (secondsAgo < 3600) {
+      return `${Math.floor(secondsAgo / 60)}m ago`;
+    } else if (secondsAgo < 86400) {
+      return `${Math.floor(secondsAgo / 3600)}h ago`;
+    } else {
+      return `${Math.floor(secondsAgo / 86400)}d ago`;
+    }
   };
 
   if (!token) {
@@ -849,7 +882,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             <div className="detail-stat-item">
               <div className="detail-stat-label">Price</div>
               <div className={`detail-stat-value ${(currentPrice === 0) ? 'detail-stat-neutral' : ''}`}>
-                ${formatSubscript(customRound(currentPrice * monUsdPrice, 3))}
+                {formatScientificPrice(currentPrice * monUsdPrice)}
               </div>
             </div>
             <div className="detail-stat-item">
@@ -965,11 +998,19 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                     <div className="detail-trades-filter-controls">
                       <span className="detail-trades-filter-label">filter by size</span>
                       <div className="detail-trades-filter-toggle">
-                        <input type="checkbox" id="trades-filter" defaultChecked />
+                        <input type="checkbox" id="trades-filter" checked={tradesFilterEnabled} onChange={() => setTradesFilterEnabled(!tradesFilterEnabled)} />
                         <label htmlFor="trades-filter"></label>
                       </div>
-                      <span className="detail-trades-filter-value">0.05</span>
-                      <span className="detail-trades-filter-desc">(showing trades greater than 0.05 MON)</span>
+                        <input
+                          type="number"
+                          className="detail-trades-filter-value"
+                          value={tradesFilterThreshold}
+                          onChange={(e) => setTradesFilterThreshold(e.target.value)}
+                          disabled={!tradesFilterEnabled}
+                          step="0.01"
+                          min="0"
+                        />
+                      <span className="detail-trades-filter-desc">(showing trades greater than {tradesFilterThreshold} MON)</span>
                     </div>
                     
                     <div className="detail-trades-actions">
@@ -1068,7 +1109,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                             {formatNumber(trade.tokenAmount)}
                           </div>
                           <div className="detail-trades-col detail-trades-time">
-                            {Math.floor((Date.now() / 1000 - trade.timestamp) / 60)}m ago
+                            {formatTimeAgo(trade.timestamp)}
                           </div>
                           <div className="detail-trades-col detail-trades-txn">
                             <button 
