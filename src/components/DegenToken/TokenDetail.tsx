@@ -789,7 +789,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   }
 
   const bondingProgress = Math.min((tokenData.marketCap / 10000) * 100, 100);
-  console.log(tokenData)
+
   return (
     <div className="detail-container">
       <div className="detail-main">
@@ -834,6 +834,8 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               setSelectedInterval={setSelectedInterval}
               realtimeCallbackRef={realtimeCallbackRef}
               monUsdPrice={monUsdPrice}
+              address={account.address}
+              devAddress={tokenData.creator}
             />
           </div>
 
@@ -932,7 +934,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                                 <button 
                                   className="detail-comment-delete"
                                   onClick={() => handleDeleteComment(comment.id)}
-                                  title="Delete comment"
                                 >
                                   ×
                                 </button>
@@ -946,7 +947,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                                 className={`detail-comment-like ${comment.likes.includes(account.address) ? 'liked' : ''}`}
                                 onClick={() => handleLikeComment(comment.id)}
                                 disabled={!account.connected}
-                                title={account.connected ? (comment.likes.includes(account.address) ? 'Unlike' : 'Like') : 'Connect wallet to like'}
                               >
                                 <span className="detail-comment-like-icon">♥</span>
                                 <span className="detail-comment-like-count">{comment.likes.length}</span>

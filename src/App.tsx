@@ -14303,66 +14303,6 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                 </span>
               </div>
 
-              {(() => {
-                if (!editingOrderSize) return null;
-                const isBuy = editingOrderSize[3] === 1;
-                const market = markets[editingOrderSize[4]];
-
-                let quotePrice = 1;
-                if (market.quoteAsset !== 'USDC') {
-                  const cfg = settings.chainConfig[activechain];
-                  const key = `${market.quoteAsset === cfg.wethticker
-                    ? cfg.ethticker
-                    : market.quoteAsset}USDC`;
-
-                  const tradesMap = trades as any as Record<string, any[]>;
-                  const marketsMap = markets as any as Record<string, any>;
-
-                  const lastTrade = tradesMap[key]?.[0]?.[3] ?? 0;
-                  const priceFactor = Number(marketsMap[key]?.priceFactor ?? 1);
-                  quotePrice = lastTrade / priceFactor;
-                }
-                const baseFilled =
-                  editingOrderSize[7] / 10 ** Number(market.baseDecimals);
-
-                const unfilledInput = isBuy
-                  ? originalOrderSize - baseFilled * quotePrice
-                  : (editingOrderSize[2] - editingOrderSize[7]) /
-                  10 ** Number(market.baseDecimals);
-
-                const needed = Math.max(0, currentOrderSize - unfilledInput);
-
-                const inputAddr = isBuy ? market.quoteAddress : market.baseAddress;
-                const available =
-                  Number((tokenBalances as any)[inputAddr] ?? BigInt(0)) /
-                  10 ** Number((tokendict as any)[inputAddr]?.decimals ?? 18);
-                const isUsdcBacked = market.quoteAsset === 'USDC';
-                const minSize = isUsdcBacked ? 1 : 0.1;
-                const minSizeToken = isUsdcBacked ? 'USDC' : 'MON';
-                const isBelowMinSize = currentOrderSize > 0 && currentOrderSize < minSize;
-
-                if (needed > available) {
-                  return (
-                    <div className="edit-order-size-warning">
-                      Insufficient balance. Need {needed.toFixed(6)} more{' '}
-                      {(tokendict as any)[inputAddr]?.ticker}. Available:{' '}
-                      {available.toFixed(6)}{' '}
-                      {(tokendict as any)[inputAddr]?.ticker}
-                    </div>
-                  );
-                }
-
-                if (isBelowMinSize) {
-                  return (
-                    <div className="edit-order-size-warning">
-                      Minimum order size is {minSize} {minSizeToken}
-                    </div>
-                  );
-                }
-
-                return null;
-              })()}
-
               <div className="order-size-balance-slider-wrapper">
                 <div className="order-size-slider-container">
                   <input
@@ -14445,7 +14385,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                     const hasInsufficientBalance = additionalAmountNeeded > availableBalance;
                     const isUsdcBacked = market.quoteAsset === 'USDC';
                     const minSize = isUsdcBacked ? 1 : 0.1;
-                    const isBelowMinSize = currentOrderSize > 0 && currentOrderSize < minSize;
+                    const isBelowMinSize = currentOrderSize > 0 && (editingOrderSize[3] === 1 ? currentOrderSize : currentOrderSize * editingOrderSize[0] / Number(market.priceFactor)) < minSize;
 
                     return isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0 || hasInsufficientBalance || isBelowMinSize;
                   })()}
@@ -14465,7 +14405,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                       const hasInsufficientBalance = additionalAmountNeeded > availableBalance;
                       const isUsdcBacked = market.quoteAsset === 'USDC';
                       const minSize = isUsdcBacked ? 1 : 0.1;
-                      const isBelowMinSize = currentOrderSize > 0 && currentOrderSize < minSize;
+                      const isBelowMinSize = currentOrderSize > 0 && (editingOrderSize[3] === 1 ? currentOrderSize : currentOrderSize * editingOrderSize[0] / Number(market.priceFactor)) < minSize;
 
                       return (isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0 || hasInsufficientBalance || isBelowMinSize) ? 0.5 : 1;
                     })(),
@@ -14485,20 +14425,70 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
 
                       const isUsdcBacked = market.quoteAsset === 'USDC';
                       const minSize = isUsdcBacked ? 1 : 0.1;
-                      const isBelowMinSize = currentOrderSize > 0 && currentOrderSize < minSize;
+                      const isBelowMinSize = currentOrderSize > 0 && (editingOrderSize[3] === 1 ? currentOrderSize : currentOrderSize * editingOrderSize[0] / Number(market.priceFactor)) < minSize;
 
                       return (isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0 || hasInsufficientBalance || isBelowMinSize) ? 'not-allowed' : 'pointer';
                     })()
                   }}
                 >
-                  {isEditingSizeSigning ? (
+                  {(() => {
+                if (!editingOrderSize) return null;
+                const isBuy = editingOrderSize[3] === 1;
+                const market = markets[editingOrderSize[4]];
+
+                let quotePrice = 1;
+                if (market.quoteAsset !== 'USDC') {
+                  const cfg = settings.chainConfig[activechain];
+                  const key = `${market.quoteAsset === cfg.wethticker
+                    ? cfg.ethticker
+                    : market.quoteAsset}USDC`;
+
+                  const tradesMap = trades as any as Record<string, any[]>;
+                  const marketsMap = markets as any as Record<string, any>;
+
+                  const lastTrade = tradesMap[key]?.[0]?.[3] ?? 0;
+                  const priceFactor = Number(marketsMap[key]?.priceFactor ?? 1);
+                  quotePrice = lastTrade / priceFactor;
+                }
+                const baseFilled =
+                  editingOrderSize[7] / 10 ** Number(market.baseDecimals);
+
+                const unfilledInput = isBuy
+                  ? originalOrderSize - baseFilled * quotePrice
+                  : (editingOrderSize[2] - editingOrderSize[7]) /
+                  10 ** Number(market.baseDecimals);
+
+                const needed = Math.max(0, currentOrderSize - unfilledInput);
+
+                const inputAddr = isBuy ? market.quoteAddress : market.baseAddress;
+                const available =
+                  Number((tokenBalances as any)[inputAddr] ?? BigInt(0)) /
+                  10 ** Number((tokendict as any)[inputAddr]?.decimals ?? 18);
+                const isUsdcBacked = market.quoteAsset === 'USDC';
+                const minSize = isUsdcBacked ? 1 : 0.1;
+                const minSizeToken = isUsdcBacked ? 'USDC' : 'MON';
+                const isBelowMinSize = currentOrderSize > 0 && (isBuy ? currentOrderSize : currentOrderSize * editingOrderSize[0] / Number(market.priceFactor)) < minSize;
+
+                if (needed > available) {
+                  return (
+                    `Insufficient ${(tokendict as any)[inputAddr]?.ticker} Balance`
+                  );
+                }
+                else if (isBelowMinSize) {
+                  return (
+                      `Minimum order size is ${minSize} ${minSizeToken}`
+                  );
+                }
+
+                return null;
+              })() ?? (isEditingSizeSigning ? (
                     <div className="signing-indicator">
                       <div className="loading-spinner"></div>
                       <span>{t('signTransaction')}</span>
                     </div>
                   ) : (
                     'Confirm'
-                  )}
+                  ))}
                 </button>
               </div>
             </div>

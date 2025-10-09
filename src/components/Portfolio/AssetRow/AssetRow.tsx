@@ -12,6 +12,7 @@ import {
 
 import './AssetRow.css';
 import { formatSig } from '../../OrderCenter/utils/formatDisplay.ts';
+import customRound from '../../../utils/customRound.tsx';
 
 interface AssetRowProps {
   logo: string;
@@ -48,7 +49,7 @@ const AssetRow: React.FC<AssetRowProps> = ({
   const market =
     settings.chainConfig[activechain].markets[assetName + 'USDC'] ?? null;
 
-  return (
+    return (
     <div className="portfolio-row">
       <div className="oc-cell">
         <img src={logo} className="asset-icon" />
@@ -76,7 +77,7 @@ const AssetRow: React.FC<AssetRowProps> = ({
           <div className="port-token-price">
             $
             {formatSubscript(
-              formatBalance(price, 'token'),
+              customRound(price, 3),
             )}
           </div>
           <div

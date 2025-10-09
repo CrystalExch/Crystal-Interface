@@ -1933,11 +1933,6 @@
   opacity: .7
 }
 
-.pk-modal-content {
-  padding: 20px;
-  padding-top: 10px
-}
-
 .pk-mode-info {
   display: flex;
   flex-direction: column;
@@ -2436,7 +2431,7 @@
 
 .pk-modal-content {
   padding: 12px;
-  padding-top: 10px;
+  padding-top: 6px;
 }
 
 .pk-mode-info {
@@ -2978,7 +2973,7 @@
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   color: rgba(255, 255, 255, 0.7);
-  padding: 20px;
+  padding: 16px;
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -3417,7 +3412,9 @@
 .main-wallet-balance-container {
   display: flex;
   align-items: center;
-  gap: 8px
+  gap: 8px;
+  margin-bottom: 4px;
+  margin-left: 2px;
 }
 
 .main-wallet-balance-label {

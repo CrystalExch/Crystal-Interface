@@ -258,8 +258,7 @@
 
   /* Empty States */
   .tracker-empty-state {
-    padding-top: 10px;
-    flex: 1;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;

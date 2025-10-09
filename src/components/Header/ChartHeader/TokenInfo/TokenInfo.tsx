@@ -55,6 +55,7 @@ const calculateBondingPercentage = (marketCap: number) => {
   const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
   return bondingPercentage;
 };
+
 const PerpsTokenSkeleton = () => {
   return (
     <div className="perps-interface-token-info-container">
@@ -195,9 +196,10 @@ const PerpsMarketRow = memo(({ index, style, data }: {
     onMouseEnter: (index: number) => void;
     onClick: (market: any) => void;
     toggleFavorite: any;
+    favorites: any;
   }
 }) => {
-  const { markets, selectedIndex, onMouseEnter, onClick, toggleFavorite } = data;
+  const { markets, selectedIndex, onMouseEnter, onClick, toggleFavorite, favorites } = data;
   const market = markets[index];
 
   if (!market) return null;
@@ -213,8 +215,9 @@ const PerpsMarketRow = memo(({ index, style, data }: {
         <button onClick={(e) => {
           e.stopPropagation();
           toggleFavorite(market.contractName);
-        }} className="dropdown-market-favorite-button">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        }} className={`dropdown-market-favorite-button 
+        ${favorites.includes(market.contractName) ? 'active' : ''}`}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill={favorites.includes(market.contractName) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
           </svg>
         </button>
@@ -539,7 +542,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     onMouseEnter: handlePerpsMouseEnter,
     onClick: handlePerpsMarketSelect,
     toggleFavorite: toggleFavorite,
-  }), [filteredPerpsMarkets, perpsSelectedIndex, handlePerpsMouseEnter, handlePerpsMarketSelect, toggleFavorite]); <div className="perps-markets-list-virtualized" style={{ height: '400px', width: '100%' }}>
+    favorites: favorites,
+  }), [filteredPerpsMarkets, perpsSelectedIndex, handlePerpsMouseEnter, handlePerpsMarketSelect, toggleFavorite]); 
+  <div className="perps-markets-list-virtualized" style={{ height: '400px', width: '100%' }}>
     <List
       ref={virtualizationListRef}
       height={400}
