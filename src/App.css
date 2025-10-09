@@ -454,7 +454,7 @@ html {
   color: #ffffff7b;
   margin-bottom: 0;
   margin-left: 12px;
-  margin-top: 10px;
+  margin-top: 6px;
   text-align: left;
 }
 
@@ -810,7 +810,7 @@ html {
 }
 
 .main-content-wrapper.simple-view .sliding-tab-indicator {
-  border-radius: 6px;
+  border-radius: 12px;
   border: 1.5px solid rgb(20 20 24);
   box-shadow: none;
   height: 100%;
@@ -1454,11 +1454,11 @@ body {
   border: none;
   color: #ffffffcf;
   flex-grow: 1;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 400;
   padding-left: 12px;
   outline: 0;
-  padding-bottom: 10px;
+  padding-bottom: 6px;
   width: 0;
 }
 
@@ -2152,7 +2152,6 @@ body {
   width: 100%;
 }
 
-.main-content-wrapper.simple-view .limit-label,
 .ob-layout-preview {
   margin-top: 5px;
 }
@@ -2625,10 +2624,9 @@ body {
 
 .main-content-wrapper.simple-view .limit-info-rectangle,
 .main-content-wrapper.simple-view .trade-info-rectangle {
-  border: 1px dashed rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   margin-top: 10px;
-  padding: 7px 12px;
+  padding: 2px 8px;
   animation: fadeInSlideUp 0.5s ease forwards;
   animation-delay: 0.5s;
   opacity: 0;
@@ -2643,10 +2641,11 @@ body {
 .main-content-wrapper.simple-view .outputbg,
 .main-content-wrapper.simple-view .sendaddressbg,
 .main-content-wrapper.simple-view .sendbg {
-  border: 1.5px solid transparent;
-  border-radius: 7px;
+  border: 1px solid transparent;
+  border-radius: 16px;
   margin: 0;
   padding: 0;
+  margin: 3px
 }
 
 .main-content-wrapper.simple-view .inputbutton1container,
@@ -2660,14 +2659,19 @@ body {
 }
 
 .main-content-wrapper.simple-view .swapmodal {
-  border:1.5px solid rgb(20 20 24);
-  border-radius: 10px;
+  border: 1.5px solid transparent;
+  border-radius: 20px;
+  background:
+    linear-gradient(black, black) padding-box,
+    linear-gradient(135deg, rgba(36, 36, 45, 0.637), rgb(28 28 34), rgb(20 20 24)) border-box;
+  background-clip: padding-box, border-box;
   padding: 0;
   padding-bottom: 11px;
   animation: fadeInSlideUp 0.5s ease forwards;
   animation-delay: 0.3s;
   opacity: 0;
 }
+
 
 .main-content-wrapper.simple-view .limit-swap-button,
 .main-content-wrapper.simple-view .send-swap-button,
@@ -2751,7 +2755,7 @@ body {
 }
 
 .main-content-wrapper.simple-view .limit-order {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
 }
 
 .main-content-wrapper.simple-view .use-market-button {
@@ -4403,11 +4407,8 @@ input[type="email"] {
   justify-content: center;
   position: relative;
   margin-left: auto;
-  width: 40px;
-  height: 40px;
   transition: color 0.2s ease, background-color 0.2s ease;
   overflow: visible;
-  margin-right: -5px;
   display: none;
 }
 
@@ -4420,8 +4421,8 @@ input[type="email"] {
 }
 
 .refresh-quote-icon {
-  width: 14px;
-  height: 14px;
+  width: 20px;
+  height: 20px;
   z-index: 2;
   filter: brightness(0.5);
 }
@@ -4441,39 +4442,10 @@ input[type="email"] {
   }
 }
 
-.refresh-timer-circle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
 
-.timer-circle-border {
-  fill: none;
-  stroke: rgba(179, 184, 249, 0.1);
-  stroke-width: 1;
-  stroke-linecap: round;
-  transform-origin: center;
-  transform: rotate(-90deg);
-  transition: stroke 0.2s ease;
-}
 
-.refresh-quote-button:hover:not(.cooldown) .timer-circle-border {
-  stroke: rgba(255, 255, 255, 0.07);
-}
 
-.refresh-quote-button.cooldown .timer-circle-border {
-  stroke: #aaaecf;
-  stroke-dasharray: 56.55;
-  stroke-dashoffset: 56.55;
-  animation: cooldown-timer 5s linear forwards;
-}
 
-.refresh-quote-button.cooldown {
-  cursor: not-allowed;
-}
 
 @keyframes cooldown-timer {
   0% {
@@ -4813,7 +4785,6 @@ input[type="email"] {
   justify-content: space-between;
   margin: 0 11px;
   margin-bottom: 8px;
-  margin-top: -4px;
   width: calc(100% - 24px);
   gap: 3px;
 }
@@ -4825,7 +4796,7 @@ input[type="email"] {
   cursor: pointer;
   flex: 1;
   font-size: 0.7rem;
-  padding: 1px 0;
+  padding: 2px 0;
   text-align: center;
   transition: all 0.2s ease;
   position: relative;
@@ -4871,12 +4842,15 @@ input[type="email"] {
 
 
 .main-content-wrapper.simple-view .limit-price-buttons {
-  margin: -2px 13px 6px 13px;
+  margin: 4px 13px 6px 13px;
+}
+
+.main-content-wrapper.simple-view .limit-label {
+  margin-bottom: 2px;
 }
 
 .main-content-wrapper.simple-view .limit-price-button {
   font-size: 0.8rem;
-  padding: 2px 0;
 }
 
 .main-content-wrapper.simple-view .limit-custom-input {

@@ -1009,7 +1009,6 @@ const TokenRow = React.memo<TokenRowProps>(
                   <img
                     className="widget-explorer-quick-buy-icon"
                     src={lightning}
-                    alt="⚡"
                   />
                   {quickbuyAmount} MON
                 </>

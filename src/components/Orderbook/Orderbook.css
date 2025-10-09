@@ -287,12 +287,6 @@
   color: #ffffff8e;
   font-weight: 300;
 }
-.ob-stacked-section .ob-lists-container,
-.ob-large-section-orderbook .ob-lists-container {
-  flex: 1;
-  top: 0;
-  margin-top: 4px;
-}
 
 .ob-stacked-section .trades-container,
 .ob-large-section-trades .trades-container {

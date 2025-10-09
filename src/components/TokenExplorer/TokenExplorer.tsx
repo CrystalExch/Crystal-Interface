@@ -21,6 +21,8 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 
+import slippage from '../../assets/slippage.svg';
+import gas from '../../assets/gas.svg';
 import { decodeEventLog, encodeFunctionData } from 'viem';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';
 import { settings as appSettings } from '../../settings';
@@ -50,6 +52,8 @@ import './TokenExplorer.css';
 import { HexColorPicker } from 'react-colorful';
 import walleticon from '../../assets/wallet_icon.png';
 import communities from '../../assets/community.png'
+import { loadBuyPresets, loadSellPresets } from '../../utils/presetManager';
+
 export interface Token {
   id: string;
   tokenAddress: string;
@@ -183,6 +187,8 @@ interface TokenExplorerProps {
     address?: string;
     chainId?: number;
   };
+  quickAmounts: any;
+  setQuickAmounts: any;
 }
 
 
@@ -211,7 +217,7 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
   hiddenColumns: [],
   quickBuyClickBehavior: 'nothing',
   secondQuickBuyEnabled: false,
-  secondQuickBuyColor: '#50f08dc0',
+  secondQuickBuyColor: '#aaaecf',
   visibleRows: {
     marketCap: true,
     volume: true,
@@ -350,12 +356,12 @@ const calculateBondingPercentage = (marketCap: number) => {
   const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
   return bondingPercentage;
 };
-
 const Tooltip: React.FC<{
-  content: string;
+  content: string | React.ReactNode;
   children: React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
-}> = ({ content, children, position = 'top' }) => {
+  offset?: number;
+}> = ({ content, children, position = 'top', offset = 10 }) => {
   const [shouldRender, setShouldRender] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -377,20 +383,20 @@ const Tooltip: React.FC<{
 
     switch (position) {
       case 'top':
-        top = rect.top + scrollY - tooltipRect.height - 25;
+        top = rect.top + scrollY - tooltipRect.height - offset - 15;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'bottom':
-        top = rect.bottom + scrollY + 10;
+        top = rect.bottom + scrollY + offset;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'left':
         top = rect.top + scrollY + rect.height / 2;
-        left = rect.left + scrollX - tooltipRect.width - 10;
+        left = rect.left + scrollX - tooltipRect.width - offset;
         break;
       case 'right':
         top = rect.top + scrollY + rect.height / 2;
-        left = rect.right + scrollX + 10;
+        left = rect.right + scrollX + offset;
         break;
     }
 
@@ -411,7 +417,7 @@ const Tooltip: React.FC<{
     }
 
     setTooltipPosition({ top, left });
-  }, [position]);
+  }, [position, offset]);
 
   const handleMouseEnter = useCallback(() => {
     if (fadeTimeoutRef.current) {
@@ -1224,187 +1230,6 @@ const AlertsPopup: React.FC<{
   );
 };
 
-const ColorPicker: React.FC<{
-  color: string;
-  onChange: (color: string) => void;
-  onClose: () => void;
-}> = ({ color, onChange, onClose }) => {
-  const [hue, setHue] = useState(0);
-  const [saturation, setSaturation] = useState(100);
-  const [lightness, setLightness] = useState(50);
-  const [hexInput, setHexInput] = useState(color);
-
-  useEffect(() => {
-    const hex = color.replace('#', '');
-    const r = parseInt(hex.slice(0, 2), 16) / 255;
-    const g = parseInt(hex.slice(2, 4), 16) / 255;
-    const b = parseInt(hex.slice(4, 6), 16) / 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0,
-      s = 0,
-      l = (max + min) / 2;
-
-    if (max !== min) {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r:
-          h = (g - b) / d + (g < b ? 6 : 0);
-          break;
-        case g:
-          h = (b - r) / d + 2;
-          break;
-        case b:
-          h = (r - g) / d + 4;
-          break;
-      }
-      h /= 6;
-    }
-
-    setHue(Math.round(h * 360));
-    setSaturation(Math.round(s * 100));
-    setLightness(Math.round(l * 100));
-    setHexInput(color);
-  }, [color]);
-
-  const hslToHex = (h: number, s: number, l: number) => {
-    l /= 100;
-    const a = (s * Math.min(l, 1 - l)) / 100;
-    const f = (n: number) => {
-      const k = (n + h / 30) % 12;
-      const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-      return Math.round(255 * c)
-        .toString(16)
-        .padStart(2, '0');
-    };
-    return `#${f(0)}${f(8)}${f(4)}`;
-  };
-
-  const updateColor = (newHue: number, newSat: number, newLight: number) => {
-    const hex = hslToHex(newHue, newSat, newLight);
-    onChange(hex);
-    setHexInput(hex);
-  };
-
-  const handleHexChange = (hex: string) => {
-    if (/^#[0-9A-Fa-f]{6}$/.test(hex)) onChange(hex);
-  };
-
-  return (
-    <div className="color-picker-overlay" onClick={onClose}>
-      <div className="color-picker" onClick={(e) => e.stopPropagation()}>
-        <div className="color-picker-header">
-          <h4>Pick Color</h4>
-          <button onClick={onClose}>×</button>
-        </div>
-
-        <div className="color-picker-content">
-          <div className="color-preview" style={{ backgroundColor: color }} />
-
-          <div className="color-slider-container">
-            <label>Hue</label>
-            <input
-              type="range"
-              min="0"
-              max="360"
-              value={hue}
-              onChange={(e) => {
-                const newHue = parseInt(e.target.value);
-                setHue(newHue);
-                updateColor(newHue, saturation, lightness);
-              }}
-              className="hue-slider"
-            />
-          </div>
-
-          <div className="color-slider-container">
-            <label>Saturation</label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={saturation}
-              onChange={(e) => {
-                const newSat = parseInt(e.target.value);
-                setSaturation(newSat);
-                updateColor(hue, newSat, lightness);
-              }}
-              className="saturation-slider"
-              style={{
-                background: `linear-gradient(to right, hsl(${hue}, 0%, ${lightness}%), hsl(${hue}, 100%, ${lightness}%))`,
-              }}
-            />
-          </div>
-
-          <div className="color-slider-container">
-            <label>Lightness</label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={lightness}
-              onChange={(e) => {
-                const newLight = parseInt(e.target.value);
-                setLightness(newLight);
-                updateColor(hue, saturation, newLight);
-              }}
-              className="lightness-slider"
-              style={{
-                background: `linear-gradient(to right, hsl(${hue}, ${saturation}%, 0%), hsl(${hue}, ${saturation}%, 50%), hsl(${hue}, ${saturation}%, 100%))`,
-              }}
-            />
-          </div>
-
-          <div className="hex-input-container">
-            <label>Hex</label>
-            <input
-              type="text"
-              value={hexInput}
-              onChange={(e) => {
-                setHexInput(e.target.value);
-                if (e.target.value.length === 7)
-                  handleHexChange(e.target.value);
-              }}
-              className="quickbuy-hex-input"
-              placeholder="#ffffff"
-            />
-          </div>
-
-          <div className="preset-colors">
-            <div className="preset-color-grid">
-              {[
-                '#ffffff',
-                '#000000',
-                '#ff0000',
-                '#00ff00',
-                '#0000ff',
-                '#ffff00',
-                '#ff00ff',
-                '#00ffff',
-                '#ffa500',
-                '#800080',
-                '#ffc0cb',
-                '#a52a2a',
-                '#808080',
-                '#add8e6',
-                '#90ee90',
-              ].map((preset) => (
-                <button
-                  key={preset}
-                  className="preset-color"
-                  style={{ backgroundColor: preset }}
-                  onClick={() => onChange(preset)}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const DisplayDropdown: React.FC<{
   settings: DisplaySettings;
@@ -1423,6 +1248,16 @@ const DisplayDropdown: React.FC<{
 }) => {
     const [showSecondButtonColorPicker, setShowSecondButtonColorPicker] = useState(false);
     const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
+    const [showMetricColorPicker, setShowMetricColorPicker] = useState(false);
+    const [metricPickerPosition, setMetricPickerPosition] = useState({ top: 0, left: 0 });
+    const [hexInputValue, setHexInputValue] = useState(settings.secondQuickBuyColor.replace('#', '').toUpperCase());
+    useEffect(() => {
+      setHexInputValue(settings.secondQuickBuyColor.replace('#', '').toUpperCase());
+    }, [settings.secondQuickBuyColor]);
+    const [activeMetricPicker, setActiveMetricPicker] = useState<{
+      metric: 'marketCap' | 'volume' | 'holders';
+      range: 'range1' | 'range2' | 'range3';
+    } | null>(null);
     const handleColorPickerClick = (event: React.MouseEvent) => {
       event.stopPropagation();
 
@@ -1452,6 +1287,43 @@ const DisplayDropdown: React.FC<{
 
       setPickerPosition({ top, left });
       setShowSecondButtonColorPicker(true);
+    };
+
+    const handleMetricColorPickerClick = (
+      event: React.MouseEvent,
+      metric: 'marketCap' | 'volume' | 'holders',
+      range: 'range1' | 'range2' | 'range3'
+    ) => {
+      event.stopPropagation();
+
+      if (showMetricColorPicker && activeMetricPicker?.metric === metric && activeMetricPicker?.range === range) {
+        setShowMetricColorPicker(false);
+        setActiveMetricPicker(null);
+        return;
+      }
+
+      const rect = (event.target as HTMLElement).getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const pickerWidth = 200;
+      const pickerHeight = 250;
+
+      let left = rect.right + 10;
+      let top = rect.top;
+
+      if (left + pickerWidth > viewportWidth) {
+        left = rect.left - pickerWidth - 10;
+      }
+      if (top + pickerHeight > viewportHeight) {
+        top = viewportHeight - pickerHeight - 20;
+      }
+      if (top < 20) {
+        top = 20;
+      }
+
+      setMetricPickerPosition({ top, left });
+      setActiveMetricPicker({ metric, range });
+      setShowMetricColorPicker(true);
     };
     const [isOpen, setIsOpen] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
@@ -1547,24 +1419,25 @@ const DisplayDropdown: React.FC<{
             setShowSecondButtonColorPicker(false);
           }
         }
+
+        if (showMetricColorPicker) {
+          if (!target.closest('.metric-color-picker-dropdown') && !target.closest('.metric-color-square')) {
+            setShowMetricColorPicker(false);
+            setActiveMetricPicker(null);
+          }
+        }
       };
 
-      if (isOpen || showSecondButtonColorPicker) {
+      if (isOpen || showSecondButtonColorPicker || showMetricColorPicker) {
         document.addEventListener('mousedown', handleClickOutside);
       }
 
       return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isOpen, showSecondButtonColorPicker]);
+    }, [isOpen, showSecondButtonColorPicker, showMetricColorPicker]);
     const updateSetting = <K extends keyof DisplaySettings>(
       key: K,
       value: DisplaySettings[K],
     ) => onSettingsChange({ ...settings, [key]: value });
-
-    const [colorPickerOpen, setColorPickerOpen] = useState<{
-      isOpen: boolean;
-      metric: 'marketCap' | 'volume' | 'holders';
-      range: 'range1' | 'range2' | 'range3';
-    } | null>(null);
 
     const updateMetricColor = (
       metric: 'marketCap' | 'volume' | 'holders',
@@ -1945,13 +1818,7 @@ const DisplayDropdown: React.FC<{
                                         metric
                                         ]?.[range] || '#ffffff',
                                     }}
-                                    onClick={() =>
-                                      setColorPickerOpen({
-                                        isOpen: true,
-                                        metric,
-                                        range,
-                                      })
-                                    }
+                                    onClick={(e) => handleMetricColorPickerClick(e, metric, range)}
                                   />
                                   <button
                                     className="metric-reset-btn"
@@ -2003,23 +1870,6 @@ const DisplayDropdown: React.FC<{
                     </div>
                   ))}
 
-                  {colorPickerOpen?.isOpen && (
-                    <ColorPicker
-                      color={
-                        (settings.metricColors as any)?.[
-                        colorPickerOpen.metric
-                        ]?.[colorPickerOpen.range] || '#ffffff'
-                      }
-                      onChange={(color) =>
-                        updateMetricColor(
-                          colorPickerOpen.metric,
-                          colorPickerOpen.range,
-                          color,
-                        )
-                      }
-                      onClose={() => setColorPickerOpen(null)}
-                    />
-                  )}
                 </div>
               )}
 
@@ -2159,16 +2009,24 @@ const DisplayDropdown: React.FC<{
                               style={{ backgroundColor: settings.secondQuickBuyColor }}
                               onClick={handleColorPickerClick}
                             />
-                            <input
+<input
                               type="text"
-                              value={settings.secondQuickBuyColor.replace('#', '').toUpperCase()}
+                              value={hexInputValue}
                               onChange={(e) => {
                                 const value = e.target.value.replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+                                setHexInputValue(value);
+
                                 if (value.length === 6) {
                                   updateSetting('secondQuickBuyColor', `#${value}`);
-                                } else if (value.length === 3) {
-                                  const expanded = value.split('').map(c => c + c).join('');
+                                }
+                              }}
+                              onBlur={() => {
+                                if (hexInputValue.length === 3) {
+                                  const expanded = hexInputValue.split('').map(c => c + c).join('');
                                   updateSetting('secondQuickBuyColor', `#${expanded}`);
+                                  setHexInputValue(expanded);
+                                } else if (hexInputValue.length !== 6) {
+                                  setHexInputValue(settings.secondQuickBuyColor.replace('#', '').toUpperCase());
                                 }
                               }}
                               onFocus={(e) => e.target.select()}
@@ -2178,7 +2036,7 @@ const DisplayDropdown: React.FC<{
                             />
                             <button
                               className="refresh-button"
-                              onClick={() => updateSetting('secondQuickBuyColor', '#50f08dc0')}
+                              onClick={() => updateSetting('secondQuickBuyColor', '#aaaecf')}
                               title="Reset to default"
                               type="button"
                             >
@@ -2211,6 +2069,52 @@ const DisplayDropdown: React.FC<{
             <HexColorPicker
               color={settings.secondQuickBuyColor}
               onChange={(color) => updateSetting('secondQuickBuyColor', color)}
+            />
+            <div className="rgb-inputs">
+              {['R', 'G', 'B'].map((channel, i) => {
+                const currentColor = settings.secondQuickBuyColor;
+                const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
+                const value = parseInt(slice, 16) || 0;
+
+                return (
+                  <div className="rgb-input-group" key={channel}>
+                    <label>{channel}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="255"
+                      value={value}
+                      onChange={(e) => {
+                        const rgb = [0, 0, 0].map((_, idx) =>
+                          idx === i
+                            ? Math.max(0, Math.min(255, Number(e.target.value)))
+                            : parseInt(currentColor.slice(1 + idx * 2, 3 + idx * 2), 16)
+                        );
+                        const newColor = `#${rgb
+                          .map((c) => c.toString(16).padStart(2, '0'))
+                          .join('')}`;
+                        updateSetting('secondQuickBuyColor', newColor);
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {showMetricColorPicker && activeMetricPicker && (
+          <div
+            className="color-picker-dropdown"
+            style={{
+              top: `${metricPickerPosition.top}px`,
+              left: `${metricPickerPosition.left}px`,
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <HexColorPicker
+              color={(settings.metricColors as any)?.[activeMetricPicker.metric]?.[activeMetricPicker.range] || '#ffffff'}
+              onChange={(color) => updateMetricColor(activeMetricPicker.metric, activeMetricPicker.range, color)}
             />
             <div className="rgb-inputs">
               {['R', 'G', 'B'].map((channel, i) => {
@@ -2887,7 +2791,7 @@ const TokenRow = React.memo<{
                       >
                         <path d="M 12 2 L 12 4 L 11 4 C 10.4 4 10 4.4 10 5 L 10 10 C 10 10.6 10.4 11 11 11 L 12 11 L 12 13 L 14 13 L 14 11 L 15 11 C 15.6 11 16 10.6 16 10 L 16 5 C 16 4.4 15.6 4 15 4 L 14 4 L 14 2 L 12 2 z M 4 9 L 4 11 L 3 11 C 2.4 11 2 11.4 2 12 L 2 17 C 2 17.6 2.4 18 3 18 L 4 18 L 4 20 L 6 20 L 6 18 L 7 18 C 7.6 18 8 17.6 8 17 L 8 12 C 8 11.4 7.6 11 7 11 L 6 11 L 6 9 L 4 9 z M 18 11 L 18 13 L 17 13 C 16.4 13 16 13.4 16 14 L 16 19 C 16 19.6 16.4 20 17 20 L 18 20 L 18 22 L 20 22 L 20 20 L 21 20 C 21.6 20 22 19.6 22 19 L 22 14 C 22 13.4 21.6 13 21 13 L 20 13 L 20 11 L 18 11 z M 4 13 L 6 13 L 6 16 L 4 16 L 4 13 z" />
                       </svg>{' '}
-                      <span className="explorer-stat-value">
+                      <span className="pro-explorer-stat-value">
                         {token.proTraders.toLocaleString()}
                       </span>
                     </div>
@@ -3053,13 +2957,82 @@ const TokenRow = React.memo<{
           </div>
         </div>
 
+        {displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled && (
+          <div
+            className={`explorer-second-ultra-container ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`}
+            style={
+              displaySettings.ultraStyle === 'border'
+                ? {
+                  border: `1px solid ${displaySettings.secondQuickBuyColor}`,
+                  boxShadow: `inset 0 0 0 1px ${displaySettings.secondQuickBuyColor}99`,
+                }
+                : undefined
+            }
+            onClick={(e) => {
+              e.stopPropagation();
+              if (displaySettings.quickBuyClickBehavior === 'openPage') {
+                onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                onTokenClick(token);
+              } else if (displaySettings.quickBuyClickBehavior === 'openNewTab') {
+                onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                window.open(`/meme/${token.tokenAddress}`, '_blank');
+              } else {
+                onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+              }
+            }}
+            onMouseMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const x = ((e.clientX - rect.left) / rect.width) * 100;
+              const y = ((e.clientY - rect.top) / rect.height) * 100;
+              e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
+              e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
+            }}
+          >
+
+            <div className="explorer-actions-section">
+              <button
+                className={`explorer-quick-buy-btn size-ultra ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`}
+                style={{ color: displaySettings.secondQuickBuyColor }}
+                disabled={isLoadingSecondary}
+              >
+                {isLoadingSecondary ? (
+                  <div style={{ border: `1.5px solid ${displaySettings.secondQuickBuyColor}`
+                    , borderTop: `1.5px solid transparent`
+                 }}
+                    className="ultra-quickbuy-loading-spinner" />
+                ) : (
+                  <>
+                    <svg fill={displaySettings.secondQuickBuyColor} className="second-ultra-quickbuy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" width="64px" height="64px"><path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86	c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833	c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86	c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18	c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" /></svg>            {quickbuyAmountSecond} MON
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div
           className={`explorer-third-row metrics-size-${displaySettings.metricSize} ${displaySettings.quickBuySize === 'large' ? 'large-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'mega' ? 'mega-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'ultra' ? `ultra-quickbuy-mode ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}` : ''} ${displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled ? 'ultra-dual-buttons' : ''}`}
           onClick={
-            displaySettings.quickBuySize === 'ultra' && !displaySettings.secondQuickBuyEnabled
+            displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled
               ? (e) => {
                 e.stopPropagation();
                 onQuickBuy(token, quickbuyAmount, 'primary');
+              }
+              : displaySettings.quickBuySize === 'ultra' && !displaySettings.secondQuickBuyEnabled
+                ? (e) => {
+                  e.stopPropagation();
+                  onQuickBuy(token, quickbuyAmount, 'primary');
+                }
+                : undefined
+          }
+          onMouseMove={
+            displaySettings.quickBuySize === 'ultra'
+              ? (e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
+                e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
               }
               : undefined
           }
@@ -3091,8 +3064,6 @@ const TokenRow = React.memo<{
                 </div>
               </Tooltip>
             )}
-
-
           </div>
 
           <div className="explorer-third-row-section">
@@ -3159,31 +3130,32 @@ const TokenRow = React.memo<{
                 <button
                   className={buttonClass}
                   onClick={(e) => {
-                    if (displaySettings.quickBuySize !== 'ultra' || displaySettings.secondQuickBuyEnabled) {
-                      e.stopPropagation();
-                      if (
-                        displaySettings.quickBuyClickBehavior === 'openPage'
-                      ) {
-                        onTokenClick(token);
-                      } else if (
-                        displaySettings.quickBuyClickBehavior === 'openNewTab'
-                      ) {
-                        window.open(`/meme/${token.tokenAddress}`, '_blank');
-                      } else {
-                        onQuickBuy(token, quickbuyAmount, 'primary');
-                      }
+                    e.stopPropagation();
+                    onQuickBuy(token, quickbuyAmount, 'primary');
+
+                    if (displaySettings.quickBuyClickBehavior === 'openPage') {
+                      onTokenClick(token);
+                    } else if (displaySettings.quickBuyClickBehavior === 'openNewTab') {
+                      window.open(`/meme/${token.tokenAddress}`, '_blank');
                     }
                   }}
                   disabled={isLoadingPrimary}
                 >
                   {isLoadingPrimary ? (
-                    <div className="quickbuy-loading-spinner" />
+                    <>
+                      <div className="quickbuy-loading-spinner" />
+                      <img
+                        className="explorer-quick-buy-icon"
+                        src={lightning}
+                        style={{opacity: 0}}
+                      />
+                      <span style={{opacity: 0}}>{quickbuyAmount} MON</span>
+                    </>
                   ) : (
                     <>
                       <img
                         className="explorer-quick-buy-icon"
                         src={lightning}
-                        alt="⚡"
                       />
                       {quickbuyAmount} MON
                     </>
@@ -3192,7 +3164,7 @@ const TokenRow = React.memo<{
               );
             })()}
 
-            {displaySettings.secondQuickBuyEnabled && (
+            {displaySettings.secondQuickBuyEnabled && displaySettings.quickBuySize !== 'ultra' && (
               <button
                 className={`explorer-quick-buy-btn second-button size-${displaySettings.quickBuySize} style-${displaySettings.quickBuyStyle}`}
                 style={{
@@ -3201,12 +3173,32 @@ const TokenRow = React.memo<{
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                  if (
+                    displaySettings.quickBuyClickBehavior === 'openPage'
+                  ) {
+                    onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                    onTokenClick(token);
+                  } else if (
+                    displaySettings.quickBuyClickBehavior === 'openNewTab'
+                  ) {
+                    onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                    window.open(`/meme/${token.tokenAddress}`, '_blank');
+                  } else {
+                    onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                  }
                 }}
                 disabled={isLoadingSecondary}
               >
                 {isLoadingSecondary ? (
-                  <div className="quickbuy-loading-spinner" />
+                  <>
+                    <div className="quickbuy-loading-spinner" />
+                    <img
+                      className="explorer-quick-buy-icon"
+                      src={lightning}
+                      style={{opacity: 0}}
+                    />
+                    <span style={{opacity: 0}}>{quickbuyAmountSecond} MON</span>
+                  </>
                 ) : (
                   <>
                     <img
@@ -3265,6 +3257,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   // currentWalletIcon,
   isBlurred = false,
   account,
+  quickAmounts,
+  setQuickAmounts,
 }) => {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [quickAmountsSecond, setQuickAmountsSecond] = useState<Record<Token['status'], string>>(() => ({
@@ -3537,13 +3531,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   );
   const [showAlertsPopup, setShowAlertsPopup] = useState(false);
   const [showBlacklistPopup, setShowBlacklistPopup] = useState(false);
-  const [quickAmounts, setQuickAmounts] = useState<
-    Record<Token['status'], string>
-  >(() => ({
-    new: localStorage.getItem('explorer-quickbuy-new') ?? '1',
-    graduating: localStorage.getItem('explorer-quickbuy-graduating') ?? '1',
-    graduated: localStorage.getItem('explorer-quickbuy-graduated') ?? '1',
-  }));
 
   const [activePresets, setActivePresets] = useState<
     Record<Token['status'], number>
@@ -3559,6 +3546,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hoveredToken, setHoveredToken] = useState<string | null>(null);
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
+  const [buyPresets, setBuyPresets] = useState(() => loadBuyPresets());
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -3588,9 +3576,21 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     );
   }, [blacklistSettings]);
 
+  useEffect(() => {
+    const handleBuyPresetsUpdate = (event: CustomEvent) => {
+      setBuyPresets(event.detail);
+    };
+
+    window.addEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+    };
+  }, []);
+
   const setQuickAmount = useCallback((s: Token['status'], v: string) => {
     const clean = v.replace(/[^0-9.]/g, '');
-    setQuickAmounts((p) => ({ ...p, [s]: clean }));
+    setQuickAmounts((p: any) => ({ ...p, [s]: clean }));
     localStorage.setItem(`explorer-quickbuy-${s}`, clean);
   }, []);
 
@@ -4795,13 +4795,29 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                         <img className="quickbuy-monad-icon" src={monadicon} />
                         <div className="explorer-preset-controls">
                           {[1, 2, 3].map((p) => (
-                            <button
+                            <Tooltip
                               key={p}
-                              className={`explorer-preset-pill ${activePresets.new === p ? 'active' : ''}`}
-                              onClick={() => setActivePreset('new', p)}
+                              offset={35}
+                              content={
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <img src={slippage} style={{ width: '14px', height: '14px' }} alt="Slippage" />
+                                    <span>{buyPresets[p]?.slippage || '0'}%</span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <img src={gas} style={{ width: '14px', height: '14px' }} alt="sPriority" />
+                                    <span>{buyPresets[p]?.priority || '0'} </span>
+                                  </div>
+                                </div>
+                              }
                             >
-                              P{p}
-                            </button>
+                              <button
+                                className={`explorer-preset-pill ${activePresets.new === p ? 'active' : ''}`}
+                                onClick={() => setActivePreset('new', p)}
+                              >
+                                P{p}
+                              </button>
+                            </Tooltip>
                           ))}
                         </div>
                       </div>
@@ -4956,13 +4972,29 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                         <img className="quickbuy-monad-icon" src={monadicon} />
                         <div className="explorer-preset-controls">
                           {[1, 2, 3].map((p) => (
-                            <button
+                            <Tooltip
                               key={p}
-                              className={`explorer-preset-pill ${activePresets.graduating === p ? 'active' : ''}`}
-                              onClick={() => setActivePreset('graduating', p)}
+                              offset={35}
+                              content={
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <img src={slippage} style={{ width: '14px', height: '14px' }} alt="Slippage" />
+                                    <span>{buyPresets[p]?.slippage || '0'}%</span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <img src={gas} style={{ width: '14px', height: '14px' }} alt="Priority" />
+                                    <span>{buyPresets[p]?.priority || '0'}</span>
+                                  </div>
+                                </div>
+                              }
                             >
-                              P{p}
-                            </button>
+                              <button
+                                className={`explorer-preset-pill ${activePresets.graduating === p ? 'active' : ''}`}
+                                onClick={() => setActivePreset('graduating', p)}
+                              >
+                                P{p}
+                              </button>
+                            </Tooltip>
                           ))}
                         </div>
                       </div>
@@ -5116,13 +5148,29 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                         <img className="quickbuy-monad-icon" src={monadicon} />
                         <div className="explorer-preset-controls">
                           {[1, 2, 3].map((p) => (
-                            <button
+                            <Tooltip
                               key={p}
-                              className={`explorer-preset-pill ${activePresets.graduated === p ? 'active' : ''}`}
-                              onClick={() => setActivePreset('graduated', p)}
+                              offset={35}
+                              content={
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <img src={slippage} style={{ width: '14px', height: '14px' }} alt="Slippage" />
+                                    <span>{buyPresets[p]?.slippage || '0'}%</span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <img src={gas} style={{ width: '14px', height: '14px' }} alt="Priority" />
+                                    <span>{buyPresets[p]?.priority || '0'} </span>
+                                  </div>
+                                </div>
+                              }
                             >
-                              P{p}
-                            </button>
+                              <button
+                                className={`explorer-preset-pill ${activePresets.graduated === p ? 'active' : ''}`}
+                                onClick={() => setActivePreset('graduated', p)}
+                              >
+                                P{p}
+                              </button>
+                            </Tooltip>
                           ))}
                         </div>
                       </div>

@@ -233,7 +233,7 @@ const PerpsMarketRow = memo(({ index, style, data }: {
         </div>
 
         <div className="perps-oi-section">
-          <div className="perps-open-interest">{market.lastPrice}</div>
+          <div className="perps-open-interest">{formatCommas(market.lastPrice)}</div>
         </div>
 
         <div className="perps-funding-section">
@@ -456,7 +456,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         formattedOI: `$${formatCommas((Number(market.openInterest) * Number(market.lastPrice)).toFixed(2))}`,
         formattedFunding: `${(market.fundingRate * 100).toFixed(4)}%`,
         formattedChange: `${(Number(market.priceChangePercent) >= 0 ? '+' : '') +
-          (market.priceChange) + ' / ' +
+        (market?.priceChange ? formatCommas(market.priceChange) : '') + ' / ' +
           (Number(market.priceChangePercent) >= 0 ? '+' : '') +
           Number(market.priceChangePercent * 100).toFixed(2)}%`,
         fundingClass: market.fundingRate < 0 ? 'negative' : 'positive',
@@ -984,6 +984,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
     return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
   });
+
   const handleDropdownKeyDown = (e: React.KeyboardEvent) => {
     if (!isDropdownVisible || sortedMarkets.length === 0) return;
 
@@ -1063,6 +1064,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
     prevPriceRef.current = current
   }, [perpsTokenInfo?.lastPrice])
+  
   useEffect(() => {
     if (!perpsTokenInfo?.nextFundingTime) return
     const tick = () => {
@@ -1429,13 +1431,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           <div className="perps-interface-token-header-right">
             <div className="perps-interface-token-metrics" ref={perpsMetricsRef}>
               <span className={`perps-interface-metric-value perps-price-large ${priceColor}`}>
-                {Number(perpsTokenInfo.lastPrice).toFixed((perpsTokenInfo.lastPrice.toString().split(".")[1] || "").length).toLocaleString()}
+                {formatCommas(Number(perpsTokenInfo.lastPrice).toFixed((perpsTokenInfo.lastPrice.toString().split(".")[1] || "").length))}
               </span>
 
               <div className="perps-interface-token-metric">
                 <span className="perps-interface-metric-label">Oracle</span>
                 <span className="perps-interface-metric-value perps-price-small">
-                  {Number(perpsTokenInfo.oraclePrice).toFixed((perpsTokenInfo.lastPrice.toString().split(".")[1] || "").length).toLocaleString()}
+                  {formatCommas(Number(perpsTokenInfo.oraclePrice).toFixed((perpsTokenInfo.lastPrice.toString().split(".")[1] || "").length))}
                 </span>
               </div>
 
@@ -1444,7 +1446,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 <span
                   className={`perps-interface-metric-value ${Number(perpsTokenInfo.priceChangePercent) >= 0 ? 'positive' : 'negative'}`}
                 >
-                  {(Number(perpsTokenInfo.priceChangePercent) >= 0 ? '+' : '') + (perpsTokenInfo.priceChange) + ' / ' + (Number(perpsTokenInfo.priceChangePercent) >= 0 ? '+' : '') + Number(perpsTokenInfo.priceChangePercent * 100).toFixed(2)}%
+                  {(Number(perpsTokenInfo.priceChangePercent) >= 0 ? '+' : '') + formatCommas(perpsTokenInfo.priceChange) + ' / ' + (Number(perpsTokenInfo.priceChangePercent) >= 0 ? '+' : '') + Number(perpsTokenInfo.priceChangePercent * 100).toFixed(2)}%
                 </span>
               </div>
 

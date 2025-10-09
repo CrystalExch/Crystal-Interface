@@ -77,6 +77,8 @@ interface MemeChartProps {
   monUsdPrice?: number;
   tradehistory?: any[];
   isMarksVisible?: boolean;
+  address: any;
+  devAddress: any;
 }
 
 const MemeChart: React.FC<MemeChartProps> = ({
@@ -88,6 +90,8 @@ const MemeChart: React.FC<MemeChartProps> = ({
   monUsdPrice,
   tradehistory,
   isMarksVisible,
+  address,
+  devAddress
 }) => {
   const [overlayVisible, setLocalOverlayVisible] = useState(true);
   const useAdvancedChart = settings.useAdv !== false;
@@ -109,6 +113,8 @@ const MemeChart: React.FC<MemeChartProps> = ({
           isMarksVisible={isMarksVisible}
           realtimeCallbackRef={realtimeCallbackRef}
           monUsdPrice={monUsdPrice}
+          address={address}
+          devAddress={devAddress}
         />
       ) : (
         <>

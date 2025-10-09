@@ -13,6 +13,8 @@ interface MemeAdvancedChartProps {
   isMarksVisible?: boolean;
   realtimeCallbackRef: any;
   monUsdPrice?: number;
+  address: any;
+  devAddress: any;
 }
 
 const SUB = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
@@ -75,6 +77,8 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   isMarksVisible = true,
   realtimeCallbackRef,
   monUsdPrice = 0,
+  address,
+  devAddress
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
@@ -438,7 +442,12 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         ) => {
           const rows =
             isMarksVisibleRef.current === false
-              ? []
+              ? (Array.isArray(tradeHistoryRef.current)
+                  ? tradeHistoryRef.current
+                  : []
+                ).filter((trade: any) => {
+                  return trade.caller.toLowerCase() == address.toLowerCase()
+                })
               : (Array.isArray(tradeHistoryRef.current)
                   ? tradeHistoryRef.current
                   : []
@@ -447,7 +456,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
                   return ts >= from && ts <= to;
                 });
 
-          const marks = rows.map((trade: any) => {
+            const marks = rows.map((trade: any) => {
             const ts = trade.timestamp ?? trade[6];
             const sideBuy = (trade.isBuy ?? trade[2] === 1) === true;
             const baseAmt = trade.tokenAmount ?? trade.amount ?? trade[0] ?? 0;
