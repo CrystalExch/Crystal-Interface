@@ -16645,7 +16645,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
             onClick={handleRefreshQuote}
             disabled={isRefreshing}
           >
-            <img src={refreshicon} className="refresh-quote-icon"></img>
+            <img src={reset} className="refresh-quote-icon"></img>
             <svg className="refresh-timer-circle" viewBox="0 0 24 24">
               <circle className="timer-circle-border" cx="12" cy="12" r="9" />
             </svg>
