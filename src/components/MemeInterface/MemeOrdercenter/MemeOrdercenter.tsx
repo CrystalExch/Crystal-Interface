@@ -77,7 +77,10 @@ interface MemeOrderCenterProps {
   subWallets?: Array<{ address: string; privateKey: string }>;
   walletTokenBalances?: { [address: string]: any };
   tokendict?: { [key: string]: any };
+  nonces?: any;
+  activeWalletPrivateKey?: string;
 }
+
 interface DevToken {
   id: string;
   symbol: string;
@@ -140,6 +143,7 @@ interface SellPopupProps {
   subWallets: Array<{ address: string; privateKey: string }>;
   walletTokenBalances: { [address: string]: any };
   tokendict: { [key: string]: any };
+  getTotalTokenBalance: (tokenId: string) => number;
 }
 
 const SellPopup: React.FC<SellPopupProps> = ({
@@ -157,6 +161,7 @@ const SellPopup: React.FC<SellPopupProps> = ({
   subWallets,
   walletTokenBalances,
   tokendict,
+  getTotalTokenBalance,
 }) => {
   const [sliderDragging, setSliderDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -242,26 +247,8 @@ const SellPopup: React.FC<SellPopupProps> = ({
               <div className="meme-balance-right">
                 <div className="meme-balance-display">
                   <img src={walleticon} className="meme-wallet-icon" />
-                  {(() => {
-                    const allWalletAddresses = [
-                      userAddr,
-                      ...subWallets.map((w) => w.address),
-                    ].filter(Boolean);
-
-                    const totalTokenBalance = allWalletAddresses.reduce(
-                      (sum, addr) => {
-                        const balance =
-                          walletTokenBalances?.[addr]?.[
-                            selectedPosition.tokenId
-                          ];
-                        if (!balance || balance <= 0n) return sum;
-                        const decimals =
-                          tokendict?.[selectedPosition.tokenId]?.decimals || 18;
-                        return sum + Number(balance) / 10 ** Number(decimals);
-                      },
-                      0,
-                    );
-
+{(() => {
+                    const totalTokenBalance = getTotalTokenBalance(selectedPosition.tokenId);
                     return (
                       totalTokenBalance *
                       (selectedPosition.lastPrice || currentPrice)
@@ -343,27 +330,11 @@ const SellPopup: React.FC<SellPopupProps> = ({
                 setIsLoading(false);
               }
             }}
-            disabled={
+disabled={
               !sellAmount ||
               parseFloat(sellAmount) <= 0 ||
               (() => {
-                const allWalletAddresses = [
-                  userAddr,
-                  ...subWallets.map((w) => w.address),
-                ].filter(Boolean);
-
-                const totalTokenBalance = allWalletAddresses.reduce(
-                  (sum, addr) => {
-                    const balance =
-                      walletTokenBalances?.[addr]?.[selectedPosition.tokenId];
-                    if (!balance || balance <= 0n) return sum;
-                    const decimals =
-                      tokendict?.[selectedPosition.tokenId]?.decimals || 18;
-                    return sum + Number(balance) / 10 ** Number(decimals);
-                  },
-                  0,
-                );
-
+                const totalTokenBalance = getTotalTokenBalance(selectedPosition.tokenId);
                 return (
                   parseFloat(sellAmount) >
                   totalTokenBalance *
@@ -410,6 +381,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   subWallets = [],
   walletTokenBalances = {},
   tokendict = {},
+  nonces,
+  activeWalletPrivateKey,
 }) => {
   const [activeSection, setActiveSection] = useState<
     'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens'
@@ -435,21 +408,22 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     setSellAmount('');
     setSellSliderPercent(0);
   }, []);
+const getTotalTokenBalance = useCallback((tokenId: string) => {
+    const allWalletAddresses = [
+      userAddr,
+      ...subWallets.map((w) => w.address),
+    ].filter(Boolean);
 
-  const handleSellMaxClick = useCallback(() => {
+    return allWalletAddresses.reduce((sum, addr) => {
+      const balance = walletTokenBalances?.[addr]?.[tokenId];
+      if (!balance || balance <= 0n) return sum;
+      const decimals = tokendict?.[tokenId]?.decimals || 18;
+      return sum + Number(balance) / 10 ** Number(decimals);
+    }, 0);
+  }, [userAddr, subWallets, walletTokenBalances, tokendict]);
+const handleSellMaxClick = useCallback(() => {
     if (selectedPosition) {
-      const allWalletAddresses = [
-        userAddr,
-        ...subWallets.map((w) => w.address),
-      ].filter(Boolean);
-
-      const totalTokenBalance = allWalletAddresses.reduce((sum, addr) => {
-        const balance = walletTokenBalances?.[addr]?.[selectedPosition.tokenId];
-        if (!balance || balance <= 0n) return sum;
-        const decimals = tokendict?.[selectedPosition.tokenId]?.decimals || 18;
-        return sum + Number(balance) / 10 ** Number(decimals);
-      }, 0);
-
+      const totalTokenBalance = getTotalTokenBalance(selectedPosition.tokenId);
       const maxMonAmount =
         totalTokenBalance * (selectedPosition.lastPrice || currentPrice);
       setSellAmount(maxMonAmount.toFixed(4));
@@ -458,10 +432,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   }, [
     selectedPosition,
     currentPrice,
-    userAddr,
-    subWallets,
-    walletTokenBalances,
-    tokendict,
+    getTotalTokenBalance,
   ]);
 
   useEffect(() => {
@@ -711,25 +682,26 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       }
     }
   };
-
-  const handleSellSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleSellSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const percent = parseInt(e.target.value);
     setSellSliderPercent(percent);
     if (selectedPosition) {
+      const totalTokenBalance = getTotalTokenBalance(selectedPosition.tokenId);
       const maxMonAmount =
-        selectedPosition.remainingTokens *
+        totalTokenBalance *
         (selectedPosition.lastPrice || currentPrice);
       const newAmount = (maxMonAmount * percent) / 100;
       setSellAmount(newAmount.toFixed(4));
     }
   };
 
-  const handleSellAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleSellAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSellAmount(value);
     if (selectedPosition) {
+      const totalTokenBalance = getTotalTokenBalance(selectedPosition.tokenId);
       const maxMonAmount =
-        selectedPosition.remainingTokens *
+        totalTokenBalance *
         (selectedPosition.lastPrice || currentPrice);
       if (maxMonAmount > 0) {
         const percent = (parseFloat(value) / maxMonAmount) * 100;
@@ -737,7 +709,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       }
     }
   };
-
   const renderContent = () => {
     switch (activeSection) {
       case 'positions':
@@ -1580,7 +1551,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           <span className="meme-oc-no-data">{noDataMessage}</span>
         </div>
       )}
-      <SellPopup
+<SellPopup
         showSellPopup={showSellPopup}
         selectedPosition={selectedPosition}
         sellAmount={sellAmount}
@@ -1596,6 +1567,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
         subWallets={subWallets}
         walletTokenBalances={walletTokenBalances}
         tokendict={tokendict}
+        getTotalTokenBalance={getTotalTokenBalance}
       />
     </div>
   );

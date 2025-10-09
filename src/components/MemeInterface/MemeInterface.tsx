@@ -823,7 +823,7 @@ const handleSellPresetSelect = useCallback(
     }
   };
 
-  const handleSellPosition = async (position: any, monAmount: string) => {
+const handleSellPosition = async (position: any, monAmount: string) => {
     if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
       walletPopup.showConnectionError();
       return;
@@ -839,11 +839,16 @@ const handleSellPresetSelect = useCallback(
       return;
     }
 
-    let txId: string = '';
+    const txId = `position-sell-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    showLoadingPopup?.(txId, {
+      title: 'Selling position...',
+      subtitle: `Selling ${monAmount} MON of ${position.symbol} across all wallets`,
+      amount: monAmount,
+      amountUnit: 'MON',
+      tokenImage: position.imageUrl,
+    });
 
     try {
-      txId = walletPopup.showSellTransaction(monAmount, 'MON', position.symbol);
-
       const monAmountNum = parseFloat(monAmount);
       const tokenPrice = position.lastPrice || currentPrice;
 
@@ -851,37 +856,122 @@ const handleSellPresetSelect = useCallback(
         throw new Error('Invalid token price');
       }
 
-      const tokenAmountToSell = monAmountNum / tokenPrice;
+      // Get all wallets that hold this token
+      const allWalletAddresses = [
+        userAddr,
+        ...subWallets.map((w) => w.address),
+      ].filter(Boolean);
+
+      const walletsWithToken = allWalletAddresses.filter((addr) => {
+        const balance = walletTokenBalances?.[addr]?.[position.tokenId];
+        return balance && balance > 0n;
+      });
+
+      if (walletsWithToken.length === 0) {
+        throw new Error('No tokens to sell');
+      }
+
+      // Calculate total tokens across all wallets
       const decimals = tokendict?.[position.tokenId]?.decimals || 18;
-      const amountTokenWei = BigInt(
-        Math.round(tokenAmountToSell * 10 ** Number(decimals)),
-      );
+      const totalTokenBalance = walletsWithToken.reduce((sum, addr) => {
+        const balance = walletTokenBalances?.[addr]?.[position.tokenId];
+        if (!balance || balance <= 0n) return sum;
+        return sum + Number(balance) / 10 ** Number(decimals);
+      }, 0);
+
+      // Calculate how many tokens we need to sell
+      const tokensToSell = monAmountNum / tokenPrice;
+
+      if (tokensToSell > totalTokenBalance) {
+        throw new Error('Insufficient token balance across all wallets');
+      }
 
       walletPopup.updateTransactionConfirming(
         txId,
-        tokenAmountToSell.toFixed(4),
+        tokensToSell.toFixed(4),
         position.symbol,
         position.symbol,
       );
 
-      const sellUo = {
-        target: routerAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: 'sell',
-          args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
-        }),
-        value: 0n,
-      };
+      // Distribute sell proportionally across wallets
+      const transferPromises = [];
+      let remainingToSell = tokensToSell;
 
-      await sendUserOperationAsync({ uo: sellUo });
+      for (const addr of walletsWithToken) {
+        if (remainingToSell <= 0) break;
+
+        const walletBalance = walletTokenBalances?.[addr]?.[position.tokenId];
+        if (!walletBalance || walletBalance <= 0n) continue;
+
+        const walletTokens = Number(walletBalance) / 10 ** Number(decimals);
+        
+        // Calculate this wallet's share proportionally
+        const walletShare = Math.min(
+          (walletTokens / totalTokenBalance) * tokensToSell,
+          remainingToSell,
+          walletTokens
+        );
+
+        if (walletShare <= 0) continue;
+
+        const amountTokenWei = BigInt(
+          Math.round(walletShare * 10 ** Number(decimals)),
+        );
+
+        if (amountTokenWei <= 0n) continue;
+
+        const wally = subWallets.find((w) => w.address === addr);
+        const pk = wally?.privateKey ?? activeWalletPrivateKey;
+        if (!pk) continue;
+
+        const sellUo = {
+          target: routerAddress as `0x${string}`,
+          data: encodeFunctionData({
+            abi: CrystalRouterAbi,
+            functionName: 'sell',
+            args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
+          }),
+          value: 0n,
+        };
+
+        const wallet = nonces.current.get(addr);
+        const params = [{ uo: sellUo }, 0n, 0n, false, pk, wallet?.nonce];
+        if (wallet) wallet.nonce += 1;
+        wallet?.pendingtxs.push(params);
+
+        const transferPromise = sendUserOperationAsync(...params)
+          .then(() => {
+            if (wallet)
+              wallet.pendingtxs = wallet.pendingtxs.filter(
+                (p: any) => p !== params,
+              );
+            return true;
+          })
+          .catch(() => {
+            if (wallet)
+              wallet.pendingtxs = wallet.pendingtxs.filter(
+                (p: any) => p !== params,
+              );
+            return false;
+          });
+
+        transferPromises.push(transferPromise);
+        remainingToSell -= walletShare;
+      }
+
+      const results = await Promise.allSettled(transferPromises);
+      const successfulTransfers = results.filter(
+        (result) => result.status === 'fulfilled' && result.value === true,
+      ).length;
 
       walletPopup.updateTransactionSuccess(txId, {
-        tokenAmount: tokenAmountToSell,
+        tokenAmount: tokensToSell,
         receivedAmount: monAmountNum,
         tokenSymbol: position.symbol,
         currencyUnit: 'MON',
       });
+
+      terminalRefetch();
     } catch (e: any) {
       console.error(e);
       if (txId) {
@@ -1738,7 +1828,7 @@ const setTrackedToYou = useCallback(() => {
         <div
           className={`meme-ordercenter ${mobileActiveView !== 'ordercenter' ? 'mobile-hidden' : ''}`}
         >
-          <MemeOrderCenter
+        <MemeOrderCenter
             orderCenterHeight={orderCenterHeight}
             isVertDragging={isVertDragging}
             isOrderCenterVisible={true}
@@ -1777,6 +1867,8 @@ const setTrackedToYou = useCallback(() => {
             walletTokenBalances={walletTokenBalances}
             tokendict={tokendict}
             userAddr={address ?? account?.address ?? ''}
+            nonces={nonces}
+            activeWalletPrivateKey={activeWalletPrivateKey}
           />
         </div>
       </div>
