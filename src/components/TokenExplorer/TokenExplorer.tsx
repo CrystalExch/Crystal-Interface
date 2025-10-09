@@ -383,7 +383,7 @@ const Tooltip: React.FC<{
 
     switch (position) {
       case 'top':
-        top = rect.top + scrollY - tooltipRect.height - offset;
+        top = rect.top + scrollY - tooltipRect.height - offset - 15;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'bottom':
@@ -2009,7 +2009,7 @@ const DisplayDropdown: React.FC<{
                               style={{ backgroundColor: settings.secondQuickBuyColor }}
                               onClick={handleColorPickerClick}
                             />
-                            <input
+<input
                               type="text"
                               value={hexInputValue}
                               onChange={(e) => {
@@ -2018,13 +2018,14 @@ const DisplayDropdown: React.FC<{
 
                                 if (value.length === 6) {
                                   updateSetting('secondQuickBuyColor', `#${value}`);
-                                } else if (value.length === 3) {
-                                  const expanded = value.split('').map(c => c + c).join('');
-                                  updateSetting('secondQuickBuyColor', `#${expanded}`);
                                 }
                               }}
                               onBlur={() => {
-                                if (hexInputValue.length !== 6 && hexInputValue.length !== 3) {
+                                if (hexInputValue.length === 3) {
+                                  const expanded = hexInputValue.split('').map(c => c + c).join('');
+                                  updateSetting('secondQuickBuyColor', `#${expanded}`);
+                                  setHexInputValue(expanded);
+                                } else if (hexInputValue.length !== 6) {
                                   setHexInputValue(settings.secondQuickBuyColor.replace('#', '').toUpperCase());
                                 }
                               }}
@@ -4780,7 +4781,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           {[1, 2, 3].map((p) => (
                             <Tooltip
                               key={p}
-                              offset={50}
+                              offset={35}
                               content={
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -4957,7 +4958,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           {[1, 2, 3].map((p) => (
                             <Tooltip
                               key={p}
-                              offset={50}
+                              offset={35}
                               content={
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -5133,7 +5134,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           {[1, 2, 3].map((p) => (
                             <Tooltip
                               key={p}
-                              offset={50}
+                              offset={35}
                               content={
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
