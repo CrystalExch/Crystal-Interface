@@ -1466,7 +1466,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       </div>
 
                       <div className="meme-oc-cell">
-                        <span>{t.migrated ? 'Migrated' : 'Non-migrated'}</span>
+                        <span>{t.migrated ? 'Migrated' : 'Bonding'}</span>
                       </div>
                     </div>
                   );

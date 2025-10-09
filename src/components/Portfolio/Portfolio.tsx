@@ -2884,7 +2884,7 @@ useEffect(() => {
               <div className="pk-modal-backdrop" onClick={closeDepositModal}>
                 <div className="pk-modal-container" onClick={(e) => e.stopPropagation()}>
                   <div className="pk-modal-header">
-                    <h3 className="pk-modal-title">Distribute MON</h3>
+                    <h3 className="pk-modal-title">Deposit MON</h3>
                     <button
                       className="pk-modal-close"
                       onClick={() => setShowDistributionModal(false)}
@@ -2895,9 +2895,8 @@ useEffect(() => {
                     </button>
                   </div>
                   <div className="pk-modal-content">
-
-                    <div className="main-wallet-balance-section">
-                      <div className="main-wallet-balance-container">
+                    <div className="pk-input-section">
+                    <div className="main-wallet-balance-container">
                         <span className="main-wallet-balance-label">Available Balance:</span>
                         <div className="main-wallet-balance-value">
                           <img src={monadicon} className="main-wallet-balance-icon" alt="MON" />
@@ -2906,10 +2905,6 @@ useEffect(() => {
                           </span>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="pk-input-section">
-                      <span className="pk-label">Amount (MON):</span>
                       <div className="pk-input-container">
                         <div className="deposit-amount-input-container">
                           <input
@@ -3302,15 +3297,15 @@ useEffect(() => {
               Spot
             </span>
             <span
-              className="portfolio-tab-title perpetuals"
-            >
-              Perpetuals
-            </span>
-            <span
               className={`portfolio-tab-title ${activeTab === 'wallets' ? 'active' : 'nonactive'}`}
               onClick={() => setActiveTab('wallets')}
             >
               Wallets
+            </span>
+            <span
+              className="portfolio-tab-title perpetuals"
+            >
+              Perpetuals
             </span>
             <span
               className={`portfolio-tab-title ${activeTab === 'trenches' ? 'active' : 'nonactive'}`}
@@ -3356,20 +3351,20 @@ useEffect(() => {
             >
               Spot
             </span>
-            <span
-              className="portfolio-tab-title perpetuals"
-            >
-              Perpetuals
-            </span>
-            <span
+                        <span
               className={`portfolio-tab-title ${activeTab === 'wallets' ? 'active' : 'nonactive'}`}
               onClick={() => setActiveTab('wallets')}
             >
               Wallets
             </span>
             <span
-              className={`portfolio-tab-title ${activeTab === 'trenches' ? 'active' : 'nonactive'}`}
-              onClick={() => setActiveTab('trenches')}
+              className="portfolio-tab-title perpetuals"
+            >
+              Perpetuals
+            </span>
+            <span
+              className="portfolio-tab-title perpetuals"
+              // onClick={() => setActiveTab('trenches')}
             >
               Trenches
             </span>

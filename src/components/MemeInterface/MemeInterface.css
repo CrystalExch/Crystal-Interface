@@ -2053,11 +2053,10 @@
   padding: 5px 12px;
   transition: all 0.2s ease;
   width: 100%;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.meme-advanced-add-button:hover {
-  background: rgba(179, 184, 249, 0.05);
-}
 
 .meme-advanced-add-icon {
   color: rgba(255, 255, 255, 0.5);

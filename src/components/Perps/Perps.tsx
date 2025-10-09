@@ -170,7 +170,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [timeInForce, setTimeInForce] = useState("GTC");
   const [isTifDropdownOpen, setIsTifDropdownOpen] = useState(false);
   const [isProDropdownOpen, setIsProDropdownOpen] = useState(false);
-  const [selectedProOption, setSelectedProOption] = useState<"Stop Limit" | "Stop Market" | "Scale">("Stop Limit");
+  const [selectedProOption, setSelectedProOption] = useState<"TP/SL" | "Scale">("Scale");
   const [indicatorStyle, setIndicatorStyle] = useState<{
     width: number;
     left: number;
@@ -1321,12 +1321,12 @@ const Perps: React.FC<PerpsProps> = ({
               </button>
               {isProDropdownOpen && (
                 <div className="perps-pro-dropdown-menu">
-                  {['Stop Limit', 'Stop Market', 'Scale'].map((option) => (
+                  {['TP/SL', 'Scale'].map((option) => (
                     <div
                       key={option}
                       className="perps-pro-option"
                       onClick={() => {
-                        setSelectedProOption(option as "Stop Limit" | "Stop Market" | "Scale");
+                        setSelectedProOption(option as "TP/SL" | "Scale");
                         setActiveOrderType("Pro");
                         setIsProDropdownOpen(false);
                       }}
@@ -1399,10 +1399,20 @@ const Perps: React.FC<PerpsProps> = ({
                 type="decimal"
                 placeholder="0.00"
                 value={limitPriceString}
-                onChange={(e) => setlimitPriceString(e.target.value)}
+                onChange={(e) => {
+                  if (new RegExp(
+                    `^\\d*\\.?\\d{0,${Math.floor(Math.log10(Number(1 / activeMarket.tickSize)))}}$`
+                  ).test(e.target.value)) {
+                    setlimitPriceString(e.target.value)
+                  }
+                }}
                 className="perps-trade-input"
               />
-              <span className="perps-mid-button">
+              <span className="perps-mid-button" onClick={(e) => {
+                if (activeMarket?.bestBidPrice) {
+                  setlimitPriceString(activeTradeType == 'long' ? activeMarket.bestBidPrice : activeMarket.bestAskPrice)
+                }
+              }}>
                 Mid
               </span>
             </div>
@@ -1416,6 +1426,27 @@ const Perps: React.FC<PerpsProps> = ({
               onChange={(e) => {
                 setInputString(e.target.value)
                 setAmountIn(BigInt(e.target.value))
+                const percentage =
+                  Number(balance) == 0
+                    ? 0
+                    : Math.min(
+                      100,
+                      Math.floor(
+                        Number(e.target.value) * 100 / (Number(balance) * Number(leverage))
+                      ),
+                    );
+                setSliderPercent(percentage);
+                const slider = document.querySelector(
+                  '.perps-balance-amount-slider',
+                );
+                const popup = document.querySelector(
+                  '.perps-slider-percentage-popup',
+                );
+                if (slider && popup) {
+                  const rect = slider.getBoundingClientRect();
+                  (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+                    }px`;
+                }
               }}
               className="perps-trade-input"
               autoFocus
