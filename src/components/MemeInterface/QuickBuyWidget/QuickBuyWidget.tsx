@@ -393,7 +393,11 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     return out;
   };
   const [selectedWallets, setSelectedWallets] = useState<Set<string>>(
-    new Set(),
+    new Set(
+      subWallets
+        .filter(w => w.privateKey == activeWalletPrivateKey)
+        .map(w => w.address)
+    )
   );
   const [isConsolidating, setIsConsolidating] = useState(false);
   const [isSplitting, setIsSplitting] = useState(false);
@@ -2160,18 +2164,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
                             <div
                               className="quickbuy-wallet-info"
-                              onClick={(e) => {
-                                handleSetActiveWallet(wallet.privateKey);
-                                e.stopPropagation();
-                              }}
                             >
                               <div className="quickbuy-wallet-name">
                                 {getWalletName(wallet.address, index)}
-                                {isActive && (
-                                  <span className="quickbuy-active-badge">
-                                    Active
-                                  </span>
-                                )}
                               </div>
                               <div
                                 className="quickbuy-wallet-address"
@@ -2202,7 +2197,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                   <img
                                     src={monadicon}
                                     className="quickbuy-wallet-mon-icon"
-                                    alt="MON"
                                   />
                                   {formatNumberWithCommas(balance, 2)}
                                 </div>
@@ -2319,20 +2313,11 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
                             <div
                               className="quickbuy-wallet-info"
-                              onClick={(e) => {
-                                handleSetActiveWallet(wallet.privateKey);
-                                e.stopPropagation();
-                              }}
                             >
                               <div className="quickbuy-wallet-name">
                                 {getWalletName(
                                   wallet.address,
                                   index + walletsWithToken.length,
-                                )}
-                                {isActive && (
-                                  <span className="quickbuy-active-badge">
-                                    Active
-                                  </span>
                                 )}
                               </div>
                               <div

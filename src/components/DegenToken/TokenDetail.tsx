@@ -213,6 +213,11 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const { activechain } = useSharedContext();
 
   const walletPopup = useWalletPopup();
+  const [tradesSortField, setTradesSortField] = useState<'type' | 'amount' | 'tokenAmount' | 'time' | null>(null);
+  const [tradesSortDirection, setTradesSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [activeTab, setActiveTab] = useState<'comments' | 'trades'>('comments');
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const explorer = settings.chainConfig[activechain]?.explorer;
   const [token, setToken] = useState<any>((tokenData || tokenAddress ? {id: tokenAddress} : null) || null);
   const [holders, setHolders] = useState<Holder[]>([]);
   const [page, setPage] = useState(0);
@@ -365,6 +370,17 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             close: Number(c.close) / 1e9,
             volume: Number(c.baseVolume) / 1e18,
           }));
+        
+        const mappedTrades: Trade[] = (m.trades || []).map((t: any) => ({
+          id: t.id,
+          timestamp: Number(t.block), 
+          isBuy: !!t.isBuy,
+          price: Number(t.priceNativePerTokenWad) / 1e9,
+          tokenAmount: Number(t.isBuy ? t.amountOut : t.amountIn) / 1e18,
+          nativeAmount: Number(t.isBuy ? t.amountIn : t.amountOut) / 1e18,
+          caller: t.account.id,
+        }));
+        setTrades(mappedTrades);
 
         const resForChart =
           selectedInterval === "1d" ? "1D" :
@@ -429,6 +445,14 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         return comment;
       })
     );
+  };
+  const handleTradesSort = (field: 'type' | 'amount' | 'tokenAmount' | 'time') => {
+    if (tradesSortField === field) {
+      setTradesSortDirection(prev => prev === 'desc' ? 'asc' : 'desc');
+    } else {
+      setTradesSortField(field);
+      setTradesSortDirection('desc');
+    }
   };
   const handleAddComment = () => {
     if (!account.connected) {
@@ -723,6 +747,36 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     );
   }
 
+  const getSortedTrades = () => {
+    const filteredTrades = trades.filter(trade => trade.nativeAmount >= 0.05);
+    
+    if (!tradesSortField) return filteredTrades;
+
+    return [...filteredTrades].sort((a, b) => {
+      let comparison = 0;
+
+      switch (tradesSortField) {
+        case 'type':
+          // Sort by buy/sell (buy first)
+          comparison = a.isBuy === b.isBuy ? 0 : a.isBuy ? -1 : 1;
+          break;
+        case 'amount':
+          comparison = a.nativeAmount - b.nativeAmount;
+          break;
+        case 'tokenAmount':
+          comparison = a.tokenAmount - b.tokenAmount;
+          break;
+        case 'time':
+          comparison = a.timestamp - b.timestamp;
+          break;
+        default:
+          return 0;
+      }
+
+      return tradesSortDirection === 'desc' ? -comparison : comparison;
+    });
+  };
+
   if (!token) {
     return (
       <div className="detail-error">
@@ -818,80 +872,219 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
           <div className="detail-info-grid">
             <div className="detail-info-section">
-              <h3>Comments</h3>
-              <div className="detail-comments-section">
-                <div className="detail-comment-input">
-                  <input
-                    type="text"
-                    placeholder={account.connected ? "Add a comment..." : "Connect wallet to comment..."}
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
-                    className="detail-comment-field"
-                    disabled={!account.connected}
-                  />
-                  <button 
-                    onClick={handleAddComment} 
-                    className="detail-comment-submit"
-                    disabled={!account.connected || !newComment.trim()}
-                  >
-                    Post
-                  </button>
-                </div>
-                <div className="detail-comments-list">
-                  {comments.map((comment) => (
-                    <div key={comment.id} className="detail-comment">
-                      <div className="detail-comment-container">
-                        {/* Profile Picture */}
-                        <div className="detail-comment-avatar">
-                          <img 
-                            src={comment.profilePic || getDefaultProfilePic(comment.userAddress)} 
-                            alt={`${comment.user} avatar`}
-                            className="detail-comment-avatar-img"
-                          />
-                        </div>
-                        
-                        {/* Comment Content */}
-                        <div className="detail-comment-content">
-                          <div className="detail-comment-header">
-                            <div className="detail-comment-user-info">
-                              <span className="detail-comment-user">{comment.user}</span>
-                              <span className="detail-comment-time">{Math.floor((Date.now() - comment.timestamp) / 60000)}m ago</span>
-                            </div>
-                            
-                            {/* Delete button - only show for comment owner */}
-                            {account.connected && account.address === comment.userAddress && (
-                              <button 
-                                className="detail-comment-delete"
-                                onClick={() => handleDeleteComment(comment.id)}
-                                title="Delete comment"
-                              >
-                                ×
-                              </button>
-                            )}
+
+              <div className="detail-tabs-header" data-active={activeTab}>
+                <button 
+                  className={`detail-tab ${activeTab === 'comments' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('comments')}
+                >
+                  Comments
+                </button>
+                <button 
+                  className={`detail-tab ${activeTab === 'trades' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('trades')}
+                >
+                  Trades
+                </button>
+              </div>
+
+              {activeTab === 'comments' ? (
+
+                <div className="detail-comments-section">
+                  <div className="detail-comment-input">
+                    <input
+                      type="text"
+                      placeholder={account.connected ? "Add a comment..." : "Connect wallet to comment..."}
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+                      className="detail-comment-field"
+                      disabled={!account.connected}
+                    />
+                    <button 
+                      onClick={handleAddComment} 
+                      className="detail-comment-submit"
+                      disabled={!account.connected || !newComment.trim()}
+                    >
+                      Post
+                    </button>
+                  </div>
+                  <div className="detail-comments-list">
+                    {comments.map((comment) => (
+                      <div key={comment.id} className="detail-comment">
+                        <div className="detail-comment-container">
+                          <div className="detail-comment-avatar">
+                            <img 
+                              src={comment.profilePic || getDefaultProfilePic(comment.userAddress)} 
+                              alt={`${comment.user} avatar`}
+                              className="detail-comment-avatar-img"
+                            />
                           </div>
                           
-                          <div className="detail-comment-message">{comment.message}</div>
-                          
-                          {/* Like section */}
-                          <div className="detail-comment-actions">
-                            <button 
-                              className={`detail-comment-like ${comment.likes.includes(account.address) ? 'liked' : ''}`}
-                              onClick={() => handleLikeComment(comment.id)}
-                              disabled={!account.connected}
-                              title={account.connected ? (comment.likes.includes(account.address) ? 'Unlike' : 'Like') : 'Connect wallet to like'}
-                            >
-                              <span className="detail-comment-like-icon">♥</span>
-                              <span className="detail-comment-like-count">{comment.likes.length}</span>
-                            </button>
+                          <div className="detail-comment-content">
+                            <div className="detail-comment-header">
+                              <div className="detail-comment-user-info">
+                                <span className="detail-comment-user">{comment.user}</span>
+                                <span className="detail-comment-time">{Math.floor((Date.now() - comment.timestamp) / 60000)}m ago</span>
+                              </div>
+                              
+                              {account.connected && account.address === comment.userAddress && (
+                                <button 
+                                  className="detail-comment-delete"
+                                  onClick={() => handleDeleteComment(comment.id)}
+                                  title="Delete comment"
+                                >
+                                  ×
+                                </button>
+                              )}
+                            </div>
+                            
+                            <div className="detail-comment-message">{comment.message}</div>
+                            
+                            <div className="detail-comment-actions">
+                              <button 
+                                className={`detail-comment-like ${comment.likes.includes(account.address) ? 'liked' : ''}`}
+                                onClick={() => handleLikeComment(comment.id)}
+                                disabled={!account.connected}
+                                title={account.connected ? (comment.likes.includes(account.address) ? 'Unlike' : 'Like') : 'Connect wallet to like'}
+                              >
+                                <span className="detail-comment-like-icon">♥</span>
+                                <span className="detail-comment-like-count">{comment.likes.length}</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                  {comments.length === 0 && <div className="detail-no-comments">No comments yet. Be the first!</div>}
+                    ))}
+                    {comments.length === 0 && <div className="detail-no-comments">No comments yet. Be the first!</div>}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="detail-trades-section">
+                  <div className="detail-trades-header-controls">
+                    <div className="detail-trades-filter-controls">
+                      <span className="detail-trades-filter-label">filter by size</span>
+                      <div className="detail-trades-filter-toggle">
+                        <input type="checkbox" id="trades-filter" defaultChecked />
+                        <label htmlFor="trades-filter"></label>
+                      </div>
+                      <span className="detail-trades-filter-value">0.05</span>
+                      <span className="detail-trades-filter-desc">(showing trades greater than 0.05 MON)</span>
+                    </div>
+                    
+                    <div className="detail-trades-actions">
+                      <button className="detail-trades-action-button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 6h18M7 12h10M10 18h4" />
+                        </svg>
+                      </button>
+                      <button className="detail-trades-action-button">
+                        Export
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="detail-trades-table">
+                    <div className="detail-trades-table-header">
+                      <div className="detail-trades-header-cell">Account</div>
+                      <div 
+                        className={`detail-trades-header-cell sortable ${tradesSortField === 'type' ? 'active' : ''}`}
+                        onClick={() => handleTradesSort('type')}
+                      >
+                        Type
+                        {tradesSortField === 'type' && (
+                          <span className={`detail-trades-sort-arrow ${tradesSortDirection}`}>
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M5 7L2 3H8L5 7Z" />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                      <div 
+                        className={`detail-trades-header-cell sortable ${tradesSortField === 'amount' ? 'active' : ''}`}
+                        onClick={() => handleTradesSort('amount')}
+                      >
+                        Amount (MON)
+                        {tradesSortField === 'amount' && (
+                          <span className={`detail-trades-sort-arrow ${tradesSortDirection}`}>
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M5 7L2 3H8L5 7Z" />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                      <div 
+                        className={`detail-trades-header-cell sortable ${tradesSortField === 'tokenAmount' ? 'active' : ''}`}
+                        onClick={() => handleTradesSort('tokenAmount')}
+                      >
+                        Amount ({tokenData.symbol})
+                        {tradesSortField === 'tokenAmount' && (
+                          <span className={`detail-trades-sort-arrow ${tradesSortDirection}`}>
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M5 7L2 3H8L5 7Z" />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                      <div 
+                        className={`detail-trades-header-cell sortable ${tradesSortField === 'time' ? 'active' : ''}`}
+                        onClick={() => handleTradesSort('time')}
+                      >
+                        Time
+                        {tradesSortField === 'time' && (
+                          <span className={`detail-trades-sort-arrow ${tradesSortDirection}`}>
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M5 7L2 3H8L5 7Z" />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                      <div className="detail-trades-header-cell">Txn</div>
+                    </div>
+                    
+                    <div className="detail-trades-body">
+                      {getSortedTrades().map((trade) => (
+                        <div key={trade.id} className="detail-trades-row">
+                          <div className="detail-trades-col detail-trades-account">
+                            <div className="detail-trades-avatar">
+                              <img src={defaultPfp} alt="Avatar" />
+                            </div>
+                            <span className="detail-trades-address">
+                              {trade.caller === token?.creator ? (
+                                <>
+                                  {trade.caller.slice(0, 6)}...{trade.caller.slice(-4)}
+                                  <span className="detail-trades-dev-tag">(dev)</span>
+                                </>
+                              ) : (
+                                `${trade.caller.slice(0, 6)}...${trade.caller.slice(-4)}`
+                              )}
+                            </span>
+                          </div>
+                          <div className={`detail-trades-col detail-trades-type ${trade.isBuy ? 'buy' : 'sell'}`}>
+                            {trade.isBuy ? 'Buy' : 'Sell'}
+                          </div>
+                          <div className="detail-trades-col">{trade.nativeAmount.toFixed(3)}</div>
+                          <div className={`detail-trades-col ${trade.isBuy ? 'buy' : 'sell'}`}>
+                            {formatNumber(trade.tokenAmount)}
+                          </div>
+                          <div className="detail-trades-col detail-trades-time">
+                            {Math.floor((Date.now() / 1000 - trade.timestamp) / 60)}m ago
+                          </div>
+                          <div className="detail-trades-col detail-trades-txn">
+                            <button 
+                              className="detail-trades-txn-link"
+                              onClick={() => window.open(`${explorer}/tx/${trade.id}`, '_blank')}
+                            >
+                              {trade.id.slice(0, 6)}...
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
         </div>
@@ -939,7 +1132,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                 <div className="detail-preset-buttons-right">
                 <button 
                       className="detail-preset-button-left"
-                      onClick={() => {/* your custom action */}}
+                      onClick={() => {/**/}}
                 >
                   Slippage (%)
                 </button>
@@ -1013,7 +1206,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           <div className="detail-trade-stats">
             <div className="detail-stat-row">
               <span>Position</span>
-              <span>
+              <span> 
                 {formatNumber(walletTokenBalance)} {tokenData.symbol}
               </span>
             </div>
@@ -1039,10 +1232,21 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           </div>
         </div>
 
+        <div className="detail-trading-panel">
         <div className="detail-meme-address">
           <span className="detail-meme-address-title">CA:</span>{' '}
-          <CopyableAddress address={tokenData.id} className="detail-meme-address-value" truncate={{ start: 6, end: 4 }} />
+          <CopyableAddress 
+            address={tokenData.id} 
+            className="detail-meme-address-value" 
+            truncate={{ start: 6, end: 4 }} 
+          />
+          <span 
+            className={`detail-meme-address-symbol ${walletTokenBalance === 0 ? 'greyed-out' : ''}`}
+          >
+            {tokenData.symbol}
+          </span>
         </div>
+      </div>
 
 
         <div className="detail-info-section">

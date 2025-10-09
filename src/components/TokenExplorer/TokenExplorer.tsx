@@ -3142,7 +3142,15 @@ const TokenRow = React.memo<{
                   disabled={isLoadingPrimary}
                 >
                   {isLoadingPrimary ? (
-                    <div className="quickbuy-loading-spinner" />
+                    <>
+                      <div className="quickbuy-loading-spinner" />
+                      <img
+                        className="explorer-quick-buy-icon"
+                        src={lightning}
+                        style={{opacity: 0}}
+                      />
+                      <span style={{opacity: 0}}>{quickbuyAmount} MON</span>
+                    </>
                   ) : (
                     <>
                       <img
@@ -3182,7 +3190,15 @@ const TokenRow = React.memo<{
                 disabled={isLoadingSecondary}
               >
                 {isLoadingSecondary ? (
-                  <div className="quickbuy-loading-spinner" />
+                  <>
+                    <div className="quickbuy-loading-spinner" />
+                    <img
+                      className="explorer-quick-buy-icon"
+                      src={lightning}
+                      style={{opacity: 0}}
+                    />
+                    <span style={{opacity: 0}}>{quickbuyAmountSecond} MON</span>
+                  </>
                 ) : (
                   <>
                     <img

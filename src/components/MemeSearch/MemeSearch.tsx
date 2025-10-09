@@ -913,7 +913,11 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                                                     title={`Quick buy ${getCurrentQuickBuyAmount()} MON`}
                                                                 >
                                                                     {buyingTokens.has(token.id) ? (
-                                                                        <div className="quickbuy-loading-spinner" />
+                                                                        <>
+                                                                            <div className="quickbuy-loading-spinner" />
+                                                                            <img className="explorer-quick-buy-icon" src={lightning} style={{opacity: 0}}/>
+                                                                            <span style={{opacity: 0}}>{getCurrentQuickBuyAmount()} MON</span>
+                                                                        </>
                                                                     ) : (
                                                                         <>
                                                                             <img className="explorer-quick-buy-icon" src={lightning} />
@@ -1178,7 +1182,11 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                                                 title={`Quick buy ${getCurrentQuickBuyAmount()} MON`}
                                                             >
                                                                 {buyingTokens.has(token.id) ? (
-                                                                    <div className="quickbuy-loading-spinner" />
+                                                                    <>
+                                                                        <div className="quickbuy-loading-spinner" />
+                                                                        <img className="explorer-quick-buy-icon" src={lightning} style={{opacity: 0}}/>
+                                                                        <span style={{opacity: 0}}>{getCurrentQuickBuyAmount()} MON</span>
+                                                                    </>
                                                                 ) : (
                                                                     <>
                                                                         <img className="explorer-quick-buy-icon" src={lightning} />

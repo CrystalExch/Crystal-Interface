@@ -653,7 +653,10 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
   //   return className;
   // };
 
-  const [oneCTSigner, setOneCTSigner] = useState('');
+  const [oneCTSigner, setOneCTSigner] = useState(() => {
+    const saved = localStorage.getItem('crystal_active_wallet_private_key');
+    return saved ? saved : '';
+  });
   const validOneCT = !!oneCTSigner
   const oneCTNonceRef = useRef<number>(0);
   const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
@@ -2322,7 +2325,7 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
             owner
             factory
             quoteAsset { id symbol name decimals }
-            baseAsset  { id symbol name decimals }
+            baseAsset { id symbol name decimals }
             symbol
             name
             description

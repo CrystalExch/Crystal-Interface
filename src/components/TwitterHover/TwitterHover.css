@@ -6,6 +6,7 @@
   background: #000000c5;
   backdrop-filter: blur(10px);
   padding: 1rem;
+  padding-top: 0rem;
   box-shadow: 0 6px 20px rgba(0,0,0,0.15);
   position: relative;
   padding-bottom: 0.5rem;
@@ -173,6 +174,13 @@
     display: flex;
     flex-direction: column;
     margin-left: 5px;
+}
+.twitter-community-hover-header-text{
+     display: flex;
+    flex-direction: column;
+    margin-left: 5px;
+    padding-top: 5px;
+    margin-bottom: 5px;
 }
 
 .twitter-hover-username-link {
@@ -351,7 +359,18 @@
   align-items: flex-end;
   min-width: 50px;
   padding: 6px;
+  margin-top: 10px;
 }
+
+
+.twitter-community-top-right-section{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 50px;
+  padding: 6px;
+}
+
 
 
 .bookmark-stat {
@@ -521,7 +540,7 @@
   color: #8098a5;
   font-size: 1rem;
   font-weight: 400;
-  margin-top: 10px;
+  margin-top: 5px;
   margin-bottom: -10px;
 }
 
@@ -629,4 +648,145 @@
 .twitter-hover-card button,
 .twitter-hover-card img {
   pointer-events: auto;
+}
+
+.twitter-link-inline {
+  color: #bcc1f0;
+  text-decoration: none;
+  font-weight: 400;
+  transition: color 0.2s ease;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.twitter-link-inline:hover {
+  color: #8fc7f6;
+  text-decoration: underline;
+}
+
+.twitter-eth-address {
+  color: #bcc1f0;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.twitter-eth-address:hover {
+  color: #8fc7f6;
+  text-decoration: underline;
+}
+
+
+.twitter-hover-skeleton-container {
+  width: 100%;
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.twitter-hover-skeleton-banner {
+  height: 6rem;
+  background: rgba(189, 189, 235, 0.08);
+  background-size: none;
+  animation: pulse 1.5s ease-in-out infinite;
+  border-radius: 6px;
+  margin: -1rem -1rem 0 -1rem;
+}
+
+.twitter-hover-skeleton-content {
+  padding: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.twitter-hover-skeleton-avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+ background: rgba(189, 189, 235, 0.08);
+  background-size: none;
+  animation: pulse 1.5s ease-in-out infinite;
+  margin-top: -2rem;
+  border: 3px solid #000000c5;
+}
+
+.twitter-hover-skeleton-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.twitter-hover-skeleton-line {
+  height: 0.875rem;
+ background: rgba(189, 189, 235, 0.08);
+  background-size: none;
+  animation: pulse 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+.twitter-hover-skeleton-line-name {
+  width: 60%;
+  height: 1rem;
+}
+
+.twitter-hover-skeleton-line-username {
+  width: 45%;
+  height: 0.875rem;
+}
+
+.twitter-hover-skeleton-line-full {
+  width: 100%;
+}
+
+.twitter-hover-skeleton-line-medium {
+  width: 75%;
+}
+
+.twitter-hover-skeleton-line-small {
+  width: 35%;
+  height: 0.75rem;
+}
+
+.twitter-hover-skeleton-line-metric {
+  width: 30%;
+  height: 0.875rem;
+}
+
+.twitter-hover-skeleton-bio {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.twitter-hover-skeleton-details {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.twitter-hover-skeleton-metrics {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.twitter-hover-skeleton-button {
+  height: 2rem;
+ background: rgba(189, 189, 235, 0.08);
+  background-size: none;
+  animation: pulse 1.5s ease-in-out infinite;
+  border-radius: 100px;
+  margin-top: 0.5rem;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
