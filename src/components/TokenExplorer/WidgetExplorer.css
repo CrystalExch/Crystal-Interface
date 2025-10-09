@@ -6,15 +6,14 @@
   color: #f2f2f2;
   display: flex;
   flex-direction: column;
-
   max-height: 700px;
   overflow: hidden;
+  position: relative;
   transition: all 0.2s ease;
   -webkit-user-select: none;
-     -moz-user-select: none;
-          user-select: none;
+  -moz-user-select: none;
+  user-select: none;
   width: 100%;
-  position: relative;
 }
 
 .widget-explorer.widget-dragging {
@@ -367,9 +366,9 @@
   overflow-x: hidden;
   overflow-y: auto;
   position: relative;
-  width: 100%;
   scrollbar-color: rgba(203, 206, 238, 0.125) rgb(6, 6, 6);
   scrollbar-width: thin;
+  width: 100%;
 }
 
 .widget-explorer-tokens-list::-webkit-scrollbar {
@@ -424,7 +423,7 @@
   flex-shrink: 0;
   height: 68px;
   -o-object-fit: cover;
-     object-fit: cover;
+  object-fit: cover;
   transition: all 0.3s ease;
   width: 68px;
 }
@@ -954,7 +953,7 @@
   display: block;
   height: 150px;
   -o-object-fit: cover;
-     object-fit: cover;
+  object-fit: cover;
   width: 150px;
 }
 
@@ -1364,9 +1363,9 @@
 
 .widget-resize-handle {
   background: transparent;
+  pointer-events: auto;
   position: absolute;
   z-index: 10;
-  pointer-events: auto;
 }
 
 .widget-resize-handle-top {
