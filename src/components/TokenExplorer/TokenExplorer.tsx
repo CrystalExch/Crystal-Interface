@@ -2957,8 +2957,16 @@ const TokenRow = React.memo<{
         </div>
 
 {displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled && (
-  <div
-    className={`explorer-second-ultra-container ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`}
+<div
+  className={`explorer-second-ultra-container ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`}
+  style={
+    displaySettings.ultraStyle === 'border'
+      ? {
+          border: `1px solid ${displaySettings.secondQuickBuyColor}`,  
+          boxShadow: `inset 0 0 0 1px ${displaySettings.secondQuickBuyColor}99`,  
+        }
+      : undefined
+  }
     onClick={(e) => {
       e.stopPropagation();
       if (displaySettings.quickBuyClickBehavior === 'openPage') {
@@ -3002,7 +3010,12 @@ const TokenRow = React.memo<{
 <div
   className={`explorer-third-row metrics-size-${displaySettings.metricSize} ${displaySettings.quickBuySize === 'large' ? 'large-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'mega' ? 'mega-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'ultra' ? `ultra-quickbuy-mode ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}` : ''} ${displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled ? 'ultra-dual-buttons' : ''}`}
   onClick={
-    displaySettings.quickBuySize === 'ultra' && !displaySettings.secondQuickBuyEnabled
+    displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled
+      ? (e) => {
+        e.stopPropagation();
+        onQuickBuy(token, quickbuyAmount, 'primary');
+      }
+      : displaySettings.quickBuySize === 'ultra' && !displaySettings.secondQuickBuyEnabled
       ? (e) => {
         e.stopPropagation();
         onQuickBuy(token, quickbuyAmount, 'primary');
@@ -3111,28 +3124,20 @@ const TokenRow = React.memo<{
       const buttonClass = `explorer-quick-buy-btn ${sizeClass} ${modeClass}`;
 
       return (
-        <button
-          className={buttonClass}
-          onClick={(e) => {
-            if (displaySettings.quickBuySize !== 'ultra' || displaySettings.secondQuickBuyEnabled) {
-              e.stopPropagation();
-              if (
-                displaySettings.quickBuyClickBehavior === 'openPage'
-              ) {
-                onQuickBuy(token, quickbuyAmount, 'primary');
-                onTokenClick(token);
-              } else if (
-                displaySettings.quickBuyClickBehavior === 'openNewTab'
-              ) {
-                onQuickBuy(token, quickbuyAmount, 'primary');
-                window.open(`/meme/${token.tokenAddress}`, '_blank');
-              } else {
-                onQuickBuy(token, quickbuyAmount, 'primary');
-              }
-            }
-          }}
-          disabled={isLoadingPrimary}
-        >
+<button
+  className={buttonClass}
+  onClick={(e) => {
+    e.stopPropagation();
+    onQuickBuy(token, quickbuyAmount, 'primary');
+    
+    if (displaySettings.quickBuyClickBehavior === 'openPage') {
+      onTokenClick(token);
+    } else if (displaySettings.quickBuyClickBehavior === 'openNewTab') {
+      window.open(`/meme/${token.tokenAddress}`, '_blank');
+    }
+  }}
+  disabled={isLoadingPrimary}
+>
           {isLoadingPrimary ? (
             <div className="quickbuy-loading-spinner" />
           ) : (
