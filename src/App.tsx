@@ -13,6 +13,7 @@ import React, {
   useMemo,
   useRef,
   useState,
+  useReducer
 } from 'react';
 import {
   Link,
@@ -174,6 +175,7 @@ import { useSharedContext } from './contexts/SharedContext.tsx';
 import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 import { sMonAbi } from './abis/sMonAbi.ts';
+import { defaultMetrics } from './components/TokenExplorer/TokenData.ts';
 
 const clearlogo = '/CrystalLogo.png';
 
@@ -2621,11 +2623,11 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
         if (!wssUrl || !factoryAddress || !baseVault) return;
 
         const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
-        const DEPOSIT_TOPIC = '' as const;
-        const WITHDRAW_TOPIC = '' as const;
-        const LOCK_TOPIC = '' as const;
-        const UNLOCK_TOPIC = '' as const;
-        const CLOSE_TOPIC = '' as const;
+        const DEPOSIT_TOPIC = '0x4e2ca0515ed1aef1395f66b5303bb5d6f1bf9d61a353fa53f73f8ac9973fa9f6' as const;
+        const WITHDRAW_TOPIC = '0xebff2602b3f468259e1e99f613fed6691f3a6526effe6ef3e768ba7ae7a36c4f' as const;
+        const LOCK_TOPIC = '0x44427e3003a08f22cf803894075ac0297524e09e521fc1c15bc91741ce3dc159' as const;
+        const UNLOCK_TOPIC = '0x7e6adfec7e3f286831a0200a754127c171a2da564078722cb97704741bbdb0ea' as const;
+        const CLOSE_TOPIC = '0x13607bf9d2dd20e1f3a7daf47ab12856f8aad65e6ae7e2c75ace3d0c424a40e8' as const;
 
         const vaultAddrLc = selectedVaultStrategy.toLowerCase();
         const quoteLc = (baseVault.quoteAsset || '').toLowerCase();
@@ -3923,7 +3925,742 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
     return { bids, asks };
   }
 
-  // entirety of launchpad
+  // tokenexplorer
+  type State = {
+    tokensByStatus: Record<Token['status'], Token[]>;
+    hidden: Set<string>;
+    loading: Set<string>;
+  };
+  
+  type Action =
+    | { type: 'INIT'; tokens: Token[] }
+    | { type: 'ADD_MARKET'; token: Token }
+    | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
+    | { type: 'HIDE_TOKEN'; id: string }
+    | { type: 'SHOW_TOKEN'; id: string }
+    | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' };
+  
+  interface AlertSettings {
+    soundAlertsEnabled: boolean;
+    volume: number;
+    sounds: {
+      newPairs: string;
+      pairMigrating: string;
+      migrated: string;
+    };
+  }
+
+  interface ExplorerToken {
+    id: string;
+    tokenAddress: string;
+    dev: string;
+    name: string;
+    symbol: string;
+    image: string;
+    price: number;
+    marketCap: number;
+    change24h: number;
+    volume24h: number;
+    holders: number;
+    proTraders: number;
+    sniperHolding: number;
+    devHolding: number;
+    bundleHolding: number;
+    insiderHolding: number;
+    top10Holding: number;
+    buyTransactions: number;
+    sellTransactions: number;
+    globalFeesPaid: number;
+    website: string;
+    twitterHandle: string;
+    progress: number;
+    status: 'new' | 'graduating' | 'graduated';
+    description: string;
+    created: number;
+    bondingAmount: number;
+    volumeDelta: number;
+    telegramHandle: string;
+    discordHandle: string;
+    graduatedTokens: number;
+    launchedTokens: number;
+  }
+
+  const ALERT_DEFAULTS: AlertSettings = {
+    soundAlertsEnabled: true,
+    volume: 100,
+    sounds: {
+      newPairs: stepaudio,
+      pairMigrating: stepaudio,
+      migrated: stepaudio,
+    },
+  };
+
+  const [pausedColumn, setPausedColumn] = useState<Token['status'] | null>(
+    null,
+  );
+  const [alertSettings, setAlertSettings] = useState<AlertSettings>(() => {
+    const saved = localStorage.getItem('explorer-alert-settings');
+    if (!saved) return ALERT_DEFAULTS;
+    try {
+      const parsed = JSON.parse(saved);
+      return {
+        ...ALERT_DEFAULTS,
+        ...parsed,
+        sounds: { ...ALERT_DEFAULTS.sounds, ...(parsed?.sounds || {}) },
+      };
+    } catch {
+      return ALERT_DEFAULTS;
+    }
+  });
+  const [isTokenExplorerLoading, setIsTokenExplorerLoading] = useState(false);
+  const initialState: State = {
+    tokensByStatus: { new: [], graduating: [], graduated: [] },
+    hidden: new Set(),
+    loading: new Set(),
+  };
+  const [{ tokensByStatus, hidden, loading: teLoading }, dispatch] = useReducer(
+    reducer,
+    initialState,
+  );
+  const TOTAL_SUPPLY = 1e9;
+  const ROUTER_EVENT = '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
+  const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
+  const MARKET_CREATED_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
+  const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+
+  const teRef = useRef<WebSocket | null>(null);
+  const subIdRef = useRef(1);
+  const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const trackedMarketsRef = useRef<Set<string>>(new Set());
+  const connectionStateRef = useRef<
+    'disconnected' | 'connecting' | 'connected' | 'reconnecting'
+  >('disconnected');
+  const retryCountRef = useRef(0);
+  const reconnectTimerRef = useRef<number | null>(null);
+  const connectionAttemptsRef = useRef(0);
+  const lastConnectionAttemptRef = useRef(0);
+  const consecutiveFailuresRef = useRef(0);
+
+  function reducer(state: State, action: Action): State {
+    switch (action.type) {
+      case 'INIT': {
+        const buckets: State['tokensByStatus'] = {
+          new: [],
+          graduating: [],
+          graduated: [],
+        };
+        action.tokens.forEach((t) => buckets[t.status].push(t));
+        return { ...state, tokensByStatus: buckets };
+      }
+      case 'ADD_MARKET': {
+        const { token } = action;
+        const list = [token, ...state.tokensByStatus[token.status]].slice(
+          0,
+          30,
+        );
+        return {
+          ...state,
+          tokensByStatus: { ...state.tokensByStatus, [token.status]: list },
+        };
+      }
+      case 'UPDATE_MARKET': {
+        const buckets = { ...state.tokensByStatus };
+        (Object.keys(buckets) as Token['status'][]).forEach((s) => {
+          buckets[s] = buckets[s].map((t) => {
+            if (t.id.toLowerCase() !== action.id.toLowerCase()) return t;
+  
+            const {
+              volumeDelta = 0,
+              buyTransactions = 0,
+              sellTransactions = 0,
+              ...rest
+            } = action.updates;
+  
+            return {
+              ...t,
+              ...rest,
+              volume24h: t.volume24h + volumeDelta,
+              buyTransactions: t.buyTransactions + buyTransactions,
+              sellTransactions: t.sellTransactions + sellTransactions,
+            };
+          });
+        });
+        return { ...state, tokensByStatus: buckets };
+      }
+      case 'HIDE_TOKEN': {
+        const h = new Set(state.hidden).add(action.id);
+        return { ...state, hidden: h };
+      }
+      case 'SET_LOADING': {
+        const l = new Set(state.loading);
+        const key = action.buttonType ? `${action.id}-${action.buttonType}` : action.id;
+        action.loading ? l.add(key) : l.delete(key);
+        return { ...state, loading: l };
+      }
+      case 'SHOW_TOKEN': {
+        const h = new Set(state.hidden);
+        h.delete(action.id);
+        return { ...state, hidden: h };
+      }
+      default:
+        return state;
+    }
+  }  
+
+  const subscribe = useCallback(
+    (ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
+      const reqId = subIdRef.current++;
+      ws.send(
+        JSON.stringify({
+          id: reqId,
+          jsonrpc: '2.0',
+          method: 'eth_subscribe',
+          params,
+        }),
+      );
+      if (!onAck) return;
+      const handler = (evt: MessageEvent) => {
+        const msg = JSON.parse(evt.data);
+        if (msg.id === reqId && msg.result) {
+          onAck(msg.result);
+          ws.removeEventListener('message', handler);
+        }
+      };
+      ws.addEventListener('message', handler);
+    },
+    [],
+  );
+
+  const addMarket = useCallback(
+    async (log: any) => {
+      if (pausedColumn !== null) {
+        return;
+      }
+      const { args } = decodeEventLog({
+        abi: CrystalRouterAbi,
+        data: log.data,
+        topics: log.topics,
+      }) as any;
+
+      let meta: any = {};
+      try {
+        const res = await fetch(args.metadataCID);
+        if (res.ok) meta = await res.json();
+      } catch (e) {
+        console.warn('failed to load metadata', e);
+      }
+
+      const socials = [args.social1, args.social2, args.social3].map((s) =>
+        s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
+      );
+      const twitter = socials.find(
+        (s) =>
+          s?.startsWith('https://x.com') ||
+          s?.startsWith('https://twitter.com'),
+      );
+      if (twitter) {
+        socials.splice(socials.indexOf(twitter), 1);
+      }
+      const telegram = socials.find((s) => s?.startsWith('https://t.me'));
+      if (telegram) {
+        socials.splice(socials.indexOf(telegram), 1);
+      }
+      const discord = socials.find(
+        (s) =>
+          s?.startsWith('https://discord.gg') ||
+          s?.startsWith('https://discord.com'),
+      );
+      if (discord) {
+        socials.splice(socials.indexOf(discord), 1);
+      }
+
+      const token: ExplorerToken = {
+        ...defaultMetrics,
+        id: args.token,
+        tokenAddress: args.token,
+        name: args.name,
+        symbol: args.symbol,
+        image: meta?.image || null,
+        description: args.description ?? '',
+        twitterHandle: twitter ?? '',
+        website: meta?.website ?? '',
+        status: 'new',
+        marketCap: defaultMetrics.price * TOTAL_SUPPLY,
+        created: Math.floor(Date.now() / 1000),
+        volumeDelta: 0,
+        telegramHandle: telegram ?? '',
+        discordHandle: discord ?? '',
+        dev: args.creator,
+        launchedTokens: 0,
+        graduatedTokens: 0,
+      };
+
+      dispatch({ type: 'ADD_MARKET', token });
+
+      if (alertSettings.soundAlertsEnabled) {
+        try {
+          const audio = new Audio(alertSettings.sounds.newPairs);
+          audio.volume = alertSettings.volume / 100;
+          audio.play().catch(console.error);
+        } catch (error) {
+          console.error('Failed to play new pairs sound:', error);
+        }
+      }
+    },
+    [
+      subscribe,
+      alertSettings.soundAlertsEnabled,
+      alertSettings.sounds.newPairs,
+      alertSettings.volume,
+      pausedColumn,
+    ],
+  );
+
+  const updateMarket = useCallback(
+    (log: any) => {
+      if (log.topics?.[0] !== MARKET_UPDATE_EVENT) return;
+      if (pausedColumn !== null) return;
+
+      const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+
+      const hex = log.data.replace(/^0x/, '');
+      const words: string[] = [];
+      for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
+
+      const isBuy = BigInt('0x' + words[0]);
+      const amountIn = BigInt('0x' + words[1]);
+      const amountOut = BigInt('0x' + words[2]);
+      const virtualNativeReserve = BigInt('0x' + words[3]);
+      const virtualTokenReserve = BigInt('0x' + words[4]);
+      const price =
+        virtualTokenReserve == 0n
+          ? 0
+          : Number(virtualNativeReserve) / Number(virtualTokenReserve);
+
+      dispatch({
+        type: 'UPDATE_MARKET',
+        id: tokenAddr,
+        updates: {
+          price: price,
+          marketCap: price * TOTAL_SUPPLY,
+          buyTransactions: isBuy ? 1 : 0,
+          sellTransactions: isBuy ? 0 : 1,
+          volumeDelta:
+            isBuy > 0 ? Number(amountIn) / 1e18 : Number(amountOut) / 1e18,
+        },
+      });
+    },
+    [pausedColumn],
+  );
+
+  const scheduleReconnect = useCallback((initialMarkets: string[]) => {
+    if (
+      connectionStateRef.current === 'connecting' ||
+      connectionStateRef.current === 'connected'
+    )
+      return;
+
+    const baseDelay = consecutiveFailuresRef.current > 5 ? 10000 : 1000;
+    const attempt = Math.min(retryCountRef.current, 8);
+    const exponentialDelay = baseDelay * Math.pow(1.5, attempt);
+    const jitter = Math.random() * 1000;
+    const delay = Math.round(exponentialDelay + jitter);
+
+    const now = Date.now();
+    const timeSinceLastAttempt = now - lastConnectionAttemptRef.current;
+    const minInterval = 2000;
+
+    if (timeSinceLastAttempt < minInterval) {
+      const additionalDelay = minInterval - timeSinceLastAttempt;
+      setTimeout(() => scheduleReconnect(initialMarkets), additionalDelay);
+      return;
+    }
+
+    if (reconnectTimerRef.current)
+      window.clearTimeout(reconnectTimerRef.current);
+
+    connectionStateRef.current = 'reconnecting';
+    reconnectTimerRef.current = window.setTimeout(() => {
+      openWebsocket(initialMarkets);
+    }, delay);
+  }, []);
+
+  const openWebsocket = useCallback(
+    (initialMarkets: string[]): void => {
+      if (
+        connectionStateRef.current === 'connecting' ||
+        connectionStateRef.current === 'connected'
+      ) {
+        return;
+      }
+
+      initialMarkets.forEach((addr) =>
+        trackedMarketsRef.current.add(addr.toLowerCase()),
+      );
+      lastConnectionAttemptRef.current = Date.now();
+      connectionAttemptsRef.current += 1;
+
+      if (teRef.current) {
+        const oldWs = teRef.current;
+        teRef.current = null;
+
+        oldWs.onopen = null;
+        oldWs.onmessage = null;
+        oldWs.onerror = null;
+        oldWs.onclose = null;
+
+        if (
+          oldWs.readyState === WebSocket.OPEN ||
+          oldWs.readyState === WebSocket.CONNECTING
+        ) {
+          oldWs.close(1000, 'reconnecting');
+        }
+      }
+
+      connectionStateRef.current = 'connecting';
+
+      try {
+        const ws = new WebSocket(settings.chainConfig[activechain].wssurl);
+        teRef.current = ws;
+
+        const connectionTimeout = setTimeout(() => {
+          if (ws.readyState === WebSocket.CONNECTING) {
+            ws.close(1000, 'connection timeout');
+            handleConnectionError('timeout');
+          }
+        }, 10000);
+
+        ws.onopen = () => {
+          clearTimeout(connectionTimeout);
+          connectionStateRef.current = 'connected';
+          retryCountRef.current = 0;
+          consecutiveFailuresRef.current = 0;
+
+          subscribe(ws, [
+            'logs',
+            { address: settings.chainConfig[activechain].router, topics: [[ROUTER_EVENT]] },
+          ]);
+          subscribe(ws, [
+            'logs',
+            { address: settings.chainConfig[activechain].router, topics: [[MARKET_UPDATE_EVENT]] },
+          ]);
+        };
+
+        ws.onmessage = ({ data }) => {
+          try {
+            const msg = JSON.parse(data);
+            if (msg.method !== 'eth_subscription' || !msg.params?.result)
+              return;
+            const log = msg.params.result;
+            if (log.topics?.[0] === ROUTER_EVENT) addMarket(log);
+            else if (log.topics?.[0] === MARKET_UPDATE_EVENT) updateMarket(log);
+          } catch (parseError) {
+            console.warn('Failed to parse WebSocket message:', parseError);
+          }
+        };
+
+        ws.onerror = (event) => {
+          clearTimeout(connectionTimeout);
+          console.warn('WebSocket error:', event);
+          handleConnectionError('error');
+        };
+
+        ws.onclose = (event) => {
+          clearTimeout(connectionTimeout);
+          connectionStateRef.current = 'disconnected';
+
+          const isNormalClose = event.code === 1000;
+          const isServerError = event.code >= 1011 && event.code <= 1014;
+          const isNetworkError = event.code === 1006;
+
+          if (!isNormalClose) {
+            consecutiveFailuresRef.current += 1;
+            retryCountRef.current += 1;
+
+            console.warn(
+              `WebSocket closed (${event.code}): ${event.reason || 'No reason'}`,
+            );
+
+            if (isServerError && consecutiveFailuresRef.current > 3) {
+              retryCountRef.current += 2;
+            } else if (isNetworkError && consecutiveFailuresRef.current > 2) {
+              retryCountRef.current += 1;
+            }
+
+            const markets = [
+              ...tokensByStatus.new,
+              ...tokensByStatus.graduating,
+              ...tokensByStatus.graduated,
+            ].map((t) => t.id);
+
+            scheduleReconnect(
+              markets.length ? markets : Array.from(trackedMarketsRef.current),
+            );
+          }
+        };
+      } catch (error) {
+        console.error('Failed to create WebSocket:', error);
+        handleConnectionError('creation');
+      }
+    },
+    [subscribe, addMarket, updateMarket, scheduleReconnect],
+  );
+
+  const handleConnectionError = useCallback(
+    (_errorType: string) => {
+      connectionStateRef.current = 'disconnected';
+      consecutiveFailuresRef.current += 1;
+      retryCountRef.current += 1;
+
+      const markets = Array.from(trackedMarketsRef.current);
+      scheduleReconnect(markets);
+    },
+    [scheduleReconnect],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function bootstrap() {
+      try {
+        const res = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+          {
+            active: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:false}) {
+              id
+              creator {
+                id
+                tokensLaunched
+                tokensGraduated
+              }
+              name
+              symbol
+              metadataCID
+              description
+              social1
+              social2
+              social3	
+              social4
+              decimals
+              initialSupply
+              timestamp
+              migrated
+              migratedAt
+              migratedMarket {
+                id
+              }
+              volumeNative
+              volumeToken
+              buyTxs
+              sellTxs
+              distinctBuyers
+              distinctSellers
+              lastPriceNativePerTokenWad
+              lastUpdatedAt
+              trades {
+                id
+                amountIn
+                amountOut
+              }
+              totalHolders
+              devHoldingAmount
+              holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
+                account { id }
+                tokens
+              }
+            }
+            migrated: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:true}) {
+              id
+              creator {
+                id
+                tokensLaunched
+                tokensGraduated
+              }
+              name
+              symbol
+              metadataCID
+              description
+              social1
+              social2
+              social3	
+              social4
+              decimals
+              initialSupply
+              timestamp
+              migrated
+              migratedAt
+              migratedMarket {
+                id
+              }
+              volumeNative
+              volumeToken
+              buyTxs
+              sellTxs
+              distinctBuyers
+              distinctSellers
+              lastPriceNativePerTokenWad
+              lastUpdatedAt
+              trades {
+                id
+                amountIn
+                amountOut
+              }
+              totalHolders
+              devHoldingAmount
+              holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
+                account { id }
+                tokens
+              }
+            }
+          }`,
+          }),
+        });
+        const json = await res.json();
+        const rawMarkets = [
+          ...(json.data?.active ?? []),
+          ...(json.data?.migrated ?? []),
+        ];
+
+        const tokens: Token[] = await Promise.all(
+          rawMarkets.map(async (m: any) => {
+            const price =
+              Number(m.lastPriceNativePerTokenWad) / 1e9 ||
+              defaultMetrics.price;
+
+            let meta: any = {};
+            try {
+              const metaRes = await fetch(m.metadataCID);
+              if (metaRes.ok) meta = await metaRes.json();
+            } catch (e) {
+              console.warn('failed to load metadata for', m.metadataCID, e);
+            }
+
+            let createdTimestamp = Number(m.timestamp);
+            if (createdTimestamp > 1e10) {
+              createdTimestamp = Math.floor(createdTimestamp / 1000);
+            }
+            const socials = [m.social1, m.social2, m.social3].map((s) =>
+              s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
+            );
+            const twitter = socials.find(
+              (s) =>
+                s?.startsWith('https://x.com') ||
+                s?.startsWith('https://twitter.com'),
+            );
+            if (twitter) {
+              socials.splice(socials.indexOf(twitter), 1);
+            }
+            const telegram = socials.find((s) => s?.startsWith('https://t.me'));
+            if (telegram) {
+              socials.splice(socials.indexOf(telegram), 1);
+            }
+            const discord = socials.find(
+              (s) =>
+                s?.startsWith('https://discord.gg') ||
+                s?.startsWith('https://discord.com'),
+            );
+            if (discord) {
+              socials.splice(socials.indexOf(discord), 1);
+            }
+            const website = socials[0];
+
+            return {
+              ...defaultMetrics,
+              id: m.id.toLowerCase(),
+              tokenAddress: m.id.toLowerCase(),
+              dev: m.creator.id,
+              name: m.name,
+              symbol: m.symbol,
+              image: meta.image || null,
+              description: meta.description ?? '',
+              twitterHandle: twitter ?? '',
+              website: website ?? '',
+              status: m.migrated
+                ? 'graduated'
+                : price * TOTAL_SUPPLY > 12500
+                  ? 'graduating'
+                  : 'new',
+              created: createdTimestamp,
+              price,
+              marketCap: price * TOTAL_SUPPLY,
+              buyTransactions: Number(m.buyTxs),
+              sellTransactions: Number(m.sellTxs),
+              volume24h: Number(m.volumeNative) / 1e18,
+              volumeDelta: 0,
+              discordHandle: discord ?? '',
+              telegramHandle: telegram ?? '',
+              launchedTokens: m.creator.tokensLaunched ?? '',
+              graduatedTokens: m.creator.tokensGraduated ?? '',
+              holders: m.totalHolders - 1,
+              devHolding: m.devHoldingAmount / 1e27,
+              top10Holding: Number(
+                (m.holders ?? [])
+                  .filter((h: { account?: { id?: string } }) => (h.account?.id?.toLowerCase() ?? '') !== (settings.chainConfig[activechain].router ?? '').toLowerCase())
+                  .slice(0, 10)
+                  .reduce((sum: bigint, h: { tokens: string }) => sum + BigInt(h.tokens || '0'), 0n)
+              ) / 1e25,
+            } as Token;
+          }),
+        );
+
+        dispatch({ type: 'INIT', tokens });
+        const all = tokens.map((t) => t.id);
+        trackedMarketsRef.current = new Set(all.map((x) => x.toLowerCase()));
+        openWebsocket(all);
+      } catch (err) {
+        console.error('initial subgraph fetch failed', err);
+      } finally {
+        if (!cancelled) setIsTokenExplorerLoading(false);
+      }
+    }
+
+    bootstrap();
+    return () => {
+      cancelled = true;
+      connectionStateRef.current = 'disconnected';
+
+      if (reconnectTimerRef.current) {
+        window.clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+
+      if (pauseTimeoutRef.current) {
+        clearTimeout(pauseTimeoutRef.current);
+        pauseTimeoutRef.current = null;
+      }
+
+      if (wsRef.current) {
+        const ws = wsRef.current;
+        wsRef.current = null;
+
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onerror = null;
+        ws.onclose = null;
+
+        if (
+          ws.readyState === WebSocket.OPEN ||
+          ws.readyState === WebSocket.CONNECTING
+        ) {
+          try {
+            ws.close(1000, 'component unmount');
+          } catch (error) {
+            console.warn('Error closing WebSocket on unmount:', error);
+          }
+        }
+      }
+
+      connectionAttemptsRef.current = 0;
+      retryCountRef.current = 0;
+      consecutiveFailuresRef.current = 0;
+      trackedMarketsRef.current.clear();
+    };
+  }, [openWebsocket]);
+
+  // memeinterface
   const [memeLive, setMemeLive] = useState<Partial<any>>({});
   const [memeTrades, setMemeTrades] = useState<LaunchpadTrade[]>([]);
   const [memeHolders, setMemeHolders] = useState<Holder[]>([]);
@@ -3949,11 +4686,6 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
   const memeLastInvalidateRef = useRef(0);
   const memePriceTickRef = useRef<(price: number, volNative: number) => void>(() => {});
   const currentPriceRef = useRef<number>(0);
-
-  const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-  const MARKET_CREATED_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
-  const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
-  const TOTAL_SUPPLY = 1e9;
 
   const calcDevHoldingPct = (list: Holder[], dev?: string) => {
     if (!dev) return 0;
@@ -23078,6 +23810,16 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
                 }}
                 quickAmounts={quickAmounts}
                 setQuickAmounts={setQuickAmounts}
+                openWebsocket={openWebsocket}
+                pausedColumn={pausedColumn}
+                setPausedColumn={setPausedColumn}
+                dispatch={dispatch}
+                hidden={hidden}
+                tokensByStatus={tokensByStatus}
+                alertSettings={alertSettings}
+                setAlertSettings={setAlertSettings}
+                loading={teLoading}
+                isLoading={isTokenExplorerLoading}
               />
             } 
           />
