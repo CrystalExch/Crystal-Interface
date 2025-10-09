@@ -2391,11 +2391,12 @@ const setTrackedToYou = useCallback(() => {
 
                     {advancedOrders.length < 5 && (
                       <div className="meme-advanced-add-container">
+                        <Tooltip content="Advanced Orders are currently disabled">
                         <button
                           className="meme-advanced-add-button"
-                          onClick={() =>
-                            setShowAdvancedDropdown(!showAdvancedDropdown)
-                          }
+                          // onClick={() =>
+                          //   setShowAdvancedDropdown(!showAdvancedDropdown)
+                          // }
                         >
                           <span>Add</span>
                           <svg
@@ -2413,7 +2414,7 @@ const setTrackedToYou = useCallback(() => {
                             />
                           </svg>
                         </button>
-
+</Tooltip>
                         {showAdvancedDropdown && (
                           <div className="meme-advanced-dropdown">
                             <button
