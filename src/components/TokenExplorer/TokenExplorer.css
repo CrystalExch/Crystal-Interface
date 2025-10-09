@@ -4532,7 +4532,7 @@
 }
 
 .explorer-third-row.ultra-quickbuy-mode.ultra-dual-buttons {
-  width: clamp(80px, 20%, 140px);  
+  width: clamp(80px, 20%, 160px);  
 }
 
 .explorer-second-ultra-container {
@@ -4546,12 +4546,12 @@
   flex-direction: column;
   padding: 0.75rem;
   position: absolute;
-  right: clamp(85px, calc(20% + 5px), 145px);  
+  right: clamp(85px, calc(20% + 5px), 165px);  
   top: 0;
   transition: all 0.3s ease;
   --mouse-x: 50%;
   --mouse-y: 50%;
-  width: clamp(80px, 20%, 140px);  
+  width: clamp(80px, 20%, 160px);  
   border: 1px solid transparent;
 }
 
