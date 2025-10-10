@@ -809,13 +809,11 @@
   position: absolute;
   inset: 0; 
   border-radius: 5px;
-  background: conic-gradient(
-    from 0deg,
-    var(--progress-color, #43e17d) 0deg,
-    var(--progress-color, #43e17d) var(--progress-angle, 0deg),
-    rgba(255, 255, 255, 0.1) var(--progress-angle, 0deg),
-    rgba(255, 255, 255, 0.1) 360deg
-  );
+  background: conic-gradient(from 0deg,
+      #aaaecf 0deg,
+      #aaaecf var(--progress-angle),
+      rgba(157, 169, 240, 0.2) var(--progress-angle),
+      rgba(157, 169, 240, 0.2) 360deg);
   z-index: 3;
   opacity: 1;
   animation: meme-interface-glow 2s ease-in-out infinite alternate;
@@ -1816,4 +1814,22 @@
 
 .meme-interface-token-header-right.show-right-gradient::after {
   opacity: 1;
+}
+
+.header-launchpad-logo{
+  width: 10px;
+}
+.header-launchpad-logo-container{
+    position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: black;
+  width: 17px;
+  height: 17px;
+  border-radius: 20px;
+  border: 1px solid #aaaecf;
+  margin-bottom:-50px;
+  left: 35px;
+  z-index: 100;
 }

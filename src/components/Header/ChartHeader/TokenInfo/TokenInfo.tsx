@@ -50,6 +50,7 @@ const createColorGradient = (base: string) => {
     end: `rgb(${lighter(r)}, ${lighter(g)}, ${lighter(b)})`,
   };
 };
+const crystal = '/CrystalLogo.png';
 
 const calculateBondingPercentage = (marketCap: number) => {
   const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
@@ -1399,6 +1400,13 @@ useEffect(() => {
                     </div>,
                     document.body,
                   )}
+              <div className="header-launchpad-logo-container">
+                  <Tooltip content="crystal.fun V2">
+
+                    <img src={crystal} className="header-launchpad-logo" />
+                  </Tooltip>
+
+                </div>
               </div>
 
               <div className="meme-interface-token-meta-row">
