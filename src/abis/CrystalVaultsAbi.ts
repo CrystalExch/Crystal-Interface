@@ -1056,5 +1056,33 @@ export const CrystalVaultsAbi = [
       ],
       "stateMutability": "nonpayable",
       "type": "function"
-    }
+    },
+    {
+      "inputs": [],
+      "name": "getBalances",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "quoteBalance",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "baseBalance",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "availableBalanceQuote",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "availableBalanceBase",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
   ] as const;

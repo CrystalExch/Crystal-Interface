@@ -50,6 +50,7 @@ interface LPVaultsProps {
   isLoading: any;
   depositors: any;
   depositHistory: any;
+  withdrawHistory: any;
   openOrders: any;
   allOrders: any;
   selectedVaultStrategy: any;
@@ -155,6 +156,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   isLoading,
   depositors,
   depositHistory,
+  withdrawHistory,
   openOrders,
   // allOrders,
   selectedVaultStrategy,
@@ -169,7 +171,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   );
   const [showManagementMenu, setShowManagementMenu] = useState(false);
   const [activeVaultStrategyTab, setActiveVaultStrategyTab] = useState<
-    'Balances' | 'Open Orders' | 'Depositors' | 'Deposit History'
+    'Balances' | 'Open Orders' | 'Depositors' | 'Deposit History' | 'Withdraw History'
   >('Balances');
   const [activeVaultPerformance, _setActiveVaultPerformance] = useState<any>([
     { name: 'Jan', value: 12.4 },
@@ -209,6 +211,15 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
     return typeMatch && myVaultsMatch && searchMatch;
   });
+
+  const selectedVaultRef = useRef<any>(null);
+  const stableSelectedVault = React.useMemo(() => {
+    if (!selectedVaultStrategy) return null;
+    const fromList = (vaultList || []).find((v: any) => v.address === selectedVaultStrategy);
+    const next = fromList ?? selectedVault ?? selectedVaultRef.current;
+    if (next) selectedVaultRef.current = next;
+    return next;
+  }, [vaultList, selectedVaultStrategy, selectedVault]);
 
   const getTokenIcon = (tokenIdentifier: string) => {
     return tokendict[tokenIdentifier]?.image;
@@ -344,6 +355,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         'Open Orders',
         'Depositors',
         'Deposit History',
+        'Withdraw History'
       ];
       const activeTabIndex = availableTabs.findIndex(
         (tab) => tab === activeTab,
@@ -406,22 +418,22 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   ]);
 
   useEffect(() => {
-    if (currentRoute.startsWith('/earn/vaults')) {
-      const pathParts = currentRoute.split('/');
-      if (pathParts.length >= 4 && pathParts[3]) {
-        const vaultAddress = pathParts[3];
-        const vault = filteredVaultStrategies.find(
-          (v: any) => v.address === vaultAddress,
-        );
-        if (vault && selectedVaultStrategy !== vault.address) {
-          setSelectedVaultStrategy(vault.address);
-          setActiveVaultStrategyTab('Balances');
-        }
-      } else {
-        setSelectedVaultStrategy(null);
-      }
+    if (!currentRoute.startsWith('/earn/vaults')) return;
+
+    const parts = currentRoute.split('/');
+    const addr = parts.length >= 4 ? parts[3] : null;
+
+    if (!addr) {
+      setSelectedVaultStrategy(null);
+      return;
     }
-  }, [currentRoute, filteredVaultStrategies, selectedVaultStrategy]);
+
+    const v = (vaultList || []).find((x: any) => x.address === addr);
+    if (v && selectedVaultStrategy !== v.address) {
+      setSelectedVaultStrategy(v.address);
+      setActiveVaultStrategyTab('Balances');
+    }
+  }, [currentRoute, vaultList, selectedVaultStrategy]);
 
   return (
     <div className="vaults-page-container">
@@ -643,7 +655,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
           </>
         )}
 
-        {selectedVaultStrategy && selectedVault && (
+        {selectedVaultStrategy && stableSelectedVault && (
           <div className="vault-strategy-detail">
             <div className="vault-strategy-header">
               <div className="vault-strategy-breadcrumb-container">
@@ -653,48 +665,48 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   </button>
                   <ChevronLeft size={16} className="earn-breadcrumb-arrow" />
                   <span className="breadcrumb-current">
-                    {selectedVault.name}
+                    {stableSelectedVault.name}
                   </span>
                 </div>
 
                 <div className="vault-detail-action-buttons">
                   <button
-                    className={`vault-detail-deposit-btn ${!connected || selectedVault.closed ? 'disabled' : ''}`}
+                    className={`vault-detail-deposit-btn ${!connected || stableSelectedVault.closed ? 'disabled' : ''}`}
                     onClick={() => {
                       if (!connected) {
                         setpopup(4);
-                      } else if (!selectedVault.closed) {
-                        setselectedVault(selectedVault);
+                      } else if (!stableSelectedVault.closed) {
+                        setselectedVault(stableSelectedVault);
                         setpopup(22);
                       }
                     }}
-                    disabled={!connected || selectedVault.closed}
+                    disabled={!connected || stableSelectedVault.closed}
                   >
                     Deposit
                   </button>
 
                   <button
-                    className={`vault-detail-withdraw-btn ${!connected || parseFloat(selectedVault.userShares || '0') === 0 ? 'disabled' : ''}`}
+                    className={`vault-detail-withdraw-btn ${!connected || parseFloat(stableSelectedVault.userShares || '0') === 0 ? 'disabled' : ''}`}
                     onClick={() => {
                       if (!connected) {
                         setpopup(4);
                       } else if (
-                        parseFloat(selectedVault.userShares || '0') > 0
+                        parseFloat(stableSelectedVault.userShares || '0') > 0
                       ) {
-                        setselectedVault(selectedVault);
+                        setselectedVault(stableSelectedVault);
                         setpopup(23);
                       }
                     }}
                     disabled={
                       !connected ||
-                      parseFloat(selectedVault.userShares || '0') === 0
+                      parseFloat(stableSelectedVault.userShares || '0') === 0
                     }
                   >
                     Withdraw
                   </button>
 
                   {address &&
-                    selectedVault.owner.toLowerCase() ===
+                    stableSelectedVault.owner.toLowerCase() ===
                       address.toLowerCase() && (
                       <>
                         <button
@@ -715,7 +727,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                 handleVaultManagement('disable-deposits')
                               }
                             >
-                              {selectedVault?.locked
+                              {stableSelectedVault?.locked
                                 ? t('Enable Deposits')
                                 : t('Disable Deposits')}
                             </button>
@@ -743,16 +755,16 @@ const LPVaults: React.FC<LPVaultsProps> = ({
               <div className="vault-strategy-sticky-bar">
                 <div className="vault-strategy-info">
                   <div className="vault-strategy-name">
-                    {selectedVault.name}
+                    {stableSelectedVault.name}
                   </div>
                   <div className="vault-strategy-contract">
                     <span className="contract-label">Vault Address:</span>
                     <span className="contract-address">
-                      {getAddress(selectedVault.address)}
+                      {getAddress(stableSelectedVault.address)}
                     </span>
                     <a
                       className="copy-address-btn"
-                      href={`${explorer}/address/${selectedVault.address}`}
+                      href={`${explorer}/address/${stableSelectedVault.address}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -767,16 +779,16 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                       Total Value Locked
                     </span>
                     <span className="vault-metric-value">
-                      {formatUSDDisplay(calculateTVL(selectedVault))}
+                      {formatUSDDisplay(calculateTVL(stableSelectedVault))}
                     </span>
                   </div>
                   <div className="vault-metric">
                     <span className="vault-metric-label">Deposit Cap</span>
                     <span className="vault-metric-value">
-                      {BigInt(selectedVault.maxShares) === 0n ? (
+                      {BigInt(stableSelectedVault.maxShares) === 0n ? (
                         <span>&#8734;</span>
                       ) : (
-                        `$${formatDisplayValue(BigInt(selectedVault.maxShares), 0)}`
+                        `$${formatDisplayValue(BigInt(stableSelectedVault.maxShares), 0)}`
                       )}
                     </span>
                   </div>
@@ -786,18 +798,18 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                     </span>
                     <span className="vault-metric-value">
                       {formatUSDDisplay(
-                        calculateUserPositionValue(selectedVault),
+                        calculateUserPositionValue(stableSelectedVault),
                       )}
                     </span>
                   </div>
                   <div className="vault-metric">
                     <span className="vault-metric-label">Status</span>
                     <span
-                      className={`vault-metric-value ${selectedVault.closed ? 'metric-negative' : selectedVault.locked ? 'metric-warning' : 'metric-positive'}`}
+                      className={`vault-metric-value ${stableSelectedVault.closed ? 'metric-negative' : stableSelectedVault.locked ? 'metric-warning' : 'metric-positive'}`}
                     >
-                      {selectedVault.closed
+                      {stableSelectedVault.closed
                         ? 'Closed'
-                        : selectedVault.locked
+                        : stableSelectedVault.locked
                           ? 'Locked'
                           : 'Active'}
                     </span>
@@ -812,36 +824,36 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   <div className="description-header">
                     <span className="leader-label">Vault Leader</span>
                     <span className="leader-address">
-                      {getAddress(selectedVault.owner).slice(0, 6)}...
-                      {getAddress(selectedVault.owner).slice(-4)}
+                      {getAddress(stableSelectedVault.owner).slice(0, 6)}...
+                      {getAddress(stableSelectedVault.owner).slice(-4)}
                     </span>
                   </div>
                   <span className="vault-description">Description</span>
-                  <p className="description-text">{selectedVault.desc}</p>
+                  <p className="description-text">{stableSelectedVault.desc}</p>
                   <div className="vault-socials">
-                    {(selectedVault.social1 || selectedVault.social2) && (
+                    {(stableSelectedVault.social1 || stableSelectedVault.social2) && (
                       <span className="vault-description">Socials</span>
                     )}
-                    {selectedVault.social1 && (
+                    {stableSelectedVault.social1 && (
                       <a
-                        href={selectedVault.social1}
+                        href={stableSelectedVault.social1}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="twitter-link-description"
                       >
                         <span>Social 1:</span>
-                        {selectedVault.social1}
+                        {stableSelectedVault.social1}
                       </a>
                     )}
-                    {selectedVault.social2 && (
+                    {stableSelectedVault.social2 && (
                       <a
-                        href={selectedVault.social2}
+                        href={stableSelectedVault.social2}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="twitter-link-description"
                       >
                         <span>Social 2:</span>
-                        {selectedVault.social2}
+                        {stableSelectedVault.social2}
                       </a>
                     )}
                   </div>
@@ -1002,6 +1014,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                         'Open Orders',
                         'Depositors',
                         'Deposit History',
+                        'Withdraw History',
                       ] as const
                     ).map((tab, index) => (
                       <div
@@ -1041,21 +1054,21 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                           <div className="vault-holdings-row">
                             <div className="vault-holding-asset">
                               <img
-                                src={getTokenIcon(selectedVault.quoteAsset)}
+                                src={getTokenIcon(stableSelectedVault.quoteAsset)}
                                 className="vault-holding-icon"
                               />
                               <span>
-                                {getTokenName(selectedVault.quoteAsset)}
+                                {getTokenName(stableSelectedVault.quoteAsset)}
                               </span>
                             </div>
                             <div className="vault-holdings-col">
-                              {getTokenTicker(selectedVault.quoteAsset)}
+                              {getTokenTicker(stableSelectedVault.quoteAsset)}
                             </div>
                             <div className="vault-holdings-col">
                               {formatDisplayValue(
-                                BigInt(selectedVault.quoteBalance),
+                                BigInt(stableSelectedVault.quoteBalance),
                                 Number(
-                                  tokendict[selectedVault?.quoteAsset]
+                                  tokendict[stableSelectedVault?.quoteAsset]
                                     ?.decimals || 18,
                                 ),
                               )}
@@ -1063,14 +1076,14 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                             <div className="vault-holdings-col">
                               {formatDisplayValue(
                                 BigInt(
-                                  selectedVault.totalShares
-                                    ? (selectedVault.quoteBalance *
-                                        selectedVault.userShares) /
-                                        selectedVault.totalShares
+                                  stableSelectedVault.totalShares
+                                    ? (stableSelectedVault.quoteBalance *
+                                        stableSelectedVault.userShares) /
+                                        stableSelectedVault.totalShares
                                     : 0n,
                                 ),
                                 Number(
-                                  tokendict[selectedVault?.quoteAsset]
+                                  tokendict[stableSelectedVault?.quoteAsset]
                                     ?.decimals || 18,
                                 ),
                               )}
@@ -1079,21 +1092,21 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                           <div className="vault-holdings-row">
                             <div className="vault-holding-asset">
                               <img
-                                src={getTokenIcon(selectedVault.baseAsset)}
+                                src={getTokenIcon(stableSelectedVault.baseAsset)}
                                 className="vault-holding-icon"
                               />
                               <span>
-                                {getTokenName(selectedVault.baseAsset)}
+                                {getTokenName(stableSelectedVault.baseAsset)}
                               </span>
                             </div>
                             <div className="vault-holdings-col">
-                              {getTokenTicker(selectedVault.baseAsset)}
+                              {getTokenTicker(stableSelectedVault.baseAsset)}
                             </div>
                             <div className="vault-holdings-col">
                               {formatDisplayValue(
-                                BigInt(selectedVault.baseBalance),
+                                BigInt(stableSelectedVault.baseBalance),
                                 Number(
-                                  tokendict[selectedVault?.baseAsset]
+                                  tokendict[stableSelectedVault?.baseAsset]
                                     ?.decimals || 18,
                                 ),
                               )}
@@ -1101,14 +1114,14 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                             <div className="vault-holdings-col">
                               {formatDisplayValue(
                                 BigInt(
-                                  selectedVault.totalShares
-                                    ? (selectedVault.baseBalance *
-                                        selectedVault.userShares) /
-                                        selectedVault.totalShares
+                                  stableSelectedVault.totalShares
+                                    ? (stableSelectedVault.baseBalance *
+                                        stableSelectedVault.userShares) /
+                                        stableSelectedVault.totalShares
                                     : 0n,
                                 ),
                                 Number(
-                                  tokendict[selectedVault?.baseAsset]
+                                  tokendict[stableSelectedVault?.baseAsset]
                                     ?.decimals || 18,
                                 ),
                               )}
@@ -1154,7 +1167,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                     : ''}
                                 </div>
                                 <div className="vault-depositors-col">
-                                  {(d.shares * 100 / Number(selectedVault.totalShares)).toFixed(2)}%
+                                  {(d.shares * 100 / Number(stableSelectedVault.totalShares)).toFixed(2)}%
                                 </div>
                                 <div className="vault-depositors-col">
                                   {d.depositCount}
@@ -1233,15 +1246,96 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                 </div>
                                 <div className="vault-dh-col">
                                   {formatDisplayValue(
-                                    e.amountQuote, selectedVault.quoteDecimals
+                                    e.amountQuote, stableSelectedVault.quoteDecimals
                                   )}{' '}
-                                  {selectedVault.quoteTicker}
+                                  {stableSelectedVault.quoteTicker}
                                 </div>
                                 <div className="vault-dh-col">
                                   {formatDisplayValue(
-                                    e.amountBase, selectedVault.baseDecimals
+                                    e.amountBase, stableSelectedVault.baseDecimals
                                   )}{' '}
-                                  {selectedVault.baseTicker}
+                                  {stableSelectedVault.baseTicker}
+                                </div>
+                                <div className="vault-dh-col">
+                                  <a
+                                    href={`${explorer}/tx/${e.txHash}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    <svg
+                                      className="txn-link"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="13"
+                                      height="13"
+                                      viewBox="0 0 24 24"
+                                      fill="currentColor"
+                                      onMouseEnter={(e) =>
+                                        (e.currentTarget.style.color =
+                                          '#73758b')
+                                      }
+                                      onMouseLeave={(e) =>
+                                        (e.currentTarget.style.color =
+                                          '#b7bad8')
+                                      }
+                                    >
+                                      <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                                      <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                                    </svg>
+                                  </a>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeVaultStrategyTab === 'Withdraw History' && (
+                    <div className="balances-tab">
+                      <div className="vault-dh">
+                        {withdrawHistory.length === 0 ? (
+                          <p>No withdrawals yet.</p>
+                        ) : (
+                          <div className="vault-dh-table">
+                            <div className="vault-dh-header">
+                              <div className="vault-dh-col-header">Time</div>
+                              <div className="vault-dh-col-header">Account</div>
+                              <div className="vault-dh-col-header">Quote</div>
+                              <div className="vault-dh-col-header">Base</div>
+                              <div className="vault-dh-col-header">Tx</div>
+                            </div>
+                            {withdrawHistory.map((e: any) => (
+                              <div key={e.id} className="vault-dh-row">
+                                <div className="vault-depositors-col">
+                                  {(() => {
+                                    const ts =
+                                      e.timestamp == null
+                                        ? null
+                                        : Number(e.timestamp);
+                                    if (!ts) return 'N/A';
+                                    const dt = new Date(ts * 1000);
+                                    const pad = (n: number) =>
+                                      n.toString().padStart(2, '0');
+                                    return `${pad(dt.getMonth() + 1)}/${pad(dt.getDate())}, ${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+                                  })()}
+                                </div>
+                                <div className="vault-dh-col">
+                                  {e.account?.id
+                                    ? `${getAddress(e.account.id).slice(0, 6)}...${getAddress(e.account.id).slice(-4)}`
+                                    : ''}
+                                </div>
+                                <div className="vault-dh-col">
+                                  {formatDisplayValue(
+                                    e.amountQuote, stableSelectedVault.quoteDecimals
+                                  )}{' '}
+                                  {stableSelectedVault.quoteTicker}
+                                </div>
+                                <div className="vault-dh-col">
+                                  {formatDisplayValue(
+                                    e.amountBase, stableSelectedVault.baseDecimals
+                                  )}{' '}
+                                  {stableSelectedVault.baseTicker}
                                 </div>
                                 <div className="vault-dh-col">
                                   <a

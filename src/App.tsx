@@ -2318,9 +2318,15 @@ useEffect(() => {
   const [isVaultsLoading, setIsVaultsLoading] = useState(true);
   const [depositors, setDepositors] = useState<any[]>([]);
   const [depositHistory, setDepositHistory] = useState<any[]>([]);
+  const [withdrawHistory, setWithdrawHistory] = useState<any[]>([]);
   const [openOrders, setOpenOrders] = useState<any[]>([]);
   const [_allOrders, setAllOrders] = useState<any[]>([]);
-  const [vaultDetailTick, setVaultDetailTick] = useState(0);
+
+  const vaultListRef = useRef<any[]>([]);
+  useEffect(() => { vaultListRef.current = vaultList; }, [vaultList]);
+
+  const wsCooldownRef = useRef<number>(0);
+  const wsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function fetchVaultBalances(vaults: { id:`0x${string}` }[]) {
     const calls = vaults.map(v => ({
@@ -2331,7 +2337,6 @@ useEffect(() => {
     }));
 
     const res = await readContracts(config, { contracts: calls });
-    console.log(res);
     const out: Record<string, {
       quoteBalance: bigint,
       baseBalance: bigint,
@@ -2509,7 +2514,7 @@ useEffect(() => {
     return () => { cancelled = true; };
   }, [address, activechain, tokendict]);
 
-  // details when a vault is selected + ws
+  // details when a vault is selected
   useEffect(() => {
     let cancelled = false;
     
@@ -2527,11 +2532,6 @@ useEffect(() => {
           vault: selectedVaultStrategy,
           acct: selectedVaultStrategy,
         };
-
-        const flattenMap = (mapObj: any, key: "orders" | "trades") =>
-          (mapObj?.shards ?? [])
-            .flatMap((s: any) => s?.batches ?? [])
-            .flatMap((b: any) => b?.[key] ?? []);
 
         const gql = (s: TemplateStringsArray, ...args: any[]) => s.reduce((acc, cur, i) => acc + cur + (args[i] ?? ''), '');
 
@@ -2646,165 +2646,256 @@ useEffect(() => {
           }
         `;
 
-        const data = await fetchSubgraph(SUBGRAPH_URL, VAULT_DETAIL_QUERY, variables);
+        const data = await fetchSubgraph(SUBGRAPH_URL, VAULT_DETAIL_QUERY, {
+          vault: selectedVaultStrategy,
+          acct: selectedVaultStrategy,
+        });
         if (cancelled) return;
 
         const acct = data?.account ?? null;
-        const _openOrders = flattenMap(acct?.openOrderMap, "orders") || [];
-        const _allOrders  = flattenMap(acct?.orderMap, "orders") || [];
+        const flattenMap = (mapObj: any, key: 'orders' | 'trades') =>
+          (mapObj?.shards ?? []).flatMap((s: any) => s?.batches ?? []).flatMap((b: any) => b?.[key] ?? []);
 
         setDepositors(data?.depositors ?? []);
         setDepositHistory(data?.deposits ?? []);
-        setOpenOrders(_openOrders);
-        setAllOrders(_allOrders);
+        setWithdrawHistory(data?.withdrawals ?? []);
+        setOpenOrders(flattenMap(acct?.openOrderMap, 'orders') || []);
+        setAllOrders(flattenMap(acct?.orderMap, 'orders') || []);
 
-        const baseVault = (vaultList || []).find(
+        const baseVault = (vaultListRef.current || []).find(
           (v: any) => (v?.address || '').toLowerCase() === selectedVaultStrategy.toLowerCase()
         );
-
         if (baseVault) {
           let userShares = baseVault.userShares ?? 0n;
-          try {
-            const me = (data?.depositors ?? []).find(
-              (d: any) => (d?.account?.id || '').toLowerCase() === (address || '').toLowerCase()
-            );
-            if (me?.shares != null) {
-              userShares = typeof me.shares === 'bigint' ? me.shares : BigInt(String(me.shares));
+          const me = (data?.depositors ?? []).find(
+            (d: any) => (d?.account?.id || '').toLowerCase() === (address || '').toLowerCase()
+          );
+          if (me?.shares != null) userShares = BigInt(String(me.shares));
+          setselectedVault((prev: any) => {
+            if (!prev || prev.address !== baseVault.address || String(prev.userShares) !== String(userShares)) {
+              return { ...baseVault, userShares } as any;
             }
-          } catch {}
-
-          if (!cancelled) {
-            if (
-              !selectedVault ||
-              selectedVault.address !== baseVault.address ||
-              String(selectedVault.userShares ?? '') !== String(userShares ?? '')
-            ) {
-              setselectedVault({
-                ...baseVault,
-                userShares,
-              } as any);
-            }
-          }
-        } else {
-          if (!cancelled) setselectedVault(null);
+            return prev;
+          });
         }
-
-        const wssUrl = settings.chainConfig[activechain]?.wssurl;
-        const factoryAddress = settings.chainConfig[activechain]?.crystalVaults;
-        if (!wssUrl || !factoryAddress || !baseVault) return;
-
-        const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
-        const DEPOSIT_TOPIC = '0x4e2ca0515ed1aef1395f66b5303bb5d6f1bf9d61a353fa53f73f8ac9973fa9f6' as const;
-        const WITHDRAW_TOPIC = '0xebff2602b3f468259e1e99f613fed6691f3a6526effe6ef3e768ba7ae7a36c4f' as const;
-        const LOCK_TOPIC = '0x44427e3003a08f22cf803894075ac0297524e09e521fc1c15bc91741ce3dc159' as const;
-        const UNLOCK_TOPIC = '0x7e6adfec7e3f286831a0200a754127c171a2da564078722cb97704741bbdb0ea' as const;
-        const CLOSE_TOPIC = '0x13607bf9d2dd20e1f3a7daf47ab12856f8aad65e6ae7e2c75ace3d0c424a40e8' as const;
-
-        const vaultAddrLc = selectedVaultStrategy.toLowerCase();
-        const quoteLc = (baseVault.quoteAsset || '').toLowerCase();
-        const baseLc = (baseVault.baseAsset  || '').toLowerCase();
-        const factoryLc = (factoryAddress || '').toLowerCase();
-        const vaultTopicLc = '0x' + vaultAddrLc.slice(2).padStart(64, '0');
-
-        const ws = new WebSocket(wssUrl);
-
-        const sendSub = (params: any) => {
-          try {
-            ws.send(JSON.stringify({
-              id: Date.now(),
-              jsonrpc: '2.0',
-              method: 'eth_subscribe',
-              params
-            }));
-          } catch {}
-        };
-
-        ws.onopen = () => {
-          sendSub(['logs', {
-            address: factoryLc,
-            topics: [
-              [DEPOSIT_TOPIC, WITHDRAW_TOPIC, LOCK_TOPIC, UNLOCK_TOPIC, CLOSE_TOPIC],
-              vaultTopicLc,
-            ],
-          }]);
-
-          sendSub(['logs', { address: quoteLc, topics: [TRANSFER_TOPIC, vaultTopicLc] }]);
-          sendSub(['logs', { address: baseLc, topics: [TRANSFER_TOPIC, vaultTopicLc] }]);
-        };
-
-        ws.onmessage = async ({ data }) => {
-          let msg: any; try { msg = JSON.parse(data as any); } catch { return; }
-          if (msg?.method !== 'eth_subscription') return;
-
-          const log = msg.params?.result;
-          if (!log?.topics?.length) return;
-
-          const topic0 = (log.topics[0] || '').toLowerCase();
-
-          const isVaultEvent =
-            topic0 === DEPOSIT_TOPIC ||
-            topic0 === WITHDRAW_TOPIC ||
-            topic0 === LOCK_TOPIC ||
-            topic0 === UNLOCK_TOPIC ||
-            topic0 === CLOSE_TOPIC;
-
-          const isTokenTransfer = topic0 === TRANSFER_TOPIC;
-
-          const matchesVault =
-            (log.topics?.[1] || '').toLowerCase() === vaultTopicLc ||
-            (log.topics?.[2] || '').toLowerCase() === vaultTopicLc ||
-            (log.topics?.[3] || '').toLowerCase() === vaultTopicLc;
-
-          if (!(isVaultEvent || isTokenTransfer) || !matchesVault) return;
-
-          try {
-            setIsVaultsLoading(true);
-            const vaultsSlim = (vaultList || []).map((v: any) => ({
-              id: v.id as `0x${string}`,
-              quoteAsset: v.quoteAsset as `0x${string}`,
-              baseAsset: v.baseAsset as `0x${string}`,
-            }));
-            const oc = await fetchVaultBalances(vaultsSlim);
-
-            setVaultList((prev: any[]) =>
-              prev.map((v: any) => {
-                const b = oc[String(v.id).toLowerCase()];
-                if (!b) return v;
-                return { ...v, quoteBalance: b.quoteBalance, baseBalance: b.baseBalance };
-              })
-            );
-
-            if (selectedVaultStrategy) {
-              setVaultDetailTick((t) => t + 1);
-            }
-          } catch (e) {
-            console.warn('ws live update failed', e);
-          } finally {
-            setIsVaultsLoading(false);
-          }
-        };
-
-        ws.onerror = () => {};
-        ws.onclose = () => {};
-
-        const close = () => { try { ws.close(); } catch {} };
-        const cleanupWs = close;
-        const _noop = cleanupWs;
-
-        return () => {};
       } catch (e) {
-        console.error("vault detail fetch failed:", e);
-        if (cancelled) return;
-        setDepositors([]);
-        setDepositHistory([]);
-        setOpenOrders([]);
-        setAllOrders([]);
+        console.error('vault detail fetch failed:', e);
+        if (!cancelled) {}
       }
     };
 
     run();
     return () => { cancelled = true; };
-  }, [selectedVaultStrategy, vaultDetailTick]);
+  }, [selectedVaultStrategy]);
+
+  // vault ws
+  useEffect(() => {
+    if (!selectedVaultStrategy) return;
+
+    const wssUrl = settings.chainConfig[activechain]?.wssurl;
+    const factoryAddress = settings.chainConfig[activechain]?.crystalVaults;
+    if (!wssUrl || !factoryAddress) return;
+
+    const DEPOSIT_TOPIC = '0x4e2ca0515ed1aef1395f66b5303bb5d6f1bf9d61a353fa53f73f8ac9973fa9f6';
+    const WITHDRAW_TOPIC = '0xebff2602b3f468259e1e99f613fed6691f3a6526effe6ef3e768ba7ae7a36c4f';
+    const LOCK_TOPIC = '0x44427e3003a08f22cf803894075ac0297524e09e521fc1c15bc91741ce3dc159';
+    const UNLOCK_TOPIC = '0x7e6adfec7e3f286831a0200a754127c171a2da564078722cb97704741bbdb0ea';
+    const CLOSE_TOPIC = '0x13607bf9d2dd20e1f3a7daf47ab12856f8aad65e6ae7e2c75ace3d0c424a40e8';
+
+    const vaultAddrLc = selectedVaultStrategy.toLowerCase();
+    const factoryLc = (factoryAddress || '').toLowerCase();
+    const vaultTopicLc = '0x' + vaultAddrLc.slice(2).padStart(64, '0');
+
+    const ws = new WebSocket(wssUrl);
+
+    const sendSub = (params: any) => {
+      try {
+        ws.send(JSON.stringify({
+          id: Date.now(),
+          jsonrpc: '2.0',
+          method: 'eth_subscribe',
+          params
+        }));
+      } catch {}
+    };
+
+    ws.onopen = () => {
+      sendSub(['logs', {
+        address: factoryLc,
+        topics: [[DEPOSIT_TOPIC, WITHDRAW_TOPIC, LOCK_TOPIC, UNLOCK_TOPIC, CLOSE_TOPIC], vaultTopicLc],
+      }]);
+    };
+
+    ws.onmessage = async ({ data }) => {
+      let msg: any; try { msg = JSON.parse(data as any); } catch { return; }
+      if (msg?.method !== 'eth_subscription') return;
+
+      const log = msg.params?.result;
+      const topic0 = String(log?.topics?.[0] || '').toLowerCase();
+
+      const isVaultEvent =
+        topic0 === DEPOSIT_TOPIC ||
+        topic0 === WITHDRAW_TOPIC ||
+        topic0 === LOCK_TOPIC ||
+        topic0 === UNLOCK_TOPIC ||
+        topic0 === CLOSE_TOPIC;
+
+      const matchesVault =
+        String(log?.topics?.[1] || '').toLowerCase() === vaultTopicLc ||
+        String(log?.topics?.[2] || '').toLowerCase() === vaultTopicLc ||
+        String(log?.topics?.[3] || '').toLowerCase() === vaultTopicLc;
+
+      if (!isVaultEvent || !matchesVault) return;
+
+      try {
+        const topic1 = String(log?.topics?.[1] || '');
+        const topic2 = String(log?.topics?.[2] || '');
+        const vaultAddr = ('0x' + topic1.slice(-40)).toLowerCase() as `0x${string}`;
+        const userAddr = ('0x' + topic2.slice(-40)).toLowerCase();
+
+        const hex = String(log?.data || '0x');
+        const words = hex.startsWith('0x') ? hex.slice(2).match(/.{1,64}/g) || [] : (hex.match(/.{1,64}/g) || []);
+        const shares = words[0] ? BigInt('0x' + words[0]) : 0n;
+        const amountQuote = words[1] ? BigInt('0x' + words[1]) : 0n;
+        const amountBase = words[2] ? BigInt('0x' + words[2]) : 0n;
+
+        const ts = Math.floor(Date.now() / 1000);
+        const rowId = `${log.transactionHash}-${log.logIndex}`;
+
+        if (topic0 === DEPOSIT_TOPIC) {
+          const newRow = {
+            id: rowId,
+            account: { id: userAddr },
+            shares: shares.toString(),
+            amountQuote: amountQuote.toString(),
+            amountBase: amountBase.toString(),
+            txHash: log.transactionHash,
+            timestamp: ts,
+          };
+          setDepositHistory(prev => {
+            if (prev?.some((r: any) => r.id === rowId)) return prev;
+            return [newRow, ...(prev || [])];
+          });
+
+          setDepositors(prev => {
+            const list = Array.isArray(prev) ? [...prev] : [];
+            const i = list.findIndex((d: any) => String(d?.account?.id || '').toLowerCase() === userAddr);
+            if (i >= 0) {
+              const cur = list[i];
+              const curShares = toBigIntSafe(cur.shares);
+              const curDQ = toBigIntSafe(cur.totalDepositedQuote);
+              const curDB = toBigIntSafe(cur.totalDepositedBase);
+              list[i] = {
+                ...cur,
+                shares: (curShares + shares).toString(),
+                depositCount: Number(cur.depositCount || 0) + 1,
+                totalDepositedQuote: (curDQ + amountQuote).toString(),
+                totalDepositedBase: (curDB + amountBase).toString(),
+                lastDepositAt: ts,
+                updatedAt: ts,
+              };
+            } else {
+              list.unshift({
+                id: `${userAddr}-${vaultAddr}`,
+                account: { id: userAddr },
+                shares: shares.toString(),
+                depositCount: 1,
+                withdrawCount: 0,
+                totalDepositedQuote: amountQuote.toString(),
+                totalDepositedBase: amountBase.toString(),
+                totalWithdrawnQuote: '0',
+                totalWithdrawnBase: '0',
+                lastDepositAt: ts,
+                lastWithdrawAt: 0,
+                updatedAt: ts,
+              });
+            }
+            return list;
+          });
+        }
+
+        if (topic0 === WITHDRAW_TOPIC) {
+          const newRow = {
+            id: rowId,
+            account: { id: userAddr },
+            shares: shares.toString(),
+            amountQuote: amountQuote.toString(),
+            amountBase: amountBase.toString(),
+            txHash: log.transactionHash,
+            timestamp: ts,
+          };
+          setWithdrawHistory(prev => {
+            if (prev?.some((r: any) => r.id === rowId)) return prev;
+            return [newRow, ...(prev || [])];
+          });
+
+          setDepositors(prev => {
+            const list = Array.isArray(prev) ? [...prev] : [];
+            const i = list.findIndex((d: any) => String(d?.account?.id || '').toLowerCase() === userAddr);
+            if (i >= 0) {
+              const cur = list[i];
+              const curShares = toBigIntSafe(cur.shares);
+              const curWQ = toBigIntSafe(cur.totalWithdrawnQuote);
+              const curWB = toBigIntSafe(cur.totalWithdrawnBase);
+              list[i] = {
+                ...cur,
+                shares: (curShares - shares >= 0n ? curShares - shares : 0n).toString(),
+                withdrawCount: Number(cur.withdrawCount || 0) + 1,
+                totalWithdrawnQuote: (curWQ + amountQuote).toString(),
+                totalWithdrawnBase: (curWB + amountBase).toString(),
+                lastWithdrawAt: ts,
+                updatedAt: ts,
+              };
+            } else {
+              list.unshift({
+                id: `${userAddr}-${vaultAddr}`,
+                account: { id: userAddr },
+                shares: '0',
+                depositCount: 0,
+                withdrawCount: 1,
+                totalDepositedQuote: '0',
+                totalDepositedBase: '0',
+                totalWithdrawnQuote: amountQuote.toString(),
+                totalWithdrawnBase: amountBase.toString(),
+                lastDepositAt: 0,
+                lastWithdrawAt: ts,
+                updatedAt: ts,
+              });
+            }
+            return list;
+          });
+        }
+      } catch (e) {
+        console.warn('ws update failed', e);
+      }
+
+      const now = Date.now();
+      wsCooldownRef.current = now;
+      if (wsTimerRef.current) clearTimeout(wsTimerRef.current);
+      wsTimerRef.current = setTimeout(async () => {
+        const slim = (vaultListRef.current || []).map((v: any) => ({ id: v.id as `0x${string}` }));
+        try {
+          const oc = await fetchVaultBalances(slim);
+          setVaultList((prev: any[]) =>
+            prev.map((v: any) => {
+              const b = oc[String(v.id).toLowerCase()];
+              return b ? { ...v, quoteBalance: b.quoteBalance, baseBalance: b.baseBalance } : v;
+            })
+          );
+        } catch (e) {
+          console.warn('ws refresh failed', e);
+        }
+      }, 300);
+    };
+
+    ws.onerror = () => {};
+    const cleanup = () => {
+      try { ws.close(); } catch {}
+      if (wsTimerRef.current) clearTimeout(wsTimerRef.current);
+    };
+
+    return cleanup;
+  }, [selectedVaultStrategy, activechain]);
 
   const findMarketForToken = useCallback((tokenAddress: string) => {
     for (const [marketKey, marketData] of Object.entries(markets)) {
@@ -23916,6 +24007,7 @@ useEffect(() => {
                 isLoading={isVaultsLoading}
                 depositors={depositors}
                 depositHistory={depositHistory}
+                withdrawHistory={withdrawHistory}
                 openOrders={openOrders}
                 allOrders={_allOrders}
                 selectedVaultStrategy={selectedVaultStrategy}
@@ -23965,6 +24057,7 @@ useEffect(() => {
                 isLoading={isVaultsLoading}
                 depositors={depositors}
                 depositHistory={depositHistory}
+                withdrawHistory={withdrawHistory}
                 openOrders={openOrders}
                 allOrders={_allOrders}
                 selectedVaultStrategy={selectedVaultStrategy}
