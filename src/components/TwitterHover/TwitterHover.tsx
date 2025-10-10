@@ -263,7 +263,7 @@ export function TwitterHover({
   url,
   children,
   openDelayMs = 180,
-  placement = 'top',
+  placement = 'bottom',
   portal = true,
 }: Props) {
   const [open, setOpen] = useState(false);
