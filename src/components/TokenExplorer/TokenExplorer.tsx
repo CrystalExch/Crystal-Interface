@@ -223,10 +223,10 @@ const Tooltip: React.FC<{
               top: `${tooltipPosition.top}px`,
               left: `${tooltipPosition.left}px`,
               transform: `${position === 'top' || position === 'bottom'
-                  ? 'translateX(-50%)'
-                  : position === 'left' || position === 'right'
-                    ? 'translateY(-50%)'
-                    : 'none'
+                ? 'translateX(-50%)'
+                : position === 'left' || position === 'right'
+                  ? 'translateY(-50%)'
+                  : 'none'
                 } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
@@ -253,6 +253,7 @@ interface BlacklistSettings {
 }
 
 type BlacklistTab = 'all' | 'dev' | 'ca' | 'keyword' | 'website' | 'handle';
+const crystal = '/CrystalLogo.png';
 
 const BlacklistPopup: React.FC<{
   isOpen: boolean;
@@ -2467,8 +2468,8 @@ const TokenRow = React.memo<{
       <div
         ref={tokenRowRef}
         className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${displaySettings.colorRows && token.status !== 'graduated'
-            ? `colored-row ${getBondingColorClass(bondingPercentage)}`
-            : ''
+          ? `colored-row ${getBondingColorClass(bondingPercentage)}`
+          : ''
           } ${metricData ? `metric-colored ${metricData.classes}` : ''} ${token.status === 'graduated' ? 'graduated' : ''}`}
         style={cssVariables}
         onMouseEnter={() => onTokenHover(token.id)}
@@ -2549,6 +2550,13 @@ const TokenRow = React.memo<{
                   className={`explorer-image-overlay ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
                 >
                   <img className="camera-icon" src={camera} alt="inspect" />
+                </div>
+                <div className="token-explorer-launchpad-logo-container">
+                                  <Tooltip content="crystal.fun V2">
+
+                  <img src={crystal} className="token-explorer-launchpad-logo" />
+                                  </Tooltip>
+
                 </div>
               </div>
             </div>
@@ -3521,32 +3529,32 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const isWalletActive = (privateKey: string) => {
     return activeWalletPrivateKey === privateKey;
   };
-const toggleWalletSelection = useCallback((address: string) => {
-  setSelectedWallets((prev) => {
-    const next = new Set(prev);
-    if (next.has(address)) {
-      next.delete(address);
-    } else {
-      next.add(address);
-    }
-    return next;
-  });
-}, [setSelectedWallets]);
+  const toggleWalletSelection = useCallback((address: string) => {
+    setSelectedWallets((prev) => {
+      const next = new Set(prev);
+      if (next.has(address)) {
+        next.delete(address);
+      } else {
+        next.add(address);
+      }
+      return next;
+    });
+  }, [setSelectedWallets]);
 
-const selectAllWallets = useCallback(() => {
-  setSelectedWallets(new Set(subWallets.map((w) => w.address)));
-}, [subWallets, setSelectedWallets]);
+  const selectAllWallets = useCallback(() => {
+    setSelectedWallets(new Set(subWallets.map((w) => w.address)));
+  }, [subWallets, setSelectedWallets]);
 
 
-const unselectAllWallets = useCallback(() => {
-  setSelectedWallets(new Set());
-}, [setSelectedWallets]);
-const selectAllWithBalance = useCallback(() => {
-  const walletsWithBalance = subWallets.filter(
-    (wallet) => getWalletBalance(wallet.address) > 0,
-  );
-  setSelectedWallets(new Set(walletsWithBalance.map((w) => w.address)));
-}, [subWallets, setSelectedWallets, getWalletBalance]);
+  const unselectAllWallets = useCallback(() => {
+    setSelectedWallets(new Set());
+  }, [setSelectedWallets]);
+  const selectAllWithBalance = useCallback(() => {
+    const walletsWithBalance = subWallets.filter(
+      (wallet) => getWalletBalance(wallet.address) > 0,
+    );
+    setSelectedWallets(new Set(walletsWithBalance.map((w) => w.address)));
+  }, [subWallets, setSelectedWallets, getWalletBalance]);
 
   const handleWalletButtonClick = () => {
     if (!account.connected) {
@@ -4938,7 +4946,7 @@ const selectAllWithBalance = useCallback(() => {
                           <TokenRow
                             key={t.id}
                             token={t}
-                            quickbuyAmount={quickAmounts.new}
+    quickbuyAmount={quickAmounts.graduating}  
                             quickbuyAmountSecond={quickAmountsSecond.new}
                             onHideToken={hideToken}
                             onBlacklistToken={handleBlacklistToken}
@@ -5159,7 +5167,7 @@ const selectAllWithBalance = useCallback(() => {
                           <TokenRow
                             key={t.id}
                             token={t}
-                            quickbuyAmount={quickAmounts.new}
+                            quickbuyAmount={quickAmounts.graduated} 
                             quickbuyAmountSecond={quickAmountsSecond.new}
                             onHideToken={hideToken}
                             onBlacklistToken={handleBlacklistToken}

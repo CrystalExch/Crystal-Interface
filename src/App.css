@@ -8047,3 +8047,25 @@ input::-webkit-inner-spin-button {
 .import-wallets-container::-webkit-scrollbar-thumb:hover {
   background: rgba(179, 184, 249, 0.3);
 }
+
+
+.protocol-crystal{
+  width: 15px;
+}
+.protocols-section{
+  padding-left: 15px;
+}
+
+.protocol-crystal-container{
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid #aaaecf;
+  width: 107px;
+  color: #d8dcff;
+  background-color: #7c88e820;
+  padding: 1px 0;
+  padding-left: 5px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}

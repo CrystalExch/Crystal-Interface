@@ -799,23 +799,27 @@
   position: relative;
   width: 42px;
   height: 43px;
-  border-radius: 3px;
+  border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: conic-gradient(from 0deg,
+      #aaaecf 0deg,
+      #aaaecf var(--progress-angle, 0deg),
+      rgba(157, 169, 240, 0.1) var(--progress-angle, 0deg),
+      rgba(157, 169, 240, 0.1) 360deg);
+  transition: --progress-angle 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .meme-interface-token-icon-wrapper::before {
   content: '';
   position: absolute;
   inset: 0; 
   border-radius: 5px;
-  background: conic-gradient(
-    from 0deg,
-    var(--progress-color, #43e17d) 0deg,
-    var(--progress-color, #43e17d) var(--progress-angle, 0deg),
-    rgba(255, 255, 255, 0.1) var(--progress-angle, 0deg),
-    rgba(255, 255, 255, 0.1) 360deg
-  );
+  background: conic-gradient(from 0deg,
+      #aaaecf 0deg,
+      #aaaecf var(--progress-angle),
+      rgba(157, 169, 240, 0.2) var(--progress-angle),
+      rgba(157, 169, 240, 0.2) 360deg);
   z-index: 3;
   opacity: 1;
   animation: meme-interface-glow 2s ease-in-out infinite alternate;
@@ -859,16 +863,21 @@
 
 .meme-interface-token-name {
   font-size: 1rem;
-  color: rgba(237, 236, 252, 0.4);
+  color: rgb(89, 91, 103);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 200px;
   letter-spacing: -0.5px;
   transition: all 0.3 ease;
-    cursor: pointer;
+  cursor: pointer;
+}
 
-
+.meme-social-buttons{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 1px;
 }
 
 .meme-interface-token-name-container:hover .meme-interface-token-name,
@@ -930,7 +939,7 @@
 .meme-interface-share-btn svg {
   width: 16px;
   height: 16px;
-  color: rgba(237, 236, 252, 0.4);
+  color: rgb(89, 91, 103);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1004,7 +1013,7 @@
 
 .meme-interface-metric-label {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(145 153 169);
   letter-spacing: -0.3px;
 }
 
@@ -1212,7 +1221,6 @@
 }
 
 .meme-camera-icon {
-  color: white;
   width: 16px;
   height: 16px;
 }
@@ -1221,6 +1229,8 @@
 .token-info-camera-icon{
   width: 23px;
   height: 23px;
+      filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%) opacity(1);
+
 }
 
 .token-info-meme-interface-twitter-btn{
@@ -1763,4 +1773,72 @@
  font-size: 0.8rem;
  color: #d8dcff;
  gap: 4px;
+ padding-right: 15px;
 }
+
+.meme-interface-token-header-right {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  position: relative;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  isolation: isolate;
+}
+
+.meme-interface-token-header-right::-webkit-scrollbar {
+  display: none;
+}
+
+/* Horizontal scroll gradients for meme header right */
+.meme-interface-token-header-right::before,
+.meme-interface-token-header-right::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30px;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.meme-interface-token-header-right::before {
+  left: 0;
+  background: linear-gradient(90deg, rgb(6, 6, 6) 0%, rgba(6, 6, 6, 0.8) 40%, rgba(6, 6, 6, 0) 100%);
+}
+
+.meme-interface-token-header-right::after {
+  right: 0;
+  background: linear-gradient(270deg, rgb(6, 6, 6) 0%, rgba(6, 6, 6, 0.8) 40%, rgba(6, 6, 6, 0) 100%);
+}
+
+.meme-interface-token-header-right.show-left-gradient::before {
+  opacity: 1;
+}
+
+.meme-interface-token-header-right.show-right-gradient::after {
+  opacity: 1;
+}
+
+.header-launchpad-logo{
+  width: 10px;
+}
+.header-launchpad-logo-container{
+    position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: black;
+  width: 17px;
+  height: 17px;
+  border-radius: 20px;
+  border: 1px solid #aaaecf;
+  margin-bottom:-50px;
+  left: 35px;
+  z-index: 100;
+}
+
+

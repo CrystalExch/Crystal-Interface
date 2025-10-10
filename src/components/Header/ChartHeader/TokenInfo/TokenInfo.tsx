@@ -50,6 +50,7 @@ const createColorGradient = (base: string) => {
     end: `rgb(${lighter(r)}, ${lighter(g)}, ${lighter(b)})`,
   };
 };
+const crystal = '/CrystalLogo.png';
 
 const calculateBondingPercentage = (marketCap: number) => {
   const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
@@ -302,7 +303,9 @@ interface TokenInfoProps {
     twitterHandle?: string;
     telegramHandle?: string;
     discordHandle?: string;
-    devMigrations?: string;
+    graduatedTokens?: number;
+    launchedTokens?: number;
+    developerAddress?: string;
   };
   isPerpsToken?: boolean;
   perpsActiveMarketKey: string;
@@ -314,6 +317,158 @@ interface TokenInfoProps {
   setperpsActiveMarketKey: any;
 }
 
+const Tooltip: React.FC<{
+  content: string | React.ReactNode;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
+  offset?: number;
+}> = ({ content, children, position = 'top', offset = 10 }) => {
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current || !tooltipRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+    let top = 0;
+    let left = 0;
+
+    switch (position) {
+      case 'top':
+        top = rect.bottom + scrollY + offset;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'bottom':
+        top = rect.bottom + scrollY + offset;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'left':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.left + scrollX - tooltipRect.width - offset;
+        break;
+      case 'right':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.right + scrollX + offset;
+        break;
+    }
+
+    const margin = 10;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    if (position === 'top' || position === 'bottom') {
+      left = Math.min(
+        Math.max(left, margin + tooltipRect.width / 2),
+        viewportWidth - margin - tooltipRect.width / 2,
+      );
+    } else {
+      top = Math.min(
+        Math.max(top, margin),
+        viewportHeight - margin - tooltipRect.height,
+      );
+    }
+
+    setTooltipPosition({ top, left });
+  }, [position, offset]);
+
+  const handleMouseEnter = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    setIsLeaving(false);
+    setShouldRender(true);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+      fadeTimeoutRef.current = null;
+    }, 10);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    setIsLeaving(true);
+    setIsVisible(false);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      setShouldRender(false);
+      setIsLeaving(false);
+      fadeTimeoutRef.current = null;
+    }, 150);
+  }, []);
+
+  useEffect(() => {
+    if (shouldRender && !isLeaving) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [shouldRender, updatePosition, isLeaving]);
+
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="tooltip-container"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {shouldRender &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+            style={{
+              position: 'absolute',
+              top: `${tooltipPosition.top}px`,
+              left: `${tooltipPosition.left}px`,
+              transform: `${position === 'top' || position === 'bottom'
+                ? 'translateX(-50%)'
+                : position === 'left' || position === 'right'
+                  ? 'translateY(-50%)'
+                  : 'none'
+                } scale(${isVisible ? 1 : 0})`,
+              opacity: isVisible ? 1 : 0,
+              zIndex: 9999,
+              pointerEvents: 'none',
+              transition:
+                'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+              willChange: 'transform, opacity',
+            }}
+          >
+            <div className="tooltip-content">{content}</div>
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+};
 const TokenInfo: React.FC<TokenInfoProps> = ({
   userAddress,
   externalUserStats,
@@ -437,9 +592,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [perpsShouldFocus, setPerpsShouldFocus] = useState(false);
   const [perpsSortField, setPerpsSortField] = useState<'volume' | 'price' | 'change' | 'funding' | 'openInterest' | null>('volume');
   const [perpsSortDirection, setPerpsSortDirection] = useState<'asc' | 'desc' | undefined>('desc');
-  const filterTabsRef = useRef<HTMLDivElement>(null);
+const filterTabsRef = useRef<HTMLDivElement>(null);
   const marketsListRef = useRef<HTMLDivElement>(null);
-  const memeMetricsRef = useRef<HTMLDivElement>(null);
+  const memeHeaderRightRef = useRef<HTMLDivElement>(null);
   const perpsMetricsRef = useRef<HTMLDivElement>(null);
   const perpsFilterTabsRef = useRef<HTMLDivElement>(null);
   const perpsMarketsListRef = useRef<HTMLDivElement>(null);
@@ -460,7 +615,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         formattedOI: `$${formatCommas((Number(market.openInterest) * Number(market.lastPrice)).toFixed(2))}`,
         formattedFunding: `${(market.fundingRate * 100).toFixed(4)}%`,
         formattedChange: `${(Number(market.priceChangePercent) >= 0 ? '+' : '') +
-        (market?.priceChange ? formatCommas(market.priceChange) : '') + ' / ' +
+          (market?.priceChange ? formatCommas(market.priceChange) : '') + ' / ' +
           (Number(market.priceChangePercent) >= 0 ? '+' : '') +
           Number(market.priceChangePercent * 100).toFixed(2)}%`,
         fundingClass: market.fundingRate < 0 ? 'negative' : 'positive',
@@ -544,7 +699,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     onClick: handlePerpsMarketSelect,
     toggleFavorite: toggleFavorite,
     favorites: favorites,
-  }), [filteredPerpsMarkets, perpsSelectedIndex, handlePerpsMouseEnter, handlePerpsMarketSelect, toggleFavorite]); 
+  }), [filteredPerpsMarkets, perpsSelectedIndex, handlePerpsMouseEnter, handlePerpsMarketSelect, toggleFavorite]);
   <div className="perps-markets-list-virtualized" style={{ height: '400px', width: '100%' }}>
     <List
       ref={virtualizationListRef}
@@ -645,16 +800,23 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         }, 100);
       }
     } catch (err) {
-      console.error('Failed to copy:', err);
-      if (showLoadingPopup && updatePopup) {
-        showLoadingPopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy to clipboard' });
-        setTimeout(() => {
-          updatePopup(txId, { title: 'Copy Failed', subtitle: 'Unable to copy to clipboard', variant: 'error', confirmed: true, isLoading: false });
-        }, 100);
-      }
     }
   };
 
+  const linkCopyToClipboard = async (text: string, label = 'Link Copied') => {
+    const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      if (showLoadingPopup && updatePopup) {
+        showLoadingPopup(txId, { title: label });
+        setTimeout(() => {
+          updatePopup(txId, { title: label, subtitle: `Link copied to clipboard`, variant: 'success', confirmed: true, isLoading: false });
+        }, 100);
+      }
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+    }
+  };
   useEffect(() => {
     if (isPerpsDropdownVisible && perpsShouldFocus) {
       const focusInput = () => {
@@ -675,9 +837,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     }
   }, [isPerpsDropdownVisible, perpsShouldFocus]);
 
-  useEffect(() => {
+useEffect(() => {
     const handleMemeScroll = () => {
-      const container = memeMetricsRef.current;
+      const container = memeHeaderRightRef.current;
       if (container) {
         const scrollLeft = container.scrollLeft;
         const scrollWidth = container.scrollWidth;
@@ -697,7 +859,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       }
     };
 
-    const container = memeMetricsRef.current;
+    const container = memeHeaderRightRef.current;
     if (container && isMemeToken) {
       container.addEventListener('scroll', handleMemeScroll);
       handleMemeScroll();
@@ -709,7 +871,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       }
     };
   }, [isMemeToken]);
-
   useEffect(() => {
     const handlePerpsScroll = () => {
       const container = perpsMetricsRef.current;
@@ -1070,7 +1231,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
     prevPriceRef.current = current
   }, [perpsTokenInfo?.lastPrice])
-  
+
   useEffect(() => {
     if (!perpsTokenInfo?.nextFundingTime) return
     const tick = () => {
@@ -1095,7 +1256,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     if (!memeTokenData) {
       return <MemeTokenSkeleton />;
     }
-
     return (
       <div
         className="meme-interface-token-info-container-meme"
@@ -1104,17 +1264,19 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           <div className="meme-interface-token-header-left">
             <div className="meme-interface-token-icon-container">
 
-              <div
-                className={`meme-interface-token-icon-wrapper ${memeTokenData.status === 'graduated' ? 'graduated' : ''}`}
-                ref={imageContainerRef}
-                style={
-                  memeTokenData.status !== 'graduated'
-                    ? {
-                      '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
-                      '--progress-color': getBondingColorMeme(bondingPercentage),
-                    } as React.CSSProperties
-                    : {}
-                }
+<div
+  className={`meme-interface-token-icon-wrapper ${memeTokenData.status === 'graduated' ? 'graduated' : ''}`}
+  ref={imageContainerRef}
+  style={
+    memeTokenData.status !== 'graduated'
+      ? {
+          '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
+          '--progress-color-start': createColorGradient(getBondingColor(bondingPercentage)).start,
+          '--progress-color-mid': createColorGradient(getBondingColor(bondingPercentage)).mid,
+          '--progress-color-end': createColorGradient(getBondingColor(bondingPercentage)).end,
+        } as React.CSSProperties
+      : {}
+  }
                 onClick={() => window.open(
                   `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(memeTokenData.image)}`,
                   '_blank',
@@ -1158,51 +1320,56 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             <div className="meme-interface-token-identity">
               <div className="meme-interface-token-name-row">
                 <h1 className="meme-interface-token-symbol">{memeTokenData.symbol}</h1>
-                <div className="meme-interface-token-name-container">
-                  <span
-                    className="meme-interface-token-name"
-                    onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
-                    style={{ cursor: 'pointer' }}
-                    title="Click to copy contract address"
-                  >
-                    {memeTokenData.name}
-                  </span>
-                  <button
-                    className="meme-interface-social-btn"
-                    onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
-                    title="Copy contract address"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                    </svg>
-                  </button>
-                </div>
-                {/* <button
-                  className="meme-interface-share-btn"
-                  onClick={() => copyToClipboard(`app.crystal.exchange/meme/${memeTokenData.tokenAddress}`)}
-                  title="Copy share link"
-                >
-                  <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" ><path d="M 36.5 5 A 6.5 6.5 0 0 0 30.236328 13.207031 L 30.121094 13.263672 L 16.738281 19.953125 L 16.623047 20.009766 A 6.5 6.5 0 0 0 11.5 17.5 A 6.5 6.5 0 0 0 11.5 30.5 A 6.5 6.5 0 0 0 16.626953 27.990234 L 16.738281 28.046875 L 30.121094 34.736328 L 30.230469 34.791016 A 6.5 6.5 0 0 0 36.5 43 A 6.5 6.5 0 0 0 36.5 30 A 6.5 6.5 0 0 0 31.671875 32.158203 L 31.460938 32.052734 L 18.080078 25.363281 L 17.871094 25.259766 A 6.5 6.5 0 0 0 17.869141 22.742188 L 18.080078 22.636719 L 31.460938 15.947266 L 31.666016 15.84375 A 6.5 6.5 0 0 0 36.5 18 A 6.5 6.5 0 0 0 36.5 5 z" /></svg>
-                </button>
+                <Tooltip content={memeTokenData.name}>
+                  <div className="meme-interface-token-name-container">
+                    <span
+                      className="meme-interface-token-name"
+                      onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {memeTokenData.name}
+                    </span>
+                    <button
+                      className="meme-interface-social-btn"
+                      onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                      </svg>
+                    </button>
+                  </div>
+                </Tooltip>
+                <div className="meme-social-buttons">
+                  <Tooltip content="Share link to this pair">
+                    <button
+                      className="meme-interface-share-btn"
+                      onClick={() => linkCopyToClipboard(`app.crystal.exchange/meme/${memeTokenData.tokenAddress}`)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /><line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></svg>
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="Add to watchlist">
+                    <button
+                      className="meme-interface-share-btn"
+                      onClick={() => {
+                        const isCurrentlyFavorited = favorites.includes(memeTokenData.tokenAddress.toLowerCase());
+                        toggleFavorite(memeTokenData.tokenAddress.toLowerCase());
 
-                <button
-                  className="meme-interface-share-btn"
-                  onClick={() => copyToClipboard(memeTokenData.tokenAddress)}
-                  title="Copy contract address"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                  </svg>
-                </button> */}
+                        const txId = `favorite-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                        if (showLoadingPopup && updatePopup) {
+                          const message = isCurrentlyFavorited ? 'Removed from Watchlist' : 'Added to Watchlist';
+                          showLoadingPopup(txId, { title: message, subtitle: `${memeTokenData.symbol} ${isCurrentlyFavorited ? 'removed from' : 'added to'} your watchlist` });
+                          setTimeout(() => {
+                            updatePopup(txId, { title: message, subtitle: `${memeTokenData.symbol} ${isCurrentlyFavorited ? 'removed from' : 'added to'} your watchlist`, variant: 'success', confirmed: true, isLoading: false });
+                          }, 100);
+                        }
+                      }}
+                      title={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? "Remove from Watchlist" : "Add to Watchlist"}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? '#d8dcff' : 'none'} stroke={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? '#d8dcff' : 'currentColor'} stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>
+                    </button>
+                  </Tooltip>
+                </div>
                 {hoveredMemeImage &&
                   memeTokenData?.image &&
                   showPreview &&
@@ -1235,6 +1402,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     </div>,
                     document.body,
                   )}
+              <div className="header-launchpad-logo-container">
+                  <Tooltip content="crystal.fun V2">
+
+                    <img src={crystal} className="header-launchpad-logo" />
+                  </Tooltip>
+
+                </div>
               </div>
 
               <div className="meme-interface-token-meta-row">
@@ -1308,8 +1482,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             </div>
           </div>
 
-          <div className="meme-interface-token-header-right">
-            <div className="meme-interface-token-metrics" ref={memeMetricsRef}>
+     <div className="meme-interface-token-header-right" ref={memeHeaderRightRef}>
+            <div className="meme-interface-token-metrics">
               <span className="meme-interface-market-cap">
                 {formatPrice((memeTokenData.marketCap || 1000) * monUsdPrice)}
               </span>
@@ -1364,6 +1538,41 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 </div>
 
               )}
+              <div className="meme-interface-token-metric">
+                <span className="meme-interface-metric-label">Supply</span>
+                <span className="meme-interface-metric-value meme-price-large">
+                  1B
+                </span>
+              </div>
+              <Tooltip content="Dev Migrations">
+                <div className="meme-interface-token-metric"
+                  onClick={() => window.open(`https://testnet.monadscan.com/address/${memeTokenData.developerAddress}`, '_blank', 'noopener,noreferrer')
+                  }
+                >
+                  <span className="meme-interface-dev-migrations-value" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: "pointer", marginLeft: "4px" }}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{
+                        width: '15px',
+                        height: '15px',
+                        color: (memeTokenData.graduatedTokens || 0) > 0 ? 'rgba(255, 251, 0, 1)' : '#b0b7c8'
+                      }}
+                    >
+                      <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                      <path d="M5 21h14" />
+                    </svg>
+                    <span style={{ color: "#b0b7c8" }}>
+                      {memeTokenData.graduatedTokens || 0}
+                    </span>
+                  </span>
+                </div>
+              </Tooltip>
 
               {externalUserStats && externalUserStats.valueBought > 0 && externalUserStats.valueNet !== 0 && (
                 <div className="meme-interface-token-metric">

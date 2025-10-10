@@ -4,27 +4,10 @@
   syntax: '<angle>';
 }
 
-@property --progress-color-start {
-  inherits: false;
-  initial-value: #ee5b5b;
-  syntax: '<color>';
-}
-
-@property --progress-color-mid {
-  inherits: false;
-  initial-value: #f59e0b;
-  syntax: '<color>';
-}
-
-@property --progress-color-end {
-  inherits: false;
-  initial-value: #43e17d;
-  syntax: '<color>';
-}
 
 .explorer-filters-popup {
   border-radius: 6px;
-  height: 451px;
+  height: 541px;
   left: 50%;
   margin: 0 auto;
   overflow: hidden;
@@ -284,11 +267,11 @@
 .explorer-holding-item {
   align-items: center;
   border: 1px solid rgba(179, 184, 249, 0.08);
-  border-radius: 6px;
+  border-radius: 20px;
   display: flex;
   font-size: 0.7rem;
   gap: 0.25rem;
-  padding: 0.15rem 0.25rem;
+  padding: 0.15rem 0.4rem;
 }
 
 .explorer-holding-label {
@@ -810,27 +793,33 @@
 .explorer-token-image-container {
   align-items: center;
   background: conic-gradient(from 0deg,
-      var(--progress-color-start) 0deg,
-      var(--progress-color-mid) calc(var(--progress-angle) / 2),
-      var(--progress-color-end) var(--progress-angle),
-      rgba(255, 255, 255, 0.1) var(--progress-angle),
-      rgba(255, 255, 255, 0.1) 360deg);
+      #aaaecf 0deg,
+      #aaaecf var(--progress-angle),
+      rgba(157, 169, 240, 0.2) var(--progress-angle),
+      rgba(157, 169, 240, 0.2) 360deg);
   border-radius: 5px;
   cursor: pointer;
   display: flex;
   height: 73px;
   justify-content: center;
   position: relative;
-  transition: --progress-angle 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-    --progress-color-start 0.8s ease,
-    --progress-color-mid 0.8s ease,
-    --progress-color-end 0.8s ease;
+  transition: --progress-angle 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   width: 73px;
+}
+
+
+.explorer-token-image-container.graduated .token-explorer-launchpad-logo-container {
+  border-color: #ffd700;
+}
+
+.explorer-token-image-container.graduated .token-explorer-launchpad-logo {
+  filter: brightness(0) saturate(100%) invert(79%) sepia(97%) saturate(1345%) hue-rotate(359deg) brightness(104%) contrast(101%);
 }
 
 .camera-icon {
   height: 30px;
   width: 30px;
+  filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%) opacity(1);
 }
 
 .explorer-token-image-container.graduated {
@@ -1057,7 +1046,7 @@
 }
 
 .keyword-label {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(206, 210, 235, 0.836);
   font-size: 0.75rem;
   margin-left: 3px;
 }
@@ -4464,4 +4453,91 @@
   height: 17px;
   transitioN: 0.3s ease all;
   width: 17px;
+}
+
+.token-explorer-launchpad-logo{
+  width: 10px;
+}
+.token-explorer-launchpad-logo-container{
+    position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: black;
+  width: 17px;
+  height: 17px;
+  border-radius: 20px;
+  border: 1px solid #aaaecf;
+  bottom:-7px;
+  right: -7px;
+}
+
+
+.protocol-crystal{
+  width: 15px;
+}
+.protocols-section{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-left: 15px;
+  margin-top: 15px;
+  margin-bottom: 5px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  padding-bottom: 15px;
+}
+
+.protocol-crystal-container{
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid #aaaecf;
+  width: 107px;
+  color: #d8dcff;
+  background-color: #7c88e820;
+  padding: 1px 0;
+  padding-left: 5px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+.protocol-crystal-container{
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid #aaaecf;
+  width: 107px;
+  color: #d8dcff;
+  background-color: #7c88e820;
+  padding: 1px 0;
+  padding-left: 5px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.protocol-nadfun-container{
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border:1px solid #b176ed;
+  width: 84px;
+  color: #b176ed;
+  background-color: #AD5FFB20;
+  padding: 1px 0;
+  padding-left: 5px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+
+.protocol-nadfun{
+  width: 15px;
+}
+
+.protocols-content{
+  display: flex;
+  gap: 8px;
 }

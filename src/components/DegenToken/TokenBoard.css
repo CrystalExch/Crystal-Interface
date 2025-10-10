@@ -4,6 +4,8 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  padding-bottom: 40px;
+  overflow-y: auto;
 }
 
 .board-header {
@@ -11,6 +13,7 @@
   flex-direction: column;
   justify-content: space-between;
   margin-bottom: 15px;
+  margin-top: 20px;
   padding: 0 16px;
   gap: 10px
 }
@@ -87,6 +90,7 @@
 .board-animation-toggle {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   font-size: 0.85rem;
   color: #999;
@@ -97,6 +101,7 @@
   border: 1.5px solid rgba(179, 184, 249, 0.1);
   background: rgba(0, 0, 0, 0.2);
   letter-spacing: -0.5px;
+  min-height: 32px;
 }
 
 .board-animation-toggle:hover {
@@ -152,6 +157,10 @@
 }
 
 @media (max-width: 768px) {
+  .board-container {
+    padding-bottom: 100px;
+  }
+
   .board-tokens-grid {
     grid-template-columns: 1fr;
     padding: 0 8px;
@@ -161,6 +170,7 @@
     flex-direction: column;
     gap: 16px;
     align-items: stretch;
+    margin-top: 24px;
   }
   
   .board-controls {
@@ -176,6 +186,35 @@
   
   .board-search-input {
     width: 100%;
+  }
+
+  .launch-token-btn {
+    margin-top: 20px;
+    padding: 0.65rem 1.25rem;
+    font-size: 0.95rem;
+  }
+
+  .board-sort-btn,
+  .board-animation-toggle {
+    font-size: 0.8rem;
+    padding: 5px 10px;
+    min-height: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .board-container {
+    padding-bottom: 120px;
+  }
+
+  .board-header {
+    margin-top: 20px;
+  }
+
+  .launch-token-btn {
+    margin-top: 16px;
+    padding: 0.65rem 1.25rem;
+    font-size: 0.9rem;
   }
 }
 
@@ -462,6 +501,7 @@
 @media (max-width: 480px) {
   .board-container {
     padding: 16px 12px;
+    padding-bottom: 120px;
   }
   
   .board-token-card {
@@ -488,9 +528,21 @@
     margin-bottom: 12px;
   }
 
+  .launch-token-btn {
+    margin-top: 16px;
+    padding: 0.6rem 1.1rem;
+    font-size: 0.9rem;
+  }
+
+  .board-sort-btn,
   .board-animation-toggle {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     padding: 4px 8px;
+    min-height: 28px;
+  }
+
+  .board-sort-buttons {
+    gap: 6px;
   }
 }
 
@@ -709,24 +761,27 @@
   filter: brightness(1.1);
 }
 
-
-
-
 .board-sort-buttons {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .board-sort-btn {
-  padding: 4px 16px;
+  padding: 6px 12px;
   background: transparent;
   border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 20px;
+  border-radius: 16px;
   color: #666;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.85rem;
   transition: all 0.2s ease;
   letter-spacing: -0.5px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .board-sort-btn:hover {

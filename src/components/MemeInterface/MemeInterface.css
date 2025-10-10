@@ -438,7 +438,7 @@
 .meme-trade-action-button {
   align-items: center;
   border: none;
-  border-radius: 20px;
+  border-radius:5px;
   cursor: pointer;
   display: flex;
   font-size: 0.9rem;

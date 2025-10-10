@@ -1213,52 +1213,73 @@
 }
 
 .detail-trades-filter-toggle {
+  display: inline-block;
+  flex-shrink: 0;
+  height: 14px;
   position: relative;
-  width: 40px;
-  height: 20px;
+  width: 28px;
 }
 
-.detail-trades-filter-toggle input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+.detail-trades-filter-toggle input[type='checkbox'] {
+  display: none;
 }
 
 .detail-trades-filter-toggle label {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
+  background-color: #26262eb8;
+  border-radius: 3px;
   bottom: 0;
-  background-color: #2bb46b;
-  border-radius: 10px;
-  transition: var(--tr-fast);
+  cursor: pointer;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: all 0.3s ease-in-out;
 }
 
 .detail-trades-filter-toggle label:before {
+  background-color: #ffffff67;
+  border-radius: 2px;
+  box-shadow: 0 0px 2px rgba(0, 0, 0, 0.5);
+  height: 10px;
+  left: 2px;
   position: absolute;
+  top: 2px;
+  transition: transform 0.3s ease-in-out;
+  width: 10px;
   content: "";
-  height: 14px;
-  width: 14px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  border-radius: 50%;
-  transition: var(--tr-fast);
 }
 
-.detail-trades-filter-toggle input:checked + label:before {
-  transform: translateX(20px);
+.detail-trades-filter-toggle input[type='checkbox']:checked + label {
+  background: #aaaecf6d;
+}
+
+.detail-trades-filter-toggle input[type='checkbox']:checked + label:before {
+  transform: translateX(14px);
+  background-color: #bdc2f1;
 }
 
 .detail-trades-filter-value {
   padding: 4px 8px;
-  background: rgba(179, 184, 249, 0.1);
+  background: rgba(63, 65, 89, 0.1);
   border: 1px solid var(--c-border);
   border-radius: 4px;
   color: var(--c-text);
   font-size: 0.75rem;
+  width: 40px;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.detail-trades-filter-value:focus {
+  border-color: #aaaecf;
+  box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.2);
+}
+
+.detail-trades-filter-value:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(179, 184, 249, 0.05);
 }
 
 .detail-trades-filter-desc {
@@ -1291,6 +1312,16 @@
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(179, 184, 249, 0.2);
   color: var(--c-text);
+}
+
+.detail-trades-filter-value::-webkit-outer-spin-button,
+.detail-trades-filter-value::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.detail-trades-filter-value[type="number"] {
+  -moz-appearance: textfield;
 }
 
 .detail-trades-table {
