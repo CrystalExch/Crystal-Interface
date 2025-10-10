@@ -2913,7 +2913,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     run();
     return () => { cancelled = true; };
-  }, [selectedVaultStrategy, vaultDetailTick]);
+  }, [selectedVaultStrategy]);
 
   const findMarketForToken = useCallback((tokenAddress: string) => {
     for (const [marketKey, marketData] of Object.entries(markets)) {
