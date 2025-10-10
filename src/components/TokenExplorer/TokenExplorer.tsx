@@ -2505,8 +2505,6 @@ const TokenRow = React.memo<{
                 'noopener,noreferrer',
               );
             }}
-            onMouseEnter={() => onImageHover(token.id)}
-            onMouseLeave={onImageLeave}
             style={
               token.status === 'graduated' || !displaySettings.progressBar
                 ? { position: 'relative' }
@@ -2522,7 +2520,6 @@ const TokenRow = React.memo<{
                 {token.image ? (
                   <img
                     src={token.image}
-                    alt={token.name}
                     className={`explorer-token-image ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
                   />
                 ) : (
@@ -2548,15 +2545,15 @@ const TokenRow = React.memo<{
                 )}
                 <div
                   className={`explorer-image-overlay ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
+                  onMouseEnter={() => onImageHover(token.id)}
+                  onMouseLeave={onImageLeave}
                 >
-                  <img className="camera-icon" src={camera} alt="inspect" />
+                  <img className="camera-icon" src={camera} />
                 </div>
                 <div className="token-explorer-launchpad-logo-container">
-                                  <Tooltip content="crystal.fun V2">
-
-                  <img src={crystal} className="token-explorer-launchpad-logo" />
-                                  </Tooltip>
-
+                  <Tooltip content="crystal.fun">
+                    <img src={crystal} className="token-explorer-launchpad-logo" />
+                  </Tooltip>
                 </div>
               </div>
             </div>

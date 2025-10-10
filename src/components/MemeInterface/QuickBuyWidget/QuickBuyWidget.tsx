@@ -1044,192 +1044,191 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     return safe > pending ? safe - pending : 0n;
   };
 
-const handleBuyTrade = async (amount: string) => {
-  if (!sendUserOperationAsync || !tokenAddress || !routerAddress) {
-    setpopup?.(4);
-    return;
-  }
-
-  const currentChainId = Number(account?.chainId);
-  if (account?.connected && currentChainId !== activechain) {
-    setChain?.();
-    return;
-  }
-
-  const totalMon = parseFloat(amount || '0');
-  if (!isFinite(totalMon) || totalMon <= 0) return;
-  const totalWei = BigInt(Math.round(totalMon * 1e18));
-
-  const targets: string[] = Array.from(selectedWallets);
-  if (targets.length === 0) {
-    const txId = `quickbuy-error-${Date.now()}`;
-    updatePopup?.(txId, {
-      title: 'Insufficient Balance',
-      subtitle: 'No wallets selected with funds to use',
-      variant: 'error',
-      isLoading: false,
-    });
-    return;
-  }
-
-  const txId = `quickbuy-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  showLoadingPopup?.(txId, {
-    title: 'Sending batch buy...',
-    subtitle: `Buying ${amount} MON of ${tokenSymbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
-    amount,
-    amountUnit: 'MON',
-    tokenImage,
-  });
-
-  // --- check total available (minus pending) ---
-  let totalAvailable = 0n;
-  for (const addr of targets) totalAvailable += getMaxSpendableWei(addr);
-  if (totalAvailable < totalWei) {
-    updatePopup?.(txId, {
-      title: 'Insufficient effective balance',
-      subtitle: 'Pending or used funds exceed available MON',
-      variant: 'error',
-      isLoading: false,
-    });
-    return;
-  }
-
-  // --- build plan ---
-  let remaining = totalWei;
-  const plan: { addr: string; amount: bigint }[] = [];
-
-  for (const addr of targets) {
-    const maxWei = getMaxSpendableWei(addr);
-    const fairShare = totalWei / BigInt(targets.length);
-    const allocation = fairShare > maxWei ? maxWei : fairShare;
-    plan.push({ addr, amount: allocation });
-    remaining -= allocation;
-  }
-
-  for (const entry of plan) {
-    if (remaining <= 0n) break;
-    const maxWei = getMaxSpendableWei(entry.addr);
-    const room = maxWei - entry.amount;
-    if (room > 0n) {
-      const add = remaining > room ? room : remaining;
-      entry.amount += add;
-      remaining -= add;
-    }
-  }
-
-  if (remaining > 0n) {
-    updatePopup?.(txId, {
-      title: 'Batch buy failed',
-      subtitle: 'Not enough MON across selected wallets',
-      variant: 'error',
-      isLoading: false,
-    });
-    return;
-  }
-
-  // ✅ Reserve pending funds
-  setPendingSpend((prev) => {
-    const updated = new Map(prev);
-    for (const { addr, amount } of plan) {
-      const current = updated.get(addr) || 0n;
-      updated.set(addr, current + amount);
-    }
-    return updated;
-  });
-
-  try {
-    const transferPromises: Promise<boolean>[] = [];
-
-    for (const { addr, amount: partWei } of plan) {
-      if (partWei <= 0n) continue;
-
-      const wally = subWallets.find((w) => w.address === addr);
-      const pk = wally?.privateKey ?? activeWalletPrivateKey;
-      if (!pk) continue;
-
-      // ✅ Check if wallet has enough gas to send
-      const maxWei = getMaxSpendableWei(addr);
-      const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-      if (maxWei <= gasReserve || partWei + gasReserve > maxWei + gasReserve) {
-        console.warn(`Skipping ${addr} due to insufficient gas`);
-        continue; // skip wallet entirely
-      }
-
-      const uo = {
-        target: routerAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: 'buy',
-          args: [true, tokenAddress as `0x${string}`, partWei, 0n],
-        }),
-        value: partWei,
-      };
-
-      const wallet = nonces.current.get(addr);
-      const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
-      if (wallet) wallet.nonce += 1;
-      wallet?.pendingtxs.push(params);
-
-      const transferPromise = sendUserOperationAsync(...params)
-        .then(() => {
-          if (wallet)
-            wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params);
-          return true;
-        })
-        .catch(() => {
-          if (wallet)
-            wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params);
-          return false;
-        });
-
-      transferPromises.push(transferPromise);
+  const handleBuyTrade = async (amount: string) => {
+    if (!sendUserOperationAsync || !tokenAddress || !routerAddress) {
+      setpopup?.(4);
+      return;
     }
 
-    // Execute only if something was queued
-    if (transferPromises.length === 0) {
+    const currentChainId = Number(account?.chainId);
+    if (account?.connected && currentChainId !== activechain) {
+      setChain?.();
+      return;
+    }
+
+    const totalMon = parseFloat(amount || '0');
+    if (!isFinite(totalMon) || totalMon <= 0) return;
+    const totalWei = BigInt(Math.round(totalMon * 1e18));
+
+    const targets: string[] = Array.from(selectedWallets);
+    if (targets.length === 0) {
+      const txId = `quickbuy-error-${Date.now()}`;
       updatePopup?.(txId, {
-        title: 'No eligible wallets',
-        subtitle: 'All selected wallets had insufficient gas to send transactions',
+        title: 'Insufficient Balance',
+        subtitle: 'No wallets selected with funds to use',
         variant: 'error',
         isLoading: false,
       });
       return;
     }
 
-    const results = await Promise.allSettled(transferPromises);
-    const successfulTransfers = results.filter(
-      (r) => r.status === 'fulfilled' && r.value === true,
-    ).length;
-
-    terminalRefetch?.();
-    const totalMonBought = Number(totalWei) / 1e18;
-
-    updatePopup?.(txId, {
-      title: `Bought ${totalMonBought} MON Worth`,
-      subtitle: `Distributed across ${successfulTransfers} wallet${successfulTransfers !== 1 ? 's' : ''}`,
-      variant: 'success',
-      isLoading: false,
+    const txId = `quickbuy-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    showLoadingPopup?.(txId, {
+      title: 'Sending batch buy...',
+      subtitle: `Buying ${amount} MON of ${tokenSymbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
+      amount,
+      amountUnit: 'MON',
+      tokenImage,
     });
-  } catch (error: any) {
-    updatePopup?.(txId, {
-      title: 'Batch buy failed',
-      subtitle: error?.message || 'One or more transactions failed',
-      variant: 'error',
-      isLoading: false,
-    });
-  } finally {
-    // ✅ Release pending funds
+
+    // --- check total available (minus pending) ---
+    let totalAvailable = 0n;
+    for (const addr of targets) totalAvailable += getMaxSpendableWei(addr);
+    if (totalAvailable < totalWei) {
+      updatePopup?.(txId, {
+        title: 'Insufficient effective balance',
+        subtitle: 'Pending or used funds exceed available MON',
+        variant: 'error',
+        isLoading: false,
+      });
+      return;
+    }
+
+    // --- build plan ---
+    let remaining = totalWei;
+    const plan: { addr: string; amount: bigint }[] = [];
+
+    for (const addr of targets) {
+      const maxWei = getMaxSpendableWei(addr);
+      const fairShare = totalWei / BigInt(targets.length);
+      const allocation = fairShare > maxWei ? maxWei : fairShare;
+      plan.push({ addr, amount: allocation });
+      remaining -= allocation;
+    }
+
+    for (const entry of plan) {
+      if (remaining <= 0n) break;
+      const maxWei = getMaxSpendableWei(entry.addr);
+      const room = maxWei - entry.amount;
+      if (room > 0n) {
+        const add = remaining > room ? room : remaining;
+        entry.amount += add;
+        remaining -= add;
+      }
+    }
+
+    if (remaining > 0n) {
+      updatePopup?.(txId, {
+        title: 'Batch buy failed',
+        subtitle: 'Not enough MON across selected wallets',
+        variant: 'error',
+        isLoading: false,
+      });
+      return;
+    }
+
+    // ✅ Reserve pending funds
     setPendingSpend((prev) => {
       const updated = new Map(prev);
       for (const { addr, amount } of plan) {
-        const cur = updated.get(addr) || 0n;
-        updated.set(addr, cur >= amount ? cur - amount : 0n);
+        const current = updated.get(addr) || 0n;
+        updated.set(addr, current + amount);
       }
       return updated;
     });
-  }
-};
 
+    try {
+      const transferPromises: Promise<boolean>[] = [];
+
+      for (const { addr, amount: partWei } of plan) {
+        if (partWei <= 0n) continue;
+
+        const wally = subWallets.find((w) => w.address === addr);
+        const pk = wally?.privateKey ?? activeWalletPrivateKey;
+        if (!pk) continue;
+
+        // ✅ Check if wallet has enough gas to send
+        const maxWei = getMaxSpendableWei(addr);
+        const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+        if (maxWei <= gasReserve || partWei + gasReserve > maxWei + gasReserve) {
+          console.warn(`Skipping ${addr} due to insufficient gas`);
+          continue; // skip wallet entirely
+        }
+
+        const uo = {
+          target: routerAddress as `0x${string}`,
+          data: encodeFunctionData({
+            abi: CrystalRouterAbi,
+            functionName: 'buy',
+            args: [true, tokenAddress as `0x${string}`, partWei, 0n],
+          }),
+          value: partWei,
+        };
+
+        const wallet = nonces.current.get(addr);
+        const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
+        if (wallet) wallet.nonce += 1;
+        wallet?.pendingtxs.push(params);
+
+        const transferPromise = sendUserOperationAsync(...params)
+          .then(() => {
+            if (wallet)
+              wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params);
+            return true;
+          })
+          .catch(() => {
+            if (wallet)
+              wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params);
+            return false;
+          });
+
+        transferPromises.push(transferPromise);
+      }
+
+      // Execute only if something was queued
+      if (transferPromises.length === 0) {
+        updatePopup?.(txId, {
+          title: 'No eligible wallets',
+          subtitle: 'All selected wallets had insufficient gas to send transactions',
+          variant: 'error',
+          isLoading: false,
+        });
+        return;
+      }
+
+      const results = await Promise.allSettled(transferPromises);
+      const successfulTransfers = results.filter(
+        (r) => r.status === 'fulfilled' && r.value === true,
+      ).length;
+
+      terminalRefetch?.();
+      const totalMonBought = Number(totalWei) / 1e18;
+
+      updatePopup?.(txId, {
+        title: `Bought ${totalMonBought} MON Worth`,
+        subtitle: `Distributed across ${successfulTransfers} wallet${successfulTransfers !== 1 ? 's' : ''}`,
+        variant: 'success',
+        isLoading: false,
+      });
+    } catch (error: any) {
+      updatePopup?.(txId, {
+        title: 'Batch buy failed',
+        subtitle: error?.message || 'One or more transactions failed',
+        variant: 'error',
+        isLoading: false,
+      });
+    } finally {
+      // ✅ Release pending funds
+      setPendingSpend((prev) => {
+        const updated = new Map(prev);
+        for (const { addr, amount } of plan) {
+          const cur = updated.get(addr) || 0n;
+          updated.set(addr, cur >= amount ? cur - amount : 0n);
+        }
+        return updated;
+      });
+    }
+  };
 
   const handleSellTrade = async (value: string) => {
     if (!sendUserOperationAsync || !tokenAddress || !routerAddress) {

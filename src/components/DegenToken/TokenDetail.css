@@ -335,6 +335,13 @@
   padding: 4px;
   transition: 0.3s ease;
   width: 100%;
+  color: var(--c-muted)
+}
+.detail-trade-tab:hover {
+  color: rgb(67 254 154);
+}
+.detail-trade-tab:last-child:hover {
+  color: rgb(235, 112, 112);
 }
 .detail-trade-tab.active {
   border: 1px solid rgba(67, 254, 154, 0.7);
@@ -545,9 +552,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px;
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius-lg);
 }
 
 .detail-meme-address-title {
@@ -559,31 +563,6 @@
 .detail-meme-address-value {
   text-decoration: none;
   font-size: 0.85rem;
-}
-
-.wallet-popup-copy-tooltip,
-.wallet-popup-hover-tooltip {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 6px 12px;
-  font-size: 0.75rem;
-  white-space: nowrap;
-  background: rgba(0, 0, 0, 0.9);
-  border: 1px solid var(--c-border);
-  border-radius: 6px;
-  pointer-events: none;
-  z-index: 1000;
-  animation: fadeIn 0.15s ease-out;
-}
-
-.wallet-popup-copy-tooltip {
-  color: var(--c-muted);
-}
-
-.wallet-popup-hover-tooltip {
-  color: var(--c-muted);
 }
 
 .detail-chat-modal-overlay {
@@ -748,6 +727,7 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+  margin-top: 8px;
 }
 
 .detail-holder-card {
@@ -1116,13 +1096,7 @@
 }
 
 .detail-meme-address-symbol {
-  color: var(--c-dim); 
-  opacity: 0.5;
-}
-
-.detail-meme-address-symbol.greyed-out {
-  color: var(--c-muted);
-  opacity: 0.5;
+  color: var(--c-text); 
 }
 
 .detail-trades-col.buy {

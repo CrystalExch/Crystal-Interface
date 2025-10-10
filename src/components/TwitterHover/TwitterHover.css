@@ -1,6 +1,5 @@
 .twitter-hover-card {
-  backdrop-filter: blur(10px);
-  background: #000000c5;
+  background: rgb(8, 8, 8);
   border: 1.5px solid #b5bcf818;
   border-radius: 12px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
@@ -13,8 +12,8 @@
   z-index: 1000;
   pointer-events: auto !important;
   -webkit-user-select: text !important;
-     -moz-user-select: text !important;
-          user-select: text !important;
+  -moz-user-select: text !important;
+  user-select: text !important;
 }
 
 .twitter-hover-skeleton {

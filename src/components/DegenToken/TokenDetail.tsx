@@ -386,7 +386,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             close: Number(c.close) / 1e9,
             volume: Number(c.baseVolume) / 1e18,
           }));
-        
+
         const mappedTrades: Trade[] = (m.trades || []).map((t: any) => ({
           id: t.id,
           timestamp: Number(t.block), 
@@ -1114,7 +1114,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                           <div className="detail-trades-col detail-trades-txn">
                             <button 
                               className="detail-trades-txn-link"
-                              onClick={() => window.open(`${explorer}/tx/${trade.id}`, '_blank')}
+                              onClick={() => window.open(`${explorer}/tx/${trade.id.substring(0, trade.id.indexOf('-'))}`, '_blank')}
                             >
                               {trade.id.slice(0, 6)}...
                             </button>
@@ -1282,7 +1282,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             truncate={{ start: 6, end: 4 }} 
           />
           <span 
-            className={`detail-meme-address-symbol ${walletTokenBalance === 0 ? 'greyed-out' : ''}`}
+            className={`detail-meme-address-symbol ${''}`}
           >
             {tokenData.symbol}
           </span>
@@ -1290,8 +1290,8 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       </div>
 
 
-        <div className="detail-info-section">
-          <h3>Top Holders</h3>
+        <div className="detail-trading-panel">
+          <div>Top Holders</div>
           <div className="detail-holders-grid">
             {holders.length > 0 ? (
               holders.slice(0, 10).map((holder, index) => (

@@ -909,6 +909,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           txReceiptResolvers.current.delete(hash);
           hash = r.transactionHash;
         }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('transaction timeout')), 10000)
+        ),
       ]);
       return hash
     },
@@ -2342,7 +2345,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     res.forEach((r, i) => {
       const key = vaults[i].id.toLowerCase();
       if (r.status === 'success') {
-        const [q, b, aq, ab] = r.result as readonly [bigint, bigint, bigint, bigint];
+        const [q, b, aq, ab] = r.result as any;
         out[key] = { quoteBalance: q, baseBalance: b, availableQuote: aq, availableBase: ab };
       } else {
         out[key] = { quoteBalance: 0n, baseBalance: 0n, availableQuote: 0n, availableBase: 0n };
@@ -2377,66 +2380,59 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     (async () => {
       setIsVaultsLoading(true);
 
-      const gql = (s: TemplateStringsArray, ...args: any[]) => s.reduce((acc, cur, i) => acc + cur + (args[i] ?? ''), '');
-
-      const VAULTS_QUERY = gql`
-        {
-          vaults(first: 1000, orderBy: lastUpdatedAt, orderDirection: desc) {
-            id
-            owner
-            factory
-            quoteAsset { id symbol name decimals }
-            baseAsset { id symbol name decimals }
-            symbol
-            name
-            description
-            social1
-            social2
-            social3
-            lockup
-            decreaseOnWithdraw
-            locked
-            closed
-            maxShares
-            totalShares
-            quoteBalance
-            baseBalance
-            depositCount
-            withdrawalCount
-            uniqueDepositors
-            createdAt
-            createdBlock
-            createdTx
-            lastUpdatedAt
+      const VAULTS_QUERY = `
+          query VaultQuery($acct: Bytes!) {
+            userVaultPositions(
+              first: 1000,
+              where: { account: $acct },
+              orderBy: updatedAt,
+              orderDirection: desc
+            ) {
+              vault { id }
+              shares
+              depositCount
+              withdrawCount
+              totalDepositedQuote
+              totalDepositedBase
+              totalWithdrawnQuote
+              totalWithdrawnBase
+              lastDepositAt
+              lastWithdrawAt
+              updatedAt
+            }
+            vaults(first: 1000, orderBy: lastUpdatedAt, orderDirection: desc) {
+              id
+              owner
+              factory
+              quoteAsset { id symbol name decimals }
+              baseAsset { id symbol name decimals }
+              symbol
+              name
+              description
+              social1
+              social2
+              social3
+              lockup
+              decreaseOnWithdraw
+              locked
+              closed
+              maxShares
+              totalShares
+              quoteBalance
+              baseBalance
+              depositCount
+              withdrawalCount
+              uniqueDepositors
+              createdAt
+              createdBlock
+              createdTx
+              lastUpdatedAt
+            }
           }
-        }
-      `;
-
-      const MY_POSITIONS_QUERY = gql`
-        query ($acct: Bytes!) {
-          userVaultPositions(
-            first: 1000,
-            where: { account: $acct },
-            orderBy: updatedAt,
-            orderDirection: desc
-          ) {
-            vault { id }
-            shares
-            depositCount
-            withdrawCount
-            totalDepositedQuote
-            totalDepositedBase
-            totalWithdrawnQuote
-            totalWithdrawnBase
-            lastDepositAt
-            lastWithdrawAt
-            updatedAt
-          }
-        }
       `;
 
       try {
-        const dataVaults = await fetchSubgraph(SUBGRAPH_URL, VAULTS_QUERY);
+        const dataVaults = await fetchSubgraph(SUBGRAPH_URL, VAULTS_QUERY, { acct: address.toLowerCase() });
         const rawVaults = (dataVaults?.vaults ?? []) as any[];
         const vaultsSlim = rawVaults.map((v: any) => ({
           id: getAddress(v.id) as `0x${string}`,
@@ -2448,8 +2444,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         let userSharesMap: Record<string, bigint> = {};
         if (address) {
-          const dataPos = await fetchSubgraph(SUBGRAPH_URL, MY_POSITIONS_QUERY, { acct: address.toLowerCase() });
-          const pos = (dataPos?.userVaultPositions ?? []) as any[];
+          const pos = (dataVaults?.userVaultPositions ?? []) as any[];
           userSharesMap = pos.reduce((m: Record<string, bigint>, p: any) => {
             m[p.vault.id] = toBigIntSafe(p.shares);
             return m;
@@ -2533,9 +2528,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             .flatMap((s: any) => s?.batches ?? [])
             .flatMap((b: any) => b?.[key] ?? []);
 
-        const gql = (s: TemplateStringsArray, ...args: any[]) => s.reduce((acc, cur, i) => acc + cur + (args[i] ?? ''), '');
-
-        const VAULT_DETAIL_QUERY = gql`
+        const VAULT_DETAIL_QUERY = `
           query VaultDetail($vault: Bytes!, $acct: ID!) {
             depositors: userVaultPositions(
               first: 1000
@@ -4707,17 +4700,44 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             query: `
               query ($id: ID!) {
                 launchpadTokens: launchpadTokens(where: { id: $id }) {
-                  lastPriceNativePerTokenWad
-                  volumeNative
-                  buyTxs
-                  sellTxs
+                  id
+                  creator {
+                    id
+                    tokensLaunched
+                    tokensGraduated
+                  }
                   name
                   symbol
                   metadataCID
-                  creator { id }
+                  description
+                  social1
+                  social2
+                  social3	
+                  social4
+                  decimals
+                  initialSupply
                   timestamp
+                  migrated
+                  migratedAt
+                  migratedMarket {
+                    id
+                  }
+                  volumeNative
+                  volumeToken
+                  buyTxs
+                  sellTxs
+                  distinctBuyers
+                  distinctSellers
+                  lastPriceNativePerTokenWad
+                  lastUpdatedAt
                   trades(first: 50, orderBy: block, orderDirection: desc) {
                     id account {id} block isBuy priceNativePerTokenWad amountIn amountOut
+                  }
+                  totalHolders
+                  devHoldingAmount
+                  holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
+                    account { id }
+                    tokens
                   }
                   series: ${'series' + (
                 memeSelectedInterval === '1s' ? '1' :
@@ -4759,18 +4779,64 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
           const price = Number(m.lastPriceNativePerTokenWad || 0) / 1e9;
           currentPriceRef.current = price;
+          const socials = [m.social1, m.social2, m.social3].map((s) =>
+            s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
+          );
+          const twitter = socials.find(
+            (s) =>
+              s?.startsWith('https://x.com') ||
+              s?.startsWith('https://twitter.com'),
+          );
+          if (twitter) {
+            socials.splice(socials.indexOf(twitter), 1);
+          }
+          const telegram = socials.find((s) => s?.startsWith('https://t.me'));
+          if (telegram) {
+            socials.splice(socials.indexOf(telegram), 1);
+          }
+          const discord = socials.find(
+            (s) =>
+              s?.startsWith('https://discord.gg') ||
+              s?.startsWith('https://discord.com'),
+          );
+          if (discord) {
+            socials.splice(socials.indexOf(discord), 1);
+          }
+          const website = socials[0];
 
           setMemeLive(p => ({
             ...p,
-            name: m.name || p?.name,
-            symbol: m.symbol || p?.symbol,
+            id: m.id.toLowerCase(),
+            tokenAddress: m.id.toLowerCase(),
+            dev: m.creator.id,
+            name: m.name,
+            symbol: m.symbol,
             image: imageUrl || p?.image,
-            dev: m.creator?.id || (p as any)?.dev || '',
+            twitterHandle: twitter ?? '',
+            website: website ?? '',
+            status: m.migrated
+              ? 'graduated'
+              : price * TOTAL_SUPPLY > 12500
+                ? 'graduating'
+                : 'new',
             price,
             marketCap: price * TOTAL_SUPPLY,
-            volume24h: Number(m.volumeNative || 0) / 1e18,
-            buyTransactions: Number(m.buyTxs || 0),
-            sellTransactions: Number(m.sellTxs || 0),
+            buyTransactions: Number(m.buyTxs),
+            sellTransactions: Number(m.sellTxs),
+            volume24h: Number(m.volumeNative) / 1e18,
+            volumeDelta: 0,
+            discordHandle: discord ?? '',
+            telegramHandle: telegram ?? '',
+            launchedTokens: m.creator.tokensLaunched ?? '',
+            graduatedTokens: m.creator.tokensGraduated ?? '',
+            holders: m.totalHolders - 1,
+            devHolding: m.devHoldingAmount / 1e27,
+            top10Holding: Number(
+              (m.holders ?? [])
+                .filter((h: { account?: { id?: string } }) => (h.account?.id?.toLowerCase() ?? '') !== (settings.chainConfig[activechain].router ?? '').toLowerCase())
+                .slice(0, 10)
+                .reduce((sum: bigint, h: { tokens: string }) => sum + BigInt(h.tokens || '0'), 0n)
+            ) / 1e25,
           }));
 
           setTokenData((td: any) => ({
@@ -5284,7 +5350,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       .filter(Boolean)
       .map((a) => a.toLowerCase());
 
-    if (allAddresses.length === 0) return;
+    if (allAddresses.length === 0 || !initialMemeFetchDone) return;
 
     let cancelled = false;
 
@@ -5782,7 +5848,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       return { readContractData: groupResults, gasEstimate: gasEstimate }
     },
     enabled: !!activeMarket && !!tokendict && !!markets,
-    refetchInterval: ['board', 'explorer', 'meme'].includes(location.pathname.slice(1)) ? 800 : 5000,
+    refetchInterval: ['board', 'spectra', 'meme'].includes(location.pathname.slice(1).substring(0, location.pathname.slice(1).indexOf('/'))) ? 800 : 5000,
     gcTime: 0,
   })
 
@@ -5820,7 +5886,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       const msg = JSON.parse(data);
       if (msg?.method !== 'eth_subscription') return;
       const log = msg.params?.result;
-      if (!log?.topics?.length) return;
+      if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
       setProcessedLogs(prev => {
         let tempset = new Set(prev);
         const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
@@ -23781,75 +23847,71 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           <Route
             path="/meme/:tokenAddress"
             element={
-              <MemeRouteBridge>
-                {({ tokenAddress }) => (
-                  <MemeInterface
-                    sliderMode={'spot' === 'spot' ? spotSliderMode : trenchesSliderMode}
-                    sliderPresets={'spot' === 'spot' ? spotSliderPresets : trenchesSliderPresets}
-                    sliderIncrement={'spot' === 'spot' ? spotSliderIncrement : trenchesSliderIncrement}
-                    marketsData={marketsData}
-                    onMarketSelect={onMarketSelect}
-                    setSendTokenIn={setSendTokenIn}
-                    setpopup={setpopup}
-                    tokenList={memoizedTokenList}
-                    sendUserOperationAsync={sendUserOperationAsync}
-                    account={{
-                      connected: connected,
-                      address: address,
-                      chainId: userchain,
-                    }}
-                    setChain={handleSetChain}
-                    address={address}
-                    subWallets={subWallets}
-                    walletTokenBalances={walletTokenBalances}
-                    activeWalletPrivateKey={oneCTSigner}
-                    setOneCTSigner={setOneCTSigner}
-                    refetch={refetch}
-                    isBlurred={isBlurred}
-                    tradesByMarket={tradesByMarket}
-                    markets={markets}
-                    tokendict={tokendict}
-                    usdc={usdc}
-                    wethticker={wethticker}
-                    ethticker={ethticker}
-                    terminalQueryData={terminalQueryData}
-                    terminalToken={terminalToken}
-                    setTerminalToken={setTerminalToken}
-                    terminalRefetch={terminalRefetch}
-                    tokenData={tokenData}
-                    setTokenData={setTokenData}
-                    monUsdPrice={monUsdPrice}
-                    buyPresets={buyPresets}
-                    sellPresets={sellPresets}
-                    monPresets={monPresets}
-                    setMonPresets={setMonPresets}
-                    onPNLDataChange={setCurrentPNLData}
-                    onTokenDataChange={setCurrentTokenData}
-                    nonces={nonces}
-                    tokenAddress={tokenAddress}
-                    live={memeLive}
-                    trades={memeTrades}
-                    setTrades={setMemeTrades}
-                    holders={memeHolders}
-                    topTraders={memeTopTraders}
-                    positions={memePositions}
-                    devTokens={memeDevTokens}
-                    top10HoldingPercentage={memeTop10HoldingPct}
-                    userStats={memeUserStats}
-                    registerRealtimeTick={(fn) => (memePriceTickRef.current = fn)}
-                    selectedInterval={memeSelectedInterval}
-                    setSelectedInterval={setMemeSelectedInterval}
-                    chartData={chartData}
-                    setChartData={setChartData}
-                    page={page}
-                    similarTokens={memeSimilarTokens}
-                    token={token}
-                    selectedWallets={selectedWallets}
-                    setSelectedWallets={setSelectedWallets}
+              <MemeInterface
+                sliderMode={'spot' === 'spot' ? spotSliderMode : trenchesSliderMode}
+                sliderPresets={'spot' === 'spot' ? spotSliderPresets : trenchesSliderPresets}
+                sliderIncrement={'spot' === 'spot' ? spotSliderIncrement : trenchesSliderIncrement}
+                marketsData={marketsData}
+                onMarketSelect={onMarketSelect}
+                setSendTokenIn={setSendTokenIn}
+                setpopup={setpopup}
+                tokenList={memoizedTokenList}
+                sendUserOperationAsync={sendUserOperationAsync}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: userchain,
+                }}
+                setChain={handleSetChain}
+                address={address}
+                subWallets={subWallets}
+                walletTokenBalances={walletTokenBalances}
+                activeWalletPrivateKey={oneCTSigner}
+                setOneCTSigner={setOneCTSigner}
+                refetch={refetch}
+                isBlurred={isBlurred}
+                tradesByMarket={tradesByMarket}
+                markets={markets}
+                tokendict={tokendict}
+                usdc={usdc}
+                wethticker={wethticker}
+                ethticker={ethticker}
+                terminalQueryData={terminalQueryData}
+                terminalToken={terminalToken}
+                setTerminalToken={setTerminalToken}
+                terminalRefetch={terminalRefetch}
+                tokenData={tokenData}
+                setTokenData={setTokenData}
+                monUsdPrice={monUsdPrice}
+                buyPresets={buyPresets}
+                sellPresets={sellPresets}
+                monPresets={monPresets}
+                setMonPresets={setMonPresets}
+                onPNLDataChange={setCurrentPNLData}
+                onTokenDataChange={setCurrentTokenData}
+                nonces={nonces}
+                tokenAddress={tokenAddress}
+                live={memeLive}
+                trades={memeTrades}
+                setTrades={setMemeTrades}
+                holders={memeHolders}
+                topTraders={memeTopTraders}
+                positions={memePositions}
+                devTokens={memeDevTokens}
+                top10HoldingPercentage={memeTop10HoldingPct}
+                userStats={memeUserStats}
+                registerRealtimeTick={(fn) => (memePriceTickRef.current = fn)}
+                selectedInterval={memeSelectedInterval}
+                setSelectedInterval={setMemeSelectedInterval}
+                chartData={chartData}
+                setChartData={setChartData}
+                page={page}
+                similarTokens={memeSimilarTokens}
+                token={token}
+                selectedWallets={selectedWallets}
+                setSelectedWallets={setSelectedWallets}
 
-                  />
-                )}
-              </MemeRouteBridge>
+              />
             }
           />
           <Route path="/board"
@@ -24219,11 +24281,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       </div>
     </div>
   );
-}
-
-function MemeRouteBridge(props: { children: (p: { tokenAddress?: string }) => JSX.Element }) {
-  const { tokenAddress } = useParams<{ tokenAddress: string }>();
-  return props.children({ tokenAddress });
 }
 
 export default Loader;
