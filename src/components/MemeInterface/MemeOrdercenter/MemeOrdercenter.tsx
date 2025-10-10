@@ -247,7 +247,7 @@ const SellPopup: React.FC<SellPopupProps> = ({
               <div className="meme-balance-right">
                 <div className="meme-balance-display">
                   <img src={walleticon} className="meme-wallet-icon" />
-{(() => {
+                  {(() => {
                     const totalTokenBalance = getTotalTokenBalance(selectedPosition.tokenId);
                     return (
                       totalTokenBalance *
@@ -330,7 +330,7 @@ const SellPopup: React.FC<SellPopupProps> = ({
                 setIsLoading(false);
               }
             }}
-disabled={
+            disabled={
               !sellAmount ||
               parseFloat(sellAmount) <= 0 ||
               (() => {
@@ -338,7 +338,7 @@ disabled={
                 return (
                   parseFloat(sellAmount) >
                   totalTokenBalance *
-                    (selectedPosition.lastPrice || currentPrice)
+                  (selectedPosition.lastPrice || currentPrice)
                 );
               })() ||
               isLoading
@@ -408,7 +408,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     setSellAmount('');
     setSellSliderPercent(0);
   }, []);
-const getTotalTokenBalance = useCallback((tokenId: string) => {
+  const getTotalTokenBalance = useCallback((tokenId: string) => {
     const allWalletAddresses = [
       userAddr,
       ...subWallets.map((w) => w.address),
@@ -421,7 +421,7 @@ const getTotalTokenBalance = useCallback((tokenId: string) => {
       return sum + Number(balance) / 10 ** Number(decimals);
     }, 0);
   }, [userAddr, subWallets, walletTokenBalances, tokendict]);
-const handleSellMaxClick = useCallback(() => {
+  const handleSellMaxClick = useCallback(() => {
     if (selectedPosition) {
       const totalTokenBalance = getTotalTokenBalance(selectedPosition.tokenId);
       const maxMonAmount =
@@ -463,47 +463,47 @@ const handleSellMaxClick = useCallback(() => {
 
   const holderRows = liveHolders.length
     ? liveHolders.map((h, i) => ({
-        rank: page * pageSize + i + 1,
-        wallet: h.address,
-        balance: h.balance,
-        bought: h.amountBought,
-        sold: h.amountSold,
-        valueBought: h.valueBought,
-        valueSold: h.valueSold,
-        pnl: h.valueNet,
-        remainingPct:
-          h.tokenNet === 0
-            ? 0
-            : (h.balance / Math.max(h.amountBought, 1e-9)) * 100,
-        tags: [],
-      }))
+      rank: page * pageSize + i + 1,
+      wallet: h.address,
+      balance: h.balance,
+      bought: h.amountBought,
+      sold: h.amountSold,
+      valueBought: h.valueBought,
+      valueSold: h.valueSold,
+      pnl: h.valueNet,
+      remainingPct:
+        h.tokenNet === 0
+          ? 0
+          : (h.balance / Math.max(h.amountBought, 1e-9)) * 100,
+      tags: [],
+    }))
     : mockHolders.slice(0, 20).map((h, i) => ({
-        rank: i + 1,
-        wallet: h.wallet,
-        balance: h.balance,
-        bought: Math.random() * 10,
-        sold: Math.random() * 8,
-        valueBought: Math.random() * 1000,
-        valueSold: Math.random() * 800,
-        pnl: (Math.random() - 0.5) * 20,
-        remainingPct: h.percentage,
-        tags: h.tags,
-      }));
+      rank: i + 1,
+      wallet: h.wallet,
+      balance: h.balance,
+      bought: Math.random() * 10,
+      sold: Math.random() * 8,
+      valueBought: Math.random() * 1000,
+      valueSold: Math.random() * 800,
+      pnl: (Math.random() - 0.5) * 20,
+      remainingPct: h.percentage,
+      tags: h.tags,
+    }));
 
   const devTokensToShow: DevToken[] = useMemo(() => {
     const src =
       devTokens && devTokens.length > 0
         ? devTokens
         : mockDevTokens.map((mt) => ({
-            id: mt.id,
-            symbol: mt.symbol,
-            name: mt.name,
-            imageUrl: mt.imageUrl,
-            price: mt.price,
-            marketCap: mt.marketCap,
-            timestamp: mt.timestamp,
-            migrated: mt.migrated,
-          }));
+          id: mt.id,
+          symbol: mt.symbol,
+          name: mt.name,
+          imageUrl: mt.imageUrl,
+          price: mt.price,
+          marketCap: mt.marketCap,
+          timestamp: mt.timestamp,
+          migrated: mt.migrated,
+        }));
 
     const seen = new Set<string>();
     const uniq: DevToken[] = [];
@@ -522,15 +522,15 @@ const handleSellMaxClick = useCallback(() => {
       topTraders && topTraders.length
         ? topTraders
         : mockTopTraders.map((t) => ({
-            address: t.wallet,
-            balance: t.balance,
-            amountBought: Math.random() * 10,
-            amountSold: Math.random() * 8,
-            valueBought: Math.random() * 1000,
-            valueSold: Math.random() * 800,
-            valueNet: (Math.random() - 0.5) * 20,
-            tokenNet: t.percentage,
-          }));
+          address: t.wallet,
+          balance: t.balance,
+          amountBought: Math.random() * 10,
+          amountSold: Math.random() * 8,
+          valueBought: Math.random() * 1000,
+          valueSold: Math.random() * 800,
+          valueNet: (Math.random() - 0.5) * 20,
+          tokenNet: t.percentage,
+        }));
 
     const score = (x: LiveHolder) => x.valueNet + currentPrice * x.balance;
 
@@ -682,7 +682,7 @@ const handleSellMaxClick = useCallback(() => {
       }
     }
   };
-const handleSellSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSellSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const percent = parseInt(e.target.value);
     setSellSliderPercent(percent);
     if (selectedPosition) {
@@ -695,7 +695,7 @@ const handleSellSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     }
   };
 
-const handleSellAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSellAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSellAmount(value);
     if (selectedPosition) {
@@ -863,8 +863,8 @@ const handleSellAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                               ({p.pnlNative >= 0 ? '+' : ''}
                               {p.spentNative > 0
                                 ? ((p.pnlNative / p.spentNative) * 100).toFixed(
-                                    1,
-                                  )
+                                  1,
+                                )
                                 : '0.0'}
                               %)
                             </span>
@@ -995,17 +995,17 @@ const handleSellAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                           )}
                           {row.wallet.toLowerCase() ===
                             (token.dev || '').toLowerCase() && (
-                            <svg
-                              className="meme-dev-icon"
-                              width="14"
-                              height="14"
-                              viewBox="0 0 30 30"
-                              fill="#ffc107"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
-                            </svg>
-                          )}
+                              <svg
+                                className="meme-dev-icon"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 30 30"
+                                fill="#ffc107"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
+                              </svg>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -1049,7 +1049,7 @@ const handleSellAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                         ($
                         {formatNumber(
                           (row.valueBought * monUsdPrice * 1e9) /
-                            (row.bought || 1),
+                          (row.bought || 1),
                         )}
                         )
                       </span>
@@ -1222,17 +1222,17 @@ const handleSellAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                             )}
                             {row.address.toLowerCase() ===
                               (token.dev || '').toLowerCase() && (
-                              <svg
-                                className="meme-dev-icon"
-                                width="14"
-                                height="14"
-                                viewBox="0 0 30 30"
-                                fill="#ffc107"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
-                              </svg>
-                            )}
+                                <svg
+                                  className="meme-dev-icon"
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 30 30"
+                                  fill="#ffc107"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
+                                </svg>
+                              )}
                           </div>
                         </div>
                       </div>
@@ -1371,176 +1371,197 @@ const handleSellAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             </div>
           </div>
         );
-case 'devTokens':
-  return (
-    <div className="meme-oc-section-content meme-oc-dev-tokens-layout" data-section="devTokens">
-      <div className="meme-oc-dev-tokens-table">
-        <div className="meme-oc-header">
-          <div className="meme-oc-header-cell">Token</div>
-          <div className="meme-oc-header-cell">Token Address</div>
-          <div className="meme-oc-header-cell">Market Cap (MON)</div>
-          <div className="meme-oc-header-cell">Migrated</div>
-          <div className="meme-oc-header-cell">Holders</div>
-        </div>
+      case 'devTokens':
+        return (
+          <div className="meme-oc-section-content meme-oc-dev-tokens-layout" data-section="devTokens">
+            <div className="meme-oc-dev-tokens-table">
+              <div className="meme-oc-header">
+                <div className="meme-oc-header-cell">Token</div>
+                <div className="meme-oc-header-cell">Market Cap (MON)</div>
+                <div className="meme-oc-header-cell">Migrated</div>
+                <div className="meme-oc-header-cell">Holders</div>
+              </div>
 
-        <div className="meme-oc-items">
-          {devTokensToShow.length === 0 ? (
-            <div className="meme-oc-empty">No tokens</div>
-          ) : (
-            devTokensToShow.map((t) => {
-              const mc = Number(t.marketCap || 0);
-              return (
-                <div key={t.id} className="meme-oc-item">
-                  <div className="meme-oc-cell">
-                    <div className="meme-wallet-info">
-                      <div
-                        className="meme-token-info"
-                        style={{ display: 'flex', alignItems: 'center' }}
-                      >
-                        {t.imageUrl && (
-                          <img
-                            src={t.imageUrl}
-                            alt={t.symbol || t.name || t.id}
-                            className="meme-token-icon"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        )}
-                        <span
-                          className="meme-wallet-address"
-                          title={t.name || t.symbol || t.id}
-                        >
-                          {(t.symbol || '').toUpperCase()}
-                          <span className="meme-wallet-address-span">
-                            {timeAgo(t.timestamp)}
-                          </span>
-                        </span>
+              <div className="meme-oc-items">
+                {devTokensToShow.length === 0 ? (
+                  <div className="meme-oc-empty">No tokens</div>
+                ) : (
+                  devTokensToShow.map((t) => {
+                    const mc = Number(t.marketCap || 0);
+                    return (
+                      <div key={t.id} className="meme-oc-item">
+                        <div className="meme-oc-cell">
+                          <div className="meme-wallet-info">
+                            <div
+                              className="meme-token-info"
+                              style={{ display: 'flex', alignItems: 'center' }}
+                            >
+                              {t.imageUrl && (
+                                <img
+                                  src={t.imageUrl}
+                                  alt={t.symbol || t.name || t.id}
+                                  className="meme-token-icon"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              )}
+                              <span
+                                className="meme-wallet-address"
+                                title={t.name || t.symbol || t.id}
+                              >
+                                {(t.symbol || '').toUpperCase()}
+                                <span className="meme-wallet-address-span">
+                                  {timeAgo(t.timestamp)}
+                                </span>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="meme-oc-cell">
+                          <div className="meme-ordercenter-info">
+                            <img
+                              className="meme-ordercenter-monad-icon"
+                              src={monadicon}
+                              alt="MONAD"
+                            />
+                            <span className="meme-usd-amount">
+                              {mc > 0 ? fmt(mc, 2) : '—'}
+                            </span>
+                          </div>
+                        </div>
+
+<div className="meme-oc-cell">
+  {t.migrated ? (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="rgb(67, 254, 154)"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10"/>
+      <path d="m9 12 2 2 4-4"/>
+    </svg>
+  ) : (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="rgb(240, 103, 103)"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10"/>
+      <path d="m15 9-6 6"/>
+      <path d="m9 9 6 6"/>
+    </svg>
+  )}
+</div>
+
+                        <div className="meme-oc-cell">
+                          <span>{liveHolders.length}</span>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
 
-                  <div className="meme-oc-cell">
-                    <div className="meme-wallet-address-sub">
-                      {t.id.slice(0, 6)}…{t.id.slice(-4)}
-                    </div>
-                  </div>
-                  <div className="meme-oc-cell">
-                    <div className="meme-ordercenter-info">
-                      <img
-                        className="meme-ordercenter-monad-icon"
-                        src={monadicon}
-                        alt="MONAD"
-                      />
-                      <span className="meme-usd-amount">
-                        {mc > 0 ? fmt(mc, 2) : '—'}
-                      </span>
-                    </div>
-                  </div>
+            <div className="meme-oc-dev-stats-panel">
+              <h3 className="meme-oc-dev-stats-title">Token Stats</h3>
 
-                  <div className="meme-oc-cell">
-                    <span>{t.migrated ? 'Migrated' : 'Bonding'}</span>
-                  </div>
+              <div className="meme-oc-dev-stats-content">
+                <div className="meme-oc-dev-stats-row">
+                  <span className="meme-oc-dev-stats-label">DEV</span>
+                  <span className="meme-oc-dev-stats-value">
+                    {token.dev ? `${token.dev.slice(0, 6)}...${token.dev.slice(-4)}` : '—'}
+                  </span>
+                </div>
 
-                  <div className="meme-oc-cell">
-                    <span>{liveHolders.length}</span>
+                <div className="meme-oc-dev-stats-row">
+                  <span className="meme-oc-dev-stats-label">Total Pairs:</span>
+                  <span className="meme-oc-dev-stats-value">{devTokensToShow.length}</span>
+                </div>
+
+
+                <div className="meme-oc-dev-stats-migration">
+                  <div className="meme-oc-migration-item migrated">
+                    <span className="meme-oc-migration-indicator"></span>
+                    <span>Migrated: {devTokensToShow.filter(t => t.migrated).length}</span>
+                  </div>
+                  <div className="meme-oc-migration-item non-migrated">
+                    <span className="meme-oc-migration-indicator"></span>
+                    <span>Non Migrated: {devTokensToShow.filter(t => !t.migrated).length}</span>
                   </div>
                 </div>
-              );
-            })
-          )}
-        </div>
-      </div>
 
-      <div className="meme-oc-dev-stats-panel">
-        <h3 className="meme-oc-dev-stats-title">Token Stats</h3>
-        
-        <div className="meme-oc-dev-stats-content">
-          <div className="meme-oc-dev-stats-row">
-            <span className="meme-oc-dev-stats-label">DEV</span>
-            <span className="meme-oc-dev-stats-value">
-              {token.dev ? `${token.dev.slice(0, 6)}...${token.dev.slice(-4)}` : '—'}
-            </span>
-          </div>
-
-          <div className="meme-oc-dev-stats-row">
-            <span className="meme-oc-dev-stats-label">Total Pairs:</span>
-            <span className="meme-oc-dev-stats-value">{devTokensToShow.length}</span>
-          </div>
-
-          <div className="meme-oc-dev-stats-row">
-            <span className="meme-oc-dev-stats-label">Holders:</span>
-            <span className="meme-oc-dev-stats-value">{liveHolders.length}</span>
-          </div>
-
-          <div className="meme-oc-dev-stats-migration">
-            <div className="meme-oc-migration-item migrated">
-              <span className="meme-oc-migration-indicator"></span>
-              <span>Migrated: {devTokensToShow.filter(t => t.migrated).length}</span>
-            </div>
-            <div className="meme-oc-migration-item non-migrated">
-              <span className="meme-oc-migration-indicator"></span>
-              <span>Non Migrated: {devTokensToShow.filter(t => !t.migrated).length}</span>
-            </div>
-          </div>
-
-          <div className="meme-oc-dev-stats-chart">
-            <div className="meme-oc-chart-circle">
-              <svg viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  fill="none"
-                  stroke="rgb(21, 21, 27)"
-                  strokeWidth="8"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  fill="none"
-                  stroke="rgb(235, 112, 112)"
-                  strokeWidth="8"
-                  strokeDasharray={`${devTokensToShow.length > 0 ? (devTokensToShow.filter(t => t.migrated).length / devTokensToShow.length) * 251 : 0} 251`}
-                  strokeLinecap="round"
-                  transform="rotate(-90 50 50)"
-                />
-              </svg>
-              <div className="meme-oc-chart-label">
-                <div className="meme-oc-chart-percentage">
-                  {devTokensToShow.length > 0 
-                    ? Math.round((devTokensToShow.filter(t => t.migrated).length / devTokensToShow.length) * 100)
-                    : 0}%
+                <div className="meme-oc-dev-stats-chart">
+                  <div className="meme-oc-chart-circle">
+<svg viewBox="0 0 100 100">
+  <circle
+    cx="50"
+    cy="50"
+    r="40"
+    fill="none"
+    stroke="rgb(240, 103, 103)"
+    strokeWidth="8"
+  />
+  <circle
+    cx="50"
+    cy="50"
+    r="40"
+    fill="none"
+    stroke="rgb(67, 254, 154)"
+    strokeWidth="8"
+    strokeDasharray={`${devTokensToShow.length > 0 ? (devTokensToShow.filter(t => t.migrated).length / devTokensToShow.length) * 251 : 0} 251`}
+    strokeLinecap="butt" 
+    transform="rotate(-90 50 50)"
+  />
+</svg>
+                    <div className="meme-oc-chart-label">
+                      <div className="meme-oc-chart-percentage">
+                        {devTokensToShow.length > 0
+                          ? Math.round((devTokensToShow.filter(t => t.migrated).length / devTokensToShow.length) * 100)
+                          : 0}%
+                      </div>
+                      <div className="meme-oc-chart-sublabel">Migrated</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="meme-oc-chart-sublabel">Migrated</div>
+
+                <div className="meme-oc-dev-stats-highlights">
+                  <h4>Highlights</h4>
+                  <div className="meme-oc-highlight-item">
+                    <span>Top MCAP</span>
+                    <span>
+                      {devTokensToShow.length > 0
+                        ? `${devTokensToShow[0].symbol} ($${fmt(Math.max(...devTokensToShow.map(t => Number(t.marketCap || 0))))})`
+                        : '—'}
+                    </span>
+                  </div>
+                  <div className="meme-oc-highlight-item">
+                    <span>Last Token Launched:</span>
+                    <span>
+                      {devTokensToShow.length > 0
+                        ? timeAgo(devTokensToShow[devTokensToShow.length - 1].timestamp)
+                        : '—'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-
-          <div className="meme-oc-dev-stats-highlights">
-            <h4>Highlights</h4>
-            <div className="meme-oc-highlight-item">
-              <span>Top MCAP</span>
-              <span>
-                {devTokensToShow.length > 0 
-                  ? `${devTokensToShow[0].symbol} ($${fmt(Math.max(...devTokensToShow.map(t => Number(t.marketCap || 0))))})`
-                  : '—'}
-              </span>
-            </div>
-            <div className="meme-oc-highlight-item">
-              <span>Last Token Launched:</span>
-              <span>
-                {devTokensToShow.length > 0 
-                  ? timeAgo(devTokensToShow[devTokensToShow.length - 1].timestamp)
-                  : '—'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+        );
       default:
         return null;
     }
@@ -1646,7 +1667,7 @@ case 'devTokens':
           <span className="meme-oc-no-data">{noDataMessage}</span>
         </div>
       )}
-<SellPopup
+      <SellPopup
         showSellPopup={showSellPopup}
         selectedPosition={selectedPosition}
         sellAmount={sellAmount}
