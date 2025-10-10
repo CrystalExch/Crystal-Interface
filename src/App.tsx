@@ -290,7 +290,7 @@ const Loader = () => {
         const ETH_TICKER = settings.chainConfig[activechain].ethticker;
         const WETH_TICKER = settings.chainConfig[activechain].wethticker;
         const tokendict: { [key: string]: any } =
-        settings.chainConfig[activechain].tokendict;
+          settings.chainConfig[activechain].tokendict;
         const newMarkets: Record<string, any> = settings.chainConfig[activechain].markets;
         for (const m of list) {
           const baseAddr0 = getAddress(String(m.baseAsset || ''));
@@ -323,7 +323,7 @@ const Loader = () => {
                 console.warn('failed to load metadata for', m.metadataCID, e);
               }
             }
-            
+
             tokendict[quoteAddr0] = {
               address: quoteAddr0,
               decimals: BigInt(Number(m.quoteDecimals ?? 18)),
@@ -422,13 +422,15 @@ const Loader = () => {
 
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 
-function App({ stateloading, setstateloading,addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
+function App({ stateloading, setstateloading, addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
   // constants
   useEffect(() => {
     if (!localStorage.getItem("noSSR")) {
       localStorage.setItem("noSSR", "true");
     }
   }, []);
+  const crystal = '/CrystalLogo.png';
+
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { client, address: scaAddress } = useSmartAccountClient({}) as { client: any; address: any };
   const { sendUserOperationAsync: rawSendUserOperationAsync } = useSendUserOperation({
@@ -659,34 +661,32 @@ function App({ stateloading, setstateloading,addressinfoloading, setaddressinfol
     const saved = localStorage.getItem('crystal_active_wallet_private_key');
     return saved ? saved : '';
   });
-const [selectedWallets, setSelectedWallets] = useState<Set<string>>(() => {
-  try {
-    // Try to load from localStorage first
-    const saved = localStorage.getItem('crystal_selected_wallets');
-    if (saved) {
-      const addresses = JSON.parse(saved);
-      if (Array.isArray(addresses) && addresses.length > 0) {
-        return new Set(addresses);
+  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('crystal_selected_wallets');
+      if (saved) {
+        const addresses = JSON.parse(saved);
+        if (Array.isArray(addresses) && addresses.length > 0) {
+          return new Set(addresses);
+        }
       }
+    } catch (error) {
+      console.error('Error loading selected wallets:', error);
     }
-  } catch (error) {
-    console.error('Error loading selected wallets:', error);
-  }
-  
-  // Default: return empty set
-  return new Set<string>();
-});
 
-useEffect(() => {
-  try {
-    localStorage.setItem(
-      'crystal_selected_wallets',
-      JSON.stringify(Array.from(selectedWallets))
-    );
-  } catch (error) {
-    console.error('Error saving selected wallets:', error);
-  }
-}, [selectedWallets]);
+    return new Set<string>();
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        'crystal_selected_wallets',
+        JSON.stringify(Array.from(selectedWallets))
+      );
+    } catch (error) {
+      console.error('Error saving selected wallets:', error);
+    }
+  }, [selectedWallets]);
   const validOneCT = !!oneCTSigner
   const oneCTNonceRef = useRef<number>(0);
   const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
@@ -2322,7 +2322,7 @@ useEffect(() => {
   const [_allOrders, setAllOrders] = useState<any[]>([]);
   const [vaultDetailTick, setVaultDetailTick] = useState(0);
 
-  async function fetchVaultBalances(vaults: { id:`0x${string}` }[]) {
+  async function fetchVaultBalances(vaults: { id: `0x${string}` }[]) {
     const calls = vaults.map(v => ({
       address: v.id,
       abi: CrystalVaultsAbi,
@@ -2372,7 +2372,7 @@ useEffect(() => {
   };
 
   // fetch vaults list
-  useEffect(() => { 
+  useEffect(() => {
     let cancelled = false;
     (async () => {
       setIsVaultsLoading(true);
@@ -2512,8 +2512,8 @@ useEffect(() => {
   // details when a vault is selected + ws
   useEffect(() => {
     let cancelled = false;
-    
-    const run = async () => {   
+
+    const run = async () => {
       if (!selectedVaultStrategy) {
         setDepositors([]);
         setDepositHistory([]);
@@ -2651,7 +2651,7 @@ useEffect(() => {
 
         const acct = data?.account ?? null;
         const _openOrders = flattenMap(acct?.openOrderMap, "orders") || [];
-        const _allOrders  = flattenMap(acct?.orderMap, "orders") || [];
+        const _allOrders = flattenMap(acct?.orderMap, "orders") || [];
 
         setDepositors(data?.depositors ?? []);
         setDepositHistory(data?.deposits ?? []);
@@ -2671,7 +2671,7 @@ useEffect(() => {
             if (me?.shares != null) {
               userShares = typeof me.shares === 'bigint' ? me.shares : BigInt(String(me.shares));
             }
-          } catch {}
+          } catch { }
 
           if (!cancelled) {
             if (
@@ -2702,7 +2702,7 @@ useEffect(() => {
 
         const vaultAddrLc = selectedVaultStrategy.toLowerCase();
         const quoteLc = (baseVault.quoteAsset || '').toLowerCase();
-        const baseLc = (baseVault.baseAsset  || '').toLowerCase();
+        const baseLc = (baseVault.baseAsset || '').toLowerCase();
         const factoryLc = (factoryAddress || '').toLowerCase();
         const vaultTopicLc = '0x' + vaultAddrLc.slice(2).padStart(64, '0');
 
@@ -2716,7 +2716,7 @@ useEffect(() => {
               method: 'eth_subscribe',
               params
             }));
-          } catch {}
+          } catch { }
         };
 
         ws.onopen = () => {
@@ -2784,14 +2784,14 @@ useEffect(() => {
           }
         };
 
-        ws.onerror = () => {};
-        ws.onclose = () => {};
+        ws.onerror = () => { };
+        ws.onclose = () => { };
 
-        const close = () => { try { ws.close(); } catch {} };
+        const close = () => { try { ws.close(); } catch { } };
         const cleanupWs = close;
         const _noop = cleanupWs;
 
-        return () => {};
+        return () => { };
       } catch (e) {
         console.error("vault detail fetch failed:", e);
         if (cancelled) return;
@@ -3532,7 +3532,7 @@ useEffect(() => {
       const p = startPrice + ((endPrice - startPrice) * i) / (numOrders - 1)
       return activeMarket.marketType !== 0 ? Math.round(Number(p.toPrecision(5))) : Math.round(p)
     })
-    
+
     let orderSizes: bigint[];
     let factorSum: number;
 
@@ -3873,7 +3873,7 @@ useEffect(() => {
     hidden: Set<string>;
     loading: Set<string>;
   };
-  
+
   type Action =
     | { type: 'INIT'; tokens: Token[] }
     | { type: 'ADD_MARKET'; token: Token }
@@ -3881,7 +3881,7 @@ useEffect(() => {
     | { type: 'HIDE_TOKEN'; id: string }
     | { type: 'SHOW_TOKEN'; id: string }
     | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' };
-  
+
   interface AlertSettings {
     soundAlertsEnabled: boolean;
     volume: number;
@@ -4010,14 +4010,14 @@ useEffect(() => {
         (Object.keys(buckets) as Token['status'][]).forEach((s) => {
           buckets[s] = buckets[s].map((t) => {
             if (t.id.toLowerCase() !== action.id.toLowerCase()) return t;
-  
+
             const {
               volumeDelta = 0,
               buyTransactions = 0,
               sellTransactions = 0,
               ...rest
             } = action.updates;
-  
+
             return {
               ...t,
               ...rest,
@@ -4047,7 +4047,7 @@ useEffect(() => {
       default:
         return state;
     }
-  }  
+  }
 
   const subscribe = useCallback(
     (ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
@@ -4626,7 +4626,7 @@ useEffect(() => {
   const memeTopTradersMapRef = useRef<Map<string, number>>(new Map());
   const memeDevTokenIdsRef = useRef<Set<string>>(new Set());
   const memeLastInvalidateRef = useRef(0);
-  const memePriceTickRef = useRef<(price: number, volNative: number) => void>(() => {});
+  const memePriceTickRef = useRef<(price: number, volNative: number) => void>(() => { });
   const currentPriceRef = useRef<number>(0);
 
   const calcDevHoldingPct = (list: Holder[], dev?: string) => {
@@ -4698,7 +4698,7 @@ useEffect(() => {
 
     const id = (tokenAddress || '').toLowerCase();
 
-    const fetchMemeTokenData = async () => { 
+    const fetchMemeTokenData = async () => {
       try {
         const response = await fetch(SUBGRAPH_URL, {
           method: 'POST',
@@ -4719,18 +4719,17 @@ useEffect(() => {
                   trades(first: 50, orderBy: block, orderDirection: desc) {
                     id account {id} block isBuy priceNativePerTokenWad amountIn amountOut
                   }
-                  series: ${
-                    'series' + (
-                      memeSelectedInterval === '1s' ? '1' :
-                      memeSelectedInterval === '5s' ? '5' :
-                      memeSelectedInterval === '15s' ? '15' :
+                  series: ${'series' + (
+                memeSelectedInterval === '1s' ? '1' :
+                  memeSelectedInterval === '5s' ? '5' :
+                    memeSelectedInterval === '15s' ? '15' :
                       memeSelectedInterval === '1m' ? '60' :
-                      memeSelectedInterval === '5m' ? '300' :
-                      memeSelectedInterval === '15m' ? '900' :
-                      memeSelectedInterval === '1h' ? '3600' :
-                      memeSelectedInterval === '4h' ? '14400' : '86400'
-                    )
-                  } { 
+                        memeSelectedInterval === '5m' ? '300' :
+                          memeSelectedInterval === '15m' ? '900' :
+                            memeSelectedInterval === '1h' ? '3600' :
+                              memeSelectedInterval === '4h' ? '14400' : '86400'
+              )
+              } { 
                     klines(first: 1000, orderBy: time, orderDirection: desc) {
                       time open high low close baseVolume
                     } 
@@ -4755,7 +4754,7 @@ useEffect(() => {
                 const meta = await metaRes.json();
                 imageUrl = meta.image || '';
               }
-            } catch {}
+            } catch { }
           }
 
           const price = Number(m.lastPriceNativePerTokenWad || 0) / 1e9;
@@ -5012,7 +5011,7 @@ useEffect(() => {
                 const meta = await metaRes.json();
                 imageUrl = meta.image || '';
               }
-            } catch {}
+            } catch { }
           }
           const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
           out.push({
@@ -5250,7 +5249,7 @@ useEffect(() => {
                   const meta = await metaRes.json();
                   imageUrl = meta.image || '';
                 }
-              } catch {}
+              } catch { }
             }
             const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
             return {
@@ -5802,13 +5801,13 @@ useEffect(() => {
 
     const sendSub = (params: any) => {
       try {
-        ws.send(JSON.stringify({ 
-          id: Date.now(), 
-          jsonrpc: '2.0', 
-          method: 'eth_subscribe', 
-          params 
+        ws.send(JSON.stringify({
+          id: Date.now(),
+          jsonrpc: '2.0',
+          method: 'eth_subscribe',
+          params
         }));
-      } catch {}
+      } catch { }
     };
 
     ws.onopen = () => {
@@ -5841,25 +5840,25 @@ useEffect(() => {
         if (log.topics[0] === MARKET_UPDATE_EVENT) {
           const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
           const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
-  
+
           const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
           const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
-  
+
           const isBuy = word(0) !== 0n;
           const inputAmountWei = word(1);
           const outputAmountWei = word(2);
           const vNativeWei = word(3);
           const vTokenWei = word(4);
-  
+
           const toNum = (x: bigint) => Number(x) / 1e18;
           const amountIn = toNum(inputAmountWei);
           const amountOut = toNum(outputAmountWei);
           const vNative = Number(vNativeWei);
           const vToken = Number(vTokenWei);
-  
+
           const price = vToken === 0 ? 0 : vNative / vToken;
           const tradePrice = (isBuy ? amountIn / amountOut : amountOut / amountIn) || 0;
-  
+
           if (tokenAddress && tokenAddr === tokenAddress.toLowerCase()) {
             setMemeLive(p => ({
               ...p,
@@ -5869,7 +5868,7 @@ useEffect(() => {
               sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
               volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
             }));
-  
+
             setMemeTrades(prev => [
               {
                 id: `${log.transactionHash}-${log.logIndex}`,
@@ -5882,11 +5881,11 @@ useEffect(() => {
               },
               ...prev.slice(0, 99),
             ]);
-  
+
             setTokenData((prev: any) => ({ ...prev, price, marketCap: price * TOTAL_SUPPLY }));
-  
+
             memePriceTickRef.current?.(tradePrice, isBuy ? amountIn : amountOut);
-  
+
             setMemeHolders(prev => {
               const arr = prev.slice();
               let idx = memeHoldersMapRef.current.get?.(callerAddr);
@@ -5916,7 +5915,7 @@ useEffect(() => {
                 h.balance = Math.max(0, (h.balance || 0) - amountIn);
               }
               arr[idx] = h;
-  
+
               for (let i = 0; i < arr.length; i++) {
                 const h = arr[i];
                 const realized = (h.valueSold || 0) - (h.valueBought || 0);
@@ -5927,12 +5926,12 @@ useEffect(() => {
               setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
               return arr;
             });
-  
+
             setMemeTopTraders(prev => {
               const copy = Array.isArray(prev) ? [...prev] : [];
               const key = callerAddr;
               let idx = memeTopTradersMapRef.current.get(key) ?? -1;
-  
+
               if (idx === -1) {
                 const row: Holder = {
                   address: `0x${log.topics[2].slice(26)}`,
@@ -5944,7 +5943,7 @@ useEffect(() => {
                 idx = copy.length - 1;
                 memeTopTradersMapRef.current.set(key, idx);
               }
-  
+
               const row = { ...copy[idx] };
               const curBal = Math.max(0, (row.balance ?? row.amountBought - row.amountSold) || 0);
               if (isBuy) {
@@ -5958,14 +5957,14 @@ useEffect(() => {
               }
               row.tokenNet = (row.amountBought || 0) - (row.amountSold || 0);
               copy[idx] = row;
-  
+
               for (let i = 0; i < copy.length; i++) {
                 const r = copy[i];
                 const bal = Math.max(0, (r.balance ?? r.amountBought - r.amountSold) || 0);
                 const realized = (r.valueSold || 0) - (r.valueBought || 0);
                 copy[i] = { ...r, valueNet: realized + bal * price };
               }
-  
+
               copy.sort((a, b) => b.valueNet - a.valueNet);
               if (copy.length > 300) {
                 const removed = copy.splice(300);
@@ -5974,7 +5973,7 @@ useEffect(() => {
               copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
               return copy;
             });
-  
+
             setMemePositions(prev => {
               const copy = Array.isArray(prev) ? [...prev] : [];
               const allUserAddresses = [
@@ -5983,7 +5982,7 @@ useEffect(() => {
               ];
               const isUserTrade = allUserAddresses.includes(callerAddr);
               let idx = memePositionsMapRef.current.get(tokenAddr);
-  
+
               if (idx === undefined && isUserTrade) {
                 const newPos = {
                   tokenId: tokenAddress?.toLowerCase(),
@@ -6005,7 +6004,7 @@ useEffect(() => {
                 memePositionsMapRef.current.set(tokenAddr, idx);
               }
               if (idx === undefined) return prev;
-  
+
               const pos = { ...copy[idx] };
               pos.lastPrice = price;
               if (isUserTrade) {
@@ -6020,14 +6019,14 @@ useEffect(() => {
                 }
               }
               pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
-  
+
               const balance = Math.max(0, pos.remainingTokens);
               const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
               const unrealized = balance * (pos.lastPrice || 0);
               pos.pnlNative = realized + unrealized;
-  
+
               copy[idx] = pos;
-  
+
               if (tokenAddress && tokenAddr === tokenAddress.toLowerCase()) {
                 const markToMarket = balance * (pos.lastPrice || 0);
                 const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
@@ -6042,7 +6041,7 @@ useEffect(() => {
               }
               return copy;
             });
-  
+
             if (memeDevTokenIdsRef.current.has(tokenAddr)) {
               setMemeDevTokens(prev => {
                 const updated = prev.map(t => {
@@ -6056,12 +6055,12 @@ useEffect(() => {
           }
           return tempset;
         }
-  
+
         if (log.topics[0] === MARKET_CREATED_EVENT) {
           addDevTokenFromEvent(log, currentTokenDev);
           return tempset;
         }
-  
+
         if (
           tokenAddress &&
           log.address?.toLowerCase() === tokenAddress.toLowerCase() &&
@@ -6088,8 +6087,8 @@ useEffect(() => {
     return () => {
       try {
         console.log("ws closing");
-        ws.close(); 
-      } catch {}
+        ws.close();
+      } catch { }
     };
   }, [activechain, tokenAddress, address, terminalRefetch, subWallets, tokenData?.dev, memeLive?.dev]);
 
@@ -7831,7 +7830,8 @@ useEffect(() => {
         setcanceledorders([]);
         setrecipient('');
         isAddressInfoFetching = true;
-        try {;
+        try {
+          ;
           const query = `
             query {
               account(id: "${address}") {
@@ -15106,56 +15106,56 @@ useEffect(() => {
                   }}
                 >
                   {(() => {
-                if (!editingOrderSize) return null;
-                const isBuy = editingOrderSize[3] === 1;
-                const market = markets[editingOrderSize[4]];
+                    if (!editingOrderSize) return null;
+                    const isBuy = editingOrderSize[3] === 1;
+                    const market = markets[editingOrderSize[4]];
 
-                let quotePrice = 1;
-                if (market.quoteAsset !== 'USDC') {
-                  const cfg = settings.chainConfig[activechain];
-                  const key = `${market.quoteAsset === cfg.wethticker
-                    ? cfg.ethticker
-                    : market.quoteAsset}USDC`;
+                    let quotePrice = 1;
+                    if (market.quoteAsset !== 'USDC') {
+                      const cfg = settings.chainConfig[activechain];
+                      const key = `${market.quoteAsset === cfg.wethticker
+                        ? cfg.ethticker
+                        : market.quoteAsset}USDC`;
 
-                  const tradesMap = trades as any as Record<string, any[]>;
-                  const marketsMap = markets as any as Record<string, any>;
+                      const tradesMap = trades as any as Record<string, any[]>;
+                      const marketsMap = markets as any as Record<string, any>;
 
-                  const lastTrade = tradesMap[key]?.[0]?.[3] ?? 0;
-                  const priceFactor = Number(marketsMap[key]?.priceFactor ?? 1);
-                  quotePrice = lastTrade / priceFactor;
-                }
-                const baseFilled =
-                  editingOrderSize[7] / 10 ** Number(market.baseDecimals);
+                      const lastTrade = tradesMap[key]?.[0]?.[3] ?? 0;
+                      const priceFactor = Number(marketsMap[key]?.priceFactor ?? 1);
+                      quotePrice = lastTrade / priceFactor;
+                    }
+                    const baseFilled =
+                      editingOrderSize[7] / 10 ** Number(market.baseDecimals);
 
-                const unfilledInput = isBuy
-                  ? originalOrderSize - baseFilled * quotePrice
-                  : (editingOrderSize[2] - editingOrderSize[7]) /
-                  10 ** Number(market.baseDecimals);
+                    const unfilledInput = isBuy
+                      ? originalOrderSize - baseFilled * quotePrice
+                      : (editingOrderSize[2] - editingOrderSize[7]) /
+                      10 ** Number(market.baseDecimals);
 
-                const needed = Math.max(0, currentOrderSize - unfilledInput);
+                    const needed = Math.max(0, currentOrderSize - unfilledInput);
 
-                const inputAddr = isBuy ? market.quoteAddress : market.baseAddress;
-                const available =
-                  Number((tokenBalances as any)[inputAddr] ?? BigInt(0)) /
-                  10 ** Number((tokendict as any)[inputAddr]?.decimals ?? 18);
-                const isUsdcBacked = market.quoteAsset === 'USDC';
-                const minSize = isUsdcBacked ? 1 : 0.1;
-                const minSizeToken = isUsdcBacked ? 'USDC' : 'MON';
-                const isBelowMinSize = currentOrderSize > 0 && (isBuy ? currentOrderSize : currentOrderSize * editingOrderSize[0] / Number(market.priceFactor)) < minSize;
+                    const inputAddr = isBuy ? market.quoteAddress : market.baseAddress;
+                    const available =
+                      Number((tokenBalances as any)[inputAddr] ?? BigInt(0)) /
+                      10 ** Number((tokendict as any)[inputAddr]?.decimals ?? 18);
+                    const isUsdcBacked = market.quoteAsset === 'USDC';
+                    const minSize = isUsdcBacked ? 1 : 0.1;
+                    const minSizeToken = isUsdcBacked ? 'USDC' : 'MON';
+                    const isBelowMinSize = currentOrderSize > 0 && (isBuy ? currentOrderSize : currentOrderSize * editingOrderSize[0] / Number(market.priceFactor)) < minSize;
 
-                if (needed > available) {
-                  return (
-                    `Insufficient ${(tokendict as any)[inputAddr]?.ticker} Balance`
-                  );
-                }
-                else if (isBelowMinSize) {
-                  return (
-                      `Minimum order size is ${minSize} ${minSizeToken}`
-                  );
-                }
+                    if (needed > available) {
+                      return (
+                        `Insufficient ${(tokendict as any)[inputAddr]?.ticker} Balance`
+                      );
+                    }
+                    else if (isBelowMinSize) {
+                      return (
+                        `Minimum order size is ${minSize} ${minSizeToken}`
+                      );
+                    }
 
-                return null;
-              })() ?? (isEditingSizeSigning ? (
+                    return null;
+                  })() ?? (isEditingSizeSigning ? (
                     <div className="signing-indicator">
                       <div className="loading-spinner"></div>
                       <span>{t('signTransaction')}</span>
@@ -15602,7 +15602,27 @@ useEffect(() => {
                 <img className="filters-reset-icon" src={reset} />
               </button>
             </div>
-
+            <div className="protocols-section">
+              <span className="keyword-label">Protocols</span>
+              <div className="protocols-content">
+              <div className="protocol-crystal-container">
+                <img className="protocol-crystal" src={crystal} />
+                <span className="protocol-crystal">crystal.fun</span>
+              </div>
+              <div className="protocol-nadfun-container">
+                <svg width="15" height="15" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#7C55FF" stopOpacity="1" />
+                      <stop offset="100%" stopColor="#AD5FFB" stopOpacity="1" />
+                    </linearGradient>
+                  </defs>
+                  <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
+                </svg>
+                <span className="protocol-nadfun">nad.fun</span>
+              </div>
+              </div>
+            </div>
             <div className="keywords-section">
               <div className="keyword-group">
                 <div className="keyword-label">Search Keywords</div>
@@ -23756,7 +23776,7 @@ useEffect(() => {
                 selectedWallets={selectedWallets}
                 setSelectedWallets={setSelectedWallets}
               />
-            } 
+            }
           />
           <Route
             path="/meme/:tokenAddress"
@@ -23826,9 +23846,9 @@ useEffect(() => {
                     token={token}
                     selectedWallets={selectedWallets}
                     setSelectedWallets={setSelectedWallets}
-          
+
                   />
-                )} 
+                )}
               </MemeRouteBridge>
             }
           />
