@@ -927,6 +927,7 @@
 .meme-ordercenter-info {
   align-items: center;
   display: flex;
+  color: rgb(214, 214, 219);
 }
 
 .meme-ordercenter-monad-icon {
