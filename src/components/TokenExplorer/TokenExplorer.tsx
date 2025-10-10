@@ -4943,7 +4943,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           <TokenRow
                             key={t.id}
                             token={t}
-                            quickbuyAmount={quickAmounts.new}
+    quickbuyAmount={quickAmounts.graduating}  
                             quickbuyAmountSecond={quickAmountsSecond.new}
                             onHideToken={hideToken}
                             onBlacklistToken={handleBlacklistToken}
@@ -5164,7 +5164,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           <TokenRow
                             key={t.id}
                             token={t}
-                            quickbuyAmount={quickAmounts.new}
+                            quickbuyAmount={quickAmounts.graduated} 
                             quickbuyAmountSecond={quickAmountsSecond.new}
                             onHideToken={hideToken}
                             onBlacklistToken={handleBlacklistToken}

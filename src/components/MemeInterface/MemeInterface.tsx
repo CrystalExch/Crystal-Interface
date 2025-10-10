@@ -314,13 +314,12 @@ const Tooltip: React.FC<{
               position: 'absolute',
               top: `${tooltipPosition.top - 20}px`,
               left: `${tooltipPosition.left}px`,
-              transform: `${
-                position === 'top' || position === 'bottom'
+              transform: `${position === 'top' || position === 'bottom'
                   ? 'translateX(-50%)'
                   : position === 'left' || position === 'right'
                     ? 'translateY(-50%)'
                     : 'none'
-              } scale(${isVisible ? 1 : 0})`,
+                } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
               pointerEvents: 'none',
@@ -471,25 +470,25 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   );
   const realtimeCallbackRef = useRef<any>({});
   const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
-const [buySlippageValue, setBuySlippageValue] = useState(() => {
-  const presets = loadBuyPresets();
-  return presets[1]?.slippage;
-});
+  const [buySlippageValue, setBuySlippageValue] = useState(() => {
+    const presets = loadBuyPresets();
+    return presets[1]?.slippage;
+  });
 
-const [buyPriorityFee, setBuyPriorityFee] = useState(() => {
-  const presets = loadBuyPresets();
-  return presets[1]?.priority;
-});
+  const [buyPriorityFee, setBuyPriorityFee] = useState(() => {
+    const presets = loadBuyPresets();
+    return presets[1]?.priority;
+  });
 
-const [sellSlippageValue, setSellSlippageValue] = useState(() => {
-  const presets = loadSellPresets();
-  return presets[1]?.slippage;
-});
+  const [sellSlippageValue, setSellSlippageValue] = useState(() => {
+    const presets = loadSellPresets();
+    return presets[1]?.slippage;
+  });
 
-const [sellPriorityFee, setSellPriorityFee] = useState(() => {
-  const presets = loadSellPresets();
-  return presets[1]?.priority;
-});
+  const [sellPriorityFee, setSellPriorityFee] = useState(() => {
+    const presets = loadSellPresets();
+    return presets[1]?.priority;
+  });
   const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');
   const [selectedSellPreset, setSelectedSellPreset] = useState(1);
   const [notif, setNotif] = useState<{
@@ -533,7 +532,7 @@ const [sellPriorityFee, setSellPriorityFee] = useState(() => {
     [address: string]: string;
   }>({});
   const [showUSD, setShowUSD] = useState(false);
-  
+
   const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
   const trackedAddressesRef = useRef<string[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(false);
@@ -564,29 +563,29 @@ const [sellPriorityFee, setSellPriorityFee] = useState(() => {
   const openInExplorer = (addr: string) =>
     window.open(`${explorer}/token/${addr}`, '_blank');
 
-const handleBuyPresetSelect = useCallback(
-  (preset: number) => {
-    setSelectedBuyPreset(preset);
-    setMobileQuickBuyPreset(preset);
-    const presets = loadBuyPresets();
-    if (presets[preset]) {
-      setBuySlippageValue(presets[preset].slippage);
-      setBuyPriorityFee(presets[preset].priority);
-    }
-  },
-  [],
-);
-const handleSellPresetSelect = useCallback(
-  (preset: number) => {
-    setSelectedSellPreset(preset);
-    const presets = loadSellPresets();
-    if (presets[preset]) {
-      setSellSlippageValue(presets[preset].slippage);
-      setSellPriorityFee(presets[preset].priority);
-    }
-  },
-  [],
-);
+  const handleBuyPresetSelect = useCallback(
+    (preset: number) => {
+      setSelectedBuyPreset(preset);
+      setMobileQuickBuyPreset(preset);
+      const presets = loadBuyPresets();
+      if (presets[preset]) {
+        setBuySlippageValue(presets[preset].slippage);
+        setBuyPriorityFee(presets[preset].priority);
+      }
+    },
+    [],
+  );
+  const handleSellPresetSelect = useCallback(
+    (preset: number) => {
+      setSelectedSellPreset(preset);
+      const presets = loadSellPresets();
+      if (presets[preset]) {
+        setSellSlippageValue(presets[preset].slippage);
+        setSellPriorityFee(presets[preset].priority);
+      }
+    },
+    [],
+  );
 
   const handleAdvancedOrderAdd = (
     orderType: 'takeProfit' | 'stopLoss' | 'devSell' | 'migration',
@@ -601,9 +600,9 @@ const handleSellPresetSelect = useCallback(
         : orderType === 'devSell'
           ? { percentage: '0' }
           : {
-              percentage: orderType === 'takeProfit' ? '+0' : '-0',
-              amount: '0',
-            }),
+            percentage: orderType === 'takeProfit' ? '+0' : '-0',
+            amount: '0',
+          }),
     };
 
     setAdvancedOrders((prev) => [...prev, newOrder]);
@@ -824,7 +823,7 @@ const handleSellPresetSelect = useCallback(
     }
   };
 
-const handleSellPosition = async (position: any, monAmount: string) => {
+  const handleSellPosition = async (position: any, monAmount: string) => {
     if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
       walletPopup.showConnectionError();
       return;
@@ -905,7 +904,7 @@ const handleSellPosition = async (position: any, monAmount: string) => {
         if (!walletBalance || walletBalance <= 0n) continue;
 
         const walletTokens = Number(walletBalance) / 10 ** Number(decimals);
-        
+
         // Calculate this wallet's share proportionally
         const walletShare = Math.min(
           (walletTokens / totalTokenBalance) * tokensToSell,
@@ -1073,49 +1072,49 @@ const handleSellPosition = async (position: any, monAmount: string) => {
     const decimals = tokendict?.[token.id]?.decimals || 18;
     return Number(balance) / 10 ** Number(decimals);
   }, [account?.address, walletTokenBalances, token.id, tokendict]);
-useEffect(() => {
-  const handleBuyPresetsUpdate = (event: CustomEvent) => {
-    const newPresets = event.detail;
-    if (newPresets[selectedBuyPreset]) {
-      setBuySlippageValue(newPresets[selectedBuyPreset].slippage);
-      setBuyPriorityFee(newPresets[selectedBuyPreset].priority);
+  useEffect(() => {
+    const handleBuyPresetsUpdate = (event: CustomEvent) => {
+      const newPresets = event.detail;
+      if (newPresets[selectedBuyPreset]) {
+        setBuySlippageValue(newPresets[selectedBuyPreset].slippage);
+        setBuyPriorityFee(newPresets[selectedBuyPreset].priority);
+      }
+    };
+
+    const handleSellPresetsUpdate = (event: CustomEvent) => {
+      const newPresets = event.detail;
+      if (newPresets[selectedSellPreset]) {
+        setSellSlippageValue(newPresets[selectedSellPreset].slippage);
+        setSellPriorityFee(newPresets[selectedSellPreset].priority);
+      }
+    };
+
+    window.addEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+    window.addEventListener('sellPresetsUpdated', handleSellPresetsUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+      window.removeEventListener('sellPresetsUpdated', handleSellPresetsUpdate as EventListener);
+    };
+  }, [selectedBuyPreset, selectedSellPreset]);
+
+  useEffect(() => {
+    if (selectedBuyPreset) {
+      updateBuyPreset(selectedBuyPreset, {
+        slippage: buySlippageValue,
+        priority: buyPriorityFee,
+      });
     }
-  };
+  }, [buySlippageValue, buyPriorityFee, selectedBuyPreset]);
 
-  const handleSellPresetsUpdate = (event: CustomEvent) => {
-    const newPresets = event.detail;
-    if (newPresets[selectedSellPreset]) {
-      setSellSlippageValue(newPresets[selectedSellPreset].slippage);
-      setSellPriorityFee(newPresets[selectedSellPreset].priority);
+  useEffect(() => {
+    if (selectedSellPreset) {
+      updateSellPreset(selectedSellPreset, {
+        slippage: sellSlippageValue,
+        priority: sellPriorityFee,
+      });
     }
-  };
-
-  window.addEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
-  window.addEventListener('sellPresetsUpdated', handleSellPresetsUpdate as EventListener);
-
-  return () => {
-    window.removeEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
-    window.removeEventListener('sellPresetsUpdated', handleSellPresetsUpdate as EventListener);
-  };
-}, [selectedBuyPreset, selectedSellPreset]);
-
-useEffect(() => {
-  if (selectedBuyPreset) {
-    updateBuyPreset(selectedBuyPreset, {
-      slippage: buySlippageValue,
-      priority: buyPriorityFee,
-    });
-  }
-}, [buySlippageValue, buyPriorityFee, selectedBuyPreset]);
-
-useEffect(() => {
-  if (selectedSellPreset) {
-    updateSellPreset(selectedSellPreset, {
-      slippage: sellSlippageValue,
-      priority: sellPriorityFee,
-    });
-  }
-}, [sellSlippageValue, sellPriorityFee, selectedSellPreset]);
+  }, [sellSlippageValue, sellPriorityFee, selectedSellPreset]);
   useEffect(() => {
     const fn = (lastPrice: number, volNative: number) => {
       const sel = selectedInterval;
@@ -1164,7 +1163,7 @@ useEffect(() => {
 
     registerRealtimeTick?.(fn);
     return () => {
-      registerRealtimeTick?.(() => {});
+      registerRealtimeTick?.(() => { });
     };
   }, [registerRealtimeTick, selectedInterval, token.symbol]);
 
@@ -1180,15 +1179,15 @@ useEffect(() => {
     setIsLoadingTrades(true);
     setTrackedAddresses(d ? [d] : []);
   }, [token.dev]);
-const setTrackedToYou = useCallback(() => {
-  const allYouAddresses = [
-    (userAddr || '').toLowerCase(),
-    ...(subWallets || []).map((w) => (w.address || '').toLowerCase()),
-  ].filter(Boolean);
+  const setTrackedToYou = useCallback(() => {
+    const allYouAddresses = [
+      (userAddr || '').toLowerCase(),
+      ...(subWallets || []).map((w) => (w.address || '').toLowerCase()),
+    ].filter(Boolean);
 
-  setIsLoadingTrades(true);
-  setTrackedAddresses(allYouAddresses);
-}, [userAddr, subWallets]);
+    setIsLoadingTrades(true);
+    setTrackedAddresses(allYouAddresses);
+  }, [userAddr, subWallets]);
 
   const clearTracked = useCallback(() => {
     setIsLoadingTrades(true);
@@ -1360,7 +1359,7 @@ const setTrackedToYou = useCallback(() => {
         }
 
         setStatsRaw(normalized);
-      } catch {}
+      } catch { }
     };
 
     const handle = setInterval(tick, 400);
@@ -1696,11 +1695,11 @@ const setTrackedToYou = useCallback(() => {
         typeof g.change_pct === 'number'
           ? g.change_pct
           : g.start_price_native != null &&
-              g.last_price_native != null &&
-              g.start_price_native !== 0
+            g.last_price_native != null &&
+            g.start_price_native !== 0
             ? ((g.last_price_native - g.start_price_native) /
-                g.start_price_native) *
-              100
+              g.start_price_native) *
+            100
             : null;
       if (pct == null || !isFinite(pct)) return '0%';
       const sign = pct > 0 ? '+' : '';
@@ -1829,7 +1828,7 @@ const setTrackedToYou = useCallback(() => {
         <div
           className={`meme-ordercenter ${mobileActiveView !== 'ordercenter' ? 'mobile-hidden' : ''}`}
         >
-        <MemeOrderCenter
+          <MemeOrderCenter
             orderCenterHeight={orderCenterHeight}
             isVertDragging={isVertDragging}
             isOrderCenterVisible={true}
@@ -1924,7 +1923,7 @@ const setTrackedToYou = useCallback(() => {
                 {fmt(
                   Math.abs(
                     (currentStats.buyVolume - currentStats.sellVolume) *
-                      monUsdPrice,
+                    monUsdPrice,
                   ),
                   1,
                 )}
@@ -2285,87 +2284,87 @@ const setTrackedToYou = useCallback(() => {
                         <div className="meme-advanced-order-inputs">
                           {(order.type === 'takeProfit' ||
                             order.type === 'stopLoss') && (
-                            <>
-                              <div className="meme-advanced-order-input-group">
-                                <svg
-                                  className="advanced-order-type-icon"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="rgb(154 155 164)"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  style={{
-                                    transform:
-                                      order.type === 'stopLoss'
-                                        ? 'rotate(180deg)'
-                                        : 'none',
-                                    paddingRight: '2px',
-                                  }}
+                              <>
+                                <div className="meme-advanced-order-input-group">
+                                  <svg
+                                    className="advanced-order-type-icon"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="rgb(154 155 164)"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    style={{
+                                      transform:
+                                        order.type === 'stopLoss'
+                                          ? 'rotate(180deg)'
+                                          : 'none',
+                                      paddingRight: '2px',
+                                    }}
+                                  >
+                                    <path d="m5 12 7-7 7 7" />
+                                    <path d="M12 19V5" />
+                                  </svg>
+                                  <span className="meme-advanced-order-input-label">
+                                    {order.type === 'takeProfit' ? 'TP' : 'SL'}
+                                  </span>
+                                  <input
+                                    type="text"
+                                    className="meme-advanced-order-input"
+                                    value={order.percentage || ''}
+                                    onChange={(e) =>
+                                      handleAdvancedOrderUpdate(
+                                        order.id,
+                                        'percentage',
+                                        e.target.value,
+                                      )
+                                    }
+                                    placeholder={
+                                      order.type === 'takeProfit' ? '+0' : '-0'
+                                    }
+                                  />
+                                  <span className="meme-advanced-order-unit">
+                                    %
+                                  </span>
+                                </div>
+                                <div className="meme-advanced-order-input-group">
+                                  <span className="meme-advanced-order-input-label">
+                                    Amount
+                                  </span>
+                                  <input
+                                    type="number"
+                                    className="meme-advanced-order-input"
+                                    value={order.amount || ''}
+                                    onChange={(e) =>
+                                      handleAdvancedOrderUpdate(
+                                        order.id,
+                                        'amount',
+                                        e.target.value,
+                                      )
+                                    }
+                                    placeholder="0"
+                                  />
+                                  <span className="meme-advanced-order-unit">
+                                    %
+                                  </span>
+                                </div>
+                                <button
+                                  className="meme-advanced-order-remove"
+                                  onClick={() =>
+                                    handleAdvancedOrderRemove(order.id)
+                                  }
                                 >
-                                  <path d="m5 12 7-7 7 7" />
-                                  <path d="M12 19V5" />
-                                </svg>
-                                <span className="meme-advanced-order-input-label">
-                                  {order.type === 'takeProfit' ? 'TP' : 'SL'}
-                                </span>
-                                <input
-                                  type="text"
-                                  className="meme-advanced-order-input"
-                                  value={order.percentage || ''}
-                                  onChange={(e) =>
-                                    handleAdvancedOrderUpdate(
-                                      order.id,
-                                      'percentage',
-                                      e.target.value,
-                                    )
-                                  }
-                                  placeholder={
-                                    order.type === 'takeProfit' ? '+0' : '-0'
-                                  }
-                                />
-                                <span className="meme-advanced-order-unit">
-                                  %
-                                </span>
-                              </div>
-                              <div className="meme-advanced-order-input-group">
-                                <span className="meme-advanced-order-input-label">
-                                  Amount
-                                </span>
-                                <input
-                                  type="number"
-                                  className="meme-advanced-order-input"
-                                  value={order.amount || ''}
-                                  onChange={(e) =>
-                                    handleAdvancedOrderUpdate(
-                                      order.id,
-                                      'amount',
-                                      e.target.value,
-                                    )
-                                  }
-                                  placeholder="0"
-                                />
-                                <span className="meme-advanced-order-unit">
-                                  %
-                                </span>
-                              </div>
-                              <button
-                                className="meme-advanced-order-remove"
-                                onClick={() =>
-                                  handleAdvancedOrderRemove(order.id)
-                                }
-                              >
-                                <img
-                                  src={trash}
-                                  className="meme-advanced-order-remove-icon"
-                                  alt="Remove"
-                                  width="14"
-                                  height="14"
-                                />
-                              </button>
-                            </>
-                          )}
+                                  <img
+                                    src={trash}
+                                    className="meme-advanced-order-remove-icon"
+                                    alt="Remove"
+                                    width="14"
+                                    height="14"
+                                  />
+                                </button>
+                              </>
+                            )}
                           {order.type === 'devSell' && (
                             <>
                               <div className="meme-advanced-order-input-group">
@@ -2478,29 +2477,29 @@ const setTrackedToYou = useCallback(() => {
                     {advancedOrders.length < 5 && (
                       <div className="meme-advanced-add-container">
                         <Tooltip content="Advanced Orders are currently disabled">
-                        <button
-                          className="meme-advanced-add-button"
+                          <button
+                            className="meme-advanced-add-button"
                           // onClick={() =>
                           //   setShowAdvancedDropdown(!showAdvancedDropdown)
                           // }
-                        >
-                          <span>Add</span>
-                          <svg
-                            className="meme-advanced-add-icon"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 16 16"
-                            fill="currentColor"
                           >
-                            <path
-                              d="M8 3v10M3 8h10"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </button>
-</Tooltip>
+                            <span>Add</span>
+                            <svg
+                              className="meme-advanced-add-icon"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 16 16"
+                              fill="currentColor"
+                            >
+                              <path
+                                d="M8 3v10M3 8h10"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          </button>
+                        </Tooltip>
                         {showAdvancedDropdown && (
                           <div className="meme-advanced-dropdown">
                             <button
@@ -3579,44 +3578,44 @@ const setTrackedToYou = useCallback(() => {
           </div>
         )}
       </div>
-     <QuickBuyWidget
-  isOpen={isWidgetOpen}
-  onClose={() => {
-    localStorage.setItem(
-      'crystal_quickbuy_widget_open',
-      JSON.stringify(false),
-    );
-    setIsWidgetOpen(false);
-  }}
-  tokenSymbol={token.symbol}
-  tokenAddress={tokenAddress}
-  tokenPrice={currentPrice}
-  buySlippageValue={buySlippageValue}
-  buyPriorityFee={buyPriorityFee}
-  sellSlippageValue={sellSlippageValue}
-  sellPriorityFee={sellPriorityFee}
-  sendUserOperationAsync={sendUserOperationAsync}
-  account={account}
-  setChain={setChain}
-  activechain={activechain}
-  routerAddress={routerAddress}
-  setpopup={setpopup}
-  subWallets={subWallets}
-  walletTokenBalances={walletTokenBalances}
-  activeWalletPrivateKey={activeWalletPrivateKey}
-  setOneCTSigner={setOneCTSigner}
-  tokenList={tokenList}
-  isBlurred={isBlurred}
-  terminalRefetch={terminalRefetch}
-  userStats={userStats}
-  monUsdPrice={monUsdPrice}
-  showUSD={showUSD}
-  onToggleCurrency={handleToggleCurrency}
-  tokenImage={token.image}
-  nonces={nonces}
-  selectedWallets={selectedWallets}
-  setSelectedWallets={setSelectedWallets}
-/>
+      <QuickBuyWidget
+        isOpen={isWidgetOpen}
+        onClose={() => {
+          localStorage.setItem(
+            'crystal_quickbuy_widget_open',
+            JSON.stringify(false),
+          );
+          setIsWidgetOpen(false);
+        }}
+        tokenSymbol={token.symbol}
+        tokenAddress={tokenAddress}
+        tokenPrice={currentPrice}
+        buySlippageValue={buySlippageValue}
+        buyPriorityFee={buyPriorityFee}
+        sellSlippageValue={sellSlippageValue}
+        sellPriorityFee={sellPriorityFee}
+        sendUserOperationAsync={sendUserOperationAsync}
+        account={account}
+        setChain={setChain}
+        activechain={activechain}
+        routerAddress={routerAddress}
+        setpopup={setpopup}
+        subWallets={subWallets}
+        walletTokenBalances={walletTokenBalances}
+        activeWalletPrivateKey={activeWalletPrivateKey}
+        setOneCTSigner={setOneCTSigner}
+        tokenList={tokenList}
+        isBlurred={isBlurred}
+        terminalRefetch={terminalRefetch}
+        userStats={userStats}
+        monUsdPrice={monUsdPrice}
+        showUSD={showUSD}
+        onToggleCurrency={handleToggleCurrency}
+        tokenImage={token.image}
+        nonces={nonces}
+        selectedWallets={selectedWallets}
+        setSelectedWallets={setSelectedWallets}
+      />
 
       {hoveredSimilarTokenImage &&
         showSimilarTokenPreview &&

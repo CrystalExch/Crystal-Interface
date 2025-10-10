@@ -207,7 +207,12 @@
 .meme-oc-section-content[data-section="devTokens"] .meme-oc-header,
 .meme-oc-section-content[data-section="devTokens"] .meme-oc-item {
   gap: 15px;
-  grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr ;
+}
+
+.meme-oc-section-content[data-section="devTokens"] .meme-oc-header{
+    gap: 15px;
+  grid-template-columns: 1.15fr .95fr .95fr 1fr ;
 }
 
 .meme-oc-header-cell {
@@ -922,6 +927,7 @@
 .meme-ordercenter-info {
   align-items: center;
   display: flex;
+  color: rgb(214, 214, 219);
 }
 
 .meme-ordercenter-monad-icon {
@@ -1232,7 +1238,7 @@
 .alerts-popup .meme-trade-action-button {
   align-items: center;
   border: none;
-  border-radius: 20px;
+  border-radius: 5px;
   cursor: pointer;
   display: flex;
   font-size: 0.9rem;
@@ -1366,11 +1372,12 @@
 }
 
 .meme-oc-dev-tokens-table {
-  flex: 0 0 60%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   min-width: 0;
+  border-right: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 
@@ -1380,33 +1387,30 @@
 }
 
 .meme-oc-dev-stats-panel {
-  flex: 0 0 40%;
   display: flex;
   flex-direction: column;
   gap: 12px;
   overflow-y: auto;
   min-width: 0;
+  min-width: 450px;
 }
 
 .meme-oc-dev-stats-title {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 0.85rem;
   color: rgb(206, 208, 223);
   margin: 0;
+  margin-top: 10px;
 }
 
 .meme-oc-dev-stats-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
 .meme-oc-dev-stats-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid rgb(30, 30, 35);
+  gap: 4px;
 }
 
 .meme-oc-dev-stats-label {
@@ -1454,15 +1458,17 @@
 }
 
 .meme-oc-dev-stats-chart {
+  position: absolute;
   display: flex;
   justify-content: center;
-  padding: 20px 0;
+  right: 20px;
+  top: 20px;
 }
 
 .meme-oc-chart-circle {
   position: relative;
-  width: 160px;
-  height: 160px;
+  width: 200px;
+  height: 200px;
 }
 
 .meme-oc-chart-circle svg {
@@ -1481,8 +1487,7 @@
 
 .meme-oc-chart-percentage {
   font-size: 32px;
-  font-weight: 700;
-  color: rgb(235, 112, 112);
+  color: white;
   line-height: 1;
 }
 
@@ -1499,18 +1504,17 @@
 }
 
 .meme-oc-dev-stats-highlights h4 {
-  font-size: 14px;
-  font-weight: 600;
-  color: rgb(206, 208, 223);
-  margin: 0 0 4px 0;
+    font-size: 0.85rem;
+    color: rgb(206, 208, 223);
+    margin: 0;
+    margin-top: 10px;
 }
 
 .meme-oc-highlight-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  padding: 6px 0;
+  gap: 4px;
 }
 
 .meme-oc-highlight-item span:first-child {

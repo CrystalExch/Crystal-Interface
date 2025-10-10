@@ -40,6 +40,7 @@ interface EarnProps {
   isLoading: any;
   depositors: any;
   depositHistory: any;
+  withdrawHistory: any;
   openOrders: any;
   allOrders: any;
   selectedVaultStrategy: any;
@@ -141,6 +142,7 @@ const Earn: React.FC<EarnProps> = (props) => {
             isLoading={props.isLoading}
             depositors={props.depositors}
             depositHistory={props.depositHistory}
+            withdrawHistory={props.withdrawHistory}
             openOrders={props.openOrders}
             allOrders={props.allOrders}
             selectedVaultStrategy={props.selectedVaultStrategy}

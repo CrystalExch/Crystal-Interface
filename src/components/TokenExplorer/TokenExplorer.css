@@ -268,11 +268,11 @@
 .explorer-holding-item {
   align-items: center;
   border: 1px solid rgba(179, 184, 249, 0.08);
-  border-radius: 6px;
+  border-radius: 20px;
   display: flex;
   font-size: 0.7rem;
   gap: 0.25rem;
-  padding: 0.15rem 0.25rem;
+  padding: 0.15rem 0.4rem;
 }
 
 .explorer-holding-label {
