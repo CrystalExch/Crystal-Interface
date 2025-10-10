@@ -721,7 +721,6 @@
 
 .detail-trade-input::-webkit-outer-spin-button,
 .detail-trade-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.detail-trade-input[type="number"] { -moz-appearance: textfield; }
 
 .detail-holders-grid {
   display: flex;
@@ -1292,10 +1291,6 @@
 .detail-trades-filter-value::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
-}
-
-.detail-trades-filter-value[type="number"] {
-  -moz-appearance: textfield;
 }
 
 .detail-trades-table {

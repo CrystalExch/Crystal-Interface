@@ -86,7 +86,7 @@ const groupOrders = (
       ? Math.floor((price + epsilon) / interval) * interval
       : Math.ceil((price - epsilon) / interval) * interval;
 
-    const roundedInterval = preciseRound(intervalStart, 8);
+    const roundedInterval = preciseRound(intervalStart, 9);
 
     if (!grouped[roundedInterval]) {
       grouped[roundedInterval] = { size: 0, shouldFlash: false, userPrice };

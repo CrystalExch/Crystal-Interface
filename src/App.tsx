@@ -2528,11 +2528,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           acct: selectedVaultStrategy,
         };
 
-        const flattenMap = (mapObj: any, key: "orders" | "trades") =>
-          (mapObj?.shards ?? [])
-            .flatMap((s: any) => s?.batches ?? [])
-            .flatMap((b: any) => b?.[key] ?? []);
-
         const VAULT_DETAIL_QUERY = `
           query VaultDetail($vault: Bytes!, $acct: ID!) {
             depositors: userVaultPositions(
@@ -6498,7 +6493,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         const interval = 1 / (activeMarket?.marketType != 0 && (Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)) ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)))) - 1) : Number(activeMarket.priceFactor))
 
-        const { bids, asks } = v2ToOrderbook(prevOrderData[1], prevOrderData[0], interval, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
+        const { bids, asks } = v2ToOrderbook(prevOrderData[1], prevOrderData[0], interval*10, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
 
         setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
         setRoundedSellOrders({ orders: roundedSell.concat(asks as any), key: activeMarketKey, amountsQuote });
@@ -6767,7 +6762,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               )
               : 1 / (activeMarket?.marketType != 0 && spread?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor))
 
-            const { bids, asks } = v2ToOrderbook(orderdata[1], orderdata[0], interval, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
+            const { bids, asks } = v2ToOrderbook(orderdata[1], orderdata[0], interval*10, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
 
             setSpreadData({ spread: `${((spread?.spread / spread?.averagePrice) * 100).toFixed(2)}%`, averagePrice: formatSubscript(formatSig(spread?.averagePrice.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket?.marketType != 0)) });
             setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
@@ -16664,7 +16659,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           try {
                             setIsUsernameSigning(true);
                             await createSubWallet();
-                            setpopup(0);
+                            setpopup(12);
                           } catch (error) {
                             console.error('Failed to enable 1CT:', error);
                           } finally {

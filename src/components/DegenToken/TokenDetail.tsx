@@ -1002,7 +1002,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                         <label htmlFor="trades-filter"></label>
                       </div>
                         <input
-                          type="number"
+                          type="decimal"
                           className="detail-trades-filter-value"
                           value={tradesFilterThreshold}
                           onChange={(e) => setTradesFilterThreshold(e.target.value)}
@@ -1159,7 +1159,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               </div>
               <div className="detail-trade-input-wrapper">
                 <input
-                  type="number"
+                  type="decimal"
                   placeholder="0.00"
                   value={tradeAmount}
                   onChange={(e) => setTradeAmount(e.target.value)}

@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { formatCommas } from '../../../../utils/numberDisplayFormat';
 import './HighlightPopup.css';
 import customRound from '../../../../utils/customRound';
+import { formatSig } from '../../../OrderCenter/utils';
 
 interface OrderHighlightPopupProps {
   mousePosition: { x: number; y: number };
@@ -61,9 +62,7 @@ const OrderHighlightPopup: React.FC<OrderHighlightPopupProps> = ({
     >
       <div>
       <span style={{color: '#ffffffef'}}>{t('avgPrice')}: </span>
-        {formatCommas(
-          marketType == 0 ? highlightData.averagePrice.toFixed(Math.floor(Math.log10(priceFactor))) : highlightData.averagePrice.toFixed(Math.floor(Math.log10(10 ** Math.max(0, 5 - Math.floor(Math.log10(highlightData.averagePrice == 0 ? 1 : highlightData.averagePrice)) - 1)))),
-        )}{' '}
+        {formatSig(highlightData.averagePrice.toFixed(Math.floor(Math.log10(priceFactor))), marketType != 0)}{' '}
         {highlightData.unit}
       </div>
       <div>
