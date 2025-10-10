@@ -1832,7 +1832,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             orderCenterHeight={orderCenterHeight}
             isVertDragging={isVertDragging}
             isOrderCenterVisible={true}
-            onHeightChange={(h) => setOrderCenterHeight(h)}
+            onHeightChange={(h: any) => setOrderCenterHeight(h)}
             onDragStart={() => {
               setIsVertDragging(true);
               document.body.style.cursor = 'row-resize';
