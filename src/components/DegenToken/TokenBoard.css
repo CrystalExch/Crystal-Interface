@@ -736,7 +736,7 @@
 }
 
 
-launch-token-btn {
+.launch-token-btn {
   display: flex;
   align-self: center;
   justify-self: center;

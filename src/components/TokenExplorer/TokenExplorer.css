@@ -810,22 +810,27 @@
 .explorer-token-image-container {
   align-items: center;
   background: conic-gradient(from 0deg,
-      var(--progress-color-start) 0deg,
-      var(--progress-color-mid) calc(var(--progress-angle) / 2),
-      var(--progress-color-end) var(--progress-angle),
-      rgba(255, 255, 255, 0.1) var(--progress-angle),
-      rgba(255, 255, 255, 0.1) 360deg);
+      #aaaecf 0deg,
+      #aaaecf var(--progress-angle),
+      rgba(157, 169, 240, 0.2) var(--progress-angle),
+      rgba(157, 169, 240, 0.2) 360deg);
   border-radius: 5px;
   cursor: pointer;
   display: flex;
   height: 73px;
   justify-content: center;
   position: relative;
-  transition: --progress-angle 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-    --progress-color-start 0.8s ease,
-    --progress-color-mid 0.8s ease,
-    --progress-color-end 0.8s ease;
+  transition: --progress-angle 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   width: 73px;
+}
+
+
+.explorer-token-image-container.graduated .token-explorer-launchpad-logo-container {
+  border-color: #ffd700;
+}
+
+.explorer-token-image-container.graduated .token-explorer-launchpad-logo {
+  filter: brightness(0) saturate(100%) invert(79%) sepia(97%) saturate(1345%) hue-rotate(359deg) brightness(104%) contrast(101%);
 }
 
 .camera-icon {
@@ -4465,3 +4470,21 @@
   transitioN: 0.3s ease all;
   width: 17px;
 }
+
+.token-explorer-launchpad-logo{
+  width: 10px;
+}
+.token-explorer-launchpad-logo-container{
+    position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: black;
+  width: 17px;
+  height: 17px;
+  border-radius: 20px;
+  border: 1px solid #aaaecf;
+  bottom:-7px;
+  right: -7px;
+}
+

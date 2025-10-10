@@ -448,10 +448,10 @@ const Tooltip: React.FC<{
               top: `${tooltipPosition.top}px`,
               left: `${tooltipPosition.left}px`,
               transform: `${position === 'top' || position === 'bottom'
-                  ? 'translateX(-50%)'
-                  : position === 'left' || position === 'right'
-                    ? 'translateY(-50%)'
-                    : 'none'
+                ? 'translateX(-50%)'
+                : position === 'left' || position === 'right'
+                  ? 'translateY(-50%)'
+                  : 'none'
                 } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
@@ -591,9 +591,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [perpsShouldFocus, setPerpsShouldFocus] = useState(false);
   const [perpsSortField, setPerpsSortField] = useState<'volume' | 'price' | 'change' | 'funding' | 'openInterest' | null>('volume');
   const [perpsSortDirection, setPerpsSortDirection] = useState<'asc' | 'desc' | undefined>('desc');
-  const filterTabsRef = useRef<HTMLDivElement>(null);
+const filterTabsRef = useRef<HTMLDivElement>(null);
   const marketsListRef = useRef<HTMLDivElement>(null);
-  const memeMetricsRef = useRef<HTMLDivElement>(null);
+  const memeHeaderRightRef = useRef<HTMLDivElement>(null);
   const perpsMetricsRef = useRef<HTMLDivElement>(null);
   const perpsFilterTabsRef = useRef<HTMLDivElement>(null);
   const perpsMarketsListRef = useRef<HTMLDivElement>(null);
@@ -836,9 +836,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     }
   }, [isPerpsDropdownVisible, perpsShouldFocus]);
 
-  useEffect(() => {
+useEffect(() => {
     const handleMemeScroll = () => {
-      const container = memeMetricsRef.current;
+      const container = memeHeaderRightRef.current;
       if (container) {
         const scrollLeft = container.scrollLeft;
         const scrollWidth = container.scrollWidth;
@@ -858,7 +858,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       }
     };
 
-    const container = memeMetricsRef.current;
+    const container = memeHeaderRightRef.current;
     if (container && isMemeToken) {
       container.addEventListener('scroll', handleMemeScroll);
       handleMemeScroll();
@@ -870,7 +870,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       }
     };
   }, [isMemeToken]);
-
   useEffect(() => {
     const handlePerpsScroll = () => {
       const container = perpsMetricsRef.current;
@@ -1318,53 +1317,55 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             <div className="meme-interface-token-identity">
               <div className="meme-interface-token-name-row">
                 <h1 className="meme-interface-token-symbol">{memeTokenData.symbol}</h1>
-                <div className="meme-interface-token-name-container">
-                  <span
-                    className="meme-interface-token-name"
-                    onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
-                    style={{ cursor: 'pointer' }}
-                    title="Click to copy contract address"
-                  >
-                    {memeTokenData.name}
-                  </span>
-                  <button
-                    className="meme-interface-social-btn"
-                    onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
-                    title="Copy contract address"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                    </svg>
-                  </button>
-                </div>
+                <Tooltip content={memeTokenData.name}>
+                  <div className="meme-interface-token-name-container">
+                    <span
+                      className="meme-interface-token-name"
+                      onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {memeTokenData.name}
+                    </span>
+                    <button
+                      className="meme-interface-social-btn"
+                      onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                      </svg>
+                    </button>
+                  </div>
+                </Tooltip>
                 <div className="meme-social-buttons">
-                  <button
-                    className="meme-interface-share-btn"
-                    onClick={() => linkCopyToClipboard(`app.crystal.exchange/meme/${memeTokenData.tokenAddress}`)}
-                    title="Share link to this pair"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /><line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></svg>
-                  </button>
+                  <Tooltip content="Share link to this pair">
+                    <button
+                      className="meme-interface-share-btn"
+                      onClick={() => linkCopyToClipboard(`app.crystal.exchange/meme/${memeTokenData.tokenAddress}`)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /><line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></svg>
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="Add to watchlist">
+                    <button
+                      className="meme-interface-share-btn"
+                      onClick={() => {
+                        const isCurrentlyFavorited = favorites.includes(memeTokenData.tokenAddress.toLowerCase());
+                        toggleFavorite(memeTokenData.tokenAddress.toLowerCase());
 
-                  <button
-                    className="meme-interface-share-btn"
-                    onClick={() => {
-                      const isCurrentlyFavorited = favorites.includes(memeTokenData.tokenAddress.toLowerCase());
-                      toggleFavorite(memeTokenData.tokenAddress.toLowerCase());
-
-                      const txId = `favorite-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                      if (showLoadingPopup && updatePopup) {
-                        const message = isCurrentlyFavorited ? 'Removed from Watchlist' : 'Added to Watchlist';
-                        showLoadingPopup(txId, { title: message, subtitle: `${memeTokenData.symbol} ${isCurrentlyFavorited ? 'removed from' : 'added to'} your watchlist` });
-                        setTimeout(() => {
-                          updatePopup(txId, { title: message, subtitle: `${memeTokenData.symbol} ${isCurrentlyFavorited ? 'removed from' : 'added to'} your watchlist`, variant: 'success', confirmed: true, isLoading: false });
-                        }, 100);
-                      }
-                    }}
-                    title={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? "Remove from Watchlist" : "Add to Watchlist"}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? '#d8dcff' : 'none'} stroke={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? '#d8dcff' : 'currentColor'} stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>
-                  </button>
+                        const txId = `favorite-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                        if (showLoadingPopup && updatePopup) {
+                          const message = isCurrentlyFavorited ? 'Removed from Watchlist' : 'Added to Watchlist';
+                          showLoadingPopup(txId, { title: message, subtitle: `${memeTokenData.symbol} ${isCurrentlyFavorited ? 'removed from' : 'added to'} your watchlist` });
+                          setTimeout(() => {
+                            updatePopup(txId, { title: message, subtitle: `${memeTokenData.symbol} ${isCurrentlyFavorited ? 'removed from' : 'added to'} your watchlist`, variant: 'success', confirmed: true, isLoading: false });
+                          }, 100);
+                        }
+                      }}
+                      title={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? "Remove from Watchlist" : "Add to Watchlist"}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? '#d8dcff' : 'none'} stroke={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? '#d8dcff' : 'currentColor'} stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>
+                    </button>
+                  </Tooltip>
                 </div>
                 {hoveredMemeImage &&
                   memeTokenData?.image &&
@@ -1471,8 +1472,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             </div>
           </div>
 
-          <div className="meme-interface-token-header-right">
-            <div className="meme-interface-token-metrics" ref={memeMetricsRef}>
+     <div className="meme-interface-token-header-right" ref={memeHeaderRightRef}>
+            <div className="meme-interface-token-metrics">
               <span className="meme-interface-market-cap">
                 {formatPrice((memeTokenData.marketCap || 1000) * monUsdPrice)}
               </span>
@@ -1533,35 +1534,35 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   1B
                 </span>
               </div>
-<Tooltip content="Dev Migrations">
-              <div className="meme-interface-token-metric"
-                onClick={() => window.open(`https://testnet.monadscan.com/address/${memeTokenData.developerAddress}`, '_blank', 'noopener,noreferrer')
-              }
-              >
-                <span className="meme-interface-dev-migrations-value" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: "pointer" }}>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{
-                      width: '16px',
-                      height: '16px',
-                      color: (memeTokenData.graduatedTokens || 0) > 0 ? 'rgba(255, 251, 0, 1)' : '#b0b7c8'
-                    }}
-                  >
-                    <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
-                    <path d="M5 21h14" />
-                  </svg>
-                  <span style={{ color: "#b0b7c8" }}>
-                    {memeTokenData.graduatedTokens || 0}
+              <Tooltip content="Dev Migrations">
+                <div className="meme-interface-token-metric"
+                  onClick={() => window.open(`https://testnet.monadscan.com/address/${memeTokenData.developerAddress}`, '_blank', 'noopener,noreferrer')
+                  }
+                >
+                  <span className="meme-interface-dev-migrations-value" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: "pointer", marginLeft: "4px" }}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{
+                        width: '15px',
+                        height: '15px',
+                        color: (memeTokenData.graduatedTokens || 0) > 0 ? 'rgba(255, 251, 0, 1)' : '#b0b7c8'
+                      }}
+                    >
+                      <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                      <path d="M5 21h14" />
+                    </svg>
+                    <span style={{ color: "#b0b7c8" }}>
+                      {memeTokenData.graduatedTokens || 0}
+                    </span>
                   </span>
-                </span>
-              </div>
-            </Tooltip>
+                </div>
+              </Tooltip>
 
               {externalUserStats && externalUserStats.valueBought > 0 && externalUserStats.valueNet !== 0 && (
                 <div className="meme-interface-token-metric">
