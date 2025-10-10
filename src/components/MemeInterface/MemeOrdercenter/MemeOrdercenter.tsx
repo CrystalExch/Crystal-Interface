@@ -1371,81 +1371,176 @@ const handleSellAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             </div>
           </div>
         );
-      case 'devTokens':
-        return (
-          <div className="meme-oc-section-content" data-section="devTokens">
-            <div className="meme-oc-header">
-              <div className="meme-oc-header-cell">Token</div>
-              <div className="meme-oc-header-cell">Token Address</div>
-              <div className="meme-oc-header-cell">Market Cap (MON)</div>
-              <div className="meme-oc-header-cell">Migration Status</div>
-            </div>
+case 'devTokens':
+  return (
+    <div className="meme-oc-section-content meme-oc-dev-tokens-layout" data-section="devTokens">
+      <div className="meme-oc-dev-tokens-table">
+        <div className="meme-oc-header">
+          <div className="meme-oc-header-cell">Token</div>
+          <div className="meme-oc-header-cell">Token Address</div>
+          <div className="meme-oc-header-cell">Market Cap (MON)</div>
+          <div className="meme-oc-header-cell">Migrated</div>
+          <div className="meme-oc-header-cell">Holders</div>
+        </div>
 
-            <div className="meme-oc-items">
-              {devTokensToShow.length === 0 ? (
-                <div className="meme-oc-empty">No tokens</div>
-              ) : (
-                devTokensToShow.map((t) => {
-                  const mc = Number(t.marketCap || 0);
-                  return (
-                    <div key={t.id} className="meme-oc-item">
-                      <div className="meme-oc-cell">
-                        <div className="meme-wallet-info">
-                          <div
-                            className="meme-token-info"
-                            style={{ display: 'flex', alignItems: 'center' }}
-                          >
-                            {t.imageUrl && (
-                              <img
-                                src={t.imageUrl}
-                                alt={t.symbol || t.name || t.id}
-                                className="meme-token-icon"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            )}
-                            <span
-                              className="meme-wallet-address"
-                              title={t.name || t.symbol || t.id}
-                            >
-                              {(t.symbol || '').toUpperCase()}
-                              <span className="meme-wallet-address-span">
-                                {timeAgo(t.timestamp)}
-                              </span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="meme-oc-cell">
-                        <div className="meme-wallet-address-sub">
-                          {t.id.slice(0, 6)}…{t.id.slice(-4)}
-                        </div>
-                      </div>
-                      <div className="meme-oc-cell">
-                        <div className="meme-ordercenter-info">
+        <div className="meme-oc-items">
+          {devTokensToShow.length === 0 ? (
+            <div className="meme-oc-empty">No tokens</div>
+          ) : (
+            devTokensToShow.map((t) => {
+              const mc = Number(t.marketCap || 0);
+              return (
+                <div key={t.id} className="meme-oc-item">
+                  <div className="meme-oc-cell">
+                    <div className="meme-wallet-info">
+                      <div
+                        className="meme-token-info"
+                        style={{ display: 'flex', alignItems: 'center' }}
+                      >
+                        {t.imageUrl && (
                           <img
-                            className="meme-ordercenter-monad-icon"
-                            src={monadicon}
-                            alt="MONAD"
+                            src={t.imageUrl}
+                            alt={t.symbol || t.name || t.id}
+                            className="meme-token-icon"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
                           />
-                          <span className="meme-usd-amount">
-                            {mc > 0 ? fmt(mc, 2) : '—'}
+                        )}
+                        <span
+                          className="meme-wallet-address"
+                          title={t.name || t.symbol || t.id}
+                        >
+                          {(t.symbol || '').toUpperCase()}
+                          <span className="meme-wallet-address-span">
+                            {timeAgo(t.timestamp)}
                           </span>
-                        </div>
-                      </div>
-
-                      <div className="meme-oc-cell">
-                        <span>{t.migrated ? 'Migrated' : 'Bonding'}</span>
+                        </span>
                       </div>
                     </div>
-                  );
-                })
-              )}
+                  </div>
+
+                  <div className="meme-oc-cell">
+                    <div className="meme-wallet-address-sub">
+                      {t.id.slice(0, 6)}…{t.id.slice(-4)}
+                    </div>
+                  </div>
+                  <div className="meme-oc-cell">
+                    <div className="meme-ordercenter-info">
+                      <img
+                        className="meme-ordercenter-monad-icon"
+                        src={monadicon}
+                        alt="MONAD"
+                      />
+                      <span className="meme-usd-amount">
+                        {mc > 0 ? fmt(mc, 2) : '—'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="meme-oc-cell">
+                    <span>{t.migrated ? 'Migrated' : 'Bonding'}</span>
+                  </div>
+
+                  <div className="meme-oc-cell">
+                    <span>{liveHolders.length}</span>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      <div className="meme-oc-dev-stats-panel">
+        <h3 className="meme-oc-dev-stats-title">Token Stats</h3>
+        
+        <div className="meme-oc-dev-stats-content">
+          <div className="meme-oc-dev-stats-row">
+            <span className="meme-oc-dev-stats-label">DEV</span>
+            <span className="meme-oc-dev-stats-value">
+              {token.dev ? `${token.dev.slice(0, 6)}...${token.dev.slice(-4)}` : '—'}
+            </span>
+          </div>
+
+          <div className="meme-oc-dev-stats-row">
+            <span className="meme-oc-dev-stats-label">Total Pairs:</span>
+            <span className="meme-oc-dev-stats-value">{devTokensToShow.length}</span>
+          </div>
+
+          <div className="meme-oc-dev-stats-row">
+            <span className="meme-oc-dev-stats-label">Holders:</span>
+            <span className="meme-oc-dev-stats-value">{liveHolders.length}</span>
+          </div>
+
+          <div className="meme-oc-dev-stats-migration">
+            <div className="meme-oc-migration-item migrated">
+              <span className="meme-oc-migration-indicator"></span>
+              <span>Migrated: {devTokensToShow.filter(t => t.migrated).length}</span>
+            </div>
+            <div className="meme-oc-migration-item non-migrated">
+              <span className="meme-oc-migration-indicator"></span>
+              <span>Non Migrated: {devTokensToShow.filter(t => !t.migrated).length}</span>
             </div>
           </div>
-        );
+
+          <div className="meme-oc-dev-stats-chart">
+            <div className="meme-oc-chart-circle">
+              <svg viewBox="0 0 100 100">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  fill="none"
+                  stroke="rgb(21, 21, 27)"
+                  strokeWidth="8"
+                />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  fill="none"
+                  stroke="rgb(235, 112, 112)"
+                  strokeWidth="8"
+                  strokeDasharray={`${devTokensToShow.length > 0 ? (devTokensToShow.filter(t => t.migrated).length / devTokensToShow.length) * 251 : 0} 251`}
+                  strokeLinecap="round"
+                  transform="rotate(-90 50 50)"
+                />
+              </svg>
+              <div className="meme-oc-chart-label">
+                <div className="meme-oc-chart-percentage">
+                  {devTokensToShow.length > 0 
+                    ? Math.round((devTokensToShow.filter(t => t.migrated).length / devTokensToShow.length) * 100)
+                    : 0}%
+                </div>
+                <div className="meme-oc-chart-sublabel">Migrated</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="meme-oc-dev-stats-highlights">
+            <h4>Highlights</h4>
+            <div className="meme-oc-highlight-item">
+              <span>Top MCAP</span>
+              <span>
+                {devTokensToShow.length > 0 
+                  ? `${devTokensToShow[0].symbol} ($${fmt(Math.max(...devTokensToShow.map(t => Number(t.marketCap || 0))))})`
+                  : '—'}
+              </span>
+            </div>
+            <div className="meme-oc-highlight-item">
+              <span>Last Token Launched:</span>
+              <span>
+                {devTokensToShow.length > 0 
+                  ? timeAgo(devTokensToShow[devTokensToShow.length - 1].timestamp)
+                  : '—'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
       default:
         return null;
     }

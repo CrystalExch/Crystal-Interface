@@ -207,7 +207,7 @@
 .meme-oc-section-content[data-section="devTokens"] .meme-oc-header,
 .meme-oc-section-content[data-section="devTokens"] .meme-oc-item {
   gap: 15px;
-  grid-template-columns: 1.2fr 1fr 1fr 1fr;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
 }
 
 .meme-oc-header-cell {
@@ -1355,4 +1355,169 @@
   filter: brightness(0) saturate(100%) invert(81%) sepia(4%) saturate(1856%) hue-rotate(198deg) brightness(105%) contrast(105%);
   height: 14px;
   width: 14px;
+}
+
+.meme-oc-dev-tokens-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  height: 100%;
+  width: 100%;
+}
+
+.meme-oc-dev-tokens-table {
+  flex: 0 0 60%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+
+.meme-oc-dev-tokens-table .meme-oc-items {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.meme-oc-dev-stats-panel {
+  flex: 0 0 40%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.meme-oc-dev-stats-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: rgb(206, 208, 223);
+  margin: 0;
+}
+
+.meme-oc-dev-stats-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.meme-oc-dev-stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgb(30, 30, 35);
+}
+
+.meme-oc-dev-stats-label {
+  font-size: 13px;
+  color: rgb(154, 155, 164);
+}
+
+.meme-oc-dev-stats-value {
+  font-size: 13px;
+  color: rgb(206, 208, 223);
+  font-weight: 500;
+}
+
+.meme-oc-dev-stats-migration {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.meme-oc-migration-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.meme-oc-migration-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.meme-oc-migration-item.migrated .meme-oc-migration-indicator {
+  background: rgb(67, 254, 154);
+}
+
+.meme-oc-migration-item.non-migrated .meme-oc-migration-indicator {
+  background: rgb(235, 112, 112);
+}
+
+.meme-oc-migration-item span:last-child {
+  color: rgb(206, 208, 223);
+}
+
+.meme-oc-dev-stats-chart {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.meme-oc-chart-circle {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.meme-oc-chart-circle svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(0deg);
+}
+
+.meme-oc-chart-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.meme-oc-chart-percentage {
+  font-size: 32px;
+  font-weight: 700;
+  color: rgb(235, 112, 112);
+  line-height: 1;
+}
+
+.meme-oc-chart-sublabel {
+  font-size: 12px;
+  color: rgb(154, 155, 164);
+  margin-top: 4px;
+}
+
+.meme-oc-dev-stats-highlights {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meme-oc-dev-stats-highlights h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgb(206, 208, 223);
+  margin: 0 0 4px 0;
+}
+
+.meme-oc-highlight-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  padding: 6px 0;
+}
+
+.meme-oc-highlight-item span:first-child {
+  color: rgb(154, 155, 164);
+}
+
+.meme-oc-highlight-item span:last-child {
+  color: rgb(206, 208, 223);
+  font-weight: 500;
 }
