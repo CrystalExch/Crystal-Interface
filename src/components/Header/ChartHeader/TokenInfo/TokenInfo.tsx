@@ -1264,17 +1264,19 @@ useEffect(() => {
           <div className="meme-interface-token-header-left">
             <div className="meme-interface-token-icon-container">
 
-              <div
-                className={`meme-interface-token-icon-wrapper ${memeTokenData.status === 'graduated' ? 'graduated' : ''}`}
-                ref={imageContainerRef}
-                style={
-                  memeTokenData.status !== 'graduated'
-                    ? {
-                      '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
-                      '--progress-color': getBondingColorMeme(bondingPercentage),
-                    } as React.CSSProperties
-                    : {}
-                }
+<div
+  className={`meme-interface-token-icon-wrapper ${memeTokenData.status === 'graduated' ? 'graduated' : ''}`}
+  ref={imageContainerRef}
+  style={
+    memeTokenData.status !== 'graduated'
+      ? {
+          '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
+          '--progress-color-start': createColorGradient(getBondingColor(bondingPercentage)).start,
+          '--progress-color-mid': createColorGradient(getBondingColor(bondingPercentage)).mid,
+          '--progress-color-end': createColorGradient(getBondingColor(bondingPercentage)).end,
+        } as React.CSSProperties
+      : {}
+  }
                 onClick={() => window.open(
                   `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(memeTokenData.image)}`,
                   '_blank',

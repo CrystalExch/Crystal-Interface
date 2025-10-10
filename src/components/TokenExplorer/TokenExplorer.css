@@ -4,27 +4,10 @@
   syntax: '<angle>';
 }
 
-@property --progress-color-start {
-  inherits: false;
-  initial-value: #ee5b5b;
-  syntax: '<color>';
-}
-
-@property --progress-color-mid {
-  inherits: false;
-  initial-value: #f59e0b;
-  syntax: '<color>';
-}
-
-@property --progress-color-end {
-  inherits: false;
-  initial-value: #43e17d;
-  syntax: '<color>';
-}
 
 .explorer-filters-popup {
   border-radius: 6px;
-  height: 451px;
+  height: 541px;
   left: 50%;
   margin: 0 auto;
   overflow: hidden;
@@ -836,6 +819,7 @@
 .camera-icon {
   height: 30px;
   width: 30px;
+  filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%) opacity(1);
 }
 
 .explorer-token-image-container.graduated {

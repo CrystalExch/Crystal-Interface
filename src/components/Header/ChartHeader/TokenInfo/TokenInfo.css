@@ -799,10 +799,16 @@
   position: relative;
   width: 42px;
   height: 43px;
-  border-radius: 3px;
+  border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: conic-gradient(from 0deg,
+      #aaaecf 0deg,
+      #aaaecf var(--progress-angle, 0deg),
+      rgba(157, 169, 240, 0.1) var(--progress-angle, 0deg),
+      rgba(157, 169, 240, 0.1) 360deg);
+  transition: --progress-angle 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .meme-interface-token-icon-wrapper::before {
   content: '';
@@ -1215,7 +1221,6 @@
 }
 
 .meme-camera-icon {
-  color: white;
   width: 16px;
   height: 16px;
 }
@@ -1224,6 +1229,8 @@
 .token-info-camera-icon{
   width: 23px;
   height: 23px;
+      filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%) opacity(1);
+
 }
 
 .token-info-meme-interface-twitter-btn{
@@ -1833,3 +1840,5 @@
   left: 35px;
   z-index: 100;
 }
+
+
