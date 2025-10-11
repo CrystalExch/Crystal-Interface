@@ -1483,28 +1483,56 @@ const Tracker: React.FC<TrackerProps> = ({
                     onClick={() => toggleTokenExpanded(token.id)}
                     style={{ cursor: 'pointer' }}
                   >
+                    {/* First Row */}
                     <div className="tracker-monitor-token-main">
-                      <div className="tracker-monitor-token-icon">
-                        <span className="tracker-monitor-emoji">{token.emoji}</span>
-                        <span className="tracker-monitor-time-badge">{token.trades[0]?.timeInTrade || '3m'}</span>
+                      <div className="tracker-monitor-token-left">
+                        <div className="tracker-monitor-token-icon">
+                          <span className="tracker-monitor-emoji">{token.emoji}</span>
+                          <span className="tracker-monitor-time-badge">{token.trades[0]?.timeInTrade || '32m'}</span>
+                        </div>
+                        <div className="tracker-monitor-token-info">
+                          <div className="tracker-monitor-token-title">
+                            <span className="tracker-monitor-token-name">{token.name}</span>
+                            <span className="tracker-monitor-token-subtitle">
+                              {token.symbol} <span>📋</span>
+                            </span>
+                            <button className="tracker-monitor-copy-btn" onClick={(e) => e.stopPropagation()}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                              </svg>
+                            </button>
+                            <button className="tracker-monitor-star-btn" onClick={(e) => e.stopPropagation()}>☆</button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="tracker-monitor-token-info">
-                        <div className="tracker-monitor-token-title">
-                          <span className="tracker-monitor-token-name">{token.name}</span>
-                          <span className="tracker-monitor-token-subtitle">
-                            {token.symbol} {token.change24h >= 0 ? '⬆' : '⬇'}
-                          </span>
-                          <button className="tracker-monitor-copy-btn">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
-                          </button>
-                          <button className="tracker-monitor-star-btn">☆</button>
+                      
+                      <div className="tracker-monitor-token-right">
+                        <div className="tracker-monitor-buy-sell-container">
+                          <div className="tracker-monitor-buy-sell-summary">
+                            <span className="tracker-monitor-buy-count">
+                              {totalBuys} ≡ {formatMonitorValue(totalBought)}
+                            </span>
+                            <span style={{ color: 'rgba(255,255,255,0.5)' }}>•</span>
+                            <span className="tracker-monitor-sell-count">
+                              {totalSells} ≡ {formatMonitorValue(totalSold)}
+                            </span>
+                          </div>
+                          <div className="tracker-monitor-summary-bars">
+                            <div 
+                              className="tracker-monitor-summary-bar buy" 
+                              style={{ width: `${buyRatio}%` }}
+                            ></div>
+                            <div 
+                              className="tracker-monitor-summary-bar sell" 
+                              style={{ width: `${100 - buyRatio}%` }}
+                            ></div>
+                          </div>
                         </div>
                       </div>
                     </div>
 
+                    {/* Second Row */}
                     <div className="tracker-monitor-token-stats-row">
                       <div className="tracker-monitor-stat-item">
                         <span className="stat-label">H</span>
@@ -1534,36 +1562,11 @@ const Tracker: React.FC<TrackerProps> = ({
                         <span className="stat-label">Last TX</span>
                         <span className="stat-value">1m</span>
                       </div>
-                      <button className="tracker-monitor-flash-btn">
+                      <button className="tracker-monitor-flash-btn" onClick={(e) => e.stopPropagation()}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                         </svg>
                       </button>
-                    </div>
-
-                    <div className="tracker-monitor-summary-row">
-                      <div className="tracker-monitor-buy-sell-bars">
-                        <div className="tracker-monitor-bar-container">
-                          <div className="tracker-monitor-buy-bar" style={{ width: `${buyRatio}%` }}></div>
-                          <div className="tracker-monitor-sell-bar" style={{ width: `${100 - buyRatio}%` }}></div>
-                        </div>
-                        <div className="tracker-monitor-bar-labels">
-                          <span className="buy-label">
-                            <span className="label-count">{totalBuys}</span>
-                            <span className="label-amount">
-                              ≡ {monitorCurrency === 'USD' ? '$' : ''}
-                              {formatMonitorValue(totalBought)}
-                            </span>
-                          </span>
-                          <span className="sell-label">
-                            <span className="label-count">{totalSells}</span>
-                            <span className="label-amount">
-                              ≡ {monitorCurrency === 'USD' ? '$' : ''}
-                              {formatMonitorValue(totalSold)}
-                            </span>
-                          </span>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
