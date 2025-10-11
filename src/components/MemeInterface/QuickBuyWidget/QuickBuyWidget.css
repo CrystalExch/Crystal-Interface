@@ -598,9 +598,7 @@
   cursor: pointer;
   display: flex;
   gap: 8px;
-  margin-bottom: 4px;
   padding: 8px 12px;
-  padding-bottom: 11px;
   transition: all 0.2s ease;
 }
 

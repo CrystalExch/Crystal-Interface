@@ -33,7 +33,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   const [totalAccountValue, setTotalAccountValue] = useState<number | null>(
     null,
   );
-  const [chartDays, setChartDays] = useState(7);
+  const [chartDays, setChartDays] = useState(1);
   const [isBlurred, _setIsBlurred] = useState(false);
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
   const [percentage, setPercentage] = useState(0);
