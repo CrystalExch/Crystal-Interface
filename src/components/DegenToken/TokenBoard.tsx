@@ -143,12 +143,8 @@ const TokenCard: React.FC<{
     } as React.CSSProperties}>
       <div className="board-token-image-container">
         <img
-          src={token.image || '/placeholder-token.png'}
-          alt={token.name}
+          src={token.image}
           className="board-token-image"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/placeholder-token.png';
-          }}
         />
       </div>
       <div className="board-token-card-body">
@@ -298,16 +294,6 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
       const tokenPromises = data.data.launchpadTokens.map(async (market: any) => {
         const price = Number(market.lastPriceNativePerTokenWad) / 1e9 || defaultMetrics.price;
 
-        let metadata: any = {};
-        try {
-          const metaResponse = await fetch(market.metadataCID);
-          if (metaResponse.ok) {
-            metadata = await metaResponse.json();
-          }
-        } catch (e) {
-          console.warn('Failed to load metadata for', market.metadataCID, e);
-        }
-
         let createdTimestamp = Number(market.timestamp);
         if (createdTimestamp > 1e10) {
           createdTimestamp = Math.floor(createdTimestamp / 1000);
@@ -331,8 +317,8 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
           creator: market.creator?.id || '0x0000000000000000000000000000000000000000',
           name: market.name,
           symbol: market.symbol,
-          image: metadata.image || '',
-          description: metadata.description || '',
+          image: market.metadataCID || '',
+          description: market.description || '',
           twitterHandle: twitter || '',
           website: website || '',
           telegramHandle: telegram || '',

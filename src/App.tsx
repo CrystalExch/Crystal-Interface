@@ -295,19 +295,11 @@ const Loader = () => {
         for (const m of list) {
           const baseAddr0 = getAddress(String(m.baseAsset || ''));
           const quoteAddr0 = getAddress(String(m.quoteAsset || ''));
-          let meta;
           if (!tokendict[baseAddr0]) {
-            try {
-              const metaRes = await fetch(m.metadataCID);
-              if (metaRes.ok) meta = await metaRes.json();
-            } catch (e) {
-              console.warn('failed to load metadata for', m.metadataCID, e);
-            }
-
             tokendict[baseAddr0] = {
               address: baseAddr0,
               decimals: BigInt(Number(m.baseDecimals ?? 18)),
-              image: meta?.image ?? '',
+              image: m.metadataCID ?? '',
               name: m.baseName,
               ticker: m.baseTicker,
               website: '',
@@ -315,19 +307,10 @@ const Loader = () => {
             }
           }
           if (!tokendict[quoteAddr0]) {
-            if (!meta) {
-              try {
-                const metaRes = await fetch(m.metadataCID);
-                if (metaRes.ok) meta = await metaRes.json();
-              } catch (e) {
-                console.warn('failed to load metadata for', m.metadataCID, e);
-              }
-            }
-
             tokendict[quoteAddr0] = {
               address: quoteAddr0,
               decimals: BigInt(Number(m.quoteDecimals ?? 18)),
-              image: meta?.image ?? '',
+              image: m.metadataCID ?? '',
               name: m.quoteName,
               ticker: m.quoteTicker,
               website: '',
@@ -739,13 +722,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       if (!currentTokenDev || creator !== String(currentTokenDev).toLowerCase()) return;
       if (memeDevTokenIdsRef.current.has(tokenId)) return;
 
-      let imageUrl = '';
-      try {
-        if (decoded.args?.metadataCID) {
-          const r = await fetch(decoded.args.metadataCID);
-          if (r.ok) imageUrl = (await r.json())?.image || '';
-        }
-      } catch { }
+      let imageUrl = decoded.args?.metadataCID || '';
 
       const symbol = String(decoded.args?.symbol || '').toUpperCase();
       const name = String(decoded.args?.name || symbol || tokenId.slice(0, 6));
@@ -4192,15 +4169,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         topics: log.topics,
       }) as any;
 
-      let meta: any = {};
-      try {
-        const res = await fetch(args.metadataCID);
-        if (res.ok) meta = await res.json();
-      } catch (e) {
-        console.warn('failed to load metadata', e);
-      }
-
-      const socials = [args.social1, args.social2, args.social3].map((s) =>
+      const socials = [args.social1, args.social2, args.social3, args.social4].map((s) =>
         s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
       );
       const twitter = socials.find(
@@ -4223,6 +4192,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       if (discord) {
         socials.splice(socials.indexOf(discord), 1);
       }
+      const website = socials[0];
 
       const token: ExplorerToken = {
         ...defaultMetrics,
@@ -4230,10 +4200,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         tokenAddress: args.token,
         name: args.name,
         symbol: args.symbol,
-        image: meta?.image || null,
+        image: args.metadataCID || '',
         description: args.description ?? '',
         twitterHandle: twitter ?? '',
-        website: meta?.website ?? '',
+        website: website ?? '',
         status: 'new',
         marketCap: defaultMetrics.price * TOTAL_SUPPLY,
         created: Math.floor(Date.now() / 1000),
@@ -4600,19 +4570,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               Number(m.lastPriceNativePerTokenWad) / 1e9 ||
               defaultMetrics.price;
 
-            let meta: any = {};
-            try {
-              const metaRes = await fetch(m.metadataCID);
-              if (metaRes.ok) meta = await metaRes.json();
-            } catch (e) {
-              console.warn('failed to load metadata for', m.metadataCID, e);
-            }
-
             let createdTimestamp = Number(m.timestamp);
             if (createdTimestamp > 1e10) {
               createdTimestamp = Math.floor(createdTimestamp / 1000);
             }
-            const socials = [m.social1, m.social2, m.social3].map((s) =>
+            const socials = [m.social1, m.social2, m.social3, m.social4].map((s) =>
               s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
             );
             const twitter = socials.find(
@@ -4644,8 +4606,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               dev: m.creator.id,
               name: m.name,
               symbol: m.symbol,
-              image: meta.image || null,
-              description: meta.description ?? '',
+              image: m.metadataCID || '',
+              description: m.description ?? '',
               twitterHandle: twitter ?? '',
               website: website ?? '',
               status: m.migrated
@@ -4900,19 +4862,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (data.launchpadTokens?.length) {
           const m = data.launchpadTokens[0];
 
-          let imageUrl = tokenData?.image || '';
-          if (m.metadataCID && !imageUrl) {
-            try {
-              const metaRes = await fetch(m.metadataCID);
-              if (metaRes.ok) {
-                const meta = await metaRes.json();
-                imageUrl = meta.image || '';
-              }
-            } catch { }
-          }
+          let imageUrl = tokenData?.image || m.metadataCID || '';
 
           const price = Number(m.lastPriceNativePerTokenWad || 0) / 1e9;
-          const socials = [m.social1, m.social2, m.social3].map((s) =>
+          const socials = [m.social1, m.social2, m.social3, m.social4].map((s) =>
             s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
           );
           const twitter = socials.find(
@@ -5200,16 +5153,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         const out = [];
         for (const t of rows) {
-          let imageUrl = '';
-          if (t.metadataCID) {
-            try {
-              const metaRes = await fetch(t.metadataCID);
-              if (metaRes.ok) {
-                const meta = await metaRes.json();
-                imageUrl = meta.image || '';
-              }
-            } catch { }
-          }
+          let imageUrl = t.metadataCID || '';
           const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
           out.push({
             id: t.id,
@@ -5438,16 +5382,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         const finalWithImages = await Promise.all(
           scored.map(async (t: any) => {
-            let imageUrl = '';
-            if (t.metadataCID) {
-              try {
-                const metaRes = await fetch(t.metadataCID);
-                if (metaRes.ok) {
-                  const meta = await metaRes.json();
-                  imageUrl = meta.image || '';
-                }
-              } catch { }
-            }
+            let imageUrl = t.metadataCID || '';
             const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
             return {
               id: t.id,
@@ -5539,22 +5474,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         const balance = Number(p.tokens) / 1e18;
 
         if (!aggregatedMap.has(tokenId)) {
-          let imageUrl = '';
-          if (p.token.metadataCID) {
-            try {
-              const metaRes = await fetch(p.token.metadataCID);
-              if (metaRes.ok) {
-                const meta = await metaRes.json();
-                imageUrl = meta.image || '';
-              }
-            } catch (e) {
-              console.warn(
-                'Failed to load metadata for token',
-                p.token.id,
-                e,
-              );
-            }
-          }
+          let imageUrl = p.token.metadataCID || '';
 
           aggregatedMap.set(tokenId, {
             tokenId: p.token.id,

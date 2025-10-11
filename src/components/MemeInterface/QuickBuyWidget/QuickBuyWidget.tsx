@@ -2115,7 +2115,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                           </button>
                         </Tooltip>
                         <div className="cs-container">
-                          <Tooltip content="Consolidate all tokens to the one active wallet (purple checkbox)">
+                          <Tooltip content="Consolidate all tokens to the selected wallet">
                             <button
                               className="quickbuy-wallet-merge-btn consolidate"
                               onClick={handleConsolidateTokens}

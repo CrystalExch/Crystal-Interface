@@ -342,18 +342,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       if (data.launchpadTokens?.length) {
         const m = data.launchpadTokens[0];
 
-        let imageUrl = token.image || '';
-        if (m.metadataCID && !imageUrl) {
-          try {
-            const metaRes = await fetch(m.metadataCID);
-            if (metaRes.ok) {
-              const meta = await metaRes.json();
-              imageUrl = meta.image || '';
-            }
-          } catch (e) {
-            console.warn('Failed to load metadata for token:', token.id, e);
-          }
-        }
+        let imageUrl = m.metadataCID || '';
 
         const updatedTokenData = {
           ...token,

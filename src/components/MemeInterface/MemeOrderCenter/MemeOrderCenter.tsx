@@ -1431,42 +1431,40 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                             </span>
                           </div>
                         </div>
-
-<div className="meme-oc-cell">
-  {t.migrated ? (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="rgb(67, 254, 154)"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10"/>
-      <path d="m9 12 2 2 4-4"/>
-    </svg>
-  ) : (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="rgb(240, 103, 103)"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10"/>
-      <path d="m15 9-6 6"/>
-      <path d="m9 9 6 6"/>
-    </svg>
-  )}
-</div>
-
+                        <div className="meme-oc-cell">
+                          {t.migrated ? (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="rgb(67, 254, 154)"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <circle cx="12" cy="12" r="10"/>
+                              <path d="m9 12 2 2 4-4"/>
+                            </svg>
+                          ) : (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="rgb(240, 103, 103)"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <circle cx="12" cy="12" r="10"/>
+                              <path d="m15 9-6 6"/>
+                              <path d="m9 9 6 6"/>
+                            </svg>
+                          )}
+                        </div>
                         <div className="meme-oc-cell">
                           <span>{liveHolders.length}</span>
                         </div>
@@ -1476,23 +1474,17 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                 )}
               </div>
             </div>
-
             <div className="meme-oc-dev-stats-panel">
-              <h3 className="meme-oc-dev-stats-title">Token Stats</h3>
-
               <div className="meme-oc-dev-stats-content">
                 <div className="meme-oc-dev-stats-row">
                   <span className="meme-oc-dev-stats-label">DEV</span>
-                  <span className="meme-oc-dev-stats-value">
-                    {token.dev ? `${token.dev.slice(0, 6)}...${token.dev.slice(-4)}` : '—'}
-                  </span>
+                  <span className="meme-oc-dev-stats-value">{token.dev ? `${token.dev.slice(0, 6)}...${token.dev.slice(-4)}` : '—'}</span>
                 </div>
 
                 <div className="meme-oc-dev-stats-row">
                   <span className="meme-oc-dev-stats-label">Total Pairs:</span>
                   <span className="meme-oc-dev-stats-value">{devTokensToShow.length}</span>
                 </div>
-
 
                 <div className="meme-oc-dev-stats-migration">
                   <div className="meme-oc-migration-item migrated">
@@ -1502,40 +1494,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                   <div className="meme-oc-migration-item non-migrated">
                     <span className="meme-oc-migration-indicator"></span>
                     <span>Non Migrated: {devTokensToShow.filter(t => !t.migrated).length}</span>
-                  </div>
-                </div>
-
-                <div className="meme-oc-dev-stats-chart">
-                  <div className="meme-oc-chart-circle">
-<svg viewBox="0 0 100 100">
-  <circle
-    cx="50"
-    cy="50"
-    r="40"
-    fill="none"
-    stroke="rgb(240, 103, 103)"
-    strokeWidth="8"
-  />
-  <circle
-    cx="50"
-    cy="50"
-    r="40"
-    fill="none"
-    stroke="rgb(67, 254, 154)"
-    strokeWidth="8"
-    strokeDasharray={`${devTokensToShow.length > 0 ? (devTokensToShow.filter(t => t.migrated).length / devTokensToShow.length) * 251 : 0} 251`}
-    strokeLinecap="butt" 
-    transform="rotate(-90 50 50)"
-  />
-</svg>
-                    <div className="meme-oc-chart-label">
-                      <div className="meme-oc-chart-percentage">
-                        {devTokensToShow.length > 0
-                          ? Math.round((devTokensToShow.filter(t => t.migrated).length / devTokensToShow.length) * 100)
-                          : 0}%
-                      </div>
-                      <div className="meme-oc-chart-sublabel">Migrated</div>
-                    </div>
                   </div>
                 </div>
 
@@ -1556,6 +1514,39 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                         ? timeAgo(devTokensToShow[devTokensToShow.length - 1].timestamp)
                         : '—'}
                     </span>
+                  </div>
+                </div>
+              </div>
+              <div className="meme-oc-dev-stats-chart">
+                <div className="meme-oc-chart-circle">
+                  <svg viewBox="0 0 100 100">
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="none"
+                      stroke="rgb(240, 103, 103)"
+                      strokeWidth="8"
+                    />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="none"
+                      stroke="rgb(67, 254, 154)"
+                      strokeWidth="8"
+                      strokeDasharray={`${devTokensToShow.length > 0 ? (devTokensToShow.filter(t => t.migrated).length / devTokensToShow.length) * 251 : 0} 251`}
+                      strokeLinecap="butt" 
+                      transform="rotate(-90 50 50)"
+                    />
+                  </svg>
+                  <div className="meme-oc-chart-label">
+                    <div className="meme-oc-chart-percentage">
+                      {devTokensToShow.length > 0
+                        ? Math.round((devTokensToShow.filter(t => t.migrated).length / devTokensToShow.length) * 100)
+                        : 0}%
+                    </div>
+                    <div className="meme-oc-chart-sublabel">Migrated</div>
                   </div>
                 </div>
               </div>

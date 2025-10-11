@@ -120,30 +120,13 @@ const Launchpad: React.FC<LaunchpadProps> = ({
 
     setIsLaunching(true);
     try {
-      const imageKey = `img/${formData.ticker}-${Date.now()}.${formData.image.name.split('.').pop()
+      const timestamp = Date.now();
+      const imageKey = `img/${formData.ticker}-${timestamp}.${formData.image.name.split('.').pop()
         }`;
       const imageUrl = await uploadToR2(
         imageKey,
         formData.image,
         formData.image.type
-      );
-
-      const timestamp = Date.now();
-      const metaKey = `metadata/${formData.ticker}-${timestamp}.json`;
-      const metadata = {
-        name: formData.name,
-        symbol: formData.ticker,
-        description: formData.description,
-        image: imageUrl,
-        telegram: formData.telegram,
-        discord: formData.discord,
-        twitter: formData.twitter,
-        website: formData.website,
-      };
-      const metadataUrl = await uploadToR2(
-        metaKey,
-        JSON.stringify(metadata),
-        'application/json'
       );
       await sendUserOperationAsync({
         uo: {
@@ -151,10 +134,10 @@ const Launchpad: React.FC<LaunchpadProps> = ({
           data: encodeFunctionData({
             abi: CrystalRouterAbi,
             functionName: 'createToken',
-            args: [formData.name, formData.ticker, metadataUrl, formData.description, formData.twitter, formData.website, formData.telegram, formData.discord],
+            args: [formData.name, formData.ticker, imageUrl, formData.description, formData.twitter, formData.website, formData.telegram, formData.discord],
           }),
         },
-      });
+      }, 15000000n);
       setIsLaunching(false);
       navigate('/board');
     } catch (err: any) {

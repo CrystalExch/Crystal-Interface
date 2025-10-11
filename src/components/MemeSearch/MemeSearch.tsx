@@ -326,17 +326,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
     const mapGraphTokenToUi = useCallback(async (m: any): Promise<Token> => {
         const price = Number(m.lastPriceNativePerTokenWad || 0) / 1e18;
 
-        let meta: any = {};
-        try {
-            if (m.metadataCID) {
-                const metaRes = await fetch(m.metadataCID);
-                if (metaRes.ok) meta = await metaRes.json();
-            }
-        } catch (e) {
-            console.warn('failed to load metadata for', m.metadataCID, e);
-        }
-
-        const socials = [m.social1, m.social2, m.social3].map((s: string) =>
+        const socials = [m.social1, m.social2, m.social3, m.social4].map((s: string) =>
             s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s
         ).filter(Boolean);
 
@@ -362,7 +352,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
             if (index >= 0) socials.splice(index, 1);
         }
 
-        const website = meta?.website || socials[0] || '';
+        const website = socials[0] || '';
 
         let createdTimestamp = Number(m.timestamp);
         if (createdTimestamp > 1e10) {
@@ -375,7 +365,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
             dev: m.creator?.id || '',
             name: m.name || '',
             symbol: m.symbol || '',
-            image: meta?.image || '',
+            image: m.metadataCID || '',
             price,
             marketCap: price * 1e9,
             change24h: 0,
@@ -388,7 +378,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
             volumeDelta: 0,
             telegramHandle: telegramUrl || '',
             discordHandle: discordUrl || '',
-            description: meta?.description || m.description || '',
+            description: m?.description || '',
         };
     }, []);
 
