@@ -24251,6 +24251,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setLeverage={setPerpsLeverage}
                 signer={perpsKeystore}
                 setSigner={setPerpsKeystore}
+                setOrderCenterHeight={setOrderCenterHeight}
               />
             } />
           <Route path="/leaderboard"

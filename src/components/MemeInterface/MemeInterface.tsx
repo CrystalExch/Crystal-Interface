@@ -312,10 +312,10 @@ const Tooltip: React.FC<{
               top: `${tooltipPosition.top - 20}px`,
               left: `${tooltipPosition.left}px`,
               transform: `${position === 'top' || position === 'bottom'
-                  ? 'translateX(-50%)'
-                  : position === 'left' || position === 'right'
-                    ? 'translateY(-50%)'
-                    : 'none'
+                ? 'translateX(-50%)'
+                : position === 'left' || position === 'right'
+                  ? 'translateY(-50%)'
+                  : 'none'
                 } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
@@ -459,7 +459,71 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     if (window.innerHeight > 720) return 239.98;
     return 198.78;
   });
-  const [isVertDragging, setIsVertDragging] = useState<boolean>(false);
+  const [_isVertDragging, setIsVertDragging] = useState(false);
+  const initialHeightRef = useRef(0);
+  const initialMousePosRef = useRef(0);
+
+  useEffect(() => {
+const handleMouseMove = (e: MouseEvent) => {
+  if (!_isVertDragging) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const mouseDelta = e.clientY - initialMousePosRef.current;
+  const newHeight = Math.max(
+    150, // minimum height
+    Math.min(
+      window.innerHeight - 400, // maximum height (leaves room for chart/orderbook) - CHANGED from 200 to 400
+      initialHeightRef.current - mouseDelta
+    )
+  );
+
+  setOrderCenterHeight(newHeight);
+  localStorage.setItem('orderCenterHeight', newHeight.toString());
+};
+    const handleMouseUp = (e: MouseEvent) => {
+      if (!_isVertDragging) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      setIsVertDragging(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+
+      const overlay = document.getElementById('global-vert-drag-overlay');
+      if (overlay) {
+        document.body.removeChild(overlay);
+      }
+    };
+
+    if (_isVertDragging) {
+      const overlay = document.createElement('div');
+      overlay.id = 'global-vert-drag-overlay';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.zIndex = '9999';
+      overlay.style.cursor = 'row-resize';
+      document.body.appendChild(overlay);
+
+      window.addEventListener('mousemove', handleMouseMove, { capture: true });
+      window.addEventListener('mouseup', handleMouseUp, { capture: true });
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove, { capture: true });
+      window.removeEventListener('mouseup', handleMouseUp, { capture: true });
+
+      const overlay = document.getElementById('global-vert-drag-overlay');
+      if (overlay) {
+        document.body.removeChild(overlay);
+      }
+    };
+  }, [_isVertDragging]);
+``
   const [isSigning, setIsSigning] = useState(false);
   const [activeTradeType, setActiveTradeType] = useState<'buy' | 'sell'>('buy');
   const [activeOrderType, _setActiveOrderType] = useState<'market' | 'Limit'>(
@@ -538,7 +602,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
   const explorer = settings.chainConfig[activechain]?.explorer;
   const userAddr = address ?? account?.address ?? '';
+  const [dragStart, setDragStart] = useState<{ y: number; height: number } | null>(null);
+  const dragStartRef = useRef<{ y: number; height: number } | null>(null);
 
+  
+
+  useEffect(() => {
+    dragStartRef.current = dragStart;
+  }, [dragStart]);
   useEffect(() => {
     if (editingPresetIndex !== null && presetInputRef.current) {
       presetInputRef.current.focus();
@@ -1827,10 +1898,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         >
           <MemeOrderCenter
             orderCenterHeight={orderCenterHeight}
-            isVertDragging={isVertDragging}
+            isVertDragging={_isVertDragging}
             isOrderCenterVisible={true}
             onHeightChange={(h: any) => setOrderCenterHeight(h)}
-            onDragStart={() => {
+            onDragStart={(e) => {
+              initialMousePosRef.current = e.clientY;
+              initialHeightRef.current = orderCenterHeight;
               setIsVertDragging(true);
               document.body.style.cursor = 'row-resize';
               document.body.style.userSelect = 'none';

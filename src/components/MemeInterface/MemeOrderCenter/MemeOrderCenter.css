@@ -700,23 +700,7 @@
   display: none;
 }
 
-.meme-oc-drag-handle {
-  align-items: center;
-  cursor: row-resize;
-  display: flex;
-  justify-content: center;
-  position: relative;
-  transition: all 0.2s ease;
-  width: 100%;
-}
 
-.meme-oc-drag-handle:hover {
-  background-color: rgba(179, 184, 249, 0.05);
-}
-
-.meme-oc-drag-handle:active {
-  background-color: rgba(179, 184, 249, 0.1);
-}
 
 .meme-oc-height-presets {
   align-items: center;
@@ -764,16 +748,8 @@
   transition: none !important;
 }
 
-.meme-oc-rectangle.meme-oc-dragging .meme-oc-drag-handle {
-  background-color: rgba(179, 184, 249, 0.1);
-}
-
 .meme-oc-rectangle.meme-oc-dragging .meme-oc-drag-indicator {
   opacity: 1;
-}
-
-.meme-oc-rectangle.meme-oc-dragging .meme-oc-drag-dot {
-  background-color: #aaaecf;
 }
 
 @media (max-width: 768px) {
@@ -787,9 +763,6 @@
     width: 24px;
   }
 
-  .meme-oc-drag-handle {
-    padding: 6px 8px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -829,9 +802,6 @@
   user-select: none !important;
 }
 
-.meme-oc-dragging .meme-oc-drag-handle {
-  pointer-events: auto;
-}
 
 .meme-oc-height-presets .meme-ordercenter-tooltip-content {
   font-size: 0.7rem;

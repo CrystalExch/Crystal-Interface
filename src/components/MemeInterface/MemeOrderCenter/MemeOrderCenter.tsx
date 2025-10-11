@@ -57,7 +57,7 @@ interface MemeOrderCenterProps {
   isVertDragging?: boolean;
   isOrderCenterVisible?: boolean;
   onHeightChange?: (height: number) => void;
-  onDragStart?: () => void;
+onDragStart?: (e: React.MouseEvent) => void;
   onDragEnd?: () => void;
   isWidgetOpen?: boolean;
   onToggleWidget?: () => void;
@@ -551,46 +551,19 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     { key: 'topTraders', label: `Top Traders (${topTraderRows.length})` },
     { key: 'devTokens', label: `Dev Tokens (${devTokensToShow.length})` },
   ];
-
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const startY = e.clientY;
-      const startHeight = orderCenterHeight;
-
-      setIsDragging(true);
-      setDragStartY(startY);
-      setDragStartHeight(startHeight);
-      onDragStart?.();
-
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-        moveEvent.preventDefault();
-        const deltaY = startY - moveEvent.clientY;
-        const newHeight = Math.max(150, Math.min(800, startHeight + deltaY));
-        onHeightChange?.(newHeight);
-      };
-
-      const handleMouseUp = (upEvent: MouseEvent) => {
-        upEvent.preventDefault();
-        setIsDragging(false);
-        onDragEnd?.();
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-      };
-
-      document.body.style.cursor = 'row-resize';
-      document.body.style.userSelect = 'none';
-
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    },
-    [orderCenterHeight, onHeightChange, onDragStart, onDragEnd],
-  );
+useEffect(() => {
+  if (isDragging && !isVertDragging) {
+    setIsDragging(false);
+  }
+}, [isVertDragging, isDragging]);
+const handleMouseDown = useCallback(
+  (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+onDragStart?.(e);  },
+  [onDragStart],
+);
 
   const handleTabChange = (
     section: 'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens',
@@ -1562,19 +1535,19 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   const noDataMessage = 'No data available';
 
   return (
-    <div
-      ref={containerRef}
-      className="meme-oc-rectangle"
-      style={{
-        position: 'relative',
-        height:
-          orderCenterHeight === 0 || isOrderCenterVisible === false
-            ? '0px'
-            : `${orderCenterHeight}px`,
-        transition: isVertDragging ? 'none' : 'height 0.1s ease',
-        overflow: 'visible',
-      }}
-    >
+<div
+  ref={containerRef}
+  className="meme-oc-rectangle"
+  style={{
+    position: 'relative',
+    height:
+      orderCenterHeight === 0 || isOrderCenterVisible === false
+        ? '0px'
+        : `${orderCenterHeight}px`,
+    transition: (isVertDragging || isDragging) ? 'none' : 'height 0.1s ease',
+    overflow: 'visible',
+  }}
+>
       <div
         className={`meme-oc-drag-spacer ${!isOrderCenterVisible ? 'meme-oc-collapsed' : ''}`}
       >

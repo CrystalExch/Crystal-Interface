@@ -71,6 +71,7 @@ interface PerpsProps {
   setLeverage: (value: string) => void;
   signer: any;
   setSigner: any;
+  setOrderCenterHeight: (height: number) => void;
 }
 
 const Perps: React.FC<PerpsProps> = ({
@@ -130,7 +131,8 @@ const Perps: React.FC<PerpsProps> = ({
   leverage,
   setLeverage,
   signer,
-  setSigner
+  setSigner,
+  setOrderCenterHeight
 }) => {
   const [exchangeConfig, setExchangeConfig] = useState<any>();
   const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
@@ -519,6 +521,70 @@ const Perps: React.FC<PerpsProps> = ({
       ? (stored as string)
       : 'Quote';
   });
+
+  // Add this useEffect for vertical dragging
+useEffect(() => {
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!_isVertDragging) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const mouseDelta = e.clientY - initialMousePosRef.current;
+    const newHeight = Math.max(
+      150, // minimum height
+      Math.min(
+        window.innerHeight - 400, // maximum height (leaves room for chart/orderbook)
+        initialHeightRef.current - mouseDelta // subtract because Y increases downward
+      )
+    );
+
+    // CRITICAL FIX: Actually update the height state!
+    setOrderCenterHeight(newHeight);
+    localStorage.setItem('perps_orderCenterHeight', newHeight.toString());
+  };
+
+  const handleMouseUp = (e: MouseEvent) => {
+    if (!_isVertDragging) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    setIsVertDragging(false);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+
+    const overlay = document.getElementById('global-vert-drag-overlay');
+    if (overlay) {
+      document.body.removeChild(overlay);
+    }
+  };
+
+  if (_isVertDragging) {
+    const overlay = document.createElement('div');
+    overlay.id = 'global-vert-drag-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.zIndex = '9999';
+    overlay.style.cursor = 'row-resize';
+    document.body.appendChild(overlay);
+
+    window.addEventListener('mousemove', handleMouseMove, { capture: true });
+    window.addEventListener('mouseup', handleMouseUp, { capture: true });
+  }
+
+  return () => {
+    window.removeEventListener('mousemove', handleMouseMove, { capture: true });
+    window.removeEventListener('mouseup', handleMouseUp, { capture: true });
+
+    const overlay = document.getElementById('global-vert-drag-overlay');
+    if (overlay) {
+      document.body.removeChild(overlay);
+    }
+  };
+}, [_isVertDragging, setOrderCenterHeight]); // Add setOrderCenterHeight to dependencies
   const prevAmountsQuote = useRef(amountsQuote)
   const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
   const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
@@ -1959,7 +2025,7 @@ const Perps: React.FC<PerpsProps> = ({
           refetch={refetch}
           sendUserOperationAsync={sendUserOperationAsync}
           setChain={handleSetChain}
-          isVertDragging={isVertDragging}
+          isVertDragging={_isVertDragging} 
           isOrderCenterVisible={isOrderCenterVisible}
           onLimitPriceUpdate={setCurrentLimitPrice}
           openEditOrderPopup={openEditOrderPopup}

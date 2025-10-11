@@ -3093,7 +3093,7 @@
   filter: brightness(0) saturate(100%) invert(93%) sepia(8%) saturate(1486%) hue-rotate(194deg) brightness(99%) contrast(96%);
 }
 
-@media(max-width: 1300px) {
+@media(max-width: 1450px) {
 
   .explorer-quick-buy-btn.size-small,
   .explorer-quick-buy-btn.size-large,
