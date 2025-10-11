@@ -2625,8 +2625,8 @@ body {
 .main-content-wrapper.simple-view .limit-info-rectangle,
 .main-content-wrapper.simple-view .trade-info-rectangle {
   border-radius: 12px;
-  margin-top: 10px;
-  padding: 2px 8px;
+  margin-top: 5px;
+  padding: 2px 14px;
   animation: fadeInSlideUp 0.5s ease forwards;
   animation-delay: 0.5s;
   opacity: 0;
@@ -2659,12 +2659,6 @@ body {
 }
 
 .main-content-wrapper.simple-view .swapmodal {
-  border: 1.5px solid transparent;
-  border-radius: 20px;
-  background:
-    linear-gradient(black, black) padding-box,
-    linear-gradient(135deg, rgba(36, 36, 45, 0.637), rgb(28 28 34), rgb(20 20 24)) border-box;
-  background-clip: padding-box, border-box;
   padding: 0;
   padding-bottom: 11px;
   animation: fadeInSlideUp 0.5s ease forwards;
@@ -2769,8 +2763,9 @@ body {
 }
 
 .main-content-wrapper.simple-view .switch-button {
-  background-color: rgb(6, 6, 6);
-  border: 1px solid rgba(34, 34, 34, 0.5);
+  background-color: rgb(9, 9, 10);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(173, 175, 220, 0.05);
   box-shadow: none;
   transform: scale(1.3);
   z-index: 1;
@@ -2786,6 +2781,7 @@ body {
   animation: fadeInSlideUp 0.5s ease forwards;
   animation-delay: 0.1s;
   opacity: 0;
+  padding: 0 10px;
 }
 
 .main-content-wrapper.simple-view .innernavlinkwrapper {
@@ -2808,6 +2804,7 @@ body {
   height: 100%;
   justify-content: center;
   width: 100%;
+  background: linear-gradient(180deg, rgb(6, 6, 6) 0%, rgb(10, 10, 12) 100%);
 }
 
 .main-content-wrapper.simple-view .right-column {
@@ -2870,7 +2867,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .main-content-wrapper.simple-view .swap-container-divider {
-  background: rgb(255 255 255/5%);
+  background: rgba(173, 175, 220, 0.05);
   border-radius: 50%;
   height: 1px;
   margin: 0 12px;
