@@ -1274,7 +1274,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         </div>
 
         <div className="detail-trading-panel">
-          <div className="detail-meme-address">
             <div className="detail-address-top">
               <div className="detail-meme-address-content">
                 <svg 
@@ -1311,7 +1310,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                 </svg>
               </button>
             </div>
-          </div>
         </div>
 
 

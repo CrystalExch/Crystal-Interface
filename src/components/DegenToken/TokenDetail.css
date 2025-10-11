@@ -1076,19 +1076,6 @@
   }
 }
 
-.detail-meme-address {
-  align-items: center;
-  border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 5px;
-  color: rgb(169, 169, 174);
-  display: flex;
-  flex-direction: column;
-  font-size: 0.9rem;
-  justify-content: space-between;
-  padding: 4px 8px;
-  width: 100%;
-}
-
 .detail-meme-address-title {
   color: #6c6c74;
   margin-right: 4px;
