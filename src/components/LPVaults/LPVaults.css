@@ -370,7 +370,7 @@
 .lp-filter-button {
   align-items: center;
   background: 0 0;
-  background-color: rgba(173, 177, 218, 0.05);
+  background-color: rgba(162, 168, 232, 0.05);
   border-radius: 20px;
   color: #ffffff79;
   cursor: pointer;
@@ -397,7 +397,7 @@
 .filter-button.active,
 .type-option.active,
 .percentage-btn.active {
-  background-color: #a4a7f616;
+  background-color: #5255b531;
   color:#d8dcff;
 }
 
@@ -3080,7 +3080,7 @@
 }
 
 .filter-button.active {
-  background-color: #a4a7f616;
+  background-color: #5255b531;
   color:#d8dcff;
 }
 

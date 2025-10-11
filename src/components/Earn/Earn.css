@@ -4,8 +4,9 @@
   align-items: center;
   width: calc(100% - 50px);
   height: 100%;
-  margin: 0 25px;
   background: linear-gradient(180deg, rgb(6, 6, 6) 0%, rgb(10, 10, 12) 100%);
+  overflow-y: scroll;
+  padding: 0 30px;
 }
 
 .earn-page-header {

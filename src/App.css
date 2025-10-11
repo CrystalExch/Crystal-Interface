@@ -1309,7 +1309,7 @@ body {
 .sendaddressbg,
 .sendbg {
   border: 1px solid rgba(179, 184, 249, 0.03);
-  background-color:  rgba(179, 184, 249, 0.03);
+  background-color:  rgba(179, 184, 249, 0.01);
   border-radius: 4px;
   display: flex;
   flex-direction: column;
