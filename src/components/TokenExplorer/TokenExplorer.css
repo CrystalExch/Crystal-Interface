@@ -131,6 +131,10 @@
   color: rgba(237, 236, 252, 0.4);
   font-size: 1rem;
   margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+
 }
 
 .explorer-token-name:hover {
@@ -177,10 +181,16 @@
 }
 
 @media(max-width: 1350px) {
-
   .explorer-twitter-username {
+    margin-bottom: -25px !important;
     margin-top: 20px;
-    margin-bottom: -8px;
+  }
+  .explorer-second-row{
+    flex-direction: column;
+    gap: 0 !important;
+    align-items: flex-start !important;
+  }.explorer-holdings-section{
+    margin-top: 20px !important;
   }
 }
 
@@ -238,6 +248,9 @@
   display: flex;
   gap: 5px;
   height: 15px;
+  background-color: rgb(6,6,6);
+  box-shadow: 0 0 10px 4px rgb(6, 6, 6)
+
 }
 
 .explorer-stat-label {
@@ -264,6 +277,7 @@
   flex-wrap: wrap;
   gap: 0.25rem 0.5rem;
   height: 32px;
+  margin-top: 15px;
 }
 
 .explorer-holding-item {
@@ -480,18 +494,6 @@
   display: flex;
   gap: 0.75rem;
   height: 18px;
-}
-
-@media(max-width: 1450px) {
-  .explorer-second-row {
-    align-items: start;
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .explorer-time-created {
-    margin-right: 0;
-  }
 }
 
 .explorer-third-row {
@@ -1197,6 +1199,9 @@
   .explorer-main {
     height: calc(100vh - 70px)
   }
+  .explorer-twitter-username {
+    margin-bottom: -28px !important;
+  }
 }
 
 .explorer-container {
@@ -1264,8 +1269,10 @@
   background-color: rgb(17, 17, 21);
 }
 
-.explorer-token-row:hover .explorer-metrics-container {
+.explorer-token-row:hover .explorer-metrics-container,
+.explorer-token-row:hover .explorer-third-row-section {
     background-color: rgb(17, 17, 21);
+    box-shadow: 0 0 10px 4px rgb(17, 17, 21)
 
 }
 
@@ -1765,10 +1772,20 @@
   }
 
   .explorer-token-row {
-    height: 120px;
+    height: 125px;
   }
 }
-
+@media(max-width:1250px) {
+  .explorer-token-row {
+    height: 140px;
+  }
+  .explorer-holdings-section{
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    margin-top: 0 !important;
+  }
+}
 @media(max-width:360px) {
   .explorer-token-row {
     height: 130px;
@@ -2945,6 +2962,8 @@
   flex-direction: column;
   padding-left: 5px;
   background-color: rgb(6,6,6);
+  box-shadow: 0 0 10px 4px rgb(6, 6, 6)
+
 }
 
 .explorer-third-row.large-quickbuy-mode .explorer-metrics-container,
@@ -4556,5 +4575,6 @@
   font-size: 0.75rem;
   letter-spacing: -0.2px;
   padding: 2px 0;
+  margin-bottom: -15px;
 }
 

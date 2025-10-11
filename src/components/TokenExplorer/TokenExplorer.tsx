@@ -2832,15 +2832,14 @@ const TokenRow = React.memo<{
               </div>
             </div>
           </div>
-          {token.twitterHandle && (() => {
-              const username = extractTwitterUsername(token.twitterHandle);
-              return username ? (
-                <div className="explorer-twitter-username">
-                  @{username}
-                </div>
-              ) : null;
-            })()}
-
+          {token.twitterHandle && !token.twitterHandle.includes('/i/communities/') && (() => {
+            const username = extractTwitterUsername(token.twitterHandle);
+            return username ? (
+              <div className="explorer-twitter-username">
+                @{username}
+              </div>
+            ) : null;
+          })()}
           <div className="explorer-holdings-section">
             {displaySettings.visibleRows.top10Holders && (
               <Tooltip content="Top 10 holders percentage">
@@ -2968,7 +2967,7 @@ const TokenRow = React.memo<{
               </Tooltip>
             )}
           </div>
-          
+
         </div>
 
         {displaySettings.quickBuySize === 'ultra' &&
@@ -4926,7 +4925,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           <TokenRow
                             key={t.id}
                             token={t}
-    quickbuyAmount={quickAmounts.graduating}  
+                            quickbuyAmount={quickAmounts.graduating}
                             quickbuyAmountSecond={quickAmountsSecond.new}
                             onHideToken={hideToken}
                             onBlacklistToken={handleBlacklistToken}
@@ -5147,7 +5146,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           <TokenRow
                             key={t.id}
                             token={t}
-                            quickbuyAmount={quickAmounts.graduated} 
+                            quickbuyAmount={quickAmounts.graduated}
                             quickbuyAmountSecond={quickAmountsSecond.new}
                             onHideToken={hideToken}
                             onBlacklistToken={handleBlacklistToken}
