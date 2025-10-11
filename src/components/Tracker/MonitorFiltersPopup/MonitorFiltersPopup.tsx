@@ -38,6 +38,7 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
   initialFilters 
 }) => {
   const [viewMode, setViewMode] = useState<'simple' | 'advanced'>('simple');
+  const [selectedSimpleFilter, setSelectedSimpleFilter] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'market' | 'transactions'>('market');
   const [filters, setFilters] = useState<MonitorFilterState>(
       initialFilters || {
@@ -64,6 +65,10 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
         },
       }
   );
+
+  const handleSimpleFilterClick = (filterType: string) => {
+    setSelectedSimpleFilter(filterType === selectedSimpleFilter ? null : filterType);
+  };
 
   const handleReset = () => {
     setFilters({
@@ -124,33 +129,48 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
 
           {viewMode === 'simple' ? (
             <div className="monitor-filters-simple-list">
-              <button className="monitor-simple-sort-option">
+              <button 
+                className={`monitor-simple-sort-option ${selectedSimpleFilter === 'latest' ? 'active' : ''}`}
+                onClick={() => handleSimpleFilterClick('latest')}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/>
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
                 Latest
               </button>
-              <button className="monitor-simple-sort-option">
+              <button 
+                className={`monitor-simple-sort-option ${selectedSimpleFilter === 'marketCap' ? 'active' : ''}`}
+                onClick={() => handleSimpleFilterClick('marketCap')}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                 </svg>
                 Market Cap
               </button>
-              <button className="monitor-simple-sort-option">
+              <button
+                className={`monitor-simple-sort-option ${selectedSimpleFilter === 'liquidity' ? 'active' : ''}`}
+                onClick={() => handleSimpleFilterClick('liquidity')}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
                 </svg>
                 Liquidity
               </button>
-              <button className="monitor-simple-sort-option">
+              <button
+                className={`monitor-simple-sort-option ${selectedSimpleFilter === 'txns' ? 'active' : ''}`}
+                onClick={() => handleSimpleFilterClick('txns')}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
                 Txns
               </button>
-              <button className="monitor-simple-sort-option">
+              <button
+                className={`monitor-simple-sort-option ${selectedSimpleFilter === 'holders' ? 'active' : ''}`}
+                onClick={() => handleSimpleFilterClick('holders')}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                   <circle cx="9" cy="7" r="4"/>
@@ -159,19 +179,28 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
                 </svg>
                 Num Holders
               </button>
-              <button className="monitor-simple-sort-option">
+              <button
+                className={`monitor-simple-sort-option ${selectedSimpleFilter === 'inflow' ? 'active' : ''}`}
+                onClick={() => handleSimpleFilterClick('inflow')}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="18 15 12 9 6 15"/>
                 </svg>
                 Inflow
               </button>
-              <button className="monitor-simple-sort-option">
+              <button
+                className={`monitor-simple-sort-option ${selectedSimpleFilter === 'outflow' ? 'active' : ''}`}
+                onClick={() => handleSimpleFilterClick('outflow')}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
                 Outflow
               </button>
-              <button className="monitor-simple-sort-option">
+              <button
+                className={`monitor-simple-sort-option ${selectedSimpleFilter === 'tokenAge' ? 'active' : ''}`}
+                onClick={() => handleSimpleFilterClick('tokenAge')}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/>
                   <polyline points="12 6 12 12 16 14"/>
@@ -475,6 +504,8 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
               )}
             </>
           )}
+
+          
         </div>
 
         <div className="monitor-filters-footer">

@@ -544,26 +544,8 @@
   opacity: 1;
 }
 
-.detail-meme-address-value {
-  text-decoration: none;
-}
 
-.detail-meme-address {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 
-.detail-meme-address-title {
-  font-weight: 100;
-  color: var(--c-text);
-  font-size: 0.85rem;
-}
-
-.detail-meme-address-value {
-  text-decoration: none;
-  font-size: 0.85rem;
-}
 
 .detail-chat-modal-overlay {
   position: fixed; inset: 0;
@@ -1094,8 +1076,55 @@
   }
 }
 
+.detail-meme-address-title {
+  color: #6c6c74;
+  margin-right: 4px;
+  font-size: 0.85rem;
+}
+
+.detail-meme-address-value {
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
 .detail-meme-address-symbol {
-  color: var(--c-text); 
+  color: rgb(169, 169, 174);
+  font-size: 0.85rem;
+}
+
+.detail-address-top {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.detail-meme-address-content {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+}
+
+.detail-contract-icon {
+  align-self: center;
+  height: 14px;
+  margin-right: 2px;
+  width: 14px;
+}
+
+.detail-address-link {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detail-address-link:hover {
+  color: #b7bad8;
+}
+
+.detail-address-link svg {
+  transition: color 0.2s ease;
 }
 
 .detail-trades-col.buy {

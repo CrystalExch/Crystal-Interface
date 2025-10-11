@@ -1267,20 +1267,43 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         </div>
 
         <div className="detail-trading-panel">
-        <div className="detail-meme-address">
-          <span className="detail-meme-address-title">CA:</span>{' '}
-          <CopyableAddress 
-            address={tokenData.id} 
-            className="detail-meme-address-value" 
-            truncate={{ start: 6, end: 4 }} 
-          />
-          <span 
-            className={`detail-meme-address-symbol ${''}`}
-          >
-            {tokenData.symbol}
-          </span>
+            <div className="detail-address-top">
+              <div className="detail-meme-address-content">
+                <svg 
+                  className="detail-contract-icon" 
+                  viewBox="0 0 24 24" 
+                  fill="currentColor"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                  <path d="M14 2v6h6"/>
+                  <path d="M12 18v-6"/>
+                  <path d="M9 15h6"/>
+                </svg>
+                <span className="detail-meme-address-title">CA:</span>{' '}
+                <CopyableAddress 
+                  address={tokenData.id} 
+                  className="detail-meme-address-value" 
+                  truncate={{ start: 15, end: 4 }} 
+                />
+              </div>
+              <button
+                className="detail-address-link"
+                onClick={() => window.open(`${explorer}/token/${tokenData.id}`, '_blank')}
+                aria-label="View on explorer"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                  <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                </svg>
+              </button>
+            </div>
         </div>
-      </div>
 
 
         <div className="detail-trading-panel">

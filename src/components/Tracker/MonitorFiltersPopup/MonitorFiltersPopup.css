@@ -260,13 +260,16 @@
     padding: 0.875rem 1.25rem;
   }
 
-  .monitor-filters-content {
-    padding: 1.25rem;
-  }
 
   .monitor-filters-footer {
     padding: 0.875rem 1.25rem;
   }
+}
+
+.monitor-filters-content {
+  padding: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .monitor-filters-view-tabs {
@@ -345,6 +348,12 @@
 .monitor-simple-sort-option:hover {
   background-color: rgba(179, 184, 249, 0.05);
   border-color: rgba(179, 184, 249, 0.2);
+}
+
+.monitor-simple-sort-option.active {
+  background-color: rgba(170, 174, 207, 0.15);
+  border-color: rgba(170, 174, 207, 0.3);
+  color: #d8dcff;
 }
 
 .monitor-simple-sort-option svg {
