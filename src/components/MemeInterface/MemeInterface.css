@@ -1098,16 +1098,25 @@
   justify-content: center;
   position: relative;
   transition: all 0.2s ease;
+  height: 5px;
+  margin-top: -2px;
+  z-index: 10;
+}
+
+.meme-oc-drag-handle:hover::before,
+.meme-oc-drag-handle:active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #aaaecf;
+  border-radius: 4px;
+  z-index: 1;
   height: 2px;
 }
 
-.meme-oc-drag-handle:hover {
-  background-color: #aaaecf;
-}
-
-.meme-oc-drag-handle:active {
-  background-color: #aaaecf;
-}
 
 .meme-oc-drag-indicator {
   align-items: center;
