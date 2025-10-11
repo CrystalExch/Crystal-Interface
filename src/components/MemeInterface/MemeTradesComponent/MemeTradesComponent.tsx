@@ -8,11 +8,7 @@ import monadlogo from '../../../assets/monadlogo.svg';
 import switchicon from '../../../assets/switch.svg';
 import TraderPortfolioPopup from './TraderPortfolioPopup/TraderPortfolioPopup';
 import TransactionFiltersPopup from './TransactionFiltersPopup';
-
-import {
-  formatSubscript,
-  FormattedNumber,
-} from '../../../utils/memeFormatSubscript';
+import { formatSubscript } from '../../../utils/numberDisplayFormat';
 
 import './MemeTradesComponent.css';
 
@@ -571,22 +567,6 @@ export default function MemeTradesComponent({
     return (Math.abs(amt) / maxForMode) * 100;
   };
 
-  const FormattedNumberDisplay = ({
-    formatted,
-  }: {
-    formatted: FormattedNumber;
-  }) => {
-    if (formatted.type === 'simple') {
-      return <span>{formatted.text}</span>;
-    }
-    return (
-      <span>
-        {formatted.beforeSubscript}
-        <span className="subscript">{formatted.subscriptValue}</span>
-        {formatted.afterSubscript}
-      </span>
-    );
-  };
   const fmtAmount = (v: number) => {
     const val = Math.abs(v);
 
@@ -937,10 +917,7 @@ export default function MemeTradesComponent({
                       </span>
                     ) : (
                       <span>
-                        $
-                        <FormattedNumberDisplay
-                          formatted={formatSubscript(t.priceUSD.toString())}
-                        />
+                        ${formatSubscript(t.priceUSD.toString())}
                       </span>
                     )}
                   </div>

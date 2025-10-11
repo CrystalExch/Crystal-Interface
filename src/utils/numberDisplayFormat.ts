@@ -100,7 +100,7 @@ export const formatSubscript = (value: string): string => {
       if (ch === '0') zerosCount++; else break;
     }
     const remainder = fractionalPart.slice(zerosCount);
-    if (zerosCount > 4 && remainder) {
+    if (zerosCount > 3 && remainder) {
       const remainder = fractionalPart.slice(zerosCount);
       const zerosSub = zerosCount.toString().split('').map(d => subscriptMap[d]||d).join('');
       return `${neg}${formattedInteger}.0${zerosSub}${remainder}`;

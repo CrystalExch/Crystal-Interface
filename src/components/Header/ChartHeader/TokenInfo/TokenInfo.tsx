@@ -21,7 +21,7 @@ import { useSharedContext } from '../../../../contexts/SharedContext';
 import {
   formatCommas,
 } from '../../../../utils/numberDisplayFormat';
-import { formatSubscript, FormattedNumber } from '../../../../utils/memeFormatSubscript';
+import { formatSubscript } from '../../../../utils/numberDisplayFormat';
 
 import { settings } from '../../../../settings.ts';
 
@@ -777,19 +777,6 @@ const filterTabsRef = useRef<HTMLDivElement>(null);
     };
   }, [currentTime]);
 
-  const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) => {
-    if (formatted.type === 'simple') {
-      return <span>{formatted.text}</span>;
-    }
-
-    return (
-      <span>
-        {formatted.beforeSubscript}
-        <span className="subscript">{formatted.subscriptValue}</span>
-        {formatted.afterSubscript}
-      </span>
-    );
-  };
   const copyToClipboard = async (text: string, label = 'Address copied') => {
     const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
@@ -1491,7 +1478,7 @@ useEffect(() => {
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">Price</span>
                 <span className="meme-interface-metric-value meme-price-large">
-                  $<FormattedNumberDisplay formatted={formatSubscript((Number(price) * monUsdPrice).toFixed(9))} />
+                  ${formatSubscript((Number(price) * monUsdPrice).toFixed(9))}
                 </span>
               </div>
 
@@ -2064,7 +2051,7 @@ useEffect(() => {
                         </div>
                         <div className="market-price-section">
                           <div className="market-price">
-                            <FormattedNumberDisplay formatted={formatSubscript(market.currentPrice)} />
+                            {formatSubscript(market.currentPrice)}
                           </div>
                           <div
                             className={`market-change ${market.priceChange.startsWith('-') ? 'negative' : 'positive'}`}

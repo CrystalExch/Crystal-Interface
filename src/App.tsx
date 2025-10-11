@@ -850,11 +850,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           'https://rpc.ankr.com/monad_testnet',
           'https://monad-testnet.drpc.org',
           'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
+          'https://quick-warmhearted-liquid.monad-testnet.quiknode.pro/f6b35b5a851643b1421398dcbccad4ca91ef6a68/',
         ];
         RPC_URLS.forEach(url => {
           fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            mode: 'no-cors',
             body: JSON.stringify({
               jsonrpc: '2.0',
               id: 0,
@@ -884,11 +886,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           'https://rpc.ankr.com/monad_testnet',
           'https://monad-testnet.drpc.org',
           'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
+          'https://quick-warmhearted-liquid.monad-testnet.quiknode.pro/f6b35b5a851643b1421398dcbccad4ca91ef6a68/',
         ];
         RPC_URLS.forEach(url => {
           fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            mode: 'no-cors',
             body: JSON.stringify({
               jsonrpc: '2.0',
               id: 0,
@@ -14347,12 +14351,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               </button>
             </div>
             <div className="high-impact-content">
-              <div className="high-impact-warning-icon">
-                <img className="warning-image" src={warningicon} />
-              </div>
+              <img className="warning-image" src={warningicon} />
 
               <p className="high-impact-message">
-                {t('highPriceImpactMessage')}
+                {t('Warning')}
               </p>
 
               <div className="high-impact-details">

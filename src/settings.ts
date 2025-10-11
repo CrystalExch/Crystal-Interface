@@ -52,7 +52,7 @@ export const settings: any = {
       name: 'Monad',
       httpurl:
         'https://testnet-rpc.monad.xyz/',
-      wssurl: `ws://${location.host}/ws`,
+      wssurl: `wss://quick-warmhearted-liquid.monad-testnet.quiknode.pro/f6b35b5a851643b1421398dcbccad4ca91ef6a68/`,
       eth: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
       weth: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701',
       usdc: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea',

@@ -86,12 +86,12 @@ const TransactionFiltersPopup: React.FC<TransactionFiltersPopupProps> = ({
           </div>
           <div className="trades-filter-group">
             <div className="filter-row">
-              <div className="filter-label">Min. USD</div>
+              <div className="filter-label">Min Value</div>
               <div className="filter-inputs">
                 <input
                   type="number"
                   className="filter-input"
-                  placeholder="Enter min USD"
+                  placeholder="Enter min value"
                   value={filters.minUSD}
                   onChange={(e) => handleInputChange('minUSD', e.target.value)}
                 />
@@ -99,12 +99,12 @@ const TransactionFiltersPopup: React.FC<TransactionFiltersPopupProps> = ({
             </div>
 
             <div className="filter-row">
-              <div className="filter-label">Max. USD</div>
+              <div className="filter-label">Max Value</div>
               <div className="filter-inputs">
                 <input
                   type="number"
                   className="filter-input"
-                  placeholder="Enter max USD"
+                  placeholder="Enter max value"
                   value={filters.maxUSD}
                   onChange={(e) => handleInputChange('maxUSD', e.target.value)}
                 />

@@ -4910,7 +4910,8 @@ input[type="email"] {
 
 .warning-image {
   width: 60px;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
+  margin-top: 8px;
   filter: brightness(0) saturate(100%) invert(36%) sepia(93%) saturate(2878%) hue-rotate(337deg) brightness(120%) contrast(100%);
 }
 
@@ -4930,17 +4931,16 @@ input[type="email"] {
   border-radius: 8px;
   padding: 10px 16px;
   width: 100%;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .high-impact-detail-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   font-size: 0.8rem;
   opacity: 0.7;
-
 }
 
 .high-impact-detail-row:last-child {
