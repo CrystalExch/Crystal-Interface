@@ -13,6 +13,12 @@ import MonitorFiltersPopup, { MonitorFilterState } from './MonitorFiltersPopup/M
 import settingsicon from '../../assets/settings.svg';
 import circle from '../../assets/circle_handle.png';
 import key from '../../assets/key.svg';
+import {
+  WALLET_BALANCE_QUERY,
+  WALLET_TRADES_QUERY,
+  TOKEN_METRICS_QUERY,
+  TRACKED_TOKENS_QUERY
+} from './TrackerQueries';
 
 import './Tracker.css';
 
@@ -171,17 +177,33 @@ interface TrackerProps {
 
 interface MonitorToken {
   id: string;
+  tokenAddress: string;
   name: string;
   symbol: string;
-  price: number;
-  change24h: number;
-  marketCap: number;
-  volume24h: number;
-  holders: number;
   emoji: string;
-  trades: TokenTrade[];
+  price: number;
+  marketCap: number;
+  change24h: number;
+  volume24h: number;
+  liquidity: number;
+  holders: number;
+  buyTransactions: number;
+  sellTransactions: number;
+  bondingCurveProgress: number;
+  txCount: number;
+  volume5m: number;
+  volume1h: number;
+  volume6h: number;
+  priceChange5m: number;
+  priceChange1h: number;
+  priceChange6h: number;
+  priceChange24h: number;
+  website: string;
+  twitter: string;
+  telegram: string;
   createdAt: string;
   lastTransaction: string;
+  trades: TokenTrade[];
 }
 
 interface TokenTrade {
@@ -282,6 +304,8 @@ const Tracker: React.FC<TrackerProps> = ({
   const [previewSelection, setPreviewSelection] = useState<Set<string>>(new Set());
   const [expandedTokens, setExpandedTokens] = useState<Set<string>>(new Set());
 
+  
+
   useEffect(() => {
     setSearchQuery('');
   }, [activeTab]);
@@ -293,74 +317,31 @@ const Tracker: React.FC<TrackerProps> = ({
     }
 
     let cancelled = false;
+    let batchNumber = 0;
 
     const fetchTrackedWalletTrades = async () => {
       try {
         const walletAddresses = trackedWallets.map(w => w.address.toLowerCase());
+        const BATCH_SIZE = 100;
+        const allTrades: any[] = [];
 
-        const response = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-                                query ($accounts: [ID!]!) {
-                                    launchpadPositions(
-                                        first: 1000,
-                                        where: { account_in: $accounts }
-                                    ) {
-                                        account {
-                                            id
-                                        }
-                                        token {
-                                            id
-                                            symbol
-                                            name
-                                            trades(
-                                                first: 100,
-                                                orderBy: block,
-                                                orderDirection: desc,
-                                                where: { account_in: $accounts }
-                                            ) {
-                                                id
-                                                block
-                                                isBuy
-                                                account {
-                                                    id
-                                                }
-                                                priceNativePerTokenWad
-                                                amountIn
-                                                amountOut
-                                                transaction {
-                                                    id
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            `,
-            variables: {
-              accounts: walletAddresses
-            }
-          }),
-        });
+        // Fetch trades in batches
+        while (true) {
+          const data = await fetchSubgraphData(WALLET_TRADES_QUERY, {
+            accounts: walletAddresses,
+            first: BATCH_SIZE,
+            skip: batchNumber * BATCH_SIZE
+          });
 
-        const { data } = await response.json();
-        const positions: any[] = data?.launchpadPositions ?? [];
+          if (!data?.trades || data.trades.length === 0) break;
+          
+          allTrades.push(...data.trades);
+          
+          if (data.trades.length < BATCH_SIZE) break;
+          batchNumber++;
+        }
 
         if (cancelled) return;
-
-        const allTrades: any[] = [];
-        for (const position of positions) {
-          if (position.token?.trades) {
-            for (const trade of position.token.trades) {
-              allTrades.push({
-                ...trade,
-                tokenSymbol: position.token.symbol,
-                tokenName: position.token.name
-              });
-            }
-          }
-        }
 
         const mapped: LiveTrade[] = allTrades.map((trade: any) => {
           const trackedWallet = trackedWallets.find(
@@ -374,9 +355,9 @@ const Tracker: React.FC<TrackerProps> = ({
           const TOTAL_SUPPLY = 1e9;
           const marketCap = price * TOTAL_SUPPLY;
 
+          const timestamp = Number(trade.timestamp || trade.block * 2);
           const now = Date.now() / 1000;
-          const blockTime = Number(trade.block);
-          const secondsAgo = Math.max(0, now - blockTime * 2);
+          const secondsAgo = Math.max(0, now - timestamp);
 
           let timeAgo = 'now';
           if (secondsAgo < 60) {
@@ -393,13 +374,13 @@ const Tracker: React.FC<TrackerProps> = ({
             id: trade.id,
             walletName: trackedWallet?.name || 'Unknown',
             emoji: trackedWallet?.emoji || '👻',
-            token: trade.tokenSymbol || 'Unknown',
+            token: trade.token?.symbol || 'Unknown',
             amount: nativeAmount,
             marketCap: marketCap / 1000,
             time: timeAgo,
             txHash: trade.transaction?.id || trade.id,
             type: isBuy ? 'buy' : 'sell',
-            createdAt: new Date(blockTime * 1000).toISOString()
+            createdAt: new Date(timestamp * 1000).toISOString()
           };
         });
 
@@ -417,7 +398,6 @@ const Tracker: React.FC<TrackerProps> = ({
     };
 
     fetchTrackedWalletTrades();
-
     const interval = setInterval(fetchTrackedWalletTrades, 10000);
 
     return () => {
@@ -425,6 +405,176 @@ const Tracker: React.FC<TrackerProps> = ({
       clearInterval(interval);
     };
   }, [trackedWallets]);
+
+  useEffect(() => {
+    if (activeTab !== 'monitor' || trackedWallets.length === 0) return;
+
+    let cancelled = false;
+
+    const fetchMonitorTokens = async () => {
+      try {
+        setIsLoadingMonitor(true);
+        const walletAddresses = trackedWallets.map(w => w.address.toLowerCase());
+
+        const data = await fetchSubgraphData(TRACKED_TOKENS_QUERY, {
+          accounts: walletAddresses
+        });
+
+        if (cancelled || !data?.launchpadPositions) return;
+
+        // Group positions by token
+        const tokenMap = new Map<string, any>();
+
+        data.launchpadPositions.forEach((position: any) => {
+          const token = position.token;
+          if (!token) return;
+
+          if (!tokenMap.has(token.id)) {
+            tokenMap.set(token.id, {
+              token,
+              walletPositions: []
+            });
+          }
+
+          tokenMap.get(token.id).walletPositions.push({
+            wallet: trackedWallets.find(w => w.address.toLowerCase() === position.account.id.toLowerCase()),
+            position
+          });
+        });
+
+        const processedTokens: MonitorToken[] = Array.from(tokenMap.values()).map(({ token, walletPositions }) => {
+          // Calculate current price
+          const lastTrade = token.trades?.[0];
+          const price = lastTrade 
+            ? Number(lastTrade.priceNativePerTokenWad) / 1e18 
+            : 0;
+
+          const totalSupply = 1e9;
+          const marketCap = price * totalSupply;
+
+          // Calculate bonding curve progress
+          const targetRaise = Number(token.bondingCurve?.targetRaise || 0) / 1e18;
+          const currentRaise = Number(token.bondingCurve?.currentRaise || 0) / 1e18;
+          const bondingCurveProgress = targetRaise > 0 
+            ? Math.min((currentRaise / targetRaise) * 100, 100) 
+            : 0;
+
+          // Calculate metrics
+          const allPositions = token.launchpadPositions || [];
+          const holders = new Set(allPositions.map((p: any) => p.account.id)).size;
+          
+          const volume24h = allPositions.reduce((sum: number, p: any) => {
+            return sum + (Number(p.nativeSpent || 0) + Number(p.nativeReceived || 0)) / 1e18;
+          }, 0);
+
+          const liquidity = currentRaise * 1000;
+
+          // Process wallet trades
+          const walletTrades = walletPositions.map(({ wallet, position }: any) => {
+            if (!wallet) return null;
+
+            const spent = Number(position.nativeSpent || 0) / 1e18;
+            const received = Number(position.nativeReceived || 0) / 1e18;
+            const tokenAmount = Number(position.tokenAmount || 0) / 1e18;
+
+            const pnl = received - spent;
+            const remaining = tokenAmount * price;
+
+            // Get trade count
+            const walletTrades = token.trades?.filter((t: any) => 
+              t.account.id.toLowerCase() === wallet.address.toLowerCase()
+            ) || [];
+
+            const boughtTxns = walletTrades.filter((t: any) => t.isBuy).length;
+            const soldTxns = walletTrades.filter((t: any) => !t.isBuy).length;
+
+            return {
+              id: `${token.id}-${wallet.id}`,
+              wallet: wallet.name,
+              emoji: wallet.emoji,
+              timeInTrade: '0m', // Would need more detailed timestamp data
+              exitStatus: tokenAmount === 0 ? 'Exited' : undefined,
+              bought: spent * 1000,
+              boughtTxns,
+              sold: received * 1000,
+              soldTxns,
+              pnl: pnl * 1000,
+              remaining: remaining * 1000
+            };
+          }).filter(Boolean);
+
+          const lastTimestamp = lastTrade ? Number(lastTrade.timestamp || lastTrade.block * 2) : 0;
+          const lastTransaction = new Date(lastTimestamp * 1000).toISOString();
+
+          return {
+            id: token.id,
+            tokenAddress: token.id,
+            name: token.name || 'Unknown',
+            symbol: token.symbol || 'UNK',
+            emoji: '🪙',
+            price: price * 1000,
+            marketCap: marketCap / 1000,
+            change24h: 0, // Would need historical price data
+            volume24h: volume24h * 1000,
+            liquidity,
+            holders,
+            buyTransactions: token.trades?.filter((t: any) => t.isBuy).length || 0,
+            sellTransactions: token.trades?.filter((t: any) => !t.isBuy).length || 0,
+            bondingCurveProgress,
+            txCount: token.trades?.length || 0,
+            volume5m: 0,
+            volume1h: 0,
+            volume6h: 0,
+            priceChange5m: 0,
+            priceChange1h: 0,
+            priceChange6h: 0,
+            priceChange24h: 0,
+            website: '',
+            twitter: '',
+            telegram: '',
+            createdAt: new Date().toISOString(), // Would need token creation timestamp
+            lastTransaction,
+            trades: walletTrades
+          };
+        });
+
+        if (!cancelled) {
+          setMonitorTokens(processedTokens);
+          setIsLoadingMonitor(false);
+        }
+      } catch (error) {
+        console.error('Failed to fetch monitor tokens:', error);
+        if (!cancelled) {
+          setIsLoadingMonitor(false);
+        }
+      }
+    };
+
+    fetchMonitorTokens();
+    const interval = setInterval(fetchMonitorTokens, 15000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [activeTab, trackedWallets]);
+
+  useEffect(() => {
+    if (Object.keys(walletTokenBalances).length === 0) return;
+
+    setTrackedWallets(prev => prev.map(wallet => {
+      const realBalance = walletTokenBalances[wallet.address];
+      if (realBalance && activechain && settings.chainConfig[activechain]?.eth) {
+        const ethToken = settings.chainConfig[activechain].eth;
+        const balance = Number(realBalance[ethToken] || 0) / 1e18;
+        return {
+          ...wallet,
+          balance: balance * 1000
+        };
+      }
+      return wallet;
+    }));
+  }, [walletTokenBalances, activechain]);
 
   useEffect(() => {
     const handleGlobalMouseUp = () => {
@@ -447,92 +597,10 @@ const Tracker: React.FC<TrackerProps> = ({
     };
   }, []);
 
-  const [monitorTokens] = useState<MonitorToken[]>([
-    {
-      id: '1',
-      name: 'PEPE',
-      symbol: 'PEPE',
-      price: 3.18,
-      change24h: -7.2,
-      marketCap: 7150,
-      volume24h: 7370,
-      holders: 1,
-      emoji: 'frog',
-      createdAt: '2025-10-03T09:30:00',
-      lastTransaction: '2025-10-03T10:00:00',
-      trades: []
-    },
-    {
-      id: '2',
-      name: 'dogwifhat',
-      symbol: 'WIF',
-      price: 0.223,
-      change24h: 5.4,
-      marketCap: 10700,
-      volume24h: 9620,
-      holders: 1,
-      emoji: 'dog',
-      createdAt: '2025-10-03T08:45:00',
-      lastTransaction: '2025-10-03T09:58:00',
-      trades: []
-    },
-    {
-      id: '3',
-      name: 'catinhat',
-      symbol: 'CAT',
-      price: 0.718,
-      change24h: -2.1,
-      marketCap: 6150,
-      volume24h: 7340,
-      holders: 1,
-      emoji: '👑',
-      createdAt: '2025-10-03T07:20:00',
-      lastTransaction: '2025-10-03T09:55:00',
-      trades: []
-    },
-    {
-      id: '4',
-      name: 'McNugget',
-      symbol: 'NUGGET',
-      price: 0.226,
-      change24h: 3.8,
-      marketCap: 7080,
-      volume24h: 6870,
-      holders: 1,
-      emoji: '🍗',
-      createdAt: '2025-10-03T06:10:00',
-      lastTransaction: '2025-10-03T09:50:00',
-      trades: []
-    },
-    {
-      id: '5',
-      name: 'Bitcoin',
-      symbol: 'BTC',
-      price: 0.456,
-      change24h: -1.5,
-      marketCap: 12300,
-      volume24h: 8900,
-      holders: 3,
-      emoji: '⚡',
-      createdAt: '2025-10-03T05:00:00',
-      lastTransaction: '2025-10-03T09:45:00',
-      trades: []
-    },
-    {
-      id: '6',
-      name: '123',
-      symbol: '123',
-      price: 0.892,
-      change24h: 8.2,
-      marketCap: 15600,
-      volume24h: 11200,
-      holders: 2,
-      emoji: '☕',
-      createdAt: '2025-10-03T04:30:00',
-      lastTransaction: '2025-10-03T09:59:00',
-      trades: []
-    }
-  ]);
+  
+
+  const [monitorTokens, setMonitorTokens] = useState<MonitorToken[]>([]);
+  const [isLoadingMonitor, setIsLoadingMonitor] = useState(false);
 
   const [showAddWalletModal, setShowAddWalletModal] = useState(false);
   const [newWalletAddress, setNewWalletAddress] = useState('');
@@ -553,6 +621,25 @@ const Tracker: React.FC<TrackerProps> = ({
 
   const isValidAddress = (addr: string) => {
     return /^0x[a-fA-F0-9]{40}$/.test(addr);
+  };
+
+  const fetchSubgraphData = async (query: string, variables: any) => {
+    try {
+      const response = await fetch(SUBGRAPH_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ query, variables }),
+      });
+      const { data, errors } = await response.json();
+      if (errors) {
+        console.error('Subgraph errors:', errors);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Fetch error:', error);
+      return null;
+    }
   };
 
   const parseLastActive = (lastActive: string): number => {
@@ -763,70 +850,56 @@ const Tracker: React.FC<TrackerProps> = ({
   // Function to fetch data for a specific wallet address
   const fetchWalletData = async (address: string) => {
     try {
-      const response = await fetch(SUBGRAPH_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-                            query ($address: ID!) {
-                                account(id: $address) {
-                                    id
-                                    positions(first: 1) {
-                                        nativeSpent
-                                        nativeReceived
-                                    }
-                                    trades(first: 1, orderBy: block, orderDirection: desc) {
-                                        block
-                                    }
-                                }
-                            }
-                        `,
-          variables: {
-            address: address.toLowerCase()
-          }
-        }),
+      const data = await fetchSubgraphData(WALLET_BALANCE_QUERY, {
+        address: address.toLowerCase()
       });
-
-      const { data } = await response.json();
 
       if (!data?.account) {
         return {
           balance: 0,
-          lastActive: 'Never'
+          lastActive: 'Never',
+          positions: []
         };
       }
 
       const account = data.account;
-      const firstPosition = account.positions?.[0];
-      const totalValue = firstPosition
-        ? (Number(firstPosition.nativeSpent || 0) + Number(firstPosition.nativeReceived || 0)) / 1e18
-        : 0;
+      
+      // Calculate total balance across all positions
+      const totalBalance = account.positions.reduce((sum: number, pos: any) => {
+        const spent = Number(pos.nativeSpent || 0);
+        const received = Number(pos.nativeReceived || 0);
+        return sum + (spent + received);
+      }, 0) / 1e18;
 
+      // Get last active time from most recent trade
       const lastTrade = account.trades?.[0];
-      const lastBlock = lastTrade ? Number(lastTrade.block || 0) : 0;
-      const now = Date.now() / 1000;
-      const estimatedTime = Math.max(0, now - lastBlock * 2);
-
+      const lastTimestamp = lastTrade ? Number(lastTrade.timestamp || lastTrade.block * 2) : 0;
+      
       let lastActive = 'Never';
-      if (lastBlock > 0) {
-        if (estimatedTime < 3600) {
-          lastActive = `${Math.floor(estimatedTime / 60)}m`;
-        } else if (estimatedTime < 86400) {
-          lastActive = `${Math.floor(estimatedTime / 3600)}h`;
+      if (lastTimestamp > 0) {
+        const now = Date.now() / 1000;
+        const secondsAgo = Math.max(0, now - lastTimestamp);
+        
+        if (secondsAgo < 3600) {
+          lastActive = `${Math.floor(secondsAgo / 60)}m`;
+        } else if (secondsAgo < 86400) {
+          lastActive = `${Math.floor(secondsAgo / 3600)}h`;
         } else {
-          lastActive = `${Math.floor(estimatedTime / 86400)}d`;
+          lastActive = `${Math.floor(secondsAgo / 86400)}d`;
         }
       }
 
       return {
-        balance: totalValue * 1000,
-        lastActive: lastActive
+        balance: totalBalance * 1000, // Convert to display format
+        lastActive,
+        positions: account.positions
       };
     } catch (error) {
       console.error('Failed to fetch wallet data:', error);
       return {
         balance: 0,
-        lastActive: 'Never'
+        lastActive: 'Never',
+        positions: []
       };
     }
   };
@@ -1457,17 +1530,42 @@ const Tracker: React.FC<TrackerProps> = ({
       });
     };
 
+    const formatValue = (value: number): string => {
+      const converted = monitorCurrency === 'USD' ? value * monUsdPrice : value;
+      if (converted === 0) return '0';
+      const absNum = Math.abs(converted);
+      const sign = converted < 0 ? '-' : '';
+
+      if (absNum >= 1000000) {
+        return `${sign}${(absNum / 1000000).toFixed(2)}M`;
+      } else if (absNum >= 1000) {
+        return `${sign}${(absNum / 1000).toFixed(2)}K`;
+      }
+      return `${sign}${absNum.toFixed(2)}`;
+    };
+
+    const getTimeAgo = (timestamp: string) => {
+      const now = new Date();
+      const past = new Date(timestamp);
+      const seconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+
+      if (seconds < 60) return `${seconds}s`;
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+      return `${Math.floor(seconds / 86400)}d`;
+    };
+
     return (
       <div className="tracker-monitor">
         {filteredTokens.length === 0 ? (
           <div className="tracker-empty-state">
             <div className="tracker-empty-content">
-              <h4>No Tokens Found</h4>
-              <p>No tokens match your search criteria.</p>
+              <h4>No Tracked Tokens</h4>
+              <p>Track tokens to monitor their performance and trading activity.</p>
             </div>
           </div>
         ) : (
-          <div className="tracker-monitor-list">
+          <div className="tracker-monitor-grid">
             {filteredTokens.map((token) => {
               const isExpanded = expandedTokens.has(token.id);
               const totalBought = token.trades.reduce((sum, t) => sum + t.bought, 0);
@@ -1477,138 +1575,167 @@ const Tracker: React.FC<TrackerProps> = ({
               const buyRatio = (totalBought + totalSold) > 0 ? (totalBought / (totalBought + totalSold) * 100) : 0;
 
               return (
-                <div key={token.id} className="tracker-monitor-token-card">
+                <div key={token.id} className="tracker-monitor-card">
                   <div 
-                    className="tracker-monitor-token-header"
+                    className="tracker-monitor-card-header"
                     onClick={() => toggleTokenExpanded(token.id)}
-                    style={{ cursor: 'pointer' }}
                   >
-                    {/* First Row */}
-                    <div className="tracker-monitor-token-main">
-                      <div className="tracker-monitor-token-left">
-                        <div className="tracker-monitor-token-icon">
-                          <span className="tracker-monitor-emoji">{token.emoji}</span>
-                          <span className="tracker-monitor-time-badge">{token.trades[0]?.timeInTrade || '32m'}</span>
+                    {/* Top section with token info */}
+                    <div className="tracker-monitor-card-top">
+                      <div className="tracker-monitor-card-left">
+                        <div
+                          className="tracker-monitor-icon-container"
+                          style={{ '--progress': token.bondingCurveProgress } as React.CSSProperties}
+                        >
+                          <div className="tracker-monitor-icon-spacer">
+                            <span className="tracker-monitor-icon-emoji">{token.emoji}</span>
+                          </div>
                         </div>
-                        <div className="tracker-monitor-token-info">
-                          <div className="tracker-monitor-token-title">
-                            <span className="tracker-monitor-token-name">{token.name}</span>
-                            <span className="tracker-monitor-token-subtitle">
-                              {token.symbol} <span>📋</span>
-                            </span>
-                            <button className="tracker-monitor-copy-btn" onClick={(e) => e.stopPropagation()}>
+                        <div className="tracker-monitor-token-details">
+                          <div className="tracker-monitor-token-name-row">
+                            <span className="tracker-monitor-token-name-text">{token.name}</span>
+                            <button className="tracker-monitor-action-btn" onClick={(e) => e.stopPropagation()}>
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                               </svg>
                             </button>
-                            <button className="tracker-monitor-star-btn" onClick={(e) => e.stopPropagation()}>☆</button>
+                            <button className="tracker-monitor-action-btn" onClick={(e) => e.stopPropagation()}>☆</button>
+                          </div>
+                          <div className="tracker-monitor-token-subtitle">
+                            <span className="tracker-monitor-token-symbol">{token.symbol}</span>
+                            <span className="tracker-monitor-token-ca">
+                              {token.tokenAddress.slice(0, 6)}...{token.tokenAddress.slice(-4)}
+                            </span>
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="tracker-monitor-token-right">
-                        <div className="tracker-monitor-buy-sell-container">
-                          <div className="tracker-monitor-buy-sell-summary">
-                            <span className="tracker-monitor-buy-count">
-                              {totalBuys} ≡ {formatMonitorValue(totalBought)}
-                            </span>
-                            <span style={{ color: 'rgba(255,255,255,0.5)' }}>•</span>
-                            <span className="tracker-monitor-sell-count">
-                              {totalSells} ≡ {formatMonitorValue(totalSold)}
-                            </span>
+
+                      <div className="tracker-monitor-card-right">
+                        <div className="tracker-monitor-price-info">
+                          <div className="tracker-monitor-price">
+                            {monitorCurrency === 'USD' ? '$' : '≡'}
+                            {formatValue(token.price)}
                           </div>
-                          <div className="tracker-monitor-summary-bars">
-                            <div 
-                              className="tracker-monitor-summary-bar buy" 
-                              style={{ width: `${buyRatio}%` }}
-                            ></div>
-                            <div 
-                              className="tracker-monitor-summary-bar sell" 
-                              style={{ width: `${100 - buyRatio}%` }}
-                            ></div>
+                          <div className={`tracker-monitor-price-change ${token.change24h >= 0 ? 'positive' : 'negative'}`}>
+                            {token.change24h >= 0 ? '+' : ''}{token.change24h.toFixed(2)}%
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Second Row */}
-                    <div className="tracker-monitor-token-stats-row">
-                      <div className="tracker-monitor-stat-item">
-                        <span className="stat-label">H</span>
-                        <span className="stat-value">{token.holders}</span>
-                      </div>
-                      <div className="tracker-monitor-stat-item">
+                    {/* Stats row */}
+                    <div className="tracker-monitor-stats-grid">
+                      <div className="tracker-monitor-stat">
                         <span className="stat-label">MC</span>
                         <span className="stat-value">
-                          {monitorCurrency === 'USD' ? '$' : ''}
-                          {formatMonitorValue(token.marketCap)}
+                          {monitorCurrency === 'USD' ? '$' : '≡'}
+                          {formatValue(token.marketCap)}
                         </span>
                       </div>
-                      <div className="tracker-monitor-stat-item">
-                        <span className="stat-label">L</span>
+                      <div className="tracker-monitor-stat">
+                        <span className="stat-label">Liq</span>
                         <span className="stat-value">
-                          {monitorCurrency === 'USD' ? '$' : ''}
-                          {formatMonitorValue(token.volume24h)}
+                          {monitorCurrency === 'USD' ? '$' : '≡'}
+                          {formatValue(token.liquidity)}
                         </span>
                       </div>
-                      <div className="tracker-monitor-stat-item">
-                        <span className="stat-label">TX</span>
+                      <div className="tracker-monitor-stat">
+                        <span className="stat-label">Vol</span>
                         <span className="stat-value">
-                          {token.trades.reduce((sum, t) => sum + t.boughtTxns + t.soldTxns, 0)}
+                          {monitorCurrency === 'USD' ? '$' : '≡'}
+                          {formatValue(token.volume24h)}
                         </span>
                       </div>
-                      <div className="tracker-monitor-stat-item">
+                      <div className="tracker-monitor-stat">
+                        <span className="stat-label">Holders</span>
+                        <span className="stat-value">{token.holders}</span>
+                      </div>
+                      <div className="tracker-monitor-stat">
+                        <span className="stat-label">Txns</span>
+                        <span className="stat-value">{token.txCount}</span>
+                      </div>
+                      <div className="tracker-monitor-stat">
                         <span className="stat-label">Last TX</span>
-                        <span className="stat-value">1m</span>
+                        <span className="stat-value">{getTimeAgo(token.lastTransaction)}</span>
                       </div>
-                      <button className="tracker-monitor-flash-btn" onClick={(e) => e.stopPropagation()}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                        </svg>
-                      </button>
+                    </div>
+
+                    {/* Buy/Sell summary */}
+                    <div className="tracker-monitor-trade-summary">
+                      <div className="tracker-monitor-trade-counts">
+                        <span className="buy-count">{totalBuys} Buys</span>
+                        <span className="separator">•</span>
+                        <span className="sell-count">{totalSells} Sells</span>
+                      </div>
+                      <div className="tracker-monitor-trade-bar">
+                        <div className="bar-buy" style={{ width: `${buyRatio}%` }}></div>
+                        <div className="bar-sell" style={{ width: `${100 - buyRatio}%` }}></div>
+                      </div>
+                      <div className="tracker-monitor-trade-amounts">
+                        <span className="buy-amount">
+                          ≡ {formatValue(totalBought)}
+                        </span>
+                        <span className="sell-amount">
+                          ≡ {formatValue(totalSold)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="tracker-monitor-progress-section">
+                      <div className="tracker-monitor-progress-bar">
+                        <div 
+                          className="tracker-monitor-progress-fill"
+                          style={{ width: `${token.bondingCurveProgress}%` }}
+                        ></div>
+                      </div>
+                      <span className="tracker-monitor-progress-text">
+                        {token.bondingCurveProgress}% Bonding Curve
+                      </span>
                     </div>
                   </div>
 
+                  {/* Expanded trades table */}
                   {isExpanded && token.trades.length > 0 && (
-                    <div className="tracker-monitor-trades-detail">
-                      <div className="tracker-monitor-trades-header-row">
+                    <div className="tracker-monitor-trades-expanded">
+                      <div className="tracker-monitor-trades-table-header">
                         <div className="header-cell">Wallet</div>
-                        <div className="header-cell">Time in Trade</div>
+                        <div className="header-cell">Time</div>
                         <div className="header-cell">Bought</div>
                         <div className="header-cell">Sold</div>
                         <div className="header-cell">PNL</div>
                         <div className="header-cell">Remaining</div>
                       </div>
                       {token.trades.map((trade) => (
-                        <div key={trade.id} className="tracker-monitor-trade-detail-row">
-                          <div className="trade-wallet">
+                        <div key={trade.id} className="tracker-monitor-trade-row-expanded">
+                          <div className="trade-wallet-col">
                             <span className="trade-emoji">{trade.emoji}</span>
                             <span className="trade-wallet-name">{trade.wallet}</span>
                           </div>
-                          <div className="trade-time">
+                          <div className="trade-time-col">
                             {trade.exitStatus && (
                               <span className="exit-badge">{trade.exitStatus}</span>
                             )}
-                            <span className="time-value">{trade.timeInTrade}</span>
+                            <span className="time-text">{trade.timeInTrade}</span>
                           </div>
-                          <div className="trade-bought">
+                          <div className="trade-bought-col">
                             <span className={`amount ${isBlurred ? 'blurred' : ''}`}>
-                              ≡ {formatMonitorValue(trade.bought, 3)}
+                              ≡ {formatValue(trade.bought)}
                             </span>
-                            <span className="txns">{trade.boughtTxns} txns</span>
+                            <span className="txns-text">{trade.boughtTxns} txns</span>
                           </div>
-                          <div className="trade-sold">
+                          <div className="trade-sold-col">
                             <span className={`amount ${isBlurred ? 'blurred' : ''}`}>
-                              ≡ {formatMonitorValue(trade.sold, 3)}
+                              ≡ {formatValue(trade.sold)}
                             </span>
-                            <span className="txns">{trade.soldTxns} txns</span>
+                            <span className="txns-text">{trade.soldTxns} txns</span>
                           </div>
-                          <div className={`trade-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}>
-                            ≡ {trade.pnl >= 0 ? '+' : ''}{formatMonitorValue(trade.pnl, 3)}
+                          <div className={`trade-pnl-col ${trade.pnl >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}>
+                            ≡ {trade.pnl >= 0 ? '+' : ''}{formatValue(trade.pnl)}
                           </div>
-                          <div className={`trade-remaining ${isBlurred ? 'blurred' : ''}`}>
-                            ≡{formatMonitorValue(trade.remaining, 0)}
+                          <div className={`trade-remaining-col ${isBlurred ? 'blurred' : ''}`}>
+                            ≡ {formatValue(trade.remaining)}
                           </div>
                         </div>
                       ))}
