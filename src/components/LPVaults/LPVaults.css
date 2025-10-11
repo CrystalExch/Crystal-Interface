@@ -28,7 +28,7 @@
   border-radius: 4px;
   display: flex;
   justify-content: center;
-  padding: .2rem .8rem
+  padding: .4rem 0
 }
 
 .lp-asset-col {
@@ -227,8 +227,6 @@
 }
 
 .lp-rectangle {
-  border: 1px solid rgba(179, 184, 249, .1);
-  border-radius: 8px;
   display: flex;
   flex-direction: column;
   justify-self: center;
@@ -372,12 +370,12 @@
 .lp-filter-button {
   align-items: center;
   background: 0 0;
-  border: 1.5px solid rgba(179, 184, 249, .1);
-  border-radius: 8px;
+  background-color: rgba(173, 177, 218, 0.05);
+  border-radius: 20px;
   color: #ffffff79;
   cursor: pointer;
   display: flex;
-  font-size: .75rem;
+  font-size: .85rem;
   height: 32px;
   justify-content: center;
   padding: .5rem .75rem;
@@ -399,9 +397,8 @@
 .filter-button.active,
 .type-option.active,
 .percentage-btn.active {
-  background-color: rgba(201, 194, 243, .05);
-  border-color: #aaaecf;
-  color: #d8dcff;
+  background-color: #a4a7f616;
+  color:#d8dcff;
 }
 
 .lp-filter-button:focus,
@@ -411,27 +408,41 @@
 }
 
 .lp-tabs {
-  border: 1.5px solid rgba(179, 184, 249, .1);
-  border-radius: 12px;
   display: flex;
-  gap: 4px;
+  gap: 8px;
   height: 33px;
   overflow: hidden;
   position: relative
 }
 
-.lp-tabs::before {
-  background-color: rgba(201, 194, 243, .05);
-  border-radius: 8px;
-  content: '';
-  height: calc(100% - 8px);
-  left: 4px;
-  position: absolute;
-  top: 4px;
-  transition: transform.3s cubic-bezier(.4, 0, .2, 1);
-  width: calc(50% - 4px);
-  z-index: 1
+
+.lp-tab {
+    position: relative;
+    z-index: 2;
+    background: transparent;
+    border: none;
+    color: #ffffff79;
+    font-size: 1.3rem;
+    font-weight: 300;
+    cursor: pointer;
+    transition: color .3s ease;
+    white-space: nowrap;
+    text-align: center;
+    height: 30px;
 }
+
+.lp-tab:hover {
+    color: #fff;
+}
+
+.lp-tab.active {
+    color: #fff;
+}
+
+.lp-tab:focus {
+    outline: 0;
+}
+
 
 .lp-tab:hover,
 .lp-tab.active,
@@ -462,7 +473,7 @@
 .lp-search-input {
   align-items: center;
   border: 1.5px solid rgba(179, 184, 249, .1);
-  border-radius: 12px;
+  border-radius: 20px;
   display: flex;
   gap: .3rem;
   height: 32px;
@@ -1330,10 +1341,11 @@
   border-radius: 10px;
   color: #e6e6f399;
   display: flex;
-  font-size: .7rem;
+  font-size: .85rem;
   justify-content: center;
   margin-bottom: 2px;
-  padding: 1px 6px
+  padding: 1px 6px;
+  font-weight: 300;
 }
 
 .lp-filter-row {
@@ -1828,12 +1840,11 @@
 }
 
 .vault-tabs {
-  border: 1.5px solid rgba(179, 184, 249, .1);
-  border-radius: 12px;
   display: flex;
   height: 33px;
   overflow: hidden;
   text-wrap: nowrap;
+  gap: 8px;
 }
 
 .vault-tab {
@@ -1845,12 +1856,10 @@
   cursor: pointer;
   display: flex;
   flex: 1;
-  font-size: .75rem;
+  font-size: 1.3rem;
   font-weight: 300;
   height: 22px;
   justify-content: center;
-  margin: 4px;
-  padding: .25rem 1rem;
   text-align: center;
   transition: all.2s ease
 }
@@ -1864,7 +1873,6 @@
 
 .vault-tab.active,
 .chart-type-btn.active {
-  background-color: rgba(201, 194, 243, .05);
   color: #fff
 }
 
@@ -2110,7 +2118,7 @@
 .vaults-search-container {
   align-items: center;
   border: 1.5px solid rgba(179, 184, 249, .1);
-  border-radius: 12px;
+  border-radius: 20px;
   display: flex;
   gap: .3rem;
   height: 32px;
@@ -2130,8 +2138,6 @@
 }
 
 .vaults-list {
-  border: 1px solid rgba(179, 184, 249, .1);
-  border-radius: 8px;
   overflow-x: auto;
   overflow-y: visible;
   width: 100%;
@@ -2143,7 +2149,7 @@
   cursor: pointer;
   display: flex;
   height: 4 0;
-  padding: .35rem 1rem;
+  padding: .35rem 0;
   transition: background-color.2s ease
 }
 
@@ -3054,17 +3060,16 @@
 .filter-button {
   align-items: center;
   background: 0 0;
-  border: 1.5px solid rgba(179, 184, 249, .1);
-  border-radius: 8px;
+  background-color: rgba(173, 177, 218, 0.05);
+  border-radius: 20px;
   color: #ffffff79;
   cursor: pointer;
   display: flex;
-  font-size: .75rem;
+  font-size: .85rem;
   height: 32px;
   justify-content: center;
-  letter-spacing: -.3px;
   padding: .5rem .75rem;
-  transition: all .3s ease;
+  transition: all.3s ease;
   white-space: nowrap
 }
 
@@ -3075,14 +3080,12 @@
 }
 
 .filter-button.active {
-  background-color: rgba(201, 194, 243, .05);
-  border-color: #aaaecf;
-  color: #d8dcff;
+  background-color: #a4a7f616;
+  color:#d8dcff;
 }
 
 .vaults-list-header {
   background-color: transparent;
-  border-bottom: 1px solid rgba(179, 184, 249, .1);
   color: #ffffff8b;
   display: flex;
   flex: 1;
@@ -3090,7 +3093,7 @@
   font-weight: 300;
   letter-spacing: -.3px;
   min-width: 780px;
-  padding: .5rem 1rem;
+  padding: .5rem 0;
 }
 
 .vault-row:hover {

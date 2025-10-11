@@ -5,6 +5,7 @@
   width: calc(100% - 50px);
   height: 100%;
   margin: 0 25px;
+  background: linear-gradient(180deg, rgb(6, 6, 6) 0%, rgb(10, 10, 12) 100%);
 }
 
 .earn-page-header {
@@ -74,7 +75,7 @@
   background: transparent;
   border: none;
   color: #ffffff79;
-  font-size: .95rem;
+  font-size: 1.1rem;
   cursor: pointer;
   transition: color .3s ease;
   white-space: nowrap;
@@ -83,6 +84,7 @@
   height: 36px;
   padding: 0 .5rem;
   letter-spacing: -.3px;
+  font-weight: 300;
 }
 
 .earn-toggle-tab:hover {
