@@ -2311,6 +2311,19 @@ const TokenRow = React.memo<{
     [bondingPercentage],
   );
 
+  const extractTwitterUsername = (url: string): string | null => {
+    if (!url) return null;
+    try {
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/').filter(Boolean);
+      if (pathParts.length > 0) {
+        return pathParts[0];
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  };
   const imageStyle: CSSVars = {
     position: 'relative',
     '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
@@ -2819,6 +2832,14 @@ const TokenRow = React.memo<{
               </div>
             </div>
           </div>
+          {token.twitterHandle && (() => {
+              const username = extractTwitterUsername(token.twitterHandle);
+              return username ? (
+                <div className="explorer-twitter-username">
+                  @{username}
+                </div>
+              ) : null;
+            })()}
 
           <div className="explorer-holdings-section">
             {displaySettings.visibleRows.top10Holders && (
@@ -2947,6 +2968,7 @@ const TokenRow = React.memo<{
               </Tooltip>
             )}
           </div>
+          
         </div>
 
         {displaySettings.quickBuySize === 'ultra' &&
