@@ -80,9 +80,6 @@ interface MemeInterfaceProps {
   setOneCTSigner: (privateKey: string) => void;
   refetch?: () => void;
   isBlurred?: boolean;
-  terminalQueryData: any;
-  terminalToken: any;
-  setTerminalToken: any;
   terminalRefetch: any;
   tokenData?: any;
   setTokenData: any;
@@ -1362,7 +1359,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       } catch { }
     };
 
-    const handle = setInterval(tick, 400);
+    const handle = setInterval(tick, 1000);
     tick();
 
     return () => {

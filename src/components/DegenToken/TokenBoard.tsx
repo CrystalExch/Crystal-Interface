@@ -44,8 +44,6 @@ interface TokenBoardProps {
   setChain: () => void;
   setpopup?: (popup: number) => void;
   terminalQueryData: any;
-  terminalToken: any;
-  setTerminalToken: any;
   terminalRefetch: any;
   setTokenData: any;
   monUsdPrice: any;
@@ -216,8 +214,6 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
   setChain,
   setpopup,
   terminalQueryData,
-  terminalToken,
-  setTerminalToken,
   terminalRefetch,
   setTokenData,
   monUsdPrice

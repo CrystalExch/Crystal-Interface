@@ -1611,7 +1611,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     stateIsLoading,
     (popup == 4 && connected) || location.pathname.slice(1) == 'portfolio'
   );
-  const [terminalToken, setTerminalToken] = useState<string>("");
   const [tokenData, setTokenData] = useState<any>();
   const [isVertDragging, setIsVertDragging] = useState(false);
   const [trades, setTrades] = useState<
@@ -2381,6 +2380,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   // fetch vaults list
   useEffect(() => {
+    if (!['earn'].includes(location.pathname.split('/')[1])) return;
     let cancelled = false;
     (async () => {
       setIsVaultsLoading(true);
@@ -2507,10 +2507,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
     })();
     return () => { cancelled = true; };
-  }, [address, activechain, tokendict]);
+  }, [address, activechain, tokendict, !['earn'].includes(location.pathname.split('/')[1])]);
 
   // details when a vault is selected
   useEffect(() => {
+    if (!['earn'].includes(location.pathname.split('/')[1])) return;
     let cancelled = false;
 
     const run = async () => {
@@ -2906,7 +2907,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     run();
     return () => { cancelled = true; };
-  }, [selectedVaultStrategy]);
+  }, [selectedVaultStrategy, !['earn'].includes(location.pathname.split('/')[1])]);
 
   const findMarketForToken = useCallback((tokenAddress: string) => {
     for (const [marketKey, marketData] of Object.entries(markets)) {
@@ -3814,16 +3815,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       });
 
       filteredUserOrders.forEach((order) => {
-        priceMap[Number(Number(order[0] / Number(activeMarket.priceFactor)).toFixed(
+        priceMap[Number(order[0]).toFixed(
           Math.floor(Math.log10(Number(activeMarket.priceFactor)))
-        ))] = true;
+        )] = true;
       });
     }
 
     const roundedOrders = orders.map((order) => {
-      const roundedPrice = Number(Number(order.price).toFixed(
-        Math.floor(Math.log10(Number(activeMarket.priceFactor)))
-      ));
       const roundedSize =
         amountsQuote === 'Base'
           ? Number((order.size / order.price).toFixed(priceDecimals))
@@ -3833,10 +3831,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           ? Number((order.totalSize / order.price).toFixed(priceDecimals))
           : Number(order.totalSize.toFixed(2));
 
-      const userPrice = priceMap[roundedPrice] === true;
+      const userPrice = priceMap[Number(order.price * Number(activeMarket.priceFactor)).toFixed(
+        Math.floor(Math.log10(Number(activeMarket.priceFactor)))
+      )] == true;
 
       return {
-        price: roundedPrice,
+        price: Number(Number(order.price).toFixed(
+          Math.floor(Math.log10(Number(activeMarket.priceFactor)))
+        )),
         size: roundedSize,
         totalSize: roundedTotalSize,
         shouldFlash: false,
@@ -4381,11 +4383,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           consecutiveFailuresRef.current = 0;
 
           subscribe(ws, [
-            'logs',
+            'monadLogs',
             { address: settings.chainConfig[activechain].router, topics: [[ROUTER_EVENT]] },
           ]);
           subscribe(ws, [
-            'logs',
+            'monadLogs',
             { address: settings.chainConfig[activechain].router, topics: [[MARKET_UPDATE_EVENT]] },
           ]);
         };
@@ -4395,9 +4397,28 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             const msg = JSON.parse(data);
             if (msg.method !== 'eth_subscription' || !msg.params?.result)
               return;
-            const log = msg.params.result;
-            if (log.topics?.[0] === ROUTER_EVENT) addMarket(log);
-            else if (log.topics?.[0] === MARKET_UPDATE_EVENT) updateMarket(log);
+            const log = msg.params?.result;
+            if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
+            setProcessedLogs(prev => {
+              let tempset = new Set(prev);
+              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+              if (tempset.has(logIdentifier)) return tempset;
+              if (tempset.size >= 10000) {
+                const first = tempset.values().next().value;
+                if (first !== undefined) {
+                  tempset.delete(first);
+                }
+              }
+              tempset.add(logIdentifier);
+              const resolve = txReceiptResolvers.current.get(log['transactionHash']);
+              if (resolve) {
+                resolve();
+                txReceiptResolvers.current.delete(log['transactionHash']);
+              }
+              if (log.topics?.[0] === ROUTER_EVENT) addMarket(log);
+              else if (log.topics?.[0] === MARKET_UPDATE_EVENT) updateMarket(log);
+              return tempset;
+            })
           } catch (parseError) {
             console.warn('Failed to parse WebSocket message:', parseError);
           }
@@ -4463,6 +4484,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   );
 
   useEffect(() => {
+    if (!['board', 'spectra', 'meme'].includes(location.pathname.split('/')[1])) return;
     let cancelled = false;
 
     async function bootstrap() {
@@ -4702,7 +4724,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       consecutiveFailuresRef.current = 0;
       trackedMarketsRef.current.clear();
     };
-  }, [openWebsocket]);
+  }, [openWebsocket, !['board', 'spectra', 'meme'].includes(location.pathname.split('/')[1])]);
 
   // memeinterface
   const [memeLive, setMemeLive] = useState<Partial<any>>({});
@@ -4729,7 +4751,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const memeDevTokenIdsRef = useRef<Set<string>>(new Set());
   const memeLastInvalidateRef = useRef(0);
   const memePriceTickRef = useRef<(price: number, volNative: number) => void>(() => { });
-  const currentPriceRef = useRef<number>(0);
 
   const calcDevHoldingPct = (list: Holder[], dev?: string) => {
     if (!dev) return 0;
@@ -4887,7 +4908,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
 
           const price = Number(m.lastPriceNativePerTokenWad || 0) / 1e9;
-          currentPriceRef.current = price;
           const socials = [m.social1, m.social2, m.social3].map((s) =>
             s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
           );
@@ -5022,10 +5042,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   // by-token oc initial
   useEffect(() => {
-    if (!tokenAddress) return;
-    const price = Number(currentPriceRef.current);
-    if (!price) return;
-    setTerminalToken(tokenAddress);
+    if (!token.id || !initialMemeFetchDone) return;
     let cancelled = false;
 
     (async () => {
@@ -5058,7 +5075,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             const valueSold = Number(p.nativeReceived) / 1e18;
             const balance = Number(p.tokens) / 1e18;
             const realized = valueSold - valueBought;
-            const unrealized = balance * price;
+            const unrealized = balance * Number(data.launchpadTokens[0].lastPriceNativePerTokenWad || 0) / 1e9;
             const totalPnl = realized + unrealized;
 
             return {
@@ -5115,7 +5132,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             const valueSold = Number(p.nativeReceived) / 1e18;
             const balance = Number(p.tokens) / 1e18;
             const realized = valueSold - valueBought;
-            const unrealized = balance * currentPriceRef.current;
+            const unrealized = balance * Number(data.launchpadTokens[0].lastPriceNativePerTokenWad || 0) / 1e9;
             const pnl = realized + unrealized;
 
             out.push({
@@ -5147,10 +5164,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return () => {
       cancelled = true;
     };
-  }, [tokenAddress, page, initialMemeFetchDone]);
+  }, [token.id, page, initialMemeFetchDone]);
 
   // dev
   useEffect(() => {
+    if (!token.id || !initialMemeFetchDone) return;
     const d = token.dev ? token.dev.toLowerCase() : '';
     if (!d) {
       setMemeDevTokens([]);
@@ -5219,11 +5237,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return () => {
       cancelled = true;
     };
-  }, [tokenAddress, page, initialMemeFetchDone]);
+  }, [token.id, page, initialMemeFetchDone]);
 
   // similar tokens
   useEffect(() => {
-    if (!token.id) return;
+    if (!token.id || !initialMemeFetchDone) return;
 
     const baseName = String(token.name || '').trim();
     const baseSymbol = String(token.symbol || '').trim();
@@ -5451,13 +5469,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return () => {
       cancelled = true;
     };
-  }, [tokenAddress, initialMemeFetchDone]);
+  }, [token.id, initialMemeFetchDone]);
 
   // positions aggregated across all wallets
   useEffect(() => {
-    const allAddresses = [address, ...subWallets.map((w) => w.address)]
-      .filter(Boolean)
-      .map((a) => a.toLowerCase());
+    const allAddresses = [...new Set(
+      [address, ...subWallets.map(w => w.address)]
+        .filter(Boolean)
+        .map(a => a.toLowerCase())
+    )];    
 
     if (allAddresses.length === 0 || !initialMemeFetchDone) return;
 
@@ -5474,95 +5494,99 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       };
 
       const aggregatedMap = new Map<string, any>();
-      for (const addr of allAddresses) {
-        let skip = 0;
 
-        while (true) {
-          const response = await fetch(SUBGRAPH_URL, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              query: POSITIONS_QUERY,
-              variables: {
-                a: addr,
-                skip,
-                first: 100,
-              },
-            }),
-          });
-
-          const { data } = await response.json();
-          const rows: any[] = data?.launchpadPositions ?? [];
-          if (!rows.length) break;
-
-          for (const p of rows) {
-            const tokenId = p.token.id.toLowerCase();
-            const boughtTokens = Number(p.tokenBought) / 1e18;
-            const soldTokens = Number(p.tokenSold) / 1e18;
-            const spentNative = Number(p.nativeSpent) / 1e18;
-            const receivedNative = Number(p.nativeReceived) / 1e18;
-            const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e9;
-            const balance = Number(p.tokens) / 1e18;
-
-            if (!aggregatedMap.has(tokenId)) {
-              let imageUrl = '';
-              if (p.token.metadataCID) {
-                try {
-                  const metaRes = await fetch(p.token.metadataCID);
-                  if (metaRes.ok) {
-                    const meta = await metaRes.json();
-                    imageUrl = meta.image || '';
-                  }
-                } catch (e) {
-                  console.warn(
-                    'Failed to load metadata for token',
-                    p.token.id,
-                    e,
-                  );
-                }
+      const response = await fetch(SUBGRAPH_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            query ($addrs: [Bytes!]!) {
+              launchpadPositions(
+                where: { account_in: $addrs, tokens_gt: "0" }
+                orderBy: tokens
+                orderDirection: desc
+                first: 1000
+              ) {
+                token { id symbol name lastPriceNativePerTokenWad metadataCID }
+                account { id }
+                tokenBought
+                tokenSold
+                nativeSpent
+                nativeReceived
+                tokens
+                lastUpdatedAt
               }
-
-              aggregatedMap.set(tokenId, {
-                tokenId: p.token.id,
-                symbol: p.token.symbol,
-                name: p.token.name,
-                metadataCID: p.token.metadataCID,
-                imageUrl: imageUrl,
-                boughtTokens: 0,
-                soldTokens: 0,
-                spentNative: 0,
-                receivedNative: 0,
-                remainingTokens: 0,
-                remainingPct: 0,
-                pnlNative: 0,
-                lastPrice: lastPrice,
-              });
             }
+          `,
+          variables: { addrs: allAddresses },
+        }),
+      });
 
-            const existing = aggregatedMap.get(tokenId);
-            existing.boughtTokens += boughtTokens;
-            existing.soldTokens += soldTokens;
-            existing.spentNative += spentNative;
-            existing.receivedNative += receivedNative;
-            existing.remainingTokens += balance;
-            existing.lastPrice = lastPrice || existing.lastPrice;
+      const { data } = await response.json();
+      const rows: any[] = data?.launchpadPositions ?? [];
 
-            if (p.token.id.toLowerCase() === tokenAddress?.toLowerCase()) {
-              totals.amountBought += boughtTokens;
-              totals.amountSold += soldTokens;
-              totals.valueBought += spentNative;
-              totals.valueSold += receivedNative;
-              totals.balance += balance;
-              totals.lastPriceNative = lastPrice || totals.lastPriceNative;
+      for (const p of rows) {
+        const tokenId = p.token.id.toLowerCase();
+        const boughtTokens = Number(p.tokenBought) / 1e18;
+        const soldTokens = Number(p.tokenSold) / 1e18;
+        const spentNative = Number(p.nativeSpent) / 1e18;
+        const receivedNative = Number(p.nativeReceived) / 1e18;
+        const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e9;
+        const balance = Number(p.tokens) / 1e18;
+
+        if (!aggregatedMap.has(tokenId)) {
+          let imageUrl = '';
+          if (p.token.metadataCID) {
+            try {
+              const metaRes = await fetch(p.token.metadataCID);
+              if (metaRes.ok) {
+                const meta = await metaRes.json();
+                imageUrl = meta.image || '';
+              }
+            } catch (e) {
+              console.warn(
+                'Failed to load metadata for token',
+                p.token.id,
+                e,
+              );
             }
           }
 
-          if (rows.length < 100) break;
-          skip += 100;
-          if (cancelled) return;
+          aggregatedMap.set(tokenId, {
+            tokenId: p.token.id,
+            symbol: p.token.symbol,
+            name: p.token.name,
+            metadataCID: p.token.metadataCID,
+            imageUrl: imageUrl,
+            boughtTokens: 0,
+            soldTokens: 0,
+            spentNative: 0,
+            receivedNative: 0,
+            remainingTokens: 0,
+            remainingPct: 0,
+            pnlNative: 0,
+            lastPrice: lastPrice,
+          });
+        }
+
+        const existing = aggregatedMap.get(tokenId);
+        existing.boughtTokens += boughtTokens;
+        existing.soldTokens += soldTokens;
+        existing.spentNative += spentNative;
+        existing.receivedNative += receivedNative;
+        existing.remainingTokens += balance;
+        existing.lastPrice = lastPrice || existing.lastPrice;
+
+        if (p.token.id.toLowerCase() === tokenAddress?.toLowerCase()) {
+          totals.amountBought += boughtTokens;
+          totals.amountSold += soldTokens;
+          totals.valueBought += spentNative;
+          totals.valueSold += receivedNative;
+          totals.balance += balance;
+          totals.lastPriceNative = lastPrice || totals.lastPriceNative;
         }
       }
-
+ 
       if (cancelled) return;
 
       const all = Array.from(aggregatedMap.values()).map((pos) => {
@@ -5629,7 +5653,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     queryKey: [
       'crystal_rpc_terminal_reads',
       address,
-      terminalToken,
+      token.id,
       subWallets.length
     ],
     queryFn: async () => {
@@ -5637,7 +5661,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       let gasEstimate: bigint = 0n;
       const tokenAddresses = [
         ...Object.values(tokendict).map(t => t.address),
-        ...(terminalToken ? [terminalToken] : [])
+        ...(token.id ? [token.id] : [])
       ];
 
       if (address && (amountIn || amountOutSwap)) {
@@ -5739,12 +5763,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           ]
         })),
         {
-          disabled: !address || !terminalToken,
-          to: router,
-          abi: CrystalRouterAbi,
+          disabled: !address || !token.id,
+          to: balancegetter,
+          abi: CrystalDataHelperAbi,
           functionName: 'getVirtualReserves',
           args: [
-            terminalToken,
+            router, token.id, weth, BigInt(1000000), BigInt(1), BigInt(100)
           ]
         },
       ];
@@ -5949,6 +5973,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           [wallet.address]: totalValue
         }));
       })
+
+      if (groupResults?.mainGroup?.at(-1)) {
+        const reservesData = groupResults?.mainGroup?.at(-1)?.result;
+        setTokenData((prev: any) => ({ ...prev, reserveQuote: reservesData[0], reserveBase: reservesData[1] }));
+      }
+
       setSubwalletBalanceLoading(prev => ({
         ...prev,
         [address]: false,
@@ -5957,13 +5987,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       return { readContractData: groupResults, gasEstimate: gasEstimate }
     },
     enabled: !!activeMarket && !!tokendict && !!markets,
-    refetchInterval: ['board', 'spectra', 'meme'].includes(location.pathname.slice(1).substring(0, location.pathname.slice(1).indexOf('/'))) ? 800 : 5000,
+    refetchInterval: ['board', 'spectra', 'meme'].includes(location.pathname.split('/')[1]) ? 800 : 5000,
     gcTime: 0,
   })
 
   // memeinterface ws
   useEffect(() => {
-    if (!initialMemeFetchDone) return;
+    if (!token.id || !initialMemeFetchDone) return;
     const wssUrl = settings.chainConfig[activechain]?.wssurl;
     const routerAddress = settings.chainConfig[activechain]?.router;
 
@@ -6265,7 +6295,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         ws.close();
       } catch { }
     };
-  }, [activechain, tokenAddress, address, terminalRefetch, subWallets, tokenData?.dev, memeLive?.dev]);
+  }, [activechain, token.id, initialMemeFetchDone, address, subWallets]);
 
   useEffect(() => {
     const cleaned = deduplicateWallets(subWallets);
@@ -6491,8 +6521,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
         }
 
-        const interval = 1 / (activeMarket?.marketType != 0 && (Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)) ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)))) - 1) : Number(activeMarket.priceFactor))
-
+        const interval = localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
+        ? Number(
+          localStorage.getItem(
+            `${activeMarket.baseAsset}_ob_interval`,
+          ),
+        )
+        : 1 / (activeMarket?.marketType != 0 && (Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)) ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)))) - 1) : Number(activeMarket.priceFactor))
         const { bids, asks } = v2ToOrderbook(prevOrderData[1], prevOrderData[0], interval*10, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
 
         setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
@@ -23883,7 +23918,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             tokenData={token}
             monUsdPrice={monUsdPrice}
             sendUserOperationAsync={sendUserOperationAsync}
-            setTerminalToken={setTerminalToken}
             setTokenData={setTokenData}
             quickAmounts={quickAmounts}
             setQuickAmount={setQuickAmount}
@@ -23913,8 +23947,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 onOpenFiltersForColumn={handleOpenFiltersForColumn}
                 sendUserOperationAsync={sendUserOperationAsync}
                 terminalQueryData={terminalQueryData}
-                terminalToken={terminalToken}
-                setTerminalToken={setTerminalToken}
                 terminalRefetch={terminalRefetch}
                 setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
@@ -23937,7 +23969,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 }}
                 quickAmounts={quickAmounts}
                 setQuickAmounts={setQuickAmounts}
-                openWebsocket={openWebsocket}
                 pausedColumn={pausedColumn}
                 setPausedColumn={setPausedColumn}
                 dispatch={dispatch}
@@ -23985,9 +24016,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 usdc={usdc}
                 wethticker={wethticker}
                 ethticker={ethticker}
-                terminalQueryData={terminalQueryData}
-                terminalToken={terminalToken}
-                setTerminalToken={setTerminalToken}
                 terminalRefetch={terminalRefetch}
                 tokenData={tokenData}
                 setTokenData={setTokenData}
@@ -24035,8 +24063,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setChain={handleSetChain}
                 setpopup={setpopup}
                 terminalQueryData={terminalQueryData}
-                terminalToken={terminalToken}
-                setTerminalToken={setTerminalToken}
                 terminalRefetch={terminalRefetch}
                 setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
@@ -24054,8 +24080,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setChain={handleSetChain}
                 setpopup={setpopup}
                 terminalQueryData={terminalQueryData}
-                terminalToken={terminalToken}
-                setTerminalToken={setTerminalToken}
                 terminalRefetch={terminalRefetch}
                 walletTokenBalances={walletTokenBalances}
                 tokenData={tokenData}

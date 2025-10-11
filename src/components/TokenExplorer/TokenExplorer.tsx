@@ -3256,8 +3256,6 @@ interface TokenExplorerProps {
   activeFilterTab?: Token['status'];
   sendUserOperationAsync: any;
   terminalQueryData: any;
-  terminalToken: any;
-  setTerminalToken: any;
   terminalRefetch: any;
   setTokenData: any;
   monUsdPrice: number;
@@ -3280,7 +3278,6 @@ interface TokenExplorerProps {
   };
   quickAmounts: any;
   setQuickAmounts: any;
-  openWebsocket: any;
   pausedColumn: any;
   setPausedColumn: any;
   dispatch: any;
@@ -3301,7 +3298,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   // activeFilterTab,
   onOpenFiltersForColumn,
   sendUserOperationAsync,
-  setTerminalToken,
   terminalRefetch,
   setTokenData,
   monUsdPrice,
@@ -3321,7 +3317,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   account,
   quickAmounts,
   setQuickAmounts,
-  openWebsocket,
   pausedColumn,
   setPausedColumn,
   dispatch,
@@ -3738,38 +3733,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const lastConnectionAttemptRef = useRef(0);
   const consecutiveFailuresRef = useRef(0);
 
-  const scheduleReconnect = useCallback((initialMarkets: string[]) => {
-    if (
-      connectionStateRef.current === 'connecting' ||
-      connectionStateRef.current === 'connected'
-    )
-      return;
-
-    const baseDelay = consecutiveFailuresRef.current > 5 ? 10000 : 1000;
-    const attempt = Math.min(retryCountRef.current, 8);
-    const exponentialDelay = baseDelay * Math.pow(1.5, attempt);
-    const jitter = Math.random() * 1000;
-    const delay = Math.round(exponentialDelay + jitter);
-
-    const now = Date.now();
-    const timeSinceLastAttempt = now - lastConnectionAttemptRef.current;
-    const minInterval = 2000;
-
-    if (timeSinceLastAttempt < minInterval) {
-      const additionalDelay = minInterval - timeSinceLastAttempt;
-      setTimeout(() => scheduleReconnect(initialMarkets), additionalDelay);
-      return;
-    }
-
-    if (reconnectTimerRef.current)
-      window.clearTimeout(reconnectTimerRef.current);
-
-    connectionStateRef.current = 'reconnecting';
-    reconnectTimerRef.current = window.setTimeout(() => {
-      openWebsocket(initialMarkets);
-    }, delay);
-  }, []);
-
   const handleTokenHover = useCallback((id: string) => setHoveredToken(id), []);
   const handleTokenLeave = useCallback(() => setHoveredToken(null), []);
   const handleImageHover = useCallback((id: string) => setHoveredImage(id), []);
@@ -4070,7 +4033,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const handleTokenClick = useCallback(
     (t: Token) => {
-      setTerminalToken(t.tokenAddress);
       setTokenData(t);
       navigate(`/meme/${t.tokenAddress}`);
     },
@@ -4534,7 +4496,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 onMouseEnter={() => handleColumnHover(columnType)}
                 onMouseLeave={handleColumnLeave}
               >
-                {' '}
                 {columnType === 'new' && (
                   <>
                     <div className="explorer-column-header">

@@ -93,8 +93,6 @@ interface TokenDetailProps {
   setChain: () => void;
   setpopup?: (popup: number) => void;
   terminalQueryData: any;
-  terminalToken: any;
-  setTerminalToken: (x: any) => void;
   terminalRefetch: any;
   walletTokenBalances: any;
   tokenData: any;
@@ -216,7 +214,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   account,
   setChain,
   setpopup,
-  setTerminalToken,
   walletTokenBalances,
   tokenData,
   setTokenData,
@@ -501,10 +498,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const handleDeleteComment = (commentId: string) => {
     setComments((prev) => prev.filter(comment => comment.id !== commentId));
   };
-
-  useEffect(() => {
-    if (tokenAddress) setTerminalToken(tokenAddress);
-  }, [tokenAddress, setTerminalToken]);
 
   useEffect(() => {
     fetchTokenData();

@@ -2265,7 +2265,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                           <img
                                             src={tokenImage}
                                             className="quickbuy-wallet-token-icon"
-                                            alt={tokenSymbol}
                                             onError={(e) => {
                                               e.currentTarget.style.display =
                                                 'none';

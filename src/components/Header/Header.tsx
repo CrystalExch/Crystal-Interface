@@ -72,7 +72,6 @@ interface HeaderProps {
   tokenData?: any;
   monUsdPrice: number;
   sendUserOperationAsync?: any;
-  setTerminalToken?: any;
   setTokenData?: (data: any) => void;
   quickAmounts?: { [key: string]: string };
   setQuickAmount?: (category: string, amount: string) => void;
@@ -284,7 +283,6 @@ const Header: React.FC<HeaderProps> = ({
   tokenData,
   monUsdPrice,
   sendUserOperationAsync,
-  setTerminalToken,
   setTokenData,
   quickAmounts,
   setQuickAmount,
@@ -309,9 +307,6 @@ const Header: React.FC<HeaderProps> = ({
   const navigate = useNavigate();
 
   const handleTokenClick = (token: any) => {
-    if (setTerminalToken) {
-      setTerminalToken(token.tokenAddress);
-    }
     if (setTokenData) {
       setTokenData(token);
     }
@@ -468,33 +463,35 @@ const Header: React.FC<HeaderProps> = ({
   }, [isWalletDropdownOpen]);
 
   const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
-const memeTokenData = isMemeTokenPage && tokenData ? (() => {
-  const token = tokenData;
-  const mergedData = { ...token, ...liveTokenData };
-  const currentMarketCap = liveTokenData.marketCap || token.marketCap;
+  const memeTokenData = isMemeTokenPage && tokenData ? (() => {
+    const token = tokenData;
+    const mergedData = { ...token, ...liveTokenData };
+    const currentMarketCap = liveTokenData.marketCap || token.marketCap;
 
-  return {
-    symbol: token.symbol,
-    name: token.name,
-    image: token.image,
-    tokenAddress: token.tokenAddress,
-    marketCap: currentMarketCap,
-    change24h: mergedData.change24h,
-    status: token.status,
-    created: token.created,
-    website: token.website || '',
-    twitterHandle: token.twitterHandle || '',
-    telegramHandle: token.telegramHandle || '',
-    discordHandle: token.discordHandle || '',
-    price: liveTokenData.price || token.price,
-    buyTransactions: liveTokenData.buyTransactions || token.buyTransactions,
-    sellTransactions: liveTokenData.sellTransactions || token.sellTransactions,
-    volume24h: liveTokenData.volume24h || token.volume24h,
-    graduatedTokens: token.graduatedTokens || 0,
-    launchedTokens: token.launchedTokens || 0,
-    developerAddress: token.dev,
-  };
-})() : undefined;
+    return {
+      symbol: token.symbol,
+      name: token.name,
+      image: token.image,
+      tokenAddress: token.tokenAddress,
+      marketCap: currentMarketCap,
+      change24h: mergedData.change24h,
+      status: token.status,
+      created: token.created,
+      website: token.website || '',
+      twitterHandle: token.twitterHandle || '',
+      telegramHandle: token.telegramHandle || '',
+      discordHandle: token.discordHandle || '',
+      price: liveTokenData.price || token.price,
+      buyTransactions: liveTokenData.buyTransactions || token.buyTransactions,
+      sellTransactions: liveTokenData.sellTransactions || token.sellTransactions,
+      volume24h: liveTokenData.volume24h || token.volume24h,
+      graduatedTokens: token.graduatedTokens || 0,
+      launchedTokens: token.launchedTokens || 0,
+      developerAddress: token.dev,
+      reserveQuote: token.reserveQuote,
+      reserveBase: token.reserveBase,
+    };
+  })() : undefined;
   const isPerpsRoute = location.pathname.startsWith('/perps')
   const currentperpsActiveMarketKey = isPerpsRoute ? perpsActiveMarketKey : undefined;
 

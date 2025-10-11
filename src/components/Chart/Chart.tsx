@@ -63,6 +63,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   const [_lastPair, setLastPair] = useState('');
 
   useEffect(() => {
+    if (perps) return;
     let isFetching = true;
     (async () => {
       setLastPair((lastPair) => {

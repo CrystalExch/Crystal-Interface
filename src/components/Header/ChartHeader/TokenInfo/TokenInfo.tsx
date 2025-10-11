@@ -225,7 +225,7 @@ const PerpsMarketRow = memo(({ index, style, data }: {
 
         <div className="market-pair-section">
           <img
-            src={market.iconSrc}
+            src={market.iconURL}
             className="market-icon"
           />
           <div className="market-info">
@@ -306,6 +306,8 @@ interface TokenInfoProps {
     graduatedTokens?: number;
     launchedTokens?: number;
     developerAddress?: string;
+    reserveQuote?: bigint;
+    reserveBase?: bigint;
   };
   isPerpsToken?: boolean;
   perpsActiveMarketKey: string;
@@ -620,7 +622,6 @@ const filterTabsRef = useRef<HTMLDivElement>(null);
           Number(market.priceChangePercent * 100).toFixed(2)}%`,
         fundingClass: market.fundingRate < 0 ? 'negative' : 'positive',
         changeClass: market.priceChangePercent < 0 ? 'negative' : 'positive',
-        iconSrc: market.iconURL
       }));
 
     if (perpsSortField && perpsSortDirection) {
@@ -1498,7 +1499,7 @@ useEffect(() => {
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">Liquidity</span>
                 <span className="meme-interface-metric-value meme-price-large">
-                  $6.23K
+                  {formatPrice(Number(memeTokenData?.reserveQuote || 0) * 2 * monUsdPrice / 10**18)}
                 </span>
               </div>
               <div className="meme-interface-token-metric">
@@ -1510,12 +1511,6 @@ useEffect(() => {
                 </span>
               </div>
 
-              <div className="meme-interface-token-metric">
-                <span className="meme-interface-metric-label">Supply</span>
-                <span className="meme-interface-metric-value meme-price-large">
-                  1B
-                </span>
-              </div>
               {memeTokenData.status == 'graduated' ? (
                 <div className="meme-interface-token-metric">
                   <span className="meme-interface-metric-label">B. Curve</span>
