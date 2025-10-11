@@ -1156,9 +1156,9 @@ body {
 .button1,
 .button2 {
   align-items: center;
-  background: #21212716;
-  border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 5px;
+  background: #05050616;
+  border: 1px solid rgba(179, 184, 249, 0.05);
+  border-radius: 4px;
   color: #ffffffd8;
   cursor: pointer;
   display: inline-flex;
@@ -1308,8 +1308,9 @@ body {
 .outputbg,
 .sendaddressbg,
 .sendbg {
-  border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, 0.03);
+  background-color:  rgba(179, 184, 249, 0.01);
+  border-radius: 4px;
   display: flex;
   flex-direction: column;
 }
@@ -1552,7 +1553,7 @@ body {
   align-self: center;
   border: 1px solid rgba(179, 184, 249, 0.1);
   background-color: rgb(6, 6, 6);
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   justify-content: center;
@@ -2645,7 +2646,8 @@ body {
   border-radius: 16px;
   margin: 0;
   padding: 0;
-  margin: 3px
+  margin: 3px;
+  background: none;
 }
 
 .main-content-wrapper.simple-view .inputbutton1container,
@@ -3630,9 +3632,8 @@ body:has(.right-column.show) .blur-background-popups {
   width: 33%;
   z-index: 5;
   background-color: rgb(9, 9, 9);
-  border-radius: 5px;
-  box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
-  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 9px;
+  border:1.5px solid rgba(179, 184, 249, 0.1);
   overflow: hidden;
   animation: dropdown-fade-in 0.2s ease-out forwards;
 }

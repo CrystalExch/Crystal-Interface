@@ -8,15 +8,6 @@
     padding-bottom: 20px;
 }
 
-.lp-rectangle {
-    display: flex;
-    flex-direction: column;
-    justify-self: center;
-    width: 100%;
-    border: 1px solid rgba(179, 184, 249, .1);
-    border-radius: 8px;
-    margin-bottom: 1rem;
-}
 
 .lp-rectangle.no-border {
     border: none;
@@ -67,69 +58,6 @@
     transform: rotate(180deg);
 }
 
-.lp-tabs {
-    position: relative;
-    display: flex;
-    border: 1.5px solid rgba(179, 184, 249, .1);
-    border-radius: 12px;
-    gap: 4px;
-    height: 33px;
-    overflow: hidden;
-}
-
-.lp-tabs::before {
-    content: '';
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    height: 32px;
-    height: calc(100% - 8px);
-    width: calc(50% - 4px);
-    border-radius: 8px;
-    transition: transform .3s cubic-bezier(.4, 0, .2, 1);
-    z-index: 1;
-    background-color: rgba(201, 194, 243, .05);
-}
-
-.lp-tabs[data-active=deposited]::before {
-    transform: translateX(100%);
-}
-
-.lp-tab {
-    position: relative;
-    z-index: 2;
-    background: transparent;
-    border: none;
-    color: #ffffff79;
-    font-size: .75rem;
-    font-weight: 300;
-    cursor: pointer;
-    transition: color .3s ease;
-    white-space: nowrap;
-    min-width: 120px;
-    text-align: center;
-    height: 30px;
-}
-
-.lp-tab:hover {
-    color: #fff;
-}
-
-.lp-tab.active {
-    color: #fff;
-}
-
-.lp-tab:focus {
-    outline: 0;
-}
-
-.vault-tabs {
-    display: flex;
-    border: 1.5px solid rgba(179, 184, 249, .1);
-    border-radius: 12px;
-    overflow: hidden;
-    text-wrap: nowrap;
-}
 
 .lp-filter-row {
     position: relative;
@@ -429,7 +357,7 @@
 
 .lp-vaults-list-header {
     display: flex;
-    padding: .5rem 1rem;
+    padding: .5rem 0;
     background-color: transparent;
     color: #ffffff8b;
     font-size: .75rem;
@@ -437,7 +365,6 @@
     font-weight: 300;
     min-width: 780px;
     flex: 1;
-    border-bottom: 1px solid rgba(179, 184, 249, .1);
 }
 
 .lp-card {
@@ -1303,12 +1230,7 @@
         overflow-y: visible;
         -webkit-overflow-scrolling: touch;
     }
-    
-    .lp-rectangle {
-        height: auto;
-        max-height: none;
-        overflow: visible;
-    }
+
 }
 
 @media (max-width: 820px) {
@@ -1405,9 +1327,6 @@
         padding: 12px;
     }
     
-    .vault-tabs {
-        margin-bottom: 1rem;
-    }
     
     .vault-form-title {
         font-size: 1rem;

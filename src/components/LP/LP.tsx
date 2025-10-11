@@ -1025,7 +1025,7 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
                 className={`lp-tab ${activeTab === 'all' ? 'active' : ''}`}
                 onClick={() => setActiveTab('all')}
               >
-                All LP Vaults
+                Pools
               </button>
               <button
                 className={`lp-tab ${activeTab === 'deposited' ? 'active' : ''}`}
