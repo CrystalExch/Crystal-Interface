@@ -5974,7 +5974,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }));
       })
 
-      if (groupResults?.mainGroup?.at(-1)) {
+      if (groupResults?.mainGroup?.at(-1)?.result) {
         const reservesData = groupResults?.mainGroup?.at(-1)?.result;
         setTokenData((prev: any) => ({ ...prev, reserveQuote: reservesData[0], reserveBase: reservesData[1] }));
       }
@@ -6537,7 +6537,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         console.error(error);
       }
     }
-  }, [amountsQuote]);
+  }, [amountsQuote, orders.length > 0]);
 
   // process data
   useLayoutEffect(() => {
