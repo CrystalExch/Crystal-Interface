@@ -1,4 +1,4 @@
-import { Search, Edit2 } from 'lucide-react';
+import { Search, Edit2, Plus } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import copy from '../../assets/copy.svg'
@@ -11,6 +11,8 @@ import LiveTradesFiltersPopup from './LiveTradesFiltersPopup/LiveTradesFiltersPo
 import { useSharedContext } from '../../contexts/SharedContext';
 import MonitorFiltersPopup, { MonitorFilterState } from './MonitorFiltersPopup/MonitorFiltersPopup';
 import settingsicon from '../../assets/settings.svg';
+import circle from '../../assets/circle_handle.png';
+import key from '../../assets/key.svg';
 
 import './Tracker.css';
 
@@ -268,6 +270,17 @@ const Tracker: React.FC<TrackerProps> = ({
       max: '',
     },
   });
+  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
+  const [draggedWallet, setDraggedWallet] = useState<TrackedWallet | null>(null);
+  const [selectionRect, setSelectionRect] = useState<{
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+  } | null>(null);
+  const [activeSelectionContainer, setActiveSelectionContainer] = useState<'main' | null>(null);
+  const [previewSelection, setPreviewSelection] = useState<Set<string>>(new Set());
+  const [expandedTokens, setExpandedTokens] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setSearchQuery('');
@@ -412,6 +425,27 @@ const Tracker: React.FC<TrackerProps> = ({
       clearInterval(interval);
     };
   }, [trackedWallets]);
+
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      endSelection();
+    };
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedWallets(new Set());
+        endSelection();
+      }
+    };
+
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+    document.addEventListener('keydown', handleGlobalKeyDown);
+
+    return () => {
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, []);
 
   const [monitorTokens] = useState<MonitorToken[]>([
     {
@@ -943,123 +977,169 @@ const Tracker: React.FC<TrackerProps> = ({
   };
 
 
-  const renderWalletItem = (wallet: TrackedWallet) => (
-    <div key={wallet.id} className="tracker-wallet-item">
-      <div className="tracker-wallet-profile">
-        <div className="tracker-wallet-emoji">{wallet.emoji}</div>
+  const renderWalletItem = (wallet: TrackedWallet) => {
+    const isSelected = selectedWallets.has(wallet.id);
+    const isPreviewSelected = previewSelection.has(wallet.id);
 
-        <div className="tracker-wallet-info">
-          {editingWallet === wallet.id ? (
-            <div className="tracker-wallet-name-edit-container">
-              <input
-                type="text"
-                className="tracker-wallet-name-input"
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    saveWalletName(wallet.id);
-                  } else if (e.key === 'Escape') {
-                    setEditingWallet(null);
-                    setEditingName('');
-                  }
-                }}
-                autoFocus
-                onBlur={() => saveWalletName(wallet.id)}
-              />
-            </div>
-          ) : (
-            <div className="tracker-wallet-name-display">
-              <span className="tracker-wallet-name">{wallet.name}</span>
-              <Edit2
-                size={12}
-                className="tracker-wallet-name-edit-icon"
+    return (
+      <div
+        key={wallet.id}
+        data-wallet-id={wallet.id}
+        className={`tracker-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''}`}
+        draggable
+        onDragStart={(e) => {
+          setDraggedWallet(wallet);
+          if (selectedWallets.size > 1 && isSelected) {
+            const selectedWalletsData = trackedWallets.filter(w => selectedWallets.has(w.id));
+            e.dataTransfer.setData('application/json', JSON.stringify({
+              type: 'multi-drag',
+              wallets: selectedWalletsData,
+              count: selectedWalletsData.length
+            }));
+          } else {
+            e.dataTransfer.setData('application/json', JSON.stringify({
+              type: 'single-drag',
+              wallet: wallet
+            }));
+          }
+        }}
+        onDragEnd={() => setDraggedWallet(null)}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (e.ctrlKey || e.metaKey) {
+            setSelectedWallets(prev => {
+              const newSet = new Set(prev);
+              if (newSet.has(wallet.id)) {
+                newSet.delete(wallet.id);
+              } else {
+                newSet.add(wallet.id);
+              }
+              return newSet;
+            });
+          } else {
+            setSelectedWallets(new Set([wallet.id]));
+          }
+        }}
+      >
+        <div className="tracker-wallet-drag-handle">
+          <img src={circle} className="tracker-drag-handle-icon" alt="Drag" />
+        </div>
+
+        <div className="tracker-wallet-profile">
+          <div className="tracker-wallet-emoji">{wallet.emoji}</div>
+
+          <div className="tracker-wallet-info">
+            {editingWallet === wallet.id ? (
+              <div className="tracker-wallet-name-edit-container">
+                <input
+                  type="text"
+                  className="tracker-wallet-name-input"
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      saveWalletName(wallet.id);
+                    } else if (e.key === 'Escape') {
+                      setEditingWallet(null);
+                      setEditingName('');
+                    }
+                  }}
+                  autoFocus
+                  onBlur={() => saveWalletName(wallet.id)}
+                />
+              </div>
+            ) : (
+              <div className="tracker-wallet-name-display">
+                <span className="tracker-wallet-name">{wallet.name}</span>
+                <Edit2
+                  size={12}
+                  className="tracker-wallet-name-edit-icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startEditingWallet(wallet.id);
+                  }}
+                />
+              </div>
+            )}
+            <div className="tracker-wallet-address">
+              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+              <img
+                src={copy}
+                className="tracker-copy-icon"
+                alt="Copy"
                 onClick={(e) => {
                   e.stopPropagation();
-                  startEditingWallet(wallet.id);
+                  navigator.clipboard.writeText(wallet.address);
                 }}
+                style={{ cursor: 'pointer' }}
               />
             </div>
-          )}
-          <div className="tracker-wallet-address">
-            {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-            <img
-              src={copy}
-              className="tracker-copy-icon"
-              alt="Copy"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(wallet.address);
-              }}
-              style={{ cursor: 'pointer' }}
-            />
-            {walletCurrency === 'USD'
-              ? `$${(wallet.balance * monUsdPrice).toFixed(2)}K`
-              : `${wallet.balance.toFixed(2)}K`
-            }
           </div>
         </div>
-      </div>
 
+        <div className={`tracker-wallet-balance ${isBlurred ? 'blurred' : ''}`}>
+          {walletCurrency === 'MON' ? (
+            <img src={monadicon} className="tracker-balance-icon" alt="MON" />
+          ) : (
+            `$`
+          )}
+          {(() => {
+            const realBalance = walletTokenBalances[wallet.address];
+            if (realBalance && activechain && settings.chainConfig[activechain]?.eth) {
+              const ethToken = settings.chainConfig[activechain].eth;
+              const balance = Number(realBalance[ethToken] || 0) / 1e18;
+              return balance > 0 ? (balance / 1000).toFixed(2) : '0.00';
+            }
+            return wallet.balance.toFixed(2);
+          })()}K
+        </div>
 
-      <div className={`tracker-wallet-balance ${isBlurred ? 'blurred' : ''}`}>
-        {walletCurrency === 'MON' ? (
-          <img src={monadicon} className="tracker-balance-icon" alt="MON" />
-        ) : (
-          `$`
-        )}
+        <div className="tracker-wallet-last-active">{wallet.lastActive}</div>
 
+        <div className="tracker-wallet-actions">
+          <Tooltip content="Export Private Key">
+            <button className="tracker-action-button">
+              <img src={key} className="tracker-action-icon" alt="Export Key" />
+            </button>
+          </Tooltip>
 
-        {(() => {
-          const realBalance = walletTokenBalances[wallet.address];
-          if (realBalance && activechain && settings.chainConfig[activechain]?.eth) {
-            const ethToken = settings.chainConfig[activechain].eth;
-            const balance = Number(realBalance[ethToken] || 0) / 1e18;
-            return balance > 0 ? (balance / 1000).toFixed(2) : '0.00';
-          }
-          return wallet.balance.toFixed(2);
-        })()}K
-      </div>
-
-      <div className="tracker-wallet-last-active">{wallet.lastActive}</div>
-
-      <div className="tracker-wallet-actions">
-        <Tooltip content="View on Explorer">
-          <a
-            href={`${settings.chainConfig[activechain].explorer}/address/${wallet.address}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="tracker-action-button"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <svg
-              className="tracker-action-icon"
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="white"
+          <Tooltip content="View on Explorer">
+            <a
+              href={`${settings.chainConfig[activechain].explorer}/address/${wallet.address}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="tracker-action-button"
+              onClick={(e) => e.stopPropagation()}
             >
-              <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-              <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-            </svg>
-          </a>
-        </Tooltip>
+              <svg
+                className="tracker-action-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="white"
+              >
+                <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+              </svg>
+            </a>
+          </Tooltip>
 
-        <Tooltip content="Delete Wallet">
-          <button
-            className="tracker-action-button delete-button"
-            onClick={(e) => {
-              e.stopPropagation();
-              confirmDeleteWallet(wallet.id);
-            }}
-          >
-            <img src={trash} className="tracker-action-icon" alt="Delete" />
-          </button>
-        </Tooltip>
+          <Tooltip content="Delete Wallet">
+            <button
+              className="tracker-action-button delete-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                confirmDeleteWallet(wallet.id);
+              }}
+            >
+              <img src={trash} className="tracker-action-icon" alt="Delete" />
+            </button>
+          </Tooltip>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const formatMonitorValue = (value: number, decimals: number = 2): string => {
     const converted = monitorCurrency === 'USD'
@@ -1082,12 +1162,94 @@ const Tracker: React.FC<TrackerProps> = ({
     setTrackedWallets([]);
   };
 
+  const startSelection = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    
+    if ((e.target as HTMLElement).closest('.tracker-wallet-item')) {
+      return;
+    }
+
+    if (!e.ctrlKey && !e.metaKey) {
+      setSelectedWallets(new Set());
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const startX = e.clientX - rect.left;
+    const startY = e.clientY - rect.top;
+
+    setActiveSelectionContainer('main');
+    setSelectionRect({
+      startX,
+      startY,
+      currentX: startX,
+      currentY: startY
+    });
+  };
+
+  const updateSelection = (e: React.MouseEvent, container: HTMLElement) => {
+    if (!activeSelectionContainer || !selectionRect) return;
+
+    const rect = container.getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+
+    setSelectionRect(prev => prev ? {
+      ...prev,
+      currentX,
+      currentY
+    } : null);
+
+    const walletElements = container.querySelectorAll('.tracker-wallet-item');
+    const newSelection = new Set<string>();
+
+    walletElements.forEach((element) => {
+      const walletRect = element.getBoundingClientRect();
+      const elementRect = {
+        left: walletRect.left - rect.left,
+        top: walletRect.top - rect.top,
+        right: walletRect.right - rect.left,
+        bottom: walletRect.bottom - rect.top
+      };
+
+      const selectionBounds = {
+        left: Math.min(selectionRect.startX, currentX),
+        top: Math.min(selectionRect.startY, currentY),
+        right: Math.max(selectionRect.startX, currentX),
+        bottom: Math.max(selectionRect.startY, currentY)
+      };
+
+      if (elementRect.left < selectionBounds.right &&
+        elementRect.right > selectionBounds.left &&
+        elementRect.top < selectionBounds.bottom &&
+        elementRect.bottom > selectionBounds.top) {
+        const walletId = element.getAttribute('data-wallet-id');
+        if (walletId) newSelection.add(walletId);
+      }
+    });
+
+    setPreviewSelection(newSelection);
+  };
+
+  const endSelection = () => {
+    if (activeSelectionContainer && previewSelection.size > 0) {
+      setSelectedWallets(prev => {
+        const combined = new Set(prev);
+        previewSelection.forEach(id => combined.add(id));
+        return combined;
+      });
+    }
+
+    setPreviewSelection(new Set());
+    setActiveSelectionContainer(null);
+    setSelectionRect(null);
+  };
 
 
   const renderWalletManager = () => {
     const filteredWallets = getFilteredWallets();
-    return (
+    const isSelecting = activeSelectionContainer === 'main';
 
+    return (
       <div className="tracker-wallet-manager">
         {trackedWallets.length === 0 ? (
           <div className="tracker-empty-state">
@@ -1105,6 +1267,7 @@ const Tracker: React.FC<TrackerProps> = ({
         ) : (
           <>
             <div className="tracker-wallets-header">
+              <div className="tracker-wallet-header-cell"></div>
               <div className="tracker-wallet-header-cell">Name</div>
               <div
                 className={`tracker-wallet-header-cell sortable ${walletSortField === 'balance' ? 'active' : ''}`}
@@ -1113,7 +1276,7 @@ const Tracker: React.FC<TrackerProps> = ({
                 Balance
                 {walletSortField === 'balance' && (
                   <span className={`tracker-sort-arrow ${walletSortDirection}`}>
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
                       <path d="M5 7L2 3H8L5 7Z" />
                     </svg>
                   </span>
@@ -1126,21 +1289,38 @@ const Tracker: React.FC<TrackerProps> = ({
                 Last Active
                 {walletSortField === 'lastActive' && (
                   <span className={`tracker-sort-arrow ${walletSortDirection}`}>
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
                       <path d="M5 7L2 3H8L5 7Z" />
                     </svg>
                   </span>
                 )}
               </div>
-              <button
-                className="tracker-remove-all-button"
-                onClick={handleRemoveAll}
-                disabled={trackedWallets.length === 0}
-              >
-                Remove All
-              </button>
+              <div className="tracker-wallet-header-cell">Actions</div>
             </div>
-            <div ref={mainWalletsRef} className="tracker-wallets-list">
+            <div
+              ref={mainWalletsRef}
+              className={`tracker-wallets-list ${isSelecting ? 'selecting' : ''}`}
+              onMouseDown={(e) => startSelection(e)}
+              onMouseMove={(e) => {
+                if (isSelecting && mainWalletsRef.current) {
+                  updateSelection(e, mainWalletsRef.current);
+                }
+              }}
+              onMouseUp={endSelection}
+              onMouseLeave={endSelection}
+              style={{ position: 'relative' }}
+            >
+              {isSelecting && selectionRect && (
+                <div
+                  className="tracker-selection-rectangle"
+                  style={{
+                    left: Math.min(selectionRect.startX, selectionRect.currentX),
+                    top: Math.min(selectionRect.startY, selectionRect.currentY),
+                    width: Math.abs(selectionRect.currentX - selectionRect.startX),
+                    height: Math.abs(selectionRect.currentY - selectionRect.startY),
+                  }}
+                />
+              )}
               {filteredWallets.length === 0 ? (
                 <div className="tracker-empty-state">
                   <div className="tracker-empty-content">
@@ -1155,8 +1335,9 @@ const Tracker: React.FC<TrackerProps> = ({
           </>
         )}
       </div>
-    )
+    );
   };
+
 
   const renderLiveTrades = () => {
     const filteredTrades = getFilteredTrades();
@@ -1263,6 +1444,19 @@ const Tracker: React.FC<TrackerProps> = ({
 
   const renderMonitor = () => {
     const filteredTokens = getFilteredMonitorTokens();
+
+    const toggleTokenExpanded = (tokenId: string) => {
+      setExpandedTokens(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(tokenId)) {
+          newSet.delete(tokenId);
+        } else {
+          newSet.add(tokenId);
+        }
+        return newSet;
+      });
+    };
+
     return (
       <div className="tracker-monitor">
         {filteredTokens.length === 0 ? (
@@ -1273,72 +1467,109 @@ const Tracker: React.FC<TrackerProps> = ({
             </div>
           </div>
         ) : (
-          <div className="tracker-monitor-grid">
-            {filteredTokens.map((token) => (
-              <div key={token.id} className="tracker-monitor-card-wrapper">
-                <div className="tracker-monitor-card">
-                  <div className="tracker-monitor-card-header">
-                    <div className="tracker-monitor-token-identity">
-                      <span className="tracker-monitor-emoji">{token.emoji}</span>
-                      <div className="tracker-monitor-token-names">
-                        <span className="tracker-monitor-token-name">{token.name}</span>
-                        <span className="tracker-monitor-token-symbol">
-                          {token.symbol} • {monitorCurrency === 'USD'
-                            ? `$${(token.price * monUsdPrice).toFixed(3)}`
-                            : `${token.price.toFixed(3)} MON`}
-                        </span>
+          <div className="tracker-monitor-list">
+            {filteredTokens.map((token) => {
+              const isExpanded = expandedTokens.has(token.id);
+              const totalBought = token.trades.reduce((sum, t) => sum + t.bought, 0);
+              const totalSold = token.trades.reduce((sum, t) => sum + t.sold, 0);
+              const totalBuys = token.trades.reduce((sum, t) => sum + t.boughtTxns, 0);
+              const totalSells = token.trades.reduce((sum, t) => sum + t.soldTxns, 0);
+              const buyRatio = (totalBought + totalSold) > 0 ? (totalBought / (totalBought + totalSold) * 100) : 0;
+
+              return (
+                <div key={token.id} className="tracker-monitor-token-card">
+                  <div 
+                    className="tracker-monitor-token-header"
+                    onClick={() => toggleTokenExpanded(token.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="tracker-monitor-token-main">
+                      <div className="tracker-monitor-token-icon">
+                        <span className="tracker-monitor-emoji">{token.emoji}</span>
+                        <span className="tracker-monitor-time-badge">{token.trades[0]?.timeInTrade || '3m'}</span>
+                      </div>
+                      <div className="tracker-monitor-token-info">
+                        <div className="tracker-monitor-token-title">
+                          <span className="tracker-monitor-token-name">{token.name}</span>
+                          <span className="tracker-monitor-token-subtitle">
+                            {token.symbol} {token.change24h >= 0 ? '⬆' : '⬇'}
+                          </span>
+                          <button className="tracker-monitor-copy-btn">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                          </button>
+                          <button className="tracker-monitor-star-btn">☆</button>
+                        </div>
                       </div>
                     </div>
-                    <div className={`tracker-monitor-change ${token.change24h >= 0 ? 'positive' : 'negative'}`}>
-                      {token.change24h >= 0 ? '+' : ''}{token.change24h}%
-                    </div>
-                  </div>
 
-                  <div className="tracker-monitor-trades-header">
-                    <div className="tracker-monitor-trades-stats">
-                      <div className="tracker-monitor-trade-stat">
+                    <div className="tracker-monitor-token-stats-row">
+                      <div className="tracker-monitor-stat-item">
                         <span className="stat-label">H</span>
                         <span className="stat-value">{token.holders}</span>
                       </div>
-                      <div className="tracker-monitor-trade-stat">
+                      <div className="tracker-monitor-stat-item">
                         <span className="stat-label">MC</span>
                         <span className="stat-value">
                           {monitorCurrency === 'USD' ? '$' : ''}
                           {formatMonitorValue(token.marketCap)}
-                          {monitorCurrency === 'MON' ? ' MON' : ''}
                         </span>
                       </div>
-                      <div className="tracker-monitor-trade-stat">
+                      <div className="tracker-monitor-stat-item">
                         <span className="stat-label">L</span>
                         <span className="stat-value">
                           {monitorCurrency === 'USD' ? '$' : ''}
                           {formatMonitorValue(token.volume24h)}
-                          {monitorCurrency === 'MON' ? ' MON' : ''}
                         </span>
                       </div>
-                      <div className="tracker-monitor-trade-stat">
-                        <span className="stat-label">L</span>
-                        <span className="stat-value">${(token.volume24h / 1000).toFixed(2)}K</span>
-                      </div>
-                      <div className="tracker-monitor-trade-stat">
+                      <div className="tracker-monitor-stat-item">
                         <span className="stat-label">TX</span>
-                        <span className="stat-value">{token.trades.reduce((sum, t) => sum + t.boughtTxns + t.soldTxns, 0)}</span>
+                        <span className="stat-value">
+                          {token.trades.reduce((sum, t) => sum + t.boughtTxns + t.soldTxns, 0)}
+                        </span>
                       </div>
-                      <div className="tracker-monitor-trade-stat">
+                      <div className="tracker-monitor-stat-item">
                         <span className="stat-label">Last TX</span>
                         <span className="stat-value">1m</span>
                       </div>
+                      <button className="tracker-monitor-flash-btn">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                        </svg>
+                      </button>
                     </div>
-                    <button className="tracker-monitor-flash-button">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                      </svg>
-                    </button>
+
+                    <div className="tracker-monitor-summary-row">
+                      <div className="tracker-monitor-buy-sell-bars">
+                        <div className="tracker-monitor-bar-container">
+                          <div className="tracker-monitor-buy-bar" style={{ width: `${buyRatio}%` }}></div>
+                          <div className="tracker-monitor-sell-bar" style={{ width: `${100 - buyRatio}%` }}></div>
+                        </div>
+                        <div className="tracker-monitor-bar-labels">
+                          <span className="buy-label">
+                            <span className="label-count">{totalBuys}</span>
+                            <span className="label-amount">
+                              ≡ {monitorCurrency === 'USD' ? '$' : ''}
+                              {formatMonitorValue(totalBought)}
+                            </span>
+                          </span>
+                          <span className="sell-label">
+                            <span className="label-count">{totalSells}</span>
+                            <span className="label-amount">
+                              ≡ {monitorCurrency === 'USD' ? '$' : ''}
+                              {formatMonitorValue(totalSold)}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  {token.trades.length > 0 && (
-                    <div className="tracker-monitor-trades-table">
-                      <div className="tracker-monitor-trades-table-header">
+                  {isExpanded && token.trades.length > 0 && (
+                    <div className="tracker-monitor-trades-detail">
+                      <div className="tracker-monitor-trades-header-row">
                         <div className="header-cell">Wallet</div>
                         <div className="header-cell">Time in Trade</div>
                         <div className="header-cell">Bought</div>
@@ -1347,53 +1578,46 @@ const Tracker: React.FC<TrackerProps> = ({
                         <div className="header-cell">Remaining</div>
                       </div>
                       {token.trades.map((trade) => (
-                        <div key={trade.id} className="tracker-monitor-trade-row">
+                        <div key={trade.id} className="tracker-monitor-trade-detail-row">
                           <div className="trade-wallet">
                             <span className="trade-emoji">{trade.emoji}</span>
                             <span className="trade-wallet-name">{trade.wallet}</span>
                           </div>
                           <div className="trade-time">
-                            {trade.exitStatus && <span className="exit-badge">{trade.exitStatus}</span>}
+                            {trade.exitStatus && (
+                              <span className="exit-badge">{trade.exitStatus}</span>
+                            )}
                             <span className="time-value">{trade.timeInTrade}</span>
                           </div>
                           <div className="trade-bought">
                             <span className={`amount ${isBlurred ? 'blurred' : ''}`}>
-                              {monitorCurrency === 'USD' ? '$' : ''}
-                              {formatMonitorValue(trade.bought, 1)}
-                              {monitorCurrency === 'MON' ? ' MON' : ''}
+                              ≡ {formatMonitorValue(trade.bought, 3)}
                             </span>
                             <span className="txns">{trade.boughtTxns} txns</span>
                           </div>
                           <div className="trade-sold">
                             <span className={`amount ${isBlurred ? 'blurred' : ''}`}>
-                              {monitorCurrency === 'USD' ? '$' : ''}
-                              {formatMonitorValue(trade.sold, 1)}
-                              {monitorCurrency === 'MON' ? ' MON' : ''}
+                              ≡ {formatMonitorValue(trade.sold, 3)}
                             </span>
                             <span className="txns">{trade.soldTxns} txns</span>
                           </div>
                           <div className={`trade-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}>
-                            {trade.pnl >= 0 ? '+' : ''}
-                            {monitorCurrency === 'USD' ? '$' : ''}
-                            {formatMonitorValue(trade.pnl, 3)}
-                            {monitorCurrency === 'MON' ? ' MON' : ''}
+                            ≡ {trade.pnl >= 0 ? '+' : ''}{formatMonitorValue(trade.pnl, 3)}
                           </div>
                           <div className={`trade-remaining ${isBlurred ? 'blurred' : ''}`}>
-                            {monitorCurrency === 'USD' ? '$' : ''}
-                            {formatMonitorValue(trade.remaining, 0)}
-                            {monitorCurrency === 'MON' ? ' MON' : ''}
+                            ≡{formatMonitorValue(trade.remaining, 0)}
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
-    )
+    );
   };
 
   return (
