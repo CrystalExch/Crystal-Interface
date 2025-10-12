@@ -112,90 +112,54 @@ const [imageUrl, setImageUrl] = useState('');
     (document.getElementById('file-input') as HTMLInputElement | null)?.click();
   };
 
-const handleLaunch = async () => {
-  if (!formData.name || !formData.ticker || !formData.image) {
-    return;
-  }
-  if (!account.connected) return setpopup(4);
-  if (account.chainId !== 10143) return setChain();
-
-  setIsLaunching(true);
-  try {
-    const timestamp = Date.now();
-    const imageKey = `img/${formData.ticker}-${timestamp}.${formData.image.name.split('.').pop()}`;
-    const uploadedImageUrl = await uploadToR2(
-      imageKey,
-      formData.image,
-      formData.image.type
-    );
-    
-    // Create the token
-    await sendUserOperationAsync({
-      uo: {
-        target: ROUTER_ADDRESS,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: 'createToken',
-          args: [
-            formData.name, 
-            formData.ticker, 
-            uploadedImageUrl, 
-            formData.description, 
-            formData.twitter, 
-            formData.website, 
-            formData.telegram, 
-            formData.discord
-          ],
-        }),
-      },
-    }, 15000000n);
-
-    if (prebuyAmount && parseFloat(prebuyAmount) > 0) {
-      const buyAmount = BigInt(Math.floor(parseFloat(prebuyAmount) * 1e18));
-
+  const handleLaunch = async () => {
+    if (!formData.name || !formData.ticker || !formData.image) {
+      return;
     }
+    if (!account.connected) return setpopup(4);
+    if (account.chainId !== 10143) return setChain();
 
-    setIsLaunching(false);
-    navigate('/board');
-  } catch (err: any) {
-    setIsLaunching(false);
-    return;
-  }
-};
+    setIsLaunching(true);
+    try {
+      const timestamp = Date.now();
+      const imageKey = `img/${formData.ticker}-${timestamp}.${formData.image.name.split('.').pop()}`;
+      const uploadedImageUrl = await uploadToR2(
+        imageKey,
+        formData.image,
+        formData.image.type
+      );
+      let buyAmount = 0n;
+      if (prebuyAmount && parseFloat(prebuyAmount) > 0) {
+        buyAmount = BigInt(Math.floor(parseFloat(prebuyAmount) * 1e18));
+      }
+      await sendUserOperationAsync({
+        uo: {
+          target: ROUTER_ADDRESS,
+          data: encodeFunctionData({
+            abi: CrystalRouterAbi,
+            functionName: 'createToken',
+            args: [
+              formData.name, 
+              formData.ticker, 
+              uploadedImageUrl, 
+              formData.description, 
+              formData.twitter, 
+              formData.website, 
+              formData.telegram, 
+              formData.discord
+            ],
+          }),
+          value: buyAmount,
+        },
+      }, 15000000n);
 
-const handleConfirmLaunch = async () => {
-  if (!imageUrl) return;
-  
-  setIsLaunching(true);
-  try {
-    await sendUserOperationAsync({
-      uo: {
-        target: ROUTER_ADDRESS,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: 'createToken',
-          args: [
-            formData.name, 
-            formData.ticker, 
-            imageUrl, 
-            formData.description, 
-            formData.twitter, 
-            formData.website, 
-            formData.telegram, 
-            formData.discord,
-            prebuyAmount ? BigInt(Math.floor(parseFloat(prebuyAmount) * 1e18)) : 0n
-          ],
-        }),
-      },
-      value: prebuyAmount ? BigInt(Math.floor(parseFloat(prebuyAmount) * 1e18)) : 0n,
-    }, 15000000n);
-    setIsLaunching(false);
-    navigate('/board');
-  } catch (err: any) {
-    setIsLaunching(false);
-    return;
-  }
-};
+      setIsLaunching(false);
+      navigate('/board');
+    } catch (err: any) {
+      setIsLaunching(false);
+      return;
+    }
+  };
 
   const isFormValid = !!formData.name && !!formData.ticker && !!formData.image;
 
