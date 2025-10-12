@@ -206,7 +206,7 @@
   height: 120px;
   object-fit: cover;
   border-radius: 10px;
-  border: 2px solid rgba(219, 221, 249, 0.2);
+  border: 2px solid rgba(219, 221, 249, 0.1);
   margin-bottom: 1rem;
 }
 
@@ -280,11 +280,11 @@
       #7f82ac 75%,
       #7f82a1 100%);
   border: none;
-  border-radius: 12px;
+  border-radius: 20px;
   color: #000000;
   font-size: 0.9rem;
   font-weight: 500;
-  padding: 0.75rem;
+  padding: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
   letter-spacing: -0.5px;

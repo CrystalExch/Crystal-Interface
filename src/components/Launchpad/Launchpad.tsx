@@ -240,8 +240,8 @@ const handleConfirmLaunch = async () => {
                       <img src={imagePreview} alt="preview" className="launchpad-image-preview" />
                       <button onClick={(e) => { e.stopPropagation(); clearImage(); }} className="launchpad-clear-button">×</button>
                     </div>
-                    <p>{formData.image?.name}</p>
-                    <p>Click to change</p>
+                    <p className="launchpad-upload-header">{formData.image?.name}</p>
+                    <p className="launchpad-upload-subtitle">Click to change</p>
                   </div>
                 ) : (
                   <div className="launchpad-upload-content">
