@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { encodeFunctionData } from 'viem';
+
 import { settings } from '../../settings';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { useSharedContext } from '../../contexts/SharedContext';
+
 import MemeChart from '../MemeInterface/MemeChart/MemeChart';
 import defaultPfp from '../../assets/leaderboard_default.png';
 import {
@@ -12,46 +14,7 @@ import {
 } from '../MemeInterface/graphql'
 
 import './TokenDetail.css';
-import {
-  setGlobalPopupHandlers,
-  useWalletPopup,
-} from '../MemeTransactionPopup/useWalletPopup';
-import customRound from '../../utils/customRound';
-import { formatSubscript } from '../../utils/numberDisplayFormat';
-
-interface Token {
-  id: string;
-  tokenAddress: string;
-  name: string;
-  symbol: string;
-  image: string;
-  price: number;
-  marketCap: number;
-  change24h: number;
-  volume24h: number;
-  holders: number;
-  proTraders: number;
-  kolTraders: number;
-  sniperHolding: number;
-  devHolding: number;
-  bundleHolding: number;
-  insiderHolding: number;
-  top10Holding: number;
-  buyTransactions: number;
-  sellTransactions: number;
-  globalFeesPaid: number;
-  website: string;
-  twitterHandle: string;
-  progress: number;
-  status: 'new' | 'graduating' | 'graduated';
-  description: string;
-  created: number;
-  bondingAmount: number;
-  volumeDelta: number;
-  telegramHandle: string;
-  discordHandle: string;
-  creator?: string;
-}
+import { useWalletPopup } from '../MemeTransactionPopup/useWalletPopup';
 
 interface Trade {
   id: string;
@@ -96,15 +59,44 @@ interface TokenDetailProps {
   terminalRefetch: any;
   walletTokenBalances: any;
   tokenData: any;
-  setTokenData: any;
   monUsdPrice: any;
+  token: any;
+  selectedInterval: any;
+  setSelectedInterval: any;
+  holders: any;
+  chartData: any;
+  setChartData: any;
+  trades: any;
+  registerRealtimeTick: (
+    fn: (price: number, volNative: number) => void,
+  ) => void;
 }
 
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 const TOTAL_SUPPLY = 1e9;
-const PAGE_SIZE = 100;
+const RESOLUTION_SECS: Record<string, number> = {
+  '1s': 1,
+  '5s': 5,
+  '15s': 15,
+  '1m': 60,
+  '5m': 300,
+  '15m': 900,
+  '1h': 3600,
+  '4h': 14400,
+  '1d': 86400,
+};
 
-
+const toSeriesKey = (sym: string, interval: string) =>
+  sym +
+  'MON' +
+  (interval === '1d'
+    ? '1D'
+    : interval === '4h'
+      ? '240'
+      : interval === '1h'
+        ? '60'
+        : interval.endsWith('s')
+          ? interval.slice(0, -1).toUpperCase() + 'S'
+          : interval.slice(0, -1));
 
 const formatPrice = (p: number) => {
   if (p >= 1e12) return `$${(p / 1e12).toFixed(2)}T`;
@@ -128,19 +120,17 @@ const formatTradeAmount = (amount: number): string => {
 
 const formatScientificPrice = (price: number): string => {
   if (price === 0) return '$0';
-  
+
   if (price >= 0.001) {
     return `$${price.toFixed(6).replace(/\.?0+$/, '')}`;
   }
-  
+
   const exponent = Math.floor(Math.log10(price));
-  
+
   const coefficient = price / Math.pow(10, exponent);
-  
+
   return `$${coefficient.toFixed(2)} × 10^${exponent}`;
 };
-
-const toPct = (balance: number) => (balance / TOTAL_SUPPLY) * 100;
 
 const CopyableAddress: React.FC<{
   address?: string | null;
@@ -148,7 +138,7 @@ const CopyableAddress: React.FC<{
   truncate?: { start: number; end: number };
   labelPrefix?: string;
 }> = ({ address, className, truncate = { start: 6, end: 4 }, labelPrefix }) => {
-  
+
   const [copied, setCopied] = useState(false);
   const [copyTooltipVisible, setCopyTooltipVisible] = useState(false);
   const [showHoverTooltip, setShowHoverTooltip] = useState(false);
@@ -184,13 +174,13 @@ const CopyableAddress: React.FC<{
         type="button"
         onClick={copy}
         onMouseEnter={() => !copyTooltipVisible && setShowHoverTooltip(true)}
-        onMouseLeave={() => setShowHoverTooltip(false)} 
+        onMouseLeave={() => setShowHoverTooltip(false)}
         className={className ? `${className} copyable-address` : 'copyable-address'}
         aria-label="Copy address to clipboard"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                    </svg>
+          <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+        </svg>
         {labelPrefix}
         {short}
       </button>
@@ -216,8 +206,15 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   setpopup,
   walletTokenBalances,
   tokenData,
-  setTokenData,
-  monUsdPrice
+  monUsdPrice,
+  token,
+  selectedInterval,
+  setSelectedInterval,
+  holders,
+  chartData,
+  setChartData,
+  trades,
+  registerRealtimeTick,
 }) => {
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const navigate = useNavigate();
@@ -229,20 +226,13 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const [tradesFilterEnabled, setTradesFilterEnabled] = useState(true);
   const [tradesFilterThreshold, setTradesFilterThreshold] = useState('1');
   const [activeTab, setActiveTab] = useState<'comments' | 'trades'>('comments');
-  const [trades, setTrades] = useState<Trade[]>([]);
   const explorer = settings.chainConfig[activechain]?.explorer;
-  const [token, setToken] = useState<any>((tokenData || tokenAddress ? {id: tokenAddress} : null) || null);
-  const [holders, setHolders] = useState<Holder[]>([]);
-  const [page, setPage] = useState(0);
-  const holdersMapRef = useRef<Map<string, number>>(new Map());
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [tradeAmount, setTradeAmount] = useState('');
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
-  const [loading, setLoading] = useState(!tokenData);
+  const [loading, setLoading] = useState<boolean>(() => !token);
   const [isSigning, setIsSigning] = useState(false);
-  const [selectedInterval, setSelectedInterval] = useState<any>(() => localStorage.getItem('meme_chart_timeframe') || '1m');
-  const [chartData, setChartData] = useState<any>(null);
   const realtimeCallbackRef = useRef<any>({});
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<'MON' | 'TOKEN'>('MON');
@@ -255,10 +245,70 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   });
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter as `0x${string}` | undefined;
 
-  const currentPrice = tokenData?.price || token?.price || 0;
+  const currentPrice = token?.price || token?.price || 0;
   const GRADUATION_THRESHOLD = 10000;
 
-  // get mon balance Ws in the chattttt
+  if (Array.isArray(holders)) {
+    holders.forEach((h: any) => {
+      const tnRaw = h?.tokenNet ?? 0;
+      const tn = typeof tnRaw === 'bigint' ? Number(tnRaw) : Number(tnRaw);
+      h.percentage = tn / 1e9;
+    });
+  }
+
+  useEffect(() => {
+    const fn = (lastPrice: number, volNative: number) => {
+      const sel = selectedInterval;
+      const resSecs = RESOLUTION_SECS[sel] ?? 60;
+      const now = Date.now();
+      const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
+
+      setChartData((prev: any) => {
+        if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
+        const [bars, key, flag] = prev;
+        const updated = [...bars];
+        const last = updated[updated.length - 1];
+
+        if (!last || last.time < bucket) {
+          const prevClose = last?.close ?? lastPrice;
+          const open = prevClose;
+          const high = Math.max(open, lastPrice);
+          const low = Math.min(open, lastPrice);
+          const newBar = {
+            time: bucket,
+            open,
+            high,
+            low,
+            close: lastPrice,
+            volume: volNative || 0,
+          };
+          updated.push(newBar);
+          const cb =
+            realtimeCallbackRef.current?.[toSeriesKey(token.symbol, sel)];
+          if (cb) cb(newBar);
+        } else {
+          const cur = { ...last };
+          cur.high = Math.max(cur.high, lastPrice);
+          cur.low = Math.min(cur.low, lastPrice);
+          cur.close = lastPrice;
+          cur.volume = (cur.volume || 0) + (volNative || 0);
+          updated[updated.length - 1] = cur;
+          const cb =
+            realtimeCallbackRef.current?.[toSeriesKey(token.symbol, sel)];
+          if (cb) cb(cur);
+        }
+        if (updated.length > 1200) updated.splice(0, updated.length - 1200);
+        console.log(updated.length);
+        return [updated, key, flag];
+      });
+    };
+
+    registerRealtimeTick?.(fn);
+    return () => {
+      registerRealtimeTick?.(() => { });
+    };
+  }, [registerRealtimeTick, selectedInterval, token.symbol]);
+
   const getCurrentMONBalance = useCallback(() => {
     if (!account?.address) return 0;
     const balances = walletTokenBalances[account.address];
@@ -278,168 +328,19 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     return getCurrentMONBalance();
   }, [getCurrentMONBalance]);
 
-  const fetchTokenData = useCallback(async () => {
-    if (!token) return;
-
-    try {
-      const seriesKey = 'series' + (
-        selectedInterval === '1s' ? '1' :
-        selectedInterval === '5s' ? '5' :
-        selectedInterval === '15s' ? '15' :
-        selectedInterval === '1m' ? '60' :
-        selectedInterval === '5m' ? '300' :
-        selectedInterval === '15m' ? '900' :
-        selectedInterval === '1h' ? '3600' :
-        selectedInterval === '4h' ? '14400':
-        '86400'
-      );
-
-      const response = await fetch(SUBGRAPH_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            query ($id: ID!) {
-              launchpadTokens(where: { id: $id }) {
-                lastPriceNativePerTokenWad
-                volumeNative
-                buyTxs
-                sellTxs
-                name
-                symbol
-                migrated
-                metadataCID
-                creator {
-                  id
-                }
-                timestamp
-                trades(first: 50, orderBy: block, orderDirection: desc) {
-                  id
-                  account { id }
-                  block
-                  isBuy
-                  priceNativePerTokenWad
-                  amountIn
-                  amountOut
-                }
-                series: ${seriesKey} {
-                  klines(first: 1000, orderBy: time, orderDirection: desc) {
-                    time open high low close
-                  }
-                }
-              }
-            }`,
-          variables: { id: token.id.toLowerCase() },
-        }),
-      });
-
-      const data = (await response.json())?.data;
-      console.log(data)
-      const klines = data?.launchpadTokens?.[0]?.series?.klines;
-      
-      if (!klines) return;
-
-      if (data.launchpadTokens?.length) {
-        const m = data.launchpadTokens[0];
-
-        let imageUrl = m.metadataCID || '';
-
-        const updatedTokenData = {
-          ...token,
-          name: m.name || token.name || "Unknown Token",
-          symbol: m.symbol || token.symbol || "UNKNOWN",
-          image: imageUrl,
-          creator: m.creator.id || "",
-          price: Number(m.lastPriceNativePerTokenWad || 0) / 1e9,
-          marketCap: (Number(m.lastPriceNativePerTokenWad || 0) / 1e9) * TOTAL_SUPPLY,
-          volume24h: Number(m.volumeNative || 0) / 1e18,
-          buyTransactions: Number(m.buyTxs || 0),
-          sellTransactions: Number(m.sellTxs || 0),
-          created: m.timestamp,
-          status: m.migrated ? 'graduated' : 'new' as const,
-        };
-
-        setTokenData(updatedTokenData);
-
-        const bars = klines
-          .slice()
-          .reverse()
-          .map((c: any) => ({
-            time: Number(c.time) * 1000,
-            open: Number(c.open) / 1e9,
-            high: Number(c.high) / 1e9,
-            low: Number(c.low) / 1e9,
-            close: Number(c.close) / 1e9,
-            volume: Number(c.baseVolume) / 1e18,
-          }));
-
-        const mappedTrades: Trade[] = (m.trades || []).map((t: any) => ({
-          id: t.id,
-          timestamp: Number(t.block), 
-          isBuy: !!t.isBuy,
-          price: Number(t.priceNativePerTokenWad) / 1e9,
-          tokenAmount: Number(t.isBuy ? t.amountOut : t.amountIn) / 1e18,
-          nativeAmount: Number(t.isBuy ? t.amountIn : t.amountOut) / 1e18,
-          caller: t.account.id,
-        }));
-        setTrades(mappedTrades);
-
-        const resForChart =
-          selectedInterval === "1d" ? "1D" :
-          selectedInterval === "4h" ? "240" :
-          selectedInterval === "1h" ? "60"  :
-          selectedInterval.endsWith("s")
-            ? selectedInterval.slice(0, -1).toUpperCase() + "S"
-            : selectedInterval.slice(0, -1);
-        
-        setChartData([bars, resForChart, false]);
-
-        if (bars.length > 0) {
-          const currentPrice = bars[bars.length - 1].close;
-          const ath = Math.max(...bars.map((b: any) => b.high));
-          
-
-          const now = Date.now();
-          const find5mAgo = bars.find((b: any) => now - b.time <= 5 * 60 * 1000);
-          const find1hAgo = bars.find((b: any) => now - b.time <= 60 * 60 * 1000);
-          const find6hAgo = bars.find((b: any) => now - b.time <= 6 * 60 * 60 * 1000);
-          
-          const price5mAgo = find5mAgo?.close || currentPrice;
-          const price1hAgo = find1hAgo?.close || currentPrice;
-          const price6hAgo = find6hAgo?.close || currentPrice;
-          
-          const change5m = price5mAgo !== 0 ? ((currentPrice - price5mAgo) / price5mAgo) * 100 : 0;
-          const change1h = price1hAgo !== 0 ? ((currentPrice - price1hAgo) / price1hAgo) * 100 : 0;
-          const change6h = price6hAgo !== 0 ? ((currentPrice - price6hAgo) / price6hAgo) * 100 : 0;
-          
-          setPriceStats({
-            ath,
-            change5m,
-            change1h,
-            change6h,
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch token data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [token, selectedInterval, setTokenData, setChartData, setLoading]);
-
   const handleLikeComment = (commentId: string) => {
     if (!account.connected) {
       walletPopup.showConnectionError();
       return;
     }
 
-    setComments((prev) => 
+    setComments((prev) =>
       prev.map(comment => {
         if (comment.id === commentId) {
           const hasLiked = comment.likes.includes(account.address);
           return {
             ...comment,
-            likes: hasLiked 
+            likes: hasLiked
               ? comment.likes.filter(addr => addr !== account.address)
               : [...comment.likes, account.address]
           };
@@ -448,6 +349,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       })
     );
   };
+
   const handleTradesSort = (field: 'type' | 'amount' | 'tokenAmount' | 'time') => {
     if (tradesSortField === field) {
       setTradesSortDirection(prev => prev === 'desc' ? 'asc' : 'desc');
@@ -456,12 +358,13 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       setTradesSortDirection('desc');
     }
   };
+
   const handleAddComment = () => {
     if (!account.connected) {
       walletPopup.showConnectionError();
       return;
     }
-    
+
     const msg = newComment.trim();
     if (!msg) return;
 
@@ -480,7 +383,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   };
 
   const getDefaultProfilePic = (address: string) => {
-    
     return defaultPfp;
   };
 
@@ -488,92 +390,15 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     setComments((prev) => prev.filter(comment => comment.id !== commentId));
   };
 
-  useEffect(() => {
-    fetchTokenData();
-  }, [fetchTokenData]);
-
-  useEffect(() => {
-    if (!token?.id || !currentPrice || !routerAddress) return;
-    
-    const price = currentPrice;
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const first = PAGE_SIZE;
-        const skip = page * PAGE_SIZE;
-        const m = token.id.toLowerCase();
-
-        const response = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: HOLDERS_QUERY,
-            variables: { m, skip, first },
-          }),
-        });
-
-        const { data } = await response.json();
-        const positions: any[] = data?.launchpadPositions ?? [];
-
-        if (cancelled) return;
-
-        const mapped: Holder[] = positions
-          .filter((p: any) => 
-            p.account?.id.toLowerCase() !== routerAddress.toLowerCase()
-          )
-          .map((p: any) => {
-            const amountBought = Number(p.tokenBought) / 1e18;
-            const amountSold = Number(p.tokenSold) / 1e18;
-            const valueBought = Number(p.nativeSpent) / 1e18;
-            const valueSold = Number(p.nativeReceived) / 1e18;
-            const balance = Number(p.tokens) / 1e18;
-            const realized = valueSold - valueBought;
-            const unrealized = balance * price;
-            const totalPnl = realized + unrealized;
-
-            return {
-              address: p.account.id,
-              balance,
-              percentage: toPct(balance),
-              amountBought,
-              amountSold,
-              valueBought,
-              valueSold,
-              tokenNet: balance,
-              valueNet: totalPnl,
-            };
-          });
-
-        // Sort by balance descending and take top 10
-        const sortedHolders = mapped.sort((a, b) => b.balance - a.balance);
-        setHolders(sortedHolders.slice(0, 10));
-        
-        holdersMapRef.current = new Map(
-          mapped.map((h: Holder, i: number) => [h.address.toLowerCase(), i])
-        );
-      } catch (error) {
-        console.error('Failed to fetch holders:', error);
-        if (!cancelled) {
-          setHolders([]);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [token?.id, currentPrice, page, routerAddress]);
-
   const handleCurrencySwitch = () => {
     setSelectedCurrency(prev => prev === 'MON' ? 'TOKEN' : 'MON');
     setTradeAmount('');
   };
 
-  const currentCurrency = (tradeType === 'sell') ? (tokenData?.symbol || 'TOKEN') : 
-                          (selectedCurrency === 'MON' ? 'MON' : tokenData?.symbol || 'TOKEN');
+  const currentCurrency = (tradeType === 'sell') ? (token?.symbol || 'TOKEN') :
+    (selectedCurrency === 'MON' ? 'MON' : token?.symbol || 'TOKEN');
   const currentBalance = (tradeType === 'sell') ? walletTokenBalance :
-                         (selectedCurrency === 'MON' ? walletMonBalance : walletTokenBalance);
+    (selectedCurrency === 'MON' ? walletMonBalance : walletTokenBalance);
 
   const handleMaxClick = () => {
     if (tradeType === 'sell') {
@@ -622,7 +447,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       if (tradeType === 'buy') {
         showLoadingPopup(txId, {
           title: 'Sending transaction...',
-          subtitle: `Buying ${tradeAmount} ${currentCurrency} worth of ${tokenData.symbol}`,
+          subtitle: `Buying ${tradeAmount} ${currentCurrency} worth of ${token.symbol}`,
           amount: tradeAmount,
           amountUnit: currentCurrency,
         });
@@ -657,14 +482,14 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
         updatePopup(txId, {
           title: 'Confirming transaction...',
-          subtitle: `Buying ${tradeAmount} ${currentCurrency} worth of ${tokenData.symbol}`,
+          subtitle: `Buying ${tradeAmount} ${currentCurrency} worth of ${token.symbol}`,
           variant: 'info',
         });
 
         await sendUserOperationAsync({ uo });
 
         updatePopup(txId, {
-          title: `Bought ${tokenData.symbol}`,
+          title: `Bought ${token.symbol}`,
           subtitle: `Spent ${tradeAmount} ${currentCurrency}`,
           variant: 'success',
           isLoading: false,
@@ -672,16 +497,16 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       } else {
         showLoadingPopup(txId, {
           title: 'Sending transaction...',
-          subtitle: `Selling ${tradeAmount} ${tokenData.symbol}`,
+          subtitle: `Selling ${tradeAmount} ${token.symbol}`,
           amount: tradeAmount,
-          amountUnit: tokenData.symbol,
+          amountUnit: token.symbol,
         });
 
         const amountTokenWei = BigInt(Math.round(parsedAmount * 1e18));
 
         updatePopup(txId, {
           title: 'Confirming sell...',
-          subtitle: `Selling ${tradeAmount} ${tokenData.symbol}`,
+          subtitle: `Selling ${tradeAmount} ${token.symbol}`,
           variant: 'info',
         });
 
@@ -698,7 +523,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         await sendUserOperationAsync({ uo: sellUo });
 
         updatePopup(txId, {
-          title: `Sold ${tokenData.symbol}`,
+          title: `Sold ${token.symbol}`,
           subtitle: 'Received MON',
           variant: 'success',
           isLoading: false,
@@ -724,7 +549,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
     if (account.chainId !== targetChainId)
       return `${walletPopup.texts.SWITCH_CHAIN} to ${settings.chainConfig[activechain]?.name || 'Monad'}`;
-    return `${tradeType === 'buy' ? 'Buy' : 'Sell'} ${tokenData.symbol}`;
+    return `${tradeType === 'buy' ? 'Buy' : 'Sell'} ${token.symbol}`;
   };
 
   const isTradeDisabled = () => {
@@ -740,17 +565,17 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     return (
       <div className="detail-loading">
         <div className="detail-loading-spinner" />
-        <span>Loading tokenData...</span>
+        <span>Loading token...</span>
       </div>
     );
   }
 
   const getSortedTrades = () => {
     const threshold = parseFloat(tradesFilterThreshold) || 0;
-    const filteredTrades = tradesFilterEnabled 
-      ? trades.filter(trade => trade.nativeAmount >= threshold)
+    const filteredTrades = tradesFilterEnabled
+      ? trades.filter((trade: any) => trade.nativeAmount >= threshold)
       : trades;
-    
+
     if (!tradesSortField) return filteredTrades;
 
     return [...filteredTrades].sort((a, b) => {
@@ -775,12 +600,12 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
       return tradesSortDirection === 'desc' ? -comparison : comparison;
     });
-    };
+  };
 
-    const formatTimeAgo = (timestamp: number): string => {
+  const formatTimeAgo = (timestamp: number): string => {
     const now = Date.now() / 1000;
     const secondsAgo = Math.max(0, now - timestamp);
-    
+
     if (secondsAgo < 60) {
       return `${Math.floor(secondsAgo)}s ago`;
     } else if (secondsAgo < 3600) {
@@ -803,7 +628,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     );
   }
 
-  const bondingProgress = Math.min((tokenData.marketCap / 10000) * 100, 100);
+  const bondingProgress = Math.min((token.marketCap / 10000) * 100, 100);
 
   return (
     <div className="detail-container">
@@ -814,16 +639,16 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
         <div className="detail-header">
           <div className="detail-token-header">
-            <img src={tokenData.image} className="detail-token-image" />
+            <img src={token.image} className="detail-token-image" />
             <div className="detail-token-info">
-              <h1 className="detail-token-name">{tokenData.name}</h1>
-              <div className="detail-token-symbol">{tokenData.symbol}</div>
+              <h1 className="detail-token-name">{token.name}</h1>
+              <div className="detail-token-symbol">{token.symbol}</div>
               <div className="detail-token-meta">
-                <CopyableAddress address={tokenData.creator ?? null} className="detail-meta-address" labelPrefix="Created by " />
+                <CopyableAddress address={token.creator?.id ?? null} className="detail-meta-address" labelPrefix="Created by " />
                 <span>•</span>
-                <span>{Math.floor((Date.now() / 1000 - tokenData.created) / 3600)}h ago</span>
+                <span>{Math.floor((Date.now() / 1000 - token.created) / 3600)}h ago</span>
                 <span>•</span>
-                {tokenData.status === 'graduated' ? <span>Coin has graduated!</span> : <span>{bondingProgress.toFixed(1)}% bonded</span>}
+                {token.status === 'graduated' ? <span>Coin has graduated!</span> : <span>{bondingProgress.toFixed(1)}% bonded</span>}
               </div>
             </div>
           </div>
@@ -831,7 +656,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           <div className="detail-quick-stats">
             <div className="detail-stat">
               <div className="detail-stat-label">Market Cap</div>
-              <div className="detail-stat-value">{formatPrice(tokenData.marketCap * monUsdPrice)}</div>
+              <div className="detail-stat-value">{formatPrice(token.marketCap * monUsdPrice)}</div>
             </div>
             <div className="detail-stat">
               <div className="detail-stat-label">ATH</div>
@@ -850,15 +675,15 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               realtimeCallbackRef={realtimeCallbackRef}
               monUsdPrice={monUsdPrice}
               address={account.address}
-              devAddress={tokenData.creator}
+              devAddress={token.creator}
             />
           </div>
 
           <div className="detail-stats-bar">
             <div className="detail-stat-item">
               <div className="detail-stat-label">Vol 24h</div>
-              <div className={`detail-stat-value ${((tokenData?.volume24h || 0) === 0) ? 'detail-stat-neutral' : ''}`}>
-                ${formatNumber((tokenData?.volume24h || 0) * monUsdPrice)}
+              <div className={`detail-stat-value ${((token?.volume24h || 0) === 0) ? 'detail-stat-neutral' : ''}`}>
+                ${formatNumber((token?.volume24h || 0) * monUsdPrice)}
               </div>
             </div>
             <div className="detail-stat-item">
@@ -891,13 +716,13 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             <div className="detail-info-section">
 
               <div className="detail-tabs-header" data-active={activeTab}>
-                <button 
+                <button
                   className={`detail-tab ${activeTab === 'comments' ? 'active' : ''}`}
                   onClick={() => setActiveTab('comments')}
                 >
                   Comments
                 </button>
-                <button 
+                <button
                   className={`detail-tab ${activeTab === 'trades' ? 'active' : ''}`}
                   onClick={() => setActiveTab('trades')}
                 >
@@ -918,8 +743,8 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                       className="detail-comment-field"
                       disabled={!account.connected}
                     />
-                    <button 
-                      onClick={handleAddComment} 
+                    <button
+                      onClick={handleAddComment}
                       className="detail-comment-submit"
                       disabled={!account.connected || !newComment.trim()}
                     >
@@ -931,22 +756,22 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                       <div key={comment.id} className="detail-comment">
                         <div className="detail-comment-container">
                           <div className="detail-comment-avatar">
-                            <img 
-                              src={comment.profilePic || getDefaultProfilePic(comment.userAddress)} 
+                            <img
+                              src={comment.profilePic || getDefaultProfilePic(comment.userAddress)}
                               alt={`${comment.user} avatar`}
                               className="detail-comment-avatar-img"
                             />
                           </div>
-                          
+
                           <div className="detail-comment-content">
                             <div className="detail-comment-header">
                               <div className="detail-comment-user-info">
                                 <span className="detail-comment-user">{comment.user}</span>
                                 <span className="detail-comment-time">{Math.floor((Date.now() - comment.timestamp) / 60000)}m ago</span>
                               </div>
-                              
+
                               {account.connected && account.address === comment.userAddress && (
-                                <button 
+                                <button
                                   className="detail-comment-delete"
                                   onClick={() => handleDeleteComment(comment.id)}
                                 >
@@ -954,11 +779,11 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                                 </button>
                               )}
                             </div>
-                            
+
                             <div className="detail-comment-message">{comment.message}</div>
-                            
+
                             <div className="detail-comment-actions">
-                              <button 
+                              <button
                                 className={`detail-comment-like ${comment.likes.includes(account.address) ? 'liked' : ''}`}
                                 onClick={() => handleLikeComment(comment.id)}
                                 disabled={!account.connected}
@@ -983,18 +808,18 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                         <input type="checkbox" id="trades-filter" checked={tradesFilterEnabled} onChange={() => setTradesFilterEnabled(!tradesFilterEnabled)} />
                         <label htmlFor="trades-filter"></label>
                       </div>
-                        <input
-                          type="decimal"
-                          className="detail-trades-filter-value"
-                          value={tradesFilterThreshold}
-                          onChange={(e) => setTradesFilterThreshold(e.target.value)}
-                          disabled={!tradesFilterEnabled}
-                          step="0.01"
-                          min="0"
-                        />
+                      <input
+                        type="decimal"
+                        className="detail-trades-filter-value"
+                        value={tradesFilterThreshold}
+                        onChange={(e) => setTradesFilterThreshold(e.target.value)}
+                        disabled={!tradesFilterEnabled}
+                        step="0.01"
+                        min="0"
+                      />
                       <span className="detail-trades-filter-desc">(showing trades greater than {tradesFilterThreshold} MON)</span>
                     </div>
-                    
+
                     <div className="detail-trades-actions">
                       <button className="detail-trades-action-button">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1006,11 +831,11 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="detail-trades-table">
                     <div className="detail-trades-table-header">
                       <div className="detail-trades-header-cell">Account</div>
-                      <div 
+                      <div
                         className={`detail-trades-header-cell sortable ${tradesSortField === 'type' ? 'active' : ''}`}
                         onClick={() => handleTradesSort('type')}
                       >
@@ -1023,7 +848,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                           </span>
                         )}
                       </div>
-                      <div 
+                      <div
                         className={`detail-trades-header-cell sortable ${tradesSortField === 'amount' ? 'active' : ''}`}
                         onClick={() => handleTradesSort('amount')}
                       >
@@ -1036,11 +861,11 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                           </span>
                         )}
                       </div>
-                      <div 
+                      <div
                         className={`detail-trades-header-cell sortable ${tradesSortField === 'tokenAmount' ? 'active' : ''}`}
                         onClick={() => handleTradesSort('tokenAmount')}
                       >
-                        Amount ({tokenData.symbol})
+                        Amount ({token.symbol})
                         {tradesSortField === 'tokenAmount' && (
                           <span className={`detail-trades-sort-arrow ${tradesSortDirection}`}>
                             <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -1049,7 +874,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                           </span>
                         )}
                       </div>
-                      <div 
+                      <div
                         className={`detail-trades-header-cell sortable ${tradesSortField === 'time' ? 'active' : ''}`}
                         onClick={() => handleTradesSort('time')}
                       >
@@ -1064,9 +889,9 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                       </div>
                       <div className="detail-trades-header-cell">Txn</div>
                     </div>
-                    
+
                     <div className="detail-trades-body">
-                      {getSortedTrades().map((trade) => (
+                      {getSortedTrades().map((trade: any) => (
                         <div key={trade.id} className="detail-trades-row">
                           <div className="detail-trades-col detail-trades-account">
                             <div className="detail-trades-avatar">
@@ -1094,7 +919,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                             {formatTimeAgo(trade.timestamp)}
                           </div>
                           <div className="detail-trades-col detail-trades-txn">
-                            <button 
+                            <button
                               className="detail-trades-txn-link"
                               onClick={() => window.open(`${explorer}/tx/${trade.id.substring(0, trade.id.indexOf('-'))}`, '_blank')}
                             >
@@ -1128,11 +953,11 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             <div className="detail-trade-input-group">
               <div className="detail-balance-info">
                 {tradeType === 'buy' && (
-                  <button 
-                    className="detail-currency-switch-button" 
+                  <button
+                    className="detail-currency-switch-button"
                     onClick={handleCurrencySwitch}
                   >
-                    Switch to {(selectedCurrency === 'MON' ? tokenData?.symbol || 'TOKEN' : 'MON')}
+                    Switch to {(selectedCurrency === 'MON' ? token?.symbol || 'TOKEN' : 'MON')}
                   </button>
                 )}
                 <span>
@@ -1151,41 +976,41 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               </div>
 
               {tradeType === 'buy' && selectedCurrency === 'MON' ? (
-              <div className="detail-preset-buttons">                
-                <div className="detail-preset-buttons-right">
-                <button 
-                      className="detail-preset-button-left"
-                      onClick={() => {/**/}}
-                >
-                  Slippage (%)
-                </button>
-                  {['1', '10', '100'].map((amount) => (
-                    <button 
-                      key={amount} 
-                      onClick={() => setTradeAmount(amount)} 
-                      className="detail-preset-button"
-                    >
-                      {amount} MON
-                    </button>
-                  ))}
-                  <button onClick={handleMaxClick} className="detail-preset-button">
-                    Max
-                  </button>
-                </div>
-              </div>
-              ) : (
-                <div className="detail-preset-buttons">                  
+                <div className="detail-preset-buttons">
                   <div className="detail-preset-buttons-right">
-                  <button 
-                    className="detail-preset-button-left" 
-                    onClick={() => {/* your custom action */}}
-                  >
-                    Slippage (%)
-                  </button>
+                    <button
+                      className="detail-preset-button-left"
+                      onClick={() => {/**/ }}
+                    >
+                      Slippage (%)
+                    </button>
+                    {['1', '10', '100'].map((amount) => (
+                      <button
+                        key={amount}
+                        onClick={() => setTradeAmount(amount)}
+                        className="detail-preset-button"
+                      >
+                        {amount} MON
+                      </button>
+                    ))}
+                    <button onClick={handleMaxClick} className="detail-preset-button">
+                      Max
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="detail-preset-buttons">
+                  <div className="detail-preset-buttons-right">
+                    <button
+                      className="detail-preset-button-left"
+                      onClick={() => {/* your custom action */ }}
+                    >
+                      Slippage (%)
+                    </button>
                     {['25', '50', '75', '100'].map((percentage) => (
-                      <button 
-                        key={percentage} 
-                        onClick={() => handlePercentageClick(Number(percentage))} 
+                      <button
+                        key={percentage}
+                        onClick={() => handlePercentageClick(Number(percentage))}
                         className="detail-preset-button"
                       >
                         {percentage}%
@@ -1194,7 +1019,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                   </div>
                 </div>
               )}
-              </div>
+            </div>
 
             <button
               onClick={() => {
@@ -1229,8 +1054,8 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           <div className="detail-trade-stats">
             <div className="detail-stat-row">
               <span>Position</span>
-              <span> 
-                {formatNumber(walletTokenBalance)} {tokenData.symbol}
+              <span>
+                {formatNumber(walletTokenBalance)} {token.symbol}
               </span>
             </div>
           </div>
@@ -1242,56 +1067,56 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             <div className="detail-bonding-bar">
               <div className="detail-bonding-fill" style={{ width: `${bondingProgress}%` }} />
             </div>
-            {tokenData.status === 'graduated' ? (
+            {token.status === 'graduated' ? (
               <div className="detail-bonding-info">
                 <span>Coin has graduated!</span>
               </div>
             ) : (
               <div className="detail-bonding-info">
-                <span>{formatNumber(tokenData.marketCap)} MON in curve</span>
-                <span>{formatNumber(GRADUATION_THRESHOLD - tokenData.marketCap)} MON to graduate</span>
+                <span>{formatNumber(token.marketCap)} MON in curve</span>
+                <span>{formatNumber(GRADUATION_THRESHOLD - token.marketCap)} MON to graduate</span>
               </div>
             )}
           </div>
         </div>
 
         <div className="detail-trading-panel">
-            <div className="detail-address-top">
-              <div className="detail-meme-address-content">
-                <svg 
-                  className="detail-contract-icon" 
-                  viewBox="0 0 24 24" 
-                  fill="currentColor"
-                >
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                  <path d="M14 2v6h6"/>
-                  <path d="M12 18v-6"/>
-                  <path d="M9 15h6"/>
-                </svg>
-                <span className="detail-meme-address-title">CA:</span>{' '}
-                <CopyableAddress 
-                  address={tokenData.id} 
-                  className="detail-meme-address-value" 
-                  truncate={{ start: 15, end: 4 }} 
-                />
-              </div>
-              <button
-                className="detail-address-link"
-                onClick={() => window.open(`${explorer}/token/${tokenData.id}`, '_blank')}
-                aria-label="View on explorer"
+          <div className="detail-address-top">
+            <div className="detail-meme-address-content">
+              <svg
+                className="detail-contract-icon"
+                viewBox="0 0 24 24"
+                fill="currentColor"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                  <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                </svg>
-              </button>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                <path d="M14 2v6h6" />
+                <path d="M12 18v-6" />
+                <path d="M9 15h6" />
+              </svg>
+              <span className="detail-meme-address-title">CA:</span>{' '}
+              <CopyableAddress
+                address={token.id}
+                className="detail-meme-address-value"
+                truncate={{ start: 15, end: 4 }}
+              />
             </div>
+            <button
+              className="detail-address-link"
+              onClick={() => window.open(`${explorer}/token/${token.id}`, '_blank')}
+              aria-label="View on explorer"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+              </svg>
+            </button>
+          </div>
         </div>
 
 
@@ -1299,15 +1124,15 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           <div>Top Holders</div>
           <div className="detail-holders-grid">
             {holders.length > 0 ? (
-              holders.slice(0, 10).map((holder, index) => (
+              holders.slice(0, 10).map((holder: any, index: any) => (
                 <div key={holder.address} className="detail-holder-card">
                   <div className="detail-holder-info">
                     <div className="detail-holder-address-main">
                       {holder.address === 'bonding curve' ? (
                         <span>Liquidity pool</span>
                       ) : (
-                        <CopyableAddress 
-                          address={holder.address} 
+                        <CopyableAddress
+                          address={holder.address}
                           className="detail-holder-address-copy"
                           truncate={{ start: 4, end: 4 }}
                         />

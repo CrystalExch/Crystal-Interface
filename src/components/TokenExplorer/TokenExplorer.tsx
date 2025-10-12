@@ -3740,19 +3740,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     },
     [],
   );
-
-  const wsRef = useRef<WebSocket | null>(null);
-  const subIdRef = useRef(1);
+  
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const trackedMarketsRef = useRef<Set<string>>(new Set());
-  const connectionStateRef = useRef<
-    'disconnected' | 'connecting' | 'connected' | 'reconnecting'
-  >('disconnected');
-  const retryCountRef = useRef(0);
-  const reconnectTimerRef = useRef<number | null>(null);
-  const connectionAttemptsRef = useRef(0);
-  const lastConnectionAttemptRef = useRef(0);
-  const consecutiveFailuresRef = useRef(0);
 
   const handleTokenHover = useCallback((id: string) => setHoveredToken(id), []);
   const handleTokenLeave = useCallback(() => setHoveredToken(null), []);

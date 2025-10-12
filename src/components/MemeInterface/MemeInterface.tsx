@@ -605,8 +605,6 @@ const handleMouseMove = (e: MouseEvent) => {
   const [dragStart, setDragStart] = useState<{ y: number; height: number } | null>(null);
   const dragStartRef = useRef<{ y: number; height: number } | null>(null);
 
-  
-
   useEffect(() => {
     dragStartRef.current = dragStart;
   }, [dragStart]);
@@ -1140,6 +1138,7 @@ const handleMouseMove = (e: MouseEvent) => {
     const decimals = tokendict?.[token.id]?.decimals || 18;
     return Number(balance) / 10 ** Number(decimals);
   }, [account?.address, walletTokenBalances, token.id, tokendict]);
+
   useEffect(() => {
     const handleBuyPresetsUpdate = (event: CustomEvent) => {
       const newPresets = event.detail;
@@ -1183,6 +1182,7 @@ const handleMouseMove = (e: MouseEvent) => {
       });
     }
   }, [sellSlippageValue, sellPriorityFee, selectedSellPreset]);
+  
   useEffect(() => {
     const fn = (lastPrice: number, volNative: number) => {
       const sel = selectedInterval;

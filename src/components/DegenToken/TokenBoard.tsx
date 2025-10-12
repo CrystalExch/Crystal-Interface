@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { settings } from '../../settings';
-import { defaultMetrics } from '../TokenExplorer/TokenData';
+
 import './TokenBoard.css';
 
 interface Token {
@@ -47,12 +46,8 @@ interface TokenBoardProps {
   terminalRefetch: any;
   setTokenData: any;
   monUsdPrice: any;
+  tokens: any;
 }
-
-const activechain = (settings as any).activechain ?? Object.keys(settings.chainConfig)[0];
-const TOTAL_SUPPLY = 1e9;
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
-const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
 
 const formatPrice = (p: number, noDecimals = false) => {
   if (p >= 1e12) return `${noDecimals ? Math.round(p / 1e12) : (p / 1e12).toFixed(1)}T MON`;
@@ -212,207 +207,117 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
   terminalQueryData,
   terminalRefetch,
   setTokenData,
-  monUsdPrice
+  monUsdPrice,
+  tokens,
 }) => {
   const navigate = useNavigate();
-  const [tokens, setTokens] = useState<Token[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'marketCap' | 'volume'>('newest');
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [newTokenIds, setNewTokenIds] = useState<Set<string>>(new Set());
-  const wsRef = useRef<WebSocket | null>(null);
 
-  const filteredAndSortedTokens = React.useMemo(() => {
-    let filtered = tokens;
+  useEffect(() => {
+    setLoading(tokens == null);
+  }, [tokens]);
+
+  const normalizedTokens: Token[] = useMemo(() => {
+    if (!tokens) return [];
+
+    const groups: any[] = [
+      ...(tokens.new ?? []),
+      ...(tokens.graduating ?? []),
+      ...(tokens.graduated ?? []),
+    ];
+
+    return groups.map((t: any) => {
+      const id = (t.id ?? t.tokenAddress ?? '').toLowerCase();
+      const tokenAddress = (t.tokenAddress ?? t.id ?? '').toLowerCase();
+
+      const price =
+        Number(
+          t.price ??
+            (t.lastPriceNativePerTokenWad != null
+              ? Number(t.lastPriceNativePerTokenWad) / 1e9
+              : 0)
+        ) || 0;
+
+      const marketCap =
+        Number(t.marketCap ?? (price ? price * 1e9 : 0)) || 0;
+
+      const volume24h =
+        Number(
+          t.volume24h ??
+            (t.volumeNative != null ? Number(t.volumeNative) / 1e18 : 0)
+        ) || 0;
+
+      return {
+        id: id || tokenAddress,
+        tokenAddress,
+        name: t.name ?? '',
+        symbol: t.symbol ?? '',
+        image: t.image ?? t.metadataCID ?? '',
+        price,
+        marketCap,
+        change24h: Number(t.change24h ?? 0),
+        volume24h,
+        holders: Number(t.holders ?? 0),
+        proTraders: Number(t.proTraders ?? 0),
+        kolTraders: Number(t.kolTraders ?? 0),
+        sniperHolding: Number(t.sniperHolding ?? 0),
+        devHolding: Number(t.devHolding ?? 0),
+        bundleHolding: Number(t.bundleHolding ?? 0),
+        insiderHolding: Number(t.insiderHolding ?? 0),
+        top10Holding: Number(t.top10Holding ?? 0),
+        buyTransactions: Number(t.buyTransactions ?? t.buyTxs ?? 0),
+        sellTransactions: Number(t.sellTransactions ?? t.sellTxs ?? 0),
+        globalFeesPaid: Number(t.globalFeesPaid ?? 0),
+        website: t.website ?? '',
+        twitterHandle: t.twitterHandle ?? '',
+        progress: Number(t.progress ?? 0),
+        status: (t.status ?? (t.migrated ? 'graduated' : 'new')) as
+          | 'new'
+          | 'graduating'
+          | 'graduated',
+        description: t.description ?? '',
+        created: Number(t.created ?? t.timestamp ?? 0),
+        bondingAmount: Number(t.bondingAmount ?? 0),
+        volumeDelta: Number(t.volumeDelta ?? 0),
+        telegramHandle: t.telegramHandle ?? (t.social2 ?? ''),
+        discordHandle: t.discordHandle ?? (t.social3 ?? ''),
+        creator: (t.creator?.id ?? t.dev ?? t.creator ?? '').toLowerCase(),
+      } as Token;
+    });
+  }, [tokens]);
+
+  const filteredAndSortedTokens = useMemo(() => {
+    let filtered = normalizedTokens;
 
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
-      filtered = tokens.filter(token =>
-        token.name.toLowerCase().includes(term) ||
-        token.symbol.toLowerCase().includes(term) ||
-        token.description.toLowerCase().includes(term) ||
-        token.creator.toLowerCase().includes(term)
+      filtered = normalizedTokens.filter(token =>
+        (token.name ?? '').toLowerCase().includes(term) ||
+        (token.symbol ?? '').toLowerCase().includes(term) ||
+        (token.description ?? '').toLowerCase().includes(term) ||
+        (token.creator ?? '').toLowerCase().includes(term)
       );
     }
 
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'newest':
-          return b.created - a.created;
+          return (b.created ?? 0) - (a.created ?? 0);
         case 'marketCap':
-          return b.marketCap - a.marketCap;
+          return (b.marketCap ?? 0) - (a.marketCap ?? 0);
         case 'volume':
-          return b.volume24h - a.volume24h;
+          return (b.volume24h ?? 0) - (a.volume24h ?? 0);
         default:
-          return b.created - a.created;
+          return (b.created ?? 0) - (a.created ?? 0);
       }
     });
 
     return sorted;
-  }, [tokens, searchTerm, sortBy]);
-
-  const fetchTokens = useCallback(async () => {
-    try {
-      const response = await fetch(SUBGRAPH_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            {
-              launchpadTokens(first: 100, orderBy: timestamp, orderDirection: desc) {
-                id
-                creator {
-                  id
-                }
-                name
-                symbol
-                metadataCID
-                description
-                social1
-                social2
-                social3
-                timestamp
-                migrated
-                migratedAt
-                volumeNative
-                volumeToken
-                buyTxs
-                sellTxs
-                distinctBuyers
-                distinctSellers
-                lastPriceNativePerTokenWad
-                lastUpdatedAt
-              }
-            }`,
-        }),
-      });
-
-      const data = await response.json();
-      if (!data.data?.launchpadTokens) return;
-
-      const tokenPromises = data.data.launchpadTokens.map(async (market: any) => {
-        const price = Number(market.lastPriceNativePerTokenWad) / 1e9 || defaultMetrics.price;
-
-        let createdTimestamp = Number(market.timestamp);
-        if (createdTimestamp > 1e10) {
-          createdTimestamp = Math.floor(createdTimestamp / 1000);
-        }
-
-        const socials = [market.social1, market.social2, market.social3].map(s => 
-          s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s
-        );
-        const twitter = socials.find(s => s?.startsWith("https://x.com") || s?.startsWith("https://twitter.com"));
-        if (twitter) socials.splice(socials.indexOf(twitter), 1);
-        const telegram = socials.find(s => s?.startsWith("https://t.me"));
-        if (telegram) socials.splice(socials.indexOf(telegram), 1);
-        const discord = socials.find(s => s?.startsWith("https://discord.gg") || s?.startsWith("https://discord.com"));
-        if (discord) socials.splice(socials.indexOf(discord), 1);
-        const website = socials[0];
-
-        return {
-          ...defaultMetrics,
-          id: market.id.toLowerCase(),
-          tokenAddress: market.id.toLowerCase(),
-          creator: market.creator?.id || '0x0000000000000000000000000000000000000000',
-          name: market.name,
-          symbol: market.symbol,
-          image: market.metadataCID || '',
-          description: market.description || '',
-          twitterHandle: twitter || '',
-          website: website || '',
-          telegramHandle: telegram || '',
-          discordHandle: discord || '',
-          status: market.migrated ? 'graduated' : 'new' as const,
-          created: createdTimestamp,
-          price,
-          marketCap: price * TOTAL_SUPPLY,
-          buyTransactions: Number(market.buyTxs),
-          sellTransactions: Number(market.sellTxs),
-          volume24h: Number(market.volumeNative) / 1e18,
-          volumeDelta: 0,
-          change24h: 20, 
-        } as Token;
-      });
-
-      const resolvedTokens = await Promise.all(tokenPromises);
-      
-      if (tokens.length > 0) {
-        const existingIds = new Set(tokens.map(t => t.id));
-        const newIds = new Set<string>();
-        
-        resolvedTokens.forEach(token => {
-          if (!existingIds.has(token.id)) {
-            newIds.add(token.id);
-          }
-        });
-        
-        if (newIds.size > 0) {
-          setNewTokenIds(newIds);
-          setTimeout(() => setNewTokenIds(new Set()), 1000);
-        }
-      }
-      
-      setTokens(resolvedTokens);
-    } catch (error) {
-      console.error('Failed to fetch tokens:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [tokens]);
-
-  const setupWebSocket = useCallback(() => {
-    if (wsRef.current) return;
-
-    const ws = new WebSocket(settings.chainConfig[activechain].wssurl);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      console.log('TokenBoard WebSocket connected');
-    };
-
-    ws.onmessage = ({ data }) => {
-      try {
-        const msg = JSON.parse(data);
-        if (msg?.method !== 'eth_subscription' || !msg.params?.result) return;
-
-        const log = msg.params.result;
-        if (log.topics[0] === MARKET_UPDATE_EVENT) {
-          const marketId = log.address.toLowerCase();
-          const hex = log.data.slice(2);
-          const words: string[] = [];
-          for (let i = 0; i < hex.length; i += 64) {
-            words.push(hex.slice(i, i + 64));
-          }
-          console.log(words)
-          const priceRaw = BigInt('0x' + words[2]);
-          const price = Number(priceRaw) / 1e18;
-          const marketCap = price * TOTAL_SUPPLY;
-
-          setTokens(prev => prev.map(token =>
-            token.id === marketId
-              ? { ...token, price, marketCap }
-              : token
-          ));
-        }
-      } catch (error) {
-        console.error('WebSocket message error:', error);
-      }
-    };
-
-  }, []);
-
-  useEffect(() => {
-    fetchTokens();
-    setupWebSocket();
-
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
-    };
-  }, [setupWebSocket]);
+  }, [normalizedTokens, searchTerm, sortBy]);
 
   const handleTokenClick = (token: Token) => {
     setTokenData(token)
@@ -434,7 +339,6 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
       </button>
       
       <div className="board-header">
-        {/* <h1 className="board-title">Trending Tokens</h1> */}
         <div className="board-controls">
           <div className="board-controls-left">
             <div className="board-sort-buttons">

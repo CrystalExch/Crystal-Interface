@@ -468,7 +468,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return g;
   })();
 
-  const match = matchPath('/meme/:tokenAddress', location.pathname);
+  const match =
+    matchPath('/meme/:tokenAddress', location.pathname) ||
+    matchPath('/board/:tokenAddress', location.pathname);
   const tokenAddress = match?.params?.tokenAddress?.toLowerCase();
 
   const txReceiptResolvers = useRef(new Map<string, () => void>());
@@ -4559,6 +4561,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }),
         });
         const json = await res.json();
+        console.log(json);
         const rawMarkets = [
           ...(json.data?.active ?? []),
           ...(json.data?.migrated ?? []),
@@ -4861,6 +4864,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         if (data.launchpadTokens?.length) {
           const m = data.launchpadTokens[0];
+          setMemeLive(m);
 
           let imageUrl = tokenData?.image || m.metadataCID || '';
 
@@ -6012,6 +6016,53 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             ]);
 
             setTokenData((prev: any) => ({ ...prev, price, marketCap: price * TOTAL_SUPPLY }));
+
+            const sel = memeSelectedInterval;
+            const RESOLUTION_SECS: Record<string, number> = {
+              '1s': 1,
+              '5s': 5,
+              '15s': 15,
+              '1m': 60,
+              '5m': 300,
+              '15m': 900,
+              '1h': 3600,
+              '4h': 14400,
+              '1d': 86400,
+            };
+            const resSecs = RESOLUTION_SECS[sel] ?? 60;
+            const now = Date.now();
+            const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
+            const volNative = isBuy ? amountIn : amountOut;
+
+            setChartData((prev: any) => {
+              if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
+
+              const [bars, key, flag] = prev as [any[], string, boolean];
+              const updated = bars.slice();
+              const last = updated[updated.length - 1];
+
+              if (!last || last.time < bucket) {
+                const open = last?.close ?? tradePrice;
+                updated.push({
+                  time: bucket,
+                  open,
+                  high: Math.max(open, tradePrice),
+                  low: Math.min(open, tradePrice),
+                  close: tradePrice,
+                  volume: volNative || 0,
+                });
+              } else {
+                const cur = { ...last };
+                cur.high = Math.max(cur.high, tradePrice);
+                cur.low = Math.min(cur.low, tradePrice);
+                cur.close = tradePrice;
+                cur.volume = (cur.volume || 0) + (volNative || 0);
+                updated[updated.length - 1] = cur;
+              }
+
+              if (updated.length > 1200) updated.splice(0, updated.length - 1200);
+              return [updated, key, flag];
+            });
 
             memePriceTickRef.current?.(tradePrice, isBuy ? amountIn : amountOut);
 
@@ -23969,7 +24020,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 token={token}
                 selectedWallets={selectedWallets}
                 setSelectedWallets={setSelectedWallets}
-
               />
             }
           />
@@ -23988,8 +24038,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 terminalRefetch={terminalRefetch}
                 setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
+                tokens={tokensByStatus}
               />
-            } />
+            } 
+          />
           <Route path="/board/:tokenAddress"
             element={
               <TokenDetail
@@ -24005,10 +24057,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 terminalRefetch={terminalRefetch}
                 walletTokenBalances={walletTokenBalances}
                 tokenData={tokenData}
-                setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
+                token={token}
+                selectedInterval={memeSelectedInterval}
+                setSelectedInterval={setMemeSelectedInterval}
+                holders={memeHolders}
+                chartData={chartData}
+                setChartData={setChartData}
+                trades={memeTrades}
+                registerRealtimeTick={(fn) => (memePriceTickRef.current = fn)}
               />
-            } />
+            } 
+          />
           <Route path="/earn" element={<Navigate to="/earn/vaults" replace />} />
           <Route path="/earn/*"
             element={
