@@ -136,7 +136,7 @@ interface MemeInterfaceProps {
   setSelectedWallets: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.5.8';
 const STATS_HTTP_BASE = 'https://api.crystal.exchange';
 const PAGE_SIZE = 100;
 const RESOLUTION_SECS: Record<string, number> = {
