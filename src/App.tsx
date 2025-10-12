@@ -435,6 +435,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const { activechain, percentage, setPercentage, favorites } = useSharedContext();
   const userchain = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.chainId || client?.chain?.id
   const location = useLocation();
+  const lastPathRef = useRef<string>(window.location.pathname);
   const navigate = useNavigate();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const HTTP_URL = settings.chainConfig[activechain].httpurl;
@@ -4460,7 +4461,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   );
 
   useEffect(() => {
-    if (!['board', 'spectra', 'meme'].includes(location.pathname.split('/')[1])) return;
+    const prevPath = lastPathRef.current;
+    const currPath = location.pathname;
+    lastPathRef.current = currPath;
+
+    const currSection = currPath.split('/')[1];
+    const cameFromLaunchpad = prevPath?.startsWith('/launchpad');
+    const isBoard = currSection === 'board';
+
+    if (cameFromLaunchpad && isBoard) return;
+
+    if (!['board', 'spectra', 'meme'].includes(currSection)) return;
+
     let cancelled = false;
 
     async function bootstrap() {
@@ -4561,7 +4573,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }),
         });
         const json = await res.json();
-        console.log(json);
         const rawMarkets = [
           ...(json.data?.active ?? []),
           ...(json.data?.migrated ?? []),
