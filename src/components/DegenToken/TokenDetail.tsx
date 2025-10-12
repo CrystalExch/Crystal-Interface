@@ -6,37 +6,13 @@ import { settings } from '../../settings';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { useSharedContext } from '../../contexts/SharedContext';
+import { formatSubscript } from '../../utils/numberDisplayFormat';
 
 import MemeChart from '../MemeInterface/MemeChart/MemeChart';
 import defaultPfp from '../../assets/leaderboard_default.png';
-import {
-  HOLDERS_QUERY,
-} from '../MemeInterface/graphql'
-
-import './TokenDetail.css';
 import { useWalletPopup } from '../MemeTransactionPopup/useWalletPopup';
 
-interface Trade {
-  id: string;
-  timestamp: number;
-  isBuy: boolean;
-  price: number;
-  tokenAmount: number;
-  nativeAmount: number;
-  caller: string;
-}
-
-interface Holder {
-  address: string;
-  balance: number;
-  percentage: number;
-  amountBought: number;
-  amountSold: number;
-  valueBought: number;
-  valueSold: number;
-  tokenNet: number;
-  valueNet: number;
-}
+import './TokenDetail.css';
 
 interface Comment {
   id: string;
@@ -116,20 +92,6 @@ const formatNumber = (n: number) => {
 const formatTradeAmount = (amount: number): string => {
   if (amount === 0) return '';
   return amount.toFixed(6).replace(/\.?0+$/, '');
-};
-
-const formatScientificPrice = (price: number): string => {
-  if (price === 0) return '$0';
-
-  if (price >= 0.001) {
-    return `$${price.toFixed(6).replace(/\.?0+$/, '')}`;
-  }
-
-  const exponent = Math.floor(Math.log10(price));
-
-  const coefficient = price / Math.pow(10, exponent);
-
-  return `$${coefficient.toFixed(2)} × 10^${exponent}`;
 };
 
 const CopyableAddress: React.FC<{
@@ -689,7 +651,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             <div className="detail-stat-item">
               <div className="detail-stat-label">Price</div>
               <div className={`detail-stat-value ${(currentPrice === 0) ? 'detail-stat-neutral' : ''}`}>
-                {formatScientificPrice(currentPrice * monUsdPrice)}
+                {formatSubscript((currentPrice * monUsdPrice).toFixed(10).toString())}
               </div>
             </div>
             <div className="detail-stat-item">
