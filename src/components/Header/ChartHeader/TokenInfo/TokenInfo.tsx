@@ -1489,7 +1489,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   const isLowLiquidity = liquidityValue < 12000;
 
                   const liquidityContent = (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
                       <span
                         className={`meme-interface-metric-value meme-price-large ${isLowLiquidity ? 'low-liquidity' : ''}`}
                       >

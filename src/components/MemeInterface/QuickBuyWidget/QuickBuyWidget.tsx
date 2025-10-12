@@ -204,10 +204,10 @@ const Tooltip: React.FC<{
               top: `${tooltipPosition.top - 20}px`,
               left: `${tooltipPosition.left}px`,
               transform: `${position === 'top' || position === 'bottom'
-                  ? 'translateX(-50%)'
-                  : position === 'left' || position === 'right'
-                    ? 'translateY(-50%)'
-                    : 'none'
+                ? 'translateX(-50%)'
+                : position === 'left' || position === 'right'
+                  ? 'translateY(-50%)'
+                  : 'none'
                 } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
@@ -1060,12 +1060,38 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     if (!isFinite(totalMon) || totalMon <= 0) return;
     const totalWei = BigInt(Math.round(totalMon * 1e18));
 
-    const targets: string[] = Array.from(selectedWallets);
+    let targets: string[] = Array.from(selectedWallets);
     if (targets.length === 0) {
       const txId = `quickbuy-error-${Date.now()}`;
       updatePopup?.(txId, {
         title: 'Insufficient Balance',
         subtitle: 'No wallets selected with funds to use',
+        variant: 'error',
+        isLoading: false,
+      });
+      return;
+    }
+
+    // Filter out wallets that don't have enough balance to cover gas
+    const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+    targets = targets.filter(addr => {
+      const balances = walletTokenBalances[addr];
+      if (!balances) return false;
+
+      const ethToken = tokenList.find(
+        (t) => t.address === settings.chainConfig[activechain].eth,
+      );
+      if (!ethToken || !balances[ethToken.address]) return false;
+
+      const raw = balances[ethToken.address];
+      return raw > gasReserve; // Only include wallets with balance greater than gas reserve
+    });
+
+    if (targets.length === 0) {
+      const txId = `quickbuy-error-${Date.now()}`;
+      updatePopup?.(txId, {
+        title: 'Insufficient Balance',
+        subtitle: 'No selected wallets have enough balance to cover gas costs',
         variant: 'error',
         isLoading: false,
       });
@@ -1147,14 +1173,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         const pk = wally?.privateKey ?? activeWalletPrivateKey;
         if (!pk) continue;
 
-        // ✅ Check if wallet has enough gas to send
-        const maxWei = getMaxSpendableWei(addr);
-        const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-        if (maxWei <= gasReserve || partWei + gasReserve > maxWei + gasReserve) {
-          console.warn(`Skipping ${addr} due to insufficient gas`);
-          continue; // skip wallet entirely
-        }
-
         const uo = {
           target: routerAddress as `0x${string}`,
           data: encodeFunctionData({
@@ -1185,11 +1203,10 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         transferPromises.push(transferPromise);
       }
 
-      // Execute only if something was queued
       if (transferPromises.length === 0) {
         updatePopup?.(txId, {
-          title: 'No eligible wallets',
-          subtitle: 'All selected wallets had insufficient gas to send transactions',
+          title: 'No transactions executed',
+          subtitle: 'Unable to process buy transactions for selected wallets',
           variant: 'error',
           isLoading: false,
         });
