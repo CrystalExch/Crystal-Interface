@@ -5,6 +5,7 @@ import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';
 import { settings } from '../../settings';
 import upload from '../../assets/upload.svg'
 import './Launchpad.css';
+import monadicon from '../../assets/monad.svg';
 import { useNavigate } from 'react-router-dom';
 
 interface LaunchpadFormData {
@@ -51,21 +52,21 @@ const Launchpad: React.FC<LaunchpadProps> = ({
   setpopup,
 }) => {
   const navigate = useNavigate()
-const [formData, setFormData] = useState<LaunchpadFormData>({
-  name: '',
-  ticker: '',
-  description: '',
-  image: null,
-  telegram: '',
-  discord: '',
-  twitter: '',
-  website: '',
-});
-const [dragActive, setDragActive] = useState(false);
-const [imagePreview, setImagePreview] = useState<string | null>(null);
-const [isLaunching, setIsLaunching] = useState(false);
-const [prebuyAmount, setPrebuyAmount] = useState('');
-const [imageUrl, setImageUrl] = useState('');
+  const [formData, setFormData] = useState<LaunchpadFormData>({
+    name: '',
+    ticker: '',
+    description: '',
+    image: null,
+    telegram: '',
+    discord: '',
+    twitter: '',
+    website: '',
+  });
+  const [dragActive, setDragActive] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isLaunching, setIsLaunching] = useState(false);
+  const [prebuyAmount, setPrebuyAmount] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -139,13 +140,13 @@ const [imageUrl, setImageUrl] = useState('');
             abi: CrystalRouterAbi,
             functionName: 'createToken',
             args: [
-              formData.name, 
-              formData.ticker, 
-              uploadedImageUrl, 
-              formData.description, 
-              formData.twitter, 
-              formData.website, 
-              formData.telegram, 
+              formData.name,
+              formData.ticker,
+              uploadedImageUrl,
+              formData.description,
+              formData.twitter,
+              formData.website,
+              formData.telegram,
               formData.discord
             ],
           }),
@@ -228,48 +229,89 @@ const [imageUrl, setImageUrl] = useState('');
                 ))}
               </div>
             </div>
-<div className="launchpad-form-group">
-  <label className="launchpad-label">
-    Pre-buy Amount <span className="optional-text">[Optional]</span>
-  </label>
-  <div className="prebuy-input-container">
-    <div className="prebuy-input-wrapper">
-      <input
-        type="number"
-        value={prebuyAmount}
-        onChange={(e) => setPrebuyAmount(e.target.value)}
-        className="launchpad-input"
-        placeholder="0.0"
-        disabled={isLaunching}
-        step="0.1"
-        min="0"
-      />
-      <span className="prebuy-currency">MON</span>
-    </div>
-    <div className="prebuy-preset-buttons">
-      {[1, 5, 10, 25].map((amount) => (
-        <button
-          key={amount}
-          type="button"
-          className="prebuy-preset-button"
-          onClick={() => setPrebuyAmount(amount.toString())}
-          disabled={isLaunching}
-        >
-          {amount}
-        </button>
-      ))}
-    </div>
-  </div>
-  <p className="prebuy-hint">
-    Buy your token immediately after launch. Leave empty to skip.
-  </p>
-</div>
+            <div className="launchpad-form-group">
+              <label className="launchpad-label">
+                Pre-buy Amount <span className="optional-text">[Optional]</span>
+              </label>
+              <div className="prebuy-input-container">
+                <div className="prebuy-input-wrapper">
+                  <input
+                    type="number"
+                    value={prebuyAmount}
+                    onChange={(e) => setPrebuyAmount(e.target.value)}
+                    className="launchpad-input"
+                    placeholder="0.0"
+                    disabled={isLaunching}
+                    step="0.1"
+                    min="0"
+                  />
+                  <span className="prebuy-currency"><img className="prebuy-icon" src={monadicon} /></span>
+                </div>
+                <div className="prebuy-preset-buttons">
+                  {[1, 5, 10, 25].map((amount) => (
+                    <button
+                      key={amount}
+                      type="button"
+                      className="prebuy-preset-button"
+                      onClick={() => setPrebuyAmount(amount.toString())}
+                      disabled={isLaunching}
+                    >
+                      {amount}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="prebuy-hint">
+                Buy your token immediately after launch. Leave empty to skip.
+              </p>
+            </div>
 
             <button className={`launchpad-launch-button ${isFormValid && !isLaunching ? 'enabled' : ''}`} onClick={handleLaunch} disabled={!isFormValid || isLaunching}>
               {isLaunching && (<div className="loading-spinner" />)}
               {isLaunching ? 'Sign Transaction' : account.connected ? (account.chainId === 10143 ? 'Launch Token' : `Switch to ${settings.chainConfig[10143].name}`) : 'Connect Wallet'}
             </button>
           </div>
+        </div>
+      </div>
+      <div className="preview-container">
+
+        <div className="launchpad-preview-section">
+          <p className="launchpad-title">Preview</p>
+          <div className="launchpad-preview-card">
+            <div className="launchpad-preview-token-header">
+              <div className="launchpad-preview-image">
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Token preview"
+                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  '?'
+                )}
+              </div>
+              <div className="launchpad-preview-token-info">
+                <h3 className="launchpad-preview-name">
+                  {formData.name || 'Token Name'}
+                </h3>
+                <p className="launchpad-preview-ticker">
+                  ${formData.ticker || 'TICKER'}
+                </p>
+              </div>
+            </div>
+
+            {formData.description && (
+              <p className="launchpad-preview-description">
+                {formData.description}
+              </p>
+            )}
+          </div>
+
+          {!formData.name && !formData.ticker && !formData.description && (
+            <p className="launchpad-preview-empty">
+              Fill out the form to see your token preview
+            </p>
+          )}
         </div>
       </div>
     </div>

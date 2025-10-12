@@ -4,6 +4,149 @@
   width: 100%;
   color: #fff;
   padding: 2rem 2rem 50px 2rem;
+  gap: 1rem
+}
+
+.launchpad-wrapper {
+  display: flex;
+  gap: 2rem;
+  max-width: 1400px;
+  width: 100%;
+  align-items: flex-start;
+}
+
+.launchpad-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 700px;
+  width: 100%;
+  flex: 1;
+}
+
+.launchpad-preview-section {
+  position: sticky;
+  top: 2rem;
+  width: 380px;
+  flex-shrink: 0;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  height: max-content;
+}
+
+.launchpad-preview-header {
+  font-size: 0.9rem;
+  color: #ffffff79;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.prebuy-icon{
+  width: 17px;
+  height: 17px;
+}
+.preview-container{
+    position: sticky;
+  top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem
+}
+
+.launchpad-preview-card {
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.launchpad-preview-token-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.launchpad-preview-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffffc9;
+  font-size: 1.5rem;
+  letter-spacing: -0.5px;
+}
+
+.launchpad-preview-token-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.launchpad-preview-name {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: -0.3px;
+  word-break: break-word;
+}
+
+.launchpad-preview-ticker {
+  font-size: 0.9rem;
+  color: #ffffff79;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.launchpad-preview-description {
+  font-size: 0.85rem;
+  color: #ffffff79;
+  line-height: 1.5;
+  letter-spacing: -0.3px;
+  margin: 0;
+  word-break: break-word;
+}
+
+.launchpad-preview-socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.launchpad-preview-social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  background: rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: -0.3px;
+  transition: all 0.2s ease;
+}
+
+.launchpad-preview-social-link:hover {
+  background: rgba(179, 184, 249, 0.15);
+  border-color: #aaaecf;
+}
+
+.launchpad-preview-empty {
+  font-size: 0.85rem;
+  color: #ffffff4d;
+  text-align: center;
+  padding: 2rem 1rem;
+  letter-spacing: -0.3px;
 }
 
 .launchpad-content {
@@ -121,8 +264,8 @@
 .launchpad-input {
   background-color: transparent;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 6px;
-  padding: 0.25rem .7rem;
+  border-radius: 4px;
+  padding: 0.3rem .7rem;
   font-size: 0.9rem;
   color: #fff;
   transition: all 0.2s ease;
