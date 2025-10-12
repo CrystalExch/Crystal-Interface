@@ -1842,3 +1842,12 @@
 }
 
 
+
+
+.low-liquidity {
+  color: rgb(241, 213, 68) !important;
+}
+
+.low-liquidity-icon {
+  flex-shrink: 0;
+}

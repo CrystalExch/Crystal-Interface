@@ -594,7 +594,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [perpsShouldFocus, setPerpsShouldFocus] = useState(false);
   const [perpsSortField, setPerpsSortField] = useState<'volume' | 'price' | 'change' | 'funding' | 'openInterest' | null>('volume');
   const [perpsSortDirection, setPerpsSortDirection] = useState<'asc' | 'desc' | undefined>('desc');
-const filterTabsRef = useRef<HTMLDivElement>(null);
+  const filterTabsRef = useRef<HTMLDivElement>(null);
   const marketsListRef = useRef<HTMLDivElement>(null);
   const memeHeaderRightRef = useRef<HTMLDivElement>(null);
   const perpsMetricsRef = useRef<HTMLDivElement>(null);
@@ -825,7 +825,7 @@ const filterTabsRef = useRef<HTMLDivElement>(null);
     }
   }, [isPerpsDropdownVisible, perpsShouldFocus]);
 
-useEffect(() => {
+  useEffect(() => {
     const handleMemeScroll = () => {
       const container = memeHeaderRightRef.current;
       if (container) {
@@ -1252,19 +1252,19 @@ useEffect(() => {
           <div className="meme-interface-token-header-left">
             <div className="meme-interface-token-icon-container">
 
-<div
-  className={`meme-interface-token-icon-wrapper ${memeTokenData.status === 'graduated' ? 'graduated' : ''}`}
-  ref={imageContainerRef}
-  style={
-    memeTokenData.status !== 'graduated'
-      ? {
-          '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
-          '--progress-color-start': createColorGradient(getBondingColor(bondingPercentage)).start,
-          '--progress-color-mid': createColorGradient(getBondingColor(bondingPercentage)).mid,
-          '--progress-color-end': createColorGradient(getBondingColor(bondingPercentage)).end,
-        } as React.CSSProperties
-      : {}
-  }
+              <div
+                className={`meme-interface-token-icon-wrapper ${memeTokenData.status === 'graduated' ? 'graduated' : ''}`}
+                ref={imageContainerRef}
+                style={
+                  memeTokenData.status !== 'graduated'
+                    ? {
+                      '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
+                      '--progress-color-start': createColorGradient(getBondingColor(bondingPercentage)).start,
+                      '--progress-color-mid': createColorGradient(getBondingColor(bondingPercentage)).mid,
+                      '--progress-color-end': createColorGradient(getBondingColor(bondingPercentage)).end,
+                    } as React.CSSProperties
+                    : {}
+                }
                 onClick={() => window.open(
                   `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(memeTokenData.image)}`,
                   '_blank',
@@ -1308,7 +1308,7 @@ useEffect(() => {
             <div className="meme-interface-token-identity">
               <div className="meme-interface-token-name-row">
                 <h1 className="meme-interface-token-symbol">{memeTokenData.symbol}</h1>
-                <Tooltip content={memeTokenData.name}>
+                <Tooltip content={memeTokenData.name} offset={5}>
                   <div className="meme-interface-token-name-container">
                     <span
                       className="meme-interface-token-name"
@@ -1390,7 +1390,7 @@ useEffect(() => {
                     </div>,
                     document.body,
                   )}
-              <div className="header-launchpad-logo-container">
+                <div className="header-launchpad-logo-container">
                   <Tooltip content="crystal.fun V2">
 
                     <img src={crystal} className="header-launchpad-logo" />
@@ -1470,7 +1470,7 @@ useEffect(() => {
             </div>
           </div>
 
-     <div className="meme-interface-token-header-right" ref={memeHeaderRightRef}>
+          <div className="meme-interface-token-header-right" ref={memeHeaderRightRef}>
             <div className="meme-interface-token-metrics">
               <span className="meme-interface-market-cap">
                 {formatPrice((memeTokenData.marketCap || 1000) * monUsdPrice)}
@@ -1482,12 +1482,44 @@ useEffect(() => {
                 </span>
               </div>
 
-
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">Liquidity</span>
-                <span className="meme-interface-metric-value meme-price-large">
-                  {formatPrice(Number(memeTokenData?.reserveQuote || 0) * 2 * monUsdPrice / 10**18)}
-                </span>
+                {(() => {
+                  const liquidityValue = Number(memeTokenData?.reserveQuote || 0) * 2 * monUsdPrice / 10 ** 18;
+                  const isLowLiquidity = liquidityValue < 12000;
+
+                  const liquidityContent = (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span
+                        className={`meme-interface-metric-value meme-price-large ${isLowLiquidity ? 'low-liquidity' : ''}`}
+                      >
+                        {formatPrice(liquidityValue)}
+                      </span>
+                      {isLowLiquidity && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="rgb(241, 213, 68)"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="low-liquidity-icon"
+                        >
+                          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                        </svg>
+                      )}
+                    </div>
+                  );
+
+                  return isLowLiquidity ? (
+                    <Tooltip content="Low liquidity warning" offset={5}>
+                      {liquidityContent}
+                    </Tooltip>
+                  ) : liquidityContent;
+                })()}
               </div>
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">24h Change</span>
