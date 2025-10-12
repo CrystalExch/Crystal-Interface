@@ -51,20 +51,21 @@ const Launchpad: React.FC<LaunchpadProps> = ({
   setpopup,
 }) => {
   const navigate = useNavigate()
-  const [formData, setFormData] = useState<LaunchpadFormData>({
-    name: '',
-    ticker: '',
-    description: '',
-    image: null,
-    telegram: '',
-    discord: '',
-    twitter: '',
-    website: '',
-  });
-  const [dragActive, setDragActive] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isLaunching, setIsLaunching] = useState(false);
-
+const [formData, setFormData] = useState<LaunchpadFormData>({
+  name: '',
+  ticker: '',
+  description: '',
+  image: null,
+  telegram: '',
+  discord: '',
+  twitter: '',
+  website: '',
+});
+const [dragActive, setDragActive] = useState(false);
+const [imagePreview, setImagePreview] = useState<string | null>(null);
+const [isLaunching, setIsLaunching] = useState(false);
+const [prebuyAmount, setPrebuyAmount] = useState('');
+const [imageUrl, setImageUrl] = useState('');
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -111,52 +112,99 @@ const Launchpad: React.FC<LaunchpadProps> = ({
     (document.getElementById('file-input') as HTMLInputElement | null)?.click();
   };
 
-  const handleLaunch = async () => {
-    if (!formData.name || !formData.ticker || !formData.image) {
-      return;
-    }
-    if (!account.connected) return setpopup(4);
-    if (account.chainId !== 10143) return setChain();
+const handleLaunch = async () => {
+  if (!formData.name || !formData.ticker || !formData.image) {
+    return;
+  }
+  if (!account.connected) return setpopup(4);
+  if (account.chainId !== 10143) return setChain();
 
-    setIsLaunching(true);
-    try {
-      const timestamp = Date.now();
-      const imageKey = `img/${formData.ticker}-${timestamp}.${formData.image.name.split('.').pop()
-        }`;
-      const imageUrl = await uploadToR2(
-        imageKey,
-        formData.image,
-        formData.image.type
-      );
-      await sendUserOperationAsync({
-        uo: {
-          target: ROUTER_ADDRESS,
-          data: encodeFunctionData({
-            abi: CrystalRouterAbi,
-            functionName: 'createToken',
-            args: [formData.name, formData.ticker, imageUrl, formData.description, formData.twitter, formData.website, formData.telegram, formData.discord],
-          }),
-        },
-      }, 15000000n);
-      setIsLaunching(false);
-      navigate('/board');
-    } catch (err: any) {
-      setIsLaunching(false);
-      return
+  setIsLaunching(true);
+  try {
+    const timestamp = Date.now();
+    const imageKey = `img/${formData.ticker}-${timestamp}.${formData.image.name.split('.').pop()}`;
+    const uploadedImageUrl = await uploadToR2(
+      imageKey,
+      formData.image,
+      formData.image.type
+    );
+    
+    // Create the token
+    await sendUserOperationAsync({
+      uo: {
+        target: ROUTER_ADDRESS,
+        data: encodeFunctionData({
+          abi: CrystalRouterAbi,
+          functionName: 'createToken',
+          args: [
+            formData.name, 
+            formData.ticker, 
+            uploadedImageUrl, 
+            formData.description, 
+            formData.twitter, 
+            formData.website, 
+            formData.telegram, 
+            formData.discord
+          ],
+        }),
+      },
+    }, 15000000n);
+
+    if (prebuyAmount && parseFloat(prebuyAmount) > 0) {
+      const buyAmount = BigInt(Math.floor(parseFloat(prebuyAmount) * 1e18));
+
     }
-  };
+
+    setIsLaunching(false);
+    navigate('/board');
+  } catch (err: any) {
+    setIsLaunching(false);
+    return;
+  }
+};
+
+const handleConfirmLaunch = async () => {
+  if (!imageUrl) return;
+  
+  setIsLaunching(true);
+  try {
+    await sendUserOperationAsync({
+      uo: {
+        target: ROUTER_ADDRESS,
+        data: encodeFunctionData({
+          abi: CrystalRouterAbi,
+          functionName: 'createToken',
+          args: [
+            formData.name, 
+            formData.ticker, 
+            imageUrl, 
+            formData.description, 
+            formData.twitter, 
+            formData.website, 
+            formData.telegram, 
+            formData.discord,
+            prebuyAmount ? BigInt(Math.floor(parseFloat(prebuyAmount) * 1e18)) : 0n
+          ],
+        }),
+      },
+      value: prebuyAmount ? BigInt(Math.floor(parseFloat(prebuyAmount) * 1e18)) : 0n,
+    }, 15000000n);
+    setIsLaunching(false);
+    navigate('/board');
+  } catch (err: any) {
+    setIsLaunching(false);
+    return;
+  }
+};
 
   const isFormValid = !!formData.name && !!formData.ticker && !!formData.image;
 
   return (
     <div className="launchpad-container">
       <div className="launchpad-content">
-
-         <div className="launchpad-back-button" onClick={() => navigate('/board')}>
-          ← Back
-        </div>
+        <h1 className="launchpad-title">Create a new coin</h1>
+        <h2 className="launchpad-subtitle">Choose carefully, these can't be changed once the coin is created</h2>
         <div className="launchpad-form-wrapper">
-          <h1 className="launchpad-title">Create a new coin</h1>
 
           <div className="launchpad-form">
             <div className="launchpad-token-info">
@@ -192,8 +240,8 @@ const Launchpad: React.FC<LaunchpadProps> = ({
                       <img src={imagePreview} alt="preview" className="launchpad-image-preview" />
                       <button onClick={(e) => { e.stopPropagation(); clearImage(); }} className="launchpad-clear-button">×</button>
                     </div>
-                    <p>{formData.image?.name}</p>
-                    <p>Click to change</p>
+                    <p className="launchpad-upload-header">{formData.image?.name}</p>
+                    <p className="launchpad-upload-subtitle">Click to change</p>
                   </div>
                 ) : (
                   <div className="launchpad-upload-content">
@@ -216,7 +264,42 @@ const Launchpad: React.FC<LaunchpadProps> = ({
                 ))}
               </div>
             </div>
-
+<div className="launchpad-form-group">
+  <label className="launchpad-label">
+    Pre-buy Amount <span className="optional-text">[Optional]</span>
+  </label>
+  <div className="prebuy-input-container">
+    <div className="prebuy-input-wrapper">
+      <input
+        type="number"
+        value={prebuyAmount}
+        onChange={(e) => setPrebuyAmount(e.target.value)}
+        className="launchpad-input"
+        placeholder="0.0"
+        disabled={isLaunching}
+        step="0.1"
+        min="0"
+      />
+      <span className="prebuy-currency">MON</span>
+    </div>
+    <div className="prebuy-preset-buttons">
+      {[1, 5, 10, 25].map((amount) => (
+        <button
+          key={amount}
+          type="button"
+          className="prebuy-preset-button"
+          onClick={() => setPrebuyAmount(amount.toString())}
+          disabled={isLaunching}
+        >
+          {amount}
+        </button>
+      ))}
+    </div>
+  </div>
+  <p className="prebuy-hint">
+    Buy your token immediately after launch. Leave empty to skip.
+  </p>
+</div>
 
             <button className={`launchpad-launch-button ${isFormValid && !isLaunching ? 'enabled' : ''}`} onClick={handleLaunch} disabled={!isFormValid || isLaunching}>
               {isLaunching && (<div className="loading-spinner" />)}

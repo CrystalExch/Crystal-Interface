@@ -1745,7 +1745,7 @@ useEffect(() => {
                   tooltipText={
                     <div>
                       <div className="tooltip-description">
-                        {t('priceImpactHelp')}
+                        {t('The total notional value of your position including leverage. This represents the full exposure of your trade in the market.')}
                       </div>
                     </div>
                   }
@@ -1763,7 +1763,7 @@ useEffect(() => {
                   tooltipText={
                     <div>
                       <div className="tooltip-description">
-                        {t('priceImpactHelp')}
+                        {t('        The amount of collateral needed to open this position. Calculated as Order Value divided by Leverage. This is the actual amount that will be reserved from your account balance.')}
                       </div>
                     </div>
                   }

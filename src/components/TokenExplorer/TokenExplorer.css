@@ -2978,6 +2978,7 @@
   font-size: 0.7rem;
   gap: 2px;
   padding: 0.2rem 0.35rem;
+  border-radius: 20px;
 }
 
 .explorer-quick-buy-btn.size-small .explorer-quick-buy-icon {
