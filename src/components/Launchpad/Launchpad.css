@@ -9,20 +9,23 @@
 .launchpad-content {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  max-width: 500px;
+  max-width: 700px;
   width: 100%;
 }
 
 .launchpad-title {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 100;
   color: #fff;
-  margin-bottom: 1rem;
-  text-align: center;
   letter-spacing: -0.5px;
 }
 
+
+.launchpad-subtitle{
+  font-size: .9rem;
+  color: grey;
+  margin-bottom: 1rem;
+}
 .launchpad-nav {
   display: flex;
   gap: 2rem;
@@ -82,6 +85,9 @@
 
 .launchpad-form-wrapper {
   width: 100%;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  padding: 10px;
+  border-radius: 8px;
 }
 
 .launchpad-form {
@@ -114,20 +120,20 @@
 
 .launchpad-input {
   background-color: transparent;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 12px;
-  padding: 0.75rem 1rem;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 6px;
+  padding: 0.25rem .7rem;
   font-size: 0.9rem;
   color: #fff;
   transition: all 0.2s ease;
   letter-spacing: -0.3px;
   font-weight: 300;
+  width: 100%;
 }
 
 .launchpad-input:focus {
   outline: none;
   border-color: #aaaecf;
-  box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.3);
 }
 
 .launchpad-input::placeholder {
@@ -147,7 +153,7 @@
   border: 2px dashed rgba(179, 184, 249, 0.1);
   color: rgba(234, 238, 252, 0.7);
   border-radius: 12px;
-  padding: 5rem 2rem;
+  padding: 3rem 1.5rem;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -208,16 +214,16 @@
   position: absolute;
   top: -5px;
   right: -5px;
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
+  width: 26px;
+  height: 26px;
+  border-radius: 20px;
   background: rgba(6, 6, 6);
-  border: 1.5px solid rgba(215, 217, 244, 0.2);
+  border: 1px solid rgba(215, 217, 244, 0.2);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 20px;
   color: #666;
 }
 
@@ -713,3 +719,237 @@
     font-size: 0.75rem;
   }
 }
+
+.prebuy-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+
+.prebuy-popup-container {
+  background: linear-gradient(135deg, #1a1a24 0%, #15151d 100%);
+  border-radius: 20px;
+  border: 1.5px solid rgba(179, 184, 249, 0.15);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.prebuy-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.prebuy-popup-header h2 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+
+.prebuy-close-button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.prebuy-close-button:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.prebuy-close-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.prebuy-popup-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.prebuy-token-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(179, 184, 249, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.prebuy-token-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(179, 184, 249, 0.2);
+}
+
+.prebuy-token-details h3 {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #fff;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.3px;
+}
+
+.prebuy-token-details p {
+  font-size: 0.9rem;
+  color: #ffffff79;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.prebuy-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.prebuy-input-wrapper input {
+  padding-right: 60px !important;
+}
+
+.prebuy-currency {
+  position: absolute;
+  right: 1rem;
+  font-size: 0.9rem;
+  color: #ffffff79;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+}
+
+.prebuy-hint {
+  font-size: 0.8rem;
+  color: #ffffff79;
+  margin: 0.5rem 0 0 0;
+  letter-spacing: -0.3px;
+  line-height: 1.4;
+}
+
+.prebuy-preset-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-top: 10px;
+}
+
+.prebuy-preset-button {
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 6px;
+  padding: 0.5rem;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: -0.3px;
+}
+
+.prebuy-preset-button:hover:not(:disabled) {
+  background: rgba(179, 184, 249, 0.15);
+  border-color: #aaaecf;
+}
+
+.prebuy-preset-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prebuy-popup-footer {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.prebuy-skip-button,
+.prebuy-confirm-button {
+  flex: 1;
+  padding: 0.875rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.prebuy-skip-button {
+  background: transparent;
+  border: 1.5px solid rgba(179, 184, 249, 0.2);
+  color: #fff;
+}
+
+.prebuy-skip-button:hover:not(:disabled) {
+  border-color: #aaaecf;
+  background: rgba(179, 184, 249, 0.05);
+}
+
+.prebuy-confirm-button {
+  background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
+  border: none;
+  color: #000000;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255/35%),
+    inset 0 -1px 1px rgb(0 0 0/55%),
+    0 2px 8px rgb(170 174 207/10%);
+}
+
+.prebuy-confirm-button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.prebuy-skip-button:disabled,
+.prebuy-confirm-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .prebuy-popup-container {
+    max-width: 95%;
+    border-radius: 16px;
+  }
+
+  .prebuy-preset-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .prebuy-popup-footer {
+    flex-direction: column;
+  }
+}
+
+
