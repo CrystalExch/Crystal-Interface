@@ -667,11 +667,11 @@
     font-weight: 300;
 }
 
-.value-container.current-position.positive {
+.value-container.positive {
     color: #50f08d;
 }
 
-.value-container.current-position.negative {
+.value-container.negative {
     color: rgb(235, 112, 112);
 }
 
@@ -699,11 +699,6 @@
 .perps-tpsl-percent-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
-}
-
-.perps-tpsl-price-input[type=number],
-.perps-tpsl-percent-input[type=number] {
-    -moz-appearance: textfield;
 }
 
 .perps-trade-action-button {
@@ -827,6 +822,14 @@
     font-size: 0.75rem;
     letter-spacing: -0.2px;
     color: rgb(226, 233, 240)
+}
+
+.perps-account-subtitle.green {
+    color: #50f08d
+}
+
+.perps-account-subtitle.red {
+    color: rgb(235, 112, 112)
 }
 
 .perps-account-row {

@@ -1535,19 +1535,19 @@ onDragStart?.(e);  },
   const noDataMessage = 'No data available';
 
   return (
-<div
-  ref={containerRef}
-  className="meme-oc-rectangle"
-  style={{
-    position: 'relative',
-    height:
-      orderCenterHeight === 0 || isOrderCenterVisible === false
-        ? '0px'
-        : `${orderCenterHeight}px`,
-    transition: (isVertDragging || isDragging) ? 'none' : 'height 0.1s ease',
-    overflow: 'visible',
-  }}
->
+    <div
+      ref={containerRef}
+      className="meme-oc-rectangle"
+      style={{
+        position: 'relative',
+        height:
+          orderCenterHeight === 0 || isOrderCenterVisible === false
+            ? '0px'
+            : `${orderCenterHeight}px`,
+        transition: (isVertDragging || isDragging) ? 'none' : 'height 0.1s ease',
+        overflow: 'visible',
+      }}
+    >
       <div
         className={`meme-oc-drag-spacer ${!isOrderCenterVisible ? 'meme-oc-collapsed' : ''}`}
       >
@@ -1555,11 +1555,7 @@ onDragStart?.(e);  },
           className="meme-oc-drag-handle"
           onMouseDown={handleMouseDown}
           style={{ cursor: isDragging ? 'row-resize' : 'row-resize' }}
-        >
-          <div className="meme-oc-drag-indicator">
-            <div className="meme-oc-drag-dot"></div>
-          </div>
-        </div>
+        />
       </div>
 
       <div className="meme-oc-top-bar">

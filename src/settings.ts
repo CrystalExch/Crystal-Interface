@@ -58,9 +58,9 @@ export const settings: any = {
       usdc: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea',
       balancegetter:
         '0xE0434E11f0dd2Ced2ae06C8DF3866e8285B3a797' as `0x${string}`,
-      router: '0x09cb384441E900663A0C36649d558f6A730FE1D3' as `0x${string}`,
+      router: '0x0c38F3721dc01A804065423b43a3c61b32353377' as `0x${string}`,
       referralManager: '0xE0434E11f0dd2Ced2ae06C8DF3866e8285B3a797' as `0x${string}`,
-      launchpadRouter: '0x09cb384441E900663A0C36649d558f6A730FE1D3' as `0x${string}`,
+      launchpadRouter: '0x0c38F3721dc01A804065423b43a3c61b32353377' as `0x${string}`,
       crystalVaults: "0x0D01aaBf9149c7C65CbED6bd4780D5fb22F44947" as `0x${string}`,
       multicall3: '0xb092ef5Eba57357112E8BbD5be2b6CfE984D6838' as `0x${string}`,
       firstblock: 39955993,

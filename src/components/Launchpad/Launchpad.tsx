@@ -136,6 +136,7 @@ const Launchpad: React.FC<LaunchpadProps> = ({
             functionName: 'createToken',
             args: [formData.name, formData.ticker, imageUrl, formData.description, formData.twitter, formData.website, formData.telegram, formData.discord],
           }),
+          value: 1000000000000000000n
         },
       }, 15000000n);
       setIsLaunching(false);

@@ -1374,6 +1374,30 @@ export const CrystalRouterAbi = [
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "close",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountQuote",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountBase",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "string",
         "name": "name",
         "type": "string"
@@ -1422,7 +1446,7 @@ export const CrystalRouterAbi = [
         "type": "address"
       }
     ],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -2389,6 +2413,11 @@ export const CrystalRouterAbi = [
         "internalType": "address",
         "name": "market",
         "type": "address"
+      },
+      {
+        "internalType": "uint88",
+        "name": "createTimestamp",
+        "type": "uint88"
       }
     ],
     "stateMutability": "view",
@@ -2435,6 +2464,19 @@ export const CrystalRouterAbi = [
         "type": "uint256"
       }
     ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "market",
+        "type": "address"
+      }
+    ],
+    "name": "lockZeroAddressLiquidity",
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -3431,6 +3473,47 @@ export const CrystalRouterAbi = [
       }
     ],
     "name": "withdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "userId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "ids",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "writeCloidSlots",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "market",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "slotIndexes",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "slotIndexes2",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "writeSlots",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

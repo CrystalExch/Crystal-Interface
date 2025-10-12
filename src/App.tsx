@@ -712,6 +712,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   const [withdrawPercentage, setWithdrawPercentage] = useState('');
   const [currentWalletIcon, setCurrentWalletIcon] = useState(walleticon);
+  const TOTAL_SUPPLY = 1e9;
 
   const addDevTokenFromEvent = useCallback(async (log: any, currentTokenDev?: string) => {
     try {
@@ -4022,9 +4023,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     },
   };
 
-  const [pausedColumn, setPausedColumn] = useState<Token['status'] | null>(
-    null,
-  );
   const [alertSettings, setAlertSettings] = useState<AlertSettings>(() => {
     const saved = localStorage.getItem('explorer-alert-settings');
     if (!saved) return ALERT_DEFAULTS;
@@ -4049,7 +4047,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     reducer,
     initialState,
   );
-  const TOTAL_SUPPLY = 1e9;
   const ROUTER_EVENT = '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
   const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
   const MARKET_CREATED_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
@@ -4057,7 +4054,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   const teRef = useRef<WebSocket | null>(null);
   const subIdRef = useRef(1);
-  const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pausedColumnRef = useRef<any>(null);
+  const alertSettingsRef = useRef<any>(alertSettings);
   const trackedMarketsRef = useRef<Set<string>>(new Set());
   const connectionStateRef = useRef<
     'disconnected' | 'connecting' | 'connected' | 'reconnecting'
@@ -4092,9 +4090,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
       case 'UPDATE_MARKET': {
         const buckets = { ...state.tokensByStatus };
+        let movedToken: any;
         (Object.keys(buckets) as Token['status'][]).forEach((s) => {
-          buckets[s] = buckets[s].map((t) => {
-            if (t.id.toLowerCase() !== action.id.toLowerCase()) return t;
+          buckets[s] = buckets[s].flatMap((t) => {
+            if (t.id.toLowerCase() !== action.id.toLowerCase()) return [t];
 
             const {
               volumeDelta = 0,
@@ -4102,16 +4101,36 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               sellTransactions = 0,
               ...rest
             } = action.updates;
+            const status = s == 'graduated'
+            ? 'graduated'
+            : (rest?.price ?? t?.price) * TOTAL_SUPPLY > 12500
+              ? 'graduating'
+              : 'new'
 
-            return {
+            if (status != s) {
+              movedToken = {
+                ...t,
+                ...rest,
+                volume24h: t.volume24h + volumeDelta,
+                buyTransactions: t.buyTransactions + buyTransactions,
+                sellTransactions: t.sellTransactions + sellTransactions,
+                status: status,
+              }
+              return []
+            }
+            return [{
               ...t,
               ...rest,
               volume24h: t.volume24h + volumeDelta,
               buyTransactions: t.buyTransactions + buyTransactions,
               sellTransactions: t.sellTransactions + sellTransactions,
-            };
+              status: status,
+            }];
           });
         });
+        if (movedToken?.status) {
+          buckets[movedToken?.status as Token['status']].push(movedToken);
+        }
         return { ...state, tokensByStatus: buckets };
       }
       case 'HIDE_TOKEN': {
@@ -4160,9 +4179,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   const addMarket = useCallback(
     async (log: any) => {
-      if (pausedColumn !== null) {
-        return;
-      }
       const { args } = decodeEventLog({
         abi: CrystalRouterAbi,
         data: log.data,
@@ -4215,6 +4231,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         graduatedTokens: 0,
       };
 
+      if (pausedColumnRef.current == token.status) return;
       dispatch({ type: 'ADD_MARKET', token });
 
       if (alertSettings.soundAlertsEnabled) {
@@ -4227,19 +4244,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
       }
     },
-    [
-      subscribe,
-      alertSettings.soundAlertsEnabled,
-      alertSettings.sounds.newPairs,
-      alertSettings.volume,
-      pausedColumn,
-    ],
+    [],
   );
 
   const updateMarket = useCallback(
     (log: any) => {
       if (log.topics?.[0] !== MARKET_UPDATE_EVENT) return;
-      if (pausedColumn !== null) return;
 
       const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
 
@@ -4270,7 +4280,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         },
       });
     },
-    [pausedColumn],
+    [],
   );
 
   const scheduleReconnect = useCallback((initialMarkets: string[]) => {
@@ -4657,11 +4667,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       if (reconnectTimerRef.current) {
         window.clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = null;
-      }
-
-      if (pauseTimeoutRef.current) {
-        clearTimeout(pauseTimeoutRef.current);
-        pauseTimeoutRef.current = null;
       }
 
       if (wsRef.current) {
@@ -23891,8 +23896,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 }}
                 quickAmounts={quickAmounts}
                 setQuickAmounts={setQuickAmounts}
-                pausedColumn={pausedColumn}
-                setPausedColumn={setPausedColumn}
+                alertSettingsRef={alertSettingsRef}
+                pausedColumnRef={pausedColumnRef}
                 dispatch={dispatch}
                 hidden={hidden}
                 tokensByStatus={tokensByStatus}

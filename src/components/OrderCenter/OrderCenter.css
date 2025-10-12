@@ -442,15 +442,6 @@
   min-height: 200px;
 }
 
-.no-orders-message {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100px;
-  color: #ffffff70;
-  font-size: 0.9rem;
-}
-
 .simple-pagination-info {
   text-align: right;
   padding: 6px 15px;

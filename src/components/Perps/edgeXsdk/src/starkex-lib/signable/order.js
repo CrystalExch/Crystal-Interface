@@ -43,6 +43,7 @@ export class SignableOrder extends StarkSignable {
     const expirationEpochHours = addOrderExpirationBufferHours(
       isoTimestampToEpochHours(order.expirationIsoTimestamp)
     );
+
     return new SignableOrder(
       {
         orderType,

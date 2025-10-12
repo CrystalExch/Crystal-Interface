@@ -143,8 +143,10 @@ const Perps: React.FC<PerpsProps> = ({
   const [inputString, setInputString] = useState('');
   const [limitPriceString, setlimitPriceString] = useState('');
   const [limitChase, setlimitChase] = useState(true);
+  const [maintenanceMargin, setMaintenanceMargin] = useState('0.00');
+  const [availableBalance, setAvailableBalance] = useState('0.00');
   const [balance, setBalance] = useState('0.00');
-  const [accountEquity, setAccountEquity] = useState('0.00');
+  const [upnl, setUpnl] = useState('0.00')
   const [userFees, setUserFees] = useState(["0.00038", "0.00012"]);
   const [amountIn, setAmountIn] = useState(BigInt(0));
   const [limitPrice, setlimitPrice] = useState(BigInt(0));
@@ -244,120 +246,6 @@ const Perps: React.FC<PerpsProps> = ({
       const apiPassphrase = urlBase64Encode(sHashBytes.slice(16, 32))
       return { apiKey, apiPassphrase, apiSecret }
     } catch (e) { throw new Error(`Failed to generate API key from signature: ${e}`) }
-  }
-
-  function starkSign(msgHashHex: string, privKeyHex: string): { r: string; s: string } {
-    // StarkEx curve parameters
-    const P = 0x800000000000011000000000000000000000000000000000000000000001n;
-    const N = 0x800000000000010ffffffffffffffffb781126dcae7b2321e66a241adc64d2fn;
-    const ALPHA = 1n; // StarkEx uses alpha = 1
-    const BETA = 0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89n;
-    const Gx = 874739451078007766457464989774322083649278607533249481151382481072868806602n;
-    const Gy = 152666792071518830868575557812948353041420400780739481342941381225525861407n;
-    const N_ELEMENT_BITS = 251n;
-    const MAX_VAL = 1n << N_ELEMENT_BITS; // 2^251
-
-    // Helper functions
-    const mod = (x: bigint, m: bigint): bigint => ((x % m) + m) % m;
-
-    const modPow = (base: bigint, exp: bigint, modulus: bigint): bigint => {
-      let result = 1n;
-      base %= modulus;
-      while (exp > 0n) {
-        if (exp & 1n) result = (result * base) % modulus;
-        base = (base * base) % modulus;
-        exp >>= 1n;
-      }
-      return result;
-    };
-
-    const inv = (x: bigint, m: bigint): bigint => modPow(x, m - 2n, m);
-
-    // Elliptic curve operations
-    const ecAdd = (x1: bigint, y1: bigint, x2: bigint, y2: bigint): [bigint, bigint] => {
-      // Point at infinity handling
-      if (x1 === 0n && y1 === 0n) return [x2, y2];
-      if (x2 === 0n && y2 === 0n) return [x1, y1];
-
-      if (x1 === x2) {
-        if (y1 === y2) {
-          // Point doubling
-          const slope = mod((3n * x1 * x1 + ALPHA) * inv(2n * y1, P), P);
-          const x3 = mod(slope * slope - 2n * x1, P);
-          const y3 = mod(slope * (x1 - x3) - y1, P);
-          return [x3, y3];
-        } else {
-          // Points are inverses
-          return [0n, 0n];
-        }
-      }
-
-      // Regular addition
-      const slope = mod((y2 - y1) * inv(x2 - x1, P), P);
-      const x3 = mod(slope * slope - x1 - x2, P);
-      const y3 = mod(slope * (x1 - x3) - y1, P);
-      return [x3, y3];
-    };
-
-    const ecMul = (k: bigint, x: bigint, y: bigint): [bigint, bigint] => {
-      if (k === 0n) throw new Error("Cannot multiply by 0");
-
-      let rx = 0n, ry = 0n;
-      let ax = x, ay = y;
-
-      while (k > 0n) {
-        if (k & 1n) {
-          [rx, ry] = ecAdd(rx, ry, ax, ay);
-        }
-        [ax, ay] = ecAdd(ax, ay, ax, ay);
-        k >>= 1n;
-      }
-      return [rx, ry];
-    };
-
-    // Format hex output
-    const toHex = (n: bigint): string => n.toString(16).padStart(64, "0");
-
-    // Parse inputs
-    const msgHash = mod(BigInt("0x" + msgHashHex.replace("0x", "")), N);
-    let privKey = mod(BigInt("0x" + privKeyHex.replace("0x", "")), N);
-    if (privKey === 0n) privKey = 1n;
-
-    // Signing loop (StarkEx ECDSA variant)
-    while (true) {
-      // Generate random k in range [1, N)
-      const randomBytes = new Uint8Array(32);
-      crypto.getRandomValues(randomBytes);
-      const k = mod(
-        BigInt("0x" + Array.from(randomBytes).map(b => b.toString(16).padStart(2, "0")).join("")),
-        N - 1n
-      ) + 1n;
-
-      // Calculate r = (k * G).x
-      const [rx, _] = ecMul(k, Gx, Gy);
-      const r = rx; // Note: StarkEx uses x coordinate directly, not mod N
-
-      // Check r is in valid range (less than 2^251)
-      if (!(1n <= r && r < MAX_VAL)) continue;
-
-      // Check (msgHash + r * privKey) % N != 0
-      const numerator = mod(msgHash + r * privKey, N);
-      if (numerator === 0n) continue;
-
-      // Calculate w = k / (msgHash + r * privKey) mod N
-      const w = mod(k * inv(numerator, N), N);
-
-      // Check w is in valid range (less than 2^251)
-      if (!(1n <= w && w < MAX_VAL)) continue;
-
-      // Calculate s = 1/w mod N (StarkEx inverts the standard ECDSA s)
-      const s = inv(w, N);
-
-      return {
-        r: toHex(r),
-        s: toHex(s)
-      };
-    }
   }
 
   function buildSignatureBody(payload: Record<string, any>) {
@@ -509,6 +397,8 @@ const Perps: React.FC<PerpsProps> = ({
   const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.length < 3;
   const [_isVertDragging, setIsVertDragging] = useState(false);
   const initialHeightRef = useRef(0);
+  const [fetchedpositions, setfetchedpositions] = useState<any[]>([]);
+  const [positions, setpositions] = useState<any[]>([]);
   const [orders, setorders] = useState<any[]>([]);
   const [canceledorders, setcanceledorders] = useState<any[]>([]);
   const [tradehistory, settradehistory] = useState<any[]>([]);
@@ -648,40 +538,34 @@ useEffect(() => {
     userFees: any
   ): Promise<any> {
     const ts = Date.now().toString()
-    const l2ExpireTime = (Date.now() + 30 * 24 * 60 * 60 * 1000).toString()
-    const l1ExpireTime = (Number(l2ExpireTime) - 9 * 24 * 60 * 60 * 1000).toString()
-  
-    const l2Price = type == 'MARKET'
-      ? side == 'BUY'
-        ? (price * 10)
-        : Number(activeMarket.stepSize)
-      : price
-  
-    const l2Value = l2Price * size
+    const l2ExpireTime = (Date.now() + 30 * 24 * 60 * 60 * 1000)
+    const l1ExpireTime = (Number(l2ExpireTime) - 9 * 24 * 60 * 60 * 1000)
+    const l2Price = type == 'MARKET' ? (side == 'BUY' ? (price * 10) : (price / 10)) : price
+    const l2Value = Number((l2Price * size).toFixed(2))
     const limitFee = Math.ceil(l2Value * Number(userFees[0])).toString()
-    const clientOrderId = Math.floor(Math.random() * 1e16).toString()
-    const l2Nonce = parseInt(sha256(toUtf8Bytes(clientOrderId)).replace(/^0x/, '').slice(0, 8), 16).toString()
-  
+    const clientOrderId = Math.random().toString().slice(2).replace(/^0+/, '');
+    const l2Nonce = BigInt(sha256(toUtf8Bytes(clientOrderId)).slice(0, 10)).toString()
     const baseRes = Number(activeMarket.starkExResolution)
     const quoteRes = Number(exchangeConfig.global.starkExCollateralCoin.starkExResolution)
-    
-    const quantumsAmountSynthetic = Math.floor(size * baseRes).toString()
-    const quantumsAmountCollateral = Math.floor(l2Price * size * quoteRes).toString()
+    const quantumsAmountSynthetic = (side === 'BUY'
+    ? Math.ceil(size * baseRes)
+    : Math.floor(size * baseRes)).toString()
+    const quantumsAmountCollateral = (side === 'BUY'
+    ? Math.ceil(l2Value * quoteRes)
+    : Math.floor(l2Value * quoteRes)).toString()
     const quantumsAmountFee = Math.ceil(Number(limitFee) * quoteRes).toString()    
-  
     const orderToSign: any = {
       clientId: clientOrderId,
       nonce: l2Nonce,
       positionId: accountId,
       isBuyingSynthetic: side == 'BUY',
       limitFee: limitFee,
-      expirationIsoTimestamp: Number(l2ExpireTime),
+      expirationIsoTimestamp: l2ExpireTime,
       quantumsAmountFee,
       quantumsAmountSynthetic,
       quantumsAmountCollateral,
       assetIdSynthetic: activeMarket.starkExSyntheticAssetId,
       assetIdCollateral: exchangeConfig.global.starkExCollateralCoin.starkExAssetId,
-      symbol
     }
 
     const signable = SignableOrder.fromOrderWithNonce(orderToSign, Number(exchangeConfig.global.starkExChainId))
@@ -689,9 +573,9 @@ useEffect(() => {
   
     return {
       price: type === 'MARKET' ? '0' : price.toString(),
-      size: size.toString(),
+      size: size.toFixed(Math.floor(Math.log10(1/Number(activeMarket?.stepSize)))),
       type,
-      timeInForce: 'IMMEDIATE_OR_CANCEL',
+      timeInForce: type == 'MARKET' ? 'IMMEDIATE_OR_CANCEL' : 'GOOD_TIL_CANCEL',
       reduceOnly: false,
       isPositionTpsl: false,
       isSetOpenTp: false,
@@ -702,12 +586,12 @@ useEffect(() => {
       triggerPrice: '',
       triggerPriceType: 'LAST_PRICE',
       clientOrderId,
-      expireTime: l1ExpireTime,
+      expireTime: l1ExpireTime.toString(),
       l2Nonce,
-      l2Value: l2Value.toFixed(0),
-      l2Size: size.toString(),
+      l2Value: l2Value,
+      l2Size: size.toFixed(Math.floor(Math.log10(1/Number(activeMarket?.stepSize)))),
       l2LimitFee: limitFee,
-      l2ExpireTime,
+      l2ExpireTime: l2ExpireTime.toString(),
       l2Signature,
       extraType: '',
       extraDataJson: '',
@@ -717,9 +601,9 @@ useEffect(() => {
   }
 
   const handleTrade = async () => {
+    if (Object.keys(perpsMarketsData).length == 0) return;
     const size = Math.floor(Number(inputString) / Number(perpsMarketsData[perpsActiveMarketKey]?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize)
     const payload = await generateSignedOrder(size, (activeTradeType === "long" ? "BUY" : "SELL"), "MARKET", Number(perpsMarketsData[perpsActiveMarketKey]?.lastPrice), signer.accountId, activeMarket.contractId, perpsActiveMarketKey, signer.privateKey, activeMarket, userFees)
-    console.log(payload)
     const ts = Date.now().toString()
     const path = '/api/v1/private/order/createOrder'
     const qs = buildSignatureBody(payload)
@@ -748,9 +632,35 @@ useEffect(() => {
   }, [])
 
   useEffect(() => {
+    if (Object.keys(perpsMarketsData).length == 0) return;
+    let upnl = 0
+    for (const position of fetchedpositions) {
+      const marketData = (Object.values(perpsMarketsData).find((v: any) => v.contractId == position.contractId) as any)
+      upnl += Number(marketData?.oraclePrice) * Number(position.openSize) - Number(position.openValue)
+      if (marketData.contractName == perpsActiveMarketKey) {
+        setCurrentPosition(Number(position.openSize))
+      }
+    }
+    setUpnl(isNaN(upnl) ? '0.00' : upnl.toFixed(2))
+  }, [fetchedpositions, perpsMarketsData, perpsActiveMarketKey])
+
+  useEffect(() => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
     if (!activeMarket?.contractId) return
     setLeverage(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage)
+    setInputString('')
+    setSliderPercent(0);
+    const slider = document.querySelector(
+      '.perps-balance-amount-slider',
+    );
+    const popup = document.querySelector(
+      '.perps-slider-percentage-popup',
+    );
+    if (slider && popup) {
+      const rect = slider.getBoundingClientRect();
+      (popup as HTMLElement).style.left = `${(rect.width - 15) * (0 / 100) + 15 / 2
+        }px`;
+    }
     const subs = [
       `depth.${activeMarket.contractId}.200`,
       `trades.${activeMarket.contractId}`,
@@ -1249,7 +1159,12 @@ useEffect(() => {
           const msg = message?.content?.data;
           if (message.type == 'trade-event') {
             if (message.content.event == 'Snapshot') {
-              setBalance(msg.collateral[0].amount)
+              let balance = Number(msg.collateral[0].amount)
+              for (const position of msg.position) {
+                balance += Number(position.openValue)
+              }
+              setfetchedpositions(msg.position)
+              setBalance(balance.toFixed(2))
             }
             else if (message.content.event == 'TRANSFER_IN_UPDATE') {
               if (msg?.collateral?.[0]?.amount) {
@@ -1447,7 +1362,7 @@ useEffect(() => {
             <div className="perps-balance-container">
               <img className="perps-wallet-icon" src={walleticon} />
               <div className="balance-value-container">
-                {Number(balance).toFixed(2)}
+                {Number(availableBalance).toFixed(2)}
               </div>
             </div>
             <button
@@ -1462,7 +1377,7 @@ useEffect(() => {
             <div className="perps-trade-input-wrapper">
               Price
               <input
-                type="decimal"
+                type="text"
                 placeholder="0.00"
                 value={limitPriceString}
                 onChange={(e) => {
@@ -1486,7 +1401,7 @@ useEffect(() => {
           <div className="perps-trade-input-wrapper">
             Size
             <input
-              type="decimal"
+              type="text"
               placeholder="0.00"
               value={inputString}
               onChange={(e) => {
@@ -1647,7 +1562,7 @@ useEffect(() => {
                 <div className="perps-tpsl-label-section">
                   <span className="perps-tpsl-row-label">TP Price</span>
                   <input
-                    type="number"
+                    type="text"
                     placeholder="Enter TP price"
                     value={tpPrice}
                     onChange={(e) => setTpPrice(e.target.value)}
@@ -1658,7 +1573,7 @@ useEffect(() => {
                   <div className="perps-tpsl-percentage">
                     <span className="perps-tpsl-row-label">TP%</span>
                     <input
-                      type="number"
+                      type="text"
                       value={tpPercent}
                       onChange={(e) => setTpPercent(e.target.value)}
                       className="perps-tpsl-percent-input"
@@ -1671,7 +1586,7 @@ useEffect(() => {
                 <div className="perps-tpsl-label-section">
                   <span className="perps-tpsl-row-label">SL Price</span>
                   <input
-                    type="number"
+                    type="text"
                     placeholder="Enter SL price"
                     value={tpPrice}
                     onChange={(e) => setSlPrice(e.target.value)}
@@ -1682,7 +1597,7 @@ useEffect(() => {
                   <div className="perps-tpsl-percentage">
                     <span className="perps-tpsl-row-label">SL%</span>
                     <input
-                      type="number"
+                      type="text"
                       value={tpPercent}
                       onChange={(e) => setSlPercent(e.target.value)}
                       className="perps-tpsl-percent-input"
@@ -1892,7 +1807,7 @@ useEffect(() => {
               Total Equity
             </span>
             <span className="perps-account-subtitle">
-              ${Number(accountEquity).toFixed(2)}
+              ${(Number(balance) + Number(upnl)).toFixed(2)}
             </span>
           </div>
           <div className="perps-account-row">
@@ -1907,8 +1822,8 @@ useEffect(() => {
             <span className="perps-account-title">
               Unrealized PNL
             </span>
-            <span className="perps-account-subtitle">
-              $0.00
+            <span className={`perps-account-subtitle ${Number(upnl) > 0 ? 'green' : Number(upnl) < 0 ? 'red' : ''}`}>
+              {Number(upnl) < 0 ? '-' : ''}${Math.abs(Number(upnl)).toFixed(2)}
             </span>
           </div>
           <div className="perps-account-row">
@@ -1916,7 +1831,7 @@ useEffect(() => {
               Cross Margin Ratio
             </span>
             <span className="perps-account-subtitle">
-              $0.00
+              0.00%
             </span>
           </div>
           <div className="perps-account-row">
@@ -1932,7 +1847,7 @@ useEffect(() => {
               Cross Account Leverage
             </span>
             <span className="perps-account-subtitle">
-              $0.00
+              0.00x
             </span>
           </div>
         </div>
@@ -2032,6 +1947,7 @@ useEffect(() => {
           openEditOrderSizePopup={openEditOrderSizePopup}
           marketsData={{}}
           isPerps={true}
+          perpsPositions={positions}
         />
       </div>
       {layoutSettings === 'default' && (

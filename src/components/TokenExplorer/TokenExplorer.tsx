@@ -831,7 +831,6 @@ const AlertsPopup: React.FC<{
     if (file) {
       const url = URL.createObjectURL(file);
       updateSoundSetting(soundType, url);
-      setOpenDropdowns((prev) => ({ ...prev, [soundType]: false }));
     }
     event.target.value = '';
   };
@@ -841,7 +840,6 @@ const AlertsPopup: React.FC<{
     soundValue: string,
   ) => {
     updateSoundSetting(soundType, soundValue);
-    setOpenDropdowns((prev) => ({ ...prev, [soundType]: false }));
   };
 
   if (!isOpen) return null;
@@ -937,7 +935,7 @@ const AlertsPopup: React.FC<{
                         </span>
                         <div className="sound-controls">
                           <div className="sound-selector-dropdown">
-                            <button
+                            <div
                               className="sound-selector"
                               onClick={() => toggleDropdown(key)}
                               onBlur={(e) => {
@@ -984,7 +982,6 @@ const AlertsPopup: React.FC<{
                                     onMouseDown={(e) => e.preventDefault()}
                                     onClick={() => {
                                       selectSound(key, stepaudio);
-                                      closeDropdown(key);
                                     }}
                                   >
                                     Step Audio
@@ -994,7 +991,6 @@ const AlertsPopup: React.FC<{
                                     onMouseDown={(e) => e.preventDefault()}
                                     onClick={() => {
                                       selectSound(key, kaching);
-                                      closeDropdown(key);
                                     }}
                                   >
                                     Ka-ching
@@ -1007,13 +1003,12 @@ const AlertsPopup: React.FC<{
                                       style={{ display: 'none' }}
                                       onChange={(e) => {
                                         handleFileUpload(key, e);
-                                        closeDropdown(key);
                                       }}
                                     />
                                   </label>
                                 </div>
                               )}
-                            </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -3299,8 +3294,8 @@ interface TokenExplorerProps {
   };
   quickAmounts: any;
   setQuickAmounts: any;
-  pausedColumn: any;
-  setPausedColumn: any;
+  alertSettingsRef: any;
+  pausedColumnRef: any;
   dispatch: any;
   hidden: any;
   tokensByStatus: any;
@@ -3338,8 +3333,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   account,
   quickAmounts,
   setQuickAmounts,
-  pausedColumn,
-  setPausedColumn,
+  alertSettingsRef,
+  pausedColumnRef,
   dispatch,
   hidden,
   tokensByStatus,
@@ -3740,20 +3735,10 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     },
     [],
   );
-
-  const wsRef = useRef<WebSocket | null>(null);
-  const subIdRef = useRef(1);
-  const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const trackedMarketsRef = useRef<Set<string>>(new Set());
-  const connectionStateRef = useRef<
-    'disconnected' | 'connecting' | 'connected' | 'reconnecting'
-  >('disconnected');
-  const retryCountRef = useRef(0);
-  const reconnectTimerRef = useRef<number | null>(null);
-  const connectionAttemptsRef = useRef(0);
-  const lastConnectionAttemptRef = useRef(0);
-  const consecutiveFailuresRef = useRef(0);
-
+  
+  const [pausedColumn, setPausedColumn] = useState<Token['status'] | null>(
+    null,
+  );
   const handleTokenHover = useCallback((id: string) => setHoveredToken(id), []);
   const handleTokenLeave = useCallback(() => setHoveredToken(null), []);
   const handleImageHover = useCallback((id: string) => setHoveredImage(id), []);
@@ -3765,29 +3750,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     [],
   );
 
-  const handleColumnHover = useCallback((_columnType: Token['status']) => {
-    if (pauseTimeoutRef.current) {
-      clearTimeout(pauseTimeoutRef.current);
-      pauseTimeoutRef.current = null;
-    }
-    // setPausedColumn(columnType);
+  const handleColumnHover = useCallback((columnType: Token['status']) => {
+    pausedColumnRef.current = columnType
+    setPausedColumn(columnType)
   }, []);
 
   const handleColumnLeave = useCallback(() => {
-    if (pauseTimeoutRef.current) {
-      clearTimeout(pauseTimeoutRef.current);
-    }
-    pauseTimeoutRef.current = setTimeout(() => {
-      setPausedColumn(null);
-    }, 300);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (pauseTimeoutRef.current) {
-        clearTimeout(pauseTimeoutRef.current);
-      }
-    };
+    pausedColumnRef.current = null
+    setPausedColumn(null)
   }, []);
 
   const copyToClipboard = useCallback(
