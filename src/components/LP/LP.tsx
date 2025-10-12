@@ -1273,7 +1273,7 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
       </div>
     </div>
 
-    {!loadingVaultDetails ? (
+    {loadingVaultDetails ? (
       <div className="vault-detail-layout">
         <div className="vault-info-section">
           <div className="lp-detail-summary">
