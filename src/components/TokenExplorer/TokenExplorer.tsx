@@ -1096,7 +1096,7 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
   hiddenColumns: [],
   quickBuyClickBehavior: 'nothing',
   secondQuickBuyEnabled: false,
-  secondQuickBuyColor: '#aaaecf',
+  secondQuickBuyColor: '#606BCC',
   visibleRows: {
     marketCap: true,
     volume: true,

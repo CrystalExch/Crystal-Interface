@@ -417,18 +417,18 @@
 
 
 .lp-tab {
-    position: relative;
-    z-index: 2;
-    background: transparent;
-    border: none;
-    color: #ffffff79;
-    font-size: 1.3rem;
-    font-weight: 300;
-    cursor: pointer;
-    transition: color .3s ease;
-    white-space: nowrap;
-    text-align: center;
-    height: 30px;
+  position: relative;
+  z-index: 2;
+  background: transparent;
+  border: none;
+  color: #ffffff79;
+  font-size: 1.3rem;
+  font-weight: 300;
+  cursor: pointer;
+  transition: color .3s ease;
+  white-space: nowrap;
+  text-align: center;
+  height: 30px;
 }
 
 .lp-tab:hover {
@@ -1840,20 +1840,18 @@
 }
 
 .vault-tab {
-  align-items: center;
-  background: 0 0;
+  position: relative;
+  z-index: 2;
+  background: transparent;
   border: none;
-  border-radius: 8px;
   color: #ffffff79;
-  cursor: pointer;
-  display: flex;
-  flex: 1;
   font-size: 1.3rem;
   font-weight: 300;
-  height: 22px;
-  justify-content: center;
+  cursor: pointer;
+  transition: color .3s ease;
+  white-space: nowrap;
   text-align: center;
-  transition: all.2s ease
+  height: 30px;
 }
 
 .vault-tab:hover,

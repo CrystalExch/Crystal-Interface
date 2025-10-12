@@ -30,10 +30,10 @@
 
 .cancel-all-oc-cell {
   border-radius: 3px;
-  color: rgb(230, 112, 112);
+  color: #aaaecf;
   cursor: default;
   display: flex;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 300;
   justify-content: center;
   overflow: hidden;

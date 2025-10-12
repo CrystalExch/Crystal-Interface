@@ -659,8 +659,7 @@ const Header: React.FC<HeaderProps> = ({
           />
         </div>
         <div className={rightHeaderClass}>
-
-          <button
+          {/* <button
             type="button"
             className="meme-search-button"
             onClick={() => setIsMemeSearchOpen(true)}
@@ -669,7 +668,7 @@ const Header: React.FC<HeaderProps> = ({
             Search by token or CA...
             <span className="meme-search-keybind">/</span>
 
-          </button>
+          </button> */}
 
           {/* <NetworkSelector
             isNetworkSelectorOpen={isNetworkSelectorOpen}

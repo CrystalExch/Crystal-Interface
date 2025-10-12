@@ -435,7 +435,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const { activechain, percentage, setPercentage, favorites } = useSharedContext();
   const userchain = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.chainId || client?.chain?.id
   const location = useLocation();
-  const lastPathRef = useRef<string>(window.location.pathname);
   const navigate = useNavigate();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const HTTP_URL = settings.chainConfig[activechain].httpurl;
@@ -1647,8 +1646,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   });
   const [perpsActiveMarketKey, setperpsActiveMarketKey] = useState(
     location.pathname.startsWith("/perps")
-      ? location.pathname.split("/").pop()?.toUpperCase() || "BTCUSD"
-      : "BTCUSD"
+      ? location.pathname.split("/").pop()?.toUpperCase() || "MONUSD"
+      : "MONUSD"
   );
   const [perpsMarketsData, setPerpsMarketsData] = useState<{ [key: string]: any }>({});
   const [perpsFilterOptions, setPerpsFilterOptions] = useState({});
@@ -1864,6 +1863,131 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     'asc' | 'desc' | undefined
   >('desc');
   const { toggleFavorite } = useSharedContext();
+  const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
+  const [vaultList, setVaultList] = useState<any>([]);
+  const [isVaultsLoading, setIsVaultsLoading] = useState(true);
+  const [depositors, setDepositors] = useState<any[]>([]);
+  const [depositHistory, setDepositHistory] = useState<any[]>([]);
+  const [withdrawHistory, setWithdrawHistory] = useState<any[]>([]);
+  const [openOrders, setOpenOrders] = useState<any[]>([]);
+  const [_allOrders, setAllOrders] = useState<any[]>([]);
+
+  const vaultListRef = useRef<any[]>([]);
+  useEffect(() => { vaultListRef.current = vaultList; }, [vaultList]);
+
+  const wsCooldownRef = useRef<number>(0);
+  const wsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  type State = {
+    tokensByStatus: Record<Token['status'], Token[]>;
+    hidden: Set<string>;
+    loading: Set<string>;
+  };
+
+  type Action =
+    | { type: 'INIT'; tokens: Token[] }
+    | { type: 'ADD_MARKET'; token: Token }
+    | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
+    | { type: 'HIDE_TOKEN'; id: string }
+    | { type: 'SHOW_TOKEN'; id: string }
+    | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' };
+
+  interface AlertSettings {
+    soundAlertsEnabled: boolean;
+    volume: number;
+    sounds: {
+      newPairs: string;
+      pairMigrating: string;
+      migrated: string;
+    };
+  }
+
+  interface ExplorerToken {
+    id: string;
+    tokenAddress: string;
+    dev: string;
+    name: string;
+    symbol: string;
+    image: string;
+    price: number;
+    marketCap: number;
+    change24h: number;
+    volume24h: number;
+    holders: number;
+    proTraders: number;
+    sniperHolding: number;
+    devHolding: number;
+    bundleHolding: number;
+    insiderHolding: number;
+    top10Holding: number;
+    buyTransactions: number;
+    sellTransactions: number;
+    globalFeesPaid: number;
+    website: string;
+    twitterHandle: string;
+    progress: number;
+    status: 'new' | 'graduating' | 'graduated';
+    description: string;
+    created: number;
+    bondingAmount: number;
+    volumeDelta: number;
+    telegramHandle: string;
+    discordHandle: string;
+    graduatedTokens: number;
+    launchedTokens: number;
+  }
+
+  const ALERT_DEFAULTS: AlertSettings = {
+    soundAlertsEnabled: true,
+    volume: 100,
+    sounds: {
+      newPairs: stepaudio,
+      pairMigrating: stepaudio,
+      migrated: stepaudio,
+    },
+  };
+
+  const [alertSettings, setAlertSettings] = useState<AlertSettings>(() => {
+    const saved = localStorage.getItem('explorer-alert-settings');
+    if (!saved) return ALERT_DEFAULTS;
+    try {
+      const parsed = JSON.parse(saved);
+      return {
+        ...ALERT_DEFAULTS,
+        ...parsed,
+        sounds: { ...ALERT_DEFAULTS.sounds, ...(parsed?.sounds || {}) },
+      };
+    } catch {
+      return ALERT_DEFAULTS;
+    }
+  });
+  const [isTokenExplorerLoading, setIsTokenExplorerLoading] = useState(false);
+  const initialState: State = {
+    tokensByStatus: { new: [], graduating: [], graduated: [] },
+    hidden: new Set(),
+    loading: new Set(),
+  };
+  const [{ tokensByStatus, hidden, loading: teLoading }, dispatch] = useReducer(
+    reducer,
+    initialState,
+  );
+  const ROUTER_EVENT = '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
+  const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
+  const MARKET_CREATED_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
+  const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+
+  const teRef = useRef<WebSocket | null>(null);
+  const subIdRef = useRef(1);
+  const pausedColumnRef = useRef<any>(null);
+  const alertSettingsRef = useRef<any>(alertSettings);
+  const trackedMarketsRef = useRef<Set<string>>(new Set());
+  const connectionStateRef = useRef<
+    'disconnected' | 'connecting' | 'connected' | 'reconnecting'
+  >('disconnected');
+  const retryCountRef = useRef(0);
+  const reconnectTimerRef = useRef<number | null>(null);
+  const connectionAttemptsRef = useRef(0);
+  const lastConnectionAttemptRef = useRef(0);
+  const consecutiveFailuresRef = useRef(0);
 
   const audio = useMemo(() => {
     const a = new Audio(stepaudio);
@@ -2299,22 +2423,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     }
   };
 
-  // vaults state management
-  const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
-  const [vaultList, setVaultList] = useState<any>([]);
-  const [isVaultsLoading, setIsVaultsLoading] = useState(true);
-  const [depositors, setDepositors] = useState<any[]>([]);
-  const [depositHistory, setDepositHistory] = useState<any[]>([]);
-  const [withdrawHistory, setWithdrawHistory] = useState<any[]>([]);
-  const [openOrders, setOpenOrders] = useState<any[]>([]);
-  const [_allOrders, setAllOrders] = useState<any[]>([]);
-
-  const vaultListRef = useRef<any[]>([]);
-  useEffect(() => { vaultListRef.current = vaultList; }, [vaultList]);
-
-  const wsCooldownRef = useRef<number>(0);
-  const wsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  // vaults
   async function fetchVaultBalances(vaults: { id: `0x${string}` }[]) {
     const calls = vaults.map(v => ({
       address: v.id,
@@ -3957,118 +4066,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }
 
   // tokenexplorer
-  type State = {
-    tokensByStatus: Record<Token['status'], Token[]>;
-    hidden: Set<string>;
-    loading: Set<string>;
-  };
-
-  type Action =
-    | { type: 'INIT'; tokens: Token[] }
-    | { type: 'ADD_MARKET'; token: Token }
-    | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
-    | { type: 'HIDE_TOKEN'; id: string }
-    | { type: 'SHOW_TOKEN'; id: string }
-    | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' };
-
-  interface AlertSettings {
-    soundAlertsEnabled: boolean;
-    volume: number;
-    sounds: {
-      newPairs: string;
-      pairMigrating: string;
-      migrated: string;
-    };
-  }
-
-  interface ExplorerToken {
-    id: string;
-    tokenAddress: string;
-    dev: string;
-    name: string;
-    symbol: string;
-    image: string;
-    price: number;
-    marketCap: number;
-    change24h: number;
-    volume24h: number;
-    holders: number;
-    proTraders: number;
-    sniperHolding: number;
-    devHolding: number;
-    bundleHolding: number;
-    insiderHolding: number;
-    top10Holding: number;
-    buyTransactions: number;
-    sellTransactions: number;
-    globalFeesPaid: number;
-    website: string;
-    twitterHandle: string;
-    progress: number;
-    status: 'new' | 'graduating' | 'graduated';
-    description: string;
-    created: number;
-    bondingAmount: number;
-    volumeDelta: number;
-    telegramHandle: string;
-    discordHandle: string;
-    graduatedTokens: number;
-    launchedTokens: number;
-  }
-
-  const ALERT_DEFAULTS: AlertSettings = {
-    soundAlertsEnabled: true,
-    volume: 100,
-    sounds: {
-      newPairs: stepaudio,
-      pairMigrating: stepaudio,
-      migrated: stepaudio,
-    },
-  };
-
-  const [alertSettings, setAlertSettings] = useState<AlertSettings>(() => {
-    const saved = localStorage.getItem('explorer-alert-settings');
-    if (!saved) return ALERT_DEFAULTS;
-    try {
-      const parsed = JSON.parse(saved);
-      return {
-        ...ALERT_DEFAULTS,
-        ...parsed,
-        sounds: { ...ALERT_DEFAULTS.sounds, ...(parsed?.sounds || {}) },
-      };
-    } catch {
-      return ALERT_DEFAULTS;
-    }
-  });
-  const [isTokenExplorerLoading, setIsTokenExplorerLoading] = useState(false);
-  const initialState: State = {
-    tokensByStatus: { new: [], graduating: [], graduated: [] },
-    hidden: new Set(),
-    loading: new Set(),
-  };
-  const [{ tokensByStatus, hidden, loading: teLoading }, dispatch] = useReducer(
-    reducer,
-    initialState,
-  );
-  const ROUTER_EVENT = '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
-  const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-  const MARKET_CREATED_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
-  const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
-
-  const teRef = useRef<WebSocket | null>(null);
-  const subIdRef = useRef(1);
-  const pausedColumnRef = useRef<any>(null);
-  const alertSettingsRef = useRef<any>(alertSettings);
-  const trackedMarketsRef = useRef<Set<string>>(new Set());
-  const connectionStateRef = useRef<
-    'disconnected' | 'connecting' | 'connected' | 'reconnecting'
-  >('disconnected');
-  const retryCountRef = useRef(0);
-  const reconnectTimerRef = useRef<number | null>(null);
-  const connectionAttemptsRef = useRef(0);
-  const lastConnectionAttemptRef = useRef(0);
-  const consecutiveFailuresRef = useRef(0);
-
   function reducer(state: State, action: Action): State {
     switch (action.type) {
       case 'INIT': {
@@ -4471,17 +4468,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   );
 
   useEffect(() => {
-    const prevPath = lastPathRef.current;
-    const currPath = location.pathname;
-    lastPathRef.current = currPath;
-
-    const currSection = currPath.split('/')[1];
-    const cameFromLaunchpad = prevPath?.startsWith('/launchpad');
-    const isBoard = currSection === 'board';
-
-    if (cameFromLaunchpad && isBoard) return;
-
-    if (!['board', 'spectra', 'meme'].includes(currSection)) return;
+    if (!['board', 'spectra', 'meme', 'launchpad'].includes(location.pathname.split('/')[1])) return;
 
     let cancelled = false;
 
@@ -4709,7 +4696,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       consecutiveFailuresRef.current = 0;
       trackedMarketsRef.current.clear();
     };
-  }, [openWebsocket, !['board', 'spectra', 'meme'].includes(location.pathname.split('/')[1])]);
+  }, [openWebsocket, !['board', 'spectra', 'meme', 'launchpad'].includes(location.pathname.split('/')[1])]);
 
   // memeinterface
   const [memeLive, setMemeLive] = useState<Partial<any>>({});
