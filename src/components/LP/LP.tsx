@@ -132,41 +132,47 @@ const LP: React.FC<LPProps> = ({
 
   const hasInitializedFavorites = useRef(false);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [vaultDetails, vaultTotalSupply, vaultUserBalance] = (await readContracts(config, {
-          contracts: [
-            { abi: CrystalRouterAbi as any, address: router, functionName: 'getReserves', args: [markets?.[selectedVault]?.address] },
-            { abi: TokenAbi as any, address: markets?.[selectedVault]?.address, functionName: 'totalSupply', args: [] },
-            ...(account.address ? [{
-              abi: TokenAbi as any,
-              address: markets?.[selectedVault]?.address,
-              functionName: 'balanceOf',
-              args: [account.address as `0x${string}`],
-            }] : [])],
-        })) as any[];
-        if (vaultDetails?.status === "success") {
-          const vaultDict = {
-            ...markets?.[selectedVault],
-            quoteBalance: vaultDetails.result[0],
-            baseBalance: vaultDetails.result[1],
-            userBalance: 0n,
-            userShares: 0n,
-            totalShares: vaultTotalSupply.result,
-          }
-if (account.address) {
-  vaultDict.userBalance = vaultUserBalance.result;
-  vaultDict.userShares = vaultUserBalance.result;
-}
-          setVaultList([vaultDict]);
+const [loadingVaultDetails, setLoadingVaultDetails] = useState(false);
+
+useEffect(() => {
+  if (!selectedVault) return;
+  
+  (async () => {
+    setLoadingVaultDetails(true);
+    try {
+      const [vaultDetails, vaultTotalSupply, vaultUserBalance] = (await readContracts(config, {
+        contracts: [
+          { abi: CrystalRouterAbi as any, address: router, functionName: 'getReserves', args: [markets?.[selectedVault]?.address] },
+          { abi: TokenAbi as any, address: markets?.[selectedVault]?.address, functionName: 'totalSupply', args: [] },
+          ...(account.address ? [{
+            abi: TokenAbi as any,
+            address: markets?.[selectedVault]?.address,
+            functionName: 'balanceOf',
+            args: [account.address as `0x${string}`],
+          }] : [])],
+      })) as any[];
+      if (vaultDetails?.status === "success") {
+        const vaultDict = {
+          ...markets?.[selectedVault],
+          quoteBalance: vaultDetails.result[0],
+          baseBalance: vaultDetails.result[1],
+          userBalance: 0n,
+          userShares: 0n,
+          totalShares: vaultTotalSupply.result,
         }
-      } catch (e) {
-        console.error(e);
-      } finally {
+        if (account.address) {
+          vaultDict.userBalance = vaultUserBalance.result;
+          vaultDict.userShares = vaultUserBalance.result;
+        }
+        setVaultList([vaultDict]);
       }
-    })();
-  }, [selectedVault, account.address]);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingVaultDetails(false);
+    }
+  })();
+}, [selectedVault, account.address]);
 
   const showVaultDetail = (vault: any) => {
     setSelectedVault(vault.baseAsset + vault.quoteAsset);
@@ -1255,19 +1261,95 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
               <p>No vaults found matching your criteria.</p>
             </div>)}
           </div>
-        ) : (
-          <div className="lp-detail-view">
-            <div className="lp-detail-header">
-              <div className="add-liquidity-breadcrumb">
-                <button onClick={backToList} className="breadcrumb-link">
-                  Liquidity Pools
-                </button>
-                <ChevronLeft size={16} className="earn-breadcrumb-arrow" />
-                <span className="breadcrumb-current">{selectedVaultData?.name} Pool</span>
+) : (
+  <div className="lp-detail-view">
+    <div className="lp-detail-header">
+      <div className="add-liquidity-breadcrumb">
+        <button onClick={backToList} className="breadcrumb-link">
+          Liquidity Pools
+        </button>
+        <ChevronLeft size={16} className="earn-breadcrumb-arrow" />
+        <span className="breadcrumb-current">{selectedVaultData?.name} Pool</span>
+      </div>
+    </div>
+
+    {!loadingVaultDetails ? (
+      <div className="vault-detail-layout">
+        <div className="vault-info-section">
+          <div className="lp-detail-summary">
+            <div className="lp-detail-top">
+              <div className="lp-detail-asset">
+                <div className="lp-detail-token-pair">
+                  <div className="lp-skeleton lp-skeleton-icon lp-first-token"></div>
+                  <div className="lp-skeleton lp-skeleton-icon lp-second-token"></div>
+                </div>
+                <div>
+                  <div className="lp-skeleton lp-skeleton-title"></div>
+                  <div className="lp-skeleton lp-skeleton-fee"></div>
+                </div>
+              </div>
+              <div className="lp-detail-stats">
+                <div className="lp-detail-stat">
+                  <div className="lp-skeleton lp-skeleton-stat-label"></div>
+                  <div className="lp-skeleton lp-skeleton-stat-value"></div>
+                </div>
+                <div className="lp-detail-stat">
+                  <div className="lp-skeleton lp-skeleton-stat-label"></div>
+                  <div className="lp-skeleton lp-skeleton-stat-value"></div>
+                </div>
+                <div className="lp-detail-stat">
+                  <div className="lp-skeleton lp-skeleton-stat-label"></div>
+                  <div className="lp-skeleton lp-skeleton-stat-value"></div>
+                </div>
+                <div className="lp-detail-stat">
+                  <div className="lp-skeleton lp-skeleton-stat-label"></div>
+                  <div className="lp-skeleton lp-skeleton-stat-value"></div>
+                </div>
               </div>
             </div>
 
-            {selectedVaultData && (
+            <div className="lp-performance-chart-container">
+              <div className="lp-skeleton lp-skeleton-chart-header"></div>
+              <div className="lp-skeleton lp-skeleton-chart"></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="vault-actions-section">
+          <div className="vault-tabs">
+            <div className="lp-skeleton lp-skeleton-tab"></div>
+            <div className="lp-skeleton lp-skeleton-tab"></div>
+          </div>
+
+          <div className="vault-deposit-form">
+            <div className="lp-skeleton lp-skeleton-form-title"></div>
+            <div className="lp-skeleton lp-skeleton-form-description"></div>
+
+            <div className="deposit-amounts-section">
+              <div className="deposit-input-group">
+                <div className="lp-skeleton lp-skeleton-input"></div>
+              </div>
+              <div className="deposit-input-group">
+                <div className="lp-skeleton lp-skeleton-input"></div>
+              </div>
+            </div>
+
+            <div className="deposit-summary">
+              <div className="deposit-summary-row">
+                <div className="lp-skeleton lp-skeleton-summary-text"></div>
+                <div className="lp-skeleton lp-skeleton-summary-value"></div>
+              </div>
+              <div className="deposit-summary-row">
+                <div className="lp-skeleton lp-skeleton-summary-text"></div>
+                <div className="lp-skeleton lp-skeleton-summary-value"></div>
+              </div>
+            </div>
+
+            <div className="lp-skeleton lp-skeleton-button"></div>
+          </div>
+        </div>
+      </div>
+    ) : selectedVaultData && (
               <div className="vault-detail-layout">
                 <div className="vault-info-section">
                   <div className="lp-detail-summary">

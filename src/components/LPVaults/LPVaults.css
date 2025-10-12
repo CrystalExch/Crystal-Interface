@@ -1687,14 +1687,6 @@
   margin-bottom: 0.5rem;
 }
 
-.deposit-input-group {
-  border: 1.5px solid rgba(179, 184, 249, .1);
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 5px
-}
-
 .deposit-input-group label {
   color: #ffffff79;
   display: block;
