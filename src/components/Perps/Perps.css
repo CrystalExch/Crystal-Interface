@@ -747,6 +747,33 @@
     transform: none;
 }
 
+.perps-button-spinner {
+  animation: spin 1s linear infinite;
+  border: 2px solid rgb(0, 0, 0);
+  border-radius: 50%;
+  border-top: 2px solid transparent;
+  height: 16px;
+  width: 16px;
+}
+
+.perps-trade-action-button.long .perps-button-spinner {
+  animation: spin 1s linear infinite;
+  border: 2px solid rgb(67 254 154);
+  border-radius: 50%;
+  border-top: 2px solid transparent;
+  height: 16px;
+  width: 16px;
+}
+
+.perps-trade-action-button.short .perps-button-spinner {
+  animation: spin 1s linear infinite;
+  border: 2px solid rgb(235, 112, 112);
+  border-radius: 50%;
+  border-top: 2px solid transparent;
+  height: 16px;
+  width: 16px;
+}
+
 .perps-trade-input::-webkit-outer-spin-button,
 .perps-trade-input::-webkit-inner-spin-button {
     -webkit-appearance: none;

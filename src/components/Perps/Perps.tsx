@@ -72,6 +72,8 @@ interface PerpsProps {
   signer: any;
   setSigner: any;
   setOrderCenterHeight: (height: number) => void;
+  isMarksVisible: any;
+  setIsMarksVisible: any;
 }
 
 const Perps: React.FC<PerpsProps> = ({
@@ -132,7 +134,9 @@ const Perps: React.FC<PerpsProps> = ({
   setLeverage,
   signer,
   setSigner,
-  setOrderCenterHeight
+  setOrderCenterHeight,
+  isMarksVisible,
+  setIsMarksVisible,
 }) => {
   const [exchangeConfig, setExchangeConfig] = useState<any>();
   const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
@@ -404,6 +408,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [tradehistory, settradehistory] = useState<any[]>([]);
   const [tradesByMarket, settradesByMarket] = useState<any>({});
   const [currentLimitPrice, setCurrentLimitPrice] = useState<number>(0);
+  const [isSigning, setIsSigning] = useState(false);
   const [amountsQuote, setAmountsQuote] = useState(() => {
     const stored = localStorage.getItem('perps_ob_amounts_quote');
 
@@ -412,69 +417,70 @@ const Perps: React.FC<PerpsProps> = ({
       : 'Quote';
   });
 
-  // Add this useEffect for vertical dragging
-useEffect(() => {
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!_isVertDragging) return;
+    // Add this useEffect for vertical dragging
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!_isVertDragging) return;
 
-    e.preventDefault();
-    e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
 
-    const mouseDelta = e.clientY - initialMousePosRef.current;
-    const newHeight = Math.max(
-      150, // minimum height
-      Math.min(
-        window.innerHeight - 400, // maximum height (leaves room for chart/orderbook)
-        initialHeightRef.current - mouseDelta // subtract because Y increases downward
-      )
-    );
+      const mouseDelta = e.clientY - initialMousePosRef.current;
+      const newHeight = Math.max(
+        150, // minimum height
+        Math.min(
+          window.innerHeight - 400, // maximum height (leaves room for chart/orderbook)
+          initialHeightRef.current - mouseDelta // subtract because Y increases downward
+        )
+      );
 
-    // CRITICAL FIX: Actually update the height state!
-    setOrderCenterHeight(newHeight);
-    localStorage.setItem('perps_orderCenterHeight', newHeight.toString());
-  };
+      // CRITICAL FIX: Actually update the height state!
+      setOrderCenterHeight(newHeight);
+      localStorage.setItem('perps_orderCenterHeight', newHeight.toString());
+    };
 
-  const handleMouseUp = (e: MouseEvent) => {
-    if (!_isVertDragging) return;
+    const handleMouseUp = (e: MouseEvent) => {
+      if (!_isVertDragging) return;
 
-    e.preventDefault();
-    e.stopPropagation();
-    setIsVertDragging(false);
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
+      e.preventDefault();
+      e.stopPropagation();
+      setIsVertDragging(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
 
-    const overlay = document.getElementById('global-vert-drag-overlay');
-    if (overlay) {
-      document.body.removeChild(overlay);
+      const overlay = document.getElementById('global-vert-drag-overlay');
+      if (overlay) {
+        document.body.removeChild(overlay);
+      }
+    };
+
+    if (_isVertDragging) {
+      const overlay = document.createElement('div');
+      overlay.id = 'global-vert-drag-overlay';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.zIndex = '9999';
+      overlay.style.cursor = 'row-resize';
+      document.body.appendChild(overlay);
+
+      window.addEventListener('mousemove', handleMouseMove, { capture: true });
+      window.addEventListener('mouseup', handleMouseUp, { capture: true });
     }
-  };
 
-  if (_isVertDragging) {
-    const overlay = document.createElement('div');
-    overlay.id = 'global-vert-drag-overlay';
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100%';
-    overlay.style.height = '100%';
-    overlay.style.zIndex = '9999';
-    overlay.style.cursor = 'row-resize';
-    document.body.appendChild(overlay);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove, { capture: true });
+      window.removeEventListener('mouseup', handleMouseUp, { capture: true });
 
-    window.addEventListener('mousemove', handleMouseMove, { capture: true });
-    window.addEventListener('mouseup', handleMouseUp, { capture: true });
-  }
+      const overlay = document.getElementById('global-vert-drag-overlay');
+      if (overlay) {
+        document.body.removeChild(overlay);
+      }
+    };
+  }, [_isVertDragging, setOrderCenterHeight]); // Add setOrderCenterHeight to dependencies
 
-  return () => {
-    window.removeEventListener('mousemove', handleMouseMove, { capture: true });
-    window.removeEventListener('mouseup', handleMouseUp, { capture: true });
-
-    const overlay = document.getElementById('global-vert-drag-overlay');
-    if (overlay) {
-      document.body.removeChild(overlay);
-    }
-  };
-}, [_isVertDragging, setOrderCenterHeight]); // Add setOrderCenterHeight to dependencies
   const prevAmountsQuote = useRef(amountsQuote)
   const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
   const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
@@ -570,10 +576,10 @@ useEffect(() => {
 
     const signable = SignableOrder.fromOrderWithNonce(orderToSign, Number(exchangeConfig.global.starkExChainId))
     const l2Signature = await signable.sign(l2PrivateKey.replace(/^0x/, ''))
-  
+
     return {
       price: type === 'MARKET' ? '0' : price.toString(),
-      size: size.toFixed(Math.floor(Math.log10(1/Number(activeMarket?.stepSize)))),
+      size: size.toFixed(Math.floor(Math.log10(Math.max(1, 1/Number(activeMarket?.stepSize))))),
       type,
       timeInForce: type == 'MARKET' ? 'IMMEDIATE_OR_CANCEL' : 'GOOD_TIL_CANCEL',
       reduceOnly: false,
@@ -589,7 +595,7 @@ useEffect(() => {
       expireTime: l1ExpireTime.toString(),
       l2Nonce,
       l2Value: l2Value,
-      l2Size: size.toFixed(Math.floor(Math.log10(1/Number(activeMarket?.stepSize)))),
+      l2Size: size.toFixed(Math.floor(Math.log10(Math.max(1, 1/Number(activeMarket?.stepSize))))),
       l2LimitFee: limitFee,
       l2ExpireTime: l2ExpireTime.toString(),
       l2Signature,
@@ -602,6 +608,7 @@ useEffect(() => {
 
   const handleTrade = async () => {
     if (Object.keys(perpsMarketsData).length == 0) return;
+    setIsSigning(true);
     const size = Math.floor(Number(inputString) / Number(perpsMarketsData[perpsActiveMarketKey]?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize)
     const payload = await generateSignedOrder(size, (activeTradeType === "long" ? "BUY" : "SELL"), "MARKET", Number(perpsMarketsData[perpsActiveMarketKey]?.lastPrice), signer.accountId, activeMarket.contractId, perpsActiveMarketKey, signer.privateKey, activeMarket, userFees)
     const ts = Date.now().toString()
@@ -622,6 +629,7 @@ useEffect(() => {
       }).then(r => r.json())
     ])
     console.log(metaRes)
+    setIsSigning(false);
   }
 
   useEffect(() => {
@@ -1214,10 +1222,12 @@ useEffect(() => {
     <ChartComponent
       activeMarket={activeMarket}
       tradehistory={tradehistory}
-      isMarksVisible={true}
+      isMarksVisible={isMarksVisible}
+      setIsMarksVisible={setIsMarksVisible}
       orders={orders}
       isOrdersVisible={true}
       showChartOutliers={true}
+      setShowChartOutliers={setChartData}
       router={router}
       refetch={refetch}
       sendUserOperationAsync={sendUserOperationAsync}
@@ -1246,7 +1256,6 @@ useEffect(() => {
     realtimeCallbackRef,
     limitPrice,
     updateLimitAmount,
-    amountIn,
     location.pathname,
     selectedInterval
   ]);
@@ -1406,7 +1415,6 @@ useEffect(() => {
               value={inputString}
               onChange={(e) => {
                 setInputString(e.target.value)
-                setAmountIn(BigInt(e.target.value))
                 const percentage =
                   Number(balance) == 0
                     ? 0
@@ -1627,12 +1635,14 @@ useEffect(() => {
                 await handleTrade();
               }
             }}
-            disabled={address && Object.keys(signer).length != 0 && (!inputString || Number(inputString) == 0)}
+            disabled={address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0)}
           >
-            {address ? (Object.keys(signer).length == 0 ? 'Enable Trading' : activeOrderType === "market"
+            {isSigning ? (
+              <div className="perps-button-spinner"></div>
+            ) : (address ? (Object.keys(signer).length == 0 ? 'Enable Trading' : activeOrderType === "market"
               ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
               : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`) : 'Connect Wallet'
-            }
+            )}
           </button>
           <div className="perps-info-rectangle">
             <div className="price-impact">
@@ -1787,13 +1797,45 @@ useEffect(() => {
         <div className="perps-deposit-withdraw-section">
           <button
             className="perps-deposit-button"
-            onClick={() => setpopup(30)}
+            onClick={async () => {
+              if (!address) {
+                setpopup(4)
+              }
+              else if (Object.keys(signer).length == 0) {
+                const signature = await signTypedDataAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
+                const apiSig = await signTypedDataAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
+                const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
+                const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig) };
+                localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
+                setSigner(tempsigner)
+                setpopup(30)
+              }
+              else {
+                setpopup(30)
+              }
+            }}
           >
             Deposit
           </button>
           <button
             className="perps-withdraw-button"
-            onClick={() => setpopup(31)}
+            onClick={async () => {
+              if (!address) {
+                setpopup(4)
+              }
+              else if (Object.keys(signer).length == 0) {
+                const signature = await signTypedDataAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
+                const apiSig = await signTypedDataAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
+                const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
+                const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig) };
+                localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
+                setSigner(tempsigner)
+                setpopup(31)
+              }
+              else {
+                setpopup(31)
+              }
+            }}
           >
             Withdraw
           </button>

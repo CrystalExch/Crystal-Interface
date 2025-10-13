@@ -1326,7 +1326,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               >
                 <div className="meme-interface-image-container">
                   {memeTokenData.image ? (
-                    <img src={memeTokenData.image} alt={memeTokenData.name} className="meme-interface-token-icon" />
+                    <img src={memeTokenData.image} className="meme-interface-token-icon" />
                   ) : (
                     <div
                       className="meme-interface-token-icon"
@@ -1428,7 +1428,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                       <div className="explorer-preview-content">
                         <img
                           src={memeTokenData.image}
-                          alt={memeTokenData.name}
                           style={{
                             width: '220px',
                             height: '220px',

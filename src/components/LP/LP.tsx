@@ -126,53 +126,52 @@ const LP: React.FC<LPProps> = ({
 
   const defaultTokens = ['MON', 'WMON', 'USDC'];
   const [vaultList, setVaultList] = useState<any>([]);
-
   const selectedVaultData = selectedVault ?
     vaultList.find((vault: any) => (vault.baseAsset + vault.quoteAsset) == selectedVault) : undefined;
 
   const hasInitializedFavorites = useRef(false);
 
-const [loadingVaultDetails, setLoadingVaultDetails] = useState(false);
+  const [loadingVaultDetails, setLoadingVaultDetails] = useState(false);
 
-useEffect(() => {
-  if (!selectedVault) return;
-  
-  (async () => {
-    setLoadingVaultDetails(true);
-    try {
-      const [vaultDetails, vaultTotalSupply, vaultUserBalance] = (await readContracts(config, {
-        contracts: [
-          { abi: CrystalRouterAbi as any, address: router, functionName: 'getReserves', args: [markets?.[selectedVault]?.address] },
-          { abi: TokenAbi as any, address: markets?.[selectedVault]?.address, functionName: 'totalSupply', args: [] },
-          ...(account.address ? [{
-            abi: TokenAbi as any,
-            address: markets?.[selectedVault]?.address,
-            functionName: 'balanceOf',
-            args: [account.address as `0x${string}`],
-          }] : [])],
-      })) as any[];
-      if (vaultDetails?.status === "success") {
-        const vaultDict = {
-          ...markets?.[selectedVault],
-          quoteBalance: vaultDetails.result[0],
-          baseBalance: vaultDetails.result[1],
-          userBalance: 0n,
-          userShares: 0n,
-          totalShares: vaultTotalSupply.result,
+  useEffect(() => {
+    if (!selectedVault) return;
+    
+    (async () => {
+      setLoadingVaultDetails(true);
+      try {
+        const [vaultDetails, vaultTotalSupply, vaultUserBalance] = (await readContracts(config, {
+          contracts: [
+            { abi: CrystalRouterAbi as any, address: router, functionName: 'getReserves', args: [markets?.[selectedVault]?.address] },
+            { abi: TokenAbi as any, address: markets?.[selectedVault]?.address, functionName: 'totalSupply', args: [] },
+            ...(account.address ? [{
+              abi: TokenAbi as any,
+              address: markets?.[selectedVault]?.address,
+              functionName: 'balanceOf',
+              args: [account.address as `0x${string}`],
+            }] : [])],
+        })) as any[];
+        if (vaultDetails?.status === "success") {
+          const vaultDict = {
+            ...markets?.[selectedVault],
+            quoteBalance: vaultDetails.result[0],
+            baseBalance: vaultDetails.result[1],
+            userBalance: 0n,
+            userShares: 0n,
+            totalShares: vaultTotalSupply.result,
+          }
+          if (account.address) {
+            vaultDict.userBalance = vaultUserBalance.result;
+            vaultDict.userShares = vaultUserBalance.result;
+          }
+          setVaultList([vaultDict]);
         }
-        if (account.address) {
-          vaultDict.userBalance = vaultUserBalance.result;
-          vaultDict.userShares = vaultUserBalance.result;
-        }
-        setVaultList([vaultDict]);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingVaultDetails(false);
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingVaultDetails(false);
-    }
-  })();
-}, [selectedVault, account.address]);
+    })();
+  }, [selectedVault, account.address]);
 
   const showVaultDetail = (vault: any) => {
     setSelectedVault(vault.baseAsset + vault.quoteAsset);
@@ -289,6 +288,7 @@ useEffect(() => {
 
   const handleContinue = () => {
     if (addLiquidityTokens.first && addLiquidityTokens.second) {
+      setSelectedVault(addLiquidityTokens.first + addLiquidityTokens.second);
       setCurrentStep(2);
     }
   };
@@ -439,7 +439,6 @@ useEffect(() => {
     }
   };
 
-
   const isAddLiquidityEnabled = () => {
     return depositAmounts.first !== '' && depositAmounts.second !== '' &&
       parseFloat(depositAmounts.first) > 0 && parseFloat(depositAmounts.second) > 0 &&
@@ -468,7 +467,7 @@ useEffect(() => {
       }
     }
 
-const percentageValue = parseFloat(cappedPercentage);
+    const percentageValue = parseFloat(cappedPercentage);
     if (percentageValue > 100) {
       setWithdrawExceedsBalance(true);
       setWithdrawPreview(null);
@@ -476,7 +475,7 @@ const percentageValue = parseFloat(cappedPercentage);
     }
 
     const userLPBalance = BigInt(selectedVaultData.userShares || 0);
-const percentageBigInt = BigInt(Math.round(percentageValue * 100));
+    const percentageBigInt = BigInt(Math.round(percentageValue * 100));
     const sharesToWithdraw = (userLPBalance * percentageBigInt) / 10000n;
 
     const totalShares = BigInt(selectedVaultData.totalShares || 0);
@@ -500,7 +499,6 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
   const isWithdrawEnabled = () => {
     return withdrawPercentage !== '' && parseFloat(withdrawPercentage) > 0 && !withdrawExceedsBalance && withdrawPreview;
   };
-
 
   const handleVaultDeposit = async () => {
     if (!selectedVaultData || !account.connected) return;
@@ -914,104 +912,123 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
                     Continue
                   </button>
                 </>
-              ) : (
-                <div className="form-section">
-                  <h2>Enter deposit amounts</h2>
-                  <p className="section-description">
-                    Enter the amounts you want to deposit for each token. The ratio will be automatically calculated based on the current pool ratio.
-                  </p>
+              ) : selectedVaultData && (
+                    <div className="vault-deposit-form">
+                      <h4 className="vault-form-title">Add Liquidity to {selectedVaultData.baseAsset + '/' + selectedVaultData.quoteAsset}</h4>
+                      <p className="vault-form-description">
+                        Enter the amounts you want to deposit for each token. The ratio will be maintained automatically.
+                      </p>
 
-                  <div className="deposit-amounts-section">
-                    <div className={`deposit-input-group ${firstTokenExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
-                      <div className="deposit-input-wrapper">
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          className={`deposit-amount-input ${firstTokenExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                          value={depositAmounts.first}
-                          onChange={(e) => handleDepositAmountChange('first', e.target.value)}
-                        />
-                        <div className="deposit-token-badge">
-                          <img src={getTokenBySymbol(addLiquidityTokens.first).icon} alt="" className="deposit-token-icon" />
-                          <span>{addLiquidityTokens.first}</span>
+                      <div className="deposit-amounts-section">
+                        <div className={`deposit-input-group ${vaultFirstTokenExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
+                          <div className="deposit-input-wrapper">
+                            <input
+                              type="text"
+                              placeholder="0.0"
+                              className={`deposit-amount-input ${vaultFirstTokenExceedsBalance ? 'lp-input-balance-error' : ''}`}
+                              value={vaultInputStrings.base}
+                              onChange={(e) => handleVaultDepositAmountChange('base', e.target.value)}
+                            />
+                            <div className="deposit-token-badge">
+                              <img src={tokendict[selectedVaultData.baseAddress]?.image} alt="" className="deposit-token-icon" />
+                              <span>{selectedVaultData.baseAsset}</span>
+                            </div>
+                          </div>
+                          <div className="lp-deposit-balance-wrapper">
+                            <div className={`lp-deposit-usd-value ${vaultFirstTokenExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
+                              {calculateUSD(vaultInputStrings.base, selectedVaultData.baseAsset)}
+                            </div>
+                          <div className="deposit-balance">
+                            <div className="deposit-balance-value">
+                              Balance: {formatDisplayValue(
+                                getTokenBalance(selectedVaultData.baseAsset),
+                                Number(
+                                  (Object.values(tokendict).find(t => t.ticker === selectedVaultData.baseAsset)?.decimals) || 18
+                                )
+                              )}
+                            </div>
+                            <button
+                              className="vault-max-button"
+                              onClick={() => {
+                                const maxAmount = (Number(getTokenBalance(selectedVaultData.baseAsset)) / 10 ** Number((Object.values(tokendict).find(t => t.ticker === selectedVaultData.baseAsset)?.decimals) || 18)).toString()
+                                handleVaultDepositAmountChange('base', maxAmount);
+                              }}
+                            >
+                              Max
+                            </button>
+                          </div>
+                          </div>
+                        </div>
+
+                        <div className={`deposit-input-group ${vaultSecondTokenExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
+                          <div className="deposit-input-wrapper">
+                            <input
+                              type="text"
+                              placeholder="0.0"
+                              className={`deposit-amount-input ${vaultSecondTokenExceedsBalance ? 'lp-input-balance-error' : ''}`}
+                              value={vaultInputStrings.quote}
+                              onChange={(e) => handleVaultDepositAmountChange('quote', e.target.value)}
+                            />
+                            <div className="deposit-token-badge">
+                              <img src={tokendict[selectedVaultData.quoteAddress]?.image} alt="" className="deposit-token-icon" />
+                              <span>{selectedVaultData.quoteAsset}</span>
+                            </div>
+                          </div>
+                          <div className="lp-deposit-balance-wrapper">
+                            <div className={`lp-deposit-usd-value ${vaultSecondTokenExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
+                              {calculateUSD(vaultInputStrings.quote, selectedVaultData.quoteAsset)}
+                            </div>
+                            <div className="deposit-balance">
+                            <div className="deposit-balance-value">
+                              Balance: {formatDisplayValue(
+                                getTokenBalance(selectedVaultData.quoteAsset),
+                                Number(
+                                  (Object.values(tokendict).find(t => t.ticker === selectedVaultData.quoteAsset)?.decimals) || 18
+                                )
+                              )}
+                            </div>
+                            <button
+                              className="vault-max-button"
+                              onClick={() => {
+                                const maxAmount = (Number(getTokenBalance(selectedVaultData.quoteAsset)) / 10 ** Number((Object.values(tokendict).find(t => t.ticker === selectedVaultData.quoteAsset)?.decimals) || 18)).toString()
+                                handleVaultDepositAmountChange('quote', maxAmount);
+                              }}
+                            >
+                              Max
+                            </button>
+                          </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="lp-deposit-balance-wrapper">
-                        <div className={`lp-deposit-usd-value ${firstTokenExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                          {calculateUSD(depositAmounts.first, addLiquidityTokens.first)}
+
+                      <div className="deposit-summary">
+                        <div className="deposit-summary-row">
+                          <span>Pool Share:</span>
+                          <span>~0.01%</span>
                         </div>
-                        <div className="deposit-balance">
-                          Balance: {formatDisplayValue(
-                            getTokenBalance(addLiquidityTokens.first),
-                            Number(
-                              (Object.values(tokendict).find(t => t.ticker === addLiquidityTokens.first)?.decimals) || 18
-                            )
-                          )}
+                        <div className="deposit-summary-row">
+                          <span>Total Value:</span>
+                          <span>
+                            {(() => {
+                              const firstUSD = calculateUSD(vaultInputStrings.base, selectedVaultData.baseAsset);
+                              const secondUSD = calculateUSD(vaultInputStrings.quote, selectedVaultData.quoteAsset);
+                              const firstValue = parseFloat(firstUSD.replace('$', '')) || 0;
+                              const secondValue = parseFloat(secondUSD.replace('$', '')) || 0;
+                              const total = firstValue + secondValue;
+                              return `${total.toFixed(2)}`;
+                            })()}
+                          </span>
                         </div>
                       </div>
-                    </div>
 
-                    <div className={`deposit-input-group ${secondTokenExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
-                      <div className="deposit-input-wrapper">
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          className={`deposit-amount-input ${secondTokenExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                          value={depositAmounts.second}
-                          onChange={(e) => handleDepositAmountChange('second', e.target.value)}
-                        />
-                        <div className="deposit-token-badge">
-                          <img src={getTokenBySymbol(addLiquidityTokens.second).icon} alt="" className="deposit-token-icon" />
-                          <span>{addLiquidityTokens.second}</span>
-                        </div>
-                      </div>
-                      <div className="lp-deposit-balance-wrapper">
-                        <div className={`lp-deposit-usd-value ${secondTokenExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                          {calculateUSD(depositAmounts.second, addLiquidityTokens.second)}
-                        </div>
-                        <div className="deposit-balance">
-                          Balance: {formatDisplayValue(
-                            getTokenBalance(addLiquidityTokens.second),
-                            Number(
-                              (Object.values(tokendict).find(t => t.ticker === addLiquidityTokens.second)?.decimals) || 18
-                            )
-                          )}
-                        </div>
-                      </div>
+                      <button
+                        className={`continue-button ${isVaultDepositEnabled() ? 'enabled' : ''} ${(vaultFirstTokenExceedsBalance || vaultSecondTokenExceedsBalance) ? 'lp-button-balance-error' : ''}`}
+                        disabled={!isVaultDepositEnabled()}
+                        onClick={handleVaultDeposit}
+                      >
+                        {getVaultDepositButtonText()}
+                      </button>
                     </div>
-                  </div>
-
-                  <div className="deposit-summary">
-                    <div className="deposit-summary-row">
-                      <span>Selected Fee Tier:</span>
-                      <span>{selectedFeeTier}</span>
-                    </div>
-                    <div className="deposit-summary-row">
-                      <span>Total Value:</span>
-                      <span>
-                        {(() => {
-                          const firstUSD = calculateUSD(depositAmounts.first, addLiquidityTokens.first);
-                          const secondUSD = calculateUSD(depositAmounts.second, addLiquidityTokens.second);
-                          const firstValue = parseFloat(firstUSD.replace('$', '')) || 0;
-                          const secondValue = parseFloat(secondUSD.replace('$', '')) || 0;
-                          const total = firstValue + secondValue;
-                          return `$${total.toFixed(2)}`;
-                        })()}
-                      </span>
-                    </div>
-                    <div className="deposit-summary-row">
-                      <span>Pool Share:</span>
-                      <span>~0.01%</span>
-                    </div>
-                  </div>
-
-                  <button
-                    className={`continue-button ${isAddLiquidityEnabled() ? 'enabled' : ''} ${(firstTokenExceedsBalance || secondTokenExceedsBalance) ? 'lp-button-balance-error' : ''}`}
-                    disabled={!isAddLiquidityEnabled()}
-                  >
-                    {getAddLiquidityButtonText()}
-                  </button>
-                </div>
               )}
             </div>
           </div>
@@ -1484,12 +1501,7 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
                             <button
                               className="vault-max-button"
                               onClick={() => {
-                                const maxAmount = formatDisplayValue(
-                                  getTokenBalance(selectedVaultData.baseAsset),
-                                  Number(
-                                    (Object.values(tokendict).find(t => t.ticker === selectedVaultData.baseAsset)?.decimals) || 18
-                                  )
-                                ).replace(/,/g, '');
+                                const maxAmount = (Number(getTokenBalance(selectedVaultData.baseAsset)) / 10 ** Number((Object.values(tokendict).find(t => t.ticker === selectedVaultData.baseAsset)?.decimals) || 18)).toString()
                                 handleVaultDepositAmountChange('base', maxAmount);
                               }}
                             >
@@ -1529,12 +1541,7 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
                             <button
                               className="vault-max-button"
                               onClick={() => {
-                                const maxAmount = formatDisplayValue(
-                                  getTokenBalance(selectedVaultData.quoteAsset),
-                                  Number(
-                                    (Object.values(tokendict).find(t => t.ticker === selectedVaultData.quoteAsset)?.decimals) || 18
-                                  )
-                                ).replace(/,/g, '');
+                                const maxAmount = (Number(getTokenBalance(selectedVaultData.quoteAsset)) / 10 ** Number((Object.values(tokendict).find(t => t.ticker === selectedVaultData.quoteAsset)?.decimals) || 18)).toString()
                                 handleVaultDepositAmountChange('quote', maxAmount);
                               }}
                             >

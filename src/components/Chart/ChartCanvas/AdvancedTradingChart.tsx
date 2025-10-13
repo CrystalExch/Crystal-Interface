@@ -748,7 +748,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     widgetRef.current.onChartReady(() => {
       setChartReady(true);
       widgetRef.current.headerReady().then(() => {
-        if (!widgetRef.current.activeChart()) {
+        if (!widgetRef.current.activeChart() || perps) {
           return;
         }
 

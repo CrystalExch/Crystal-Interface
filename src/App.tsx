@@ -168,7 +168,7 @@ import ImportWalletsPopup from './components/Tracker/ImportWalletsPopup.tsx';
 import TradingPresetsPopup from './components/Tracker/TradingPresetsPopup/TradingPresetsPopup';
 import LiveTradesSettingsPopup from './components/Tracker/ LiveTradesSettingsPopup/LiveTradesSettingsPopup.tsx';
 // import config
-import { ChevronDown, SearchIcon } from 'lucide-react';
+import { ChevronDown, Logs, SearchIcon } from 'lucide-react';
 import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortfolioData.ts';
 import { settings } from './settings.ts';
 import { useSharedContext } from './contexts/SharedContext.tsx';
@@ -4376,6 +4376,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             'monadLogs',
             { address: settings.chainConfig[activechain].router, topics: [[MARKET_UPDATE_EVENT]] },
           ]);
+          subscribe(ws, [
+            'monadLogs',
+            { address: settings.chainConfig[activechain].router, topics: [['0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']] },
+          ]);
         };
 
         ws.onmessage = ({ data }) => {
@@ -4403,6 +4407,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               }
               if (log.topics?.[0] === ROUTER_EVENT) addMarket(log);
               else if (log.topics?.[0] === MARKET_UPDATE_EVENT) updateMarket(log);
+              else if (log.topics?.[0] == '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098') {
+                
+              }
               return tempset;
             })
           } catch (parseError) {
@@ -4790,10 +4797,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   // metadata n klines
   useEffect(() => {
-    if (!tokenAddress) return;
+    if (!token.id) return;
     let isCancelled = false;
 
-    const id = (tokenAddress || '').toLowerCase();
+    const id = (token.id || '').toLowerCase();
 
     const fetchMemeTokenData = async () => {
       try {
@@ -5004,7 +5011,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     fetchMemeTokenData();
     return () => { isCancelled = true; };
-  }, [tokenAddress, memeSelectedInterval]);
+  }, [token.id, memeSelectedInterval]);
 
   // by-token oc initial
   useEffect(() => {
@@ -5014,7 +5021,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     (async () => {
       const first = 100;
       const skip = page * 100;
-      const m = (tokenAddress || '').toLowerCase();
+      const m = (token.id || '').toLowerCase();
 
       const holdersPromise = (async () => {
         const response = await fetch(SUBGRAPH_URL, {
@@ -5317,7 +5324,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     (async () => {
       try {
-        const exclude = tokenAddress?.toLowerCase();
+        const exclude = token.id?.toLowerCase();
         const nameTerms = tokenize(baseName);
         const terms = Array.from(new Set(nameTerms)).slice(0, 4);
         const sym = baseSymbol.trim();
@@ -5510,7 +5517,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         existing.remainingTokens += balance;
         existing.lastPrice = lastPrice || existing.lastPrice;
 
-        if (p.token.id.toLowerCase() === tokenAddress?.toLowerCase()) {
+        if (p.token.id.toLowerCase() === token.id?.toLowerCase()) {
           totals.amountBought += boughtTokens;
           totals.amountSold += soldTokens;
           totals.valueBought += spentNative;
@@ -5560,7 +5567,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return () => {
       cancelled = true;
     };
-  }, [address, subWallets, tokenAddress, initialMemeFetchDone]);
+  }, [address, subWallets, token.id, initialMemeFetchDone]);
 
   // live dev holding
   useEffect(() => {
@@ -5954,7 +5961,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     };
 
     ws.onopen = () => {
-      if (tokenAddress) sendSub(['monadLogs', { address: tokenAddress, topics: [[TRANSFER_TOPIC]] }]);
+      if (token.id) sendSub(['monadLogs', { address: token.id, topics: [[TRANSFER_TOPIC]] }]);
       sendSub(['monadLogs', { address: routerAddress, topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT]] }]);
     };
 
@@ -6015,7 +6022,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           const price = vToken === 0 ? 0 : vNative / vToken;
           const tradePrice = (isBuy ? amountIn / amountOut : amountOut / amountIn) || 0;
 
-          if (tokenAddress && tokenAddr === tokenAddress.toLowerCase()) {
+          if (token.id && tokenAddr === token.id.toLowerCase()) {
             setMemeLive(p => ({
               ...p,
               price,
@@ -6188,7 +6195,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               if (idx === undefined && isUserTrade) {
                 const newPos = {
-                  tokenId: tokenAddress?.toLowerCase(),
+                  tokenId: token.id?.toLowerCase(),
                   symbol: tokenData?.symbol || '',
                   name: tokenData?.name || '',
                   imageUrl: tokenData?.image || '',
@@ -6230,7 +6237,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               copy[idx] = pos;
 
-              if (tokenAddress && tokenAddr === tokenAddress.toLowerCase()) {
+              if (token.id && tokenAddr === token.id.toLowerCase()) {
                 const markToMarket = balance * (pos.lastPrice || 0);
                 const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
                 setMemeUserStats({
@@ -6272,7 +6279,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           if (!mcfg || !mcfg.baseAddress) return tempset;
           const tokenAddrFromMarket = (mcfg.baseAddress || '').toLowerCase();
 
-          if (!tokenAddress || tokenAddrFromMarket !== tokenAddress.toLowerCase()) return tempset;
+          if (!token.id || tokenAddrFromMarket !== token.id.toLowerCase()) return tempset;
 
           const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
           const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
@@ -6461,7 +6468,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             let idx = memePositionsMapRef.current.get(tokenAddrFromMarket);
             if (idx === undefined && isUserTrade) {
               const newPos = {
-                tokenId: tokenAddress?.toLowerCase(),
+                tokenId: token.id?.toLowerCase(),
                 symbol: tokenData?.symbol || '',
                 name: tokenData?.name   || '',
                 imageUrl: tokenData?.image || '',
@@ -6505,7 +6512,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
             copy[idx] = pos;
 
-            if (tokenAddress && tokenAddrFromMarket === tokenAddress.toLowerCase()) {
+            if (token.id && tokenAddrFromMarket === token.id.toLowerCase()) {
               const markToMarket = balance * (pos.lastPrice || 0);
               const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
               setMemeUserStats({
@@ -6535,8 +6542,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
 
         if (
-          tokenAddress &&
-          log.address?.toLowerCase() === tokenAddress.toLowerCase() &&
+          token.id &&
+          log.address?.toLowerCase() === token.id.toLowerCase() &&
           log.topics[0] === TRANSFER_TOPIC &&
           address
         ) {
@@ -24269,7 +24276,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 onPNLDataChange={setCurrentPNLData}
                 onTokenDataChange={setCurrentTokenData}
                 nonces={nonces}
-                tokenAddress={tokenAddress}
+                tokenAddress={token.id}
                 live={memeLive}
                 trades={memeTrades}
                 setTrades={setMemeTrades}
@@ -24581,6 +24588,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 signer={perpsKeystore}
                 setSigner={setPerpsKeystore}
                 setOrderCenterHeight={setOrderCenterHeight}
+                isMarksVisible={isMarksVisible}
+                setIsMarksVisible={setIsMarksVisible}
               />
             } />
           <Route path="/leaderboard"

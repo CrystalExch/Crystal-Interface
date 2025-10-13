@@ -28,7 +28,7 @@
   border-radius: 4px;
   display: flex;
   justify-content: center;
-  padding: .4rem 0
+  padding: .4rem .4rem
 }
 
 .lp-asset-col {
@@ -2138,8 +2138,7 @@
   align-items: center;
   cursor: pointer;
   display: flex;
-  height: 4 0;
-  padding: .35rem 0;
+  padding: .4rem .4rem;
   transition: background-color.2s ease
 }
 
@@ -3083,7 +3082,7 @@
   font-weight: 300;
   letter-spacing: -.3px;
   min-width: 780px;
-  padding: .5rem 0;
+  padding: .5rem .4rem;
 }
 
 .vault-row:hover {

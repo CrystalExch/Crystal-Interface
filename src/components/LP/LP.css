@@ -357,7 +357,7 @@
 
 .lp-vaults-list-header {
     display: flex;
-    padding: .5rem 0;
+    padding: .5rem .4rem;
     background-color: transparent;
     color: #ffffff8b;
     font-size: .75rem;
@@ -381,14 +381,6 @@
 
 .lp-card:hover .lp-summary {
     background-color: #2727314d;
-}
-
-.lp-summary {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: .2rem .8rem;
-    border-radius: 4px;
 }
 
 .lp-col {
