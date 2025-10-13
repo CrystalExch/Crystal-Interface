@@ -1803,6 +1803,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const nonces = useRef<any>({})
   const blockNumber = useRef(0n);
   const wsRef = useRef<WebSocket | null>(null);
+  const explorerWsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<any>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const prevAmountsQuote = useRef(amountsQuote)
@@ -4235,10 +4236,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       if (pausedColumnRef.current == token.status) return;
       dispatch({ type: 'ADD_MARKET', token });
 
-      if (alertSettings.soundAlertsEnabled) {
+      if (alertSettingsRef.current.soundAlertsEnabled) {
         try {
-          const audio = new Audio(alertSettings.sounds.newPairs);
-          audio.volume = alertSettings.volume / 100;
+          const audio = new Audio(alertSettingsRef.current.sounds.newPairs);
+          audio.volume = alertSettingsRef.current.volume / 100;
           audio.play().catch(console.error);
         } catch (error) {
           console.error('Failed to play new pairs sound:', error);
@@ -4671,9 +4672,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         reconnectTimerRef.current = null;
       }
 
-      if (wsRef.current) {
-        const ws = wsRef.current;
-        wsRef.current = null;
+      if (explorerWsRef.current) {
+        const ws = explorerWsRef.current;
+        explorerWsRef.current = null;
 
         ws.onopen = null;
         ws.onmessage = null;
@@ -9376,8 +9377,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }));
           const open24 = miniAsc.length ? miniAsc[0].value : last;
           const highs = miniAsc.length ? miniAsc.map((p) => p.value) : [last];
+          const lows = miniAsc.length ? miniAsc.map((p) => p.value) : [last];
           const high24 = Math.max(...highs);
-          const low24 = Math.min(...highs);
+          const low24 = Math.min(...lows);
           const pct = open24 === 0 ? 0 : ((last - open24) / open24) * 100;
           const deltaRaw = lastRaw - open24 * pf;
 
@@ -13613,26 +13615,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       <div className="trade-markers-toggle-row">
                         <div className="settings-option-info">
                           <span className="trade-markers-toggle-label">
-                            {t('showTradeMarkers')}
-                          </span>
-                          <span className="settings-option-subtitle">
-                            {t('displayTradeExecutionMarkers')}
-                          </span>
-                        </div>
-                        <ToggleSwitch
-                          checked={isMarksVisible}
-                          onChange={() => {
-                            setIsMarksVisible(!isMarksVisible);
-                            localStorage.setItem(
-                              'crystal_marks_visible',
-                              JSON.stringify(!isMarksVisible),
-                            );
-                          }}
-                        />
-                      </div>
-                      <div className="trade-markers-toggle-row">
-                        <div className="settings-option-info">
-                          <span className="trade-markers-toggle-label">
                             {t('showChartOrders')}
                           </span>
                           <span className="settings-option-subtitle">
@@ -13688,21 +13670,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                               'crystal_ordercenter_visible',
                               JSON.stringify(!isOrderCenterVisible),
                             );
-                          }}
-                        />
-                      </div>
-                      <div className="audio-toggle-row">
-                        <div className="settings-option-info">
-                          <span className="audio-toggle-label">{t('showChartOutliers')}</span>
-                          <span className="settings-option-subtitle">
-                            {t('includeOutlierDataPoints')}
-                          </span>
-                        </div>
-                        <ToggleSwitch
-                          checked={showChartOutliers}
-                          onChange={() => {
-                            setShowChartOutliers(!showChartOutliers);
-                            localStorage.setItem('crystal_show_chart_outliers', JSON.stringify(!showChartOutliers));
                           }}
                         />
                       </div>
@@ -23902,9 +23869,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       activeMarket={activeMarket}
       tradehistory={tradehistory}
       isMarksVisible={isMarksVisible}
+      setIsMarksVisible={setIsMarksVisible}
       orders={orders}
       isOrdersVisible={isOrdersVisible}
       showChartOutliers={showChartOutliers}
+      setShowChartOutliers={setShowChartOutliers}
       router={router}
       refetch={refetch}
       sendUserOperationAsync={sendUserOperationAsync}

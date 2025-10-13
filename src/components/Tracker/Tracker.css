@@ -12,7 +12,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px;
+  padding-top: 10px;
   min-height: 40px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   background: rgb(6, 6, 6);
@@ -127,7 +127,8 @@
 
 .counter-button {
   padding: 2px 8px !important;
-  min-width: 60px;
+  min-width: 50px;
+  max-width: 70px;
 }
 
 .tracker-counter-wrapper {

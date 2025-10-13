@@ -1025,6 +1025,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       return () => window.removeEventListener('resize', handleResize);
     }
   }, [isOpen]);
+  
   const getMaxSpendableWei = (addr: string): bigint => {
     const balances = walletTokenBalances[addr];
     if (!balances) return 0n;

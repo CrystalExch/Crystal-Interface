@@ -67,6 +67,15 @@ function formatMemePrice(price: number): string {
   return `${neg}0.0${toSub(zeros)}${tail2}`;
 }
 
+function formatDisplay(value: number): string {
+  if (Math.abs(value) >= 1000000) {
+    return (value / 1000000).toFixed(2) + 'M';
+  } else if (Math.abs(value) >= 1000) {
+    return (value / 1000).toFixed(2) + 'K';
+  }
+  return value.toFixed(3);
+}
+
 const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   data,
   token,
@@ -707,14 +716,5 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
     </div>
   );
 };
-
-function formatDisplay(value: number): string {
-  if (Math.abs(value) >= 1000000) {
-    return (value / 1000000).toFixed(2) + 'M';
-  } else if (Math.abs(value) >= 1000) {
-    return (value / 1000).toFixed(2) + 'K';
-  }
-  return value.toFixed(3);
-}
 
 export default MemeAdvancedChart;

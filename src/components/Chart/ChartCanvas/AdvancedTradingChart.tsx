@@ -21,9 +21,11 @@ interface ChartCanvasProps {
   setOverlayVisible: any;
   tradehistory: any;
   isMarksVisible: boolean;
+  setIsMarksVisible: any;
   orders: any;
   isOrdersVisible: boolean;
   showChartOutliers: boolean;
+  setShowChartOutliers: any;
   router: any;
   refetch: any;
   sendUserOperationAsync: any;
@@ -46,9 +48,11 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   setOverlayVisible,
   tradehistory,
   isMarksVisible,
+  setIsMarksVisible,
   orders,
   isOrdersVisible,
   showChartOutliers,
+  setShowChartOutliers,
   router,
   refetch,
   sendUserOperationAsync,
@@ -743,6 +747,55 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 
     widgetRef.current.onChartReady(() => {
       setChartReady(true);
+      widgetRef.current.headerReady().then(() => {
+        if (!widgetRef.current.activeChart()) {
+          return;
+        }
+
+        const marksBtn = widgetRef.current.createButton();
+        marksBtn.setAttribute('title', 'Toggle Marks');
+        const updateButtonDisplay = (firstOption: boolean) => {
+          marksBtn.innerHTML = firstOption
+            ? `<span>Hide Marks</span>`
+            : `<span>Show Marks</span>`;
+        };
+
+        updateButtonDisplay(isMarksVisibleRef.current);
+
+        marksBtn.addEventListener('click', () => {
+          if (isMarksVisibleRef.current) {
+            setIsMarksVisible(false);
+            localStorage.setItem('crystal_marks_visible', JSON.stringify(false));
+            updateButtonDisplay(false);
+          } else {
+            setIsMarksVisible(true);
+            localStorage.setItem('crystal_marks_visible', JSON.stringify(true));
+            updateButtonDisplay(true);
+          }
+        });
+
+        const outlierBtn = widgetRef.current.createButton();
+        outlierBtn.setAttribute('title', 'Toggle Outliers');
+        const updateButtonDisplay2 = (firstOption: boolean) => {
+          outlierBtn.innerHTML = firstOption
+            ? `<span>Hide Outliers</span>`
+            : `<span>Show Outliers</span>`;
+        };
+
+        updateButtonDisplay2(showChartOutliers);
+
+        outlierBtn.addEventListener('click', () => {
+          if (showChartOutliers) {
+            localStorage.setItem('crystal_show_chart_outliers', JSON.stringify(false));
+            updateButtonDisplay2(false);
+            setShowChartOutliers(false);
+          } else {
+            localStorage.setItem('crystal_show_chart_outliers', JSON.stringify(true));
+            updateButtonDisplay2(true);
+            setShowChartOutliers(true);
+          }
+        });
+      });
       const marketId = `${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}_${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`;
       const chartId = `layout_${marketId}`;
       localAdapterRef.current
