@@ -211,14 +211,19 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
   tokens,
 }) => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'marketCap' | 'volume'>('newest');
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [newTokenIds, setNewTokenIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    setLoading(tokens == null);
+    const groups: any[] = [
+      ...(tokens.new ?? []),
+      ...(tokens.graduating ?? []),
+      ...(tokens.graduated ?? []),
+    ];
+    setLoading(groups.length == 0);
   }, [tokens]);
 
   const normalizedTokens: Token[] = useMemo(() => {

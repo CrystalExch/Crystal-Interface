@@ -71,7 +71,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
       >
         $
         {typeof payload[0]?.value === 'number'
-          ? payload[0].value.toFixed(2)
+          ? formatNumber(payload[0].value)
           : '0'}
       </p>}
       <p

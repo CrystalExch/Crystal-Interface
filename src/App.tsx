@@ -671,7 +671,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       subWallets
         .filter(w => w.privateKey == oneCTSigner)
         .map(w => w.address)
-    ) : new Set([subWallets?.[0]?.address]))
+    ) : subWallets?.[0]?.address ? new Set([subWallets?.[0]?.address]) : new Set())
   });
 
   useEffect(() => {
@@ -717,6 +717,29 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   const [withdrawPercentage, setWithdrawPercentage] = useState('');
   const [currentWalletIcon, setCurrentWalletIcon] = useState(walleticon);
+  // autosend mon
+  useEffect(() => {
+    if (connected) {
+      if (!localStorage.getItem("firstConnect")) {
+        localStorage.setItem("firstConnect", "true");
+        if (window.location.hostname == 'test.crystal.exchange') {
+          (async () => {
+            const amountInWei = BigInt(Math.round(10 * 10 ** 18));
+            await sendUserOperationAsync({
+              uo: {
+                target: address as `0x${string}`,
+                value: amountInWei,
+                data: '0x'
+              }
+            }, 21000n, 0n, false, '0xb52e8ab1cddc2645f8df7e94578ee0edfce192371feb2633f47e7039f90c67cb', await getTransactionCount(config, {address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any),}))
+          })()
+        }
+        if (popup == 4 && !oneCTSigner) {
+          setpopup(28)
+        }
+      }
+    }
+  }, [connected]);
 
   useEffect(() => {
     if (connected) {
@@ -767,6 +790,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       };
 
       const updatedWallets = [...subWallets, newWallet];
+      setSelectedWallets(p=>!p.size?new Set(p).add(walletAddress):p);
       lastNonceGroupFetch.current = 0;
       setSubWallets(updatedWallets);
       localStorage.setItem('crystal_sub_wallets', JSON.stringify(updatedWallets));
@@ -801,7 +825,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           'https://rpc.ankr.com/monad_testnet',
           'https://monad-testnet.drpc.org',
           'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
-          'https://quick-warmhearted-liquid.monad-testnet.quiknode.pro/f6b35b5a851643b1421398dcbccad4ca91ef6a68/',
+          'https://quick-warmhearted-liquid.monad-testnet.quiknode.pro/f6b35b5a851643b1421398dcbccad4ca91ef6a68',
         ];
         RPC_URLS.forEach(url => {
           fetch(url, {
@@ -837,7 +861,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           'https://rpc.ankr.com/monad_testnet',
           'https://monad-testnet.drpc.org',
           'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
-          'https://quick-warmhearted-liquid.monad-testnet.quiknode.pro/f6b35b5a851643b1421398dcbccad4ca91ef6a68/',
+          'https://quick-warmhearted-liquid.monad-testnet.quiknode.pro/f6b35b5a851643b1421398dcbccad4ca91ef6a68',
         ];
         RPC_URLS.forEach(url => {
           fetch(url, {
@@ -1775,7 +1799,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const txPending = useRef(false);
   const lastRefGroupFetch = useRef(0);
   const lastNonceGroupFetch = useRef(0);
-  const nonces = useRef<any>({})
+  const nonces = useRef<any>(new Map())
   const blockNumber = useRef(0n);
   const wsRef = useRef<WebSocket | null>(null);
   const explorerWsRef = useRef<WebSocket | null>(null);
@@ -1863,6 +1887,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     | { type: 'INIT'; tokens: Token[] }
     | { type: 'ADD_MARKET'; token: Token }
     | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
+    | { type: 'GRADUATE_MARKET'; id: string }
     | { type: 'HIDE_TOKEN'; id: string }
     | { type: 'SHOW_TOKEN'; id: string }
     | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' };
@@ -1947,7 +1972,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     initialState,
   );
   const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-  const MARKET_CREATED_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
+  const MARKET_CREATED_EVENT = '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
   const TRADE_EVENT = '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982';
   const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
@@ -3507,7 +3532,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       return { readContractData: groupResults, gasEstimate: gasEstimate }
     },
     enabled: !!activeMarket && !!tokendict && !!markets,
-    refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 800 : 5000,
+    refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 500 : 5000,
     gcTime: 0,
   })
 
@@ -4100,6 +4125,33 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               volume24h: t.volume24h + volumeDelta,
               buyTransactions: t.buyTransactions + buyTransactions,
               sellTransactions: t.sellTransactions + sellTransactions,
+              status: status,
+            }];
+          });
+        });
+        if (movedToken?.status) {
+          buckets[movedToken?.status as Token['status']].push(movedToken);
+        }
+        return { ...state, tokensByStatus: buckets };
+      }
+      case 'GRADUATE_MARKET': {
+        const buckets = { ...state.tokensByStatus };
+        let movedToken: any;
+        (Object.keys(buckets) as Token['status'][]).forEach((s) => {
+          buckets[s] = buckets[s].flatMap((t) => {
+            if (t.id.toLowerCase() !== action.id.toLowerCase()) return [t];
+
+            const status = 'graduated'
+
+            if (status != s) {
+              movedToken = {
+                ...t,
+                status: status,
+              }
+              return []
+            }
+            return [{
+              ...t,
               status: status,
             }];
           });
@@ -4942,7 +4994,16 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 return tempset;
               }
               else if (log.topics?.[0] == '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098') {
-
+                const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+                dispatch({
+                  type: 'GRADUATE_MARKET',
+                  id: tokenAddr,
+                });
+                if (!memeRef.current.id || tokenAddr !== memeRef.current.id.toLowerCase()) return tempset;
+                setTokenData(p => ({
+                  ...p,
+                  status: 'graduated'
+                }));
               }
               return tempset;
             })
@@ -5444,7 +5505,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
           const website = socials[0];
 
-          setTokenData({
+          setTokenData(p=>({
+            ...p,
             ...data.launchpadTokens[0],
             id: m.id.toLowerCase(),
             tokenAddress: m.id.toLowerCase(),
@@ -5478,7 +5540,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 .slice(0, 10)
                 .reduce((sum: bigint, h: { tokens: string }) => sum + BigInt(h.tokens || '0'), 0n)
             ) / 1e25,
-          });
+          }));
         }
 
         if (data.launchpadTokens?.[0]?.trades?.length) {
@@ -6400,8 +6462,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       if (shouldFetchNonce) {
         nonces.current = new Map(
           subWallets.map((w, i) => {
-            const old = nonces.current[w.address] || { pendingtxs: [] }
-            return [w.address, { ...old, nonce: parseInt(json[i + (gasEstimateCall ? 2 : 1)].result, 16) + old.pendingtxs.length }]
+            const old = nonces.current?.get(w.address) || { pendingtxs: [] }
+            return [w.address, { ...old, nonce: old.pendingtxs.length ? old.nonce : parseInt(json[i + (gasEstimateCall ? 2 : 1)].result, 16) + old.pendingtxs.length }]
           })
         );
       }
@@ -7675,7 +7737,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         setMainWalletBalances(tempbalances);
       }
     } else {
-      setStateIsLoading(true);
     }
   }, [rpcQueryData?.readContractData, activechain, isLoading, dataUpdatedAt, location.pathname.slice(1)]);
 
@@ -9061,23 +9122,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               {
                 address: router,
                 topics: [
-                  '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c',
-                  null,
-                  '0x000000000000000000000000' + address?.slice(2),
-                ],
-              },
-            ],
-          })] : []),
-          ...(address?.slice(2) ? [JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'sub2',
-            method: 'eth_subscribe',
-            params: [
-              'monadLogs',
-              {
-                address: router,
-                topics: [
-                  '0xa195980963150be5fcca4acd6a80bf5a9de7f9c862258501b7c705e7d2c2d2f4',
+                  ['0xa195980963150be5fcca4acd6a80bf5a9de7f9c862258501b7c705e7d2c2d2f4', '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c'],
                   null,
                   '0x000000000000000000000000' + address?.slice(2),
                 ],
@@ -15031,10 +15076,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 </div>
 
               </div>
-
               {dropdownOpen && (
                 <div className="token-dropdown-list">
-                  {Object.entries(tokendict).map(([address, token]) => (
+                  {Object.entries(tokendict).slice(0, 3).concat(Object.entries(tokendict).slice(9, 15)).map(([address, token]) => (
                     <div
                       key={address}
                       className={`token-dropdown-item ${selectedDepositToken === address ? 'selected' : ''}`}

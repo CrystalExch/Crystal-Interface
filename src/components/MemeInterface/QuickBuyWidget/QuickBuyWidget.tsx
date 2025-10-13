@@ -1864,20 +1864,25 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                   <img
                     className="quickbuy-switch-icon"
                     src={switchicon}
-                    alt="Switch"
                   />
                 </button>
               </div>
               <div className="quickbuy-order-indicator">
                 <div className="quickbuy-token-balance">
                   <span className="quickbuy-token-amount">
-                    {formatNumberWithCommas(userStats.balance, 2)} {tokenSymbol}
+                    {formatNumberWithCommas(Array.from(selectedWallets).reduce(
+                    (sum, addr) => sum + getWalletTokenBalance(addr),
+                    0,
+                  ), 2)} {tokenSymbol}
                   </span>
                   •
                   <span className="quickbuy-usd-value">
                     $
                     {formatNumberWithCommas(
-                      userStats.balance * tokenPrice * monUsdPrice,
+                      Array.from(selectedWallets).reduce(
+                        (sum, addr) => sum + getWalletTokenBalance(addr),
+                        0,
+                      ) * tokenPrice * monUsdPrice,
                       2,
                     )}
                   </span>
@@ -1886,9 +1891,11 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                     <img
                       className="quickbuy-monad-icon"
                       src={monadicon}
-                      alt="Order Indicator"
                     />
-                    {formatNumberWithCommas(userStats.balance * tokenPrice, 2)}
+                    {formatNumberWithCommas(Array.from(selectedWallets).reduce(
+                    (sum, addr) => sum + getWalletTokenBalance(addr),
+                    0,
+                  ) * tokenPrice, 2)}
                   </span>
                 </div>
               </div>

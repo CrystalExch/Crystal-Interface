@@ -261,9 +261,6 @@ const Launchpad: React.FC<LaunchpadProps> = ({
                   ))}
                 </div>
               </div>
-              <p className="prebuy-hint">
-                Buy your token immediately after launch. Leave empty to skip.
-              </p>
             </div>
 
             <button className={`launchpad-launch-button ${isFormValid && !isLaunching ? 'enabled' : ''}`} onClick={handleLaunch} disabled={!isFormValid || isLaunching}>

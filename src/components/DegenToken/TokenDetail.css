@@ -434,6 +434,10 @@
   padding: 6px 12px;
   transition: 0.3s ease;
   width: 100%;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .detail-trade-button.buy {
   border: 1px solid rgba(67, 254, 154, 0.7);
@@ -708,14 +712,14 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .detail-holder-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 12px;
+  padding: 6px 0;
   border-bottom: 1px solid rgba(179, 184, 249, 0.05);
   transition: all var(--tr-fast);
 }

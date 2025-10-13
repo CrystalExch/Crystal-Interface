@@ -410,9 +410,9 @@ html {
 .tokenlistimage {
   border-radius: 50%;
   height: 30px;
+  width: 30px;
   margin-left: -20px;
   margin-right: 7px;
-  min-height: 30px;
   margin-top: 9px;
   min-width: 30px;
   min-height: 30px
@@ -2624,9 +2624,10 @@ body {
 
 .main-content-wrapper.simple-view .limit-info-rectangle,
 .main-content-wrapper.simple-view .trade-info-rectangle {
+  border: 1px dashed rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  margin-top: 5px;
-  padding: 2px 14px;
+  margin-top: 10px;
+  padding: 7px 12px;
   animation: fadeInSlideUp 0.5s ease forwards;
   animation-delay: 0.5s;
   opacity: 0;
@@ -2641,12 +2642,10 @@ body {
 .main-content-wrapper.simple-view .outputbg,
 .main-content-wrapper.simple-view .sendaddressbg,
 .main-content-wrapper.simple-view .sendbg {
-  border: 1px solid transparent;
-  border-radius: 16px;
+  border: 1.5px solid transparent;
+  border-radius: 7px;
   margin: 0;
   padding: 0;
-  margin: 3px;
-  background: none;
 }
 
 .main-content-wrapper.simple-view .inputbutton1container,
@@ -2660,6 +2659,8 @@ body {
 }
 
 .main-content-wrapper.simple-view .swapmodal {
+  border:1.5px solid rgb(20 20 24);
+  border-radius: 10px;
   padding: 0;
   padding-bottom: 11px;
   animation: fadeInSlideUp 0.5s ease forwards;
@@ -2866,7 +2867,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .main-content-wrapper.simple-view .swap-container-divider {
-  background: rgba(173, 175, 220, 0.05);
+  background: rgb(255 255 255/5%);
   border-radius: 50%;
   height: 1px;
   margin: 0 12px;
@@ -4297,9 +4298,7 @@ input[type="email"] {
   background-color: rgb(6, 6, 6);
   border: 1px solid #1a1a1d;
   border-radius: 6px;
-  overflow-y: scroll;
   z-index: 10;
-  max-height: 200px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   scrollbar-width: thin;
   scrollbar-color: rgb(22, 23, 23) rgb(6, 6, 6);
@@ -4406,6 +4405,8 @@ input[type="email"] {
   justify-content: center;
   position: relative;
   margin-left: auto;
+  width: 35px;
+  height: 35px;
   transition: color 0.2s ease, background-color 0.2s ease;
   overflow: visible;
   display: none;
@@ -4420,15 +4421,48 @@ input[type="email"] {
 }
 
 .refresh-quote-icon {
-  width: 20px;
-  height: 20px;
+  width: 15px;
+  height: 15px;
   z-index: 2;
-  filter: brightness(0.5);
+  filter: brightness(0.6);
 }
-
 
 .refresh-quote-button.refreshing .refresh-quote-icon {
   animation: click-rotate 0.5s ease forwards;
+}
+
+.refresh-timer-circle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.timer-circle-border {
+  fill: none;
+  stroke: rgba(179, 184, 249, 0.1);
+  stroke-width: 1;
+  stroke-linecap: round;
+  transform-origin: center;
+  transform: rotate(-90deg);
+  transition: stroke 0.2s ease;
+}
+
+.refresh-quote-button:hover:not(.cooldown) .timer-circle-border {
+  stroke: rgba(255, 255, 255, 0.07);
+}
+
+.refresh-quote-button.cooldown .timer-circle-border {
+  stroke: #aaaecf;
+  stroke-dasharray: 56.55;
+  stroke-dashoffset: 56.55;
+  animation: cooldown-timer 5s linear forwards;
+}
+
+.refresh-quote-button.refreshing {
+  cursor: not-allowed;
 }
 
 @keyframes click-rotate {

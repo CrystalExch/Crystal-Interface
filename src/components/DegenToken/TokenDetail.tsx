@@ -978,16 +978,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         <div className="detail-trading-panel">
           <div className="detail-address-top">
             <div className="detail-meme-address-content">
-              <svg
-                className="detail-contract-icon"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
-                <path d="M14 2v6h6" />
-                <path d="M12 18v-6" />
-                <path d="M9 15h6" />
-              </svg>
               <span className="detail-meme-address-title">CA:</span>{' '}
               <CopyableAddress
                 address={token.id}
