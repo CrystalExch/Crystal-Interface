@@ -7,7 +7,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.6);
   z-index: 12;
   animation: pk-fadeIn 0.2s ease-out;
 }
@@ -17,10 +17,10 @@
   border: 1px solid rgba(179, 184, 249, 0.15);
   border-radius: 6px;
   width: 90%;
-  max-width: 450px;
-  max-height: 75vh;
+  max-width: 420px;
+  max-height: 90vh;
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
 }
@@ -29,13 +29,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 16px 20px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.15);
 }
 
 .monitor-filters-title {
   color: #ffffff;
   font-size: 1rem;
+  font-weight: 300;
   margin: 0;
   letter-spacing: -0.3px;
 }
@@ -43,11 +44,9 @@
 .monitor-filters-close {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s;
+  padding: 0;
+  transition: opacity 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -57,36 +56,64 @@
   opacity: 0.7;
 }
 
+.close-button-icon {
+  width: 18px;
+  height: 18px;
+  opacity: 0.8;
+}
+
+.monitor-filters-content {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(179, 184, 249, 0.2) transparent;
+}
+
+.monitor-filters-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.monitor-filters-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.monitor-filters-content::-webkit-scrollbar-thumb {
+  background: rgba(179, 184, 249, 0.2);
+  border-radius: 3px;
+}
+
 .monitor-filters-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
 }
 
 .monitor-filter-group {
-  margin-bottom: 1.25rem;
+  margin-bottom: 16px;
 }
 
 .monitor-filter-label {
   display: block;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.8rem;
+  color: #ffffff7b;
+  font-size: 0.75rem;
+  font-weight: 300;
   letter-spacing: -0.3px;
-  margin-bottom: 0.5rem;
+  margin-bottom: 8px;
 }
 
 .monitor-filter-range {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  gap: 8px;
 }
 
 .monitor-filter-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   background: none;
-  border-radius: 8px;
-  padding: 0.65rem 0.75rem;
+  border-radius: 4px;
+  padding: 8px 12px;
   transition: all 0.2s;
   box-sizing: border-box;
   min-width: 0;
@@ -95,15 +122,15 @@
 .monitor-filter-input-wrapper:focus-within {
   outline: none;
   border-color: #aaaecf;
-  box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.2);
 }
 
 .monitor-filter-input {
   background: transparent;
   border: none;
   outline: none;
-  color: #e6e7f8;
-  font-size: 0.85rem;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 300;
   flex: 1;
   min-width: 0;
   letter-spacing: -0.3px;
@@ -115,9 +142,10 @@
 }
 
 .monitor-filter-input-suffix {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.75rem;
-  margin-left: 0.5rem;
+  color: #ffffff7b;
+  font-size: 0.7rem;
+  font-weight: 300;
+  margin-left: 8px;
   flex-shrink: 0;
   letter-spacing: -0.2px;
   white-space: nowrap;
@@ -127,9 +155,9 @@
   position: relative;
   display: flex;
   gap: 4px;
-  margin-bottom: 1.5rem;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
   padding: 4px;
   overflow: hidden;
 }
@@ -141,7 +169,7 @@
   left: 4px;
   height: calc(100% - 8px);
   width: calc(50% - 4px);
-  border-radius: 8px;
+  border-radius: 4px;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
   background-color: rgba(201, 194, 243, 0.05);
@@ -158,13 +186,13 @@
   background: transparent;
   border: none;
   color: #ffffff79;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 300;
   cursor: pointer;
   transition: color 0.3s ease;
-  padding: 0.5rem 1rem;
+  padding: 6px 12px;
   text-align: center;
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .monitor-filter-tab:hover {
@@ -175,12 +203,11 @@
   color: #fff;
 }
 
-
 .monitor-filters-footer {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
+  gap: 8px;
+  padding: 16px 20px;
   border-top: 1px solid rgba(179, 184, 249, 0.15);
 }
 
@@ -188,11 +215,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
   color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   transition: all 0.2s;
@@ -202,39 +229,27 @@
 .monitor-filters-reset-button:hover {
   background: rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.9);
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(179, 184, 249, 0.2);
 }
 
 .monitor-filters-apply-button {
   flex: 1;
   background: linear-gradient(135deg, #aaaecf 0%, #7f82a1 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 20px;
   color: #0f0f12;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
-  padding: 0.65rem 1.5rem;
+  padding: 8px 16px;
   cursor: pointer;
-  transition: all 0.2s;
-  letter-spacing: -0.3px;
+  transition: filter 0.2s ease;
+  letter-spacing: -0.5px;
+  height: 32px;
   box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
 }
 
 .monitor-filters-apply-button:hover {
   filter: brightness(1.1);
-}
-
-.monitor-filters-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.monitor-filters-container::-webkit-scrollbar-track {
-  background: #1a1a1f;
-}
-
-.monitor-filters-container::-webkit-scrollbar-thumb {
-  background: #3a3a3f;
-  border-radius: 3px;
 }
 
 @keyframes pk-fadeIn {
@@ -257,28 +272,21 @@
   }
 
   .monitor-filters-header {
-    padding: 0.875rem 1.25rem;
+    padding: 14px 16px;
   }
-
 
   .monitor-filters-footer {
-    padding: 0.875rem 1.25rem;
+    padding: 14px 16px;
   }
-}
-
-.monitor-filters-content {
-  padding: 1.5rem;
-  flex: 1;
-  overflow-y: auto;
 }
 
 .monitor-filters-view-tabs {
   position: relative;
   display: flex;
   gap: 4px;
-  margin-bottom: 1.5rem;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
   padding: 4px;
   overflow: hidden;
 }
@@ -290,7 +298,7 @@
   left: 4px;
   height: calc(100% - 8px);
   width: calc(50% - 4px);
-  border-radius: 8px;
+  border-radius: 4px;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
   background-color: rgba(201, 194, 243, 0.05);
@@ -307,12 +315,12 @@
   background: transparent;
   border: none;
   color: #ffffff79;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 300;
   cursor: pointer;
   transition: color 0.3s ease;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  padding: 6px 12px;
+  border-radius: 4px;
 }
 
 .monitor-filter-view-tab:hover {
@@ -326,20 +334,20 @@
 .monitor-filters-simple-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .monitor-simple-sort-option {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   background: transparent;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  color: #fff;
-  font-size: 0.85rem;
-  font-weight: 400;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
+  padding: 10px 12px;
+  color: #ffffffd5;
+  font-size: 0.8rem;
+  font-weight: 300;
   cursor: pointer;
   transition: all 0.2s ease;
   letter-spacing: -0.3px;
@@ -351,8 +359,9 @@
 }
 
 .monitor-simple-sort-option.active {
-  background-color: rgba(170, 174, 207, 0.15);
-  border-color: rgba(170, 174, 207, 0.3);
+  background: rgb(170 174 207 / 8%);
+  border-color: #aaaecf66;
+  box-shadow: 0 0 0 1px rgba(170, 174, 207, 0.6);
   color: #d8dcff;
 }
 

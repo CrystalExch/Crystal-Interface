@@ -957,7 +957,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       }
     };
   }, [_isVertDragging]);
-  ``
+
   const [isSigning, setIsSigning] = useState(false);
   const [activeTradeType, setActiveTradeType] = useState<'buy' | 'sell'>('buy');
   const [activeOrderType, _setActiveOrderType] = useState<'market' | 'Limit'>(
@@ -1741,6 +1741,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setIsLoadingTrades(true);
     setTrackedAddresses(d ? [d] : []);
   }, [token.dev]);
+
   const setTrackedToYou = useCallback(() => {
     const allYouAddresses = [
       (userAddr || '').toLowerCase(),
@@ -2047,61 +2048,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       setInputCurrency('MON');
     }
   }, [activeTradeType]);
-
-  useEffect(() => {    
-    try {
-      if (!Array.isArray(chartData) || chartData.length === 0) return;
-      const bars = Array.isArray(chartData[0]) ? chartData[0] : [];
-      if (bars.length === 0) return;
-      if (!Array.isArray(trades)) return;
-
-      let widthSec = RESOLUTION_SECS[selectedInterval];
-
-      const you = address.toLowerCase();
-      const dev = token?.dev.toLowerCase();
-      const trackedSet = new Set((Array.isArray(trackedAddresses) ? trackedAddresses : []).map(a => (a ?? '').toLowerCase()));
-
-      for (let i = 0; i < bars.length; i++) {
-        const b = bars[i];
-        b.trades = [];
-        b.hasYou = false;
-        b.hasDev = false;
-        b.hasTracked = false;
-        b.countYou = 0;
-        b.countDev = 0;
-        b.countTracked = 0;
-      }
-
-      const t0 = Number(bars[0]?.time);
-      console.log(bars[0]);
-      console.log(trades.length);
-      for (let k = 0; k < trades.length; k++) {
-        console.log(k);
-        const t = trades[k];
-
-        const caller = t.caller.toLowerCase();
-        const ts = Number(t.timestamp);
-
-        t.isYou = caller === you;
-        t.isDev = caller === dev;
-        t.isTracked = trackedSet.has(caller);
-
-        console.log(t, t.isYou, t.isDev, t.isTracked);
-
-        const idx = Math.floor((ts - t0) / widthSec);
-        if (idx < 0 || idx >= bars.length) continue;
-
-        const b = bars[idx];
-        b.trades.push(t);
-
-        if (t.isYou) { b.hasYou = true; b.countYou++; }
-        if (t.isDev) { b.hasDev = true; b.countDev++; }
-        if (t.isTracked) { b.hasTracked = true; b.countTracked++; }
-      }
-    } catch (e) {
-      console.error('flag + bucket useeffect error', e);
-    }
-  }, [chartData, trades, address, trackedAddresses, selectedInterval]);
 
   const formatNumberWithCommas = fmt;
 
@@ -2678,6 +2624,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               isMarksVisible={true}
               address={address}
               devAddress={token.dev}
+              trackedAddresses={
+                trackedAddresses && trackedAddresses.length
+                  ? trackedAddresses
+                  : [
+                      String(address || '').toLowerCase(),
+                      String(token?.dev || '').toLowerCase(),
+                      ...subWallets.map(w => String(w.address || '').toLowerCase())
+                    ]
+              }
             />
           </div>
           <div

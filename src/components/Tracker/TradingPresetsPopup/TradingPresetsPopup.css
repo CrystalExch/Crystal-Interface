@@ -7,20 +7,20 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.6);
   z-index: 12;
   animation: fadeIn 0.2s ease-out;
 }
 
 .trading-presets-container {
-  background: rgb(8, 8, 8);
+  background-color: rgb(8, 8, 8);
   border: 1px solid rgba(179, 184, 249, 0.15);
   border-radius: 6px;
   width: 90%;
-  max-width: 480px;
-  max-height: 85vh;
+  max-width: 420px;
+  max-height: 90vh;
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
 }
@@ -29,7 +29,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 16px 20px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.15);
   flex-shrink: 0;
 }
@@ -46,9 +46,8 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s;
+  padding: 0;
+  transition: opacity 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -59,17 +58,17 @@
 }
 
 .close-button-icon {
-  width: 16px;
-  height: 16px;
-  opacity: 0.6;
+  width: 18px;
+  height: 18px;
+  opacity: 0.8;
 }
 
 .trading-presets-content {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 20px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(203, 206, 238, 0.2) transparent;
+  scrollbar-color: rgba(179, 184, 249, 0.2) transparent;
 }
 
 .trading-presets-content::-webkit-scrollbar {
@@ -81,19 +80,19 @@
 }
 
 .trading-presets-content::-webkit-scrollbar-thumb {
-  background: rgba(203, 206, 238, 0.2);
+  background: rgba(179, 184, 249, 0.2);
   border-radius: 3px;
 }
 
 .trading-presets-tabs {
   position: relative;
   display: flex;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 12px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
   gap: 4px;
   padding: 4px;
   overflow: hidden;
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
 }
 
 .trading-presets-tabs::before {
@@ -103,7 +102,7 @@
   left: 4px;
   height: calc(100% - 8px);
   width: calc(33.333% - 5.333px);
-  border-radius: 8px;
+  border-radius: 4px;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
   background-color: rgba(201, 194, 243, 0.05);
@@ -124,15 +123,15 @@
   background: transparent;
   border: none;
   color: #ffffff79;
-  padding: 0.5rem 1rem;
-  font-size: 0.85rem;
+  padding: 6px 12px;
+  font-size: 0.75rem;
   font-weight: 300;
   cursor: pointer;
   transition: color 0.3s ease;
   letter-spacing: -0.3px;
   white-space: nowrap;
   text-align: center;
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .trading-preset-tab:hover {
@@ -146,18 +145,18 @@
 .trading-settings-tabs {
   position: relative;
   display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  gap: 8px;
+  margin-bottom: 20px;
 }
 
 .trading-setting-tab {
   flex: 1;
   background: transparent;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
   color: #ffffff79;
-  padding: 0.65rem 1rem;
-  font-size: 0.85rem;
+  padding: 8px 12px;
+  font-size: 0.75rem;
   font-weight: 300;
   cursor: pointer;
   transition: all 0.2s;
@@ -191,31 +190,30 @@
 .trading-presets-inputs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  gap: 8px;
+  margin-bottom: 20px;
 }
 
 .trading-preset-input-group {
   display: flex;
   flex-direction: column;
   background: transparent;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
   overflow: hidden;
   transition: all 0.2s;
 }
 
 .trading-preset-input-group:focus-within {
   border-color: #aaaecf;
-  box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.2);
 }
 
 .trading-preset-input {
   background: transparent;
   border: none;
   color: #fff;
-  padding: 12px 10px 6px;
-  font-size: 0.9rem;
+  padding: 10px 8px 6px;
+  font-size: 0.85rem;
   font-weight: 300;
   outline: none;
   text-align: center;
@@ -230,9 +228,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   background: rgba(255, 255, 255, 0.02);
-  color: #ffffff79;
+  color: #ffffff7b;
   padding: 6px;
   font-size: 0.65rem;
   font-weight: 300;
@@ -242,8 +240,8 @@
 .trading-presets-auto-fee {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  gap: 8px;
+  margin-bottom: 20px;
 }
 
 .trading-auto-fee-checkbox {
@@ -290,7 +288,7 @@
 }
 
 .trading-auto-fee-label {
-  color: #fff;
+  color: #ffffffd5;
   font-size: 0.85rem;
   font-weight: 300;
   letter-spacing: -0.3px;
@@ -299,11 +297,11 @@
 .trading-max-fee-input {
   flex: 1;
   background: transparent;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
   color: #fff;
-  padding: 0.65rem 0.75rem;
-  font-size: 0.85rem;
+  padding: 8px 12px;
+  font-size: 0.8rem;
   font-weight: 300;
   outline: none;
   letter-spacing: -0.3px;
@@ -312,7 +310,6 @@
 
 .trading-max-fee-input:focus {
   border-color: #aaaecf;
-  box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.2);
 }
 
 .trading-max-fee-input:disabled {
@@ -326,33 +323,33 @@
 }
 
 .trading-mev-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 8px;
 }
 
 .trading-mev-label {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.8rem;
+  color: #ffffff7b;
+  font-size: 0.75rem;
   font-weight: 300;
   letter-spacing: -0.3px;
 }
 
 .trading-mev-label span {
-  color: #fff;
+  color: #ffffffd5;
 }
 
 .trading-mev-label svg {
-  color: #ffffff79;
+  color: #ffffff7b;
 }
 
 .trading-mev-options {
   display: flex;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .trading-mev-option {
@@ -362,11 +359,11 @@
   justify-content: center;
   gap: 6px;
   background: transparent;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
   color: #ffffff79;
-  padding: 0.65rem 0.75rem;
-  font-size: 0.8rem;
+  padding: 8px 12px;
+  font-size: 0.75rem;
   font-weight: 300;
   cursor: pointer;
   transition: all 0.2s;
@@ -392,26 +389,26 @@
 }
 
 .trading-rpc-section {
-  margin-bottom: 0.5rem;
+  margin-bottom: 8px;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .trading-rpc-label {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.8rem;
+  color: #ffffff7b;
+  font-size: 0.75rem;
   font-weight: 300;
   letter-spacing: -0.3px;
 }
 
 .trading-rpc-input {
   background: transparent;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
   color: #fff;
-  padding: 0.65rem 0.75rem;
-  font-size: 0.85rem;
+  padding: 8px 12px;
+  font-size: 0.8rem;
   font-weight: 300;
   outline: none;
   transition: all 0.2s;
@@ -420,7 +417,6 @@
 
 .trading-rpc-input:focus {
   border-color: #aaaecf;
-  box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.2);
 }
 
 .trading-rpc-input::placeholder {
@@ -430,8 +426,8 @@
 .trading-presets-footer {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
+  gap: 8px;
+  padding: 16px 20px;
   border-top: 1px solid rgba(179, 184, 249, 0.15);
   flex-shrink: 0;
 }
@@ -440,11 +436,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
   color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   transition: all 0.2s;
@@ -454,21 +450,22 @@
 .trading-presets-reset-button:hover {
   background: rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.9);
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(179, 184, 249, 0.2);
 }
 
 .trading-presets-continue-button {
   flex: 1;
-  padding: 0.65rem 1.5rem;
+  padding: 5px 16px;
   background: linear-gradient(135deg, #aaaecf 0%, #7f82a1 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 20px;
   color: #0f0f12;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
-  letter-spacing: -0.3px;
+  transition: filter 0.2s ease;
+  letter-spacing: -0.5px;
+  height: 32px;
   box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
 }
 

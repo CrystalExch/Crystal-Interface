@@ -481,6 +481,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.tracker-wallet-item:hover .tracker-action-button {
+  opacity: 1;
+  visibility: visible;
 }
 
 .tracker-action-button:hover {
@@ -733,7 +740,7 @@
 .tracker-monitor-card {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 12px;
+  border-radius: 8px;
   transition: all 0.3s ease;
   cursor: pointer;
   overflow: hidden;
@@ -747,43 +754,37 @@
 }
 
 .tracker-monitor-card-header {
-  padding: 16px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .tracker-monitor-card-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
 }
 
 .tracker-monitor-card-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex: 1;
   min-width: 0;
 }
 
 .tracker-monitor-icon-container {
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: conic-gradient(from 0deg,
-      #aaaecf 0deg,
-      #aaaecf var(--progress-angle, 0deg),
-      rgba(157, 169, 240, 0.2) var(--progress-angle, 0deg),
-      rgba(157, 169, 240, 0.2) 360deg);
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  --progress-angle: calc(var(--progress, 0) * 3.6deg);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .tracker-monitor-card:hover .tracker-monitor-icon-container {
@@ -791,36 +792,58 @@
 }
 
 .tracker-monitor-icon-spacer {
-  background: rgb(6, 6, 6);
-  border-radius: 10px;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+tracker-monitor-play-badge {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: linear-gradient(135deg, #aaaecf 0%, #7f82a1 100%);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.tracker-monitor-play-badge svg {
+  width: 10px;
+  height: 10px;
+  fill: #0f0f12;
 }
 
 .tracker-monitor-icon-emoji {
-  font-size: 2rem;
+  font-size: 1.5rem;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .tracker-monitor-token-details {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .tracker-monitor-token-name-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: 6px;
 }
 
 .tracker-monitor-token-name-text {
   color: #fff;
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 500;
   letter-spacing: -0.3px;
   white-space: nowrap;
   overflow: hidden;
@@ -850,9 +873,15 @@
 .tracker-monitor-token-subtitle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: rgba(255, 255, 255, 0.5);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+}
+
+.tracker-monitor-token-age {
+  color: #90EE90;
+  font-size: 0.7rem;
+  font-weight: 500;
 }
 
 .tracker-monitor-token-symbol {
@@ -870,32 +899,63 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 6px;
-  min-width: 120px;
-}
-
-.tracker-monitor-price-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
   gap: 4px;
 }
 
-.tracker-monitor-price {
-  color: #fff;
-  font-size: 1.2rem;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+.tracker-monitor-value-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
 }
 
-.tracker-monitor-price-change {
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 6px;
-  letter-spacing: -0.2px;
+.tracker-monitor-value-row .value-icon {
+  width: 14px;
+  height: 14px;
 }
+
+.tracker-monitor-value-row .value-bar {
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.tracker-monitor-value-row .value-bar.green {
+  background: #00ff88;
+}
+
+.tracker-monitor-value-row .value-bar.red {
+  background: #ff6b6b;
+}
+
+.tracker-monitor-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.tracker-monitor-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+}
+
+.tracker-monitor-stat-item .stat-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+
+.tracker-monitor-stat-item .stat-value {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+}
+
 
 .tracker-monitor-price-change.positive {
   color: #00ff88;
