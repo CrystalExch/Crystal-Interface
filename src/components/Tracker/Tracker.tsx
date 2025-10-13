@@ -23,7 +23,28 @@ import {
 import './Tracker.css';
 
 const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.5.8';
+const STORAGE_KEY = 'tracked_wallets_data';
 
+// Helper functions for localStorage
+const saveWalletsToStorage = (wallets: TrackedWallet[]) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(wallets));
+  } catch (error) {
+    console.error('Failed to save wallets to localStorage:', error);
+  }
+};
+
+const loadWalletsFromStorage = (): TrackedWallet[] => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.error('Failed to load wallets from localStorage:', error);
+  }
+  return [];
+};
 
 export interface FilterState {
   transactionTypes: {
@@ -169,7 +190,7 @@ interface TrackerProps {
   walletTokenBalances?: { [address: string]: any };
   connected?: boolean;
   address?: string | null;
-  getWalletIcon?: () => string;      //x
+  getWalletIcon?: () => string;
   onDepositClick?: () => void;
   onDisconnect?: () => void;
   t?: (k: string) => string;
@@ -238,7 +259,366 @@ const Tracker: React.FC<TrackerProps> = ({
   const [walletSortDirection, setWalletSortDirection] = useState<SortDirection>('desc');
   const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
   const [trackedWalletTrades, setTrackedWalletTrades] = useState<LiveTrade[]>([]);
-  const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
+  // Hardcoded example data for testing
+  const exampleWallets: TrackedWallet[] = [
+    {
+      id: '1',
+      address: '0x1234567890123456789012345678901234567890',
+      name: 'Whale Watcher',
+      emoji: '🐋',
+      balance: 1250.50,
+      lastActive: '5m'
+    },
+    {
+      id: '2',
+      address: '0x2345678901234567890123456789012345678901',
+      name: 'Diamond Hands',
+      emoji: '💎',
+      balance: 850.25,
+      lastActive: '15m'
+    },
+    {
+      id: '3',
+      address: '0x3456789012345678901234567890123456789012',
+      name: 'Moon Boy',
+      emoji: '🚀',
+      balance: 2100.75,
+      lastActive: '1h'
+    },
+    {
+      id: '4',
+      address: '0x4567890123456789012345678901234567890123',
+      name: 'Paper Hands',
+      emoji: '🧻',
+      balance: 420.00,
+      lastActive: '3h'
+    },
+    {
+      id: '5',
+      address: '0x5678901234567890123456789012345678901234',
+      name: 'Degen Trader',
+      emoji: '🎰',
+      balance: 690.50,
+      lastActive: '5h'
+    }
+  ];
+
+  const exampleTrades: LiveTrade[] = [
+    {
+      id: 'trade1',
+      walletName: 'Whale Watcher',
+      emoji: '🐋',
+      token: 'PEPE',
+      amount: 1.5,
+      marketCap: 45000,
+      time: '2m',
+      txHash: '0xabc123',
+      type: 'buy',
+      createdAt: new Date(Date.now() - 120000).toISOString()
+    },
+    {
+      id: 'trade2',
+      walletName: 'Diamond Hands',
+      emoji: '💎',
+      token: 'WOJAK',
+      amount: 0.8,
+      marketCap: 12000,
+      time: '5m',
+      txHash: '0xdef456',
+      type: 'sell',
+      createdAt: new Date(Date.now() - 300000).toISOString()
+    },
+    {
+      id: 'trade3',
+      walletName: 'Moon Boy',
+      emoji: '🚀',
+      token: 'DOGE',
+      amount: 2.5,
+      marketCap: 85000,
+      time: '8m',
+      txHash: '0xghi789',
+      type: 'buy',
+      createdAt: new Date(Date.now() - 480000).toISOString()
+    },
+    {
+      id: 'trade4',
+      walletName: 'Paper Hands',
+      emoji: '🧻',
+      token: 'SHIB',
+      amount: 0.3,
+      marketCap: 28000,
+      time: '12m',
+      txHash: '0xjkl012',
+      type: 'sell',
+      createdAt: new Date(Date.now() - 720000).toISOString()
+    },
+    {
+      id: 'trade5',
+      walletName: 'Degen Trader',
+      emoji: '🎰',
+      token: 'FLOKI',
+      amount: 1.2,
+      marketCap: 35000,
+      time: '18m',
+      txHash: '0xmno345',
+      type: 'buy',
+      createdAt: new Date(Date.now() - 1080000).toISOString()
+    },
+    {
+      id: 'trade6',
+      walletName: 'Whale Watcher',
+      emoji: '🐋',
+      token: 'BONK',
+      amount: 3.5,
+      marketCap: 52000,
+      time: '25m',
+      txHash: '0xpqr678',
+      type: 'buy',
+      createdAt: new Date(Date.now() - 1500000).toISOString()
+    },
+    {
+      id: 'trade7',
+      walletName: 'Moon Boy',
+      emoji: '🚀',
+      token: 'WIF',
+      amount: 0.9,
+      marketCap: 19000,
+      time: '32m',
+      txHash: '0xstu901',
+      type: 'sell',
+      createdAt: new Date(Date.now() - 1920000).toISOString()
+    },
+    {
+      id: 'trade8',
+      walletName: 'Diamond Hands',
+      emoji: '💎',
+      token: 'TURBO',
+      amount: 1.8,
+      marketCap: 41000,
+      time: '45m',
+      txHash: '0xvwx234',
+      type: 'buy',
+      createdAt: new Date(Date.now() - 2700000).toISOString()
+    }
+  ];
+
+  const exampleMonitorTokens: MonitorToken[] = [
+    {
+      id: '0x1111',
+      tokenAddress: '0x1111111111111111111111111111111111111111',
+      name: 'PepeToken',
+      symbol: 'PEPE',
+      emoji: '🐸',
+      price: 0.0000125,
+      marketCap: 45000,
+      change24h: 15.5,
+      volume24h: 8500,
+      liquidity: 12000,
+      holders: 2450,
+      buyTransactions: 1250,
+      sellTransactions: 980,
+      bondingCurveProgress: 65,
+      txCount: 2230,
+      volume5m: 450,
+      volume1h: 1200,
+      volume6h: 4500,
+      priceChange5m: 2.5,
+      priceChange1h: 5.2,
+      priceChange6h: 12.8,
+      priceChange24h: 15.5,
+      website: '',
+      twitter: '',
+      telegram: '',
+      createdAt: new Date(Date.now() - 7200000).toISOString(),
+      lastTransaction: new Date(Date.now() - 120000).toISOString(),
+      trades: [
+        {
+          id: 'trade-pepe-1',
+          wallet: 'Whale Watcher',
+          emoji: '🐋',
+          timeInTrade: '2h',
+          bought: 5000,
+          boughtTxns: 3,
+          sold: 2000,
+          soldTxns: 1,
+          pnl: 1500,
+          remaining: 3500
+        },
+        {
+          id: 'trade-pepe-2',
+          wallet: 'Diamond Hands',
+          emoji: '💎',
+          timeInTrade: '1h',
+          bought: 3000,
+          boughtTxns: 2,
+          sold: 0,
+          soldTxns: 0,
+          pnl: 800,
+          remaining: 3800
+        }
+      ]
+    },
+    {
+      id: '0x2222',
+      tokenAddress: '0x2222222222222222222222222222222222222222',
+      name: 'DogeKing',
+      symbol: 'DOGE',
+      emoji: '🐕',
+      price: 0.000095,
+      marketCap: 85000,
+      change24h: -8.2,
+      volume24h: 15000,
+      liquidity: 22000,
+      holders: 4200,
+      buyTransactions: 2100,
+      sellTransactions: 2450,
+      bondingCurveProgress: 82,
+      txCount: 4550,
+      volume5m: 850,
+      volume1h: 2200,
+      volume6h: 7500,
+      priceChange5m: -1.2,
+      priceChange1h: -3.5,
+      priceChange6h: -5.8,
+      priceChange24h: -8.2,
+      website: '',
+      twitter: '',
+      telegram: '',
+      createdAt: new Date(Date.now() - 14400000).toISOString(),
+      lastTransaction: new Date(Date.now() - 180000).toISOString(),
+      trades: [
+        {
+          id: 'trade-doge-1',
+          wallet: 'Moon Boy',
+          emoji: '🚀',
+          timeInTrade: '4h',
+          bought: 8000,
+          boughtTxns: 5,
+          sold: 3000,
+          soldTxns: 2,
+          pnl: -500,
+          remaining: 4500
+        },
+        {
+          id: 'trade-doge-2',
+          wallet: 'Paper Hands',
+          emoji: '🧻',
+          timeInTrade: '3h',
+          exitStatus: 'Exited',
+          bought: 2000,
+          boughtTxns: 1,
+          sold: 2200,
+          soldTxns: 2,
+          pnl: 200,
+          remaining: 0
+        }
+      ]
+    },
+    {
+      id: '0x3333',
+      tokenAddress: '0x3333333333333333333333333333333333333333',
+      name: 'ShibaRocket',
+      symbol: 'SHIB',
+      emoji: '🦊',
+      price: 0.000032,
+      marketCap: 28000,
+      change24h: 22.8,
+      volume24h: 6200,
+      liquidity: 8500,
+      holders: 1850,
+      buyTransactions: 980,
+      sellTransactions: 650,
+      bondingCurveProgress: 45,
+      txCount: 1630,
+      volume5m: 320,
+      volume1h: 980,
+      volume6h: 3100,
+      priceChange5m: 3.8,
+      priceChange1h: 8.5,
+      priceChange6h: 18.2,
+      priceChange24h: 22.8,
+      website: '',
+      twitter: '',
+      telegram: '',
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
+      lastTransaction: new Date(Date.now() - 90000).toISOString(),
+      trades: [
+        {
+          id: 'trade-shib-1',
+          wallet: 'Degen Trader',
+          emoji: '🎰',
+          timeInTrade: '1h',
+          bought: 4000,
+          boughtTxns: 3,
+          sold: 1500,
+          soldTxns: 1,
+          pnl: 800,
+          remaining: 3300
+        }
+      ]
+    },
+    {
+      id: '0x4444',
+      tokenAddress: '0x4444444444444444444444444444444444444444',
+      name: 'FlokiMoon',
+      symbol: 'FLOKI',
+      emoji: '🌙',
+      price: 0.000048,
+      marketCap: 35000,
+      change24h: 5.3,
+      volume24h: 9800,
+      liquidity: 11500,
+      holders: 2980,
+      buyTransactions: 1520,
+      sellTransactions: 1280,
+      bondingCurveProgress: 58,
+      txCount: 2800,
+      volume5m: 520,
+      volume1h: 1450,
+      volume6h: 5200,
+      priceChange5m: 1.2,
+      priceChange1h: 2.8,
+      priceChange6h: 4.5,
+      priceChange24h: 5.3,
+      website: '',
+      twitter: '',
+      telegram: '',
+      createdAt: new Date(Date.now() - 10800000).toISOString(),
+      lastTransaction: new Date(Date.now() - 240000).toISOString(),
+      trades: [
+        {
+          id: 'trade-floki-1',
+          wallet: 'Whale Watcher',
+          emoji: '🐋',
+          timeInTrade: '3h',
+          bought: 6000,
+          boughtTxns: 4,
+          sold: 2500,
+          soldTxns: 2,
+          pnl: 1200,
+          remaining: 4700
+        },
+        {
+          id: 'trade-floki-2',
+          wallet: 'Moon Boy',
+          emoji: '🚀',
+          timeInTrade: '2h',
+          bought: 3500,
+          boughtTxns: 2,
+          sold: 1000,
+          soldTxns: 1,
+          pnl: 400,
+          remaining: 2900
+        }
+      ]
+    }
+  ];
+
+  const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>(() => {
+    const stored = loadWalletsFromStorage();
+    // If no stored wallets, use example data
+    return stored.length > 0 ? stored : exampleWallets;
+  });
   const [monitorFilters, setMonitorFilters] = useState<MonitorFilterState>({
     general: {
       lastTransaction: '',
@@ -304,7 +684,10 @@ const Tracker: React.FC<TrackerProps> = ({
   const [previewSelection, setPreviewSelection] = useState<Set<string>>(new Set());
   const [expandedTokens, setExpandedTokens] = useState<Set<string>>(new Set());
 
-  
+  // Save wallets to localStorage whenever they change
+  useEffect(() => {
+    saveWalletsToStorage(trackedWallets);
+  }, [trackedWallets]);
 
   useEffect(() => {
     setSearchQuery('');
@@ -316,6 +699,11 @@ const Tracker: React.FC<TrackerProps> = ({
       return;
     }
 
+    // Use example data initially for testing
+    if (trackedWallets.some(w => exampleWallets.find(ew => ew.id === w.id))) {
+      setTrackedWalletTrades(exampleTrades);
+    }
+
     let cancelled = false;
     let batchNumber = 0;
 
@@ -325,7 +713,6 @@ const Tracker: React.FC<TrackerProps> = ({
         const BATCH_SIZE = 100;
         const allTrades: any[] = [];
 
-        // Fetch trades in batches
         while (true) {
           const data = await fetchSubgraphData(WALLET_TRADES_QUERY, {
             accounts: walletAddresses,
@@ -409,6 +796,12 @@ const Tracker: React.FC<TrackerProps> = ({
   useEffect(() => {
     if (activeTab !== 'monitor' || trackedWallets.length === 0) return;
 
+    // Use example data initially for testing
+    if (trackedWallets.some(w => exampleWallets.find(ew => ew.id === w.id))) {
+      setMonitorTokens(exampleMonitorTokens);
+      setIsLoadingMonitor(false);
+    }
+
     let cancelled = false;
 
     const fetchMonitorTokens = async () => {
@@ -422,7 +815,6 @@ const Tracker: React.FC<TrackerProps> = ({
 
         if (cancelled || !data?.launchpadPositions) return;
 
-        // Group positions by token
         const tokenMap = new Map<string, any>();
 
         data.launchpadPositions.forEach((position: any) => {
@@ -443,7 +835,6 @@ const Tracker: React.FC<TrackerProps> = ({
         });
 
         const processedTokens: MonitorToken[] = Array.from(tokenMap.values()).map(({ token, walletPositions }) => {
-          // Calculate current price
           const lastTrade = token.trades?.[0];
           const price = lastTrade 
             ? Number(lastTrade.priceNativePerTokenWad) / 1e18 
@@ -452,14 +843,12 @@ const Tracker: React.FC<TrackerProps> = ({
           const totalSupply = 1e9;
           const marketCap = price * totalSupply;
 
-          // Calculate bonding curve progress
           const targetRaise = Number(token.bondingCurve?.targetRaise || 0) / 1e18;
           const currentRaise = Number(token.bondingCurve?.currentRaise || 0) / 1e18;
           const bondingCurveProgress = targetRaise > 0 
             ? Math.min((currentRaise / targetRaise) * 100, 100) 
             : 0;
 
-          // Calculate metrics
           const allPositions = token.launchpadPositions || [];
           const holders = new Set(allPositions.map((p: any) => p.account.id)).size;
           
@@ -469,7 +858,6 @@ const Tracker: React.FC<TrackerProps> = ({
 
           const liquidity = currentRaise * 1000;
 
-          // Process wallet trades
           const walletTrades = walletPositions.map(({ wallet, position }: any) => {
             if (!wallet) return null;
 
@@ -480,7 +868,6 @@ const Tracker: React.FC<TrackerProps> = ({
             const pnl = received - spent;
             const remaining = tokenAmount * price;
 
-            // Get trade count
             const walletTrades = token.trades?.filter((t: any) => 
               t.account.id.toLowerCase() === wallet.address.toLowerCase()
             ) || [];
@@ -492,7 +879,7 @@ const Tracker: React.FC<TrackerProps> = ({
               id: `${token.id}-${wallet.id}`,
               wallet: wallet.name,
               emoji: wallet.emoji,
-              timeInTrade: '0m', // Would need more detailed timestamp data
+              timeInTrade: '0m',
               exitStatus: tokenAmount === 0 ? 'Exited' : undefined,
               bought: spent * 1000,
               boughtTxns,
@@ -514,7 +901,7 @@ const Tracker: React.FC<TrackerProps> = ({
             emoji: '🪙',
             price: price * 1000,
             marketCap: marketCap / 1000,
-            change24h: 0, // Would need historical price data
+            change24h: 0,
             volume24h: volume24h * 1000,
             liquidity,
             holders,
@@ -532,7 +919,7 @@ const Tracker: React.FC<TrackerProps> = ({
             website: '',
             twitter: '',
             telegram: '',
-            createdAt: new Date().toISOString(), // Would need token creation timestamp
+            createdAt: new Date().toISOString(),
             lastTransaction,
             trades: walletTrades
           };
@@ -709,7 +1096,6 @@ const Tracker: React.FC<TrackerProps> = ({
         return false;
       }
 
-      // Market cap filter
       if (activeFilters.marketCap.min && trade.marketCap < parseFloat(activeFilters.marketCap.min)) {
         return false;
       }
@@ -717,7 +1103,6 @@ const Tracker: React.FC<TrackerProps> = ({
         return false;
       }
 
-      // Transaction amount filter
       if (activeFilters.transactionAmount.min && trade.amount < parseFloat(activeFilters.transactionAmount.min)) {
         return false;
       }
@@ -728,7 +1113,6 @@ const Tracker: React.FC<TrackerProps> = ({
       return true;
     });
 
-    // Sorting
     if (tradeSortField) {
       trades = [...trades].sort((a, b) => {
         let comparison = 0;
@@ -745,7 +1129,6 @@ const Tracker: React.FC<TrackerProps> = ({
       });
     }
 
-    // apply search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       trades = trades.filter(trade =>
@@ -762,7 +1145,6 @@ const Tracker: React.FC<TrackerProps> = ({
     const now = new Date();
 
     let tokens = monitorTokens.filter(token => {
-      // Existing filters...
       if (monitorFilters.general.lastTransaction) {
         const lastTxTime = new Date(token.lastTransaction);
         const secondsAgo = (now.getTime() - lastTxTime.getTime()) / 1000;
@@ -802,7 +1184,6 @@ const Tracker: React.FC<TrackerProps> = ({
         return false;
       }
 
-      // NEW: Transaction filters
       const totalTransactions = token.trades.reduce((sum, t) => sum + t.boughtTxns + t.soldTxns, 0);
 
       if (monitorFilters.transactions.transactionCountMin && totalTransactions < parseFloat(monitorFilters.transactions.transactionCountMin)) {
@@ -812,7 +1193,6 @@ const Tracker: React.FC<TrackerProps> = ({
         return false;
       }
 
-      // Calculate total inflow (buy) volume
       const inflowVolume = token.trades.reduce((sum, t) => sum + t.bought, 0);
 
       if (monitorFilters.transactions.inflowVolumeMin && inflowVolume < parseFloat(monitorFilters.transactions.inflowVolumeMin)) {
@@ -822,7 +1202,6 @@ const Tracker: React.FC<TrackerProps> = ({
         return false;
       }
 
-      // Calculate total outflow (sell) volume
       const outflowVolume = token.trades.reduce((sum, t) => sum + t.sold, 0);
 
       if (monitorFilters.transactions.outflowVolumeMin && outflowVolume < parseFloat(monitorFilters.transactions.outflowVolumeMin)) {
@@ -835,7 +1214,6 @@ const Tracker: React.FC<TrackerProps> = ({
       return true;
     });
 
-    // Apply search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       tokens = tokens.filter(token =>
@@ -847,7 +1225,6 @@ const Tracker: React.FC<TrackerProps> = ({
     return tokens;
   };
 
-  // Function to fetch data for a specific wallet address
   const fetchWalletData = async (address: string) => {
     try {
       const data = await fetchSubgraphData(WALLET_BALANCE_QUERY, {
@@ -864,14 +1241,12 @@ const Tracker: React.FC<TrackerProps> = ({
 
       const account = data.account;
       
-      // Calculate total balance across all positions
       const totalBalance = account.positions.reduce((sum: number, pos: any) => {
         const spent = Number(pos.nativeSpent || 0);
         const received = Number(pos.nativeReceived || 0);
         return sum + (spent + received);
       }, 0) / 1e18;
 
-      // Get last active time from most recent trade
       const lastTrade = account.trades?.[0];
       const lastTimestamp = lastTrade ? Number(lastTrade.timestamp || lastTrade.block * 2) : 0;
       
@@ -890,7 +1265,7 @@ const Tracker: React.FC<TrackerProps> = ({
       }
 
       return {
-        balance: totalBalance * 1000, // Convert to display format
+        balance: totalBalance * 1000,
         lastActive,
         positions: account.positions
       };
@@ -966,7 +1341,6 @@ const Tracker: React.FC<TrackerProps> = ({
         return;
       }
 
-      // Filter out existing wallets
       const walletsToImport = importedData.filter(item => {
         const exists = trackedWallets.some(
           w => w.address.toLowerCase() === item.trackedWalletAddress.toLowerCase()
@@ -974,7 +1348,6 @@ const Tracker: React.FC<TrackerProps> = ({
         return !exists && item.trackedWalletAddress;
       });
 
-      // Fetch data for each wallet
       const newWallets: TrackedWallet[] = await Promise.all(
         walletsToImport.map(async (item) => {
           const walletData = await fetchWalletData(item.trackedWalletAddress);
@@ -1002,6 +1375,9 @@ const Tracker: React.FC<TrackerProps> = ({
     }
   };
 
+  const handleExportPrivateKey = (address: string) => {
+    alert(`Export private key functionality needs to be integrated with your wallet management system.\n\nWallet: ${address}\n\nThis would typically:\n1. Retrieve the encrypted private key from secure storage\n2. Decrypt it with the user's password\n3. Display it securely or copy to clipboard`);
+  };
 
   const closeAddWalletModal = () => {
     setShowAddWalletModal(false);
@@ -1171,7 +1547,13 @@ const Tracker: React.FC<TrackerProps> = ({
 
         <div className="tracker-wallet-actions">
           <Tooltip content="Export Private Key">
-            <button className="tracker-action-button">
+            <button 
+              className="tracker-action-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleExportPrivateKey(wallet.address);
+              }}
+            >
               <img src={key} className="tracker-action-icon" alt="Export Key" />
             </button>
           </Tooltip>
@@ -1324,6 +1706,38 @@ const Tracker: React.FC<TrackerProps> = ({
 
     return (
       <div className="tracker-wallet-manager">
+        <div className="tracker-wallets-header">
+          <div className="tracker-wallet-header-cell"></div>
+          <div className="tracker-wallet-header-cell">Name</div>
+          <div
+            className={`tracker-wallet-header-cell sortable ${walletSortField === 'balance' ? 'active' : ''}`}
+            onClick={() => handleWalletSort('balance')}
+          >
+            Balance
+            {walletSortField === 'balance' && (
+              <span className={`tracker-sort-arrow ${walletSortDirection}`}>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+                  <path d="M5 7L2 3H8L5 7Z" />
+                </svg>
+              </span>
+            )}
+          </div>
+          <div
+            className={`tracker-wallet-header-cell sortable ${walletSortField === 'lastActive' ? 'active' : ''}`}
+            onClick={() => handleWalletSort('lastActive')}
+          >
+            Last Active
+            {walletSortField === 'lastActive' && (
+              <span className={`tracker-sort-arrow ${walletSortDirection}`}>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+                  <path d="M5 7L2 3H8L5 7Z" />
+                </svg>
+              </span>
+            )}
+          </div>
+          <div className="tracker-wallet-header-cell">Actions</div>
+        </div>
+        
         {trackedWallets.length === 0 ? (
           <div className="tracker-empty-state">
             <div className="tracker-empty-content">
@@ -1338,74 +1752,41 @@ const Tracker: React.FC<TrackerProps> = ({
             </div>
           </div>
         ) : (
-          <>
-            <div className="tracker-wallets-header">
-              <div className="tracker-wallet-header-cell"></div>
-              <div className="tracker-wallet-header-cell">Name</div>
+          <div
+            ref={mainWalletsRef}
+            className={`tracker-wallets-list ${isSelecting ? 'selecting' : ''}`}
+            onMouseDown={(e) => startSelection(e)}
+            onMouseMove={(e) => {
+              if (isSelecting && mainWalletsRef.current) {
+                updateSelection(e, mainWalletsRef.current);
+              }
+            }}
+            onMouseUp={endSelection}
+            onMouseLeave={endSelection}
+            style={{ position: 'relative' }}
+          >
+            {isSelecting && selectionRect && (
               <div
-                className={`tracker-wallet-header-cell sortable ${walletSortField === 'balance' ? 'active' : ''}`}
-                onClick={() => handleWalletSort('balance')}
-              >
-                Balance
-                {walletSortField === 'balance' && (
-                  <span className={`tracker-sort-arrow ${walletSortDirection}`}>
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-                      <path d="M5 7L2 3H8L5 7Z" />
-                    </svg>
-                  </span>
-                )}
-              </div>
-              <div
-                className={`tracker-wallet-header-cell sortable ${walletSortField === 'lastActive' ? 'active' : ''}`}
-                onClick={() => handleWalletSort('lastActive')}
-              >
-                Last Active
-                {walletSortField === 'lastActive' && (
-                  <span className={`tracker-sort-arrow ${walletSortDirection}`}>
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-                      <path d="M5 7L2 3H8L5 7Z" />
-                    </svg>
-                  </span>
-                )}
-              </div>
-              <div className="tracker-wallet-header-cell">Actions</div>
-            </div>
-            <div
-              ref={mainWalletsRef}
-              className={`tracker-wallets-list ${isSelecting ? 'selecting' : ''}`}
-              onMouseDown={(e) => startSelection(e)}
-              onMouseMove={(e) => {
-                if (isSelecting && mainWalletsRef.current) {
-                  updateSelection(e, mainWalletsRef.current);
-                }
-              }}
-              onMouseUp={endSelection}
-              onMouseLeave={endSelection}
-              style={{ position: 'relative' }}
-            >
-              {isSelecting && selectionRect && (
-                <div
-                  className="tracker-selection-rectangle"
-                  style={{
-                    left: Math.min(selectionRect.startX, selectionRect.currentX),
-                    top: Math.min(selectionRect.startY, selectionRect.currentY),
-                    width: Math.abs(selectionRect.currentX - selectionRect.startX),
-                    height: Math.abs(selectionRect.currentY - selectionRect.startY),
-                  }}
-                />
-              )}
-              {filteredWallets.length === 0 ? (
-                <div className="tracker-empty-state">
-                  <div className="tracker-empty-content">
-                    <h4>No Wallets Found</h4>
-                    <p>No wallets match your search criteria.</p>
-                  </div>
+                className="tracker-selection-rectangle"
+                style={{
+                  left: Math.min(selectionRect.startX, selectionRect.currentX),
+                  top: Math.min(selectionRect.startY, selectionRect.currentY),
+                  width: Math.abs(selectionRect.currentX - selectionRect.startX),
+                  height: Math.abs(selectionRect.currentY - selectionRect.startY),
+                }}
+              />
+            )}
+            {filteredWallets.length === 0 ? (
+              <div className="tracker-empty-state">
+                <div className="tracker-empty-content">
+                  <h4>No Wallets Found</h4>
+                  <p>No wallets match your search criteria.</p>
                 </div>
-              ) : (
-                filteredWallets.map(wallet => renderWalletItem(wallet))
-              )}
-            </div>
-          </>
+              </div>
+            ) : (
+              filteredWallets.map(wallet => renderWalletItem(wallet))
+            )}
+          </div>
         )}
       </div>
     );
@@ -1580,7 +1961,6 @@ const Tracker: React.FC<TrackerProps> = ({
                     className="tracker-monitor-card-header"
                     onClick={() => toggleTokenExpanded(token.id)}
                   >
-                    {/* Top section with token info */}
                     <div className="tracker-monitor-card-top">
                       <div className="tracker-monitor-card-left">
                         <div
@@ -1624,7 +2004,6 @@ const Tracker: React.FC<TrackerProps> = ({
                       </div>
                     </div>
 
-                    {/* Stats row */}
                     <div className="tracker-monitor-stats-grid">
                       <div className="tracker-monitor-stat">
                         <span className="stat-label">MC</span>
@@ -1661,7 +2040,6 @@ const Tracker: React.FC<TrackerProps> = ({
                       </div>
                     </div>
 
-                    {/* Buy/Sell summary */}
                     <div className="tracker-monitor-trade-summary">
                       <div className="tracker-monitor-trade-counts">
                         <span className="buy-count">{totalBuys} Buys</span>
@@ -1682,7 +2060,6 @@ const Tracker: React.FC<TrackerProps> = ({
                       </div>
                     </div>
 
-                    {/* Progress bar */}
                     <div className="tracker-monitor-progress-section">
                       <div className="tracker-monitor-progress-bar">
                         <div 
@@ -1696,7 +2073,6 @@ const Tracker: React.FC<TrackerProps> = ({
                     </div>
                   </div>
 
-                  {/* Expanded trades table */}
                   {isExpanded && token.trades.length > 0 && (
                     <div className="tracker-monitor-trades-expanded">
                       <div className="tracker-monitor-trades-table-header">
@@ -2001,7 +2377,6 @@ const Tracker: React.FC<TrackerProps> = ({
         />
       )}
 
-      {/* Delete Confirmation Modal */}
       {showDeleteConfirmation && (
         <div className="tracker-modal-backdrop" onClick={() => setShowDeleteConfirmation(false)}>
           <div className="tracker-modal-container" onClick={(e) => e.stopPropagation()}>
