@@ -15,6 +15,7 @@ import MemeChart from './MemeChart/MemeChart';
 import MemeOrderCenter from './MemeOrderCenter/MemeOrderCenter';
 import MemeTradesComponent from './MemeTradesComponent/MemeTradesComponent';
 import QuickBuyWidget from './QuickBuyWidget/QuickBuyWidget';
+import { CrystalLaunchpadToken } from '../../abis/CrystalLaunchpadToken';
 
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { useSharedContext } from '../../contexts/SharedContext';
@@ -400,10 +401,459 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         return 0;
     }
   };
+  // Wallet helper functions
+  const getWalletBalance = (address: string) => {
+    const balances = walletTokenBalances[address];
+    if (!balances) return 0;
+
+    const ethToken = tokenList.find(
+      (t) => t.address === settings.chainConfig[activechain]?.eth,
+    );
+    if (ethToken && balances[ethToken.address]) {
+      return (
+        Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals)
+      );
+    }
+    return 0;
+  };
+
+  const getWalletName = (address: string, index: number) => {
+    return walletNames[address] || `Wallet ${index + 1}`;
+  };
+
+  const getWalletTokenBalance = (address: string) => {
+    const balances = walletTokenBalances[address];
+    if (!balances || !tokenAddress) return 0;
+
+    const balance = balances[tokenAddress];
+    if (!balance || balance <= 0n) return 0;
+
+    const tokenInfo = tokenList.find((t) => t.address === tokenAddress);
+    const decimals = tokenInfo?.decimals || 18;
+    return Number(balance) / 10 ** Number(decimals);
+  };
+
+  const getWalletTokenCount = (address: string) => {
+    const balances = walletTokenBalances[address];
+    if (!balances) return 0;
+
+    const ethAddress = settings.chainConfig[activechain]?.eth;
+    let count = 0;
+
+    for (const [tokenAddr, balance] of Object.entries(balances)) {
+      if (
+        tokenAddr !== ethAddress &&
+        balance &&
+        BigInt(balance.toString()) > 0n
+      ) {
+        count++;
+      }
+    }
+
+    return count;
+  };
+
+  const isWalletActive = (privateKey: string) => {
+    return activeWalletPrivateKey === privateKey;
+  };
+
+  const handleSetActiveWallet = (privateKey: string) => {
+    if (!isWalletActive(privateKey)) {
+      localStorage.setItem('crystal_active_wallet_private_key', privateKey);
+      setOneCTSigner(privateKey);
+      if (terminalRefetch) {
+        setTimeout(() => terminalRefetch(), 0);
+      }
+    } else {
+      localStorage.removeItem('crystal_active_wallet_private_key');
+      setOneCTSigner('');
+      if (terminalRefetch) {
+        setTimeout(() => terminalRefetch(), 0);
+      }
+    }
+  };
+
+  const toggleWalletSelection = useCallback((address: string) => {
+    setSelectedWallets((prev) => {
+      const next = new Set(prev);
+      if (next.has(address)) {
+        next.delete(address);
+      } else {
+        next.add(address);
+      }
+      return next;
+    });
+  }, [setSelectedWallets]);
+
+  const selectAllWallets = useCallback(() => {
+    const walletsWithToken = subWallets.filter(
+      (w) => getWalletTokenBalance(w.address) > 0,
+    );
+
+    if (walletsWithToken.length > 0) {
+      setSelectedWallets(new Set(walletsWithToken.map((w) => w.address)));
+    } else {
+      setSelectedWallets(new Set(subWallets.map((w) => w.address)));
+    }
+  }, [subWallets, setSelectedWallets]);
+
+  const unselectAllWallets = useCallback(() => {
+    setSelectedWallets(new Set());
+  }, [setSelectedWallets]);
+
+  const selectAllWithBalance = useCallback(() => {
+    const walletsWithBalance = subWallets.filter(
+      (wallet) => getWalletBalance(wallet.address) > 0,
+    );
+    setSelectedWallets(new Set(walletsWithBalance.map((w) => w.address)));
+  }, [subWallets, setSelectedWallets]);
+
+  const selectAllWithBalanceWithoutToken = useCallback(() => {
+    const walletsWithoutToken = subWallets.filter(
+      (w) => getWalletTokenBalance(w.address) === 0,
+    );
+    const walletsWithBalance = walletsWithoutToken.filter(
+      (wallet) => getWalletBalance(wallet.address) > 0,
+    );
+    setSelectedWallets(new Set(walletsWithBalance.map((w) => w.address)));
+  }, [subWallets, setSelectedWallets]);
+
+  const handleConsolidateTokens = async () => {
+    if (!tokenAddress) return;
+
+    if (selectedWallets.size !== 1) {
+      const txId = `consolidate-error-${Date.now()}`;
+      showLoadingPopup?.(txId, {
+        title: 'Select one destination wallet',
+        subtitle: 'Check exactly one wallet to receive all tokens',
+      });
+      setTimeout(() => {
+        updatePopup?.(txId, {
+          title: 'Select one destination wallet',
+          subtitle: 'Check exactly one wallet to receive all tokens',
+          variant: 'error',
+          isLoading: false,
+        });
+      }, 100);
+      return;
+    }
+
+    const destinationAddr = Array.from(selectedWallets)[0];
+
+    const sourceWallets = subWallets
+      .map((w) => w.address)
+      .filter((addr) => addr !== destinationAddr)
+      .filter((addr) => (walletTokenBalances[addr]?.[tokenAddress] ?? 0n) > 0n);
+
+    if (sourceWallets.length === 0) {
+      const txId = `consolidate-error-${Date.now()}`;
+      showLoadingPopup?.(txId, {
+        title: 'Nothing to consolidate',
+        subtitle: `No other wallets hold ${token.symbol}`,
+      });
+      setTimeout(() => {
+        updatePopup?.(txId, {
+          title: 'Nothing to consolidate',
+          subtitle: `No other wallets hold ${token.symbol}`,
+          variant: 'error',
+          isLoading: false,
+        });
+      }, 100);
+      return;
+    }
+
+    setIsConsolidating(true);
+    const txId = `consolidate-${Date.now()}`;
+    showLoadingPopup?.(txId, {
+      title: 'Consolidating Tokens',
+      subtitle: `Sending ${token.symbol} from ${sourceWallets.length} wallets to selected wallet`,
+      tokenImage: token.image,
+    });
+
+    try {
+      const transferPromises = [];
+      for (const sourceAddr of sourceWallets) {
+        const sourceWallet = subWallets.find((w) => w.address === sourceAddr);
+        if (!sourceWallet) continue;
+
+        const balance = walletTokenBalances[sourceAddr]?.[tokenAddress];
+        if (!balance || balance <= 0n) continue;
+
+        try {
+          const uo = {
+            target: tokenAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: CrystalLaunchpadToken,
+              functionName: 'transfer',
+              args: [destinationAddr as `0x${string}`, balance as bigint],
+            }),
+            value: 0n,
+          };
+          const wallet = nonces.current.get(sourceAddr);
+          const params = [
+            { uo },
+            0n,
+            0n,
+            false,
+            sourceWallet.privateKey,
+            wallet?.nonce,
+          ];
+          if (wallet) wallet.nonce += 1;
+          wallet?.pendingtxs.push(params);
+          const transferPromise = sendUserOperationAsync(...params)
+            .then(() => {
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p !== params,
+                );
+              return true;
+            })
+            .catch(() => {
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p !== params,
+                );
+              return false;
+            });
+          transferPromises.push(transferPromise);
+        } catch (err) {
+          console.error(`Failed to consolidate from ${sourceAddr}:`, err);
+        }
+      }
+      const results = await Promise.allSettled(transferPromises);
+      const successfulTransfers = results.filter(
+        (result) => result.status === 'fulfilled' && result.value === true,
+      ).length;
+      terminalRefetch();
+      updatePopup?.(txId, {
+        title: 'Consolidation Complete',
+        subtitle: `Consolidated ${token.symbol} from ${successfulTransfers}/${sourceWallets.length} wallets`,
+        variant: 'success',
+        isLoading: false,
+      });
+
+      setSelectedWallets(new Set([destinationAddr]));
+    } catch (error: any) {
+      updatePopup?.(txId, {
+        title: 'Consolidation Failed',
+        subtitle: error?.message || 'Failed to consolidate tokens',
+        variant: 'error',
+        isLoading: false,
+      });
+    } finally {
+      setIsConsolidating(false);
+    }
+  };
+
+  const handleSplitTokens = async () => {
+    if (selectedWallets.size === 0 || !tokenAddress) return;
+
+    const selected = Array.from(selectedWallets);
+
+    const sourceAddr = selected.find(
+      (addr) => (walletTokenBalances[addr]?.[tokenAddress!] ?? 0n) > 0n,
+    );
+    if (!sourceAddr) {
+      const txId = `split-error-${Date.now()}`;
+      showLoadingPopup?.(txId, {
+        title: 'No Tokens to Split',
+        subtitle: 'None of the selected wallets have tokens to split',
+      });
+      setTimeout(
+        () =>
+          updatePopup?.(txId, {
+            title: 'No Tokens to Split',
+            subtitle: 'None of the selected wallets have tokens to split',
+            variant: 'error',
+            isLoading: false,
+          }),
+        100,
+      );
+      return;
+    }
+    const sourceBalance: bigint =
+      walletTokenBalances[sourceAddr]?.[tokenAddress] ?? 0n;
+    if (sourceBalance <= 0n) {
+      const txId = `split-error-${Date.now()}`;
+      showLoadingPopup?.(txId, {
+        title: 'Insufficient Source Balance',
+        subtitle: 'Source wallet has 0 tokens',
+      });
+      setTimeout(
+        () =>
+          updatePopup?.(txId, {
+            title: 'Insufficient Source Balance',
+            subtitle: 'Source wallet has 0 tokens',
+            variant: 'error',
+            isLoading: false,
+          }),
+        100,
+      );
+      return;
+    }
+
+    if (selected.length < 2) {
+      const txId = `split-error-${Date.now()}`;
+      showLoadingPopup?.(txId, {
+        title: 'Need More Wallets',
+        subtitle: 'Select at least 2 wallets to split tokens',
+      });
+      setTimeout(
+        () =>
+          updatePopup?.(txId, {
+            title: 'Need More Wallets',
+            subtitle: 'Select at least 2 wallets to split tokens',
+            variant: 'error',
+            isLoading: false,
+          }),
+        100,
+      );
+      return;
+    }
+
+    setIsSplitting(true);
+    const txId = `split-${Date.now()}`;
+    showLoadingPopup?.(txId, {
+      title: 'Splitting Tokens',
+      subtitle: `Redistributing ${token.symbol} across ${selected.length} wallets (±20%)`,
+      tokenImage: token.image,
+    });
+
+    try {
+      const BP = 10_000;
+      const VAR = 2_000;
+      const weights: number[] = selected.map(() => {
+        const delta = Math.floor(Math.random() * (2 * VAR + 1)) - VAR;
+        return Math.max(1, BP + delta);
+      });
+      const sumW = weights.reduce((a, b) => a + b, 0);
+      const sumWBig = BigInt(sumW);
+
+      const desired: Record<string, bigint> = {};
+      let allocated = 0n;
+      for (let i = 0; i < selected.length; i++) {
+        if (i === selected.length - 1) {
+          desired[selected[i]] = sourceBalance - allocated;
+        } else {
+          const amt = (sourceBalance * BigInt(weights[i])) / sumWBig;
+          desired[selected[i]] = amt;
+          allocated += amt;
+        }
+      }
+
+      const plan: { to: string; amount: bigint }[] = [];
+      for (const addr of selected) {
+        if (addr === sourceAddr) continue;
+        const targetAmt = desired[addr];
+        if (targetAmt > 0n) {
+          plan.push({ to: addr, amount: targetAmt });
+        }
+      }
+
+      if (plan.length === 0) {
+        const txId2 = `split-error-${Date.now()}`;
+        showLoadingPopup?.(txId2, {
+          title: 'Split amounts are zero',
+          subtitle: 'Try selecting fewer wallets',
+        });
+        setTimeout(
+          () =>
+            updatePopup?.(txId2, {
+              title: 'Split amounts are zero',
+              subtitle: 'Try selecting fewer wallets',
+              variant: 'error',
+              isLoading: false,
+            }),
+          100,
+        );
+        setIsSplitting(false);
+        return;
+      }
+
+      const sourceWalletData = subWallets.find((w) => w.address === sourceAddr);
+      if (!sourceWalletData) throw new Error('Source wallet not found');
+
+      const transferPromises = [];
+      for (const { to, amount } of plan) {
+        try {
+          const uo = {
+            target: tokenAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: CrystalLaunchpadToken,
+              functionName: 'transfer',
+              args: [to as `0x${string}`, amount],
+            }),
+            value: 0n,
+          };
+
+          const wallet = nonces.current.get(sourceAddr);
+          const params = [
+            { uo },
+            0n,
+            0n,
+            false,
+            sourceWalletData.privateKey,
+            wallet?.nonce,
+          ];
+          if (wallet) wallet.nonce += 1;
+          wallet?.pendingtxs.push(params);
+          const transferPromise = sendUserOperationAsync(...params)
+            .then(() => {
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p !== params,
+                );
+              return true;
+            })
+            .catch(() => {
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p !== params,
+                );
+              return false;
+            });
+          transferPromises.push(transferPromise);
+        } catch (err) {
+          console.error(`Split transfer failed to ${to}:`, err);
+        }
+      }
+
+      const results = await Promise.allSettled(transferPromises);
+      const successfulTransfers = results.filter(
+        (result) => result.status === 'fulfilled' && result.value === true,
+      ).length;
+
+      terminalRefetch();
+      updatePopup?.(txId, {
+        title: 'Split Complete',
+        subtitle: `Sent ${token.symbol} to ${successfulTransfers}/${plan.length} wallets`,
+        variant: 'success',
+        isLoading: false,
+      });
+
+      setSelectedWallets(new Set());
+    } catch (error: any) {
+      updatePopup?.(txId, {
+        title: 'Split Failed',
+        subtitle: error?.message || 'Failed to split tokens',
+        variant: 'error',
+        isLoading: false,
+      });
+    } finally {
+      setIsSplitting(false);
+    }
+  };
   const walletPopup = useWalletPopup();
   useEffect(() => {
     setGlobalPopupHandlers(showLoadingPopup, updatePopup);
   }, []);
+  const getTotalSelectedWalletsBalance = useCallback(() => {
+    let total = 0;
+    selectedWallets.forEach((address) => {
+      total += getWalletBalance(address);
+    });
+    return total;
+  }, [selectedWallets]);
   const [selectedStatsTimeframe, setSelectedStatsTimeframe] = useState('24h');
   const [hoveredStatsContainer, setHoveredStatsContainer] = useState(false);
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
@@ -464,24 +914,24 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const initialMousePosRef = useRef(0);
 
   useEffect(() => {
-const handleMouseMove = (e: MouseEvent) => {
-  if (!_isVertDragging) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!_isVertDragging) return;
 
-  e.preventDefault();
-  e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
 
-  const mouseDelta = e.clientY - initialMousePosRef.current;
-  const newHeight = Math.max(
-    150, // minimum height
-    Math.min(
-      window.innerHeight - 400, // maximum height (leaves room for chart/orderbook) - CHANGED from 200 to 400
-      initialHeightRef.current - mouseDelta
-    )
-  );
+      const mouseDelta = e.clientY - initialMousePosRef.current;
+      const newHeight = Math.max(
+        150, // minimum height
+        Math.min(
+          window.innerHeight - 400, // maximum height (leaves room for chart/orderbook) - CHANGED from 200 to 400
+          initialHeightRef.current - mouseDelta
+        )
+      );
 
-  setOrderCenterHeight(newHeight);
-  localStorage.setItem('orderCenterHeight', newHeight.toString());
-};
+      setOrderCenterHeight(newHeight);
+      localStorage.setItem('orderCenterHeight', newHeight.toString());
+    };
     const handleMouseUp = (e: MouseEvent) => {
       if (!_isVertDragging) return;
 
@@ -523,7 +973,7 @@ const handleMouseMove = (e: MouseEvent) => {
       }
     };
   }, [_isVertDragging]);
-``
+  ``
   const [isSigning, setIsSigning] = useState(false);
   const [activeTradeType, setActiveTradeType] = useState<'buy' | 'sell'>('buy');
   const [activeOrderType, _setActiveOrderType] = useState<'market' | 'Limit'>(
@@ -593,6 +1043,12 @@ const handleMouseMove = (e: MouseEvent) => {
     [address: string]: string;
   }>({});
   const [showUSD, setShowUSD] = useState(false);
+  const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
+  const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
+  const walletDropdownRef = useRef<HTMLDivElement>(null);
+  const walletDropdownPanelRef = useRef<HTMLDivElement>(null);
+  const [isConsolidating, setIsConsolidating] = useState(false);
+  const [isSplitting, setIsSplitting] = useState(false);
 
   const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
   const trackedAddressesRef = useRef<string[]>([]);
@@ -604,7 +1060,52 @@ const handleMouseMove = (e: MouseEvent) => {
   const userAddr = address ?? account?.address ?? '';
   const [dragStart, setDragStart] = useState<{ y: number; height: number } | null>(null);
   const dragStartRef = useRef<{ y: number; height: number } | null>(null);
+  // Load wallet names from localStorage
+  useEffect(() => {
+    const storedWalletNames = localStorage.getItem('crystal_wallet_names');
+    if (storedWalletNames) {
+      try {
+        setWalletNames(JSON.parse(storedWalletNames));
+      } catch (error) {
+        console.error('Error loading wallet names:', error);
+      }
+    }
 
+    const handleWalletNamesUpdate = (event: CustomEvent) => {
+      setWalletNames(event.detail);
+    };
+
+    window.addEventListener(
+      'walletNamesUpdated',
+      handleWalletNamesUpdate as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener(
+        'walletNamesUpdated',
+        handleWalletNamesUpdate as EventListener,
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        walletDropdownRef.current &&
+        !walletDropdownRef.current.contains(event.target as Node) &&
+        walletDropdownPanelRef.current &&
+        !walletDropdownPanelRef.current.contains(event.target as Node)
+      ) {
+        setIsWalletDropdownOpen(false);
+      }
+    };
+
+    if (isWalletDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () =>
+        document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isWalletDropdownOpen]);
   useEffect(() => {
     dragStartRef.current = dragStart;
   }, [dragStart]);
@@ -1182,7 +1683,7 @@ const handleMouseMove = (e: MouseEvent) => {
       });
     }
   }, [sellSlippageValue, sellPriorityFee, selectedSellPreset]);
-  
+
   useEffect(() => {
     const fn = (lastPrice: number, volNative: number) => {
       const sel = selectedInterval;
@@ -2061,7 +2562,339 @@ const handleMouseMove = (e: MouseEvent) => {
             Sell
           </button>
         </div>
+        {subWallets.length > 0 && (
+          <div className="meme-wallet-dropdown-container" ref={walletDropdownRef}>
+            <button
+              className={`meme-wallet-dropdown-trigger ${isWalletDropdownOpen ? 'active' : ''}`}
+              onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
+            >
+              <img src={walleticon} className="meme-wallet-icon" alt="Wallets" />
+              <span className="meme-wallet-count">{selectedWallets.size}</span>
+
+              <div className="meme-wallet-total-balance">
+                <img src={monadicon} className="meme-wallet-mon-small-icon" alt="MON" />
+                <span>{formatNumberWithCommas(getTotalSelectedWalletsBalance(), 2)}</span>
+              </div>
+
+
+            </button>
+          </div>
+        )}
+        {isWalletDropdownOpen && account.connected && (
+          <div className="meme-wallet-dropdown-panel" ref={walletDropdownPanelRef}>
+            <div className="meme-wallet-dropdown-header">
+              <div className="meme-wallet-dropdown-actions">
+                <button
+                  className="meme-wallet-action-btn"
+                  onClick={
+                    selectedWallets.size === subWallets.length
+                      ? unselectAllWallets
+                      : selectAllWallets
+                  }
+                >
+                  {selectedWallets.size === subWallets.length
+                    ? 'Unselect All'
+                    : 'Select All'}
+                </button>
+                <button
+                  className="meme-wallet-action-btn"
+                  onClick={selectAllWithBalance}
+                >
+                  Select All with Balance
+                </button>
+              </div>
+              <button
+                className="meme-wallet-dropdown-close"
+                onClick={() => setIsWalletDropdownOpen(false)}
+              >
+                <img
+                  src={closebutton}
+                  className="meme-wallet-dropdown-close-icon"
+                  alt="Close"
+                />
+              </button>
+            </div>
+
+            <div className="meme-wallet-dropdown-list">
+              {(() => {
+                const walletsWithToken = subWallets.filter(
+                  (w) => getWalletTokenBalance(w.address) > 0,
+                );
+                const walletsWithoutToken = subWallets.filter(
+                  (w) => getWalletTokenBalance(w.address) === 0,
+                );
+                const hasTokenHolders = walletsWithToken.length > 0;
+
+                return (
+                  <>
+                    {/* Token holders section */}
+                    {walletsWithToken.map((wallet, index) => {
+                      const balance = getWalletBalance(wallet.address);
+                      const isActive = isWalletActive(wallet.privateKey);
+                      const isSelected = selectedWallets.has(wallet.address);
+                      const tokenBalance = getWalletTokenBalance(wallet.address);
+
+                      return (
+                        <div
+                          key={wallet.address}
+                          className={`meme-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                          onClick={() => toggleWalletSelection(wallet.address)}
+                        >
+                          <div className="meme-wallet-checkbox-container">
+                            <input
+                              type="checkbox"
+                              className="meme-wallet-checkbox"
+                              checked={isSelected}
+                              readOnly
+                            />
+                          </div>
+
+                          <div className="meme-wallet-info">
+                            <div className="meme-wallet-name">
+                              {getWalletName(wallet.address, index)}
+                            </div>
+                            <div
+                              className="meme-wallet-address"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyToClipboard(wallet.address, 'Wallet address copied');
+                              }}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              {wallet.address.slice(0, 4)}...
+                              {wallet.address.slice(-4)}
+                              <svg
+                                className="meme-wallet-address-copy-icon"
+                                width="11"
+                                height="11"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                              >
+                                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                              </svg>
+                            </div>
+                          </div>
+
+                          <div className="meme-wallet-balance">
+                            <Tooltip content="MON Balance">
+                              <div
+                                className={`meme-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}
+                              >
+                                <img
+                                  src={monadicon}
+                                  className="meme-wallet-mon-icon"
+                                  alt="MON"
+                                />
+                                {formatNumberWithCommas(balance, 2)}
+                              </div>
+                            </Tooltip>
+                          </div>
+
+                          <div className="meme-wallet-tokens">
+                            {tokenBalance > 0 ? (
+                              <Tooltip content="Tokens">
+                                <div
+                                  className={`meme-wallet-token-amount ${isBlurred ? 'blurred' : ''}`}
+                                >
+                                  {token.image && (
+                                    <img
+                                      src={token.image}
+                                      className="meme-wallet-token-icon"
+                                      alt={token.symbol}
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                      }}
+                                    />
+                                  )}
+                                  <span className="meme-wallet-token-balance">
+                                    {formatNumberWithCommas(tokenBalance, 2)}
+                                  </span>
+                                </div>
+                              </Tooltip>
+                            ) : null}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Section divider if there are both types */}
+                    {hasTokenHolders && walletsWithoutToken.length > 0 && (
+                      <div className="meme-wallets-section-label">
+                        <button
+                          className="meme-wallet-action-btn"
+                          onClick={() => {
+                            const walletsWithoutTokenAddrs = walletsWithoutToken.map(
+                              (w) => w.address,
+                            );
+                            const allWithoutSelected =
+                              walletsWithoutTokenAddrs.length > 0 &&
+                              walletsWithoutTokenAddrs.every((a) =>
+                                selectedWallets.has(a),
+                              );
+
+                            if (allWithoutSelected) {
+                              setSelectedWallets((prev) => {
+                                const next = new Set(prev);
+                                walletsWithoutTokenAddrs.forEach((a) => next.delete(a));
+                                return next;
+                              });
+                            } else {
+                              setSelectedWallets((prev) => {
+                                const next = new Set(prev);
+                                walletsWithoutTokenAddrs.forEach((a) => next.add(a));
+                                return next;
+                              });
+                            }
+                          }}
+                        >
+                          {walletsWithoutToken.every((w) =>
+                            selectedWallets.has(w.address),
+                          )
+                            ? 'Unselect All'
+                            : 'Select All'}
+                        </button>
+
+                        <button
+                          className="meme-wallet-action-btn"
+                          onClick={selectAllWithBalanceWithoutToken}
+                        >
+                          Select All With Balance
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Wallets without token section */}
+                    {walletsWithoutToken.map((wallet, index) => {
+                      const balance = getWalletBalance(wallet.address);
+                      const isActive = isWalletActive(wallet.privateKey);
+                      const isSelected = selectedWallets.has(wallet.address);
+                      const tokenCount = getWalletTokenCount(wallet.address);
+
+                      return (
+                        <div
+                          key={wallet.address}
+                          className={`meme-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                          onClick={() => toggleWalletSelection(wallet.address)}
+                        >
+                          <div className="meme-wallet-checkbox-container">
+                            <input
+                              type="checkbox"
+                              className="meme-wallet-checkbox"
+                              checked={isSelected}
+                              readOnly
+                            />
+                          </div>
+
+                          <div className="meme-wallet-info">
+                            <div className="meme-wallet-name">
+                              {getWalletName(
+                                wallet.address,
+                                index + walletsWithToken.length,
+                              )}
+                            </div>
+                            <div
+                              className="meme-wallet-address"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyToClipboard(wallet.address, 'Wallet address copied');
+                              }}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              {wallet.address.slice(0, 4)}...
+                              {wallet.address.slice(-4)}
+                              <svg
+                                className="meme-wallet-address-copy-icon"
+                                width="11"
+                                height="11"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                              >
+                                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                              </svg>
+                            </div>
+                          </div>
+
+                          <div className="meme-wallet-balance">
+                            <Tooltip content="MON Balance">
+                              <div
+                                className={`meme-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}
+                              >
+                                <img
+                                  src={monadicon}
+                                  className="meme-wallet-mon-icon"
+                                  alt="MON"
+                                />
+                                {formatNumberWithCommas(balance, 2)}
+                              </div>
+                            </Tooltip>
+                          </div>
+
+                          <div className="meme-wallet-tokens">
+                            <Tooltip content="Tokens">
+                              <div className="meme-wallet-token-count">
+                                <div className="meme-wallet-token-structure-icons">
+                                  <div className="token1"></div>
+                                  <div className="token2"></div>
+                                  <div className="token3"></div>
+                                </div>
+                                <span className="meme-wallet-total-tokens">
+                                  {tokenCount}
+                                </span>
+                              </div>
+                            </Tooltip>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Consolidate/Split buttons */}
+                    {hasTokenHolders && (
+                      <div className="meme-wallet-actions-footer">
+                        <button
+                          className="meme-wallet-merge-btn consolidate"
+                          onClick={handleConsolidateTokens}
+                          disabled={
+                            selectedWallets.size !== 1 ||
+                            isConsolidating
+                          }
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                          >
+                            <path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z" />
+                          </svg>
+                          Consolidate
+                        </button>
+                        <button
+                          className="meme-wallet-merge-btn split"
+                          onClick={handleSplitTokens}
+                          disabled={selectedWallets.size < 2 || isSplitting}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                          >
+                            <path d="M15 3l-4 4h3v7h2V7h3l-4-4zM9 10H6l4 4 4-4H11V3H9v7z" />
+                          </svg>
+                          Split Tokens
+                        </button>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
+
         <div className="meme-trade-panel-content">
+
           <div className="meme-amount-header">
             <div className="meme-amount-header-left">
               <span className="meme-amount-label">Amount</span>
