@@ -847,13 +847,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   useEffect(() => {
     setGlobalPopupHandlers(showLoadingPopup, updatePopup);
   }, []);
-  const getTotalSelectedWalletsBalance = useCallback(() => {
-    let total = 0;
-    selectedWallets.forEach((address) => {
-      total += getWalletBalance(address);
-    });
-    return total;
-  }, [selectedWallets]);
+
   const [selectedStatsTimeframe, setSelectedStatsTimeframe] = useState('24h');
   const [hoveredStatsContainer, setHoveredStatsContainer] = useState(false);
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
@@ -1615,7 +1609,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       handleTrade();
     }
   };
-
+  const getTotalSelectedWalletsBalance = useCallback(() => {
+    let total = 0;
+    selectedWallets.forEach((address) => {
+      total += getWalletBalance(address);
+    });
+    return total;
+  }, [selectedWallets, walletTokenBalances, tokenList, activechain]);
   const currentPrice = token.price || 0;
 
   const getCurrentMONBalance = useCallback(() => {
@@ -2077,113 +2077,385 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       setIsSigning(true);
 
       if (activeTradeType === 'buy') {
-        txId = walletPopup.showBuyTransaction(
-          tradeAmount,
-          inputCurrency,
-          token.symbol,
-          token.image,
-        );
+        if (selectedWallets.size > 0) {
+          const walletsArray = Array.from(selectedWallets);
+          const amountPerWallet = parseFloat(tradeAmount) / walletsArray.length;
+          const totalAmount = parseFloat(tradeAmount);
+          const estimatedTokens = totalAmount / currentPrice;
+          txId = `multibuy-${Date.now()}`;
+          showLoadingPopup?.(txId, {
+            title: `Buying ${token.symbol}`,
+            subtitle: `${walletsArray.length} wallet${walletsArray.length > 1 ? 's' : ''} • ${formatNumberWithCommas(totalAmount, 2)} MON`,
+            amount: totalAmount.toString(),
+            amountUnit: 'MON',
+            tokenImage: token.image,
+          });
 
-        const valNum = parseFloat(tradeAmount);
-        const value = BigInt(Math.round(valNum * 1e18));
+          const buyPromises = [];
+          for (const walletAddr of walletsArray) {
+            const wallet = subWallets.find((w) => w.address === walletAddr);
+            if (!wallet) continue;
 
-        const uo = {
-          target: routerAddress,
-          data: encodeFunctionData({
-            abi: CrystalRouterAbi,
-            functionName: 'buy',
-            args: [true, token.tokenAddress as `0x${string}`, value, 0n],
-          }),
-          value,
-        };
+            const value = BigInt(Math.round(amountPerWallet * 1e18));
 
-        walletPopup.updateTransactionConfirming(
-          txId,
-          tradeAmount,
-          inputCurrency,
-          token.symbol,
-        );
-        await sendUserOperationAsync({ uo });
-        walletPopup.updateTransactionSuccess(txId, {
-          tokenAmount: Number(quoteValue ?? 0),
-          spentAmount: Number(tradeAmount),
-          tokenSymbol: token.symbol,
-          currencyUnit: inputCurrency,
-        });
+            const uo = {
+              target: routerAddress,
+              data: encodeFunctionData({
+                abi: CrystalRouterAbi,
+                functionName: 'buy',
+                args: [true, token.tokenAddress as `0x${string}`, value, 0n],
+              }),
+              value,
+            };
 
-        terminalRefetch();
-      } else {
-        txId = walletPopup.showSellTransaction(
-          tradeAmount,
-          inputCurrency === 'TOKEN' ? token.symbol : 'MON',
-          token.symbol,
-          token.image,
-        );
+            const walletNonce = nonces.current.get(walletAddr);
+            const params = [
+              { uo },
+              0n,
+              0n,
+              false,
+              wallet.privateKey,
+              walletNonce?.nonce,
+            ];
+            if (walletNonce) walletNonce.nonce += 1;
+            walletNonce?.pendingtxs.push(params);
 
-        let amountTokenWei: bigint;
-        let monAmountWei: bigint;
-        let isExactInput: boolean;
+            const buyPromise = sendUserOperationAsync(...params)
+              .then(() => {
+                if (walletNonce)
+                  walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
+                    (p: any) => p !== params,
+                  );
+                return true;
+              })
+              .catch(() => {
+                if (walletNonce)
+                  walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
+                    (p: any) => p !== params,
+                  );
+                return false;
+              });
+            buyPromises.push(buyPromise);
+          }
 
-        const decimals = tokendict?.[token.id]?.decimals || 18;
+          const results = await Promise.allSettled(buyPromises);
+          const successfulBuys = results.filter(
+            (result) => result.status === 'fulfilled' && result.value === true,
+          ).length;
 
-        if (inputCurrency === 'TOKEN') {
-          amountTokenWei = BigInt(
-            Math.round(parseFloat(tradeAmount) * 10 ** Number(decimals)),
-          );
-          isExactInput = true;
-          monAmountWei = 0n;
+          updatePopup?.(txId, {
+            title: 'Buy Complete',
+            subtitle: `${successfulBuys}/${walletsArray.length} wallet${walletsArray.length > 1 ? 's' : ''} • Got ~${formatNumberWithCommas(estimatedTokens, 2)} ${token.symbol}`,
+            variant: 'success',
+            isLoading: false,
+          });
+
+          terminalRefetch();
         } else {
-          monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
-          // const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
-          const tokensToSell = parseFloat(tradeAmount) / currentPrice;
-          amountTokenWei = BigInt(
-            Math.round(tokensToSell * 10 ** Number(decimals)),
+          // Single wallet buy logic
+          txId = walletPopup.showBuyTransaction(
+            tradeAmount,
+            inputCurrency,
+            token.symbol,
+            token.image,
           );
-          isExactInput = false;
+
+          const valNum = parseFloat(tradeAmount);
+          const value = BigInt(Math.round(valNum * 1e18));
+
+          const uo = {
+            target: routerAddress,
+            data: encodeFunctionData({
+              abi: CrystalRouterAbi,
+              functionName: 'buy',
+              args: [true, token.tokenAddress as `0x${string}`, value, 0n],
+            }),
+            value,
+          };
+
+          walletPopup.updateTransactionConfirming(
+            txId,
+            tradeAmount,
+            inputCurrency,
+            token.symbol,
+          );
+          await sendUserOperationAsync({ uo });
+          walletPopup.updateTransactionSuccess(txId, {
+            tokenAmount: Number(quoteValue ?? 0),
+            spentAmount: Number(tradeAmount),
+            tokenSymbol: token.symbol,
+            currencyUnit: inputCurrency,
+          });
+
+          terminalRefetch();
         }
+      } else {
+        // Multi-wallet sell logic
+        if (selectedWallets.size > 0) {
+          const decimals = tokendict?.[token.id]?.decimals || 18;
+          const walletsArray = Array.from(selectedWallets);
 
-        const currentBalance =
-          walletTokenBalances?.[userAddr]?.[token.id] || 0n;
-        if (amountTokenWei > currentBalance) {
-          amountTokenWei = currentBalance > 1n ? currentBalance - 1n : 0n;
+          // Filter wallets that have tokens
+          const walletsWithTokens = walletsArray.filter((addr) => {
+            const balance = walletTokenBalances?.[addr]?.[token.id];
+            return balance && balance > 0n;
+          });
+
+          if (walletsWithTokens.length === 0) {
+            throw new Error('No selected wallets have tokens to sell');
+          }
+
+          txId = `multisell-${Date.now()}`;
+
+          let totalTokensToSell = 0;
+          let estimatedMON = 0;
+
+          if (inputCurrency === 'TOKEN') {
+            totalTokensToSell = parseFloat(tradeAmount);
+            estimatedMON = totalTokensToSell * currentPrice;
+          } else {
+            estimatedMON = parseFloat(tradeAmount);
+            totalTokensToSell = estimatedMON / currentPrice;
+          }
+
+          showLoadingPopup?.(txId, {
+            title: `Selling ${token.symbol}`,
+            subtitle: `${walletsWithTokens.length} wallet${walletsWithTokens.length > 1 ? 's' : ''} • ${formatNumberWithCommas(totalTokensToSell, 2)} ${token.symbol}`,
+            amount: totalTokensToSell.toString(),
+            amountUnit: token.symbol,
+            tokenImage: token.image,
+          });
+          const sellPromises = [];
+
+          if (inputCurrency === 'TOKEN') {
+            // Divide token amount across wallets
+            const totalTokenAmount = parseFloat(tradeAmount);
+            const totalTokenWei = BigInt(
+              Math.round(totalTokenAmount * 10 ** Number(decimals)),
+            );
+
+            // Calculate total tokens available
+            const totalAvailable = walletsWithTokens.reduce((sum, addr) => {
+              const balance = walletTokenBalances?.[addr]?.[token.id] || 0n;
+              return sum + balance;
+            }, 0n);
+
+            for (const walletAddr of walletsWithTokens) {
+              const wallet = subWallets.find((w) => w.address === walletAddr);
+              if (!wallet) continue;
+
+              const walletBalance = walletTokenBalances?.[walletAddr]?.[token.id] || 0n;
+
+              // Proportional distribution
+              let amountTokenWei = (totalTokenWei * walletBalance) / totalAvailable;
+
+              // Ensure we don't sell more than balance
+              if (amountTokenWei > walletBalance) {
+                amountTokenWei = walletBalance > 1n ? walletBalance - 1n : 0n;
+              }
+
+              if (amountTokenWei <= 0n) continue;
+
+              const sellUo = {
+                target: routerAddress as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: CrystalRouterAbi,
+                  functionName: 'sell',
+                  args: [
+                    true,
+                    tokenAddress as `0x${string}`,
+                    amountTokenWei,
+                    0n,
+                  ],
+                }),
+                value: 0n,
+              };
+
+              const walletNonce = nonces.current.get(walletAddr);
+              const params = [
+                { uo: sellUo },
+                0n,
+                0n,
+                false,
+                wallet.privateKey,
+                walletNonce?.nonce,
+              ];
+              if (walletNonce) walletNonce.nonce += 1;
+              walletNonce?.pendingtxs.push(params);
+
+              const sellPromise = sendUserOperationAsync(...params)
+                .then(() => {
+                  if (walletNonce)
+                    walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
+                      (p: any) => p !== params,
+                    );
+                  return true;
+                })
+                .catch(() => {
+                  if (walletNonce)
+                    walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
+                      (p: any) => p !== params,
+                    );
+                  return false;
+                });
+              sellPromises.push(sellPromise);
+            }
+          } else {
+            // MON amount mode - sell proportionally
+            const monAmount = parseFloat(tradeAmount);
+            const tokensToSell = monAmount / currentPrice;
+
+            for (const walletAddr of walletsWithTokens) {
+              const wallet = subWallets.find((w) => w.address === walletAddr);
+              if (!wallet) continue;
+
+              const walletBalance = walletTokenBalances?.[walletAddr]?.[token.id] || 0n;
+              const walletTokens = Number(walletBalance) / 10 ** Number(decimals);
+
+              // Each wallet sells proportionally
+              const walletShare = tokensToSell / walletsWithTokens.length;
+
+              let amountTokenWei = BigInt(
+                Math.round(Math.min(walletShare, walletTokens) * 10 ** Number(decimals)),
+              );
+
+              if (amountTokenWei > walletBalance) {
+                amountTokenWei = walletBalance > 1n ? walletBalance - 1n : 0n;
+              }
+
+              if (amountTokenWei <= 0n) continue;
+
+              const sellUo = {
+                target: routerAddress as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: CrystalRouterAbi,
+                  functionName: 'sell',
+                  args: [
+                    true,
+                    tokenAddress as `0x${string}`,
+                    amountTokenWei,
+                    0n,
+                  ],
+                }),
+                value: 0n,
+              };
+
+              const walletNonce = nonces.current.get(walletAddr);
+              const params = [
+                { uo: sellUo },
+                0n,
+                0n,
+                false,
+                wallet.privateKey,
+                walletNonce?.nonce,
+              ];
+              if (walletNonce) walletNonce.nonce += 1;
+              walletNonce?.pendingtxs.push(params);
+
+              const sellPromise = sendUserOperationAsync(...params)
+                .then(() => {
+                  if (walletNonce)
+                    walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
+                      (p: any) => p !== params,
+                    );
+                  return true;
+                })
+                .catch(() => {
+                  if (walletNonce)
+                    walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
+                      (p: any) => p !== params,
+                    );
+                  return false;
+                });
+              sellPromises.push(sellPromise);
+            }
+          }
+
+          const results = await Promise.allSettled(sellPromises);
+          const successfulSells = results.filter(
+            (result) => result.status === 'fulfilled' && result.value === true,
+          ).length;
+
+
+          updatePopup?.(txId, {
+            title: 'Sell Complete',
+            subtitle: `${successfulSells}/${walletsWithTokens.length} wallet${walletsWithTokens.length > 1 ? 's' : ''} • Got ~${formatNumberWithCommas(estimatedMON, 2)} MON`,
+            variant: 'success',
+            isLoading: false,
+          });
+          terminalRefetch();
+        } else {
+          txId = walletPopup.showSellTransaction(
+            tradeAmount,
+            inputCurrency === 'TOKEN' ? token.symbol : 'MON',
+            token.symbol,
+            token.image,
+          );
+
+          let amountTokenWei: bigint;
+          let monAmountWei: bigint;
+          let isExactInput: boolean;
+
+          const decimals = tokendict?.[token.id]?.decimals || 18;
+
+          if (inputCurrency === 'TOKEN') {
+            amountTokenWei = BigInt(
+              Math.round(parseFloat(tradeAmount) * 10 ** Number(decimals)),
+            );
+            isExactInput = true;
+            monAmountWei = 0n;
+          } else {
+            monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
+            const tokensToSell = parseFloat(tradeAmount) / currentPrice;
+            amountTokenWei = BigInt(
+              Math.round(tokensToSell * 10 ** Number(decimals)),
+            );
+            isExactInput = false;
+          }
+
+          const currentBalance =
+            walletTokenBalances?.[userAddr]?.[token.id] || 0n;
+          if (amountTokenWei > currentBalance) {
+            amountTokenWei = currentBalance > 1n ? currentBalance - 1n : 0n;
+          }
+
+          if (amountTokenWei <= 0n) {
+            throw new Error(walletPopup.texts.INSUFFICIENT_TOKEN_BALANCE);
+          }
+
+          walletPopup.updateTransactionConfirming(
+            txId,
+            tradeAmount,
+            inputCurrency === 'TOKEN' ? token.symbol : 'MON',
+            token.symbol,
+          );
+
+          const sellUo = {
+            target: routerAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: CrystalRouterAbi,
+              functionName: 'sell',
+              args: [
+                isExactInput,
+                tokenAddress as `0x${string}`,
+                amountTokenWei,
+                monAmountWei,
+              ],
+            }),
+            value: 0n,
+          };
+
+          await sendUserOperationAsync({ uo: sellUo });
+
+          walletPopup.updateTransactionSuccess(txId, {
+            tokenAmount: Number(tradeAmount),
+            receivedAmount: Number(quoteValue ?? 0),
+            tokenSymbol: token.symbol,
+            currencyUnit: 'MON',
+          });
+
+          terminalRefetch();
         }
-
-        if (amountTokenWei <= 0n) {
-          throw new Error(walletPopup.texts.INSUFFICIENT_TOKEN_BALANCE);
-        }
-
-        walletPopup.updateTransactionConfirming(
-          txId,
-          tradeAmount,
-          inputCurrency === 'TOKEN' ? token.symbol : 'MON',
-          token.symbol,
-        );
-
-        const sellUo = {
-          target: routerAddress as `0x${string}`,
-          data: encodeFunctionData({
-            abi: CrystalRouterAbi,
-            functionName: 'sell',
-            args: [
-              isExactInput,
-              tokenAddress as `0x${string}`,
-              amountTokenWei,
-              monAmountWei,
-            ],
-          }),
-          value: 0n,
-        };
-
-        await sendUserOperationAsync({ uo: sellUo });
-
-        walletPopup.updateTransactionSuccess(txId, {
-          tokenAmount: Number(tradeAmount),
-          receivedAmount: Number(quoteValue ?? 0),
-          tokenSymbol: token.symbol,
-          currencyUnit: 'MON',
-        });
-
-        terminalRefetch();
       }
 
       setTradeAmount('');
@@ -2562,6 +2834,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             Sell
           </button>
         </div>
+        <div className="meme-trade-inputs-row">
+          <div className="meme-order-type-container">
+            <span style={{fontSize: 17}}>Market</span>
+            <Tooltip content="Limit orders coming soon">
+            <span style={{opacity: 0.4, fontSize: 17, cursor: 'not-allowed'}}>Limit</span>
+            </Tooltip>
+          </div>
         {subWallets.length > 0 && (
           <div className="meme-wallet-dropdown-container" ref={walletDropdownRef}>
             <button
@@ -2580,6 +2859,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             </button>
           </div>
         )}
+        </div>
         {isWalletDropdownOpen && account.connected && (
           <div className="meme-wallet-dropdown-panel" ref={walletDropdownPanelRef}>
             <div className="meme-wallet-dropdown-header">

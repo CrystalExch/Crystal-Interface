@@ -2716,8 +2716,6 @@
   justify-content: flex-end;
   position: relative;
   margin-left: auto;
-  margin-top: 10px;
-  margin-right: 10px;
 }
 
 .meme-wallet-dropdown-trigger {
@@ -2736,8 +2734,8 @@
 }
 
 .meme-wallet-dropdown-trigger.active {
-  background: rgba(179, 184, 249, 0.15);
-  border-color: rgba(179, 184, 249, 0.3);
+   background: rgba(179, 184, 249, 0.05);
+
 }
 
 .meme-wallet-icon {
@@ -2889,8 +2887,7 @@
 }
 
 .meme-wallet-checkbox:hover {
-  border-color: rgba(170, 174, 207, 0.6);
-  background: rgba(170, 174, 207, 0.05);
+  border-color: #d8dcff;
 }
 
 .meme-wallet-checkbox:checked {
@@ -2904,7 +2901,7 @@
   top: 2px;
   width: 10.5px;
   height: 10.5px;
-  border-radius: 4px;
+  border-radius: 3px;
   background-color: #d8dcff;
 }
 
@@ -3126,4 +3123,19 @@
 .meme-wallet-merge-btn svg {
   width: 16px;
   height: 16px;
+}
+
+.meme-order-type-container{
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.meme-trade-inputs-row{
+  display: flex;
+  align-items: center;
+  padding-right: 10px;
+  padding-left: 15px;
+  margin-top: 5px;
 }
