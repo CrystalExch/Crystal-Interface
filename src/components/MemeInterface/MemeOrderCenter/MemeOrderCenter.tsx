@@ -734,7 +734,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                               />
                             )}
                             <span
-                              className="meme-wallet-address meme-clickable-token"
+                              className="oc-meme-wallet-address meme-clickable-token"
                               onClick={() =>
                                 (window.location.href = `/meme/${p.tokenId}`)
                               }
@@ -951,7 +951,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                           <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
                           <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
                         </svg>
-                        <span className="meme-wallet-address">
+                        <span className="oc-meme-wallet-address">
                           {row.wallet.slice(0, 8)}…{row.wallet.slice(-4)}
                         </span>
                         <div className="meme-wallet-tags">
@@ -1176,7 +1176,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                             <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
                           </svg>
                           <span
-                            className="meme-wallet-address"
+                            className="oc-meme-wallet-address"
                             title={row.address}
                           >
                             {row.address.slice(0, 8)}…{row.address.slice(-4)}
@@ -1381,11 +1381,11 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                                 />
                               )}
                               <span
-                                className="meme-wallet-address"
+                                className="oc-meme-wallet-address"
                                 title={t.name || t.symbol || t.id}
                               >
                                 {(t.symbol || '').toUpperCase()}
-                                <span className="meme-wallet-address-span">
+                                <span className="oc-meme-wallet-address-span">
                                   {timeAgo(t.timestamp)}
                                 </span>
                               </span>

@@ -262,7 +262,7 @@
   min-width: 20px;
 }
 
-.meme-wallet-address,
+.oc-meme-wallet-address,
 .meme-token-name {
   align-items: center;
   color: rgb(221, 221, 224);
@@ -272,7 +272,7 @@
   white-space: nowrap;
 }
 
-.meme-wallet-address-span {
+.oc-meme-wallet-address-span {
   align-items: center;
   color: rgba(221, 221, 224, 0.533);
   display: flex;
