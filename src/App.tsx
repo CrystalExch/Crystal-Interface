@@ -421,11 +421,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     waitForTxn: false,
   });
 
-  //PNL
-  const [perpsLeverage, setPerpsLeverage] = useState<string>(() => {
-    const saved = localStorage.getItem('crystal_perps_leverage');
-    return saved !== null ? saved : '10.0';
-  });
   const { signTypedDataAsync } = useSignTypedData({ client })
   const { signMessageAsync } = useSignMessage({ client })
   const user = useUser();
@@ -437,6 +432,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const location = useLocation();
   const navigate = useNavigate();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const TOTAL_SUPPLY = 1e9;
   const HTTP_URL = settings.chainConfig[activechain].httpurl;
   const WS_URL = settings.chainConfig[activechain].wssurl;
   const eth = settings.chainConfig[activechain].eth as `0x${string}`;
@@ -646,6 +642,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const saved = localStorage.getItem('crystal_active_wallet_private_key');
     return saved ? saved : '';
   });
+  
+  const validOneCT = !!oneCTSigner
+  const oneCTNonceRef = useRef<number>(0);
+  const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
+    address: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+    signTransaction: async () => ''
+  };
+  const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : scaAddress as `0x${string}`
+  const connected = address != undefined
+  const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>(
+    loadWalletsFromStorage()
+  );
   const [selectedWallets, setSelectedWallets] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem('crystal_selected_wallets');
@@ -659,30 +667,25 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       console.error('Error loading selected wallets:', error);
     }
 
-    return new Set<string>();
+    return (oneCTSigner ? new Set(
+      subWallets
+        .filter(w => w.privateKey == oneCTSigner)
+        .map(w => w.address)
+    ) : new Set([subWallets?.[0]?.address]))
   });
 
   useEffect(() => {
     try {
-      localStorage.setItem(
-        'crystal_selected_wallets',
-        JSON.stringify(Array.from(selectedWallets))
-      );
+      if (selectedWallets.size > 0) {
+        localStorage.setItem(
+          'crystal_selected_wallets',
+          JSON.stringify(Array.from(selectedWallets))
+        );
+      }
     } catch (error) {
       console.error('Error saving selected wallets:', error);
     }
   }, [selectedWallets]);
-  const validOneCT = !!oneCTSigner
-  const oneCTNonceRef = useRef<number>(0);
-  const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
-    address: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-    signTransaction: async () => ''
-  };
-  const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : scaAddress as `0x${string}`
-  const connected = address != undefined
-  const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>(
-    loadWalletsFromStorage()
-  );
 
   const getWalletIcon = () => {
     const connectorName = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.name || 'Unknown';
@@ -714,38 +717,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   const [withdrawPercentage, setWithdrawPercentage] = useState('');
   const [currentWalletIcon, setCurrentWalletIcon] = useState(walleticon);
-  const TOTAL_SUPPLY = 1e9;
-
-  const addDevTokenFromEvent = useCallback(async (log: any, currentTokenDev?: string) => {
-    try {
-      const decoded: any = decodeEventLog({ abi: CrystalRouterAbi, data: log.data, topics: log.topics });
-      const tokenId = String(decoded.args?.token || '').toLowerCase();
-      const creator = String(decoded.args?.creator || '').toLowerCase();
-
-      if (!currentTokenDev || creator !== String(currentTokenDev).toLowerCase()) return;
-      if (memeDevTokenIdsRef.current.has(tokenId)) return;
-
-      let imageUrl = decoded.args?.metadataCID || '';
-
-      const symbol = String(decoded.args?.symbol || '').toUpperCase();
-      const name = String(decoded.args?.name || symbol || tokenId.slice(0, 6));
-      const price = 0;
-
-      const newDev = {
-        id: tokenId, symbol, name, imageUrl,
-        price, marketCap: price * TOTAL_SUPPLY, timestamp: Math.floor(Date.now() / 1000), migrated: false,
-      };
-
-      setMemeDevTokens(prev => {
-        if (prev.some(t => String(t.id).toLowerCase() === tokenId)) return prev;
-        const updated = [newDev, ...prev];
-        memeDevTokenIdsRef.current = new Set(updated.map(t => String(t.id || '').toLowerCase()));
-        return updated;
-      });
-    } catch (e) {
-      console.error('failed to decode MARKET_CREATED_EVENT', e);
-    }
-  }, []);
 
   useEffect(() => {
     if (connected) {
@@ -908,6 +879,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   })
   const [perpsDepositAmount, setPerpsDepositAmount] = useState('');
   const [perpsWithdrawAmount, setPerpsWithdrawAmount] = useState('');
+  const [perpsLeverage, setPerpsLeverage] = useState<string>(() => {
+    const saved = localStorage.getItem('crystal_perps_leverage');
+    return saved !== null ? saved : '10.0';
+  });
   // state vars
   const [_trackedWallets, setTrackedWallets] = useState<any[]>([]);
   const [showSendDropdown, setShowSendDropdown] = useState(false);
@@ -4401,7 +4376,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 const mcfg = markets[addresstoMarket[marketAddr]];
                 if (!mcfg || !mcfg.baseAddress) return tempset;
                 const tokenAddrFromMarket = (mcfg.baseAddress || '').toLowerCase();
-                if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
       
                 const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
                 const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
@@ -4418,7 +4392,22 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 const price = priceFactor ? (Number(endPrice) / priceFactor) : 0;
       
                 const tradePrice = price;
-      
+
+                dispatch({
+                  type: 'UPDATE_MARKET',
+                  id: tokenAddrFromMarket,
+                  updates: {
+                    price: price,
+                    marketCap: price * TOTAL_SUPPLY,
+                    buyTransactions: isBuy ? 1 : 0,
+                    sellTransactions: isBuy ? 0 : 1,
+                    volumeDelta:
+                      isBuy == true ? Number(amountIn) / 1e18 : Number(amountOut) / 1e18,
+                  },
+                });
+
+                if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
+
                 setTokenData(p => ({
                   ...p,
                   price,
@@ -4998,7 +4987,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         handleConnectionError('creation');
       }
     },
-    [subscribe, addMarket, updateMarket, scheduleReconnect],
+    [subscribe, scheduleReconnect],
   );
 
   useEffect(() => {
@@ -5261,6 +5250,37 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     );
     return row ? toPct(Math.max(0, row.balance)) : 0;
   };
+  
+  const addDevTokenFromEvent = useCallback(async (log: any, currentTokenDev?: string) => {
+    try {
+      const decoded: any = decodeEventLog({ abi: CrystalRouterAbi, data: log.data, topics: log.topics });
+      const tokenId = String(decoded.args?.token || '').toLowerCase();
+      const creator = String(decoded.args?.creator || '').toLowerCase();
+
+      if (!currentTokenDev || creator !== String(currentTokenDev).toLowerCase()) return;
+      if (memeDevTokenIdsRef.current.has(tokenId)) return;
+
+      let imageUrl = decoded.args?.metadataCID || '';
+
+      const symbol = String(decoded.args?.symbol || '').toUpperCase();
+      const name = String(decoded.args?.name || symbol || tokenId.slice(0, 6));
+      const price = 0;
+
+      const newDev = {
+        id: tokenId, symbol, name, imageUrl,
+        price, marketCap: price * TOTAL_SUPPLY, timestamp: Math.floor(Date.now() / 1000), migrated: false,
+      };
+
+      setMemeDevTokens(prev => {
+        if (prev.some(t => String(t.id).toLowerCase() === tokenId)) return prev;
+        const updated = [newDev, ...prev];
+        memeDevTokenIdsRef.current = new Set(updated.map(t => String(t.id || '').toLowerCase()));
+        return updated;
+      });
+    } catch (e) {
+      console.error('failed to decode MARKET_CREATED_EVENT', e);
+    }
+  }, []);
 
   const toPct = (balance: number) => (balance / 1e9) * 100;
 
@@ -6438,8 +6458,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     gcTime: 0,
   });
 
-  const subsRef = useRef<Map<number, {params:any, ok:boolean, subId?:string, ts:number}>>(new Map());
-  const subIdsRef = useRef<Set<string>>(new Set());
   const pendingTradesRef = useRef<Array<any>>([]);
   const queuedUpdatesRef = useRef<Array<any>>([]);
 

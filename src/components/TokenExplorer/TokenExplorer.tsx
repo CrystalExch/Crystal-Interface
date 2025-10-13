@@ -3306,7 +3306,6 @@ interface TokenExplorerProps {
   nonces: any;
   selectedWallets: Set<string>;
   setSelectedWallets: React.Dispatch<React.SetStateAction<Set<string>>>;
-
 }
 
 const TokenExplorer: React.FC<TokenExplorerProps> = ({
@@ -3537,6 +3536,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const isWalletActive = (privateKey: string) => {
     return activeWalletPrivateKey === privateKey;
   };
+
   const toggleWalletSelection = useCallback((address: string) => {
     setSelectedWallets((prev) => {
       const next = new Set(prev);
@@ -3553,10 +3553,10 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     setSelectedWallets(new Set(subWallets.map((w) => w.address)));
   }, [subWallets, setSelectedWallets]);
 
-
   const unselectAllWallets = useCallback(() => {
     setSelectedWallets(new Set());
   }, [setSelectedWallets]);
+
   const selectAllWithBalance = useCallback(() => {
     const walletsWithBalance = subWallets.filter(
       (wallet) => getWalletBalance(wallet.address) > 0,
@@ -4290,7 +4290,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           <div className="wallet-dropdown-container" ref={walletDropdownRef}>
             <button
               type="button"
-              className="transparent-button"
+              className="explorer-transparent-button"
               onClick={handleWalletButtonClick}
             >
               <div className="connect-content">
