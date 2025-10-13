@@ -75,10 +75,11 @@ interface MemeChartProps {
   setSelectedInterval: (interval: string) => void;
   realtimeCallbackRef: any;
   monUsdPrice?: number;
-  tradehistory?: any[];
+  tradehistory: any[];
   isMarksVisible?: boolean;
   address: any;
   devAddress: any;
+  trackedAddresses: string[];
 }
 
 const MemeChart: React.FC<MemeChartProps> = ({
@@ -91,7 +92,8 @@ const MemeChart: React.FC<MemeChartProps> = ({
   tradehistory,
   isMarksVisible,
   address,
-  devAddress
+  devAddress,
+  trackedAddresses,
 }) => {
   const [overlayVisible, setLocalOverlayVisible] = useState(true);
   const useAdvancedChart = settings.useAdv !== false;
@@ -115,6 +117,7 @@ const MemeChart: React.FC<MemeChartProps> = ({
           monUsdPrice={monUsdPrice}
           address={address}
           devAddress={devAddress}
+          trackedAddresses={trackedAddresses}
         />
       ) : (
         <>

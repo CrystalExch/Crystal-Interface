@@ -9,12 +9,13 @@ interface MemeAdvancedChartProps {
   selectedInterval: string;
   setSelectedInterval: any;
   setOverlayVisible: (visible: boolean) => void;
-  tradehistory?: any[];
-  isMarksVisible?: boolean;
+  tradehistory: any[];
+  isMarksVisible?: boolean; // kept for UI, but marks inclusion now depends only on trackedAddresses rule below
   realtimeCallbackRef: any;
   monUsdPrice?: number;
   address: any;
   devAddress: any;
+  trackedAddresses: string[]; // driving source of truth for marks filtering
 }
 
 const SUB = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
@@ -67,13 +68,14 @@ function formatMemePrice(price: number): string {
   return `${neg}0.0${toSub(zeros)}${tail2}`;
 }
 
-function formatDisplay(value: number): string {
-  if (Math.abs(value) >= 1000000) {
-    return (value / 1000000).toFixed(2) + 'M';
-  } else if (Math.abs(value) >= 1000) {
-    return (value / 1000).toFixed(2) + 'K';
-  }
-  return value.toFixed(3);
+const RES_SECONDS: Record<string, number> = {
+  '1s': 1, '5s': 5, '15s': 15,
+  '1m': 60, '5m': 300, '15m': 900,
+  '1h': 3600, '4h': 14400, '1d': 86400
+};
+
+function toSec(x: number) {
+  return x >= 10_000_000_000 ? Math.floor(x / 1000) : x;
 }
 
 const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
@@ -82,24 +84,37 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   selectedInterval,
   setSelectedInterval,
   setOverlayVisible,
-  tradehistory = [],
+  tradehistory,
   isMarksVisible = true,
   realtimeCallbackRef,
   monUsdPrice = 0,
   address,
-  devAddress
+  devAddress,
+  trackedAddresses,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
+
+  // runtime data caches
   const dataRef = useRef<any>({});
   const tokenRef = useRef(token);
-  const tradeHistoryRef = useRef(tradehistory);
-  const marksRef = useRef<any>();
-  const isMarksVisibleRef = useRef<boolean>(isMarksVisible);
+
+  // MIRROR LATEST PROPS IN REFS
+  const tradeHistoryRef = useRef<any[]>(tradehistory ?? []);
+  const addressRef = useRef<any>(address);
+  const devAddressRef = useRef<any>(devAddress);
+  const trackedAddressesRef = useRef<string[]>(Array.isArray(trackedAddresses) ? trackedAddresses : []);
+  const selectedIntervalRef = useRef<string>(selectedInterval);
+
+  // VERSION BUMP THAT FORCES TRADINGVIEW TO RE-QUERY MARKS
+  const [marksVersion, setMarksVersion] = useState<number>(0);
+  const marksVersionRef = useRef<number>(0);
+
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
   const subsRef = useRef<Record<string, string>>({});
   const onResetCacheNeededRef = useRef<(() => void) | null>(null);
+
   const [showMarketCap, setShowMarketCap] = useState<boolean>(() => {
     try {
       const raw = localStorage.getItem('meme_chart_showMarketCap');
@@ -108,6 +123,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       return false;
     }
   });
+
   const [showUSD, setShowUSD] = useState<boolean>(() => {
     try {
       const raw = localStorage.getItem('meme_chart_showUSD');
@@ -116,6 +132,11 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       return false;
     }
   });
+
+  // HELPERS TO KEEP SYMBOL STABLE FOR BARS, BUT UNIQUE FOR MARKS
+  const basePair = () => `${token.symbol}/${showUSD ? 'USD' : 'MON'}`;
+  const tvSymbol = () => `${basePair()}|m${marksVersionRef.current}`; // append a version suffix that we strip in resolveSymbol
+
   const toResKey = (sym: string, res: string) => sym + 'MON' + res;
 
   function enforceOpenEqualsPrevClose(bars: any[] = []) {
@@ -136,6 +157,30 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
     return out;
   }
 
+  useEffect(() => { tradeHistoryRef.current = tradehistory ?? []; }, [tradehistory]);
+  useEffect(() => { addressRef.current = address; }, [address]);
+  useEffect(() => { devAddressRef.current = devAddress; }, [devAddress]);
+  useEffect(() => { trackedAddressesRef.current = Array.isArray(trackedAddresses) ? trackedAddresses : []; }, [trackedAddresses]);
+  useEffect(() => { selectedIntervalRef.current = selectedInterval; }, [selectedInterval]);
+  useEffect(() => { marksVersionRef.current = marksVersion; }, [marksVersion]);
+
+  useEffect(() => {
+    setMarksVersion((v) => v + 1);
+  }, [JSON.stringify(trackedAddresses ?? [])]);
+
+  useEffect(() => {
+    if (!widgetRef.current?.activeChart) return;
+    try {
+      const chart = widgetRef.current.activeChart();
+      const res = chart.resolution();
+      chart.setSymbol(tvSymbol(), res, () => { });
+    } catch { }
+  }, [marksVersion]);
+
+  useEffect(() => {
+    onResetCacheNeededRef.current?.();
+  }, [selectedInterval, address, devAddress, tradehistory]);
+
   useEffect(() => {
     if (data && data[0] && data[1]) {
       const [bars, resRaw] = data as [any[], string];
@@ -151,110 +196,12 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   }, [data, token.symbol]);
 
   useEffect(() => {
-    try {
-      const prev = tradeHistoryRef.current || [];
-      const diff = tradehistory.slice(prev.length);
-
-      const becameVisible = !isMarksVisibleRef.current && isMarksVisible;
-      isMarksVisibleRef.current = isMarksVisible;
-
-      tradeHistoryRef.current = Array.isArray(tradehistory)
-        ? [...tradehistory]
-        : [];
-
-      const canPush =
-        chartReady &&
-        typeof marksRef.current === 'function' &&
-        widgetRef.current?.activeChart()?.symbol();
-      if (tradehistory.length > 0 && becameVisible) {
-        if (canPush) {
-          const marks = tradehistory.map((trade: any) => {
-            const ts = trade.timestamp ?? trade[6];
-            const sideBuy = (trade.isBuy ?? trade[2] === 1) === true;
-            const baseAmt = trade.tokenAmount ?? trade.amount ?? trade[0] ?? 0;
-
-            return {
-              id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              time: ts,
-              hoveredBorderWidth: 0,
-              borderWidth: 0,
-              color: sideBuy
-                ? { background: 'rgb(131, 251, 155)', border: '' }
-                : { background: 'rgb(210, 82, 82)', border: '' },
-              text:
-                `${sideBuy ? 'Bought' : 'Sold'} ${formatDisplay(baseAmt)} ${token.symbol} on ` +
-                new Date(ts * 1000)
-                  .toLocaleString('en-US', {
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hourCycle: 'h23',
-                  })
-                  .replace(/, \d{2}$/, ''),
-              label: sideBuy ? 'B' : 'S',
-              labelFontColor: 'black',
-              minSize: 17,
-            };
-          });
-          marksRef.current(marks);
-        }
-        return;
-      }
-
-      if (tradehistory.length > 0 && isMarksVisible) {
-        if (canPush && diff.length > 0) {
-          const marks = diff.map((trade: any) => {
-            const ts = trade.timestamp ?? trade[6];
-            const sideBuy = (trade.isBuy ?? trade[2] === 1) === true;
-            const baseAmt = trade.tokenAmount ?? trade.amount ?? trade[0] ?? 0;
-
-            return {
-              id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              time: ts,
-              hoveredBorderWidth: 0,
-              borderWidth: 0,
-              color: sideBuy
-                ? { background: 'rgb(131, 251, 155)', border: '' }
-                : { background: 'rgb(210, 82, 82)', border: '' },
-              text:
-                `${sideBuy ? 'Bought' : 'Sold'} ${formatDisplay(baseAmt)} ${token.symbol} on ` +
-                new Date(ts * 1000)
-                  .toLocaleString('en-US', {
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hourCycle: 'h23',
-                  })
-                  .replace(/, \d{2}$/, ''),
-              label: sideBuy ? 'B' : 'S',
-              labelFontColor: 'black',
-              minSize: 17,
-            };
-          });
-          marksRef.current(marks);
-        }
-        return;
-      }
-
-      if (chartReady) {
-        widgetRef.current?.activeChart?.()?.clearMarks?.();
-      }
-    } catch (e) {
-      console.error('Error updating trade marks:', e);
-    }
-  }, [tradehistory]);
-
-  useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
     widgetRef.current = new (window as any).TradingView.widget({
       container: chartRef.current,
       library_path: '/charting_library/',
       autosize: true,
-      symbol: `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,
+      symbol: tvSymbol(),
       interval:
         selectedInterval === '1d'
           ? '1D'
@@ -354,11 +301,12 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         },
 
         resolveSymbol: (symbolName: string, onResolve: Function) => {
+          const [pure] = String(symbolName).split('|');
           setTimeout(() => {
             onResolve({
-              name: symbolName,
-              full_name: symbolName,
-              description: symbolName,
+              name: pure,
+              full_name: pure,
+              description: pure,
               type: 'crypto',
               session: '24x7',
               timezone: 'Etc/UTC',
@@ -449,55 +397,82 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           to: number,
           onDataCallback: (marks: any[]) => void,
         ) => {
-          const rows =
-            isMarksVisibleRef.current === false
-              ? (Array.isArray(tradeHistoryRef.current)
-                  ? tradeHistoryRef.current
-                  : []
-                ).filter((trade: any) => {
-                  return trade.caller.toLowerCase() == address.toLowerCase()
-                })
-              : (Array.isArray(tradeHistoryRef.current)
-                  ? tradeHistoryRef.current
-                  : []
-                ).filter((trade: any) => {
-                  const ts = trade.timestamp ?? trade[6];
-                  return ts >= from && ts <= to;
-                });
+          try {
+            const you = String(addressRef.current || '').toLowerCase();
+            const dev = String(devAddressRef.current || '').toLowerCase();
 
-            const marks = rows.map((trade: any) => {
-            const ts = trade.timestamp ?? trade[6];
-            const sideBuy = (trade.isBuy ?? trade[2] === 1) === true;
-            const baseAmt = trade.tokenAmount ?? trade.amount ?? trade[0] ?? 0;
-
-            return {
-              id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              time: ts,
-              hoveredBorderWidth: 0,
-              borderWidth: 0,
-              color: sideBuy
-                ? { background: 'rgb(131, 251, 155)', border: '' }
-                : { background: 'rgb(210, 82, 82)', border: '' },
-              text:
-                `${sideBuy ? 'Bought' : 'Sold'} ${formatDisplay(baseAmt)} ${token.symbol} on ` +
-                new Date(ts * 1000)
-                  .toLocaleString('en-US', {
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hourCycle: 'h23',
-                  })
-                  .replace(/, \d{2}$/, ''),
-              label: sideBuy ? 'B' : 'S',
-              labelFontColor: 'black',
-              minSize: 17,
+            const tracked = Array.isArray(trackedAddressesRef.current)
+              ? trackedAddressesRef.current.map(a => String(a || '').toLowerCase()).filter(Boolean)
+              : [];
+              
+            const includeCaller = (raw: string | undefined) => {
+              const c = String(raw || '').toLowerCase();
+              if (!c) return false;
+              if (tracked.length === 0) return c === you || c === dev;
+              return tracked.includes(c);
             };
-          });
 
-          marksRef.current = onDataCallback;
-          setTimeout(() => onDataCallback(marks), 0);
+            const labelFor = (caller: string, isBuy: boolean) => {
+              const c = caller.toLowerCase();
+              if (c === dev) return isBuy ? 'DB' : 'DS';
+              if (c === you) return isBuy ? 'B' : 'S';
+              return isBuy ? 'B' : 'S';
+            };
+
+            const rows = (tradeHistoryRef.current ?? [])
+              .map((t: any) => ({
+                ...t,
+                __tsSec: toSec(Number(t.timestamp ?? t.blockTimestamp ?? t.time ?? 0)),
+                __caller: String(t.caller ?? t.account?.id ?? '')
+              }))
+              .filter(t => t.__tsSec >= from && t.__tsSec <= to)
+              .filter(t => includeCaller(t.__caller));
+
+            const step = RES_SECONDS[selectedIntervalRef.current] ?? 60;
+            const bucket = (sec: number) => Math.floor(sec / step) * step;
+
+            type Agg = {
+              buys: number;
+              sells: number;
+              last?: any;
+            };
+            const byBucket = new Map<number, Agg>();
+
+            for (const tr of rows) {
+              const k = bucket(tr.__tsSec);
+              const isBuy = !!tr.isBuy;
+              const rec = byBucket.get(k) ?? { buys: 0, sells: 0 };
+              if (isBuy) rec.buys++; else rec.sells++;
+              if (!rec.last || tr.__tsSec >= rec.last.__tsSec) rec.last = tr;
+              byBucket.set(k, rec);
+            }
+
+            const marks = Array.from(byBucket.entries()).map(([tSec, rec]) => {
+              const src = rec.last!;
+              const isBuy = !!src.isBuy;
+              const caller = src.__caller;
+              const label = labelFor(caller, isBuy);
+              const summary = `${rec.buys} buy${rec.buys !== 1 ? 's' : ''}, ${rec.sells} sell${rec.sells !== 1 ? 's' : ''}`;
+              const amt = Number(src.tokenAmount ?? 0);
+
+              return {
+                id: `${tSec}-${label}-${rec.buys}-${rec.sells}`,
+                time: tSec,
+                color: isBuy
+                  ? { background: 'rgb(131, 251, 155)', border: '' }
+                  : { background: 'rgb(210, 82, 82)', border: '' },
+                label,
+                labelFontColor: 'black',
+                minSize: 17,
+                text: `${summary} • ${label} • ${amt} ${token.symbol}`
+              };
+            }).sort((a, b) => a.time - b.time);
+
+            onDataCallback(marks);
+          } catch (e) {
+            console.error('getMarks error', e);
+            onDataCallback([]);
+          }
         },
 
         subscribeBars: (
@@ -507,8 +482,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           subscriberUID: string,
           onResetCacheNeeded: () => void,
         ) => {
-          const key = toResKey(token.symbol, resolution);
-
+          const key = `${token.symbol}MON${resolution}`;
           realtimeCallbackRef.current[key] = onRealtimeCallback;
           subsRef.current[subscriberUID] = key;
           onResetCacheNeededRef.current = onResetCacheNeeded;
@@ -537,36 +511,23 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           : `<span>USD</span> / <span style="color:rgb(209,209,250)">MON</span>`;
         monBtn.addEventListener('click', () => {
           setOverlayVisible(true);
-          if (showUSD) {
-            setShowUSD(false);
-            localStorage.setItem('meme_chart_showUSD', JSON.stringify(false));
-            try {
+          try {
+            setShowUSD((prev) => {
+              const next = !prev;
+              localStorage.setItem('meme_chart_showUSD', JSON.stringify(next));
+              // keep same marks version, only change base pair
               widgetRef.current
                 .activeChart()
                 .setSymbol(
-                  `${token.symbol}/MON`,
+                  `${token.symbol}/${next ? 'USD' : 'MON'}|m${marksVersionRef.current}`,
                   widgetRef.current.activeChart().resolution(),
                   () => setOverlayVisible(false),
                 );
-            } catch (error) {
-              setOverlayVisible(false);
-              console.error('Error changing to MON:', error);
-            }
-          } else {
-            setShowUSD(true);
-            localStorage.setItem('meme_chart_showUSD', JSON.stringify(true));
-            try {
-              widgetRef.current
-                .activeChart()
-                .setSymbol(
-                  `${token.symbol}/USD`,
-                  widgetRef.current.activeChart().resolution(),
-                  () => setOverlayVisible(false),
-                );
-            } catch (error) {
-              setOverlayVisible(false);
-              console.error('Error changing to USD:', error);
-            }
+              return next;
+            });
+          } catch (error) {
+            setOverlayVisible(false);
+            console.error('Error toggling currency:', error);
           }
         });
 
@@ -577,52 +538,23 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           : `<span>Market Cap</span> / <span style="color:rgb(209,209,250)">Price</span>`;
         priceBtn.addEventListener('click', () => {
           setOverlayVisible(true);
-          if (showMarketCap) {
-            setShowMarketCap(false);
-            localStorage.setItem(
-              'meme_chart_showMarketCap',
-              JSON.stringify(false),
-            );
-            try {
-              const currentSymbol = widgetRef.current.activeChart().symbol();
-              const currentResolution = widgetRef.current
-                .activeChart()
-                .resolution();
-
+          try {
+            setShowMarketCap((prev) => {
+              const next = !prev;
+              localStorage.setItem('meme_chart_showMarketCap', JSON.stringify(next));
+              const currentResolution = widgetRef.current.activeChart().resolution();
               setTimeout(() => {
                 widgetRef.current
                   .activeChart()
-                  .setSymbol(currentSymbol, currentResolution, () =>
+                  .setSymbol(tvSymbol(), currentResolution, () =>
                     setOverlayVisible(false),
                   );
               }, 10);
-            } catch (error) {
-              setOverlayVisible(false);
-              console.error('Error switching to Price:', error);
-            }
-          } else {
-            setShowMarketCap(true);
-            localStorage.setItem(
-              'meme_chart_showMarketCap',
-              JSON.stringify(true),
-            );
-            try {
-              const currentSymbol = widgetRef.current.activeChart().symbol();
-              const currentResolution = widgetRef.current
-                .activeChart()
-                .resolution();
-
-              setTimeout(() => {
-                widgetRef.current
-                  .activeChart()
-                  .setSymbol(currentSymbol, currentResolution, () =>
-                    setOverlayVisible(false),
-                  );
-              }, 10);
-            } catch (error) {
-              setOverlayVisible(false);
-              console.error('Error switching to MarketCap:', error);
-            }
+              return next;
+            });
+          } catch (error) {
+            setOverlayVisible(false);
+            console.error('Error toggling MarketCap:', error);
           }
         });
       });
@@ -680,7 +612,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         widgetRef.current.remove();
       }
     };
-  }, [token.symbol, showMarketCap, showUSD]);
+  }, [token.symbol]);
 
   useEffect(() => {
     try {
@@ -690,7 +622,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         localStorage.setItem('meme_chart_timeframe', selectedInterval);
 
         widgetRef.current.setSymbol(
-          `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,
+          tvSymbol(),
           selectedInterval === '1d'
             ? '1D'
             : selectedInterval === '4h'
@@ -708,7 +640,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
     } catch (e) {
       setOverlayVisible(false);
     }
-  }, [token.symbol, selectedInterval]);
+  }, [token.symbol, selectedInterval, marksVersion, showUSD]);
 
   return (
     <div className="advanced-chart-container">
