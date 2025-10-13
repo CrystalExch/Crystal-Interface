@@ -116,7 +116,6 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
       setClosing(false);
     }, 300);
   };
-
   useEffect(() => {
     setSortedTransactions((prev) => {
       let result = prev[0];
