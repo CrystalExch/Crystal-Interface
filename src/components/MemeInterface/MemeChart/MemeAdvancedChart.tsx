@@ -105,11 +105,11 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   const trackedAddressesRef = useRef<string[]>(Array.isArray(trackedAddresses) ? trackedAddresses : []);
   const selectedIntervalRef = useRef<string>(selectedInterval);
   const [marksVersion, setMarksVersion] = useState<number>(0);
+  const marksRef = useRef<any>();
   const marksVersionRef = useRef<number>(0);
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
   const subsRef = useRef<Record<string, string>>({});
-  const onResetCacheNeededRef = useRef<(() => void) | null>(null);
   const [showMarketCap, setShowMarketCap] = useState<boolean>(() => {
     try {
       const raw = localStorage.getItem('meme_chart_showMarketCap');
@@ -137,7 +137,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   }, [subWalletAddresses]);
 
   const basePair = () => `${token.symbol}/${showUSD ? 'USD' : 'MON'}`;
-  const tvSymbol = () => `${basePair()}|m${marksVersionRef.current}`;
+  const tvSymbol = () => `${basePair()}`;
 
   const toResKey = (sym: string, res: string) => sym + 'MON' + res;
 
@@ -159,20 +159,194 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
     return out;
   }
 
-  useEffect(() => { tradeHistoryRef.current = tradehistory ?? []; }, [tradehistory]);
   useEffect(() => { addressRef.current = address; }, [address]);
   useEffect(() => { devAddressRef.current = devAddress; }, [devAddress]);
   useEffect(() => { trackedAddressesRef.current = Array.isArray(trackedAddresses) ? trackedAddresses : []; }, [trackedAddresses]);
   useEffect(() => { selectedIntervalRef.current = selectedInterval; }, [selectedInterval]);
-  useEffect(() => { marksVersionRef.current = marksVersion; }, [marksVersion]);
 
   useEffect(() => {
     setMarksVersion((v) => v + 1);
   }, [JSON.stringify(trackedAddresses ?? [])]);
 
   useEffect(() => {
-    onResetCacheNeededRef.current?.();
-  }, [selectedInterval, address, devAddress, tradehistory]);
+    try {
+      const diff = tradehistory.slice(0, tradehistory.length - (tradeHistoryRef.current || []).length);
+      const becameVisible = marksVersionRef.current != marksVersion;
+      marksVersionRef.current = marksVersion;
+      tradeHistoryRef.current = [...tradehistory];
+      if (tradehistory.length > 0 && becameVisible) {
+        if (chartReady) {
+          widgetRef.current?.activeChart()?.clearMarks();
+        }
+        if (
+          chartReady &&
+          typeof marksRef.current === 'function' &&
+          widgetRef.current?.activeChart()?.symbol()
+        ) {
+          const you = String(addressRef.current || '').toLowerCase();
+          const dev = String(devAddressRef.current || '').toLowerCase();
+
+          const tracked = Array.isArray(trackedAddressesRef.current)
+            ? trackedAddressesRef.current.map(a => String(a || '').toLowerCase()).filter(Boolean)
+            : [];
+
+          const includeCaller = (raw: string | undefined) => {
+            const c = String(raw || '').toLowerCase();
+            if (!c) return false;
+            if (tracked.length === 0) return c === you || c === dev;
+            return tracked.includes(c);
+          };
+
+          const labelFor = (caller: string, isBuy: boolean) => {
+            const c = caller.toLowerCase();
+            const dev = String(devAddressRef.current || '').toLowerCase();
+            const you = String(addressRef.current || '').toLowerCase();
+            const subs = trackedAddresses;
+
+            if (c === dev) return isBuy ? 'DB' : 'DS';
+            if (c === you || subs.includes(c)) return isBuy ? 'B' : 'S';
+            return isBuy ? 'B' : 'S';
+          };
+
+          const rows = (tradehistory ?? [])
+            .map((t: any) => ({
+              ...t,
+              __tsSec: toSec(Number(t.timestamp ?? t.blockTimestamp ?? t.time ?? 0)),
+              __caller: String(t.caller ?? t.account?.id ?? '')
+            }))
+            .filter(t => includeCaller(t.__caller));
+
+          const step = RES_SECONDS[selectedIntervalRef.current] ?? 60;
+          const bucket = (sec: number) => Math.floor(sec / step) * step;
+
+          type Agg = {
+            buys: number;
+            sells: number;
+            last?: any;
+          };
+          const byBucket = new Map<number, Agg>();
+
+          for (const tr of rows) {
+            const k = bucket(tr.__tsSec);
+            const isBuy = !!tr.isBuy;
+            const rec = byBucket.get(k) ?? { buys: 0, sells: 0 };
+            if (isBuy) rec.buys++; else rec.sells++;
+            if (!rec.last || tr.__tsSec >= rec.last.__tsSec) rec.last = tr;
+            byBucket.set(k, rec);
+          }
+
+          const marks = Array.from(byBucket.entries()).map(([tSec, rec]) => {
+            const src = rec.last!;
+            const isBuy = src.isBuy;
+            const caller = src.__caller;
+            const label = labelFor(caller, isBuy);
+            const summary = `${rec.buys} buy${rec.buys !== 1 ? 's' : ''}, ${rec.sells} sell${rec.sells !== 1 ? 's' : ''}`;
+            const amt = Number(src.tokenAmount ?? 0);
+
+            return {
+              id: `${tSec}-${label}-${rec.buys}-${rec.sells}`,
+              time: tSec,
+              hoveredBorderWidth: 0,
+              borderWidth: 0,
+              color: isBuy
+                ? { background: 'rgb(131, 251, 155)', border: '' }
+                : { background: 'rgb(210, 82, 82)', border: '' },
+              label,
+              labelFontColor: 'black',
+              minSize: 17,
+              text: `${summary} • ${label} • ${amt} ${token.symbol}`
+            };
+          }).sort((a, b) => a.time - b.time);
+          marksRef.current(marks);
+        }
+      } else if (tradehistory.length > 0 && isMarksVisible) {
+        if (
+          chartReady &&
+          typeof marksRef.current === 'function' &&
+          widgetRef.current?.activeChart()?.symbol()
+        ) {
+          const you = String(addressRef.current || '').toLowerCase();
+          const dev = String(devAddressRef.current || '').toLowerCase();
+
+          const tracked = Array.isArray(trackedAddressesRef.current)
+            ? trackedAddressesRef.current.map(a => String(a || '').toLowerCase()).filter(Boolean)
+            : [];
+
+          const includeCaller = (raw: string | undefined) => {
+            const c = String(raw || '').toLowerCase();
+            if (!c) return false;
+            if (tracked.length === 0) return c === you || c === dev;
+            return tracked.includes(c);
+          };
+
+          const labelFor = (caller: string, isBuy: boolean) => {
+            const c = caller.toLowerCase();
+            const dev = String(devAddressRef.current || '').toLowerCase();
+            const you = String(addressRef.current || '').toLowerCase();
+            const subs = trackedAddresses;
+
+            if (c === dev) return isBuy ? 'DB' : 'DS';
+            if (c === you || subs.includes(c)) return isBuy ? 'B' : 'S';
+            return isBuy ? 'B' : 'S';
+          };
+          const rows = (diff ?? [])
+            .map((t: any) => ({
+              ...t,
+              __tsSec: toSec(Number(t.timestamp ?? t.blockTimestamp ?? t.time ?? 0)),
+              __caller: String(t.caller ?? t.account?.id ?? '')
+            }))
+            .filter(t => includeCaller(t.__caller));
+
+          const step = RES_SECONDS[selectedIntervalRef.current] ?? 60;
+          const bucket = (sec: number) => Math.floor(sec / step) * step;
+
+          type Agg = {
+            buys: number;
+            sells: number;
+            last?: any;
+          };
+          const byBucket = new Map<number, Agg>();
+
+          for (const tr of rows) {
+            const k = bucket(tr.__tsSec);
+            const isBuy = !!tr.isBuy;
+            const rec = byBucket.get(k) ?? { buys: 0, sells: 0 };
+            if (isBuy) rec.buys++; else rec.sells++;
+            if (!rec.last || tr.__tsSec >= rec.last.__tsSec) rec.last = tr;
+            byBucket.set(k, rec);
+          }
+
+          const marks = Array.from(byBucket.entries()).map(([tSec, rec]) => {
+            const src = rec.last!;
+            const isBuy = src.isBuy;
+            const caller = src.__caller;
+            const label = labelFor(caller, isBuy);
+            const summary = `${rec.buys} buy${rec.buys !== 1 ? 's' : ''}, ${rec.sells} sell${rec.sells !== 1 ? 's' : ''}`;
+            const amt = Number(src.tokenAmount ?? 0);
+
+            return {
+              id: `${tSec}-${label}-${rec.buys}-${rec.sells}`,
+              time: tSec,
+              hoveredBorderWidth: 0,
+              borderWidth: 0,
+              color: isBuy
+                ? { background: 'rgb(131, 251, 155)', border: '' }
+                : { background: 'rgb(210, 82, 82)', border: '' },
+              label,
+              labelFontColor: 'black',
+              minSize: 17,
+              text: `${summary} • ${label} • ${amt} ${token.symbol}`
+            };
+          }).sort((a, b) => a.time - b.time);
+          marksRef.current(marks);
+        }
+      } else {
+        if (chartReady) {
+          widgetRef.current?.activeChart()?.clearMarks();
+        }
+      }
+    } catch (e) {}
+  }, [tradehistory.length]);
 
   useEffect(() => {
     if (data && data[0] && data[1]) {
@@ -411,9 +585,9 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               const you = String(addressRef.current || '').toLowerCase();
               const subs = trackedAddresses;
 
-              if (c === dev) return isBuy ? 'Dev Buy' : 'Dev Sell';
-              if (c === you || subs.includes(c)) return isBuy ? 'Your Buy' : 'Your Sell';
-              return isBuy ? 'Buy' : 'Sell';
+              if (c === dev) return isBuy ? 'DB' : 'DS';
+              if (c === you || subs.includes(c)) return isBuy ? 'B' : 'S';
+              return isBuy ? 'B' : 'S';
             };
 
             const rows = (tradeHistoryRef.current ?? [])
@@ -455,6 +629,8 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               return {
                 id: `${tSec}-${label}-${rec.buys}-${rec.sells}`,
                 time: tSec,
+                hoveredBorderWidth: 0,
+                borderWidth: 0,
                 color: isBuy
                   ? { background: 'rgb(131, 251, 155)', border: '' }
                   : { background: 'rgb(210, 82, 82)', border: '' },
@@ -465,7 +641,10 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               };
             }).sort((a, b) => a.time - b.time);
 
-            onDataCallback(marks);
+            marksRef.current = onDataCallback;
+            setTimeout(() => {
+              onDataCallback(marks);
+            }, 0);
           } catch (e) {
             console.error('getMarks error', e);
             onDataCallback([]);
@@ -477,19 +656,12 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           resolution: string,
           onRealtimeCallback: (bar: any) => void,
           subscriberUID: string,
-          onResetCacheNeeded: () => void,
         ) => {
           const key = `${token.symbol}MON${resolution}`;
           realtimeCallbackRef.current[key] = onRealtimeCallback;
           subsRef.current[subscriberUID] = key;
-          onResetCacheNeededRef.current = onResetCacheNeeded;
         },
-
-        unsubscribeBars: (subscriberUID: string) => {
-          const key = subsRef.current[subscriberUID];
-          if (key) delete realtimeCallbackRef.current[key];
-          delete subsRef.current[subscriberUID];
-        },
+        unsubscribeBars: () => {},
       },
     });
 
@@ -515,7 +687,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               widgetRef.current
                 .activeChart()
                 .setSymbol(
-                  `${token.symbol}/${next ? 'USD' : 'MON'}|m${marksVersionRef.current}`,
+                  `${token.symbol}/${next ? 'USD' : 'MON'}`,
                   widgetRef.current.activeChart().resolution(),
                   () => setOverlayVisible(false),
                 );

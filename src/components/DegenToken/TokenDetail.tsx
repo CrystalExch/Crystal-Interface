@@ -43,9 +43,7 @@ interface TokenDetailProps {
   chartData: any;
   setChartData: any;
   trades: any;
-  registerRealtimeTick: (
-    fn: (price: number, volNative: number) => void,
-  ) => void;
+  realtimeCallbackRef: any;
 }
 
 const TOTAL_SUPPLY = 1e9;
@@ -60,19 +58,6 @@ const RESOLUTION_SECS: Record<string, number> = {
   '4h': 14400,
   '1d': 86400,
 };
-
-const toSeriesKey = (sym: string, interval: string) =>
-  sym +
-  'MON' +
-  (interval === '1d'
-    ? '1D'
-    : interval === '4h'
-      ? '240'
-      : interval === '1h'
-        ? '60'
-        : interval.endsWith('s')
-          ? interval.slice(0, -1).toUpperCase() + 'S'
-          : interval.slice(0, -1));
 
 const formatPrice = (p: number) => {
   if (p >= 1e12) return `$${(p / 1e12).toFixed(2)}T`;
@@ -176,7 +161,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   chartData,
   setChartData,
   trades,
-  registerRealtimeTick,
+  realtimeCallbackRef,
 }) => {
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const navigate = useNavigate();
@@ -195,7 +180,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [loading, setLoading] = useState<boolean>(() => !token);
   const [isSigning, setIsSigning] = useState(false);
-  const realtimeCallbackRef = useRef<any>({});
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<'MON' | 'TOKEN'>('MON');
   const ethToken = settings.chainConfig[activechain]?.eth;
@@ -217,59 +201,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       h.percentage = tn / 1e9;
     });
   }
-
-  useEffect(() => {
-    const fn = (lastPrice: number, volNative: number) => {
-      const sel = selectedInterval;
-      const resSecs = RESOLUTION_SECS[sel] ?? 60;
-      const now = Date.now();
-      const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
-
-      setChartData((prev: any) => {
-        if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
-        const [bars, key, flag] = prev;
-        const updated = [...bars];
-        const last = updated[updated.length - 1];
-
-        if (!last || last.time < bucket) {
-          const prevClose = last?.close ?? lastPrice;
-          const open = prevClose;
-          const high = Math.max(open, lastPrice);
-          const low = Math.min(open, lastPrice);
-          const newBar = {
-            time: bucket,
-            open,
-            high,
-            low,
-            close: lastPrice,
-            volume: volNative || 0,
-          };
-          updated.push(newBar);
-          const cb =
-            realtimeCallbackRef.current?.[toSeriesKey(token.symbol, sel)];
-          if (cb) cb(newBar);
-        } else {
-          const cur = { ...last };
-          cur.high = Math.max(cur.high, lastPrice);
-          cur.low = Math.min(cur.low, lastPrice);
-          cur.close = lastPrice;
-          cur.volume = (cur.volume || 0) + (volNative || 0);
-          updated[updated.length - 1] = cur;
-          const cb =
-            realtimeCallbackRef.current?.[toSeriesKey(token.symbol, sel)];
-          if (cb) cb(cur);
-        }
-        if (updated.length > 1200) updated.splice(0, updated.length - 1200);
-        console.log(updated.length);
-        return [updated, key, flag];
-      });
-    };
-
-    registerRealtimeTick?.(fn);
-    return () => {
-      registerRealtimeTick?.(() => { });
-    };
-  }, [registerRealtimeTick, selectedInterval, token.symbol]);
 
   const getCurrentMONBalance = useCallback(() => {
     if (!account?.address) return 0;
@@ -636,8 +567,10 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               setSelectedInterval={setSelectedInterval}
               realtimeCallbackRef={realtimeCallbackRef}
               monUsdPrice={monUsdPrice}
+              tradehistory={trades}
               address={account.address}
               devAddress={token.creator}
+              trackedAddresses={[account.address]}
             />
           </div>
 

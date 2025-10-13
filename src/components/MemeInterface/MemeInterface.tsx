@@ -111,7 +111,6 @@ interface MemeInterfaceProps {
   }) => void;
   nonces: any;
   tokenAddress?: string;
-  live: Partial<any>;
   trades: Trade[];
   setTrades: React.Dispatch<React.SetStateAction<Trade[]>>;
   holders: Holder[];
@@ -127,9 +126,7 @@ interface MemeInterfaceProps {
     valueSold: number;
     valueNet: number;
   };
-  registerRealtimeTick: (
-    fn: (price: number, volNative: number) => void,
-  ) => void;
+  realtimeCallbackRef: any;
   selectedInterval: any;
   setSelectedInterval: any;
   chartData: any;
@@ -155,19 +152,6 @@ const RESOLUTION_SECS: Record<string, number> = {
   '4h': 14400,
   '1d': 86400,
 };
-
-const toSeriesKey = (sym: string, interval: string) =>
-  sym +
-  'MON' +
-  (interval === '1d'
-    ? '1D'
-    : interval === '4h'
-      ? '240'
-      : interval === '1h'
-        ? '60'
-        : interval.endsWith('s')
-          ? interval.slice(0, -1).toUpperCase() + 'S'
-          : interval.slice(0, -1));
 
 const fmt = (v: number, d = 6) => {
   if (v === 0) return '0.00';
@@ -380,7 +364,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   devTokens,
   top10HoldingPercentage,
   userStats,
-  registerRealtimeTick,
+  realtimeCallbackRef,
   selectedInterval,
   setSelectedInterval,
   chartData,
@@ -963,7 +947,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [activeOrderType, _setActiveOrderType] = useState<'market' | 'Limit'>(
     'market',
   );
-  const realtimeCallbackRef = useRef<any>({});
   const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
   const [buySlippageValue, setBuySlippageValue] = useState(() => {
     const presets = loadBuyPresets();
@@ -1676,58 +1659,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       });
     }
   }, [sellSlippageValue, sellPriorityFee, selectedSellPreset]);
-
-  useEffect(() => {
-    const fn = (lastPrice: number, volNative: number) => {
-      const sel = selectedInterval;
-      const resSecs = RESOLUTION_SECS[sel] ?? 60;
-      const now = Date.now();
-      const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
-
-      setChartData((prev: any) => {
-        if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
-        const [bars, key, flag] = prev;
-        const updated = [...bars];
-        const last = updated[updated.length - 1];
-
-        if (!last || last.time < bucket) {
-          const prevClose = last?.close ?? lastPrice;
-          const open = prevClose;
-          const high = Math.max(open, lastPrice);
-          const low = Math.min(open, lastPrice);
-          const newBar = {
-            time: bucket,
-            open,
-            high,
-            low,
-            close: lastPrice,
-            volume: volNative || 0,
-          };
-          updated.push(newBar);
-          const cb =
-            realtimeCallbackRef.current?.[toSeriesKey(token.symbol, sel)];
-          if (cb) cb(newBar);
-        } else {
-          const cur = { ...last };
-          cur.high = Math.max(cur.high, lastPrice);
-          cur.low = Math.min(cur.low, lastPrice);
-          cur.close = lastPrice;
-          cur.volume = (cur.volume || 0) + (volNative || 0);
-          updated[updated.length - 1] = cur;
-          const cb =
-            realtimeCallbackRef.current?.[toSeriesKey(token.symbol, sel)];
-          if (cb) cb(cur);
-        }
-        if (updated.length > 1200) updated.splice(0, updated.length - 1200);
-        return [updated, key, flag];
-      });
-    };
-
-    registerRealtimeTick?.(fn);
-    return () => {
-      registerRealtimeTick?.(() => { });
-    };
-  }, [registerRealtimeTick, selectedInterval, token.symbol]);
 
   const toggleTrackedAddress = useCallback((addr: string) => {
     const a = (addr || '').toLowerCase();

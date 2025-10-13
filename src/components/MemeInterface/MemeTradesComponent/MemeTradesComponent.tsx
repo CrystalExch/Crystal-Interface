@@ -391,6 +391,56 @@ export default function MemeTradesComponent({
     [tradesByMarket, markets, resolveNative, usdc],
   );
 
+  const SUB = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
+  const toSub = (n: number) =>
+    String(n)
+      .split('')
+      .map((d) => SUB[+d])
+      .join('');
+
+  function formatMemePrice(price: number): string {
+    if (!isFinite(price)) return '';
+    if (Math.abs(price) < 1e-18) return '0';
+
+    const neg = price < 0 ? '-' : '';
+    const abs = Math.abs(price);
+
+    if (abs >= 1_000_000_000)
+      return neg + (abs / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B';
+    if (abs >= 1_000_000)
+      return neg + (abs / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (abs >= 1_000)
+      return neg + (abs / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+
+    if (abs >= 100) return neg + abs.toFixed(0).replace(/\.00$/, '');
+    if (abs >= 10) return neg + abs.toFixed(1).replace(/\.00$/, '');
+    if (abs >= 1) return neg + abs.toFixed(2).replace(/\.00$/, '');
+    if (abs >= 1e-1) return neg + abs.toFixed(3).replace(/\.00$/, '');
+    if (abs >= 1e-2) return neg + abs.toFixed(4).replace(/\.00$/, '');
+    if (abs >= 1e-3) return neg + abs.toFixed(5).replace(/\.00$/, '');
+    if (abs >= 1e-4) return neg + abs.toFixed(6).replace(/\.00$/, '');
+
+    const exp = Math.floor(Math.log10(abs));
+    let zeros = -exp - 1;
+    if (zeros < 0) zeros = 0;
+
+    const tailDigits = 2;
+    const factor = Math.pow(10, tailDigits);
+    let scaled = abs * Math.pow(10, zeros + 1);
+    let t = Math.round(scaled * factor);
+
+    if (t >= Math.pow(10, 1 + tailDigits)) {
+      zeros = Math.max(0, zeros - 1);
+      scaled = abs * Math.pow(10, zeros + 1);
+      t = Math.round(scaled * factor);
+    }
+
+    const s = t.toString().padStart(1 + tailDigits, '0');
+    const tail2 = s.slice(0, 3);
+
+    return `${neg}0.0${toSub(zeros)}${tail2}`;
+  }
+
   const fetchLatestPriceInQuote = (tradesArr: RawTrade[]): number | null => {
     if (!tradesArr || tradesArr.length === 0) return null;
     const sorted = [...tradesArr].sort((a, b) => b.timestamp - a.timestamp);
@@ -901,11 +951,10 @@ export default function MemeTradesComponent({
                     {amountMode === 'MON' && (
                       <img
                         src={monadlogo}
-                        alt=""
                         className="meme-trade-mon-logo"
                       />
                     )}
-                    {fmtAmount(shownAmount)}
+                    {formatSubscript(fmtAmount(shownAmount))}
                   </div>
 
                   <div className="meme-trade-mc">
@@ -915,7 +964,7 @@ export default function MemeTradesComponent({
                       </span>
                     ) : (
                       <span>
-                        ${formatSubscript(t.priceUSD.toString())}
+                        ${formatMemePrice(t.priceUSD)}
                       </span>
                     )}
                   </div>

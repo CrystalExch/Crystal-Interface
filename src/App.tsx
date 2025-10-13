@@ -1595,7 +1595,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     stateIsLoading,
     (popup == 4 && connected) || location.pathname.slice(1) == 'portfolio'
   );
-  const [tokenData, setTokenData] = useState<any>();
+  const [tokenData, setTokenData] = useState<Partial<Token>>();
   const [isVertDragging, setIsVertDragging] = useState(false);
   const [trades, setTrades] = useState<
     [boolean, string, string, string, string][]
@@ -1971,7 +1971,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     reducer,
     initialState,
   );
-  const ROUTER_EVENT = '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
   const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
   const MARKET_CREATED_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
   const TRADE_EVENT = '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982';
@@ -1981,7 +1980,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const subIdRef = useRef(1);
   const pausedColumnRef = useRef<any>(null);
   const alertSettingsRef = useRef<any>(alertSettings);
-  const trackedMarketsRef = useRef<Set<string>>(new Set());
   const connectionStateRef = useRef<
     'disconnected' | 'connecting' | 'connected' | 'reconnecting'
   >('disconnected');
@@ -1990,6 +1988,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const connectionAttemptsRef = useRef(0);
   const lastConnectionAttemptRef = useRef(0);
   const consecutiveFailuresRef = useRef(0);
+  const memeRealtimeCallbackRef = useRef<any>({});
 
   const audio = useMemo(() => {
     const a = new Audio(stepaudio);
@@ -4285,7 +4284,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     [],
   );
 
-  const scheduleReconnect = useCallback((initialMarkets: string[]) => {
+  const scheduleReconnect = useCallback(() => {
     if (
       connectionStateRef.current === 'connecting' ||
       connectionStateRef.current === 'connected'
@@ -4304,7 +4303,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     if (timeSinceLastAttempt < minInterval) {
       const additionalDelay = minInterval - timeSinceLastAttempt;
-      setTimeout(() => scheduleReconnect(initialMarkets), additionalDelay);
+      setTimeout(() => scheduleReconnect(), additionalDelay);
       return;
     }
 
@@ -4313,22 +4312,28 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     connectionStateRef.current = 'reconnecting';
     reconnectTimerRef.current = window.setTimeout(() => {
-      openWebsocket(initialMarkets);
+      openWebsocket();
     }, delay);
   }, []);
 
-  const openWebsocket = useCallback(
-    (initialMarkets: string[]): void => {
+  const handleConnectionError = useCallback(
+    (_errorType: string) => {
+      connectionStateRef.current = 'disconnected';
+      consecutiveFailuresRef.current += 1;
+      retryCountRef.current += 1;
+
+      scheduleReconnect();
+    },
+    [scheduleReconnect],
+  );
+
+  const openWebsocket = useCallback((): void => {
       if (
         connectionStateRef.current === 'connecting' ||
         connectionStateRef.current === 'connected'
       ) {
         return;
       }
-
-      initialMarkets.forEach((addr) =>
-        trackedMarketsRef.current.add(addr.toLowerCase()),
-      );
       lastConnectionAttemptRef.current = Date.now();
       connectionAttemptsRef.current += 1;
 
@@ -4370,15 +4375,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
           subscribe(ws, [
             'monadLogs',
-            { address: settings.chainConfig[activechain].router, topics: [[ROUTER_EVENT]] },
-          ]);
-          subscribe(ws, [
-            'monadLogs',
-            { address: settings.chainConfig[activechain].router, topics: [[MARKET_UPDATE_EVENT]] },
-          ]);
-          subscribe(ws, [
-            'monadLogs',
-            { address: settings.chainConfig[activechain].router, topics: [['0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']] },
+            { address: settings.chainConfig[activechain].router, topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT, '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']] }
           ]);
         };
 
@@ -4405,8 +4402,566 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 resolve();
                 txReceiptResolvers.current.delete(log['transactionHash']);
               }
-              if (log.topics?.[0] === ROUTER_EVENT) addMarket(log);
-              else if (log.topics?.[0] === MARKET_UPDATE_EVENT) updateMarket(log);
+      
+              if (log.topics?.[0] === TRADE_EVENT) {
+                const marketAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+                const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
+      
+                const mcfg = settings?.chainConfig?.[activechain]?.markets?.[marketAddr];
+                if (!mcfg || !mcfg.baseAddress) return tempset;
+                const tokenAddrFromMarket = (mcfg.baseAddress || '').toLowerCase();
+      
+                if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
+      
+                const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+                const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
+      
+                const isBuy = word(0) !== 0n;
+                const amountInWei = word(1);
+                const amountOutWei = word(2);
+                const endPrice = word(4);
+      
+                const amountIn = Number(amountInWei)  / 1e18;
+                const amountOut = Number(amountOutWei) / 1e18;
+      
+                const priceFactor = Number(mcfg.priceFactor || 1);
+                const price = priceFactor ? (Number(endPrice) / priceFactor) : 0;
+      
+                const tradePrice = price;
+      
+                setTokenData(p => ({
+                  ...p,
+                  price,
+                  marketCap: price * TOTAL_SUPPLY,
+                  buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
+                  sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
+                  volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
+                }));
+      
+                setMemeTrades(prev => [
+                  {
+                    id: `${log.transactionHash}-${log.logIndex}`,
+                    timestamp: Date.now() / 1000,
+                    isBuy,
+                    price: tradePrice,
+                    nativeAmount: isBuy ? amountIn : amountOut,
+                    tokenAmount:  isBuy ? amountOut : amountIn,
+                    caller: `0x${log.topics[2].slice(26)}`,
+                  },
+                  ...prev.slice(0, 99),
+                ]);
+            
+                const sel = memeSelectedInterval;
+                const RESOLUTION_SECS: Record<string, number> = {
+                  '1s': 1, '5s': 5, '15s': 15, '1m': 60, '5m': 300, '15m': 900,
+                  '1h': 3600, '4h': 14400, '1d': 86400,
+                };
+                const resSecs = RESOLUTION_SECS[sel] ?? 60;
+                const now = Date.now();
+                const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
+                const volNative = isBuy ? amountIn : amountOut;
+                const toSeriesKey = (sym: string, interval: string) =>
+                  sym +
+                  'MON' +
+                  (interval === '1d'
+                    ? '1D'
+                    : interval === '4h'
+                      ? '240'
+                      : interval === '1h'
+                        ? '60'
+                        : interval.endsWith('s')
+                          ? interval.slice(0, -1).toUpperCase() + 'S'
+                          : interval.slice(0, -1));
+                setChartData((prev: any) => {
+                  if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
+                  const [bars, key, flag] = prev;
+                  const updated = [...bars];
+                  const last = updated[updated.length - 1];
+          
+                  if (!last || last.time < bucket) {
+                    const prevClose = last?.close ?? tradePrice;
+                    const open = prevClose;
+                    const high = Math.max(open, tradePrice);
+                    const low = Math.min(open, tradePrice);
+                    const newBar = {
+                      time: bucket,
+                      open,
+                      high,
+                      low,
+                      close: tradePrice,
+                      volume: volNative || 0,
+                    };
+                    updated.push(newBar);
+                    const cb =
+                      memeRealtimeCallbackRef.current?.[toSeriesKey(memeRef.current.symbol, sel)];
+                    if (cb) cb(newBar);
+                  } else {
+                    const cur = { ...last };
+                    cur.high = Math.max(cur.high, tradePrice);
+                    cur.low = Math.min(cur.low, tradePrice);
+                    cur.close = tradePrice;
+                    cur.volume = (cur.volume || 0) + (volNative || 0);
+                    updated[updated.length - 1] = cur;
+                    const cb =
+                      memeRealtimeCallbackRef.current?.[toSeriesKey(memeRef.current.symbol, sel)];
+                    if (cb) cb(cur);
+                  }
+                  if (updated.length > 1200) updated.splice(0, updated.length - 1200);
+                  return [updated, key, flag];
+                });
+      
+                setMemeHolders(prev => {
+                  const arr = prev.slice();
+                  let idx = memeHoldersMapRef.current.get?.(callerAddr);
+                  if (idx == undefined) {
+                    const fresh: Holder = {
+                      address: `0x${log.topics[2].slice(26)}`,
+                      balance: 0,
+                      amountBought: 0,
+                      amountSold: 0,
+                      valueBought: 0,
+                      valueSold: 0,
+                      valueNet: 0,
+                      tokenNet: 0,
+                    };
+                    arr.push(fresh);
+                    idx = arr.length - 1;
+                    memeHoldersMapRef.current.set(callerAddr, idx);
+                  }
+                  const h = { ...arr[idx] };
+                  if (isBuy) {
+                    h.amountBought = (h.amountBought || 0) + amountOut;
+                    h.valueBought = (h.valueBought || 0) + amountIn;
+                    h.balance = (h.balance || 0) + amountOut;
+                  } else {
+                    h.amountSold = (h.amountSold || 0) + amountIn;
+                    h.valueSold = (h.valueSold || 0) + amountOut;
+                    h.balance = Math.max(0, (h.balance || 0) - amountIn);
+                  }
+                  arr[idx] = h;
+      
+                  for (let i = 0; i < arr.length; i++) {
+                    const hh = arr[i];
+                    const realized = (hh.valueSold || 0) - (hh.valueBought || 0);
+                    const bal = Math.max(0, hh.balance || 0);
+                    arr[i] = { ...hh, valueNet: realized + bal * price };
+                  }
+      
+                  const topSum = arr
+                    .map(hh => Math.max(0, hh.balance || 0))
+                    .sort((a, b) => b - a)
+                    .slice(0, 10)
+                    .reduce((s, n) => s + n, 0);
+                  setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
+                  return arr;
+                });
+      
+                setMemeTopTraders(prev => {
+                  const copy = Array.isArray(prev) ? [...prev] : [];
+                  const key = callerAddr;
+                  let idx = memeTopTradersMapRef.current.get(key) ?? -1;
+      
+                  if (idx === -1) {
+                    const row: Holder = {
+                      address: `0x${log.topics[2].slice(26)}`,
+                      balance: 0, tokenNet: 0, valueNet: 0,
+                      amountBought: 0, amountSold: 0,
+                      valueBought: 0, valueSold: 0,
+                    };
+                    copy.push(row);
+                    idx = copy.length - 1;
+                    memeTopTradersMapRef.current.set(key, idx);
+                  }
+      
+                  const row = { ...copy[idx] };
+                  const curBal = Math.max(0, (row.balance ?? row.amountBought - row.amountSold) || 0);
+                  if (isBuy) {
+                    row.amountBought = (row.amountBought || 0) + amountOut;
+                    row.valueBought = (row.valueBought || 0) + amountIn;
+                    row.balance = curBal + amountOut;
+                  } else {
+                    row.amountSold = (row.amountSold || 0) + amountIn;
+                    row.valueSold = (row.valueSold || 0) + amountOut;
+                    row.balance = Math.max(0, curBal - amountIn);
+                  }
+                  row.tokenNet = (row.amountBought || 0) - (row.amountSold || 0);
+                  copy[idx] = row;
+      
+                  for (let i = 0; i < copy.length; i++) {
+                    const r = copy[i];
+                    const bal = Math.max(0, (r.balance ?? r.amountBought - r.amountSold) || 0);
+                    const realized = (r.valueSold || 0) - (r.valueBought || 0);
+                    copy[i] = { ...r, valueNet: realized + bal * price };
+                  }
+      
+                  copy.sort((a, b) => b.valueNet - a.valueNet);
+                  if (copy.length > 300) {
+                    const removed = copy.splice(300);
+                    for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
+                  }
+                  copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
+                  return copy;
+                });
+      
+                setMemePositions(prev => {
+                  const copy = Array.isArray(prev) ? [...prev] : [];
+                  const allUserAddresses = [
+                    (address || '').toLowerCase(),
+                    ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
+                  ];
+                  const isUserTrade = allUserAddresses.includes(callerAddr);
+      
+                  let idx = memePositionsMapRef.current.get(tokenAddrFromMarket);
+                  if (idx === undefined && isUserTrade) {
+                    const newPos = {
+                      tokenId: memeRef.current.id?.toLowerCase(),
+                      symbol: memeRef.current?.symbol || '',
+                      name: memeRef.current?.name   || '',
+                      imageUrl: memeRef.current?.image || '',
+                      metadataCID: '',
+                      boughtTokens: 0,
+                      soldTokens: 0,
+                      spentNative: 0,
+                      receivedNative: 0,
+                      remainingTokens: 0,
+                      remainingPct: 0,
+                      pnlNative: 0,
+                      lastPrice: price,
+                    };
+                    copy.push(newPos);
+                    idx = copy.length - 1;
+                    memePositionsMapRef.current.set(tokenAddrFromMarket, idx);
+                  }
+                  if (idx === undefined) return prev;
+      
+                  const pos = { ...copy[idx] };
+                  pos.lastPrice = price;
+                  if (isUserTrade) {
+                    if (isBuy) {
+                      pos.boughtTokens += amountOut;
+                      pos.spentNative += amountIn;
+                      pos.remainingTokens = (pos.remainingTokens || 0) + amountOut;
+                    } else {
+                      pos.soldTokens += amountIn;
+                      pos.receivedNative += amountOut;
+                      pos.remainingTokens = Math.max(0, (pos.remainingTokens || 0) - amountIn);
+                    }
+                  }
+                  pos.remainingPct = pos.boughtTokens > 0
+                    ? (pos.remainingTokens / pos.boughtTokens) * 100
+                    : 0;
+      
+                  const balance = Math.max(0, pos.remainingTokens);
+                  const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
+                  const unrealized = balance * (pos.lastPrice || 0);
+                  pos.pnlNative = realized + unrealized;
+      
+                  copy[idx] = pos;
+      
+                  if (memeRef.current.id && tokenAddrFromMarket === memeRef.current.id.toLowerCase()) {
+                    const markToMarket = balance * (pos.lastPrice || 0);
+                    const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
+                    setMemeUserStats({
+                      balance,
+                      amountBought: pos.boughtTokens || 0,
+                      amountSold: pos.soldTokens   || 0,
+                      valueBought: pos.spentNative  || 0,
+                      valueSold: pos.receivedNative || 0,
+                      valueNet: totalPnL,
+                    });
+                  }
+                  return copy;
+                });
+      
+                if (memeDevTokenIdsRef.current.has(tokenAddrFromMarket)) {
+                  setMemeDevTokens(prev => {
+                    const updated = prev.map(t => {
+                      if ((t.id || '').toLowerCase() !== tokenAddrFromMarket) return t;
+                      return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
+                    });
+                    memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
+                    return updated;
+                  });
+                }
+      
+                return tempset;
+              }
+              else if (log.topics?.[0] === MARKET_CREATED_EVENT) {
+                addMarket(log);
+              }
+              else if (log.topics?.[0] === MARKET_UPDATE_EVENT) {
+                updateMarket(log);
+                const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+                const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
+      
+                const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+                const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
+      
+                const isBuy = word(0) !== 0n;
+                const inputAmountWei = word(1);
+                const outputAmountWei = word(2);
+                const vNativeWei = word(3);
+                const vTokenWei = word(4);
+      
+                const toNum = (x: bigint) => Number(x) / 1e18;
+                const amountIn = toNum(inputAmountWei);
+                const amountOut = toNum(outputAmountWei);
+                const vNative = Number(vNativeWei);
+                const vToken = Number(vTokenWei);
+      
+                const price = vToken === 0 ? 0 : vNative / vToken;
+                const tradePrice = (isBuy ? amountIn / amountOut : amountOut / amountIn) || 0;
+                if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
+                  setTokenData(p => ({
+                    ...p,
+                    price,
+                    marketCap: price * TOTAL_SUPPLY,
+                    buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
+                    sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
+                    volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
+                  }));
+      
+                  setMemeTrades(prev => [
+                    {
+                      id: `${log.transactionHash}-${log.logIndex}`,
+                      timestamp: Date.now() / 1000,
+                      isBuy,
+                      price: tradePrice,
+                      nativeAmount: isBuy ? amountIn : amountOut,
+                      tokenAmount: isBuy ? amountOut : amountIn,
+                      caller: `0x${log.topics[2].slice(26)}`,
+                    },
+                    ...prev.slice(0, 99),
+                  ]);
+      
+                  const sel = memeSelectedInterval;
+                  const RESOLUTION_SECS: Record<string, number> = {
+                    '1s': 1, '5s': 5, '15s': 15, '1m': 60, '5m': 300, '15m': 900,
+                    '1h': 3600, '4h': 14400, '1d': 86400,
+                  };
+                  const resSecs = RESOLUTION_SECS[sel] ?? 60;
+                  const now = Date.now();
+                  const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
+                  const volNative = isBuy ? amountIn : amountOut;
+                  const toSeriesKey = (sym: string, interval: string) =>
+                    sym +
+                    'MON' +
+                    (interval === '1d'
+                      ? '1D'
+                      : interval === '4h'
+                        ? '240'
+                        : interval === '1h'
+                          ? '60'
+                          : interval.endsWith('s')
+                            ? interval.slice(0, -1).toUpperCase() + 'S'
+                            : interval.slice(0, -1));
+                  setChartData((prev: any) => {
+                    if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
+                    const [bars, key, flag] = prev;
+                    const updated = [...bars];
+                    const last = updated[updated.length - 1];
+            
+                    if (!last || last.time < bucket) {
+                      const prevClose = last?.close ?? tradePrice;
+                      const open = prevClose;
+                      const high = Math.max(open, tradePrice);
+                      const low = Math.min(open, tradePrice);
+                      const newBar = {
+                        time: bucket,
+                        open,
+                        high,
+                        low,
+                        close: tradePrice,
+                        volume: volNative || 0,
+                      };
+                      updated.push(newBar);
+                      const cb =
+                        memeRealtimeCallbackRef.current?.[toSeriesKey(memeRef.current.symbol, sel)];
+                      if (cb) cb(newBar);
+                    } else {
+                      const cur = { ...last };
+                      cur.high = Math.max(cur.high, tradePrice);
+                      cur.low = Math.min(cur.low, tradePrice);
+                      cur.close = tradePrice;
+                      cur.volume = (cur.volume || 0) + (volNative || 0);
+                      updated[updated.length - 1] = cur;
+                      const cb =
+                        memeRealtimeCallbackRef.current?.[toSeriesKey(memeRef.current.symbol, sel)];
+                      if (cb) cb(cur);
+                    }
+                    if (updated.length > 1200) updated.splice(0, updated.length - 1200);
+                    return [updated, key, flag];
+                  });
+      
+                  setMemeHolders(prev => {
+                    const arr = prev.slice();
+                    let idx = memeHoldersMapRef.current.get?.(callerAddr);
+                    if (idx == undefined) {
+                      const fresh: Holder = {
+                        address: `0x${log.topics[2].slice(26)}`,
+                        balance: 0,
+                        amountBought: 0,
+                        amountSold: 0,
+                        valueBought: 0,
+                        valueSold: 0,
+                        valueNet: 0,
+                        tokenNet: 0,
+                      };
+                      arr.push(fresh);
+                      idx = arr.length - 1;
+                      memeHoldersMapRef.current.set(callerAddr, idx);
+                    }
+                    const h = { ...arr[idx] };
+                    if (isBuy) {
+                      h.amountBought = (h.amountBought || 0) + amountOut;
+                      h.valueBought = (h.valueBought || 0) + amountIn;
+                      h.balance = (h.balance || 0) + amountOut;
+                    } else {
+                      h.amountSold = (h.amountSold || 0) + amountIn;
+                      h.valueSold = (h.valueSold || 0) + amountOut;
+                      h.balance = Math.max(0, (h.balance || 0) - amountIn);
+                    }
+                    arr[idx] = h;
+      
+                    for (let i = 0; i < arr.length; i++) {
+                      const h = arr[i];
+                      const realized = (h.valueSold || 0) - (h.valueBought || 0);
+                      const bal = Math.max(0, h.balance || 0);
+                      arr[i] = { ...h, valueNet: realized + bal * price };
+                    }
+                    const topSum = arr.map(h => Math.max(0, h.balance || 0)).sort((a, b) => b - a).slice(0, 10).reduce((s, n) => s + n, 0);
+                    setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
+                    return arr;
+                  });
+      
+                  setMemeTopTraders(prev => {
+                    const copy = Array.isArray(prev) ? [...prev] : [];
+                    const key = callerAddr;
+                    let idx = memeTopTradersMapRef.current.get(key) ?? -1;
+      
+                    if (idx === -1) {
+                      const row: Holder = {
+                        address: `0x${log.topics[2].slice(26)}`,
+                        balance: 0, tokenNet: 0, valueNet: 0,
+                        amountBought: 0, amountSold: 0,
+                        valueBought: 0, valueSold: 0,
+                      };
+                      copy.push(row);
+                      idx = copy.length - 1;
+                      memeTopTradersMapRef.current.set(key, idx);
+                    }
+      
+                    const row = { ...copy[idx] };
+                    const curBal = Math.max(0, (row.balance ?? row.amountBought - row.amountSold) || 0);
+                    if (isBuy) {
+                      row.amountBought = (row.amountBought || 0) + amountOut;
+                      row.valueBought = (row.valueBought || 0) + amountIn;
+                      row.balance = curBal + amountOut;
+                    } else {
+                      row.amountSold = (row.amountSold || 0) + amountIn;
+                      row.valueSold = (row.valueSold || 0) + amountOut;
+                      row.balance = Math.max(0, curBal - amountIn);
+                    }
+                    row.tokenNet = (row.amountBought || 0) - (row.amountSold || 0);
+                    copy[idx] = row;
+      
+                    for (let i = 0; i < copy.length; i++) {
+                      const r = copy[i];
+                      const bal = Math.max(0, (r.balance ?? r.amountBought - r.amountSold) || 0);
+                      const realized = (r.valueSold || 0) - (r.valueBought || 0);
+                      copy[i] = { ...r, valueNet: realized + bal * price };
+                    }
+      
+                    copy.sort((a, b) => b.valueNet - a.valueNet);
+                    if (copy.length > 300) {
+                      const removed = copy.splice(300);
+                      for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
+                    }
+                    copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
+                    return copy;
+                  });
+      
+                  setMemePositions(prev => {
+                    const copy = Array.isArray(prev) ? [...prev] : [];
+                    const allUserAddresses = [
+                      (address || '').toLowerCase(),
+                      ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
+                    ];
+                    const isUserTrade = allUserAddresses.includes(callerAddr);
+                    let idx = memePositionsMapRef.current.get(tokenAddr);
+      
+                    if (idx === undefined && isUserTrade) {
+                      const newPos = {
+                        tokenId: memeRef.current.id?.toLowerCase(),
+                        symbol: memeRef.current?.symbol || '',
+                        name: memeRef.current?.name || '',
+                        imageUrl: memeRef.current?.image || '',
+                        metadataCID: '',
+                        boughtTokens: 0,
+                        soldTokens: 0,
+                        spentNative: 0,
+                        receivedNative: 0,
+                        remainingTokens: 0,
+                        remainingPct: 0,
+                        pnlNative: 0,
+                        lastPrice: price,
+                      };
+                      copy.push(newPos);
+                      idx = copy.length - 1;
+                      memePositionsMapRef.current.set(tokenAddr, idx);
+                    }
+                    if (idx === undefined) return prev;
+      
+                    const pos = { ...copy[idx] };
+                    pos.lastPrice = price;
+                    if (isUserTrade) {
+                      if (isBuy) {
+                        pos.boughtTokens += amountOut;
+                        pos.spentNative += amountIn;
+                        pos.remainingTokens += amountOut;
+                      } else {
+                        pos.soldTokens += amountIn;
+                        pos.receivedNative += amountOut;
+                        pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
+                      }
+                    }
+                    pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
+      
+                    const balance = Math.max(0, pos.remainingTokens);
+                    const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
+                    const unrealized = balance * (pos.lastPrice || 0);
+                    pos.pnlNative = realized + unrealized;
+      
+                    copy[idx] = pos;
+      
+                    if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
+                      const markToMarket = balance * (pos.lastPrice || 0);
+                      const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
+                      setMemeUserStats({
+                        balance,
+                        amountBought: pos.boughtTokens || 0,
+                        amountSold: pos.soldTokens || 0,
+                        valueBought: pos.spentNative || 0,
+                        valueSold: pos.receivedNative || 0,
+                        valueNet: totalPnL,
+                      });
+                    }
+                    return copy;
+                  });
+      
+                  if (memeDevTokenIdsRef.current.has(tokenAddr)) {
+                    setMemeDevTokens(prev => {
+                      const updated = prev.map(t => {
+                        if ((t.id || '').toLowerCase() !== tokenAddr) return t;
+                        return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
+                      });
+                      memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
+                      return updated;
+                    });
+                  }
+                }
+                return tempset;
+              }
               else if (log.topics?.[0] == '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098') {
 
               }
@@ -4445,15 +5000,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               retryCountRef.current += 1;
             }
 
-            const markets = [
-              ...tokensByStatus.new,
-              ...tokensByStatus.graduating,
-              ...tokensByStatus.graduated,
-            ].map((t) => t.id);
-
-            scheduleReconnect(
-              markets.length ? markets : Array.from(trackedMarketsRef.current),
-            );
+            scheduleReconnect();
           }
         };
       } catch (error) {
@@ -4462,18 +5009,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
     },
     [subscribe, addMarket, updateMarket, scheduleReconnect],
-  );
-
-  const handleConnectionError = useCallback(
-    (_errorType: string) => {
-      connectionStateRef.current = 'disconnected';
-      consecutiveFailuresRef.current += 1;
-      retryCountRef.current += 1;
-
-      const markets = Array.from(trackedMarketsRef.current);
-      scheduleReconnect(markets);
-    },
-    [scheduleReconnect],
   );
 
   useEffect(() => {
@@ -4660,8 +5195,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         dispatch({ type: 'INIT', tokens });
         const all = tokens.map((t) => t.id);
-        trackedMarketsRef.current = new Set(all.map((x) => x.toLowerCase()));
-        openWebsocket(all);
+        openWebsocket();
       } catch (err) {
         console.error('initial subgraph fetch failed', err);
       } finally {
@@ -4703,12 +5237,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       connectionAttemptsRef.current = 0;
       retryCountRef.current = 0;
       consecutiveFailuresRef.current = 0;
-      trackedMarketsRef.current.clear();
     };
   }, [openWebsocket, !['board', 'spectra', 'meme', 'launchpad'].includes(location.pathname.split('/')[1])]);
 
   // memeinterface
-  const [memeLive, setMemeLive] = useState<Partial<any>>({});
   const [memeTrades, setMemeTrades] = useState<LaunchpadTrade[]>([]);
   const [memeHolders, setMemeHolders] = useState<Holder[]>([]);
   const [memeTopTraders, setMemeTopTraders] = useState<Holder[]>([]);
@@ -4725,13 +5257,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [page, _setPage] = useState(0);
   const [initialMemeFetchDone, setInitialMemeFetchDone] = useState(false);
 
-  const memeWsRef = useRef<WebSocket | null>(null);
+  const memeRef = useRef<any>();
   const memeHoldersMapRef = useRef<Map<string, number>>(new Map());
   const memePositionsMapRef = useRef<Map<string, number>>(new Map());
   const memeTopTradersMapRef = useRef<Map<string, number>>(new Map());
   const memeDevTokenIdsRef = useRef<Set<string>>(new Set());
   const memeLastInvalidateRef = useRef(0);
-  const memePriceTickRef = useRef<(price: number, volNative: number) => void>(() => { });
 
   const calcDevHoldingPct = (list: Holder[], dev?: string) => {
     if (!dev) return 0;
@@ -4775,21 +5306,19 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     };
 
     const snapshot: Partial<Token> = (tokenData ?? {}) as Partial<Token>;
-    const live: Partial<Token> = memeLive ?? {};
     const merged = {
       ...baseDefaults,
       ...snapshot,
-      ...live,
     } as Token;
 
-    merged.id = (merged.id || tokenAddress || "").toLowerCase();
+    merged.id = (tokenAddress || "").toLowerCase();
     merged.tokenAddress = (merged.tokenAddress || tokenAddress || "").toLowerCase();
     if (!merged.created) {
       merged.created = Math.floor(Date.now() / 1000);
     }
-
+    memeRef.current = merged
     return merged;
-  }, [tokenAddress, tokenData, memeLive]);
+  }, [tokenAddress, tokenData]);
 
   useEffect(() => {
     localStorage.setItem('meme_chart_timeframe', memeSelectedInterval);
@@ -4876,7 +5405,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         if (data.launchpadTokens?.length) {
           const m = data.launchpadTokens[0];
-          setMemeLive(m);
 
           let imageUrl = tokenData?.image || m.metadataCID || '';
 
@@ -4906,16 +5434,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
           const website = socials[0];
 
-          setMemeLive(p => ({
-            ...p,
+          setTokenData({
+            ...data.launchpadTokens[0],
             id: m.id.toLowerCase(),
             tokenAddress: m.id.toLowerCase(),
             dev: m.creator.id,
             name: m.name,
             symbol: m.symbol,
-            image: imageUrl || p?.image,
+            image: imageUrl,
             twitterHandle: twitter ?? '',
             website: website ?? '',
+            created: m.timestamp,
             status: m.migrated
               ? 'graduated'
               : price * TOTAL_SUPPLY > 12500
@@ -4939,17 +5468,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 .slice(0, 10)
                 .reduce((sum: bigint, h: { tokens: string }) => sum + BigInt(h.tokens || '0'), 0n)
             ) / 1e25,
-          }));
-
-          setTokenData((td: any) => ({
-            ...td,
-            id,
-            image: imageUrl || td?.image,
-            name: m.name || td?.name,
-            symbol: m.symbol || td?.symbol,
-            dev: m.creator?.id || td?.dev,
-            created: m.timestamp,
-          }));
+          });
         }
 
         if (data.launchpadTokens?.[0]?.trades?.length) {
@@ -4990,14 +5509,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   : memeSelectedInterval.endsWith('s')
                     ? memeSelectedInterval.slice(0, -1).toUpperCase() + 'S'
                     : memeSelectedInterval.slice(0, -1);
-
           setChartData([bars, resForChart, false]);
         }
 
         setInitialMemeFetchDone(true);
       } catch (e) {
         console.error('Error fetching token data:', e);
-        setMemeLive(p => ({
+        setTokenData(p => ({
           ...p,
           price: 0,
           marketCap: 0,
@@ -5074,7 +5592,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (!cancelled) {
           setMemeTop10HoldingPct(top10Pct);
           const devPct = calcDevHoldingPct(mapped, token.dev);
-          setMemeLive((p: any) => ({ ...p, devHolding: devPct }));
+          setTokenData((p: any) => ({ ...p, devHolding: devPct }));
           setMemeHolders(mapped);
           memeHoldersMapRef.current = new Map(
             mapped.map((h: Holder, i: number) => [h.address.toLowerCase(), i]),
@@ -5571,21 +6089,20 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   // live dev holding
   useEffect(() => {
-    const dev = (token.dev || (memeLive as any)?.dev || tokenData?.dev || "").toLowerCase();
+    const dev = (token.dev || (tokenData as any)?.dev || tokenData?.dev || "").toLowerCase();
     if (!dev) {
-      setMemeLive(p => ({ ...p, devHolding: 0 }));
+      setTokenData(p => ({ ...p, devHolding: 0 }));
       return;
     }
 
     const row = memeHolders.find(h => (h.address || "").toLowerCase() === dev);
     const pct = row ? toPct(Math.max(0, row.balance || 0)) : 0;
 
-    setMemeLive(p => ({ ...p, devHolding: pct }));
+    setTokenData(p => ({ ...p, devHolding: pct }));
   }, [
     memeHolders,
     token.dev,
     tokenData?.dev,
-    (memeLive as any)?.dev,
   ]);
 
   // data loop, reuse to have every single rpc call method in this loop
@@ -5937,14 +6454,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const queuedUpdatesRef = useRef<Array<any>>([]);
 
   // memeinterface ws
-  useEffect(() => {
+  /* useEffect(() => {
     if (!token.id || !initialMemeFetchDone) return;
     const wssUrl = settings.chainConfig[activechain]?.wssurl;
     const routerAddress = settings.chainConfig[activechain]?.router;
 
     if (!wssUrl || !routerAddress) return;
 
-    const currentTokenDev = (memeLive as any)?.dev || tokenData?.dev || '';
+    const currentTokenDev = tokenData?.dev || '';
 
     const ws = new WebSocket(wssUrl);
     memeWsRef.current = ws;
@@ -5963,8 +6480,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     ws.onopen = () => {
       sendSub(['monadLogs', { address: token.id, topics: [[TRANSFER_TOPIC]] }]);
-      sendSub(['monadLogs', { address: routerAddress, topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT]] }]);
-      sendSub(['monadLogs', { address: routerAddress, topics: [['0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']] }]);
+      sendSub(['monadLogs', { address: routerAddress, topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT, '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']] }]);
     };
 
     ws.onmessage = ({ data }) => {
@@ -5979,7 +6495,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         } else if (msg.result) {
           subsRef.current.set(msg.id, { ...pending, ok: true, subId: msg.result });
           subIdsRef.current.add(msg.result);
-          console.log('ws subscribed ok:', pending.params, '->', msg.result);
         }
         return;
       }
@@ -6023,9 +6538,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
           const price = vToken === 0 ? 0 : vNative / vToken;
           const tradePrice = (isBuy ? amountIn / amountOut : amountOut / amountIn) || 0;
-
           if (token.id && tokenAddr === token.id.toLowerCase()) {
-            setMemeLive(p => ({
+            setTokenData(p => ({
               ...p,
               price,
               marketCap: price * TOTAL_SUPPLY,
@@ -6046,8 +6560,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               },
               ...prev.slice(0, 99),
             ]);
-
-            setTokenData((prev: any) => ({ ...prev, price, marketCap: price * TOTAL_SUPPLY }));
 
             const sel = memeSelectedInterval;
             const RESOLUTION_SECS: Record<string, number> = {
@@ -6299,7 +6811,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
           const tradePrice = price;
 
-          setMemeLive(p => ({
+          setTokenData(p => ({
             ...p,
             price,
             marketCap: price * TOTAL_SUPPLY,
@@ -6584,7 +7096,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         ws.close();
       } catch { }
     };
-  }, [activechain, token.id, initialMemeFetchDone, address, subWallets]);
+  }, [activechain, token.id, initialMemeFetchDone, address, subWallets]); */
 
   useEffect(() => {
     const cleaned = deduplicateWallets(subWallets);
@@ -24283,7 +24795,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 onTokenDataChange={setCurrentTokenData}
                 nonces={nonces}
                 tokenAddress={token.id}
-                live={memeLive}
                 trades={memeTrades}
                 setTrades={setMemeTrades}
                 holders={memeHolders}
@@ -24292,7 +24803,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 devTokens={memeDevTokens}
                 top10HoldingPercentage={memeTop10HoldingPct}
                 userStats={memeUserStats}
-                registerRealtimeTick={(fn) => (memePriceTickRef.current = fn)}
+                realtimeCallbackRef={memeRealtimeCallbackRef}
                 selectedInterval={memeSelectedInterval}
                 setSelectedInterval={setMemeSelectedInterval}
                 chartData={chartData}
@@ -24347,7 +24858,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 chartData={chartData}
                 setChartData={setChartData}
                 trades={memeTrades}
-                registerRealtimeTick={(fn) => (memePriceTickRef.current = fn)}
+                realtimeCallbackRef={memeRealtimeCallbackRef}
               />
             } 
           />
