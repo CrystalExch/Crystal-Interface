@@ -10,12 +10,12 @@ interface MemeAdvancedChartProps {
   setSelectedInterval: any;
   setOverlayVisible: (visible: boolean) => void;
   tradehistory: any[];
-  isMarksVisible?: boolean; // kept for UI, but marks inclusion now depends only on trackedAddresses rule below
+  isMarksVisible?: boolean;
   realtimeCallbackRef: any;
   monUsdPrice?: number;
   address: any;
   devAddress: any;
-  trackedAddresses: string[]; // driving source of truth for marks filtering
+  trackedAddresses: string[];
 }
 
 const SUB = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
@@ -95,18 +95,14 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
 
-  // runtime data caches
   const dataRef = useRef<any>({});
   const tokenRef = useRef(token);
-
-  // MIRROR LATEST PROPS IN REFS
   const tradeHistoryRef = useRef<any[]>(tradehistory ?? []);
   const addressRef = useRef<any>(address);
   const devAddressRef = useRef<any>(devAddress);
   const trackedAddressesRef = useRef<string[]>(Array.isArray(trackedAddresses) ? trackedAddresses : []);
   const selectedIntervalRef = useRef<string>(selectedInterval);
 
-  // VERSION BUMP THAT FORCES TRADINGVIEW TO RE-QUERY MARKS
   const [marksVersion, setMarksVersion] = useState<number>(0);
   const marksVersionRef = useRef<number>(0);
 
@@ -133,9 +129,8 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
     }
   });
 
-  // HELPERS TO KEEP SYMBOL STABLE FOR BARS, BUT UNIQUE FOR MARKS
   const basePair = () => `${token.symbol}/${showUSD ? 'USD' : 'MON'}`;
-  const tvSymbol = () => `${basePair()}|m${marksVersionRef.current}`; // append a version suffix that we strip in resolveSymbol
+  const tvSymbol = () => `${basePair()}|m${marksVersionRef.current}`;
 
   const toResKey = (sym: string, res: string) => sym + 'MON' + res;
 
@@ -404,7 +399,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
             const tracked = Array.isArray(trackedAddressesRef.current)
               ? trackedAddressesRef.current.map(a => String(a || '').toLowerCase()).filter(Boolean)
               : [];
-              
+
             const includeCaller = (raw: string | undefined) => {
               const c = String(raw || '').toLowerCase();
               if (!c) return false;
@@ -515,7 +510,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
             setShowUSD((prev) => {
               const next = !prev;
               localStorage.setItem('meme_chart_showUSD', JSON.stringify(next));
-              // keep same marks version, only change base pair
               widgetRef.current
                 .activeChart()
                 .setSymbol(
