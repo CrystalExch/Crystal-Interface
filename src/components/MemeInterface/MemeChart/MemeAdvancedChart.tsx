@@ -171,15 +171,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   }, [JSON.stringify(trackedAddresses ?? [])]);
 
   useEffect(() => {
-    if (!widgetRef.current?.activeChart) return;
-    try {
-      const chart = widgetRef.current.activeChart();
-      const res = chart.resolution();
-      chart.setSymbol(tvSymbol(), res, () => { });
-    } catch { }
-  }, [marksVersion]);
-
-  useEffect(() => {
     onResetCacheNeededRef.current?.();
   }, [selectedInterval, address, devAddress, tradehistory]);
 
@@ -645,7 +636,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
     } catch (e) {
       setOverlayVisible(false);
     }
-  }, [token.symbol, selectedInterval, marksVersion, showUSD]);
+  }, [token.symbol, selectedInterval, showUSD]);
 
   return (
     <div className="advanced-chart-container">

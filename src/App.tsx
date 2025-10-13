@@ -4408,7 +4408,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               if (log.topics?.[0] === ROUTER_EVENT) addMarket(log);
               else if (log.topics?.[0] === MARKET_UPDATE_EVENT) updateMarket(log);
               else if (log.topics?.[0] == '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098') {
-                
+
               }
               return tempset;
             })
@@ -5934,6 +5934,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const subsRef = useRef<Map<number, {params:any, ok:boolean, subId?:string, ts:number}>>(new Map());
   const subIdsRef = useRef<Set<string>>(new Set());
   const pendingTradesRef = useRef<Array<any>>([]);
+  const queuedUpdatesRef = useRef<Array<any>>([]);
 
   // memeinterface ws
   useEffect(() => {
@@ -5961,8 +5962,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     };
 
     ws.onopen = () => {
-      if (token.id) sendSub(['monadLogs', { address: token.id, topics: [[TRANSFER_TOPIC]] }]);
+      sendSub(['monadLogs', { address: token.id, topics: [[TRANSFER_TOPIC]] }]);
       sendSub(['monadLogs', { address: routerAddress, topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT]] }]);
+      sendSub(['monadLogs', { address: routerAddress, topics: [['0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']] }]);
     };
 
     ws.onmessage = ({ data }) => {
@@ -6539,6 +6541,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
 
           return tempset;
+        }
+
+        if (log.topics[0] == '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098') {
+
         }
 
         if (
