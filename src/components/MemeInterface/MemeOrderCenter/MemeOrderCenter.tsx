@@ -57,7 +57,7 @@ interface MemeOrderCenterProps {
   isVertDragging?: boolean;
   isOrderCenterVisible?: boolean;
   onHeightChange?: (height: number) => void;
-onDragStart?: (e: React.MouseEvent) => void;
+  onDragStart?: (e: React.MouseEvent) => void;
   onDragEnd?: () => void;
   isWidgetOpen?: boolean;
   onToggleWidget?: () => void;
@@ -551,20 +551,20 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     { key: 'topTraders', label: `Top Traders (${topTraderRows.length})` },
     { key: 'devTokens', label: `Dev Tokens (${devTokensToShow.length})` },
   ];
-useEffect(() => {
-  if (isDragging && !isVertDragging) {
-    setIsDragging(false);
-  }
-}, [isVertDragging, isDragging]);
-const handleMouseDown = useCallback(
-  (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-onDragStart?.(e);
-  },
-  [onDragStart],
-);
+  useEffect(() => {
+    if (isDragging && !isVertDragging) {
+      setIsDragging(false);
+    }
+  }, [isVertDragging, isDragging]);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(true);
+      onDragStart?.(e);
+    },
+    [onDragStart],
+  );
 
   const handleTabChange = (
     section: 'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens',
@@ -1418,8 +1418,8 @@ onDragStart?.(e);
                               strokeLinecap="round"
                               strokeLinejoin="round"
                             >
-                              <circle cx="12" cy="12" r="10"/>
-                              <path d="m9 12 2 2 4-4"/>
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="m9 12 2 2 4-4" />
                             </svg>
                           ) : (
                             <svg
@@ -1433,9 +1433,9 @@ onDragStart?.(e);
                               strokeLinecap="round"
                               strokeLinejoin="round"
                             >
-                              <circle cx="12" cy="12" r="10"/>
-                              <path d="m15 9-6 6"/>
-                              <path d="m9 9 6 6"/>
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="m15 9-6 6" />
+                              <path d="m9 9 6 6" />
                             </svg>
                           )}
                         </div>
@@ -1460,16 +1460,16 @@ onDragStart?.(e);
                   <span className="meme-oc-dev-stats-value">{devTokensToShow.length}</span>
                 </div>
 
-<div className="meme-oc-dev-stats-migration">
-  <div className="meme-oc-migration-item migrated">
-    <span className="meme-oc-migration-indicator"></span>
-    <span>Migrated: {token.graduatedTokens || devTokensToShow.filter(t => t.migrated).length}</span>
-  </div>
-  <div className="meme-oc-migration-item non-migrated">
-    <span className="meme-oc-migration-indicator"></span>
-    <span>Non Migrated: {devTokensToShow.length - (token.graduatedTokens || 0)}</span>
-  </div>
-</div>
+                <div className="meme-oc-dev-stats-migration">
+                  <div className="meme-oc-migration-item migrated">
+                    <span className="meme-oc-migration-indicator"></span>
+                    <span>Migrated: {token.graduatedTokens || devTokensToShow.filter(t => t.migrated).length}</span>
+                  </div>
+                  <div className="meme-oc-migration-item non-migrated">
+                    <span className="meme-oc-migration-indicator"></span>
+                    <span>Non Migrated: {devTokensToShow.length - (token.graduatedTokens || 0)}</span>
+                  </div>
+                </div>
                 <div className="meme-oc-dev-stats-highlights">
                   <h4>Highlights</h4>
                   <div className="meme-oc-highlight-item">
@@ -1490,39 +1490,39 @@ onDragStart?.(e);
                   </div>
                 </div>
               </div>
-<div className="meme-oc-dev-stats-chart">
-  <div className="meme-oc-chart-circle">
-    <svg viewBox="0 0 100 100">
-      <circle
-        cx="50"
-        cy="50"
-        r="40"
-        fill="none"
-        stroke="rgb(240, 103, 103)"
-        strokeWidth="8"
-      />
-      <circle
-        cx="50"
-        cy="50"
-        r="40"
-        fill="none"
-        stroke="rgb(67, 254, 154)"
-        strokeWidth="8"
-        strokeDasharray={`${devTokensToShow.length > 0 ? ((token.graduatedTokens || 0) / devTokensToShow.length) * 251 : 0} 251`}
-        strokeLinecap="butt" 
-        transform="rotate(-90 50 50)"
-      />
-    </svg>
-    <div className="meme-oc-chart-label">
-      <div className="meme-oc-chart-percentage">
-        {devTokensToShow.length > 0
-          ? Math.round(((token.graduatedTokens || 0) / devTokensToShow.length) * 100)
-          : 0}%
-      </div>
-      <div className="meme-oc-chart-sublabel">Migrated</div>
-    </div>
-  </div>
-</div>
+              <div className="meme-oc-dev-stats-chart">
+                <div className="meme-oc-chart-circle">
+                  <svg viewBox="0 0 100 100">
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="none"
+                      stroke="rgb(240, 103, 103)"
+                      strokeWidth="8"
+                    />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="none"
+                      stroke="rgb(67, 254, 154)"
+                      strokeWidth="8"
+                      strokeDasharray={`${devTokensToShow.length > 0 ? ((token.graduatedTokens || 0) / devTokensToShow.length) * 251 : 0} 251`}
+                      strokeLinecap="butt"
+                      transform="rotate(-90 50 50)"
+                    />
+                  </svg>
+                  <div className="meme-oc-chart-label">
+                    <div className="meme-oc-chart-percentage">
+                      {devTokensToShow.length > 0
+                        ? Math.round(((token.graduatedTokens || 0) / devTokensToShow.length) * 100)
+                        : 0}%
+                    </div>
+                    <div className="meme-oc-chart-sublabel">Migrated</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -1535,19 +1535,19 @@ onDragStart?.(e);
   const noDataMessage = 'No data available';
 
   return (
-<div
-  ref={containerRef}
-  className="meme-oc-rectangle"
-  style={{
-    position: 'relative',
-    height:
-      orderCenterHeight === 0 || isOrderCenterVisible === false
-        ? '0px'
-        : `${orderCenterHeight}px`,
-    transition: (isVertDragging || isDragging) ? 'none' : 'height 0.1s ease',
-    overflow: 'visible',
-  }}
->
+    <div
+      ref={containerRef}
+      className="meme-oc-rectangle"
+      style={{
+        position: 'relative',
+        height:
+          orderCenterHeight === 0 || isOrderCenterVisible === false
+            ? '0px'
+            : `${orderCenterHeight}px`,
+        transition: (isVertDragging || isDragging) ? 'none' : 'height 0.1s ease',
+        overflow: 'visible',
+      }}
+    >
       <div
         className={`meme-oc-drag-spacer ${!isOrderCenterVisible ? 'meme-oc-collapsed' : ''}`}
       >
