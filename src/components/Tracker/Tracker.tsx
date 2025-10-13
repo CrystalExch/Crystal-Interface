@@ -254,7 +254,8 @@ const Tracker: React.FC<TrackerProps> = ({
   monUsdPrice,
   walletTokenBalances = {}
 }) => {
-  const { activechain } = useSharedContext();
+  const context = useSharedContext();
+  const activechain = context?.activechain || 'monad';
   const [walletSortField, setWalletSortField] = useState<'balance' | 'lastActive' | null>(null);
   const [walletSortDirection, setWalletSortDirection] = useState<SortDirection>('desc');
   const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
@@ -682,6 +683,21 @@ const Tracker: React.FC<TrackerProps> = ({
   } | null>(null);
   const [activeSelectionContainer, setActiveSelectionContainer] = useState<'main' | null>(null);
   const [previewSelection, setPreviewSelection] = useState<Set<string>>(new Set());
+  const [isMultiDrag, setIsMultiDrag] = useState(false);
+  const [dragReorderState, setDragReorderState] = useState<{
+    draggedIndex: number;
+    dragOverIndex: number;
+    dragOverPosition: 'top' | 'bottom' | null;
+    draggedContainer: 'main' | null;
+    dragOverContainer: 'main' | null;
+  }>({
+    draggedIndex: -1,
+    dragOverIndex: -1,
+    dragOverPosition: null,
+    draggedContainer: null,
+    dragOverContainer: null
+  });
+  const [dropPreviewLine, setDropPreviewLine] = useState<{ top: number; containerKey: string } | null>(null);
   const [expandedTokens, setExpandedTokens] = useState<Set<string>>(new Set());
 
   // Save wallets to localStorage whenever they change
@@ -962,27 +978,6 @@ const Tracker: React.FC<TrackerProps> = ({
       return wallet;
     }));
   }, [walletTokenBalances, activechain]);
-
-  useEffect(() => {
-    const handleGlobalMouseUp = () => {
-      endSelection();
-    };
-
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setSelectedWallets(new Set());
-        endSelection();
-      }
-    };
-
-    document.addEventListener('mouseup', handleGlobalMouseUp);
-    document.addEventListener('keydown', handleGlobalKeyDown);
-
-    return () => {
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
-      document.removeEventListener('keydown', handleGlobalKeyDown);
-    };
-  }, []);
 
   
 
@@ -1425,175 +1420,117 @@ const Tracker: React.FC<TrackerProps> = ({
     setMonitorFilters(filters);
   };
 
+  const handleReorderDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-  const renderWalletItem = (wallet: TrackedWallet) => {
-    const isSelected = selectedWallets.has(wallet.id);
-    const isPreviewSelected = previewSelection.has(wallet.id);
+    try {
+      const reorderData = e.dataTransfer.getData('text/reorder');
+      if (!reorderData || reorderData.trim() === '') {
+        return;
+      }
 
-    return (
-      <div
-        key={wallet.id}
-        data-wallet-id={wallet.id}
-        className={`tracker-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''}`}
-        draggable
-        onDragStart={(e) => {
-          setDraggedWallet(wallet);
-          if (selectedWallets.size > 1 && isSelected) {
-            const selectedWalletsData = trackedWallets.filter(w => selectedWallets.has(w.id));
-            e.dataTransfer.setData('application/json', JSON.stringify({
-              type: 'multi-drag',
-              wallets: selectedWalletsData,
-              count: selectedWalletsData.length
-            }));
-          } else {
-            e.dataTransfer.setData('application/json', JSON.stringify({
-              type: 'single-drag',
-              wallet: wallet
-            }));
-          }
-        }}
-        onDragEnd={() => setDraggedWallet(null)}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (e.ctrlKey || e.metaKey) {
-            setSelectedWallets(prev => {
-              const newSet = new Set(prev);
-              if (newSet.has(wallet.id)) {
-                newSet.delete(wallet.id);
-              } else {
-                newSet.add(wallet.id);
-              }
-              return newSet;
-            });
-          } else {
-            setSelectedWallets(new Set([wallet.id]));
-          }
-        }}
-      >
-        <div className="tracker-wallet-drag-handle">
-          <img src={circle} className="tracker-drag-handle-icon" alt="Drag" />
-        </div>
+      const data = JSON.parse(reorderData);
 
-        <div className="tracker-wallet-profile">
-          <div className="tracker-wallet-emoji">{wallet.emoji}</div>
+      if (data.type === 'reorder') {
+        const { index: draggedIndex } = data;
+        const { dragOverIndex, dragOverPosition } = dragReorderState;
 
-          <div className="tracker-wallet-info">
-            {editingWallet === wallet.id ? (
-              <div className="tracker-wallet-name-edit-container">
-                <input
-                  type="text"
-                  className="tracker-wallet-name-input"
-                  value={editingName}
-                  onChange={(e) => setEditingName(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      saveWalletName(wallet.id);
-                    } else if (e.key === 'Escape') {
-                      setEditingWallet(null);
-                      setEditingName('');
-                    }
-                  }}
-                  autoFocus
-                  onBlur={() => saveWalletName(wallet.id)}
-                />
-              </div>
-            ) : (
-              <div className="tracker-wallet-name-display">
-                <span className="tracker-wallet-name">{wallet.name}</span>
-                <Edit2
-                  size={12}
-                  className="tracker-wallet-name-edit-icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    startEditingWallet(wallet.id);
-                  }}
-                />
-              </div>
-            )}
-            <div className="tracker-wallet-address">
-              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-              <img
-                src={copy}
-                className="tracker-copy-icon"
-                alt="Copy"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigator.clipboard.writeText(wallet.address);
-                }}
-                style={{ cursor: 'pointer' }}
-              />
-            </div>
-          </div>
-        </div>
+        if (draggedIndex === dragOverIndex) {
+          setDragReorderState({
+            draggedIndex: -1,
+            dragOverIndex: -1,
+            dragOverPosition: null,
+            draggedContainer: null,
+            dragOverContainer: null
+          });
+          setDropPreviewLine(null);
+          return;
+        }
 
-        <div className={`tracker-wallet-balance ${isBlurred ? 'blurred' : ''}`}>
-          {walletCurrency === 'MON' ? (
-            <img src={monadicon} className="tracker-balance-icon" alt="MON" />
-          ) : (
-            `$`
-          )}
-          {(() => {
-            const realBalance = walletTokenBalances[wallet.address];
-            if (realBalance && activechain && settings.chainConfig[activechain]?.eth) {
-              const ethToken = settings.chainConfig[activechain].eth;
-              const balance = Number(realBalance[ethToken] || 0) / 1e18;
-              return balance > 0 ? (balance / 1000).toFixed(2) : '0.00';
-            }
-            return wallet.balance.toFixed(2);
-          })()}K
-        </div>
+        let targetIndex = dragOverIndex;
 
-        <div className="tracker-wallet-last-active">{wallet.lastActive}</div>
+        if (dragOverPosition === 'bottom') {
+          targetIndex++;
+        }
 
-        <div className="tracker-wallet-actions">
-          <Tooltip content="Export Private Key">
-            <button 
-              className="tracker-action-button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleExportPrivateKey(wallet.address);
-              }}
-            >
-              <img src={key} className="tracker-action-icon" alt="Export Key" />
-            </button>
-          </Tooltip>
+        if (draggedIndex < targetIndex) {
+          targetIndex--;
+        }
 
-          <Tooltip content="View on Explorer">
-            <a
-              href={`${settings.chainConfig[activechain].explorer}/address/${wallet.address}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="tracker-action-button"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <svg
-                className="tracker-action-icon"
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="white"
-              >
-                <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-              </svg>
-            </a>
-          </Tooltip>
+        targetIndex = Math.max(0, targetIndex);
 
-          <Tooltip content="Delete Wallet">
-            <button
-              className="tracker-action-button delete-button"
-              onClick={(e) => {
-                e.stopPropagation();
-                confirmDeleteWallet(wallet.id);
-              }}
-            >
-              <img src={trash} className="tracker-action-icon" alt="Delete" />
-            </button>
-          </Tooltip>
-        </div>
-      </div>
-    );
+        const reorderedWallets = [...trackedWallets];
+        const maxIndex = reorderedWallets.length - 1;
+        targetIndex = Math.min(targetIndex, maxIndex);
+
+        const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
+        reorderedWallets.splice(targetIndex, 0, movedWallet);
+        setTrackedWallets(reorderedWallets);
+      }
+    } catch (error) {
+      console.error('Reorder drop error:', error);
+    }
+
+    setDragReorderState({
+      draggedIndex: -1,
+      dragOverIndex: -1,
+      dragOverPosition: null,
+      draggedContainer: null,
+      dragOverContainer: null
+    });
+    setDropPreviewLine(null);
+  };
+
+  const handleMultiDragStart = (e: React.DragEvent) => {
+    e.stopPropagation();
+    setIsMultiDrag(true);
+
+    const selectedWalletsData = trackedWallets
+      .filter(w => selectedWallets.has(w.id))
+      .map((w, arrayIndex) => ({
+        ...w,
+        index: trackedWallets.findIndex(tw => tw.id === w.id)
+      }));
+
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('application/json', JSON.stringify({
+      type: 'multi-drag',
+      wallets: selectedWalletsData,
+      count: selectedWalletsData.length,
+      timestamp: Date.now()
+    }));
+  };
+
+  const updateSelection = (e: React.MouseEvent, container: HTMLElement) => {
+    if (!activeSelectionContainer || !selectionRect) return;
+
+    e.stopPropagation();
+    e.preventDefault();
+
+    const rect = container.getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+
+    setSelectionRect(prev => prev ? {
+      ...prev,
+      currentX,
+      currentY
+    } : null);
+  };
+
+  const endSelection = () => {
+    if (activeSelectionContainer && previewSelection.size > 0) {
+      setSelectedWallets(prev => {
+        const combined = new Set(prev);
+        previewSelection.forEach(id => combined.add(id));
+        return combined;
+      });
+    }
+
+    setPreviewSelection(new Set());
+    setActiveSelectionContainer(null);
+    setSelectionRect(null);
   };
 
   const formatMonitorValue = (value: number, decimals: number = 2): string => {
@@ -1617,88 +1554,59 @@ const Tracker: React.FC<TrackerProps> = ({
     setTrackedWallets([]);
   };
 
-  const startSelection = (e: React.MouseEvent) => {
-    if (e.button !== 0) return;
+  const handleReorderDragOver = (e: React.DragEvent, targetIndex: number, containerKey: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     
-    if ((e.target as HTMLElement).closest('.tracker-wallet-item')) {
+    if (isMultiDrag) {
       return;
     }
 
-    if (!e.ctrlKey && !e.metaKey) {
-      setSelectedWallets(new Set());
-    }
+    const element = e.currentTarget as HTMLElement;
+    const rect = element.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const isTopHalf = y < rect.height / 2;
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const startX = e.clientX - rect.left;
-    const startY = e.clientY - rect.top;
+    const containerType = containerKey.split('-')[0] as 'main';
 
-    setActiveSelectionContainer('main');
-    setSelectionRect({
-      startX,
-      startY,
-      currentX: startX,
-      currentY: startY
-    });
-  };
-
-  const updateSelection = (e: React.MouseEvent, container: HTMLElement) => {
-    if (!activeSelectionContainer || !selectionRect) return;
-
-    const rect = container.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const currentY = e.clientY - rect.top;
-
-    setSelectionRect(prev => prev ? {
+    setDragReorderState(prev => ({
       ...prev,
-      currentX,
-      currentY
-    } : null);
+      dragOverIndex: targetIndex,
+      dragOverPosition: isTopHalf ? 'top' : 'bottom',
+      dragOverContainer: containerType
+    }));
 
-    const walletElements = container.querySelectorAll('.tracker-wallet-item');
-    const newSelection = new Set<string>();
+    const parentElement = element.parentElement;
+    if (parentElement) {
+      const parentRect = parentElement.getBoundingClientRect();
+      const lineTop = isTopHalf ?
+        rect.top - parentRect.top :
+        rect.bottom - parentRect.top;
 
-    walletElements.forEach((element) => {
-      const walletRect = element.getBoundingClientRect();
-      const elementRect = {
-        left: walletRect.left - rect.left,
-        top: walletRect.top - rect.top,
-        right: walletRect.right - rect.left,
-        bottom: walletRect.bottom - rect.top
-      };
-
-      const selectionBounds = {
-        left: Math.min(selectionRect.startX, currentX),
-        top: Math.min(selectionRect.startY, currentY),
-        right: Math.max(selectionRect.startX, currentX),
-        bottom: Math.max(selectionRect.startY, currentY)
-      };
-
-      if (elementRect.left < selectionBounds.right &&
-        elementRect.right > selectionBounds.left &&
-        elementRect.top < selectionBounds.bottom &&
-        elementRect.bottom > selectionBounds.top) {
-        const walletId = element.getAttribute('data-wallet-id');
-        if (walletId) newSelection.add(walletId);
-      }
-    });
-
-    setPreviewSelection(newSelection);
-  };
-
-  const endSelection = () => {
-    if (activeSelectionContainer && previewSelection.size > 0) {
-      setSelectedWallets(prev => {
-        const combined = new Set(prev);
-        previewSelection.forEach(id => combined.add(id));
-        return combined;
-      });
+      setDropPreviewLine({ top: lineTop, containerKey });
     }
-
-    setPreviewSelection(new Set());
-    setActiveSelectionContainer(null);
-    setSelectionRect(null);
   };
 
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      endSelection();
+    };
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedWallets(new Set());
+        endSelection();
+      }
+    };
+
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+    document.addEventListener('keydown', handleGlobalKeyDown);
+
+    return () => {
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, []);
 
   const renderWalletManager = () => {
     const filteredWallets = getFilteredWallets();
@@ -1761,8 +1669,14 @@ const Tracker: React.FC<TrackerProps> = ({
                 updateSelection(e, mainWalletsRef.current);
               }
             }}
-            onMouseUp={endSelection}
-            onMouseLeave={endSelection}
+            onMouseUp={(e) => {
+              e.stopPropagation();
+              endSelection();
+            }}
+            onMouseLeave={(e) => {
+              e.stopPropagation();
+              endSelection();
+            }}
             style={{ position: 'relative' }}
           >
             {isSelecting && selectionRect && (
@@ -1784,7 +1698,7 @@ const Tracker: React.FC<TrackerProps> = ({
                 </div>
               </div>
             ) : (
-              filteredWallets.map(wallet => renderWalletItem(wallet))
+              filteredWallets.map((wallet, index) => renderWalletItem(wallet, index))
             )}
           </div>
         )}
@@ -2125,6 +2039,451 @@ const Tracker: React.FC<TrackerProps> = ({
       </div>
     );
   };
+
+  /*
+
+  const renderWalletItem = (wallet: TrackedWallet) => {
+    const isSelected = selectedWallets.has(wallet.id);
+    const isPreviewSelected = previewSelection.has(wallet.id);
+    const isDragging = dragReorderState.draggedIndex === index && dragReorderState.draggedContainer === 'main';
+    const isDragOver = dragReorderState.dragOverIndex === index && dragReorderState.dragOverContainer === 'main';
+    const containerKey = 'tracker-wallets';
+
+    return (
+      <div
+        key={wallet.id}
+        data-wallet-id={wallet.id}
+        className={`tracker-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''}`}
+        draggable
+        onDragStart={(e) => {
+          setDraggedWallet(wallet);
+          if (selectedWallets.size > 1 && isSelected) {
+            const selectedWalletsData = trackedWallets.filter(w => selectedWallets.has(w.id));
+            e.dataTransfer.setData('application/json', JSON.stringify({
+              type: 'multi-drag',
+              wallets: selectedWalletsData,
+              count: selectedWalletsData.length
+            }));
+          } else {
+            e.dataTransfer.setData('application/json', JSON.stringify({
+              type: 'single-drag',
+              wallet: wallet
+            }));
+          }
+        }}
+        onDragEnd={() => setDraggedWallet(null)}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (e.ctrlKey || e.metaKey) {
+            setSelectedWallets(prev => {
+              const newSet = new Set(prev);
+              if (newSet.has(wallet.id)) {
+                newSet.delete(wallet.id);
+              } else {
+                newSet.add(wallet.id);
+              }
+              return newSet;
+            });
+          } else {
+            setSelectedWallets(new Set([wallet.id]));
+          }
+        }}
+      >
+        <div className="tracker-wallet-drag-handle">
+          <img src={circle} className="tracker-drag-handle-icon" alt="Drag" />
+        </div>
+
+        <div className="tracker-wallet-profile">
+          <div className="tracker-wallet-emoji">{wallet.emoji}</div>
+
+          <div className="tracker-wallet-info">
+            {editingWallet === wallet.id ? (
+              <div className="tracker-wallet-name-edit-container">
+                <input
+                  type="text"
+                  className="tracker-wallet-name-input"
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      saveWalletName(wallet.id);
+                    } else if (e.key === 'Escape') {
+                      setEditingWallet(null);
+                      setEditingName('');
+                    }
+                  }}
+                  autoFocus
+                  onBlur={() => saveWalletName(wallet.id)}
+                />
+              </div>
+            ) : (
+              <div className="tracker-wallet-name-display">
+                <span className="tracker-wallet-name">{wallet.name}</span>
+                <Edit2
+                  size={12}
+                  className="tracker-wallet-name-edit-icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startEditingWallet(wallet.id);
+                  }}
+                />
+              </div>
+            )}
+            <div className="tracker-wallet-address">
+              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+              <img
+                src={copy}
+                className="tracker-copy-icon"
+                alt="Copy"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(wallet.address);
+                }}
+                style={{ cursor: 'pointer' }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className={`tracker-wallet-balance ${isBlurred ? 'blurred' : ''}`}>
+          {walletCurrency === 'MON' ? (
+            <img src={monadicon} className="tracker-balance-icon" alt="MON" />
+          ) : (
+            `$`
+          )}
+          {(() => {
+            const realBalance = walletTokenBalances[wallet.address];
+            if (realBalance && activechain && settings.chainConfig[activechain]?.eth) {
+              const ethToken = settings.chainConfig[activechain].eth;
+              const balance = Number(realBalance[ethToken] || 0) / 1e18;
+              return balance > 0 ? (balance / 1000).toFixed(2) : '0.00';
+            }
+            return wallet.balance.toFixed(2);
+          })()}K
+        </div>
+
+        <div className="tracker-wallet-last-active">{wallet.lastActive}</div>
+
+        <div className="tracker-wallet-actions">
+          <Tooltip content="Export Private Key">
+            <button 
+              className="tracker-action-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleExportPrivateKey(wallet.address);
+              }}
+            >
+              <img src={key} className="tracker-action-icon" alt="Export Key" />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="View on Explorer">
+            <a
+              href={`${settings.chainConfig[activechain].explorer}/address/${wallet.address}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="tracker-action-button"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg
+                className="tracker-action-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="white"
+              >
+                <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+              </svg>
+            </a>
+          </Tooltip>
+
+          <Tooltip content="Delete Wallet">
+            <button
+              className="tracker-action-button delete-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                confirmDeleteWallet(wallet.id);
+              }}
+            >
+              <img src={trash} className="tracker-action-icon" alt="Delete" />
+            </button>
+          </Tooltip>
+        </div>
+      </div>
+    );
+  };
+
+  */
+
+  const renderWalletItem = (wallet: TrackedWallet, index: number) => {
+    const isSelected = selectedWallets.has(wallet.id);
+    const isPreviewSelected = previewSelection.has(wallet.id);
+    const isDragging = dragReorderState.draggedIndex === index && dragReorderState.draggedContainer === 'main';
+    const isDragOver = dragReorderState.dragOverIndex === index && dragReorderState.dragOverContainer === 'main';
+    const containerKey = 'tracker-wallets';
+
+    return (
+      <div
+        key={wallet.id}
+        data-wallet-id={wallet.id}
+        className={`tracker-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''} ${isDragging ? 'dragging' : ''} ${isMultiDrag && isSelected ? 'multi-drag-ghost' : ''} ${(isSelected || isPreviewSelected) ? 'handle-visible' : ''}`}
+        draggable
+        onDragStart={(e) => {
+          e.stopPropagation();
+          setDropPreviewLine(null);
+          setDragReorderState(prev => ({
+            ...prev,
+            draggedIndex: index,
+            draggedContainer: 'main'
+          }));
+
+          if (selectedWallets.size > 1 && isSelected) {
+            handleMultiDragStart(e);
+            return;
+          }
+
+          setSelectedWallets(new Set([wallet.id]));
+
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('application/json', JSON.stringify({
+            type: 'single-drag',
+            wallet: wallet,
+            index: index
+          }));
+
+          const reorderData = {
+            type: 'reorder',
+            index: index,
+            container: 'main',
+            timestamp: Date.now()
+          };
+          e.dataTransfer.setData('text/reorder', JSON.stringify(reorderData));
+        }}
+        onDragEnd={(e) => {
+          e.stopPropagation();
+          setIsMultiDrag(false);
+          setDragReorderState({
+            draggedIndex: -1,
+            dragOverIndex: -1,
+            dragOverPosition: null,
+            draggedContainer: null,
+            dragOverContainer: null
+          });
+          setDropPreviewLine(null);
+          setDraggedWallet(null);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!isMultiDrag) {
+            handleReorderDragOver(e, index, containerKey);
+          }
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const relatedTarget = e.relatedTarget as Node;
+          if (!e.currentTarget.contains(relatedTarget)) {
+            setDropPreviewLine(null);
+            setDragReorderState(prev => ({ ...prev, dragOverIndex: -1, dragOverPosition: null }));
+          }
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!isMultiDrag) {
+            handleReorderDrop(e);
+          }
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (e.ctrlKey || e.metaKey) {
+            setSelectedWallets(prev => {
+              const newSet = new Set(prev);
+              if (newSet.has(wallet.id)) {
+                newSet.delete(wallet.id);
+              } else {
+                newSet.add(wallet.id);
+              }
+              return newSet;
+            });
+          } else {
+            setSelectedWallets(new Set([wallet.id]));
+          }
+        }}
+      >
+        {/* Multi-drag count badge */}
+        {isMultiDrag && isSelected && selectedWallets.size > 1 && (
+          <div className="multi-drag-count">
+            {selectedWallets.size}
+          </div>
+        )}
+
+        {/* Drop preview line */}
+        {!isMultiDrag && dropPreviewLine && dropPreviewLine.containerKey === containerKey && isDragOver && (
+          <div
+            className="drop-preview-line"
+            style={{
+              top: dragReorderState.dragOverPosition === 'top' ? -1 : '100%'
+            }}
+          />
+        )}
+
+        <div className="tracker-wallet-drag-handle">
+          <img src={circle} className="tracker-drag-handle-icon" alt="Drag" />
+        </div>
+
+        <div className="tracker-wallet-profile">
+          <div className="tracker-wallet-emoji">{wallet.emoji}</div>
+
+          <div className="tracker-wallet-info">
+            {editingWallet === wallet.id ? (
+              <div className="tracker-wallet-name-edit-container">
+                <input
+                  type="text"
+                  className="tracker-wallet-name-input"
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      saveWalletName(wallet.id);
+                    } else if (e.key === 'Escape') {
+                      setEditingWallet(null);
+                      setEditingName('');
+                    }
+                  }}
+                  autoFocus
+                  onBlur={() => saveWalletName(wallet.id)}
+                />
+              </div>
+            ) : (
+              <div className="tracker-wallet-name-display">
+                <span className="tracker-wallet-name">{wallet.name}</span>
+                <Edit2
+                  size={12}
+                  className="tracker-wallet-name-edit-icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startEditingWallet(wallet.id);
+                  }}
+                />
+              </div>
+            )}
+            <div className="tracker-wallet-address">
+              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+              <img
+                src={copy}
+                className="tracker-copy-icon"
+                alt="Copy"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(wallet.address);
+                }}
+                style={{ cursor: 'pointer' }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className={`tracker-wallet-balance ${isBlurred ? 'blurred' : ''}`}>
+          {walletCurrency === 'MON' ? (
+            <img src={monadicon} className="tracker-balance-icon" alt="MON" />
+          ) : (
+            '$'
+          )}
+          {(() => {
+            const realBalance = walletTokenBalances[wallet.address];
+            if (realBalance && activechain && settings.chainConfig[activechain]?.eth) {
+              const ethToken = settings.chainConfig[activechain].eth;
+              const balance = Number(realBalance[ethToken] || 0) / 1e18;
+              return balance > 0 ? (balance / 1000).toFixed(2) : '0.00';
+            }
+            return wallet.balance.toFixed(2);
+          })()}K
+        </div>
+
+        <div className="tracker-wallet-last-active">{wallet.lastActive}</div>
+
+        <div className="tracker-wallet-actions">
+          <Tooltip content="Export Private Key">
+            <button 
+              className="tracker-action-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleExportPrivateKey(wallet.address);
+              }}
+            >
+              <img src={key} className="tracker-action-icon" alt="Export Key" />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="View on Explorer">
+            
+            <a
+              href={`${settings.chainConfig[activechain]?.explorer}/address/${wallet.address}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="tracker-action-button"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg
+                className="tracker-action-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="white"
+              >
+                <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+              </svg>
+            </a>
+          </Tooltip>
+
+          <Tooltip content="Delete Wallet">
+            <button
+              className="tracker-action-button delete-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                confirmDeleteWallet(wallet.id);
+              }}
+            >
+              <img src={trash} className="tracker-action-icon" alt="Delete" />
+            </button>
+          </Tooltip>
+        </div>
+      </div>
+    );
+  };
+  
+
+    const startSelection = (e: React.MouseEvent) => {
+      if (e.button !== 0) return;
+      
+      if ((e.target as HTMLElement).closest('.tracker-wallet-item')) {
+        return;
+      }
+
+      e.stopPropagation();
+
+      if (!e.ctrlKey && !e.metaKey) {
+        setSelectedWallets(new Set());
+      }
+
+      const rect = e.currentTarget.getBoundingClientRect();
+      const startX = e.clientX - rect.left;
+      const startY = e.clientY - rect.top;
+
+      setActiveSelectionContainer('main');
+      setSelectionRect({
+        startX,
+        startY,
+        currentX: startX,
+        currentY: startY
+      });
+    };
 
   return (
     <div className="tracker-container">

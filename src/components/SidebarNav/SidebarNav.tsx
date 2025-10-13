@@ -169,14 +169,16 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={perps} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Perpetuals')}</span>
             </Link>
-            <Link
-              to="/board"
-              className={`page-mode-button ${path === '/board' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
-              onClick={handleLinkClick}
-            >
-              <img src={fun} className="sidebar-icon" />
-              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('crystal.fun')}</span>
-            </Link>
+            {!isMobile && (
+              <Link
+                to="/board"
+                className={`page-mode-button ${path === '/board' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+                onClick={handleLinkClick}
+              >
+                <img src={fun} className="sidebar-icon" />
+                <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('crystal.fun')}</span>
+              </Link>
+            )}
             <Link
               to="/swap"
               className={`view-mode-button ${path === '/swap' || (isTradingPage && simpleView) ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -192,19 +194,21 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={swap} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Swap')}</span>
             </Link>
-            <Link
-              to="/earn/liquidity"
-              className={`page-mode-button ${path.startsWith('/earn/liquidity') || path.startsWith('/earn/vaults')
-                  ? 'active'
-                  : ''
-                } ${isResizing ? 'no-transition' : ''}`}
-              onClick={handleLinkClick}
-            >
-              <img src={liquidity} className="sidebar-icon" />
-              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>
-                {t('Earn')}
-              </span>
-            </Link>
+            {!isMobile && (
+              <Link
+                to="/earn/liquidity"
+                className={`page-mode-button ${path.startsWith('/earn/liquidity') || path.startsWith('/earn/vaults')
+                    ? 'active'
+                    : ''
+                  } ${isResizing ? 'no-transition' : ''}`}
+                onClick={handleLinkClick}
+              >
+                <img src={liquidity} className="sidebar-icon" />
+                <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>
+                  {t('Earn')}
+                </span>
+              </Link>
+            )}
             <Link
               to="/portfolio"
               className={`page-mode-button ${path === '/portfolio' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -221,14 +225,16 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={tracker} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Trackers')}</span>
             </Link>*/}
-            <Link
-              to="/leaderboard"
-              className={`page-mode-button ${path === '/leaderboard' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
-              onClick={handleLinkClick}
-            >
-              <img src={leaderboard} className="sidebar-icon" />
-              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('leaderboard')}</span>
-            </Link>
+            {!isMobile && (
+              <Link
+                to="/leaderboard"
+                className={`page-mode-button ${path === '/leaderboard' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+                onClick={handleLinkClick}
+              >
+                <img src={leaderboard} className="sidebar-icon" />
+                <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('leaderboard')}</span>
+              </Link>
+            )}
             {/* <Link
               to="/lending"
               className={`page-mode-button ${path === '/lending' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -376,7 +382,36 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 <img src={twitter} className="mobile-menu-icon" />
                 <span>{'X / ' + t('twitter')}</span>
               </a>
+
+              {/* appended internal routes */}
+              <Link
+                to="/board"
+                className="mobile-menu-item"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <img src={fun} className="mobile-menu-icon" />
+                <span>{t('crystal.fun')}</span>
+              </Link>
+
+              <Link
+                to="/earn/liquidity"
+                className="mobile-menu-item"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <img src={liquidity} className="mobile-menu-icon" />
+                <span>{t('Earn')}</span>
+              </Link>
+
+              <Link
+                to="/leaderboard"
+                className="mobile-menu-item"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <img src={leaderboard} className="mobile-menu-icon" />
+                <span>{t('leaderboard')}</span>
+              </Link>
             </div>
+
           </div>
         </>
       )}
