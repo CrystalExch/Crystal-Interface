@@ -288,7 +288,6 @@ export default function MemeTradesComponent({
   const dev = norm(devAddress);
   const you = norm(currentUserAddress);
 
-  // Create a set of all "you" addresses (main wallet + sub wallets)
   const youSet = new Set(
     [you, ...(subWallets || []).map((w) => norm(w.address))].filter(
       (addr) => addr !== '',
@@ -323,7 +322,6 @@ export default function MemeTradesComponent({
     }
   }
 
-  // Check if transaction filters are active
   const hasActiveFilters =
     transactionFilters.makerAddress.trim() !== '' ||
     transactionFilters.minUSD.trim() !== '' ||

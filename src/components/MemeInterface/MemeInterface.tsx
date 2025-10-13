@@ -957,7 +957,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       }
     };
   }, [_isVertDragging]);
-  ``
+
   const [isSigning, setIsSigning] = useState(false);
   const [activeTradeType, setActiveTradeType] = useState<'buy' | 'sell'>('buy');
   const [activeOrderType, _setActiveOrderType] = useState<'market' | 'Limit'>(
@@ -1741,6 +1741,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setIsLoadingTrades(true);
     setTrackedAddresses(d ? [d] : []);
   }, [token.dev]);
+
   const setTrackedToYou = useCallback(() => {
     const allYouAddresses = [
       (userAddr || '').toLowerCase(),
@@ -2623,7 +2624,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               isMarksVisible={true}
               address={address}
               devAddress={token.dev}
-              trackedAddresses={trackedAddresses}
+              trackedAddresses={
+                trackedAddresses && trackedAddresses.length
+                  ? trackedAddresses
+                  : [
+                      String(address || '').toLowerCase(),
+                      String(token?.dev || '').toLowerCase(),
+                      ...subWallets.map(w => String(w.address || '').toLowerCase())
+                    ]
+              }
             />
           </div>
           <div

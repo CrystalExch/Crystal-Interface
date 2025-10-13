@@ -16,6 +16,7 @@ interface MemeAdvancedChartProps {
   address: any;
   devAddress: any;
   trackedAddresses: string[];
+  subWalletAddresses?: string[];
 }
 
 const SUB = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
@@ -91,6 +92,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   address,
   devAddress,
   trackedAddresses,
+  subWalletAddresses,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
@@ -102,15 +104,12 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   const devAddressRef = useRef<any>(devAddress);
   const trackedAddressesRef = useRef<string[]>(Array.isArray(trackedAddresses) ? trackedAddresses : []);
   const selectedIntervalRef = useRef<string>(selectedInterval);
-
   const [marksVersion, setMarksVersion] = useState<number>(0);
   const marksVersionRef = useRef<number>(0);
-
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
   const subsRef = useRef<Record<string, string>>({});
   const onResetCacheNeededRef = useRef<(() => void) | null>(null);
-
   const [showMarketCap, setShowMarketCap] = useState<boolean>(() => {
     try {
       const raw = localStorage.getItem('meme_chart_showMarketCap');
@@ -119,7 +118,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       return false;
     }
   });
-
   const [showUSD, setShowUSD] = useState<boolean>(() => {
     try {
       const raw = localStorage.getItem('meme_chart_showUSD');
@@ -128,6 +126,15 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       return false;
     }
   });
+  const subWalletAddressesRef = useRef<string[]>(
+    Array.isArray(subWalletAddresses) ? subWalletAddresses.map(a => String(a).toLowerCase()) : []
+  );
+
+  useEffect(() => {
+    subWalletAddressesRef.current = Array.isArray(subWalletAddresses)
+      ? subWalletAddresses.map(a => String(a).toLowerCase())
+      : [];
+  }, [subWalletAddresses]);
 
   const basePair = () => `${token.symbol}/${showUSD ? 'USD' : 'MON'}`;
   const tvSymbol = () => `${basePair()}|m${marksVersionRef.current}`;
@@ -189,7 +196,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       dataRef.current[key] = enforceOpenEqualsPrevClose(bars);
     }
   }, [data, token.symbol]);
-
+  
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
     widgetRef.current = new (window as any).TradingView.widget({
@@ -409,9 +416,13 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
 
             const labelFor = (caller: string, isBuy: boolean) => {
               const c = caller.toLowerCase();
-              if (c === dev) return isBuy ? 'DB' : 'DS';
-              if (c === you) return isBuy ? 'B' : 'S';
-              return isBuy ? 'B' : 'S';
+              const dev = String(devAddressRef.current || '').toLowerCase();
+              const you = String(addressRef.current || '').toLowerCase();
+              const subs = trackedAddresses;
+
+              if (c === dev) return isBuy ? 'Dev Buy' : 'Dev Sell';
+              if (c === you || subs.includes(c)) return isBuy ? 'Your Buy' : 'Your Sell';
+              return isBuy ? 'Buy' : 'Sell';
             };
 
             const rows = (tradeHistoryRef.current ?? [])
@@ -444,7 +455,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
 
             const marks = Array.from(byBucket.entries()).map(([tSec, rec]) => {
               const src = rec.last!;
-              const isBuy = !!src.isBuy;
+              const isBuy = src.isBuy;
               const caller = src.__caller;
               const label = labelFor(caller, isBuy);
               const summary = `${rec.buys} buy${rec.buys !== 1 ? 's' : ''}, ${rec.sells} sell${rec.sells !== 1 ? 's' : ''}`;
