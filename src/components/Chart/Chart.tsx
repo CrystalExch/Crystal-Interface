@@ -100,7 +100,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
                     : 86400
         }`.toLowerCase();
         
-        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.5.8';
+        const endpoint = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
         
         let allCandles: any[] = [];
         const query = `

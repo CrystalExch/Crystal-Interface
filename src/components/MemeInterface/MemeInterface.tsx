@@ -43,6 +43,9 @@ interface Trade {
   tokenAmount: number;
   nativeAmount: number;
   caller: string;
+  isDev?: boolean;
+  isYou?: boolean;
+  isTracked?: boolean;
 }
 
 interface Holder {
@@ -137,7 +140,7 @@ interface MemeInterfaceProps {
   setSelectedWallets: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.5.8';
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 const STATS_HTTP_BASE = 'https://api.crystal.exchange';
 const PAGE_SIZE = 100;
 const RESOLUTION_SECS: Record<string, number> = {
@@ -401,7 +404,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         return 0;
     }
   };
-  // Wallet helper functions
+
   const getWalletBalance = (address: string) => {
     const balances = walletTokenBalances[address];
     if (!balances) return 0;
@@ -455,22 +458,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const isWalletActive = (privateKey: string) => {
     return activeWalletPrivateKey === privateKey;
-  };
-
-  const handleSetActiveWallet = (privateKey: string) => {
-    if (!isWalletActive(privateKey)) {
-      localStorage.setItem('crystal_active_wallet_private_key', privateKey);
-      setOneCTSigner(privateKey);
-      if (terminalRefetch) {
-        setTimeout(() => terminalRefetch(), 0);
-      }
-    } else {
-      localStorage.removeItem('crystal_active_wallet_private_key');
-      setOneCTSigner('');
-      if (terminalRefetch) {
-        setTimeout(() => terminalRefetch(), 0);
-      }
-    }
   };
 
   const toggleWalletSelection = useCallback((address: string) => {
@@ -843,7 +830,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       setIsSplitting(false);
     }
   };
+
   const walletPopup = useWalletPopup();
+
   useEffect(() => {
     setGlobalPopupHandlers(showLoadingPopup, updatePopup);
   }, []);
@@ -1054,7 +1043,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const userAddr = address ?? account?.address ?? '';
   const [dragStart, setDragStart] = useState<{ y: number; height: number } | null>(null);
   const dragStartRef = useRef<{ y: number; height: number } | null>(null);
-  // Load wallet names from localStorage
+
   useEffect(() => {
     const storedWalletNames = localStorage.getItem('crystal_wallet_names');
     if (storedWalletNames) {
@@ -1100,9 +1089,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isWalletDropdownOpen]);
+
   useEffect(() => {
     dragStartRef.current = dragStart;
   }, [dragStart]);
+
   useEffect(() => {
     if (editingPresetIndex !== null && presetInputRef.current) {
       presetInputRef.current.focus();
@@ -1609,6 +1600,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       handleTrade();
     }
   };
+
   const getTotalSelectedWalletsBalance = useCallback(() => {
     let total = 0;
     selectedWallets.forEach((address) => {
@@ -2054,6 +2046,61 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       setInputCurrency('MON');
     }
   }, [activeTradeType]);
+
+  useEffect(() => {    
+    try {
+      if (!Array.isArray(chartData) || chartData.length === 0) return;
+      const bars = Array.isArray(chartData[0]) ? chartData[0] : [];
+      if (bars.length === 0) return;
+      if (!Array.isArray(trades)) return;
+
+      let widthSec = RESOLUTION_SECS[selectedInterval];
+
+      const you = address.toLowerCase();
+      const dev = token?.dev.toLowerCase();
+      const trackedSet = new Set((Array.isArray(trackedAddresses) ? trackedAddresses : []).map(a => (a ?? '').toLowerCase()));
+
+      for (let i = 0; i < bars.length; i++) {
+        const b = bars[i];
+        b.trades = [];
+        b.hasYou = false;
+        b.hasDev = false;
+        b.hasTracked = false;
+        b.countYou = 0;
+        b.countDev = 0;
+        b.countTracked = 0;
+      }
+
+      const t0 = Number(bars[0]?.time);
+      console.log(bars[0]);
+      console.log(trades.length);
+      for (let k = 0; k < trades.length; k++) {
+        console.log(k);
+        const t = trades[k];
+
+        const caller = t.caller.toLowerCase();
+        const ts = Number(t.timestamp);
+
+        t.isYou = caller === you;
+        t.isDev = caller === dev;
+        t.isTracked = trackedSet.has(caller);
+
+        console.log(t, t.isYou, t.isDev, t.isTracked);
+
+        const idx = Math.floor((ts - t0) / widthSec);
+        if (idx < 0 || idx >= bars.length) continue;
+
+        const b = bars[idx];
+        b.trades.push(t);
+
+        if (t.isYou) { b.hasYou = true; b.countYou++; }
+        if (t.isDev) { b.hasDev = true; b.countDev++; }
+        if (t.isTracked) { b.hasTracked = true; b.countTracked++; }
+      }
+    } catch (e) {
+      console.error('flag + bucket useeffect error', e);
+    }
+  }, [chartData, trades, address, trackedAddresses, selectedInterval]);
 
   const formatNumberWithCommas = fmt;
 
