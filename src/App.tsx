@@ -9864,7 +9864,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               autofetched: true,
             }
           }
-          const scaleExp = (m.scaleFactor == '21' && m.quoteDecimals == '18') ? 9 : Number(m.scaleFactor ?? 0);
+          const scaleExp = Number(m.scaleFactor ?? 0);
           const scaleFactor = (BigInt(10) ** BigInt(scaleExp));
           const baseDec = Number(m.baseDecimals ?? 18);
           const quoteDec = Number(m.quoteDecimals ?? 18);

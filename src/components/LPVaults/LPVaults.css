@@ -2162,6 +2162,7 @@
   flex: .8
 }
 
+.vault-name-col,
 .vault-curator-col,
 .vault-leader-col {
   flex: 1.2
