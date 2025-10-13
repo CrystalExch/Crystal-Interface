@@ -718,7 +718,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                   return (
                     <div key={p.tokenId} className="meme-oc-item">
                       <div className="meme-oc-cell">
-                        <div className="meme-wallet-info">
+                        <div className="oc-meme-wallet-info">
                           <div
                             className="meme-token-info"
                             style={{ display: 'flex', alignItems: 'center' }}
@@ -931,7 +931,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                     className="meme-oc-item"
                   >
                     <div className="meme-oc-cell">
-                      <div className="meme-wallet-info">
+                      <div className="oc-meme-wallet-info">
                         <span className="meme-wallet-index">{row.rank}</span>
                         <svg
                           className="wallet-address-link"
@@ -1155,7 +1155,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                   return (
                     <div key={row.address} className="meme-oc-item">
                       <div className="meme-oc-cell">
-                        <div className="meme-wallet-info">
+                        <div className="oc-meme-wallet-info">
                           <span className="meme-wallet-index">{index + 1}</span>
                           <svg
                             className="wallet-address-link"
@@ -1365,7 +1365,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                     return (
                       <div key={t.id} className="meme-oc-item">
                         <div className="meme-oc-cell">
-                          <div className="meme-wallet-info">
+                          <div className="oc-meme-wallet-info">
                             <div
                               className="meme-token-info"
                               style={{ display: 'flex', alignItems: 'center' }}
