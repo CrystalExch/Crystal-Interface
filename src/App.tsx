@@ -4388,15 +4388,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
             setProcessedLogs(prev => {
               let tempset = new Set(prev);
-              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              if (tempset.has(logIdentifier)) return tempset;
-              if (tempset.size >= 10000) {
-                const first = tempset.values().next().value;
-                if (first !== undefined) {
-                  tempset.delete(first);
-                }
-              }
-              tempset.add(logIdentifier);
               const resolve = txReceiptResolvers.current.get(log['transactionHash']);
               if (resolve) {
                 resolve();
@@ -4407,10 +4398,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 const marketAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
                 const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
       
-                const mcfg = settings?.chainConfig?.[activechain]?.markets?.[marketAddr];
+                const mcfg = markets[addresstoMarket[marketAddr]];
                 if (!mcfg || !mcfg.baseAddress) return tempset;
                 const tokenAddrFromMarket = (mcfg.baseAddress || '').toLowerCase();
-      
                 if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
       
                 const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;

@@ -660,7 +660,7 @@ html {
 .wallet-popup-copy-tooltip,
 .wallet-popup-hover-tooltip {
   background: rgba(9, 9, 9);
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 5px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   color: #fff;
@@ -1156,8 +1156,8 @@ body {
 .button1,
 .button2 {
   align-items: center;
-  background: #05050616;
-  border: 1px solid rgba(179, 184, 249, 0.05);
+  background: #21212716;
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 4px;
   color: #ffffffd8;
   cursor: pointer;
@@ -1308,8 +1308,7 @@ body {
 .outputbg,
 .sendaddressbg,
 .sendbg {
-  border: 1px solid rgba(179, 184, 249, 0.03);
-  background-color:  rgba(179, 184, 249, 0.01);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 4px;
   display: flex;
   flex-direction: column;
@@ -1324,7 +1323,7 @@ body {
 }
 
 .scalebgtop {
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -1335,7 +1334,7 @@ body {
 }
 
 .scalebottombg {
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -1464,7 +1463,7 @@ body {
 }
 
 .sendbg {
-  margin: 5px 12px;
+  margin: 4px 12px;
 }
 
 .sendaddressbg {
@@ -1551,19 +1550,19 @@ body {
 .switch-button {
   align-items: center;
   align-self: center;
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   background-color: rgb(6, 6, 6);
   border-radius: 6px;
   cursor: pointer;
   display: flex;
   justify-content: center;
-  margin: -11px 0;
+  margin: -10px 0;
   overflow: hidden;
   padding: 0;
   position: relative;
   user-select: none;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
 }
 
 .switch-button:active {
@@ -2318,7 +2317,7 @@ body {
 }
 
 .language-grid-item {
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 4px;
   color: rgb(255, 255, 255, 0.7);
   cursor: pointer;
@@ -2930,8 +2929,11 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .sliding-tab-indicator {
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid #aaaecf30;
   border-radius: 4px;
+  box-shadow:
+  inset 0 0.5px rgba(230, 227, 250, 0.053),
+  0 5px 15px rgb(0 0 0/20%);
   height: 24px;
   position: absolute;
   transition: transform .2s ease;
@@ -3630,8 +3632,9 @@ body:has(.right-column.show) .blur-background-popups {
   width: 33%;
   z-index: 5;
   background-color: rgb(9, 9, 9);
-  border-radius: 9px;
-  border:1.5px solid rgba(179, 184, 249, 0.1);
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
+  border: 1px solid rgba(179, 184, 249, 0.15);
   overflow: hidden;
   animation: dropdown-fade-in 0.2s ease-out forwards;
 }
@@ -4454,7 +4457,7 @@ input[type="email"] {
 }
 
 .scale-info-box {
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 6px;
   padding: 5px 10px;
   margin: 5px 12px;
@@ -4786,7 +4789,7 @@ input[type="email"] {
 }
 
 .limit-price-button {
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 4px;
   color: #ffffff7b;
   cursor: pointer;
@@ -6872,7 +6875,7 @@ input::-webkit-inner-spin-button {
 }
 
 .preset-button {
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 8px;
   color: rgb(255, 255, 255, 0.7);
   cursor: pointer;
@@ -6906,7 +6909,7 @@ input::-webkit-inner-spin-button {
 }
 
 .increment-button {
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 8px;
   color: rgb(255,255,255,0.7);
   cursor: pointer;
@@ -6926,7 +6929,7 @@ input::-webkit-inner-spin-button {
 }
 
 .increment-display {
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 8px;
   color: rgb(255,255,255,0.7);
   cursor: pointer;
@@ -7370,7 +7373,7 @@ input::-webkit-inner-spin-button {
   position: relative;
   display: flex;
   align-items: center;
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 8px;
   background: transparent;
   height: 40px;
@@ -7397,7 +7400,7 @@ input::-webkit-inner-spin-button {
   padding: 8px 12px;
   color: #ffffff8b;
   font-size: 0.8rem;
-  border-left: 1px solid rgba(179, 184, 249, 0.1);
+  border-left: 1px solid rgba(179, 184, 249, 0.12);
   background: transparent;
   border-radius: 0;
   font-weight: 400;
