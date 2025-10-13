@@ -185,7 +185,7 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
       </div>
     );
 
-    if (!tokenIn) {
+    if (!tokenIn || (tx.tokenOut && !tokenOut)) {
       return (
         <div className="txhistory-inner-failed">
           <div className="txhistory-error-wrapper">

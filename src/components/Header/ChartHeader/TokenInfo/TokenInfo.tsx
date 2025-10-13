@@ -22,6 +22,7 @@ import {
   formatCommas,
 } from '../../../../utils/numberDisplayFormat';
 import { formatSubscript } from '../../../../utils/numberDisplayFormat';
+import { formatSig } from '../../../OrderCenter/utils/formatDisplay.ts';
 
 import { settings } from '../../../../settings.ts';
 
@@ -187,6 +188,56 @@ const MemeTokenSkeleton = () => {
     </div>
   );
 };
+
+const SUB = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
+const toSub = (n: number) =>
+  String(n)
+    .split('')
+    .map((d) => SUB[+d])
+    .join('');
+
+function formatMemePrice(price: number): string {
+  if (!isFinite(price)) return '';
+  if (Math.abs(price) < 1e-18) return '0';
+
+  const neg = price < 0 ? '-' : '';
+  const abs = Math.abs(price);
+
+  if (abs >= 1_000_000_000)
+    return neg + (abs / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B';
+  if (abs >= 1_000_000)
+    return neg + (abs / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (abs >= 1_000)
+    return neg + (abs / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+
+  if (abs >= 100) return neg + abs.toFixed(0).replace(/\.00$/, '');
+  if (abs >= 10) return neg + abs.toFixed(1).replace(/\.00$/, '');
+  if (abs >= 1) return neg + abs.toFixed(2).replace(/\.00$/, '');
+  if (abs >= 1e-1) return neg + abs.toFixed(3).replace(/\.00$/, '');
+  if (abs >= 1e-2) return neg + abs.toFixed(4).replace(/\.00$/, '');
+  if (abs >= 1e-3) return neg + abs.toFixed(5).replace(/\.00$/, '');
+  if (abs >= 1e-4) return neg + abs.toFixed(6).replace(/\.00$/, '');
+
+  const exp = Math.floor(Math.log10(abs));
+  let zeros = -exp - 1;
+  if (zeros < 0) zeros = 0;
+
+  const tailDigits = 2;
+  const factor = Math.pow(10, tailDigits);
+  let scaled = abs * Math.pow(10, zeros + 1);
+  let t = Math.round(scaled * factor);
+
+  if (t >= Math.pow(10, 1 + tailDigits)) {
+    zeros = Math.max(0, zeros - 1);
+    scaled = abs * Math.pow(10, zeros + 1);
+    t = Math.round(scaled * factor);
+  }
+
+  const s = t.toString().padStart(1 + tailDigits, '0');
+  const tail2 = s.slice(0, 3);
+
+  return `${neg}0.0${toSub(zeros)}${tail2}`;
+}
 
 const PerpsMarketRow = memo(({ index, style, data }: {
   index: number;
@@ -1478,7 +1529,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">Price</span>
                 <span className="meme-interface-metric-value meme-price-large">
-                  ${formatSubscript((Number(price) * monUsdPrice).toFixed(9))}
+                  ${formatMemePrice((Number(price) * monUsdPrice))}
                 </span>
               </div>
 
@@ -1500,7 +1551,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                           xmlns="http://www.w3.org/2000/svg"
                           width="14"
                           height="14"
-                          viewBox="0 0 24 24"
+                          viewBox="0 0 24 22"
                           fill="none"
                           stroke="rgb(241, 213, 68)"
                           strokeWidth="2"
@@ -1508,14 +1559,14 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                           strokeLinejoin="round"
                           className="low-liquidity-icon"
                         >
-                          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                          <path d="M12 2C12 2 6 9 6 13a6 6 0 0 0 12 0c0-4-6-11-6-11z" />
                         </svg>
                       )}
                     </div>
                   );
 
                   return isLowLiquidity ? (
-                    <Tooltip content="Low liquidity warning" offset={5}>
+                    <Tooltip content="Warning: low liquidity" offset={5}>
                       {liquidityContent}
                     </Tooltip>
                   ) : liquidityContent;

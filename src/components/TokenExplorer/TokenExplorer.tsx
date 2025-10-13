@@ -3695,6 +3695,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       'explorer-alert-settings',
       JSON.stringify(alertSettings),
     );
+    alertSettingsRef.current = alertSettings
   }, [alertSettings]);
 
   useEffect(() => {

@@ -14,9 +14,11 @@ interface ChartComponentProps {
   activeMarket: any;
   tradehistory: any;
   isMarksVisible: boolean;
+  setIsMarksVisible: any;
   orders: any;
   isOrdersVisible: boolean;
   showChartOutliers: boolean;
+  setShowChartOutliers: any;
   router: any;
   refetch: any;
   sendUserOperationAsync: any;
@@ -39,9 +41,11 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   activeMarket,
   tradehistory,
   isMarksVisible,
+  setIsMarksVisible,
   orders,
   isOrdersVisible,
   showChartOutliers,
+  setShowChartOutliers,
   router,
   refetch,
   sendUserOperationAsync,
@@ -229,9 +233,11 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           setOverlayVisible={setOverlayVisible}
           tradehistory={tradehistory}
           isMarksVisible={isMarksVisible}
+          setIsMarksVisible={setIsMarksVisible}
           orders={orders}
           isOrdersVisible={isOrdersVisible}
           showChartOutliers={showChartOutliers}
+          setShowChartOutliers={setShowChartOutliers}
           router={router}
           refetch={refetch}
           sendUserOperationAsync={sendUserOperationAsync}
