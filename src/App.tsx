@@ -715,7 +715,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       case 'HaHa Wallet':
         return wallethaha;
       default:
-        return;
+        return walleticon;
     }
   };
 
@@ -735,7 +735,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 value: amountInWei,
                 data: '0x'
               }
-            }, 21000n, 0n, false, '0xb52e8ab1cddc2645f8df7e94578ee0edfce192371feb2633f47e7039f90c67cb', await getTransactionCount(config, {address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any),}))
+            }, 100000n, 0n, false, '0xb52e8ab1cddc2645f8df7e94578ee0edfce192371feb2633f47e7039f90c67cb', await getTransactionCount(config, {address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any),}))
           })()
         }
         if (popup == 4 && !oneCTSigner) {
@@ -747,7 +747,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   useEffect(() => {
     if (connected) {
-      setCurrentWalletIcon(getWalletIcon() ?? walleticon);
+      setCurrentWalletIcon(getWalletIcon());
     } else {
       setCurrentWalletIcon(walleticon);
     }
