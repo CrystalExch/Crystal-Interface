@@ -592,6 +592,10 @@
   width: 20px;
 }
 
+.explorer-discord-btn{
+    height: 18px;
+    width: 18px;
+}
 .explorer-telegram-btn:hover,
 .explorer-twitter-btn:hover,
 .explorer-telegram-btn:hover,

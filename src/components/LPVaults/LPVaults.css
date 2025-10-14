@@ -370,7 +370,7 @@
 .lp-filter-button {
   align-items: center;
   background: 0 0;
-  background-color: rgba(162, 168, 232, 0.05);
+  background-color: rgba(162, 168, 232, 0.035);
   border-radius: 20px;
   color: #ffffff79;
   cursor: pointer;
@@ -397,7 +397,7 @@
 .filter-button.active,
 .type-option.active,
 .percentage-btn.active {
-  background-color: #5255b531;
+  background-color: #7375a931;
   color:#d8dcff;
 }
 
@@ -1360,7 +1360,7 @@
   align-items: center;
   background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 20px;
   box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
   color: #000;
   cursor: pointer;
@@ -1857,7 +1857,6 @@
 .vault-tab:hover,
 .chart-type-btn:hover,
 .tab-btn:hover {
-  background-color: #ffffff05;
   color: #fff
 }
 
@@ -2077,7 +2076,7 @@
   align-items: center;
   background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 20px;
   box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
   color: #000;
   cursor: pointer;
@@ -3050,7 +3049,7 @@
 .filter-button {
   align-items: center;
   background: 0 0;
-  background-color: rgba(173, 177, 218, 0.05);
+  background-color: rgba(162, 168, 232, 0.035);
   border-radius: 20px;
   color: #ffffff79;
   cursor: pointer;
@@ -3064,13 +3063,11 @@
 }
 
 .filter-button:hover {
-  background-color: #ffffff05;
-  border-color: #2a2a2f;
   color: #fff
 }
 
 .filter-button.active {
-  background-color: #5255b531;
+  background-color: #7375a931;
   color:#d8dcff;
 }
 
