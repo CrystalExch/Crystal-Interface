@@ -769,7 +769,7 @@
 .explorer-quickbuy-input {
   background: 0 0;
   border: none;
-  color: #ffffffbd;
+  color: #ffffffcf;
   flex: 1;
   font-size: .85rem;
   letter-spacing: -.3px;
@@ -1806,7 +1806,7 @@
   display: flex;
   font-size: 0.8rem;
   gap: 4px;
-  margin-left: 8px;
+  margin-right: 8px;
   opacity: 0;
   transition: opacity 0.2s ease;
 }
