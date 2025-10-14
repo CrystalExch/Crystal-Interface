@@ -127,6 +127,7 @@ import defaultPfp from './assets/leaderboard_default.png';
 import iconusdc from './assets/iconusdc.png';
 import edgeX from './assets/edgeX.svg';
 import switchicon from './assets/switch.svg';
+
 //audio
 import stepaudio from './assets/step_audio.mp3';
 import backaudio from './assets/back_audio.mp3';
@@ -167,8 +168,9 @@ import PNLComponent from './components/PNLComponent/PNLComponent.tsx';
 import ImportWalletsPopup from './components/Tracker/ImportWalletsPopup.tsx';
 import TradingPresetsPopup from './components/Tracker/TradingPresetsPopup/TradingPresetsPopup';
 import LiveTradesSettingsPopup from './components/Tracker/ LiveTradesSettingsPopup/LiveTradesSettingsPopup.tsx';
+
 // import config
-import { ChevronDown, Logs, SearchIcon } from 'lucide-react';
+import { ChevronDown, SearchIcon } from 'lucide-react';
 import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortfolioData.ts';
 import { settings } from './settings.ts';
 import { useSharedContext } from './contexts/SharedContext.tsx';
@@ -176,8 +178,6 @@ import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 import { sMonAbi } from './abis/sMonAbi.ts';
 import { defaultMetrics } from './components/TokenExplorer/TokenData.ts';
-
-const clearlogo = '/CrystalLogo.png';
 
 type LaunchpadTrade = {
   id: string;
@@ -233,6 +233,40 @@ interface Token {
   discordHandle: string;
   graduatedTokens: number;
   launchedTokens: number;
+}
+
+type AudioGroups = 'swap' | 'order' | 'transfer' | 'approve';
+
+interface AudioGroupSettings {
+  swap: boolean;
+  order: boolean;
+  transfer: boolean;
+  approve: boolean;
+}
+
+type State = {
+  tokensByStatus: Record<Token['status'], Token[]>;
+  hidden: Set<string>;
+  loading: Set<string>;
+};
+
+type Action =
+  | { type: 'INIT'; tokens: Token[] }
+  | { type: 'ADD_MARKET'; token: Partial<Token> }
+  | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
+  | { type: 'GRADUATE_MARKET'; id: string }
+  | { type: 'HIDE_TOKEN'; id: string }
+  | { type: 'SHOW_TOKEN'; id: string }
+  | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' };
+
+interface AlertSettings {
+  soundAlertsEnabled: boolean;
+  volume: number;
+  sounds: {
+    newPairs: string;
+    pairMigrating: string;
+    migrated: string;
+  };
 }
 
 const Loader = () => {
@@ -1757,15 +1791,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     ? orderSizeString
     : (originalOrderSize === 0 ? '' : originalOrderSize.toString());
   const [hasEditedPrice, setHasEditedPrice] = useState(false);
-  type AudioGroups = 'swap' | 'order' | 'transfer' | 'approve';
-
-  interface AudioGroupSettings {
-    swap: boolean;
-    order: boolean;
-    transfer: boolean;
-    approve: boolean;
-  }
-
   const defaultGroups: AudioGroupSettings = {
     swap: true,
     order: true,
@@ -1880,30 +1905,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   const wsCooldownRef = useRef<number>(0);
   const wsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  type State = {
-    tokensByStatus: Record<Token['status'], Token[]>;
-    hidden: Set<string>;
-    loading: Set<string>;
-  };
-
-  type Action =
-    | { type: 'INIT'; tokens: Token[] }
-    | { type: 'ADD_MARKET'; token: Partial<Token> }
-    | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
-    | { type: 'GRADUATE_MARKET'; id: string }
-    | { type: 'HIDE_TOKEN'; id: string }
-    | { type: 'SHOW_TOKEN'; id: string }
-    | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' };
-
-  interface AlertSettings {
-    soundAlertsEnabled: boolean;
-    volume: number;
-    sounds: {
-      newPairs: string;
-      pairMigrating: string;
-      migrated: string;
-    };
-  }
 
   const ALERT_DEFAULTS: AlertSettings = {
     soundAlertsEnabled: true,
@@ -15166,7 +15167,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 }`}
             />
             <div className="onboarding-crystal-logo">
-              <img className="onboarding-crystal-logo-image" src={clearlogo} />
+              <img className="onboarding-crystal-logo-image" src={crystal} />
               <span className="onboarding-crystal-text">CRYSTAL</span>
             </div>
 
