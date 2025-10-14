@@ -260,7 +260,6 @@ const Tracker: React.FC<TrackerProps> = ({
   const [walletSortDirection, setWalletSortDirection] = useState<SortDirection>('desc');
   const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
   const [trackedWalletTrades, setTrackedWalletTrades] = useState<LiveTrade[]>([]);
-  // Hardcoded example data for testing
   const exampleWallets: TrackedWallet[] = [
     {
       id: '1',
@@ -700,7 +699,6 @@ const Tracker: React.FC<TrackerProps> = ({
   const [dropPreviewLine, setDropPreviewLine] = useState<{ top: number; containerKey: string } | null>(null);
   const [expandedTokens, setExpandedTokens] = useState<Set<string>>(new Set());
 
-  // Save wallets to localStorage whenever they change
   useEffect(() => {
     saveWalletsToStorage(trackedWallets);
   }, [trackedWallets]);
@@ -1867,7 +1865,6 @@ const Tracker: React.FC<TrackerProps> = ({
               const totalSold = token.trades.reduce((sum, t) => sum + t.sold, 0);
               const totalBuys = token.trades.reduce((sum, t) => sum + t.boughtTxns, 0);
               const totalSells = token.trades.reduce((sum, t) => sum + t.soldTxns, 0);
-              const buyRatio = (totalBought + totalSold) > 0 ? (totalBought / (totalBought + totalSold) * 100) : 0;
 
               return (
                 <div key={token.id} className="tracker-monitor-card">
@@ -1875,115 +1872,121 @@ const Tracker: React.FC<TrackerProps> = ({
                     className="tracker-monitor-card-header"
                     onClick={() => toggleTokenExpanded(token.id)}
                   >
-                    <div className="tracker-monitor-card-top">
-                      <div className="tracker-monitor-card-left">
-                        <div
-                          className="tracker-monitor-icon-container"
-                          style={{ '--progress': token.bondingCurveProgress } as React.CSSProperties}
-                        >
-                          <div className="tracker-monitor-icon-spacer">
-                            <span className="tracker-monitor-icon-emoji">{token.emoji}</span>
-                          </div>
-                        </div>
-                        <div className="tracker-monitor-token-details">
-                          <div className="tracker-monitor-token-name-row">
-                            <span className="tracker-monitor-token-name-text">{token.name}</span>
-                            <button className="tracker-monitor-action-btn" onClick={(e) => e.stopPropagation()}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                              </svg>
-                            </button>
-                            <button className="tracker-monitor-action-btn" onClick={(e) => e.stopPropagation()}>☆</button>
-                          </div>
-                          <div className="tracker-monitor-token-subtitle">
-                            <span className="tracker-monitor-token-symbol">{token.symbol}</span>
-                            <span className="tracker-monitor-token-ca">
-                              {token.tokenAddress.slice(0, 6)}...{token.tokenAddress.slice(-4)}
-                            </span>
-                          </div>
+                    {/* Left: Token Icon & Info */}
+                    <div className="tracker-monitor-card-left">
+                      <div
+                        className="tracker-monitor-icon-container"
+                        style={{ '--progress': token.bondingCurveProgress } as React.CSSProperties}
+                      >
+                        <div className="tracker-monitor-icon-spacer">
+                          <span className="tracker-monitor-icon-emoji">{token.emoji}</span>
                         </div>
                       </div>
 
-                      <div className="tracker-monitor-card-right">
-                        <div className="tracker-monitor-price-info">
-                          <div className="tracker-monitor-price">
-                            {monitorCurrency === 'USD' ? '$' : '≡'}
-                            {formatValue(token.price)}
-                          </div>
-                          <div className={`tracker-monitor-price-change ${token.change24h >= 0 ? 'positive' : 'negative'}`}>
-                            {token.change24h >= 0 ? '+' : ''}{token.change24h.toFixed(2)}%
-                          </div>
+                      <div className="tracker-monitor-token-details">
+                        <div className="tracker-monitor-token-name-row">
+                          <span className="tracker-monitor-token-name-text">{token.name}</span>
+                          <button 
+                            className="tracker-monitor-copy-btn" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(token.tokenAddress);
+                            }}
+                            title="Copy Address"
+                          >
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                            </svg>
+                          </button>
+                          <button className="tracker-monitor-action-btn" onClick={(e) => e.stopPropagation()}>☆</button>
+                        </div>
+                        <div className="tracker-monitor-token-subtitle">
+                          <span className="tracker-monitor-token-symbol">{token.symbol}</span>
+                          <span className="tracker-monitor-token-ca">
+                            {token.tokenAddress.slice(0, 6)}...{token.tokenAddress.slice(-4)}
+                          </span>
+                          <span className="tracker-monitor-token-age">
+                            {getTimeAgo(token.createdAt)}
+                          </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="tracker-monitor-stats-grid">
-                      <div className="tracker-monitor-stat">
+                    {/* Middle: Stats */}
+                    <div className="tracker-monitor-stats-section">
+                      <div className="tracker-monitor-stat-compact">
+                        <span className="stat-label">H</span>
+                        <span className="stat-value">{token.holders}</span>
+                      </div>
+
+                      <div className="tracker-monitor-stat-compact">
                         <span className="stat-label">MC</span>
                         <span className="stat-value">
                           {monitorCurrency === 'USD' ? '$' : '≡'}
                           {formatValue(token.marketCap)}
                         </span>
                       </div>
-                      <div className="tracker-monitor-stat">
-                        <span className="stat-label">Liq</span>
+
+                      <div className="tracker-monitor-stat-compact">
+                        <span className="stat-label">L</span>
                         <span className="stat-value">
                           {monitorCurrency === 'USD' ? '$' : '≡'}
                           {formatValue(token.liquidity)}
                         </span>
                       </div>
-                      <div className="tracker-monitor-stat">
-                        <span className="stat-label">Vol</span>
-                        <span className="stat-value">
-                          {monitorCurrency === 'USD' ? '$' : '≡'}
-                          {formatValue(token.volume24h)}
-                        </span>
-                      </div>
-                      <div className="tracker-monitor-stat">
-                        <span className="stat-label">Holders</span>
-                        <span className="stat-value">{token.holders}</span>
-                      </div>
-                      <div className="tracker-monitor-stat">
-                        <span className="stat-label">Txns</span>
+
+                      <div className="tracker-monitor-stat-compact">
+                        <span className="stat-label">TX</span>
                         <span className="stat-value">{token.txCount}</span>
                       </div>
-                      <div className="tracker-monitor-stat">
+
+                      <div className="tracker-monitor-stat-compact">
                         <span className="stat-label">Last TX</span>
                         <span className="stat-value">{getTimeAgo(token.lastTransaction)}</span>
                       </div>
                     </div>
 
-                    <div className="tracker-monitor-trade-summary">
-                      <div className="tracker-monitor-trade-counts">
-                        <span className="buy-count">{totalBuys} Buys</span>
-                        <span className="separator">•</span>
-                        <span className="sell-count">{totalSells} Sells</span>
+                    {/* Buy/Sell Amounts */}
+                    <div className="tracker-monitor-buy-sell-section">
+                      <div className="tracker-monitor-buy-amount">
+                        <span>{totalBuys}</span>
+                        <img src={monadicon} className="tracker-monitor-amount-icon" alt="MON" />
+                        <span className={isBlurred ? 'blurred' : ''}>{formatValue(totalBought)}</span>
                       </div>
-                      <div className="tracker-monitor-trade-bar">
-                        <div className="bar-buy" style={{ width: `${buyRatio}%` }}></div>
-                        <div className="bar-sell" style={{ width: `${100 - buyRatio}%` }}></div>
-                      </div>
-                      <div className="tracker-monitor-trade-amounts">
-                        <span className="buy-amount">
-                          ≡ {formatValue(totalBought)}
-                        </span>
-                        <span className="sell-amount">
-                          ≡ {formatValue(totalSold)}
-                        </span>
-                      </div>
-                    </div>
 
-                    <div className="tracker-monitor-progress-section">
-                      <div className="tracker-monitor-progress-bar">
+                      <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
+
+                      <div className="tracker-monitor-sell-amount">
+                        <span>{totalSells}</span>
+                        <img src={monadicon} className="tracker-monitor-amount-icon" alt="MON" />
+                        <span className={isBlurred ? 'blurred' : ''}>{formatValue(totalSold)}</span>
+                      </div>
+
+                      <div className="tracker-monitor-progress-bar-inline">
                         <div 
-                          className="tracker-monitor-progress-fill"
+                          className="tracker-monitor-progress-fill-inline"
                           style={{ width: `${token.bondingCurveProgress}%` }}
                         ></div>
                       </div>
-                      <span className="tracker-monitor-progress-text">
-                        {token.bondingCurveProgress}% Bonding Curve
-                      </span>
+                    </div>
+
+                    {/* Right: Quick Buy */}
+                    <div className="tracker-monitor-quickbuy-section">
+                      <button
+                        className="tracker-monitor-quickbuy-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Handle quick buy
+                        }}
+                      >
+                        <svg
+                          className="tracker-monitor-quickbuy-icon"
+                          viewBox="0 0 72 72"
+                          fill="currentColor"
+                        >
+                          <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86 c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833 c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86 c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18 c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
 

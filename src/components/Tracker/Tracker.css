@@ -716,128 +716,82 @@
 }
 
 /* Monitor Section */
-.tracker-monitor {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(203, 206, 238, 0.2) transparent;
-}
-
-.tracker-monitor::-webkit-scrollbar {
-  width: 8px;
-}
-
-.tracker-monitor::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.tracker-monitor::-webkit-scrollbar-thumb {
-  background: rgba(203, 206, 238, 0.2);
-  border-radius: 4px;
-}
-
 .tracker-monitor-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.tracker-monitor-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  overflow: hidden;
-}
-
-.tracker-monitor-card:hover {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(179, 184, 249, 0.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transform: translateY(-2px);
-}
-
-.tracker-monitor-card-header {
-  padding: 12px 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.tracker-monitor-card-top {
+.tracker-monitor-card {
+  background: transparent;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.tracker-monitor-card:hover {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(179, 184, 249, 0.15);
+}
+
+.tracker-monitor-card-header {
+  padding: 12px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 12px;
+  position: relative;
 }
 
 .tracker-monitor-card-left {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1;
-  min-width: 0;
+  flex-shrink: 0;
 }
 
 .tracker-monitor-icon-container {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
-}
-
-.tracker-monitor-card:hover .tracker-monitor-icon-container {
-  transform: scale(1.05);
+  background: conic-gradient(
+    from 0deg,
+    #aaaecf 0deg,
+    #aaaecf calc(var(--progress) * 3.6deg),
+    rgba(157, 169, 240, 0.2) calc(var(--progress) * 3.6deg),
+    rgba(157, 169, 240, 0.2) 360deg
+  );
+  transition: var(--progress) 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tracker-monitor-icon-spacer {
-  background: transparent;
+  background: rgb(6, 6, 6);
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-tracker-monitor-play-badge {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  background: linear-gradient(135deg, #aaaecf 0%, #7f82a1 100%);
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.tracker-monitor-play-badge svg {
-  width: 10px;
-  height: 10px;
-  fill: #0f0f12;
+  width: 53px;
+  height: 53px;
 }
 
 .tracker-monitor-icon-emoji {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .tracker-monitor-token-details {
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .tracker-monitor-token-name-row {
@@ -854,6 +808,161 @@ tracker-monitor-play-badge {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.tracker-monitor-token-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+}
+
+.tracker-monitor-token-symbol {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.tracker-monitor-token-ca {
+  color: rgba(255, 255, 255, 0.4);
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+}
+
+.tracker-monitor-token-age {
+  color: #90EE90;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.tracker-monitor-copy-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  padding: 2px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  border-radius: 3px;
+}
+
+.tracker-monitor-copy-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tracker-monitor-stats-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+}
+
+.tracker-monitor-stat-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tracker-monitor-stat-compact .stat-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.65rem;
+  letter-spacing: -0.2px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.tracker-monitor-stat-compact .stat-value {
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+.tracker-monitor-buy-sell-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tracker-monitor-buy-amount {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #00ff88;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.tracker-monitor-sell-amount {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.tracker-monitor-amount-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.tracker-monitor-progress-bar-inline {
+  width: 60px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.tracker-monitor-progress-fill-inline {
+  height: 100%;
+  background: linear-gradient(90deg, #aaaecf 0%, #9a9ec7 50%, #8b8eb8 100%);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 6px rgba(170, 174, 207, 0.4);
+}
+
+.tracker-monitor-quickbuy-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-right: 4px;
+}
+
+.tracker-monitor-quickbuy-btn {
+  background: #aaaecf;
+  border: none;
+  border-radius: 20px;
+  color: #0f0f12;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  transition: all 0.2s ease;
+  letter-spacing: -0.5px;
+}
+
+.tracker-monitor-quickbuy-btn:hover {
+  filter: brightness(1.1);
+}
+
+.tracker-monitor-quickbuy-icon {
+  width: 14px;
+  height: 14px;
 }
 
 .tracker-monitor-action-btn {
@@ -876,261 +985,7 @@ tracker-monitor-play-badge {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.tracker-monitor-token-subtitle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.7rem;
-}
-
-.tracker-monitor-token-age {
-  color: #90EE90;
-  font-size: 0.7rem;
-  font-weight: 500;
-}
-
-.tracker-monitor-token-symbol {
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.tracker-monitor-token-ca {
-  color: rgba(255, 255, 255, 0.4);
-  font-family: 'Courier New', monospace;
-  font-size: 0.7rem;
-}
-
-.tracker-monitor-card-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-}
-
-.tracker-monitor-value-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.8);
-  font-weight: 500;
-}
-
-.tracker-monitor-value-row .value-icon {
-  width: 14px;
-  height: 14px;
-}
-
-.tracker-monitor-value-row .value-bar {
-  width: 20px;
-  height: 3px;
-  border-radius: 2px;
-}
-
-.tracker-monitor-value-row .value-bar.green {
-  background: #00ff88;
-}
-
-.tracker-monitor-value-row .value-bar.red {
-  background: #ff6b6b;
-}
-
-.tracker-monitor-stats-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-  border-top: 1px solid rgba(179, 184, 249, 0.1);
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-}
-
-.tracker-monitor-stat-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.7rem;
-}
-
-.tracker-monitor-stat-item .stat-label {
-  color: rgba(255, 255, 255, 0.5);
-  font-weight: 500;
-}
-
-.tracker-monitor-stat-item .stat-value {
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 600;
-}
-
-
-.tracker-monitor-price-change.positive {
-  color: #00ff88;
-  background: rgba(0, 255, 136, 0.15);
-  border: 1px solid rgba(0, 255, 136, 0.3);
-}
-
-.tracker-monitor-price-change.negative {
-  color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.15);
-  border: 1px solid rgba(255, 107, 107, 0.3);
-}
-
-.tracker-monitor-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  padding: 14px 0;
-  border-top: 1px solid rgba(179, 184, 249, 0.1);
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-}
-
-.tracker-monitor-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.tracker-monitor-stat .stat-label {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.7rem;
-  letter-spacing: -0.2px;
-  font-weight: 500;
-  text-transform: uppercase;
-}
-
-.tracker-monitor-stat .stat-value {
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 600;
-  letter-spacing: -0.3px;
-}
-
-.tracker-monitor-trade-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-top: 4px;
-}
-
-.tracker-monitor-trade-counts {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.tracker-monitor-trade-counts .buy-count {
-  color: #00ff88;
-  font-weight: 600;
-}
-
-.tracker-monitor-trade-counts .separator {
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.tracker-monitor-trade-counts .sell-count {
-  color: #ff6b6b;
-  font-weight: 600;
-}
-
-.tracker-monitor-trade-bar {
-  display: flex;
-  height: 8px;
-  width: 100%;
-  border-radius: 4px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.tracker-monitor-trade-bar .bar-buy {
-  background: linear-gradient(90deg, #00ff88 0%, #00d4ff 100%);
-  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
-}
-
-.tracker-monitor-trade-bar .bar-sell {
-  background: linear-gradient(90deg, #ff6b6b 0%, #ff4757 100%);
-  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
-}
-
-.tracker-monitor-trade-amounts {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.tracker-monitor-trade-amounts .buy-amount {
-  color: #00ff88;
-  font-weight: 600;
-}
-
-.tracker-monitor-trade-amounts .sell-amount {
-  color: #ff6b6b;
-  font-weight: 600;
-}
-
-.tracker-monitor-progress-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 8px;
-}
-
-.tracker-monitor-progress-bar {
-  width: 100%;
-  height: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 5px;
-  overflow: hidden;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.tracker-monitor-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #aaaecf 0%, #9a9ec7 50%, #8b8eb8 100%);
-  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 10px rgba(170, 174, 207, 0.5);
-  position: relative;
-  overflow: hidden;
-}
-
-.tracker-monitor-progress-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    transparent 100%
-  );
-  animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-.tracker-monitor-progress-text {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.7rem;
-  text-align: center;
-  font-weight: 500;
-  letter-spacing: -0.2px;
-}
-
+/* Expanded trades section */
 .tracker-monitor-trades-expanded {
   padding: 16px;
   background: rgba(0, 0, 0, 0.4);
@@ -1272,6 +1127,20 @@ tracker-monitor-play-badge {
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.8rem;
   font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+  .tracker-monitor-card-header {
+    flex-wrap: wrap;
+  }
+
+  .tracker-monitor-stats-section {
+    order: 3;
+    width: 100%;
+    padding: 8px 0;
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
+  }
 }
 
 .tracker-monitor-loading {

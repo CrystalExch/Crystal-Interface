@@ -312,7 +312,7 @@
 
 .detail-trading-panel {
   position: sticky;
-  width: 320px;
+  width: 100%;
   height: fit-content;
   padding: 10px;
   border: 1px solid var(--c-border);
@@ -634,7 +634,7 @@
   .detail-main, .detail-trading-panel { padding: 12px; }
   .detail-preset-buttons { grid-template-columns: repeat(2, 1fr); }
 }
-
+/*
 @media (max-width: 1000px) {
   .detail-container { flex-direction: column; justify-content: center; align-items: center; }
   .detail-trading-panel-container { width: 100%; max-width: 800px; align-items: center; }
@@ -698,6 +698,89 @@
     gap: var(--gap-xl);
   }
 }
+*/
+
+@media (max-width: 1000px) {
+  :root {
+    --detail-mobile-max: 860px;
+  }
+
+  .detail-container {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "back"
+      "header"
+      "chart"
+      "stats"
+      "trading"
+      "comments";
+    gap: var(--gap-xl);
+    padding: var(--gap-xl) var(--gap);
+    justify-items: center;
+  }
+
+  .detail-main,
+  .detail-content {
+    display: contents;
+  }
+
+  .detail-back-button {
+    grid-area: back;
+  }
+
+  .detail-header {
+    grid-area: header;
+    width: 100%;
+    max-width: var(--detail-mobile-max);
+    margin: 0 auto;
+    justify-content: center;
+  }
+
+  .detail-chart-section {
+    grid-area: chart;
+    width: 100%;
+    max-width: var(--detail-mobile-max);
+    margin: 0 auto;
+  }
+
+  .detail-stats-bar {
+    grid-area: stats;
+    width: 100%;
+    max-width: var(--detail-mobile-max);
+    margin: 0 auto;
+  }
+
+  .detail-info-grid {
+    grid-area: comments;
+    display: grid;
+    gap: var(--gap-xl);
+    width: 100%;
+    max-width: var(--detail-mobile-max);
+    margin: 0 auto;
+  }
+
+  .detail-info-section {
+    text-align: center;
+  }
+
+  .detail-trading-panel-container {
+    grid-area: trading;
+    width: 100%;
+    max-width: var(--detail-mobile-max);
+    margin: 0 auto;
+    padding-top: 0;
+    align-items: stretch;
+  }
+
+  .detail-trading-panel {
+    position: static;
+    width: 100%;
+    max-width: none;
+    margin: 0 auto;
+  }
+}
+
 
 .detail-comments-list::-webkit-scrollbar { width: 6px; }
 .detail-comments-list::-webkit-scrollbar-track { background: #1a1a1a; border-radius: 3px; }
@@ -1393,6 +1476,7 @@
   grid-template-columns: 2fr 0.8fr 1.2fr 1.5fr 1fr 0.8fr;
   border-bottom: 1px solid rgba(179, 184, 249, 0.05);
   transition: background var(--tr-fast);
+  position: relative;
 }
 
 .detail-trades-row:hover {
@@ -1531,4 +1615,12 @@
   .detail-trades-header-cell:nth-child(n+5) {
     display: none;
   }
+}
+
+.detail-trades-row.buy {
+background-image: linear-gradient(90deg, rgba(67, 254, 154, 0.08), transparent);
+}
+
+.detail-trades-row.sell {
+  background-image: linear-gradient(90deg, rgba(235, 112, 112, 0.08), transparent);
 }
