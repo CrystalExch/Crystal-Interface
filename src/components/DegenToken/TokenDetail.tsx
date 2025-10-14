@@ -172,7 +172,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const [tradesSortDirection, setTradesSortDirection] = useState<'asc' | 'desc'>('desc');
   const [tradesFilterEnabled, setTradesFilterEnabled] = useState(true);
   const [tradesFilterThreshold, setTradesFilterThreshold] = useState('1');
-  const [activeTab, setActiveTab] = useState<'comments' | 'trades'>('comments');
+  const [activeTab, setActiveTab] = useState<'comments' | 'trades'>('trades');
   const explorer = settings.chainConfig[activechain]?.explorer;
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -717,11 +717,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
                     <div className="detail-trades-actions">
                       <button className="detail-trades-action-button">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M3 6h18M7 12h10M10 18h4" />
-                        </svg>
-                      </button>
-                      <button className="detail-trades-action-button">
                         Export
                       </button>
                     </div>
@@ -787,7 +782,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
                     <div className="detail-trades-body">
                       {getSortedTrades().map((trade: any) => (
-                        <div key={trade.id} className="detail-trades-row">
+                        <div key={trade.id} className={`detail-trades-row ${trade.isBuy ? 'buy' : 'sell'}`}>
                           <div className="detail-trades-col detail-trades-account">
                             <div className="detail-trades-avatar">
                               <img src={defaultPfp} alt="Avatar" />
