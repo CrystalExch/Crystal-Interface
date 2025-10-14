@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import closebutton from '../../../assets/close_button.png';
 import './MonitorFiltersPopup.css';
 
@@ -37,53 +37,104 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
   onApply, 
   initialFilters 
 }) => {
+
+  const SIMPLE_PRESETS: Record<string, MonitorFilterState> = {
+    latest: { general: { lastTransaction: '86400', tokenAgeMin: '', tokenAgeMax: '' }, market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' }, transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' } },
+    marketCap: { general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' }, market: { marketCapMin: '20000', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' }, transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' } },
+    liquidity: { general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' }, market: { marketCapMin: '', marketCapMax: '', liquidityMin: '10000', liquidityMax: '', holdersMin: '', holdersMax: '' }, transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' } },
+    txns: { general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' }, market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' }, transactions: { transactionCountMin: '2000', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' } },
+    holders: { general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' }, market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '2000', holdersMax: '' }, transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' } },
+    inflow: { general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' }, market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' }, transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '3000', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' } },
+    outflow: { general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' }, market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' }, transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '1500', outflowVolumeMax: '' } },
+    tokenAge: { general: { lastTransaction: '', tokenAgeMin: '0', tokenAgeMax: '24' }, market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' }, transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' } }
+  };
+  const detectSimplePreset = (currentFilters: MonitorFilterState): string | null => {
+    if (!currentFilters) return null;
+    
+    for (const [key, preset] of Object.entries(SIMPLE_PRESETS)) {
+      const matches = 
+        preset.general.lastTransaction === currentFilters.general.lastTransaction &&
+        preset.general.tokenAgeMin === currentFilters.general.tokenAgeMin &&
+        preset.general.tokenAgeMax === currentFilters.general.tokenAgeMax &&
+        preset.market.marketCapMin === currentFilters.market.marketCapMin &&
+        preset.market.liquidityMin === currentFilters.market.liquidityMin &&
+        preset.market.holdersMin === currentFilters.market.holdersMin &&
+        preset.transactions.transactionCountMin === currentFilters.transactions.transactionCountMin &&
+        preset.transactions.inflowVolumeMin === currentFilters.transactions.inflowVolumeMin &&
+        preset.transactions.outflowVolumeMin === currentFilters.transactions.outflowVolumeMin;
+      
+      if (matches) return key;
+    }
+    return null;
+  };
+  
+
   const [viewMode, setViewMode] = useState<'simple' | 'advanced'>('simple');
-  const [selectedSimpleFilter, setSelectedSimpleFilter] = useState<string | null>(null);
+  const [selectedSimpleFilter, setSelectedSimpleFilter] = useState<string | null>(() => 
+    detectSimplePreset(initialFilters || {
+      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' },
+      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' },
+      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' },
+    })
+  );
   const [activeTab, setActiveTab] = useState<'market' | 'transactions'>('market');
   const [filters, setFilters] = useState<MonitorFilterState>(
-      initialFilters || {
-        general: {
-          lastTransaction: '',
-          tokenAgeMin: '',
-          tokenAgeMax: '',
-        },
-        market: {
-          marketCapMin: '',
-          marketCapMax: '',
-          liquidityMin: '',
-          liquidityMax: '',
-          holdersMin: '',
-          holdersMax: '',
-        },
-        transactions: {
-          transactionCountMin: '',
-          transactionCountMax: '',
-          inflowVolumeMin: '',
-          inflowVolumeMax: '',
-          outflowVolumeMin: '',
-          outflowVolumeMax: '',
-        },
-      }
+    initialFilters || {
+      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' },
+      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' },
+      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' },
+    }
   );
 
-  const handleSimpleFilterClick = (filterType: string) => {
-    setSelectedSimpleFilter(filterType === selectedSimpleFilter ? null : filterType);
+  const normalize = (v: string) => (v == null ? '' : String(v).trim());
+
+  const computeSimpleFilters = (key: string | null): MonitorFilterState =>
+    key && SIMPLE_PRESETS[key]
+      ? {
+          general: {
+            lastTransaction: normalize(SIMPLE_PRESETS[key].general.lastTransaction),
+            tokenAgeMin: normalize(SIMPLE_PRESETS[key].general.tokenAgeMin),
+            tokenAgeMax: normalize(SIMPLE_PRESETS[key].general.tokenAgeMax)
+          },
+          market: {
+            marketCapMin: normalize(SIMPLE_PRESETS[key].market.marketCapMin),
+            marketCapMax: normalize(SIMPLE_PRESETS[key].market.marketCapMax),
+            liquidityMin: normalize(SIMPLE_PRESETS[key].market.liquidityMin),
+            liquidityMax: normalize(SIMPLE_PRESETS[key].market.liquidityMax),
+            holdersMin: normalize(SIMPLE_PRESETS[key].market.holdersMin),
+            holdersMax: normalize(SIMPLE_PRESETS[key].market.holdersMax)
+          },
+          transactions: {
+            transactionCountMin: normalize(SIMPLE_PRESETS[key].transactions.transactionCountMin),
+            transactionCountMax: normalize(SIMPLE_PRESETS[key].transactions.transactionCountMax),
+            inflowVolumeMin: normalize(SIMPLE_PRESETS[key].transactions.inflowVolumeMin),
+            inflowVolumeMax: normalize(SIMPLE_PRESETS[key].transactions.inflowVolumeMax),
+            outflowVolumeMin: normalize(SIMPLE_PRESETS[key].transactions.outflowVolumeMin),
+            outflowVolumeMax: normalize(SIMPLE_PRESETS[key].transactions.outflowVolumeMax)
+          }
+        }
+      : {
+          general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' },
+          market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' },
+          transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' }
+        };
+
+  const handleSimpleFilterClick = (t: string) => {
+    const next = selectedSimpleFilter === t ? null : t;
+    setSelectedSimpleFilter(next);
+    setFilters(computeSimpleFilters(next));
   };
 
   const handleReset = () => {
-    setFilters({
-      general: {
-        lastTransaction: '',
-        tokenAgeMin: '',
-        tokenAgeMax: '',
-      },
+    const emptyFilters: MonitorFilterState = {
+      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' },
       market: {
         marketCapMin: '',
         marketCapMax: '',
         liquidityMin: '',
         liquidityMax: '',
         holdersMin: '',
-        holdersMax: '',
+        holdersMax: ''
       },
       transactions: {
         transactionCountMin: '',
@@ -91,15 +142,37 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
         inflowVolumeMin: '',
         inflowVolumeMax: '',
         outflowVolumeMin: '',
-        outflowVolumeMax: '',
-      },
-    });
+        outflowVolumeMax: ''
+      }
+    };
+    setFilters(emptyFilters);
+    setSelectedSimpleFilter(null);
   };
 
   const handleApply = () => {
-    onApply(filters);
+    onApply(JSON.parse(JSON.stringify(filters)));
     onClose();
   };
+
+  const syncFiltersFromSimple = (presetKey: string | null) => {
+    if (presetKey && SIMPLE_PRESETS[presetKey]) {
+      setFilters(computeSimpleFilters(presetKey));
+    }
+  };
+
+  useEffect(() => {
+    if (viewMode === 'advanced' && selectedSimpleFilter) {
+      syncFiltersFromSimple(selectedSimpleFilter);
+    }
+  }, [viewMode]);
+
+  useEffect(() => {
+    if (viewMode === 'simple') {
+      setSelectedSimpleFilter(detectSimplePreset(filters));
+    }
+  }, [viewMode, filters]);
+
+
 
   return (
     <div className="monitor-filters-backdrop" onClick={onClose}>
