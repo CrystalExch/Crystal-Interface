@@ -1706,7 +1706,7 @@ const DisplayDropdown: React.FC<{
 
                     <div className="toggle-item">
                       <label className="toggle-label">
-                        <EyeOff size={16}  />
+                        <EyeOff size={16} />
                         Hide Hidden Tokens
                       </label>
                       <div
@@ -2268,7 +2268,7 @@ const TokenRow = React.memo<{
   blacklistSettings: any;
   formatTimeAgo: (timestamp: number) => string;
 }>((props) => {
-const {
+  const {
     token,
     quickbuyAmount,
     quickbuyAmountSecond,
@@ -2475,7 +2475,7 @@ const {
 
   return (
     <>
-<div
+      <div
         ref={tokenRowRef}
         className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${isBlacklisted ? 'blacklisted-token' : ''} ${displaySettings.colorRows && token.status !== 'graduated'
           ? `colored-row ${getBondingColorClass(bondingPercentage)}`
@@ -2486,7 +2486,7 @@ const {
         onMouseLeave={onTokenLeave}
         onClick={() => onTokenClick(token)}
       >
-<div className="explorer-token-actions">
+        <div className="explorer-token-actions">
           <button
             className={`explorer-hide-button ${isHidden ? 'strikethrough' : ''}`}
             onClick={(e) => {
@@ -2495,7 +2495,7 @@ const {
             }}
           >
             <Tooltip content={isHidden ? 'Show Token' : 'Hide Token'}>
-             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
             </Tooltip>
           </button>
           <button
@@ -2506,7 +2506,7 @@ const {
               onHideToken(token.id);
             }}
           >
-  <Tooltip content={isBlacklisted ? 'Unblacklist Dev' : 'Blacklist Dev'}>
+            <Tooltip content={isBlacklisted ? 'Unblacklist Dev' : 'Blacklist Dev'}>
               <svg
                 className="blacklist-dev-icon"
                 width="16"
@@ -2858,7 +2858,7 @@ const {
             ) : null;
           })()}
           <div className="explorer-holdings-section">
-          {displaySettings.visibleRows.devHolding && (
+            {displaySettings.visibleRows.devHolding && (
               <Tooltip content="Developer Holding">
                 <div className="explorer-holding-item">
                   <svg
@@ -4064,18 +4064,18 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     [hidden],
   );
 
-const handleBlacklistToken = useCallback((token: Token) => {
+  const handleBlacklistToken = useCallback((token: Token) => {
     // Check if this dev address is already blacklisted
     const existingItem = blacklistSettings.items.find(
       (item) => item.type === 'dev' && item.text.toLowerCase() === token.dev.toLowerCase()
     );
-    
+
     if (existingItem) {
       // Remove from blacklist
       setBlacklistSettings((prev) => ({
         items: prev.items.filter((item) => item.id !== existingItem.id)
       }));
-      
+
       // Show unblacklist message
       const txId = `blacklist-removed-${Date.now()}`;
       if (showLoadingPopup && updatePopup) {
@@ -4095,7 +4095,7 @@ const handleBlacklistToken = useCallback((token: Token) => {
       }
       return;
     }
-    
+
     // Add to blacklist
     const newItem = {
       id: Date.now().toString(),
@@ -4103,7 +4103,7 @@ const handleBlacklistToken = useCallback((token: Token) => {
       type: 'dev' as const,
     };
     setBlacklistSettings((prev) => ({ items: [...prev.items, newItem] }));
-    
+
     // Show blacklist success message
     const txId = `blacklist-success-${Date.now()}`;
     if (showLoadingPopup && updatePopup) {
@@ -4236,74 +4236,74 @@ const handleBlacklistToken = useCallback((token: Token) => {
     });
   }, []);
 
-const visibleTokens = useMemo(() => {
-  // First mark all tokens with blacklist status
-  const markBlacklistStatus = (tokens: Token[]) => {
-    return tokens.map((token) => {
-      const isBlacklisted = blacklistSettings.items.some((item) => {
-        const itemText = item.text.toLowerCase();
+  const visibleTokens = useMemo(() => {
+    // First mark all tokens with blacklist status
+    const markBlacklistStatus = (tokens: Token[]) => {
+      return tokens.map((token) => {
+        const isBlacklisted = blacklistSettings.items.some((item) => {
+          const itemText = item.text.toLowerCase();
 
-        switch (item.type) {
-          case 'dev':
-            return token.dev.toLowerCase() === itemText;
-          case 'ca':
-            return token.tokenAddress.toLowerCase() === itemText;
-          case 'keyword':
-            const searchText =
-              `${token.name} ${token.symbol} ${token.description}`.toLowerCase();
-            return searchText.includes(itemText);
-          case 'website':
-            return token.website.toLowerCase().includes(itemText);
-          case 'handle':
-            return token.twitterHandle.toLowerCase().includes(itemText);
-          default:
-            return false;
-        }
+          switch (item.type) {
+            case 'dev':
+              return token.dev.toLowerCase() === itemText;
+            case 'ca':
+              return token.tokenAddress.toLowerCase() === itemText;
+            case 'keyword':
+              const searchText =
+                `${token.name} ${token.symbol} ${token.description}`.toLowerCase();
+              return searchText.includes(itemText);
+            case 'website':
+              return token.website.toLowerCase().includes(itemText);
+            case 'handle':
+              return token.twitterHandle.toLowerCase().includes(itemText);
+            default:
+              return false;
+          }
+        });
+        return { ...token, isBlacklisted };
       });
-      return { ...token, isBlacklisted };
-    });
-  };
+    };
 
-  // Mark blacklist status for all tokens first
-  const allTokensWithBlacklist = {
-    new: markBlacklistStatus(tokensByStatus.new),
-    graduating: markBlacklistStatus(tokensByStatus.graduating),
-    graduated: markBlacklistStatus(tokensByStatus.graduated),
-  };
+    // Mark blacklist status for all tokens first
+    const allTokensWithBlacklist = {
+      new: markBlacklistStatus(tokensByStatus.new),
+      graduating: markBlacklistStatus(tokensByStatus.graduating),
+      graduated: markBlacklistStatus(tokensByStatus.graduated),
+    };
 
-  // Then apply hideHiddenTokens filter if enabled
-  const filtered = {
-    new: displaySettings.hideHiddenTokens
-      ? allTokensWithBlacklist.new.filter((t: any) => !hidden.has(t.id) && !t.isBlacklisted)
-      : allTokensWithBlacklist.new,
-    graduating: displaySettings.hideHiddenTokens
-      ? allTokensWithBlacklist.graduating.filter((t: any) => !hidden.has(t.id) && !t.isBlacklisted)
-      : allTokensWithBlacklist.graduating,
-    graduated: displaySettings.hideHiddenTokens
-      ? allTokensWithBlacklist.graduated.filter((t: any) => !hidden.has(t.id) && !t.isBlacklisted)
-      : allTokensWithBlacklist.graduated,
-  };
+    // Then apply hideHiddenTokens filter if enabled
+    const filtered = {
+      new: displaySettings.hideHiddenTokens
+        ? allTokensWithBlacklist.new.filter((t: any) => !hidden.has(t.id) && !t.isBlacklisted)
+        : allTokensWithBlacklist.new,
+      graduating: displaySettings.hideHiddenTokens
+        ? allTokensWithBlacklist.graduating.filter((t: any) => !hidden.has(t.id) && !t.isBlacklisted)
+        : allTokensWithBlacklist.graduating,
+      graduated: displaySettings.hideHiddenTokens
+        ? allTokensWithBlacklist.graduated.filter((t: any) => !hidden.has(t.id) && !t.isBlacklisted)
+        : allTokensWithBlacklist.graduated,
+    };
 
-  // Apply additional filters if they exist
-  if (!appliedFilters) return filtered;
+    // Apply additional filters if they exist
+    if (!appliedFilters) return filtered;
 
-  return (['new', 'graduating', 'graduated'] as Token['status'][]).reduce(
-    (acc, s) => ({
-      ...acc,
-      [s]: appliedFilters[s]
-        ? applyFilters(filtered[s], appliedFilters[s])
-        : filtered[s],
-    }),
-    {} as Record<Token['status'], Token[]>,
-  );
-}, [
-  tokensByStatus,
-  hidden,
-  appliedFilters,
-  applyFilters,
-  displaySettings.hideHiddenTokens,
-  blacklistSettings,
-]);
+    return (['new', 'graduating', 'graduated'] as Token['status'][]).reduce(
+      (acc, s) => ({
+        ...acc,
+        [s]: appliedFilters[s]
+          ? applyFilters(filtered[s], appliedFilters[s])
+          : filtered[s],
+      }),
+      {} as Record<Token['status'], Token[]>,
+    );
+  }, [
+    tokensByStatus,
+    hidden,
+    appliedFilters,
+    applyFilters,
+    displaySettings.hideHiddenTokens,
+    blacklistSettings,
+  ]);
   const newTokens = visibleTokens.new;
   const graduatingTokens = visibleTokens.graduating;
   const graduatedTokens = visibleTokens.graduated;
@@ -4674,12 +4674,15 @@ const visibleTokens = useMemo(() => {
                         </div>
 
                         {alertSettings.soundAlertsEnabled && (
-                          <button
-                            className="alerts-popup-trigger"
-                            onClick={() => setShowAlertsPopup(true)}
-                          >
-                            <Bell size={18} />
-                          </button>
+                          <Tooltip content="Alerts">
+
+                            <button
+                              className="alerts-popup-trigger"
+                              onClick={() => setShowAlertsPopup(true)}
+                            >
+                              <Bell size={18} />
+                            </button>
+                          </Tooltip>
                         )}
                         <Tooltip content="Filters">
                           <button
@@ -4753,7 +4756,7 @@ const visibleTokens = useMemo(() => {
                           </div>
                         ))
                       ) : newTokens.length ? (
-       newTokens.map((t) => (
+                        newTokens.map((t) => (
                           <TokenRow
                             key={t.id}
                             token={t}
@@ -4897,12 +4900,15 @@ const visibleTokens = useMemo(() => {
                           </div>
                         </div>
                         {alertSettings.soundAlertsEnabled && (
-                          <button
-                            className="alerts-popup-trigger"
-                            onClick={() => setShowAlertsPopup(true)}
-                          >
-                            <Bell size={18} />
-                          </button>
+                          <Tooltip content="Alerts">
+
+                            <button
+                              className="alerts-popup-trigger"
+                              onClick={() => setShowAlertsPopup(true)}
+                            >
+                              <Bell size={18} />
+                            </button>
+                          </Tooltip>
                         )}
                         <Tooltip content="Filters">
 
@@ -5122,12 +5128,14 @@ const visibleTokens = useMemo(() => {
                           </div>
                         </div>
                         {alertSettings.soundAlertsEnabled && (
-                          <button
-                            className="alerts-popup-trigger"
-                            onClick={() => setShowAlertsPopup(true)}
-                          >
-                            <Bell size={18} />
-                          </button>
+                          <Tooltip content="Alerts">
+                            <button
+                              className="alerts-popup-trigger"
+                              onClick={() => setShowAlertsPopup(true)}
+                            >
+                              <Bell size={18} />
+                            </button>
+                          </Tooltip>
                         )}
                         <Tooltip content="Filters">
 
