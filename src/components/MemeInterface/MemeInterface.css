@@ -101,7 +101,7 @@
 }
 
 .meme-token-info-title {
-  color: #f4f5f9f4;
+  color: #cdd0ddf4;
   font-size: .9rem;
   letter-spacing: -.3px
 }
@@ -2652,14 +2652,14 @@
 }
 
 .meme-similar-token-symbol {
-  opacity: 0.7;
+  color: rgb(122, 124, 130);
 }
 
 .meme-similar-token-id {
-  font-size: 0.8rem;
-  opacity: 0.6;
+  font-size: 0.75rem;
   overflow: hidden;
   white-space: nowrap;
+  color: rgb(122, 124, 130);
 }
 
 .meme-similar-token-right {
@@ -2677,8 +2677,7 @@
 
 .meme-similar-token-stat .label {
   font-size: 0.75rem;
-  margin-top: 2px;
-  opacity: 0.6;
+  color: rgb(122, 124, 130);
   white-space: nowrap;
 }
 
@@ -2688,7 +2687,7 @@
 
 .meme-similar-token-empty {
   font-size: 12px;
-  opacity: 0.6;
+  color: rgb(122, 124, 130);
   padding: 6px 0;
 }
 

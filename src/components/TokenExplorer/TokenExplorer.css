@@ -1280,10 +1280,10 @@
 
 }
 
-.explorer-token-row:hover .explorer-hide-button {
+.explorer-token-row:hover .explorer-hide-button,
+.explorer-token-row:hover .explorer-blacklist-button {
   opacity: 1;
 }
-
 .explorer-hide-button:active {
   transform: scale(0.95);
 }
@@ -2560,12 +2560,11 @@
   filter: brightness(0.7);
   height: 26px;
   justify-content: center;
-  left: 20px;
-  margin-left: 3px;
+  left: -6px;
   opacity: 0;
   padding: 4px;
   position: absolute;
-  top: -6px;
+  top: 22px;
   transition: all 0.2s ease;
   width: 26px;
   z-index: 11;
@@ -2574,9 +2573,14 @@
 .explorer-token-row:hover .explorer-blacklist-button {
   opacity: 1;
 }
-
 .explorer-blacklist-button:active {
   transform: scale(0.95);
+}
+
+.explorer-blacklist-button .blacklist-dev-icon {
+  color: #b1b2c8;
+  height: 16px;
+  width: 16px;
 }
 
 .display-dropdown-trigger {
@@ -3462,15 +3466,12 @@
   opacity: 0.7;
 }
 
-.explorer-token-row.hidden-token .explorer-hide-button {
-  background: rgba(0, 0, 0, 1);
-  border-color: rgba(255, 255, 255, 0.2);
-  opacity: 1;
-}
+
 
 .explorer-token-row.hidden-token .explorer-hide-button:hover {
   background: rgba(0, 0, 0, 0.95);
-  border-color: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.2);
+
 }
 
 .explorer-token-row.colored-row {
@@ -3958,7 +3959,7 @@
 
 .explorer-token-actions {
   display: flex;
-  gap: 10px;
+  gap: 5px;
   position: absolute;
 }
 
@@ -4608,3 +4609,9 @@
   display: flex;
   justify-content: center;
 }
+
+.explorer-token-row.blacklisted-token {
+  opacity: 0.5;
+}
+
+
