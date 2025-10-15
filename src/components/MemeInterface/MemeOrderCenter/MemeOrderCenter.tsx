@@ -22,6 +22,7 @@ import lightning from '../../../assets/flash.png';
 import monadicon from '../../../assets/monadlogo.svg';
 import switchicon from '../../../assets/switch.svg';
 import walleticon from '../../../assets/wallet_icon.png';
+import { useNavigate } from 'react-router-dom';
 
 import './MemeOrderCenter.css';
 
@@ -384,6 +385,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   nonces,
   activeWalletPrivateKey,
 }) => {
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<
     'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens'
   >('positions');
@@ -733,15 +735,13 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                                 }}
                               />
                             )}
-                            <span
-                              className="oc-meme-wallet-address meme-clickable-token"
-                              onClick={() =>
-                                (window.location.href = `/meme/${p.tokenId}`)
-                              }
-                              style={{ cursor: 'pointer' }}
-                            >
-                              {tokenShort}
-                            </span>
+  <span
+    className="oc-meme-wallet-address meme-clickable-token"
+    onClick={() => navigate(`/meme/${p.tokenId}`)}
+    style={{ cursor: 'pointer' }}
+  >
+    {tokenShort}
+  </span>
                           </div>
                         </div>
                       </div>
@@ -1381,14 +1381,17 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                                 />
                               )}
                               <span
-                                className="oc-meme-wallet-address"
+                               className="oc-meme-wallet-address meme-clickable-token"
                                 title={t.name || t.symbol || t.id}
+                                onClick={() => navigate(`/meme/${t.id}`)}
+                                style={{ cursor: 'pointer' }}
                               >
                                 {(t.symbol || '').toUpperCase()}
-                                <span className="oc-meme-wallet-address-span">
+
+                              </span>
+                               <span className="oc-meme-wallet-address-span">
                                   {timeAgo(t.timestamp)}
                                 </span>
-                              </span>
                             </div>
                           </div>
                         </div>

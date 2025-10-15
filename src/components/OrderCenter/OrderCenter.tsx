@@ -11,7 +11,6 @@ import CombinedHeaderFilter from './CombinedHeaderFilter/CombinedHeaderFilter';
 import FilterSelect from './FilterSelect/FilterSelect';
 import ToggleSwitch from '../ToggleSwitch/ToggleSwitch';
 
-// Perps specific imports
 import PerpsPositionsContent from './PerpsPositionsView/PerpsPositionContent';
 import PerpsOpenOrdersContent from './PerpsOpenOrdersView/PerpsOpenOrdersContent';
 import PerpsTradeHistoryContent from './PerpsTradeHistoryView/PerpsTradeHistoryContent';

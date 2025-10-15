@@ -2700,15 +2700,16 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 .meme-wallet-mon-small-icon{
-  width: 14px;
-  height: 14px; 
+  width: 13px;
+  height: 13px; 
 }
 
 .meme-wallet-total-balance{
   display: flex;
   align-items: center;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   gap: 4px;
+  color: #e3e5f4;
 }
 .meme-wallet-dropdown-container {
   display: flex;
@@ -2738,13 +2739,13 @@
 }
 
 .meme-wallet-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .meme-wallet-count {
-  font-size: 0.9rem;
-  color: #d8dcff;
+  font-size: 0.8rem;
+  color: #e3e5f4;
   text-align: center;
   margin-right: 8px;
 }
