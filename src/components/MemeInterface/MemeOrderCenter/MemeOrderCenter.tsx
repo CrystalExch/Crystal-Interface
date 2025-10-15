@@ -1381,17 +1381,17 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                                 />
                               )}
                               <span
-                               className="oc-meme-wallet-address meme-clickable-token"
+                             className="oc-meme-wallet-address meme-clickable-token"
                                 title={t.name || t.symbol || t.id}
                                 onClick={() => navigate(`/meme/${t.id}`)}
                                 style={{ cursor: 'pointer' }}
                               >
                                 {(t.symbol || '').toUpperCase()}
-
-                              </span>
-                               <span className="oc-meme-wallet-address-span">
+                                <span className="oc-meme-wallet-address-span">
                                   {timeAgo(t.timestamp)}
                                 </span>
+                              </span>
+
                             </div>
                           </div>
                         </div>
