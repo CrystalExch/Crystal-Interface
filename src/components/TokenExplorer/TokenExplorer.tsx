@@ -2852,9 +2852,19 @@ const TokenRow = React.memo<{
           {token.twitterHandle && !token.twitterHandle.includes('/i/communities/') && (() => {
             const username = extractTwitterUsername(token.twitterHandle);
             return username ? (
-              <div className="explorer-twitter-username">
-                @{username}
-              </div>
+                <a
+                  href={`https://x.com/${username}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="explorer-twitter-username"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                                <Tooltip content={`@${username} on X`}>
+
+                  @{username}
+                                </Tooltip>
+
+                </a>
             ) : null;
           })()}
           <div className="explorer-holdings-section">

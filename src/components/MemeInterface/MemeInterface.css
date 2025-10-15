@@ -23,8 +23,10 @@
 }
 
 .meme-ordercenter {
+  width: 100%;
   display: flex;
   flex-direction: column;
+  overflow-x: scroll;
 }
 
 .meme-chart-container {
@@ -1244,6 +1246,7 @@
   background: rgb(6, 6, 6);
   border-radius: 8px;
   border-top: 1px solid rgba(179, 184, 249, 0.1);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   display: none;
   justify-content: center;
   left: 0;

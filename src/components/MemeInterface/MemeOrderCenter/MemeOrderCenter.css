@@ -1,7 +1,6 @@
 * {
   box-sizing: border-box;
 }
-
 .meme-oc-rectangle {
   background-color: rgb(6, 6, 6);
   border-right: none;
@@ -15,6 +14,7 @@
   pointer-events: auto;
   position: relative;
   width: 100%;
+  max-width: 100%;
 }
 
 @media(max-width: 1020px) {
@@ -27,8 +27,9 @@
 .meme-oc-top-bar {
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   min-width: 0;
-  overflow-x: scroll;
+  overflow-x: auto;
   width: 100%;
+  max-width: 100%;
 }
 
 .meme-oc-inner {
@@ -37,7 +38,7 @@
   height: 100%;
   justify-content: space-between;
   min-width: 800px;
-  width: 100%;
+  width: max-content;
 }
 
 
