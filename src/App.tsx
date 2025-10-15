@@ -127,6 +127,7 @@ import defaultPfp from './assets/leaderboard_default.png';
 import iconusdc from './assets/iconusdc.png';
 import edgeX from './assets/edgeX.svg';
 import switchicon from './assets/switch.svg';
+
 //audio
 import stepaudio from './assets/step_audio.mp3';
 import backaudio from './assets/back_audio.mp3';
@@ -167,8 +168,9 @@ import PNLComponent from './components/PNLComponent/PNLComponent.tsx';
 import ImportWalletsPopup from './components/Tracker/ImportWalletsPopup.tsx';
 import TradingPresetsPopup from './components/Tracker/TradingPresetsPopup/TradingPresetsPopup';
 import LiveTradesSettingsPopup from './components/Tracker/ LiveTradesSettingsPopup/LiveTradesSettingsPopup.tsx';
+
 // import config
-import { ChevronDown, Logs, SearchIcon } from 'lucide-react';
+import { ChevronDown, SearchIcon } from 'lucide-react';
 import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortfolioData.ts';
 import { settings } from './settings.ts';
 import { useSharedContext } from './contexts/SharedContext.tsx';
@@ -176,8 +178,6 @@ import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 import { sMonAbi } from './abis/sMonAbi.ts';
 import { defaultMetrics } from './components/TokenExplorer/TokenData.ts';
-
-const clearlogo = '/CrystalLogo.png';
 
 type LaunchpadTrade = {
   id: string;
@@ -203,6 +203,7 @@ type Holder = {
 interface Token {
   id: string;
   tokenAddress: string;
+  dev: string;
   name: string;
   symbol: string;
   image: string;
@@ -214,6 +215,7 @@ interface Token {
   proTraders: number;
   sniperHolding: number;
   devHolding: number;
+  bundleHolding: number;
   insiderHolding: number;
   top10Holding: number;
   buyTransactions: number;
@@ -227,8 +229,44 @@ interface Token {
   created: number;
   bondingAmount: number;
   volumeDelta: number;
-  quote?: number;
-  dev: string;
+  telegramHandle: string;
+  discordHandle: string;
+  graduatedTokens: number;
+  launchedTokens: number;
+}
+
+type AudioGroups = 'swap' | 'order' | 'transfer' | 'approve';
+
+interface AudioGroupSettings {
+  swap: boolean;
+  order: boolean;
+  transfer: boolean;
+  approve: boolean;
+}
+
+type State = {
+  tokensByStatus: Record<Token['status'], Token[]>;
+  hidden: Set<string>;
+  loading: Set<string>;
+};
+
+type Action =
+  | { type: 'INIT'; tokens: Token[] }
+  | { type: 'ADD_MARKET'; token: Partial<Token> }
+  | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
+  | { type: 'GRADUATE_MARKET'; id: string }
+  | { type: 'HIDE_TOKEN'; id: string }
+  | { type: 'SHOW_TOKEN'; id: string }
+  | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' };
+
+interface AlertSettings {
+  soundAlertsEnabled: boolean;
+  volume: number;
+  sounds: {
+    newPairs: string;
+    pairMigrating: string;
+    migrated: string;
+  };
 }
 
 const Loader = () => {
@@ -711,7 +749,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       case 'HaHa Wallet':
         return wallethaha;
       default:
-        return;
+        return walleticon;
     }
   };
 
@@ -731,7 +769,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 value: amountInWei,
                 data: '0x'
               }
-            }, 21000n, 0n, false, '0xb52e8ab1cddc2645f8df7e94578ee0edfce192371feb2633f47e7039f90c67cb', await getTransactionCount(config, {address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any),}))
+            }, 100000n, 0n, false, '0xb52e8ab1cddc2645f8df7e94578ee0edfce192371feb2633f47e7039f90c67cb', await getTransactionCount(config, {address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any),}))
           })()
         }
         if (popup == 4 && !oneCTSigner) {
@@ -743,7 +781,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   useEffect(() => {
     if (connected) {
-      setCurrentWalletIcon(getWalletIcon() ?? walleticon);
+      setCurrentWalletIcon(getWalletIcon());
     } else {
       setCurrentWalletIcon(walleticon);
     }
@@ -1753,15 +1791,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     ? orderSizeString
     : (originalOrderSize === 0 ? '' : originalOrderSize.toString());
   const [hasEditedPrice, setHasEditedPrice] = useState(false);
-  type AudioGroups = 'swap' | 'order' | 'transfer' | 'approve';
-
-  interface AudioGroupSettings {
-    swap: boolean;
-    order: boolean;
-    transfer: boolean;
-    approve: boolean;
-  }
-
   const defaultGroups: AudioGroupSettings = {
     swap: true,
     order: true,
@@ -1829,6 +1858,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       tradesloading ||
       addressinfoloading);
 
+  const monUsdPrice = (Number(tradesByMarket[ethticker+'USDC']?.[0]?.[3]) / Number(markets[ethticker+'USDC']?.priceFactor) || 1)
+
   const [walletTokenBalances, setWalletTokenBalances] = useState({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
   const [walletsLoading, _setWalletsLoading] = useState(false);
@@ -1872,70 +1903,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [openOrders, setOpenOrders] = useState<any[]>([]);
   const [_allOrders, setAllOrders] = useState<any[]>([]);
 
-  const vaultListRef = useRef<any[]>([]);
-  useEffect(() => { vaultListRef.current = vaultList; }, [vaultList]);
-
   const wsCooldownRef = useRef<number>(0);
   const wsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  type State = {
-    tokensByStatus: Record<Token['status'], Token[]>;
-    hidden: Set<string>;
-    loading: Set<string>;
-  };
-
-  type Action =
-    | { type: 'INIT'; tokens: Token[] }
-    | { type: 'ADD_MARKET'; token: Token }
-    | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
-    | { type: 'GRADUATE_MARKET'; id: string }
-    | { type: 'HIDE_TOKEN'; id: string }
-    | { type: 'SHOW_TOKEN'; id: string }
-    | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' };
-
-  interface AlertSettings {
-    soundAlertsEnabled: boolean;
-    volume: number;
-    sounds: {
-      newPairs: string;
-      pairMigrating: string;
-      migrated: string;
-    };
-  }
-
-  interface ExplorerToken {
-    id: string;
-    tokenAddress: string;
-    dev: string;
-    name: string;
-    symbol: string;
-    image: string;
-    price: number;
-    marketCap: number;
-    change24h: number;
-    volume24h: number;
-    holders: number;
-    proTraders: number;
-    sniperHolding: number;
-    devHolding: number;
-    bundleHolding: number;
-    insiderHolding: number;
-    top10Holding: number;
-    buyTransactions: number;
-    sellTransactions: number;
-    globalFeesPaid: number;
-    website: string;
-    twitterHandle: string;
-    progress: number;
-    status: 'new' | 'graduating' | 'graduated';
-    description: string;
-    created: number;
-    bondingAmount: number;
-    volumeDelta: number;
-    telegramHandle: string;
-    discordHandle: string;
-    graduatedTokens: number;
-    launchedTokens: number;
-  }
 
   const ALERT_DEFAULTS: AlertSettings = {
     soundAlertsEnabled: true,
@@ -1961,7 +1930,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       return ALERT_DEFAULTS;
     }
   });
-  const [isTokenExplorerLoading, setIsTokenExplorerLoading] = useState(false);
+  const [isTokenExplorerLoading, setIsTokenExplorerLoading] = useState(true);
   const initialState: State = {
     tokensByStatus: { new: [], graduating: [], graduated: [] },
     hidden: new Set(),
@@ -2619,11 +2588,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
 
       try {
-        const variables = {
-          vault: selectedVaultStrategy,
-          acct: selectedVaultStrategy,
-        };
-
         const VAULT_DETAIL_QUERY = `
           query VaultDetail($vault: Bytes!, $acct: ID!) {
             depositors: userVaultPositions(
@@ -2754,7 +2718,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         setOpenOrders(flattenMap(acct?.openOrderMap, 'orders') || []);
         setAllOrders(flattenMap(acct?.orderMap, 'orders') || []);
 
-        const baseVault = (vaultListRef.current || []).find(
+        const baseVault = (vaultList || []).find(
           (v: any) => (v?.address || '').toLowerCase() === selectedVaultStrategy.toLowerCase()
         );
         if (baseVault) {
@@ -2967,7 +2931,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       wsCooldownRef.current = now;
       if (wsTimerRef.current) clearTimeout(wsTimerRef.current);
       wsTimerRef.current = setTimeout(async () => {
-        const slim = (vaultListRef.current || []).map((v: any) => ({ id: v.id as `0x${string}` }));
+        const slim = (vaultList || []).map((v: any) => ({ id: v.id as `0x${string}` }));
         try {
           const oc = await fetchVaultBalances(slim);
           setVaultList((prev: any[]) =>
@@ -4080,13 +4044,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
       case 'ADD_MARKET': {
         const { token } = action;
-        const list = [token, ...state.tokensByStatus[token.status]].slice(
+        const list = [token, ...state.tokensByStatus[token?.status as Token['status']]].slice(
           0,
           30,
         );
         return {
           ...state,
-          tokensByStatus: { ...state.tokensByStatus, [token.status]: list },
+          tokensByStatus: { ...state.tokensByStatus, [token?.status as Token['status']]: list },
         };
       }
       case 'UPDATE_MARKET': {
@@ -4238,7 +4202,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
       const website = socials[0];
 
-      const token: ExplorerToken = {
+      const token: Partial<Token> = {
         ...defaultMetrics,
         id: args.token,
         tokenAddress: args.token,
@@ -5234,7 +5198,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         );
 
         dispatch({ type: 'INIT', tokens });
-        const all = tokens.map((t) => t.id);
         openWebsocket();
       } catch (err) {
         console.error('initial subgraph fetch failed', err);
@@ -5296,13 +5259,28 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   );
   const [page, _setPage] = useState(0);
   const [initialMemeFetchDone, setInitialMemeFetchDone] = useState(false);
-
+  const [currentPNLData, setCurrentPNLData] = useState({
+    balance: 0,
+    amountBought: 0,
+    amountSold: 0,
+    valueBought: 0,
+    valueSold: 0,
+    valueNet: 0,
+  });
+  const [currentTokenData, setCurrentTokenData] = useState({
+    address: '',
+    symbol: '',
+    name: '',
+    price: 0,
+  });
   const memeRef = useRef<any>();
   const memeHoldersMapRef = useRef<Map<string, number>>(new Map());
   const memePositionsMapRef = useRef<Map<string, number>>(new Map());
   const memeTopTradersMapRef = useRef<Map<string, number>>(new Map());
   const memeDevTokenIdsRef = useRef<Set<string>>(new Set());
   const memeLastInvalidateRef = useRef(0);
+  const pendingTradesRef = useRef<Array<any>>([]);
+  const queuedUpdatesRef = useRef<Array<any>>([]);
 
   const calcDevHoldingPct = (list: Holder[], dev?: string) => {
     if (!dev) return 0;
@@ -5351,6 +5329,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       tokenAddress: tokenAddress || "",
       name: "Unknown Token",
       symbol: "UNKNOWN",
+      dev: "",
       image: "",
       price: 0,
       marketCap: 0,
@@ -5360,6 +5339,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       proTraders: 0,
       sniperHolding: 0,
       devHolding: 0,
+      bundleHolding: 0,
       insiderHolding: 0,
       top10Holding: 0,
       buyTransactions: 0,
@@ -5373,7 +5353,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       created: Math.floor(Date.now() / 1000),
       bondingAmount: 0,
       volumeDelta: 0,
-      dev: "",
+      telegramHandle: "",
+      discordHandle: "",
+      graduatedTokens: 0,
+      launchedTokens: 0
     };
 
     const snapshot: Partial<Token> = (tokenData ?? {}) as Partial<Token>;
@@ -5390,10 +5373,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     memeRef.current = merged
     return merged;
   }, [tokenAddress, tokenData]);
-
-  useEffect(() => {
-    localStorage.setItem('meme_chart_timeframe', memeSelectedInterval);
-  }, [memeSelectedInterval]);
 
   // metadata n klines
   useEffect(() => {
@@ -5477,7 +5456,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (data.launchpadTokens?.length) {
           const m = data.launchpadTokens[0];
 
-          let imageUrl = tokenData?.image || m.metadataCID || '';
+          let imageUrl = token?.image || m.metadataCID || '';
 
           const price = Number(m.lastPriceNativePerTokenWad || 0) / 1e9;
           const socials = [m.social1, m.social2, m.social3, m.social4].map((s) =>
@@ -5581,7 +5560,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   : memeSelectedInterval.endsWith('s')
                     ? memeSelectedInterval.slice(0, -1).toUpperCase() + 'S'
                     : memeSelectedInterval.slice(0, -1);
-          setChartData([bars, resForChart, false]);
+                    
+          setChartData([bars, data.launchpadTokens[0].symbol + 'MON' + resForChart, true]);
         }
 
         setInitialMemeFetchDone(true);
@@ -6161,7 +6141,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   // live dev holding
   useEffect(() => {
-    const dev = (token.dev || (tokenData as any)?.dev || tokenData?.dev || "").toLowerCase();
+    const dev = (token.dev || "").toLowerCase();
     if (!dev) {
       setTokenData(p => ({ ...p, devHolding: 0 }));
       return;
@@ -6174,7 +6154,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [
     memeHolders,
     token.dev,
-    tokenData?.dev,
   ]);
 
   // data loop, reuse to have every single rpc call method in this loop
@@ -6519,9 +6498,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     refetchInterval: ['board', 'spectra', 'meme'].includes(location.pathname.split('/')[1]) ? 800 : 5000,
     gcTime: 0,
   });
-
-  const pendingTradesRef = useRef<Array<any>>([]);
-  const queuedUpdatesRef = useRef<Array<any>>([]);
 
   // memeinterface ws
   /* useEffect(() => {
@@ -9961,7 +9937,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           const pct = open24 === 0 ? 0 : ((last - open24) / open24) * 100;
           const deltaRaw = lastRaw - open24 * pf;
 
-          const volQ = Number((m.volume ?? 0) / 10 ** Number(cfg.quoteDecimals));
+          const volQ = Number((m.volume ?? 0) / 10 ** Number(6));
           const volumeDisplay = formatCommas(volQ.toFixed(2));
 
           const trades = Array.isArray(m.trades) ? m.trades : [];
@@ -12842,47 +12818,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     setExplorerFiltersActiveTab(newTab);
   }, []);
 
-  const resolveNative = useCallback(
-    (symbol: string | undefined) => {
-      if (!symbol) return "";
-      if (symbol === wethticker) return ethticker ?? symbol;
-      return symbol;
-    },
-    [wethticker, ethticker],
-  );
-
-  const usdPer = useCallback(
-    (symbol?: string): number => {
-      if (!symbol || !tradesByMarket || !markets) return 0;
-      const sym = resolveNative(symbol);
-      if (usdc && sym === "USDC") return 1;
-      const pair = `${sym}USDC`;
-      const top = tradesByMarket[pair]?.[0]?.[3];
-      const pf = Number(markets[pair]?.priceFactor) || 1;
-      if (!top || !pf) return 0;
-      return Number(top) / pf;
-    },
-    [tradesByMarket, markets, resolveNative, usdc],
-  );
-
-  const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
-
-  const [currentPNLData, setCurrentPNLData] = useState({
-    balance: 0,
-    amountBought: 0,
-    amountSold: 0,
-    valueBought: 0,
-    valueSold: 0,
-    valueNet: 0,
-  });
-
-  const [currentTokenData, setCurrentTokenData] = useState({
-    address: '',
-    symbol: '',
-    name: '',
-    price: 0,
-  });
-
   //popup modals
   const Modals = (
     <>
@@ -15232,7 +15167,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 }`}
             />
             <div className="onboarding-crystal-logo">
-              <img className="onboarding-crystal-logo-image" src={clearlogo} />
+              <img className="onboarding-crystal-logo-image" src={crystal} />
               <span className="onboarding-crystal-text">CRYSTAL</span>
             </div>
 
@@ -24836,7 +24771,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 wethticker={wethticker}
                 ethticker={ethticker}
                 terminalRefetch={terminalRefetch}
-                tokenData={tokenData}
+                tokenData={token}
                 setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
                 buyPresets={buyPresets}
@@ -24901,7 +24836,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 terminalQueryData={terminalQueryData}
                 terminalRefetch={terminalRefetch}
                 walletTokenBalances={walletTokenBalances}
-                tokenData={tokenData}
+                tokenData={token}
                 monUsdPrice={monUsdPrice}
                 token={token}
                 selectedInterval={memeSelectedInterval}

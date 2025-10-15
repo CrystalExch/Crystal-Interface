@@ -12,6 +12,7 @@ import { useSharedContext } from '../../contexts/SharedContext';
 import MonitorFiltersPopup, { MonitorFilterState } from './MonitorFiltersPopup/MonitorFiltersPopup';
 import settingsicon from '../../assets/settings.svg';
 import circle from '../../assets/circle_handle.png';
+import lightning from '../../assets/flash.png';
 import key from '../../assets/key.svg';
 import {
   WALLET_BALANCE_QUERY,
@@ -77,8 +78,6 @@ const Tooltip: React.FC<{
   const [vis, setVis] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
-
-
   const updatePosition = useCallback(() => {
     if (!containerRef.current) return;
 
@@ -122,6 +121,8 @@ const Tooltip: React.FC<{
       };
     }
   }, [vis, updatePosition]);
+
+  
 
   return (
     <div
@@ -698,24 +699,21 @@ const Tracker: React.FC<TrackerProps> = ({
   });
   const [dropPreviewLine, setDropPreviewLine] = useState<{ top: number; containerKey: string } | null>(null);
   const [expandedTokens, setExpandedTokens] = useState<Set<string>>(new Set());
+  const demoTradesSeeded = useRef(false);
+  const hasLiveTradeData = useRef(false);
 
   useEffect(() => {
-    saveWalletsToStorage(trackedWallets);
-  }, [trackedWallets]);
-
-  useEffect(() => {
-    setSearchQuery('');
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (trackedWallets.length === 0) {
-      setTrackedWalletTrades([]);
-      return;
+    // Always seed with example trades first (once)
+    if (!demoTradesSeeded.current) {
+      setTrackedWalletTrades(exampleTrades);
+      demoTradesSeeded.current = true;
     }
 
-    // Use example data initially for testing
-    if (trackedWallets.some(w => exampleWallets.find(ew => ew.id === w.id))) {
+    if (trackedWallets.length === 0) {
+      hasLiveTradeData.current = false;
+      // keep example trades visible rather than clearing to []
       setTrackedWalletTrades(exampleTrades);
+      return;
     }
 
     let cancelled = false;
@@ -735,15 +733,16 @@ const Tracker: React.FC<TrackerProps> = ({
           });
 
           if (!data?.trades || data.trades.length === 0) break;
-          
+
           allTrades.push(...data.trades);
-          
+
           if (data.trades.length < BATCH_SIZE) break;
           batchNumber++;
         }
 
         if (cancelled) return;
 
+        // Map trades
         const mapped: LiveTrade[] = allTrades.map((trade: any) => {
           const trackedWallet = trackedWallets.find(
             w => w.address.toLowerCase() === trade.account.id.toLowerCase()
@@ -788,12 +787,19 @@ const Tracker: React.FC<TrackerProps> = ({
         mapped.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
         if (!cancelled) {
-          setTrackedWalletTrades(mapped);
+          if (mapped.length > 0) {
+            hasLiveTradeData.current = true;
+            setTrackedWalletTrades(mapped);
+          } else if (!hasLiveTradeData.current) {
+            // No live data yet → keep example trades visible
+            setTrackedWalletTrades(exampleTrades);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch tracked wallet trades:', error);
-        if (!cancelled) {
-          setTrackedWalletTrades([]);
+        if (!cancelled && !hasLiveTradeData.current) {
+          // On error and no live data yet → keep example trades visible
+          setTrackedWalletTrades(exampleTrades);
         }
       }
     };
@@ -806,6 +812,14 @@ const Tracker: React.FC<TrackerProps> = ({
       clearInterval(interval);
     };
   }, [trackedWallets]);
+
+  useEffect(() => {
+    saveWalletsToStorage(trackedWallets);
+  }, [trackedWallets]);
+
+  useEffect(() => {
+    setSearchQuery('');
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab !== 'monitor' || trackedWallets.length === 0) return;
@@ -1137,86 +1151,91 @@ const Tracker: React.FC<TrackerProps> = ({
   const getFilteredMonitorTokens = () => {
     const now = new Date();
 
-    let tokens = monitorTokens.filter(token => {
-      if (monitorFilters.general.lastTransaction) {
-        const lastTxTime = new Date(token.lastTransaction);
-        const secondsAgo = (now.getTime() - lastTxTime.getTime()) / 1000;
-        if (secondsAgo > parseFloat(monitorFilters.general.lastTransaction)) {
-          return false;
+    const numOrNull = (v: string) => {
+      const t = (v ?? '').trim();
+      if (t === '' || t === '.') return null;
+      const n = Number(t);
+      return Number.isNaN(n) ? null : n;
+    };
+
+    let tokens = monitorTokens.filter((token) => {
+      {
+        const secs = numOrNull(monitorFilters.general.lastTransaction);
+        if (secs != null) {
+          const lastTxTime = new Date(token.lastTransaction);
+          const secondsAgo = (now.getTime() - lastTxTime.getTime()) / 1000;
+          if (secondsAgo > secs) return false;
         }
       }
 
-      const tokenCreatedTime = new Date(token.createdAt);
-      const tokenAgeMinutes = (now.getTime() - tokenCreatedTime.getTime()) / (1000 * 60);
+      {
+        const tokenCreatedTime = new Date(token.createdAt);
+        const tokenAgeMinutes = (now.getTime() - tokenCreatedTime.getTime()) / (1000 * 60);
 
-      if (monitorFilters.general.tokenAgeMin && tokenAgeMinutes < parseFloat(monitorFilters.general.tokenAgeMin)) {
-        return false;
-      }
-      if (monitorFilters.general.tokenAgeMax && tokenAgeMinutes > parseFloat(monitorFilters.general.tokenAgeMax)) {
-        return false;
-      }
+        const minMin = numOrNull(monitorFilters.general.tokenAgeMin); // minutes
+        const maxHr  = numOrNull(monitorFilters.general.tokenAgeMax); // hours, convert
+        const maxMin = maxHr != null ? maxHr * 60 : null;
 
-      if (monitorFilters.market.marketCapMin && token.marketCap < parseFloat(monitorFilters.market.marketCapMin)) {
-        return false;
-      }
-      if (monitorFilters.market.marketCapMax && token.marketCap > parseFloat(monitorFilters.market.marketCapMax)) {
-        return false;
+        if (minMin != null && tokenAgeMinutes < minMin) return false;
+        if (maxMin != null && tokenAgeMinutes > maxMin) return false;
       }
 
-      if (monitorFilters.market.liquidityMin && token.volume24h < parseFloat(monitorFilters.market.liquidityMin)) {
-        return false;
-      }
-      if (monitorFilters.market.liquidityMax && token.volume24h > parseFloat(monitorFilters.market.liquidityMax)) {
-        return false;
-      }
-
-      if (monitorFilters.market.holdersMin && token.holders < parseFloat(monitorFilters.market.holdersMin)) {
-        return false;
-      }
-      if (monitorFilters.market.holdersMax && token.holders > parseFloat(monitorFilters.market.holdersMax)) {
-        return false;
+      {
+        const mcMin = numOrNull(monitorFilters.market.marketCapMin);
+        const mcMax = numOrNull(monitorFilters.market.marketCapMax);
+        if (mcMin != null && token.marketCap < mcMin) return false;
+        if (mcMax != null && token.marketCap > mcMax) return false;
       }
 
-      const totalTransactions = token.trades.reduce((sum, t) => sum + t.boughtTxns + t.soldTxns, 0);
-
-      if (monitorFilters.transactions.transactionCountMin && totalTransactions < parseFloat(monitorFilters.transactions.transactionCountMin)) {
-        return false;
-      }
-      if (monitorFilters.transactions.transactionCountMax && totalTransactions > parseFloat(monitorFilters.transactions.transactionCountMax)) {
-        return false;
+      {
+        const liqMin = numOrNull(monitorFilters.market.liquidityMin);
+        const liqMax = numOrNull(monitorFilters.market.liquidityMax);
+        if (liqMin != null && token.liquidity < liqMin) return false;
+        if (liqMax != null && token.liquidity > liqMax) return false;
       }
 
-      const inflowVolume = token.trades.reduce((sum, t) => sum + t.bought, 0);
-
-      if (monitorFilters.transactions.inflowVolumeMin && inflowVolume < parseFloat(monitorFilters.transactions.inflowVolumeMin)) {
-        return false;
-      }
-      if (monitorFilters.transactions.inflowVolumeMax && inflowVolume > parseFloat(monitorFilters.transactions.inflowVolumeMax)) {
-        return false;
+      {
+        const hMin = numOrNull(monitorFilters.market.holdersMin);
+        const hMax = numOrNull(monitorFilters.market.holdersMax);
+        if (hMin != null && token.holders < hMin) return false;
+        if (hMax != null && token.holders > hMax) return false;
       }
 
-      const outflowVolume = token.trades.reduce((sum, t) => sum + t.sold, 0);
-
-      if (monitorFilters.transactions.outflowVolumeMin && outflowVolume < parseFloat(monitorFilters.transactions.outflowVolumeMin)) {
-        return false;
+      {
+        const txMin = numOrNull(monitorFilters.transactions.transactionCountMin);
+        const txMax = numOrNull(monitorFilters.transactions.transactionCountMax);
+        const txCount = token.txCount ?? 0;
+        if (txMin != null && txCount < txMin) return false;
+        if (txMax != null && txCount > txMax) return false;
       }
-      if (monitorFilters.transactions.outflowVolumeMax && outflowVolume > parseFloat(monitorFilters.transactions.outflowVolumeMax)) {
-        return false;
+
+      {
+        const trades = Array.isArray(token.trades) ? token.trades : [];
+        const inflow = trades.reduce((sum, t) => sum + (t?.bought ?? 0), 0);
+        const outflow = trades.reduce((sum, t) => sum + (t?.sold ?? 0), 0);
+
+        const inflowMin = numOrNull(monitorFilters.transactions.inflowVolumeMin);
+        const inflowMax = numOrNull(monitorFilters.transactions.inflowVolumeMax);
+        const outflowMin = numOrNull(monitorFilters.transactions.outflowVolumeMin);
+        const outflowMax = numOrNull(monitorFilters.transactions.outflowVolumeMax);
+
+        if (inflowMin != null && inflow < inflowMin) return false;
+        if (inflowMax != null && inflow > inflowMax) return false;
+        if (outflowMin != null && outflow < outflowMin) return false;
+        if (outflowMax != null && outflow > outflowMax) return false;
       }
 
       return true;
     });
 
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      tokens = tokens.filter(token =>
-        token.name.toLowerCase().includes(query) ||
-        token.symbol.toLowerCase().includes(query)
-      );
+      const q = searchQuery.toLowerCase();
+      tokens = tokens.filter((t) => t.name.toLowerCase().includes(q) || t.symbol.toLowerCase().includes(q));
     }
 
     return tokens;
   };
+
 
   const fetchWalletData = async (address: string) => {
     try {
@@ -1710,45 +1729,50 @@ const Tracker: React.FC<TrackerProps> = ({
 
     return (
       <div className="tracker-live-trades">
-        <div className="tracker-trades-table">
-          <div className="tracker-table-header">
+        <div className="detail-trades-table">
+          <div className="detail-trades-table-header">
             <div
-              className={`tracker-header-cell sortable ${tradeSortField === 'dateCreated' ? 'active' : ''}`}
+              className={`detail-trades-header-cell sortable ${tradeSortField === 'dateCreated' ? 'active' : ''}`}
               onClick={() => handleTradeSort('dateCreated')}
             >
               Time
               {tradeSortField === 'dateCreated' && (
-                <span className={`tracker-sort-arrow ${tradeSortDirection}`}>
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <span className={`detail-trades-sort-arrow ${tradeSortDirection}`}>
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
                     <path d="M5 7L2 3H8L5 7Z" />
                   </svg>
                 </span>
               )}
             </div>
-            <div className="tracker-header-cell">Name</div>
-            <div className="tracker-header-cell">Token</div>
+
+            <div className="detail-trades-header-cell">Name</div>
+
+            <div className="detail-trades-header-cell">Type</div>
+
+            <div className="detail-trades-header-cell">Token</div>
+
             <div
-              className={`tracker-header-cell sortable ${tradeSortField === 'amount' ? 'active' : ''}`}
+              className={`detail-trades-header-cell sortable ${tradeSortField === 'amount' ? 'active' : ''}`}
               onClick={() => handleTradeSort('amount')}
             >
               Amount
               {tradeSortField === 'amount' && (
-                <span className={`tracker-sort-arrow ${tradeSortDirection}`}>
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <span className={`detail-trades-sort-arrow ${tradeSortDirection}`}>
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
                     <path d="M5 7L2 3H8L5 7Z" />
                   </svg>
                 </span>
               )}
             </div>
+
             <div
-              className={`tracker-header-cell sortable ${tradeSortField === 'marketCap' ? 'active' : ''}`}
+              className={`detail-trades-header-cell sortable ${tradeSortField === 'marketCap' ? 'active' : ''}`}
               onClick={() => handleTradeSort('marketCap')}
-              style={{ justifySelf: 'end' }}
             >
               Market Cap
               {tradeSortField === 'marketCap' && (
-                <span className={`tracker-sort-arrow ${tradeSortDirection}`}>
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <span className={`detail-trades-sort-arrow ${tradeSortDirection}`}>
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
                     <path d="M5 7L2 3H8L5 7Z" />
                   </svg>
                 </span>
@@ -1756,7 +1780,8 @@ const Tracker: React.FC<TrackerProps> = ({
             </div>
           </div>
 
-          <div className="tracker-table-content">
+          {/* Body */}
+          <div className="detail-trades-body">
             {filteredTrades.length === 0 ? (
               <div className="tracker-empty-state">
                 <div className="tracker-empty-content">
@@ -1768,42 +1793,71 @@ const Tracker: React.FC<TrackerProps> = ({
               filteredTrades.map((trade) => (
                 <div
                   key={trade.id}
-                  className={`tracker-trade-row ${trade.type === 'buy' ? 'trade-buy' : 'trade-sell'}`}
+                  className={`detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
                 >
-                  <div className="tracker-trade-date">
-                    {new Date(trade.createdAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                  {/* Time */}
+                  <div className="detail-trades-col detail-trades-time">
+                    {trade.time}
                   </div>
-                  <div className="tracker-trade-name">
-                    <span className="tracker-trade-emoji">{trade.emoji}</span>
-                    <span className="tracker-trade-wallet-name">{trade.walletName}</span>
-                    <span className="tracker-trade-time">{trade.time}</span>
-                  </div>
-                  <div className="tracker-trade-token">
-                    <div className="tracker-token-info">
-                      <div className="tracker-token-icon"></div>
-                      <span>{trade.token}</span>
-                      <span className="tracker-token-time">• {trade.time}</span>
+
+                  {/* Name (emoji + name, muted time like detail rows do) */}
+                  <div className="detail-trades-col detail-trades-account">
+                    <div className="detail-trades-avatar">
+                      {/* reuse emoji as avatar visual */}
+                      <div style={{
+                        width: 24, height: 24, display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', borderRadius: '50%', background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(179,184,249,0.15)', fontSize: 12
+                      }}>
+                        {trade.emoji}
+                      </div>
                     </div>
-                  </div>
-                  <div className="tracker-trade-amount">
-                    <img src={monadicon} className="tracker-amount-icon" alt="MON" />
-                    <span className={`tracker-amount-value ${isBlurred ? 'blurred' : ''}`}>
-                      {trade.amount}
+                    <span className="detail-trades-address">
+                      {trade.walletName}
+                      <span className="detail-trades-dev-tag" style={{ marginLeft: 8 }}>
+                        {/* small muted relative time dot, same tone as detail list uses for meta */}
+                        • {trade.time}
+                      </span>
                     </span>
                   </div>
-                  <div className={`tracker-trade-mc ${isBlurred ? 'blurred' : ''}`}>
-                    ${trade.marketCap.toLocaleString()}K
+
+                  {/* Type */}
+                  <div className="detail-trades-col">
+                    <span className={`detail-trades-type buy ${trade.type}`}>
+                      {trade.type === 'buy' ? 'Buy' : 'Sell'}
+                    </span>
+                  </div>
+
+                  {/* Token */}
+                  <div className="detail-trades-col">
+                    {trade.token}
+                  </div>
+
+                  {/* Amount (colored, no token icon) */}
+                  <div className="detail-trades-col">
+                    <span
+                      className={[
+                        'detail-trades-amount',
+                        trade.type === 'buy' ? 'amount-buy' : 'amount-sell',
+                        isBlurred ? 'blurred' : ''
+                      ].join(' ')}
+                    >
+                      {trade.amount.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                    </span>
+                  </div>
+
+                  {/* Market Cap */}
+                  <div className="detail-trades-col">
+                    <span className={isBlurred ? 'blurred' : ''}>
+                      ${trade.marketCap.toLocaleString()}K
+                    </span>
                   </div>
                 </div>
               ))
             )}
           </div>
         </div>
+
       </div>
     )
   };

@@ -125,9 +125,7 @@ const LP: React.FC<LPProps> = ({
   }, [tokendict]);
 
   const defaultTokens = ['MON', 'WMON', 'USDC'];
-  const [vaultList, setVaultList] = useState<any>([]);
-  const selectedVaultData = selectedVault ?
-    vaultList.find((vault: any) => (vault.baseAsset + vault.quoteAsset) == selectedVault) : undefined;
+  const [selectedVaultData, setSelectedVaultData] = useState<any>(undefined);
 
   const hasInitializedFavorites = useRef(false);
 
@@ -163,7 +161,7 @@ const LP: React.FC<LPProps> = ({
             vaultDict.userBalance = vaultUserBalance.result;
             vaultDict.userShares = vaultUserBalance.result;
           }
-          setVaultList([vaultDict]);
+          setSelectedVaultData(vaultDict);
         }
       } catch (e) {
         console.error(e);
@@ -250,18 +248,18 @@ const LP: React.FC<LPProps> = ({
     return `$${usd.toFixed(2)}`;
   };
 
-  const filteredVaults = Object.values(markets).filter((market: any) => {
+  let filteredVaults = Object.values(markets).filter((market: any) => {
     const tokenMatch =
       selectedTokens.length === 0 ||
       selectedTokens.every(token =>
         market.quoteAsset === token.symbol ||
         market.baseAsset === token.symbol
       );
-
+  
     const isDeposited = activeTab === 'deposited'
       ? parseFloat(market?.userBalance) > 0
       : true;
-
+  
     let categoryMatch = true;
     if (activeFilter === 'LSTs') {
       categoryMatch = market?.category === 'LST';
@@ -272,9 +270,19 @@ const LP: React.FC<LPProps> = ({
     } else if (activeFilter === 'Unverified') {
       categoryMatch = market?.verified === false;
     }
-
+  
     return tokenMatch && isDeposited && categoryMatch;
   });
+  
+  if (filteredVaults.some((m: any) =>
+    m.baseAddress === settings.chainConfig[activechain]?.eth ||
+    m.quoteAddress === settings.chainConfig[activechain]?.eth
+  )) {
+    filteredVaults = filteredVaults.filter((m: any) =>
+      m.baseAddress !== settings.chainConfig[activechain]?.weth &&
+      m.quoteAddress !== settings.chainConfig[activechain]?.weth
+    );
+  }  
 
   const handleReset = () => {
     setAddLiquidityTokens({ first: '', second: '' });
@@ -930,7 +938,7 @@ const LP: React.FC<LPProps> = ({
                               onChange={(e) => handleVaultDepositAmountChange('base', e.target.value)}
                             />
                             <div className="deposit-token-badge">
-                              <img src={tokendict[selectedVaultData.baseAddress]?.image} alt="" className="deposit-token-icon" />
+                              <img src={tokendict[selectedVaultData.baseAddress]?.image} className="deposit-token-icon" />
                               <span>{selectedVaultData.baseAsset}</span>
                             </div>
                           </div>
@@ -970,7 +978,7 @@ const LP: React.FC<LPProps> = ({
                               onChange={(e) => handleVaultDepositAmountChange('quote', e.target.value)}
                             />
                             <div className="deposit-token-badge">
-                              <img src={tokendict[selectedVaultData.quoteAddress]?.image} alt="" className="deposit-token-icon" />
+                              <img src={tokendict[selectedVaultData.quoteAddress]?.image} className="deposit-token-icon" />
                               <span>{selectedVaultData.quoteAsset}</span>
                             </div>
                           </div>
@@ -1278,95 +1286,94 @@ const LP: React.FC<LPProps> = ({
               <p>No vaults found matching your criteria.</p>
             </div>)}
           </div>
-) : (
-  <div className="lp-detail-view">
-    <div className="lp-detail-header">
-      <div className="add-liquidity-breadcrumb">
-        <button onClick={backToList} className="breadcrumb-link">
-          Liquidity Pools
-        </button>
-        <ChevronLeft size={16} className="earn-breadcrumb-arrow" />
-        <span className="breadcrumb-current">{selectedVaultData?.name} Pool</span>
-      </div>
-    </div>
-
-    {loadingVaultDetails ? (
-      <div className="vault-detail-layout">
-        <div className="vault-info-section">
-          <div className="lp-detail-summary">
-            <div className="lp-detail-top">
-              <div className="lp-detail-asset">
-                <div className="lp-detail-token-pair">
-                  <div className="lp-skeleton lp-skeleton-icon lp-first-token"></div>
-                  <div className="lp-skeleton lp-skeleton-icon lp-second-token"></div>
-                </div>
-                <div>
-                  <div className="lp-skeleton lp-skeleton-title"></div>
-                  <div className="lp-skeleton lp-skeleton-fee"></div>
-                </div>
-              </div>
-              <div className="lp-detail-stats">
-                <div className="lp-detail-stat">
-                  <div className="lp-skeleton lp-skeleton-stat-label"></div>
-                  <div className="lp-skeleton lp-skeleton-stat-value"></div>
-                </div>
-                <div className="lp-detail-stat">
-                  <div className="lp-skeleton lp-skeleton-stat-label"></div>
-                  <div className="lp-skeleton lp-skeleton-stat-value"></div>
-                </div>
-                <div className="lp-detail-stat">
-                  <div className="lp-skeleton lp-skeleton-stat-label"></div>
-                  <div className="lp-skeleton lp-skeleton-stat-value"></div>
-                </div>
-                <div className="lp-detail-stat">
-                  <div className="lp-skeleton lp-skeleton-stat-label"></div>
-                  <div className="lp-skeleton lp-skeleton-stat-value"></div>
-                </div>
+        ) : (
+          <div className="lp-detail-view">
+            <div className="lp-detail-header">
+              <div className="add-liquidity-breadcrumb">
+                <button onClick={backToList} className="breadcrumb-link">
+                  Liquidity Pools
+                </button>
+                <ChevronLeft size={16} className="earn-breadcrumb-arrow" />
+                <span className="breadcrumb-current">{selectedVaultData?.name} Pool</span>
               </div>
             </div>
+            {loadingVaultDetails ? (
+              <div className="vault-detail-layout">
+                <div className="vault-info-section">
+                  <div className="lp-detail-summary">
+                    <div className="lp-detail-top">
+                      <div className="lp-detail-asset">
+                        <div className="lp-detail-token-pair">
+                          <div className="lp-skeleton lp-skeleton-icon lp-first-token"></div>
+                          <div className="lp-skeleton lp-skeleton-icon lp-second-token"></div>
+                        </div>
+                        <div>
+                          <div className="lp-skeleton lp-skeleton-title"></div>
+                          <div className="lp-skeleton lp-skeleton-fee"></div>
+                        </div>
+                      </div>
+                      <div className="lp-detail-stats">
+                        <div className="lp-detail-stat">
+                          <div className="lp-skeleton lp-skeleton-stat-label"></div>
+                          <div className="lp-skeleton lp-skeleton-stat-value"></div>
+                        </div>
+                        <div className="lp-detail-stat">
+                          <div className="lp-skeleton lp-skeleton-stat-label"></div>
+                          <div className="lp-skeleton lp-skeleton-stat-value"></div>
+                        </div>
+                        <div className="lp-detail-stat">
+                          <div className="lp-skeleton lp-skeleton-stat-label"></div>
+                          <div className="lp-skeleton lp-skeleton-stat-value"></div>
+                        </div>
+                        <div className="lp-detail-stat">
+                          <div className="lp-skeleton lp-skeleton-stat-label"></div>
+                          <div className="lp-skeleton lp-skeleton-stat-value"></div>
+                        </div>
+                      </div>
+                    </div>
 
-            <div className="lp-performance-chart-container">
-              <div className="lp-skeleton lp-skeleton-chart-header"></div>
-              <div className="lp-skeleton lp-skeleton-chart"></div>
-            </div>
-          </div>
-        </div>
+                    <div className="lp-performance-chart-container">
+                      <div className="lp-skeleton lp-skeleton-chart-header"></div>
+                      <div className="lp-skeleton lp-skeleton-chart"></div>
+                    </div>
+                  </div>
+                </div>
 
-        <div className="vault-actions-section">
-          <div className="vault-tabs">
-            <div className="lp-skeleton lp-skeleton-tab"></div>
-            <div className="lp-skeleton lp-skeleton-tab"></div>
-          </div>
+                <div className="vault-actions-section">
+                  <div className="vault-tabs">
+                    <div className="lp-skeleton lp-skeleton-tab"></div>
+                    <div className="lp-skeleton lp-skeleton-tab"></div>
+                  </div>
 
-          <div className="vault-deposit-form">
-            <div className="lp-skeleton lp-skeleton-form-title"></div>
-            <div className="lp-skeleton lp-skeleton-form-description"></div>
+                  <div className="vault-deposit-form">
+                    <div className="lp-skeleton lp-skeleton-form-title"></div>
+                    <div className="lp-skeleton lp-skeleton-form-description"></div>
 
-            <div className="deposit-amounts-section">
-              <div className="deposit-input-group">
-                <div className="lp-skeleton lp-skeleton-input"></div>
+                    <div className="deposit-amounts-section">
+                      <div className="deposit-input-group">
+                        <div className="lp-skeleton lp-skeleton-input"></div>
+                      </div>
+                      <div className="deposit-input-group">
+                        <div className="lp-skeleton lp-skeleton-input"></div>
+                      </div>
+                    </div>
+
+                    <div className="deposit-summary">
+                      <div className="deposit-summary-row">
+                        <div className="lp-skeleton lp-skeleton-summary-text"></div>
+                        <div className="lp-skeleton lp-skeleton-summary-value"></div>
+                      </div>
+                      <div className="deposit-summary-row">
+                        <div className="lp-skeleton lp-skeleton-summary-text"></div>
+                        <div className="lp-skeleton lp-skeleton-summary-value"></div>
+                      </div>
+                    </div>
+
+                    <div className="lp-skeleton lp-skeleton-button"></div>
+                  </div>
+                </div>
               </div>
-              <div className="deposit-input-group">
-                <div className="lp-skeleton lp-skeleton-input"></div>
-              </div>
-            </div>
-
-            <div className="deposit-summary">
-              <div className="deposit-summary-row">
-                <div className="lp-skeleton lp-skeleton-summary-text"></div>
-                <div className="lp-skeleton lp-skeleton-summary-value"></div>
-              </div>
-              <div className="deposit-summary-row">
-                <div className="lp-skeleton lp-skeleton-summary-text"></div>
-                <div className="lp-skeleton lp-skeleton-summary-value"></div>
-              </div>
-            </div>
-
-            <div className="lp-skeleton lp-skeleton-button"></div>
-          </div>
-        </div>
-      </div>
-    ) : selectedVaultData && (
+            ) : selectedVaultData && (
               <div className="vault-detail-layout">
                 <div className="vault-info-section">
                   <div className="lp-detail-summary">

@@ -139,8 +139,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   const basePair = () => `${token.symbol}/${showUSD ? 'USD' : 'MON'}`;
   const tvSymbol = () => `${basePair()}`;
 
-  const toResKey = (sym: string, res: string) => sym + 'MON' + res;
-
   function enforceOpenEqualsPrevClose(bars: any[] = []) {
     if (!Array.isArray(bars) || bars.length === 0) return bars;
     const out = [...bars].sort((a, b) => a.time - b.time);
@@ -349,18 +347,8 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   }, [tradehistory.length]);
 
   useEffect(() => {
-    if (data && data[0] && data[1]) {
-      const [bars, resRaw] = data as [any[], string];
-      const res =
-        typeof resRaw === 'string'
-          ? resRaw.endsWith('s')
-            ? resRaw.slice(0, -1).toUpperCase() + 'S'
-            : resRaw.toUpperCase()
-          : String(resRaw);
-      const key = toResKey(token.symbol, res);
-      dataRef.current[key] = enforceOpenEqualsPrevClose(bars);
-    }
-  }, [data, token.symbol]);
+    dataRef.current[data[1]] = enforceOpenEqualsPrevClose(data[0]);
+  }, [data]);
   
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
@@ -502,7 +490,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         },
 
         getBars: async (
-          _symbolInfo: any,
+          symbolInfo: any,
           resolution: string,
           periodParams: any,
           onHistoryCallback: Function,
@@ -523,9 +511,12 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
                       : resolution + 'm',
             );
 
-            const key = toResKey(token.symbol, resolution);
+            const key =
+              symbolInfo.name.split('/')[0] +
+              'MON' +
+              resolution;
 
-            await new Promise<void>((resolve) => {
+              await new Promise<void>((resolve) => {
               const check = () => {
                 if (dataRef.current[key]) {
                   clearInterval(intervalCheck);
