@@ -1256,7 +1256,6 @@
   border-radius: 4px;
   cursor: pointer;
   display: flex;
-  filter: brightness(0.7);
   height: 26px;
   justify-content: center;
   left: -6px;
@@ -1267,6 +1266,7 @@
   transition: all 0.2s ease;
   width: 26px;
   z-index: 11;
+  color: #8e8f9e;
 }
 
 .explorer-token-row:hover {
@@ -1284,9 +1284,7 @@
 .explorer-token-row:hover .explorer-blacklist-button {
   opacity: 1;
 }
-.explorer-hide-button:active {
-  transform: scale(0.95);
-}
+
 
 .quickbuy-loading-spinner {
   animation: spin 1s linear infinite;
@@ -2557,7 +2555,6 @@
   border-radius: 4px;
   cursor: pointer;
   display: flex;
-  filter: brightness(0.7);
   height: 26px;
   justify-content: center;
   left: -6px;
@@ -2573,12 +2570,9 @@
 .explorer-token-row:hover .explorer-blacklist-button {
   opacity: 1;
 }
-.explorer-blacklist-button:active {
-  transform: scale(0.95);
-}
 
 .explorer-blacklist-button .blacklist-dev-icon {
-  color: #b1b2c8;
+  color: #8e8f9e;
   height: 16px;
   width: 16px;
 }
@@ -4615,3 +4609,29 @@
 }
 
 
+.explorer-hide-button:hover,
+.explorer-blacklist-button:hover {
+  color: #d8dcff;
+}
+
+.explorer-hide-button:hover .blacklist-dev-icon,
+.explorer-blacklist-button:hover .blacklist-dev-icon {
+  color: #d8dcff;
+}
+
+.explorer-hide-button.strikethrough:hover::after,
+.explorer-blacklist-button.strikethrough:hover::after {
+  background: #d8dcff;
+}
+
+.explorer-hide-button.strikethrough::after,
+.explorer-blacklist-button.strikethrough::after {
+  content: '';
+  position: absolute;
+  width: 70%;
+  height: 1.5px;
+  background: #b1b2c8;
+  transform: rotate(45deg);
+  pointer-events: none;
+  box-shadow: 0 0 4px black;
+}

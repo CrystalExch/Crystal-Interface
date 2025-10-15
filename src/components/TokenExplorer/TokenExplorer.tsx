@@ -2486,27 +2486,27 @@ const {
         onMouseLeave={onTokenLeave}
         onClick={() => onTokenClick(token)}
       >
-        <div className="explorer-token-actions">
+<div className="explorer-token-actions">
           <button
-            className="explorer-hide-button"
+            className={`explorer-hide-button ${isHidden ? 'strikethrough' : ''}`}
             onClick={(e) => {
               e.stopPropagation();
               onHideToken(token.id);
             }}
           >
             <Tooltip content={isHidden ? 'Show Token' : 'Hide Token'}>
-              {isHidden ? <Eye size={16} /> : <EyeOff size={16} />}
+             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
             </Tooltip>
           </button>
           <button
-            className="explorer-blacklist-button"
+            className={`explorer-blacklist-button ${isBlacklisted ? 'strikethrough' : ''}`}
             onClick={(e) => {
               e.stopPropagation();
               onBlacklistToken(token);
               onHideToken(token.id);
             }}
           >
-            <Tooltip content="Blacklist Dev">
+  <Tooltip content={isBlacklisted ? 'Unblacklist Dev' : 'Blacklist Dev'}>
               <svg
                 className="blacklist-dev-icon"
                 width="16"
