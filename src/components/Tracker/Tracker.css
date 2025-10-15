@@ -624,13 +624,6 @@
   color: rgba(255, 255, 255, 0.4);
 }
 
-.tracker-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 0 1 auto;
-}
-
 .tracker-header-button {
   background: transparent;
   border: 1.5px solid rgba(179, 184, 249, 0.1);
@@ -731,12 +724,6 @@
     flex: 1;
     text-align: center;
     justify-content: center;
-  }
-
-  .tracker-header-actions {
-    flex: 1 1 100%;
-    width: 100%;
-    justify-content: flex-start;
   }
 }
 
