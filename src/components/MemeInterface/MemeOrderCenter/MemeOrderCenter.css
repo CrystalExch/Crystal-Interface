@@ -285,7 +285,6 @@
 .meme-wallet-tags,
 .meme-token-tags {
   display: flex;
-  flex-wrap: wrap;
   gap: 4px;
   width: 100%;
 }

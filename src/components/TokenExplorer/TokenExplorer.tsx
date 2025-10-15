@@ -1081,7 +1081,7 @@ interface TabFilters {
 
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
-  quickBuySize: 'small',
+  quickBuySize: 'large',
   quickBuyStyle: 'color',
   ultraStyle: 'default',
   ultraColor: 'color',
