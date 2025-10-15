@@ -94,6 +94,7 @@ const Tooltip: React.FC<{
   const [vis, setVis] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  
   const updatePosition = useCallback(() => {
     if (!containerRef.current) return;
 
@@ -137,8 +138,6 @@ const Tooltip: React.FC<{
       };
     }
   }, [vis, updatePosition]);
-
-  
 
   return (
     <div
@@ -1685,6 +1684,23 @@ const Tracker: React.FC<TrackerProps> = ({
     const isDragOver = dragReorderState.dragOverIndex === index && dragReorderState.dragOverContainer === 'main';
     const containerKey = 'tracker-wallets';
 
+    // Get token count for this wallet
+    const getWalletTokenCount = (address: string) => {
+      const balances = walletTokenBalances[address];
+      if (!balances) return 0;
+
+      const ethAddress = chainCfg?.eth;
+      let count = 0;
+
+      for (const [tokenAddr, balance] of Object.entries(balances)) {
+        if (tokenAddr !== ethAddress && balance && BigInt(balance.toString()) > 0n) {
+          count++;
+        }
+      }
+
+      return count;
+    };
+
     return (
       <div
         key={wallet.id}
@@ -1792,14 +1808,16 @@ const Tracker: React.FC<TrackerProps> = ({
           />
         )}
 
+        <div style={{ width: '30px' }}></div>
+
         <div className="tracker-wallet-drag-handle">
-          <img src={circle} className="tracker-drag-handle-icon" alt="Drag" />
+          <Tooltip content="Drag to reorder wallet">
+            <img src={circle} className="tracker-drag-handle-icon" alt="Drag" />
+          </Tooltip>
         </div>
 
         <div className="tracker-wallet-profile">
-          <div className="tracker-wallet-emoji">{wallet.emoji}</div>
-
-          <div className="tracker-wallet-info">
+          <div className="tracker-wallet-name-container">
             {editingWallet === wallet.id ? (
               <div className="tracker-wallet-name-edit-container">
                 <input
@@ -1832,43 +1850,52 @@ const Tracker: React.FC<TrackerProps> = ({
                 />
               </div>
             )}
-            <div className="tracker-wallet-address">
-              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-              <img
-                src={copy}
-                className="tracker-copy-icon"
-                alt="Copy"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigator.clipboard.writeText(wallet.address);
-                }}
-                style={{ cursor: 'pointer' }}
-              />
-            </div>
+            {editingWallet !== wallet.id && (
+              <div className="tracker-wallet-address">
+                {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                <img
+                  src={copy}
+                  className="tracker-copy-icon"
+                  alt="Copy"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(wallet.address);
+                  }}
+                  style={{ cursor: 'pointer' }}
+                />
+              </div>
+            )}
           </div>
         </div>
 
-        <div className={`tracker-wallet-balance ${isBlurred ? 'blurred' : ''}`}>
-          {walletCurrency === 'MON' ? (
+        <div className="tracker-wallet-balance">
+          <div className={isBlurred ? 'blurred' : ''}>
             <img src={monadicon} className="tracker-balance-icon" alt="MON" />
-          ) : (
-            '$'
-          )}
-          {(() => {
-            const b = walletTokenBalances[wallet.address];
-            const ethToken = chainCfg?.eth;
+            {(() => {
+              const b = walletTokenBalances[wallet.address];
+              const ethToken = chainCfg?.eth;
 
-            if (b && ethToken) {
-              const bal = Number(b[ethToken] || 0) / 1e18;
-              return bal > 0
-                ? (bal / DISPLAY_SCALE).toFixed(2)
-                : '0.00';
-            }
-            return wallet.balance.toFixed(2);
-          })()}K
-        </div>
+              if (b && ethToken) {
+                const bal = Number(b[ethToken] || 0) / 1e18;
+                return bal > 0
+                  ? (bal / DISPLAY_SCALE).toFixed(2)
+                  : '0.00';
+              }
+              return wallet.balance.toFixed(2);
+            })()}
+          </div>
+        </div>  
 
-        <div className="tracker-wallet-last-active">{wallet.lastActive}</div>
+        <div className="tracker-wallet-last-active">
+          <div className="tracker-wallet-token-count">
+            <div className="tracker-wallet-token-structure-icons">
+              <div className="token1"></div>
+              <div className="token2"></div>
+              <div className="token3"></div>
+            </div>
+            <span className="tracker-wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
+          </div>
+        </div>  
 
         <div className="tracker-wallet-actions">
           <Tooltip content="Export Private Key">
@@ -1884,16 +1911,17 @@ const Tracker: React.FC<TrackerProps> = ({
           </Tooltip>
 
           <Tooltip content="View on Explorer">
-            
             <a
               href={`${chainCfg?.explorer}/address/${wallet.address}`}
               target="_blank"
               rel="noopener noreferrer"
               className="tracker-action-button"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
             >
               <svg
-                className="tracker-action-icon"
+                className="tracker-action-icon-svg"
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
                 height="16"
@@ -1918,12 +1946,15 @@ const Tracker: React.FC<TrackerProps> = ({
             </button>
           </Tooltip>
         </div>
+
+
+        
       </div>
     );
   };
   
 
-    const startSelection = (e: React.MouseEvent) => {
+  const startSelection = (e: React.MouseEvent) => {
       if (e.button !== 0) return;
       
       if ((e.target as HTMLElement).closest('.tracker-wallet-item')) {
@@ -1947,7 +1978,7 @@ const Tracker: React.FC<TrackerProps> = ({
         currentX: startX,
         currentY: startY
       });
-    };
+  };
 
   return (
     <div className="tracker-container">
