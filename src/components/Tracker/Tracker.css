@@ -26,7 +26,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 10px;
+  padding: 10px 20px;
   min-height: 40px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   background: rgb(6, 6, 6);
@@ -142,18 +142,25 @@
 .tracker-add-button:hover { filter: brightness(1.1); }
 
 @media (max-width: 950px) {
-  .tracker-header { justify-content: center; }
+  .tracker-header { 
+    justify-content: center; 
+    padding-bottom: 20px;
+  }
   .tracker-tabs {
     flex: 1 1 100%; width: 100%; justify-content: center; order: -1;
     padding-bottom: 10px; border-bottom: 1px solid rgba(179,184,249,0.1); margin-bottom: 0;
   }
   .tracker-tab { flex: 1; text-align: center; justify-content: center; }
-  .tracker-header-actions { flex: 1 1 100%; width: 100%; justify-content: flex-start; }
+  .tracker-header-actions { 
+    flex: 1 1 100%; 
+    width: 100%; 
+    justify-content: center; 
+  }
 }
 
 /* Content + Empty */
 .tracker-content { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: rgb(6,6,6); }
-.tracker-empty-state { height: 100%; display: flex; align-items: center; justify-content: center; }
+.tracker-empty-state { padding-top: 10px; height: 100%; display: flex; align-items: center; justify-content: center; }
 .tracker-empty-content { text-align: center; max-width: 300px; }
 .tracker-empty-content h4 { color: #ebedfe; font-size: 1.1rem; margin: 0 0 8px; letter-spacing: -0.3px; }
 .tracker-empty-content p { color: rgba(255,255,255,.5); font-size: .9rem; margin: 0 0 16px; line-height: 1.4; letter-spacing: -0.3px; }
@@ -186,8 +193,14 @@
 .tracker-wallet-header-cell.active { color: #d8dcff; }
 
 .tracker-wallet-item {
-  display: grid; grid-template-columns: 30px 2fr 1.5fr 1fr 1fr; gap: 16px; padding: 8px 20px;
-  transition: all .2s ease; align-items: center; cursor: pointer; position: relative;
+  display: grid; 
+  grid-template-columns: 30px 20px 2fr 1.5fr 1fr 1fr; 
+  gap: 16px; 
+  padding: 8px 20px;
+  transition: all .2s ease; 
+  align-items: center; 
+  cursor: pointer; 
+  position: relative;
   border-bottom: 1px solid rgba(179,184,249,0.05);
 }
 .tracker-wallet-item.handle-visible { grid-template-columns: 30px 20px 2fr 1fr 1fr 2fr; }

@@ -2116,9 +2116,9 @@ const Tracker: React.FC<TrackerProps> = ({
             >
               {monitorCurrency === 'USD' ? 'USD' : 'MON'}
             </button>
-            <button className="tracker-header-button">P1</button>
+            <button className="tracker-header-button" onClick={() => setpopup(34)}>P1</button>
             <div style={{ display: 'flex' }}>
-              <button className="tracker-header-button flash-button">
+              <button className="tracker-header-button flash-button" onClick={() => setpopup(33)}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
