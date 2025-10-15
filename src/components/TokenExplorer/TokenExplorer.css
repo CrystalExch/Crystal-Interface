@@ -1285,6 +1285,10 @@
   opacity: 1;
 }
 
+.explorer-quick-buy-btn.style-grey .quickbuy-loading-spinner {
+  border: 1.5px solid #dedfeb;
+  border-top: 1.5px solid transparent;
+}
 
 .quickbuy-loading-spinner {
   animation: spin 1s linear infinite;
@@ -3240,7 +3244,7 @@
 }
 
 .explorer-quick-buy-btn.style-grey {
-  background: rgba(166, 166, 180, 0.1);
+  background: rgb(34, 34, 38);
   box-shadow: none;
   color: #ffffffcc;
   font-weight: 500;
