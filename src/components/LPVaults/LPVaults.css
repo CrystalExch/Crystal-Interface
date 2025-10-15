@@ -1860,7 +1860,8 @@
 @media(max-width:1024px) {
   .vault-detail-layout {
     flex-direction: column;
-    gap: 1.5rem
+    gap: 1.5rem;
+    align-items: center;
   }
 
   .vault-actions-section {
@@ -1869,6 +1870,7 @@
   }
 
   .vault-strategy-sticky-bar {
+    padding-top: 5px;
     align-items: flex-start;
     flex-direction: column
   }
@@ -2049,12 +2051,15 @@
 }
 
 .vaults-filters {
-  align-items: center;
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
-  margin-bottom: .5rem;
-  width: 100%
+  align-items: center;
+  width: 100%;
+  flex-wrap: wrap;
+  row-gap: .5rem;
+  margin-bottom: .75rem;
+  padding: 0 5px;
 }
 
 .vaults-search-container {
@@ -2080,18 +2085,19 @@
 }
 
 .vaults-list {
+  width: 100%;
   overflow-x: auto;
   overflow-y: visible;
-  width: 100%;
-
 }
 
 .vault-row {
-  align-items: center;
+  transition: background-color .2s ease;
   cursor: pointer;
+  margin-bottom: 2px;
+  padding: .2rem;
+  min-width: 780px;
+  align-items: center;
   display: flex;
-  padding: .4rem .4rem;
-  transition: background-color.2s ease
 }
 
 .vault-row:last-child,
@@ -3025,15 +3031,15 @@
 }
 
 .vaults-list-header {
+  display: flex;
+  padding: .5rem .4rem;
   background-color: transparent;
   color: #ffffff8b;
-  display: flex;
-  flex: 1;
   font-size: .75rem;
-  font-weight: 300;
   letter-spacing: -.3px;
+  font-weight: 300;
   min-width: 780px;
-  padding: .5rem .4rem;
+  flex: 1;
 }
 
 .vault-row:hover {
@@ -3377,8 +3383,6 @@
   font-size: .75rem
 }
 
-@media (max-width:1024px) {
-}
 
 @media (max-width:768px) {
 
