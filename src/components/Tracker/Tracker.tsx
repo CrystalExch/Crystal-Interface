@@ -8,6 +8,7 @@ import trash from '../../assets/trash.svg';
 import { settings } from '../../settings';
 import ImportWalletsPopup from './ImportWalletsPopup';
 import LiveTradesFiltersPopup from './LiveTradesFiltersPopup/LiveTradesFiltersPopup';
+import EmojiPicker from 'emoji-picker-react';
 import { useSharedContext } from '../../contexts/SharedContext';
 import MonitorFiltersPopup, { MonitorFilterState } from './MonitorFiltersPopup/MonitorFiltersPopup';
 import settingsicon from '../../assets/settings.svg';
@@ -500,6 +501,8 @@ const Tracker: React.FC<TrackerProps> = ({
   });
   const [dropPreviewLine, setDropPreviewLine] = useState<{ top: number; containerKey: string } | null>(null);
   const [expandedTokens, setExpandedTokens] = useState<Set<string>>(new Set());
+  const [pinnedTokens, setPinnedTokens] = useState<Set<string>>(new Set());
+
   const txFromCacheRef = useRef(new Map<string, string>());
 
   const trackedSetRef = useRef<Set<string>>(new Set());
@@ -706,12 +709,12 @@ const Tracker: React.FC<TrackerProps> = ({
       website: '',
       twitter: '',
       telegram: '',
-      createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-      lastTransaction: new Date(Date.now() - 300000).toISOString(), // 5 min ago
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      lastTransaction: new Date(Date.now() - 300000).toISOString(),
       trades: [
         {
           id: 'trade-1',
-          wallet: 'Paper Hands',
+          wallet: 'Paper Hands', // CORRELATES to tracked wallet
           emoji: '😀',
           timeInTrade: '2h 15m',
           bought: 150.5,
@@ -723,7 +726,7 @@ const Tracker: React.FC<TrackerProps> = ({
         },
         {
           id: 'trade-2',
-          wallet: 'Diamond Hands',
+          wallet: 'Diamond Hands', // CORRELATES to tracked wallet
           emoji: '💎',
           timeInTrade: '6h 42m',
           exitStatus: 'Exited' as const,
@@ -762,12 +765,12 @@ const Tracker: React.FC<TrackerProps> = ({
       website: '',
       twitter: '',
       telegram: '',
-      createdAt: new Date(Date.now() - 172800000).toISOString(), 
-      lastTransaction: new Date(Date.now() - 120000).toISOString(), 
+      createdAt: new Date(Date.now() - 172800000).toISOString(),
+      lastTransaction: new Date(Date.now() - 120000).toISOString(),
       trades: [
         {
           id: 'trade-3',
-          wallet: 'Whale Watcher',
+          wallet: 'Whale Watcher', // CORRELATES to tracked wallet
           emoji: '😈',
           timeInTrade: '1d 4h',
           bought: 500.0,
@@ -805,12 +808,12 @@ const Tracker: React.FC<TrackerProps> = ({
       website: '',
       twitter: '',
       telegram: '',
-      createdAt: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
-      lastTransaction: new Date(Date.now() - 60000).toISOString(), // 1 min ago
+      createdAt: new Date(Date.now() - 43200000).toISOString(),
+      lastTransaction: new Date(Date.now() - 60000).toISOString(),
       trades: [
         {
           id: 'trade-4',
-          wallet: 'Moon Boy',
+          wallet: 'Moon Boy', // CORRELATES to tracked wallet
           emoji: '🚀',
           timeInTrade: '8h 12m',
           bought: 75.0,
@@ -822,7 +825,7 @@ const Tracker: React.FC<TrackerProps> = ({
         },
         {
           id: 'trade-5',
-          wallet: 'Degen Trader',
+          wallet: 'Degen Trader', // CORRELATES to tracked wallet
           emoji: '⚡',
           timeInTrade: '3h 45m',
           bought: 25.5,
@@ -831,6 +834,148 @@ const Tracker: React.FC<TrackerProps> = ({
           soldTxns: 0,
           pnl: 15.2,
           remaining: 25.5
+        }
+      ]
+    },
+    {
+      id: 'token-4',
+      tokenAddress: '0x4567890123def1234567890123def12345678901',
+      name: 'Pepe Classic',
+      symbol: 'PEPEC',
+      emoji: '🐸',
+      price: 0.000234,
+      marketCap: 234000,
+      change24h: 45.2,
+      volume24h: 67000,
+      liquidity: 45000,
+      holders: 2150,
+      buyTransactions: 198,
+      sellTransactions: 76,
+      bondingCurveProgress: 92,
+      txCount: 274,
+      volume5m: 890,
+      volume1h: 6700,
+      volume6h: 23000,
+      priceChange5m: 3.1,
+      priceChange1h: 12.4,
+      priceChange6h: 28.7,
+      priceChange24h: 45.2,
+      website: '',
+      twitter: '',
+      telegram: '',
+      createdAt: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
+      lastTransaction: new Date(Date.now() - 180000).toISOString(), // 3 min ago
+      trades: [
+        {
+          id: 'trade-6',
+          wallet: 'Paper Hands', // CORRELATES to same wallet as token-1
+          emoji: '😀',
+          timeInTrade: '1d 12h',
+          bought: 89.3,
+          boughtTxns: 2,
+          sold: 25.1,
+          soldTxns: 1,
+          pnl: 34.7,
+          remaining: 64.2
+        }
+      ]
+    },
+    {
+      id: 'token-5',
+      tokenAddress: '0x5678901234ef12345678901234ef123456789012',
+      name: 'Bonk Inu',
+      symbol: 'BONK',
+      emoji: '🔨',
+      price: 0.00000789,
+      marketCap: 7890,
+      change24h: -23.4,
+      volume24h: 12000,
+      liquidity: 8900,
+      holders: 567,
+      buyTransactions: 89,
+      sellTransactions: 134,
+      bondingCurveProgress: 34,
+      txCount: 223,
+      volume5m: 234,
+      volume1h: 1890,
+      volume6h: 6700,
+      priceChange5m: -2.1,
+      priceChange1h: -8.9,
+      priceChange6h: -15.6,
+      priceChange24h: -23.4,
+      website: '',
+      twitter: '',
+      telegram: '',
+      createdAt: new Date(Date.now() - 604800000).toISOString(), // 1 week ago
+      lastTransaction: new Date(Date.now() - 900000).toISOString(), // 15 min ago
+      trades: [
+        {
+          id: 'trade-7',
+          wallet: 'Whale Watcher', // CORRELATES to same wallet as token-2
+          emoji: '😈',
+          timeInTrade: '4d 8h',
+          bought: 300.0,
+          boughtTxns: 4,
+          sold: 180.0,
+          soldTxns: 3,
+          pnl: -67.3,
+          remaining: 120.0
+        },
+        {
+          id: 'trade-8',
+          wallet: 'Diamond Hands', // CORRELATES to same wallet as token-1
+          emoji: '💎',
+          timeInTrade: '2d 15h',
+          exitStatus: 'Exited' as const,
+          bought: 50.0,
+          boughtTxns: 1,
+          sold: 50.0,
+          soldTxns: 1,
+          pnl: -12.4,
+          remaining: 0
+        }
+      ]
+    },
+    {
+      id: 'token-6',
+      tokenAddress: '0x6789012345f123456789012345f1234567890123',
+      name: 'Wojak Coin',
+      symbol: 'WOJ',
+      emoji: '😭',
+      price: 0.000056,
+      marketCap: 56000,
+      change24h: 78.9,
+      volume24h: 23000,
+      liquidity: 15000,
+      holders: 1890,
+      buyTransactions: 234,
+      sellTransactions: 45,
+      bondingCurveProgress: 78,
+      txCount: 279,
+      volume5m: 567,
+      volume1h: 4500,
+      volume6h: 12000,
+      priceChange5m: 5.6,
+      priceChange1h: 23.4,
+      priceChange6h: 45.8,
+      priceChange24h: 78.9,
+      website: '',
+      twitter: '',
+      telegram: '',
+      createdAt: new Date(Date.now() - 345600000).toISOString(), // 4 days ago
+      lastTransaction: new Date(Date.now() - 45000).toISOString(), // 45 sec ago
+      trades: [
+        {
+          id: 'trade-9',
+          wallet: 'Degen Trader', // CORRELATES to same wallet as token-3
+          emoji: '⚡',
+          timeInTrade: '12h 34m',
+          bought: 45.6,
+          boughtTxns: 3,
+          sold: 0,
+          soldTxns: 0,
+          pnl: 67.8,
+          remaining: 45.6
         }
       ]
     }
@@ -1072,7 +1217,11 @@ const Tracker: React.FC<TrackerProps> = ({
       });
     }
 
-    return tokens;
+    // Sort pinned tokens to the top
+    const pinned = tokens.filter(t => pinnedTokens.has(t.id));
+    const unpinned = tokens.filter(t => !pinnedTokens.has(t.id));
+    
+    return [...pinned, ...unpinned];
   };
 
   const handleAddWallet = async () => {
@@ -1696,33 +1845,42 @@ const Tracker: React.FC<TrackerProps> = ({
                         <div className="tracker-monitor-token-details">
                           <div className="tracker-monitor-token-name-row">
                             <span className="tracker-monitor-token-name-text">{token.name}</span>
+                            <div className="tracker-monitor-address-copy-group">
+                              <span className="tracker-monitor-token-ca">
+                                {token.tokenAddress.slice(0, 6)}...{token.tokenAddress.slice(-4)}
+                              </span>
+                              <img
+                                src={copy}
+                                className="tracker-monitor-copy-icon"
+                                alt="Copy"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(token.tokenAddress);
+                                }}
+                                style={{ cursor: 'pointer' }}
+                              />
+                            </div>
                             <button 
-                              className="tracker-monitor-copy-btn" 
+                              className={`tracker-monitor-action-btn ${pinnedTokens.has(token.id) ? 'pinned' : ''}`}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigator.clipboard.writeText(token.tokenAddress);
+                                setPinnedTokens(prev => {
+                                  const newSet = new Set(prev);
+                                  if (newSet.has(token.id)) {
+                                    newSet.delete(token.id);
+                                  } else {
+                                    newSet.add(token.id);
+                                  }
+                                  return newSet;
+                                });
                               }}
-                              title="Copy Address"
                             >
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                              </svg>
-                            </button>
-                            <button 
-                              className="tracker-monitor-action-btn" 
-                              onClick={(e) => e.stopPropagation()} // PREVENT triggering expand/collapse
-                            >
-                              ☆
+                              {pinnedTokens.has(token.id) ? '★' : '☆'}
                             </button>
                           </div>
                           <div className="tracker-monitor-token-subtitle">
                             <span className="tracker-monitor-token-symbol">{token.symbol}</span>
-                            <span className="tracker-monitor-token-ca">
-                              {token.tokenAddress.slice(0, 6)}...{token.tokenAddress.slice(-4)}
-                            </span>
-                            <span className="tracker-monitor-token-age">
-                              {getTimeAgo(token.createdAt)}
-                            </span>
+                            <span className="tracker-monitor-token-age">{getTimeAgo(token.createdAt)}</span>
                           </div>
                         </div>
                       </div>
@@ -1770,14 +1928,14 @@ const Tracker: React.FC<TrackerProps> = ({
                       <div className="tracker-monitor-stat-compact">
                         <span className="stat-label">MC</span>
                         <span className="stat-value">
-                          {monitorCurrency === 'USD' ? '$' : '≡'}
+                          {monitorCurrency === 'USD' ? '$' : ''}
                           {formatCompact(toDisplay(token.marketCap, monitorCurrency, monUsdPrice))}
                         </span>
                       </div>
                       <div className="tracker-monitor-stat-compact">
                         <span className="stat-label">L</span>
                         <span className="stat-value">
-                          {monitorCurrency === 'USD' ? '$' : '≡'}
+                          {monitorCurrency === 'USD' ? '$' : ''}
                           {formatValue(token.liquidity)}
                         </span>
                       </div>
@@ -1823,18 +1981,18 @@ const Tracker: React.FC<TrackerProps> = ({
                             <span className="time-text">{trade.timeInTrade}</span>
                           </div>
                           <div className="trade-bought-col">
-                            <span className="amount">≡ {trade.bought.toFixed(3)}</span>
+                            <span className="amount"> {trade.bought.toFixed(3)}</span>
                             <span className="txns-text">{trade.boughtTxns} txns</span>
                           </div>
                           <div className="trade-sold-col">
-                            <span className="amount">≡ {trade.sold.toFixed(3)}</span>
+                            <span className="amount"> {trade.sold.toFixed(3)}</span>
                             <span className="txns-text">{trade.soldTxns} txns</span>
                           </div>
                           <div className={`trade-pnl-col ${trade.pnl >= 0 ? 'positive' : 'negative'}`}>
-                            {trade.pnl >= 0 ? '+' : ''}≡ {trade.pnl.toFixed(3)}
+                            {trade.pnl >= 0 && '+'}{trade.pnl.toFixed(3)}
                           </div>
                           <div className="trade-remaining-col">
-                            ≡ {trade.remaining.toFixed(3)}
+                             {trade.remaining.toFixed(3)}
                           </div>
                         </div>
                       ))}
@@ -2378,29 +2536,20 @@ const Tracker: React.FC<TrackerProps> = ({
 
       {showEmojiPicker && (
         <div className="tracker-emoji-picker-backdrop" onClick={() => setShowEmojiPicker(false)}>
-          <div className="tracker-emoji-picker-dropdown" onClick={(e) => e.stopPropagation()}>
-            <div className="tracker-emoji-picker-search">
-              <input 
-                type="text" 
-                placeholder="Search emojis..."
-                className="tracker-emoji-search-input"
-              />
-            </div>
-            <div className="tracker-emoji-picker-grid">
-              {allEmojis.map((emoji) => (
-                <button
-                  key={emoji}
-                  className="tracker-emoji-picker-option"
-                  onClick={() => {
-                    setNewWalletEmoji(emoji);
-                    setShowEmojiPicker(false);
-                  }}
-                  type="button"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
+          <div className="tracker-emoji-picker-positioned" onClick={(e) => e.stopPropagation()}>
+            <EmojiPicker
+              onEmojiClick={(emojiData) => {
+                setNewWalletEmoji(emojiData.emoji);
+                setShowEmojiPicker(false);
+              }}
+              width={350}
+              height={400}
+              searchDisabled={false}
+              skinTonesDisabled={true}
+              previewConfig={{
+                showPreview: false
+              }}
+            />
           </div>
         </div>
       )}
