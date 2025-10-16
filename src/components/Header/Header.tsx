@@ -804,7 +804,7 @@ const Header: React.FC<HeaderProps> = ({
                           <div className="wallet-dropdown-checkbox-container">
                             <input
                               type="checkbox"
-                              className="wallet-dropdown-checkbox"
+                              className="quickbuy-wallet-checkbox"
                               checked={isActive}
                               readOnly
                             />

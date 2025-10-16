@@ -565,14 +565,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             .then(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params,
+                  (p: any) => p[5] != params[5],
                 );
               return true;
             })
             .catch(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params,
+                  (p: any) => p[5] != params[5],
                 );
               return false;
             });
@@ -762,14 +762,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             .then(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params,
+                  (p: any) => p[5] != params[5],
                 );
               return true;
             })
             .catch(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params,
+                  (p: any) => p[5] != params[5],
                 );
               return false;
             });
@@ -1468,14 +1468,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           .then(() => {
             if (wallet)
               wallet.pendingtxs = wallet.pendingtxs.filter(
-                (p: any) => p !== params,
+                (p: any) => p[5] != params[5],
               );
             return true;
           })
           .catch(() => {
             if (wallet)
               wallet.pendingtxs = wallet.pendingtxs.filter(
-                (p: any) => p !== params,
+                (p: any) => p[5] != params[5],
               );
             return false;
           });
@@ -2046,14 +2046,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               .then(() => {
                 if (walletNonce)
                   walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
-                    (p: any) => p !== params,
+                    (p: any) => p[5] != params[5],
                   );
                 return true;
               })
               .catch(() => {
                 if (walletNonce)
                   walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
-                    (p: any) => p !== params,
+                    (p: any) => p[5] != params[5],
                   );
                 return false;
               });
@@ -2209,14 +2209,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 .then(() => {
                   if (walletNonce)
                     walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
-                      (p: any) => p !== params,
+                      (p: any) => p[5] != params[5],
                     );
                   return true;
                 })
                 .catch(() => {
                   if (walletNonce)
                     walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
-                      (p: any) => p !== params,
+                      (p: any) => p[5] != params[5],
                     );
                   return false;
                 });
@@ -2278,14 +2278,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 .then(() => {
                   if (walletNonce)
                     walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
-                      (p: any) => p !== params,
+                      (p: any) => p[5] != params[5],
                     );
                   return true;
                 })
                 .catch(() => {
                   if (walletNonce)
                     walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
-                      (p: any) => p !== params,
+                      (p: any) => p[5] != params[5],
                     );
                   return false;
                 });

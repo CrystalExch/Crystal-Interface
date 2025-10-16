@@ -1191,13 +1191,11 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
         const transferPromise = sendUserOperationAsync(...params)
           .then(() => {
-            console.log(wallet, params)
             if (wallet)
               wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p[5] != params[5]);
             return true;
           })
           .catch(() => {
-            console.log(wallet, params)
             if (wallet)
               wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p[5] != params[5]);
             return false;

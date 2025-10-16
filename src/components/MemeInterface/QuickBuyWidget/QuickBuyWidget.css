@@ -620,8 +620,6 @@
   display: flex;
   flex-shrink: 0;
   justify-content: center;
-  margin-right: 8px;
-  width: 20px;
 }
 
 .quickbuy-wallet-checkbox {

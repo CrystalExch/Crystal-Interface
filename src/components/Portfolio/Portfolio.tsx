@@ -898,10 +898,10 @@ useEffect(() => {
           wallet?.pendingtxs.push(params);
           const transferPromise = sendUserOperationAsync(...params)
             .then(() => {
-              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p[5] != params[5])
               return true;
             }).catch(() => {
-              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params)
+              if (wallet) wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p[5] != params[5])
               return false
             })
           transferPromises.push(transferPromise);

@@ -7842,7 +7842,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               amountIn > tokenBalances[tokenIn] ||
               ((orderType == 1 || multihop) &&
                 !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
-                BigInt(rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0) || BigInt(0)) != amountIn)) &&
+                rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0) == undefined)) &&
             connected &&
             userchain == activechain,
           );
@@ -7853,7 +7853,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 amountIn == BigInt(0)) ||
                 ((orderType == 1 || multihop) &&
                   !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
-                  BigInt(rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0) || BigInt(0)) != amountIn)
+                  rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0) == undefined)
                 ? 0
                 : amountIn === BigInt(0)
                   ? 1
@@ -7870,7 +7870,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
               ((amountIn == BigInt(0) && amountOutSwap != BigInt(0)) ||
                 ((orderType == 1 || multihop) &&
-                  BigInt(rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0) || BigInt(0)) != amountIn))
+                rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0) == undefined))
               ? multihop
                 ? 3
                 : 2
@@ -8074,7 +8074,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     userchain,
     tokenBalances[tokenIn],
     multihop,
-    rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0),
     recipient,
     mids,
     scaleStart,

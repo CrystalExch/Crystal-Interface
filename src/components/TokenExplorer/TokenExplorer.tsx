@@ -3995,14 +3995,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             .then(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params,
+                  (p: any) => p[5] != params[5],
                 );
               return true;
             })
             .catch(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params,
+                  (p: any) => p[5] != params[5],
                 );
               return false;
             });
