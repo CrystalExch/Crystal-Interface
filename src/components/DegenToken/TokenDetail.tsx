@@ -41,9 +41,9 @@ interface TokenDetailProps {
   setSelectedInterval: any;
   holders: any;
   chartData: any;
-  setChartData: any;
   trades: any;
   realtimeCallbackRef: any;
+  selectedIntervalRef: any;
 }
 
 const TOTAL_SUPPLY = 1e9;
@@ -159,9 +159,9 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   setSelectedInterval,
   holders,
   chartData,
-  setChartData,
   trades,
   realtimeCallbackRef,
+  selectedIntervalRef
 }) => {
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const navigate = useNavigate();
@@ -571,6 +571,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               address={account.address}
               devAddress={token.creator}
               trackedAddresses={[account.address]}
+              selectedIntervalRef={selectedIntervalRef}
             />
           </div>
 

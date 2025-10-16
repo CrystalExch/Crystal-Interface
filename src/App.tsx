@@ -4447,7 +4447,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   ...prev.slice(0, 99),
                 ]);
             
-                const sel = memeSelectedInterval;
+                const sel = memeSelectedIntervalRef.current;
                 const RESOLUTION_SECS: Record<string, number> = {
                   '1s': 1, '5s': 5, '15s': 15, '1m': 60, '5m': 300, '15m': 900,
                   '1h': 3600, '4h': 14400, '1d': 86400,
@@ -4730,7 +4730,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     ...prev.slice(0, 99),
                   ]);
       
-                  const sel = memeSelectedInterval;
+                  const sel = memeSelectedIntervalRef.current;
                   const RESOLUTION_SECS: Record<string, number> = {
                     '1s': 1, '5s': 5, '15s': 15, '1m': 60, '5m': 300, '15m': 900,
                     '1h': 3600, '4h': 14400, '1d': 86400,
@@ -5258,6 +5258,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [memeSelectedInterval, setMemeSelectedInterval] = useState(
     () => localStorage.getItem('meme_chart_timeframe') || '1m',
   );
+  const memeSelectedIntervalRef = useRef<string>(memeSelectedInterval);
   const [page, _setPage] = useState(0);
   const [initialMemeFetchDone, setInitialMemeFetchDone] = useState(false);
   const [currentPNLData, setCurrentPNLData] = useState({
@@ -6440,12 +6441,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
 
       if (shouldFetchNonce) {
-        nonces.current = new Map(
-          subWallets.map((w, i) => {
-            const old = nonces.current?.get(w.address) || { pendingtxs: [] }
-            return [w.address, { ...old, nonce: old.pendingtxs.length ? old.nonce : parseInt(json[i + (gasEstimateCall ? 2 : 1)].result, 16) + old.pendingtxs.length }]
-          })
-        );
+        subWallets.forEach((w, i) => {
+          const old = nonces.current?.get(w.address) || { pendingtxs: [] }
+          old.nonce = parseInt(json[i + (gasEstimateCall ? 2 : 1)].result, 16) + old.pendingtxs.length
+          nonces.current.set(w.address, old)
+        })
       }
 
       [{ address: scaAddress }].concat(subWallets as any).forEach((wallet, walletIndex) => {
@@ -24797,12 +24797,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 selectedInterval={memeSelectedInterval}
                 setSelectedInterval={setMemeSelectedInterval}
                 chartData={chartData}
-                setChartData={setChartData}
                 page={page}
                 similarTokens={memeSimilarTokens}
                 token={token}
                 selectedWallets={selectedWallets}
                 setSelectedWallets={setSelectedWallets}
+                selectedIntervalRef={memeSelectedIntervalRef}
               />
             }
           />
@@ -24846,9 +24846,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setSelectedInterval={setMemeSelectedInterval}
                 holders={memeHolders}
                 chartData={chartData}
-                setChartData={setChartData}
                 trades={memeTrades}
                 realtimeCallbackRef={memeRealtimeCallbackRef}
+                selectedIntervalRef={memeSelectedIntervalRef}
               />
             } 
           />

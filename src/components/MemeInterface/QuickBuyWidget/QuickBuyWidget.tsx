@@ -714,14 +714,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             .then(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params,
+                  (p: any) => p[5] != params[5],
                 );
               return true;
             })
             .catch(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params,
+                  (p: any) => p[5] != params[5],
                 );
               return false;
             });
@@ -942,14 +942,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             .then(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params,
+                  (p: any) => p[5] != params[5],
                 );
               return true;
             })
             .catch(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params,
+                  (p: any) => p[5] != params[5],
                 );
               return false;
             });
@@ -1191,13 +1191,15 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
         const transferPromise = sendUserOperationAsync(...params)
           .then(() => {
+            console.log(wallet, params)
             if (wallet)
-              wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params);
+              wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p[5] != params[5]);
             return true;
           })
           .catch(() => {
+            console.log(wallet, params)
             if (wallet)
-              wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p !== params);
+              wallet.pendingtxs = wallet.pendingtxs.filter((p: any) => p[5] != params[5]);
             return false;
           });
 
@@ -1321,14 +1323,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             .then(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params,
+                  (p: any) => p[5] != params[5],
                 );
               return true;
             })
             .catch(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params,
+                  (p: any) => p[5] != params[5],
                 );
               return false;
             });
@@ -1394,14 +1396,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             .then(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params,
+                  (p: any) => p[5] != params[5],
                 );
               return true;
             })
             .catch(() => {
               if (wallet)
                 wallet.pendingtxs = wallet.pendingtxs.filter(
-                  (p: any) => p !== params,
+                  (p: any) => p[5] != params[5],
                 );
               return false;
             });

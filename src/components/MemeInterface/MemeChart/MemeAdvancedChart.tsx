@@ -17,6 +17,7 @@ interface MemeAdvancedChartProps {
   devAddress: any;
   trackedAddresses: string[];
   subWalletAddresses?: string[];
+  selectedIntervalRef: any;
 }
 
 const SUB = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
@@ -93,6 +94,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   devAddress,
   trackedAddresses,
   subWalletAddresses,
+  selectedIntervalRef
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
@@ -103,7 +105,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   const addressRef = useRef<any>(address);
   const devAddressRef = useRef<any>(devAddress);
   const trackedAddressesRef = useRef<string[]>(Array.isArray(trackedAddresses) ? trackedAddresses : []);
-  const selectedIntervalRef = useRef<string>(selectedInterval);
   const [marksVersion, setMarksVersion] = useState<number>(0);
   const marksRef = useRef<any>();
   const marksVersionRef = useRef<number>(0);

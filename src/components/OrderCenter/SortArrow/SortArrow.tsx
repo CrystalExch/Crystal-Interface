@@ -23,24 +23,10 @@ const SortArrow: React.FC<SortArrowProps> = ({
       tabIndex={0}
       aria-label={`Sort ${sortDirection === 'asc' ? 'ascending' : 'descending'}`}
     >
-      {sortDirection && (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="13"
-          height="13"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`sort-arrow-icon ${sortDirection}`}
-          aria-hidden="true"
-        >
-          <path d="m5 12 7-7 7 7" />
-          <path d="M12 19V5" />
-        </svg>
-      )}
+      <span
+        className={`sort-arrow-icon ${sortDirection || ''}`}
+        aria-hidden="true"
+      />
     </span>
   );
 };
