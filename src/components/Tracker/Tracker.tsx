@@ -543,13 +543,11 @@ const Tracker: React.FC<TrackerProps> = ({
         let accountAddr: string | null =
           (args.account || args.trader || args.sender || args.owner || args.from) ?? null;
 
-        // 2) fallback: resolve from the tx (async, cached)
         if (!accountAddr && txHash) {
           const cached = txFromCacheRef.current.get(txHash);
           if (cached) {
             accountAddr = cached;
           } else {
-            // fire-and-forget; update lastActive when resolved
             pc.getTransaction({ hash: txHash as `0x${string}` })
               .then(tx => {
                 if (!tx?.from) return;
@@ -564,7 +562,6 @@ const Tracker: React.FC<TrackerProps> = ({
 
         if (accountAddr) touchWallet(accountAddr);
 
-        // derive numbers safely
         const isBuy     = Boolean(args.isBuy ?? args.buy ?? (args.from && !args.to));
         const amountIn  = Number(args.amountIn ?? 0n) / 1e18;
         const amountOut = Number(args.amountOut ?? 0n) / 1e18;
@@ -765,8 +762,8 @@ const Tracker: React.FC<TrackerProps> = ({
       website: '',
       twitter: '',
       telegram: '',
-      createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-      lastTransaction: new Date(Date.now() - 120000).toISOString(), // 2 min ago
+      createdAt: new Date(Date.now() - 172800000).toISOString(), 
+      lastTransaction: new Date(Date.now() - 120000).toISOString(), 
       trades: [
         {
           id: 'trade-3',
@@ -838,8 +835,6 @@ const Tracker: React.FC<TrackerProps> = ({
       ]
     }
   ]);
-  const [isLoadingMonitor, setIsLoadingMonitor] = useState(false);
-
   const [showAddWalletModal, setShowAddWalletModal] = useState(false);
   const [newWalletAddress, setNewWalletAddress] = useState('');
   const [newWalletName, setNewWalletName] = useState('');
@@ -855,7 +850,17 @@ const Tracker: React.FC<TrackerProps> = ({
 
   const mainWalletsRef = useRef<HTMLDivElement>(null);
 
-  const emojiOptions = ['😀', '😈', '🚀', '💎', '🔥', '⚡', '💰', '🎯', '👑', '🦄', '🐋', '🐸', '🤖', '👻', '🎪'];
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [allEmojis] = useState([
+    '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '🥲', '☺️', '😊', '😇', '🙂', '🙃', '😉', '😌',
+    '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🥸',
+    '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢',
+    '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔',
+    '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤',
+    '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺',
+    '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀',
+    '😿', '😾', '🚀', '💎', '🔥', '⚡', '💰', '🎯', '👑', '🦄', '🐋', '🐸', '🤖', '👻', '🎪'
+  ]);
 
   const isValidAddress = (addr: string) => {
     return /^0x[a-fA-F0-9]{40}$/.test(addr);
@@ -1159,10 +1164,6 @@ const Tracker: React.FC<TrackerProps> = ({
     }
   };
 
-  const handleExportPrivateKey = (address: string) => {
-    alert(`Export private key functionality needs to be integrated with your wallet management system.\n\nWallet: ${address}\n\nThis would typically:\n1. Retrieve the encrypted private key from secure storage\n2. Decrypt it with the user's password\n3. Display it securely or copy to clipboard`);
-  };
-
   const closeAddWalletModal = () => {
     setShowAddWalletModal(false);
     setNewWalletAddress('');
@@ -1437,35 +1438,14 @@ const Tracker: React.FC<TrackerProps> = ({
     return (
       <div className="tracker-wallet-manager">
         <div className="tracker-wallets-header" data-wallet-count={filteredWallets.length}>
-          <div className="tracker-wallet-header-cell"></div>
-          <div className="tracker-wallet-header-cell"></div>
           <div className="tracker-wallet-header-cell">Created</div>
+          <div className="tracker-wallet-header-cell"></div>
           <div className="tracker-wallet-header-cell">Name</div>
-          <div
-            className={`tracker-wallet-header-cell sortable ${walletSortField === 'balance' ? 'active' : ''}`}
-            onClick={() => handleWalletSort('balance')}
-          >
+          <div className={`tracker-wallet-header-cell sortable ${walletSortField === 'balance' ? 'active' : ''}`}>
             Balance
-            {walletSortField === 'balance' && (
-              <span className={`tracker-sort-arrow ${walletSortDirection}`}>
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-                  <path d="M5 7L2 3H8L5 7Z" />
-                </svg>
-              </span>
-            )}
           </div>
-          <div
-            className={`tracker-wallet-header-cell sortable ${walletSortField === 'lastActive' ? 'active' : ''}`}
-            onClick={() => handleWalletSort('lastActive')}
-          >
+          <div className={`tracker-wallet-header-cell sortable ${walletSortField === 'lastActive' ? 'active' : ''}`}>
             Last Active
-            {walletSortField === 'lastActive' && (
-              <span className={`tracker-sort-arrow ${walletSortDirection}`}>
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-                  <path d="M5 7L2 3H8L5 7Z" />
-                </svg>
-              </span>
-            )}
           </div>
           <div className="tracker-wallet-header-cell">Actions</div>
         </div>
@@ -1520,26 +1500,7 @@ const Tracker: React.FC<TrackerProps> = ({
             filteredWallets.map((wallet, index) => renderWalletItem(wallet, index))
           )}
 
-          {/* Selected wallets actions */}
-          {selectedWallets.size > 0 && (
-            <div className="tracker-selection-actions">
-              <span className="tracker-selection-count">
-                {selectedWallets.size} wallet{selectedWallets.size !== 1 ? 's' : ''} selected
-              </span>
-              <button
-                className="tracker-selection-action-btn"
-                onClick={handleRemoveAll}
-              >
-                Remove All
-              </button>
-              <button
-                className="tracker-selection-action-btn"
-                onClick={() => setSelectedWallets(new Set())}
-              >
-                Clear Selection
-              </button>
-            </div>
-          )}
+          
         </div>
       </div>
     );
@@ -1719,10 +1680,10 @@ const Tracker: React.FC<TrackerProps> = ({
                   <div 
                     className="tracker-monitor-card-header"
                     onClick={() => toggleTokenExpanded(token.id)}
+                    style={{ cursor: 'pointer' }}
                   >
-                    <div className="tracker-monitor-card-row">
-                      {/* Top Row: Token Info */}
-                      <div className="tracker-monitor-card-top">
+                    <div className="tracker-monitor-card-top">
+                      <div className="tracker-monitor-left-section">
                         <div
                           className="tracker-monitor-icon-container"
                           style={{ '--progress': token.bondingCurveProgress } as React.CSSProperties}
@@ -1747,7 +1708,12 @@ const Tracker: React.FC<TrackerProps> = ({
                                 <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
                               </svg>
                             </button>
-                            <button className="tracker-monitor-action-btn" onClick={(e) => e.stopPropagation()}>☆</button>
+                            <button 
+                              className="tracker-monitor-action-btn" 
+                              onClick={(e) => e.stopPropagation()} // PREVENT triggering expand/collapse
+                            >
+                              ☆
+                            </button>
                           </div>
                           <div className="tracker-monitor-token-subtitle">
                             <span className="tracker-monitor-token-symbol">{token.symbol}</span>
@@ -1759,12 +1725,28 @@ const Tracker: React.FC<TrackerProps> = ({
                             </span>
                           </div>
                         </div>
+                      </div>
+
+                      <div className="tracker-monitor-right-section">
+                        <div className="tracker-monitor-buy-sell-row">
+                          <div className="tracker-monitor-buy-amount">
+                            <span>{totalBuys}</span>
+                            <img src={monadicon} className="tracker-monitor-amount-icon" alt="MON" />
+                            <span className={isBlurred ? 'blurred' : ''}>{formatValue(totalBought)}</span>
+                          </div>
+                          <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
+                          <div className="tracker-monitor-sell-amount">
+                            <span>{totalSells}</span>
+                            <img src={monadicon} className="tracker-monitor-amount-icon" alt="MON" />
+                            <span className={isBlurred ? 'blurred' : ''}>{formatValue(totalSold)}</span>
+                          </div>
+                        </div>
 
                         <div className="tracker-monitor-quickbuy-section">
                           <button
                             className="tracker-monitor-quickbuy-btn"
                             onClick={(e) => {
-                              e.stopPropagation();
+                              e.stopPropagation(); // PREVENT triggering expand/collapse
                               // Handle quick buy
                             }}
                           >
@@ -1778,73 +1760,84 @@ const Tracker: React.FC<TrackerProps> = ({
                           </button>
                         </div>
                       </div>
+                    </div>
 
-                      {/* Bottom: Stats & Buy/Sell */}
-                      <div className="tracker-monitor-card-bottom">
-                        <div className="tracker-monitor-stats-section">
-                          <div className="tracker-monitor-stat-compact">
-                            <span className="stat-label">H</span>
-                            <span className="stat-value">{token.holders}</span>
-                          </div>
+                    <div className="tracker-monitor-stats-section">
+                      <div className="tracker-monitor-stat-compact">
+                        <span className="stat-label">H</span>
+                        <span className="stat-value">{token.holders}</span>
+                      </div>
+                      <div className="tracker-monitor-stat-compact">
+                        <span className="stat-label">MC</span>
+                        <span className="stat-value">
+                          {monitorCurrency === 'USD' ? '$' : '≡'}
+                          {formatCompact(toDisplay(token.marketCap, monitorCurrency, monUsdPrice))}
+                        </span>
+                      </div>
+                      <div className="tracker-monitor-stat-compact">
+                        <span className="stat-label">L</span>
+                        <span className="stat-value">
+                          {monitorCurrency === 'USD' ? '$' : '≡'}
+                          {formatValue(token.liquidity)}
+                        </span>
+                      </div>
+                      <div className="tracker-monitor-stat-compact">
+                        <span className="stat-label">TX</span>
+                        <span className="stat-value">{token.txCount}</span>
+                      </div>
+                    </div>
 
-                          <div className="tracker-monitor-stat-compact">
-                            <span className="stat-label">MC</span>
-                            <span className="stat-value">
-                              {monitorCurrency === 'USD' ? '$' : '≡'}
-                              {formatCompact(toDisplay(token.marketCap, monitorCurrency, monUsdPrice))}
-                            </span>
-                          </div>
-
-                          <div className="tracker-monitor-stat-compact">
-                            <span className="stat-label">L</span>
-                            <span className="stat-value">
-                              {monitorCurrency === 'USD' ? '$' : '≡'}
-                              {formatValue(token.liquidity)}
-                            </span>
-                          </div>
-
-                          <div className="tracker-monitor-stat-compact">
-                            <span className="stat-label">TX</span>
-                            <span className="stat-value">{token.txCount}</span>
-                          </div>
-                        </div>
-
-                        <div className="tracker-monitor-buy-sell-row">
-                          <div className="tracker-monitor-buy-sell-left">
-                            <div className="tracker-monitor-buy-amount">
-                              <span>{totalBuys}</span>
-                              <img src={monadicon} className="tracker-monitor-amount-icon" alt="MON" />
-                              <span className={isBlurred ? 'blurred' : ''}>{formatValue(totalBought)}</span>
-                            </div>
-
-                            <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
-
-                            <div className="tracker-monitor-sell-amount">
-                              <span>{totalSells}</span>
-                              <img src={monadicon} className="tracker-monitor-amount-icon" alt="MON" />
-                              <span className={isBlurred ? 'blurred' : ''}>{formatValue(totalSold)}</span>
-                            </div>
-                          </div>
-
-                          <div className="tracker-monitor-progress-section">
-                            <span style={{ fontSize: '.7rem', color: 'rgba(255,255,255,0.5)' }}>
-                              Last TX {getTimeAgo(token.lastTransaction || 0)}
-                            </span>
-                            <div className="tracker-monitor-progress-bar-inline">
-                              <div 
-                                className="tracker-monitor-progress-fill-inline"
-                                style={{ width: `${token.bondingCurveProgress}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        </div>
+                    <div className="tracker-monitor-progress-section">
+                      <span style={{ fontSize: '.7rem', color: 'rgba(255,255,255,0.5)' }}>
+                        Last TX {getTimeAgo(token.lastTransaction || 0)}
+                      </span>
+                      <div className="tracker-monitor-progress-bar-inline">
+                        <div 
+                          className="tracker-monitor-progress-fill-inline"
+                          style={{ width: `${token.bondingCurveProgress}%` }}
+                        ></div>
                       </div>
                     </div>
                   </div>
 
                   {isExpanded && token.trades.length > 0 && (
                     <div className="tracker-monitor-trades-expanded">
-                      {/* trades content remains the same */}
+                      <div className="tracker-monitor-trades-table-header">
+                        <div className="header-cell">Wallet</div>
+                        <div className="header-cell">Time in Trade</div>
+                        <div className="header-cell">Bought</div>
+                        <div className="header-cell">Sold</div>
+                        <div className="header-cell">PNL</div>
+                        <div className="header-cell">Remaining</div>
+                      </div>
+                      {token.trades.map((trade) => (
+                        <div key={trade.id} className="tracker-monitor-trade-row-expanded">
+                          <div className="trade-wallet-col">
+                            <span className="trade-emoji">{trade.emoji}</span>
+                            <span className="trade-wallet-name">{trade.wallet}</span>
+                          </div>
+                          <div className="trade-time-col">
+                            {trade.exitStatus && (
+                              <span className="exit-badge">{trade.exitStatus}</span>
+                            )}
+                            <span className="time-text">{trade.timeInTrade}</span>
+                          </div>
+                          <div className="trade-bought-col">
+                            <span className="amount">≡ {trade.bought.toFixed(3)}</span>
+                            <span className="txns-text">{trade.boughtTxns} txns</span>
+                          </div>
+                          <div className="trade-sold-col">
+                            <span className="amount">≡ {trade.sold.toFixed(3)}</span>
+                            <span className="txns-text">{trade.soldTxns} txns</span>
+                          </div>
+                          <div className={`trade-pnl-col ${trade.pnl >= 0 ? 'positive' : 'negative'}`}>
+                            {trade.pnl >= 0 ? '+' : ''}≡ {trade.pnl.toFixed(3)}
+                          </div>
+                          <div className="trade-remaining-col">
+                            ≡ {trade.remaining.toFixed(3)}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -1863,21 +1856,6 @@ const Tracker: React.FC<TrackerProps> = ({
     const isDragging = dragReorderState.draggedIndex === index && dragReorderState.draggedContainer === 'main';
     const isDragOver = dragReorderState.dragOverIndex === index && dragReorderState.dragOverContainer === 'main';
     const containerKey = 'tracker-wallets';
-    const getWalletTokenCount = (address: string) => {
-      const balances = walletTokenBalances[address];
-      if (!balances) return 0;
-
-      const ethAddress = chainCfg?.eth;
-      let count = 0;
-
-      for (const [tokenAddr, balance] of Object.entries(balances)) {
-        if (tokenAddr !== ethAddress && balance && BigInt(balance.toString()) > 0n) {
-          count++;
-        }
-      }
-
-      return count;
-    };
 
     return (
       <div
@@ -1986,17 +1964,7 @@ const Tracker: React.FC<TrackerProps> = ({
           />
         )}
 
-        {/* Empty space column */}
-        <div style={{ width: '30px' }}></div>
-
-        {/* Drag handle column */}
-        <div className="tracker-wallet-drag-handle">
-          <Tooltip content="Drag to reorder wallet">
-            <img src={circle} className="tracker-drag-handle-icon" alt="Drag" />
-          </Tooltip>
-        </div>
-
-        {/* Created column */}
+        {/* Created column - MOVED TO FIRST */}
         <div className="tracker-wallet-created">
           <span className="tracker-wallet-created-date">
             {new Date(wallet.createdAt).toLocaleDateString('en-US', { 
@@ -2010,6 +1978,13 @@ const Tracker: React.FC<TrackerProps> = ({
               minute: '2-digit' 
             })}
           </span>
+        </div>
+
+        {/* Drag handle column */}
+        <div className="tracker-wallet-drag-handle">
+          <Tooltip content="Drag to reorder wallet">
+            <img src={circle} className="tracker-drag-handle-icon" alt="Drag" />
+          </Tooltip>
         </div>
 
         {/* Profile column */}
@@ -2087,32 +2062,15 @@ const Tracker: React.FC<TrackerProps> = ({
           </span>
         </div>
 
-        {/* Last Active column */}
+        {/* Last Active column - CLEANED UP */}
         <div className="tracker-wallet-last-active">
-          <div className="tracker-wallet-token-count">
-            <div className="tracker-wallet-token-structure-icons">
-              <div className="token1"></div>
-              <div className="token2"></div>
-              <div className="token3"></div>
-            </div>
-            <span className="tracker-wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
-          </div>
-        </div>  
+          <span className="tracker-wallet-last-active-time">
+            {wallet.lastActive}
+          </span>
+        </div>
 
         {/* Actions column */}
         <div className="tracker-wallet-actions">
-          <Tooltip content="Export Private Key">
-            <button 
-              className="tracker-action-button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleExportPrivateKey(wallet.address);
-              }}
-            >
-              <img src={key} className="tracker-action-icon" alt="Export Key" />
-            </button>
-          </Tooltip>
-
           <Tooltip content="View on Explorer">
             <a
               href={`${chainCfg?.explorer}/address/${wallet.address}`}
@@ -2152,6 +2110,7 @@ const Tracker: React.FC<TrackerProps> = ({
       </div>
     );
   };
+
   
 
   const startSelection = (e: React.MouseEvent) => {
@@ -2375,31 +2334,25 @@ const Tracker: React.FC<TrackerProps> = ({
 
               <div className="tracker-input-section">
                 <label className="tracker-label">Wallet Name:</label>
-                <input
-                  type="text"
-                  className="tracker-input"
-                  value={newWalletName}
-                  onChange={(e) => {
-                    setNewWalletName(e.target.value);
-                    setAddWalletError('');
-                  }}
-                  placeholder="Enter a name for this wallet"
-                  maxLength={20}
-                />
-              </div>
-
-              <div className="tracker-input-section">
-                <label className="tracker-label">Emoji:</label>
-                <div className="tracker-emoji-grid">
-                  {emojiOptions.map((emoji) => (
-                    <button
-                      key={emoji}
-                      className={`tracker-emoji-option ${newWalletEmoji === emoji ? 'selected' : ''}`}
-                      onClick={() => setNewWalletEmoji(emoji)}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
+                <div className="tracker-input-with-emoji">
+                  <button 
+                    className="tracker-emoji-picker-trigger"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    type="button"
+                  >
+                    {newWalletEmoji}
+                  </button>
+                  <input
+                    type="text"
+                    className="tracker-input tracker-input-with-emoji-field"
+                    value={newWalletName}
+                    onChange={(e) => {
+                      setNewWalletName(e.target.value);
+                      setAddWalletError('');
+                    }}
+                    placeholder="Enter a name for this wallet"
+                    maxLength={20}
+                  />
                 </div>
               </div>
 
@@ -2422,6 +2375,36 @@ const Tracker: React.FC<TrackerProps> = ({
           </div>
         </div>
       )}
+
+      {showEmojiPicker && (
+        <div className="tracker-emoji-picker-backdrop" onClick={() => setShowEmojiPicker(false)}>
+          <div className="tracker-emoji-picker-dropdown" onClick={(e) => e.stopPropagation()}>
+            <div className="tracker-emoji-picker-search">
+              <input 
+                type="text" 
+                placeholder="Search emojis..."
+                className="tracker-emoji-search-input"
+              />
+            </div>
+            <div className="tracker-emoji-picker-grid">
+              {allEmojis.map((emoji) => (
+                <button
+                  key={emoji}
+                  className="tracker-emoji-picker-option"
+                  onClick={() => {
+                    setNewWalletEmoji(emoji);
+                    setShowEmojiPicker(false);
+                  }}
+                  type="button"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {showFiltersPopup && (
         <LiveTradesFiltersPopup
