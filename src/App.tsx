@@ -1683,8 +1683,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   });
   const [perpsActiveMarketKey, setperpsActiveMarketKey] = useState(
     location.pathname.startsWith("/perps")
-      ? location.pathname.split("/").pop()?.toUpperCase() || "MONUSD"
-      : "MONUSD"
+      ? location.pathname.split("/").pop()?.toUpperCase() || "BTCUSD"
+      : "BTCUSD"
   );
   const [perpsMarketsData, setPerpsMarketsData] = useState<{ [key: string]: any }>({});
   const [perpsFilterOptions, setPerpsFilterOptions] = useState({});
@@ -2444,7 +2444,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   // fetch vaults list
   useEffect(() => {
-    if (!['earn'].includes(location.pathname.split('/')[1])) return;
+    if (!['earn'].includes(location.pathname.split('/')[1]) || !address) return;
     let cancelled = false;
     (async () => {
       setIsVaultsLoading(true);

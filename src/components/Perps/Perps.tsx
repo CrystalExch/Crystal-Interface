@@ -616,7 +616,7 @@ const Perps: React.FC<PerpsProps> = ({
     const qs = buildSignatureBody(payload)
     const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "POST" + path + qs)).slice(2)
     const [metaRes] = await Promise.all([
-      fetch("https://pro.edgex.exchange/api/v1/private/order/createOrder", {
+      fetch("/api/v1/private/order/createOrder", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -793,8 +793,8 @@ const Perps: React.FC<PerpsProps> = ({
     const fetchData = async () => {
       try {
         const [metaRes, labelsRes] = await Promise.all([
-          fetch('https://pro.edgex.exchange/api/v1/public/meta/getMetaData', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json()),
-          fetch('https://pro.edgex.exchange/api/v1/public/contract-labels', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
+          fetch('/api/v1/public/meta/getMetaData', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json()),
+          fetch('/api/v1/public/contract-labels', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
         ])
         if (liveStreamCancelled) return;
         if (metaRes?.data) setExchangeConfig(metaRes.data)
@@ -1096,12 +1096,51 @@ const Perps: React.FC<PerpsProps> = ({
 
     const fetchData = async () => {
       try {
+        const onboardpayload = {
+          clientAccountId: "main",
+          ethAddress: address,
+          l2Key: signer.publicKey,
+          l2KeyYCoordinate: signer.publicKeyY,
+          onlySignOn: "https://pro.edgex.exchange",
+          signature: signer.signature
+        }
+        const [onboardRes] = await Promise.all([
+          fetch("/api/v1/public/user/onboardSite", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(onboardpayload)
+          }).then(r => r.json())
+        ])
+        const regts = Date.now().toString()
+        const regpath = '/api/v1/private/account/registerAccount'
+        const payload = {
+          clientAccountId: "main",
+          l2Key: signer.publicKey,
+          l2KeyYCoordinate: signer.publicKeyY
+        }
+        const regqs = buildSignatureBody(payload)
+        const regsig = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(regts + "POST" + regpath + regqs)).slice(2)
+        const [registerRes] = await Promise.all([
+          fetch("/api/v1/private/account/registerAccount", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-edgeX-Timestamp": regts,
+              "X-edgeX-Signature": regsig,
+              "X-edgeX-Passphrase": signer.apiPassphrase,
+              "X-edgeX-Api-Key": signer.apiKey
+            },
+            body: JSON.stringify(payload)
+          }).then(r => r.json())
+        ])
         const ts = Date.now().toString()
         const path = '/api/v1/private/account/getAccountPage'
         const qs = 'size=100'
         const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "GET" + path + qs)).slice(2)
         const [metaRes] = await Promise.all([
-          fetch("https://pro.edgex.exchange/api/v1/private/account/getAccountPage?size=100", {
+          fetch("/api/v1/private/account/getAccountPage?size=100", {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -1627,7 +1666,7 @@ const Perps: React.FC<PerpsProps> = ({
                 const signature = await signTypedDataAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
                 const apiSig = await signTypedDataAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
                 const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
-                const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig) };
+                const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
                 localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
                 setSigner(tempsigner)
               }
@@ -1805,7 +1844,7 @@ const Perps: React.FC<PerpsProps> = ({
                 const signature = await signTypedDataAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
                 const apiSig = await signTypedDataAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
                 const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
-                const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig) };
+                const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
                 localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
                 setSigner(tempsigner)
                 setpopup(30)
@@ -1827,7 +1866,7 @@ const Perps: React.FC<PerpsProps> = ({
                 const signature = await signTypedDataAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
                 const apiSig = await signTypedDataAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
                 const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
-                const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig) };
+                const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
                 localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
                 setSigner(tempsigner)
                 setpopup(31)
