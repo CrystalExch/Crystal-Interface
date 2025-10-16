@@ -1300,61 +1300,63 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
         <div className="meme-interface-token-header-info">
           <div className="meme-interface-token-header-left">
-            <div className="meme-interface-token-icon-container">
-
-              <div
-                className={`meme-interface-token-icon-wrapper ${memeTokenData.status === 'graduated' ? 'graduated' : ''}`}
-                ref={imageContainerRef}
-                style={
-                  memeTokenData.status !== 'graduated'
-                    ? {
-                      '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
-                      '--progress-color-start': createColorGradient(getBondingColor(bondingPercentage)).start,
-                      '--progress-color-mid': createColorGradient(getBondingColor(bondingPercentage)).mid,
-                      '--progress-color-end': createColorGradient(getBondingColor(bondingPercentage)).end,
-                    } as React.CSSProperties
-                    : {}
-                }
-                onClick={() => window.open(
-                  `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(memeTokenData.image)}`,
-                  '_blank',
-                  'noopener,noreferrer'
-                )}
-                onMouseEnter={() => setHoveredMemeImage(true)}
-                onMouseLeave={() => setHoveredMemeImage(false)}
-              >
-                <div className="meme-interface-image-container">
-                  {memeTokenData.image ? (
-                    <img src={memeTokenData.image} className="meme-interface-token-icon" />
-                  ) : (
-                    <div
-                      className="meme-interface-token-icon"
-                      style={{
-                        width: '37px',
-                        height: '37px',
-                        backgroundColor: '#000000',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '24px',
-                        color: '#ffffff',
-                        borderRadius: '3px',
-                        boxShadow: '0px 0px 0 1.5px rgb(6, 6, 6)',
-                        position: 'relative',
-                        zIndex: 3
-                      }}
-                    >
-                      {memeTokenData.symbol.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="meme-interface-image-overlay">
-                    <img className="token-info-camera-icon" src={camera} alt="inspect" />
-
-                  </div>
-                </div>
-              </div>
-            </div>
-
+<div className="meme-interface-token-icon-container">
+  <div
+    className={`meme-interface-token-icon-wrapper ${memeTokenData.status === 'graduated' ? 'graduated' : ''}`}
+    ref={imageContainerRef}
+    style={
+      memeTokenData.status !== 'graduated'
+        ? {
+          '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
+          '--progress-color-start': createColorGradient(getBondingColor(bondingPercentage)).start,
+          '--progress-color-mid': createColorGradient(getBondingColor(bondingPercentage)).mid,
+          '--progress-color-end': createColorGradient(getBondingColor(bondingPercentage)).end,
+        } as React.CSSProperties
+        : {}
+    }
+    onClick={() => window.open(
+      `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(memeTokenData.image)}`,
+      '_blank',
+      'noopener,noreferrer'
+    )}
+    onMouseEnter={() => setHoveredMemeImage(true)}
+    onMouseLeave={() => setHoveredMemeImage(false)}
+  >
+    <div className="meme-interface-image-container">
+      {memeTokenData.image ? (
+        <img 
+          key={memeTokenData.tokenAddress} // ADD THIS KEY
+          src={memeTokenData.image} 
+          className="meme-interface-token-icon" 
+        />
+      ) : (
+        <div
+          key={memeTokenData.tokenAddress} // ADD THIS KEY TOO
+          className="meme-interface-token-icon"
+          style={{
+            width: '37px',
+            height: '37px',
+            backgroundColor: '#000000',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '24px',
+            color: '#ffffff',
+            borderRadius: '3px',
+            boxShadow: '0px 0px 0 1.5px rgb(6, 6, 6)',
+            position: 'relative',
+            zIndex: 3
+          }}
+        >
+          {memeTokenData.symbol.charAt(0).toUpperCase()}
+        </div>
+      )}
+      <div className="meme-interface-image-overlay">
+        <img className="token-info-camera-icon" src={camera} alt="inspect" />
+      </div>
+    </div>
+  </div>
+</div>
             <div className="meme-interface-token-identity">
               <div className="meme-interface-token-name-row">
                 <h1 className="meme-interface-token-symbol">{memeTokenData.symbol}</h1>
