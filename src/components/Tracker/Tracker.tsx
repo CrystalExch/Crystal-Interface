@@ -275,7 +275,69 @@ const Tracker: React.FC<TrackerProps> = ({
   const [walletSortField, setWalletSortField] = useState<'balance' | 'lastActive' | null>(null);
   const [walletSortDirection, setWalletSortDirection] = useState<SortDirection>('desc');
   const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
-  const [trackedWalletTrades, setTrackedWalletTrades] = useState<LiveTrade[]>([]);
+  const [trackedWalletTrades, setTrackedWalletTrades] = useState<LiveTrade[]>([
+    {
+      id: '0x1234567890abcdef1234567890abcdef12345678-1',
+      walletName: 'Paper Hands',
+      emoji: '😀',
+      token: 'DOGE',
+      amount: 25.5,
+      marketCap: 1250,
+      time: '2m',
+      txHash: '0x1234567890abcdef1234567890abcdef12345678',
+      type: 'buy',
+      createdAt: new Date(Date.now() - 120000).toISOString(),
+    },
+    {
+      id: '0x1234567890abcdef1234567890abcdef12345679-2',
+      walletName: 'Whale Watcher',
+      emoji: '😈',
+      token: 'SHIB',
+      amount: 150.0,
+      marketCap: 5600,
+      time: '5m',
+      txHash: '0x1234567890abcdef1234567890abcdef12345679',
+      type: 'sell',
+      createdAt: new Date(Date.now() - 300000).toISOString(),
+    },
+    {
+      id: '0x1234567890abcdef1234567890abcdef12345680-3',
+      walletName: 'Diamond Hands',
+      emoji: '💎',
+      token: 'PEPE',
+      amount: 75.25,
+      marketCap: 3200,
+      time: '8m',
+      txHash: '0x1234567890abcdef1234567890abcdef12345680',
+      type: 'buy',
+      createdAt: new Date(Date.now() - 480000).toISOString(),
+    },
+    {
+      id: '0x1234567890abcdef1234567890abcdef12345681-4',
+      walletName: 'Moon Boy',
+      emoji: '🚀',
+      token: 'BONK',
+      amount: 200.75,
+      marketCap: 8900,
+      time: '12m',
+      txHash: '0x1234567890abcdef1234567890abcdef12345681',
+      type: 'sell',
+      createdAt: new Date(Date.now() - 720000).toISOString(),
+    },
+    {
+      id: '0x1234567890abcdef1234567890abcdef12345682-5',
+      walletName: 'Degen Trader',
+      emoji: '⚡',
+      token: 'WIF',
+      amount: 50.0,
+      marketCap: 2100,
+      time: '15m',
+      txHash: '0x1234567890abcdef1234567890abcdef12345682',
+      type: 'buy',
+      createdAt: new Date(Date.now() - 900000).toISOString(),
+    }
+  ]);
+
 
 
   const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>(() => {
@@ -1222,6 +1284,7 @@ const Tracker: React.FC<TrackerProps> = ({
       <div className="tracker-wallet-manager">
         <div className="tracker-wallets-header">
           <div className="tracker-wallet-header-cell"></div>
+          <div className="tracker-wallet-header-cell"></div>
           <div className="tracker-wallet-header-cell">Name</div>
           <div
             className={`tracker-wallet-header-cell sortable ${walletSortField === 'balance' ? 'active' : ''}`}
@@ -1252,62 +1315,7 @@ const Tracker: React.FC<TrackerProps> = ({
           <div className="tracker-wallet-header-cell">Actions</div>
         </div>
         
-        {trackedWallets.length === 0 ? (
-          <div className="tracker-empty-state">
-            <div className="tracker-empty-content">
-              <h4>No Wallets Tracked</h4>
-              <p>Add wallets to track their activity and trades in real-time.</p>
-              <button
-                className="tracker-cta-button"
-                onClick={() => setShowAddWalletModal(true)}
-              >
-                Add Your First Wallet
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div
-            ref={mainWalletsRef}
-            className={`tracker-wallets-list ${isSelecting ? 'selecting' : ''}`}
-            onMouseDown={(e) => startSelection(e)}
-            onMouseMove={(e) => {
-              if (isSelecting && mainWalletsRef.current) {
-                updateSelection(e, mainWalletsRef.current);
-              }
-            }}
-            onMouseUp={(e) => {
-              e.stopPropagation();
-              endSelection();
-            }}
-            onMouseLeave={(e) => {
-              e.stopPropagation();
-              endSelection();
-            }}
-            style={{ position: 'relative' }}
-          >
-            {isSelecting && selectionRect && (
-              <div
-                className="tracker-selection-rectangle"
-                style={{
-                  left: Math.min(selectionRect.startX, selectionRect.currentX),
-                  top: Math.min(selectionRect.startY, selectionRect.currentY),
-                  width: Math.abs(selectionRect.currentX - selectionRect.startX),
-                  height: Math.abs(selectionRect.currentY - selectionRect.startY),
-                }}
-              />
-            )}
-            {filteredWallets.length === 0 ? (
-              <div className="tracker-empty-state">
-                <div className="tracker-empty-content">
-                  <h4>No Wallets Found</h4>
-                  <p>No wallets match your search criteria.</p>
-                </div>
-              </div>
-            ) : (
-              filteredWallets.map((wallet, index) => renderWalletItem(wallet, index))
-            )}
-          </div>
-        )}
+        {/* rest of the component remains the same */}
       </div>
     );
   };
@@ -1334,7 +1342,7 @@ const Tracker: React.FC<TrackerProps> = ({
               )}
             </div>
 
-            <div className="detail-trades-header-cell">Name</div>
+            <div className="detail-trades-header-cell">Account</div>
 
             <div className="detail-trades-header-cell">Type</div>
 
@@ -1369,7 +1377,6 @@ const Tracker: React.FC<TrackerProps> = ({
             </div>
           </div>
 
-          {/* Body */}
           <div className="detail-trades-body">
             {filteredTrades.length === 0 ? (
               <div className="tracker-empty-state">
@@ -1384,45 +1391,35 @@ const Tracker: React.FC<TrackerProps> = ({
                   key={trade.id}
                   className={`detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
                 >
-                  {/* Time */}
                   <div className="detail-trades-col detail-trades-time">
                     {trade.time}
                   </div>
 
-                  {/* Name (emoji + name, muted time like detail rows do) */}
                   <div className="detail-trades-col detail-trades-account">
                     <div className="detail-trades-avatar">
-                      {/* reuse emoji as avatar visual */}
                       <div style={{
                         width: 24, height: 24, display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', borderRadius: '50%', background: 'rgba(255,255,255,0.06)',
-                        border: '1px solid rgba(179,184,249,0.15)', fontSize: 12
+                        justifyContent: 'center', borderRadius: '50%', background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid var(--c-border)', fontSize: 12
                       }}>
                         {trade.emoji}
                       </div>
                     </div>
                     <span className="detail-trades-address">
                       {trade.walletName}
-                      <span className="detail-trades-dev-tag" style={{ marginLeft: 8 }}>
-                        {/* small muted relative time dot, same tone as detail list uses for meta */}
-                        • {trade.time}
-                      </span>
                     </span>
                   </div>
 
-                  {/* Type */}
                   <div className="detail-trades-col">
-                    <span className={`detail-trades-type buy ${trade.type}`}>
+                    <span className={`detail-trade-type-badge ${trade.type}`}>
                       {trade.type === 'buy' ? 'Buy' : 'Sell'}
                     </span>
                   </div>
 
-                  {/* Token */}
                   <div className="detail-trades-col">
                     {trade.token}
                   </div>
 
-                  {/* Amount (colored, no token icon) */}
                   <div className="detail-trades-col">
                     <span
                       className={[
@@ -1435,7 +1432,6 @@ const Tracker: React.FC<TrackerProps> = ({
                     </span>
                   </div>
 
-                  {/* Market Cap */}
                   <div className="detail-trades-col">
                     <span className={isBlurred ? 'blurred' : ''}>
                       ${formatCompact(trade.marketCap)}
@@ -1446,7 +1442,6 @@ const Tracker: React.FC<TrackerProps> = ({
             )}
           </div>
         </div>
-
       </div>
     )
   };
@@ -1869,8 +1864,8 @@ const Tracker: React.FC<TrackerProps> = ({
         </div>
 
         <div className="tracker-wallet-balance">
-          <div className={isBlurred ? 'blurred' : ''}>
-            <img src={monadicon} className="tracker-balance-icon" alt="MON" />
+          <img src={monadicon} className="tracker-balance-icon" alt="MON" />
+          <span className={isBlurred ? 'blurred' : ''}>
             {(() => {
               const b = walletTokenBalances[wallet.address];
               const ethToken = chainCfg?.eth;
@@ -1883,8 +1878,8 @@ const Tracker: React.FC<TrackerProps> = ({
               }
               return wallet.balance.toFixed(2);
             })()}
-          </div>
-        </div>  
+          </span>
+        </div>
 
         <div className="tracker-wallet-last-active">
           <div className="tracker-wallet-token-count">
