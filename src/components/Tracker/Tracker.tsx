@@ -196,6 +196,7 @@ interface TrackedWallet {
   balance: number;
   lastActive: string;
   id: string;
+  createdAt: string;
 }
 
 interface LiveTrade {
@@ -359,7 +360,14 @@ const Tracker: React.FC<TrackerProps> = ({
 
   const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>(() => {
     const stored = loadWalletsFromStorage();
-    return stored.length > 0 ? stored : [];
+    if (stored.length > 0) {
+      // Migrate existing wallets to add createdAt if missing
+      return stored.map(wallet => ({
+        ...wallet,
+        createdAt: wallet.createdAt || new Date().toISOString()
+      }));
+    }
+    return [];
   });
 
   const trackedWalletsRef = useRef(trackedWallets);
@@ -1083,7 +1091,8 @@ const Tracker: React.FC<TrackerProps> = ({
       name: defaultName,
       emoji: newWalletEmoji,
       balance: 0,             
-      lastActive: '—'         
+      lastActive: '—',
+      createdAt: new Date().toISOString()         
     };
 
     setTrackedWallets(prev => [...prev, newWallet]);
@@ -1133,7 +1142,8 @@ const Tracker: React.FC<TrackerProps> = ({
           name: walletName,
           emoji: item.emoji || '👻',
           balance: 0,
-          lastActive: '—'
+          lastActive: '—',
+          createdAt: new Date().toISOString()
         };
       });
 
@@ -1426,9 +1436,10 @@ const Tracker: React.FC<TrackerProps> = ({
 
     return (
       <div className="tracker-wallet-manager">
-        <div className="tracker-wallets-header">
+        <div className="tracker-wallets-header" data-wallet-count={filteredWallets.length}>
           <div className="tracker-wallet-header-cell"></div>
           <div className="tracker-wallet-header-cell"></div>
+          <div className="tracker-wallet-header-cell">Created</div>
           <div className="tracker-wallet-header-cell">Name</div>
           <div
             className={`tracker-wallet-header-cell sortable ${walletSortField === 'balance' ? 'active' : ''}`}
@@ -1458,8 +1469,78 @@ const Tracker: React.FC<TrackerProps> = ({
           </div>
           <div className="tracker-wallet-header-cell">Actions</div>
         </div>
-        
-        {/* rest of the component remains the same */}
+
+        {/* Wallet List Container */}
+        <div 
+          className={`tracker-wallets-container ${isSelecting ? 'selecting' : ''}`}
+          ref={mainWalletsRef}
+          onMouseDown={startSelection}
+          onMouseMove={(e) => updateSelection(e, e.currentTarget)}
+          onDrop={handleReorderDrop}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          {/* Selection Rectangle */}
+          {selectionRect && activeSelectionContainer === 'main' && (
+            <div
+              className="selection-rectangle"
+              style={{
+                left: Math.min(selectionRect.startX, selectionRect.currentX),
+                top: Math.min(selectionRect.startY, selectionRect.currentY),
+                width: Math.abs(selectionRect.currentX - selectionRect.startX),
+                height: Math.abs(selectionRect.currentY - selectionRect.startY),
+              }}
+            />
+          )}
+
+          {/* Empty State */}
+          {filteredWallets.length === 0 ? (
+            <div className="tracker-empty-state">
+              <div className="tracker-empty-content">
+                <h4>No Wallets Found</h4>
+                <p>
+                  {searchQuery.trim() 
+                    ? "No wallets match your search criteria." 
+                    : "Add your first wallet to start tracking."}
+                </p>
+                {!searchQuery.trim() && (
+                  <button
+                    className="tracker-add-wallet-empty-btn"
+                    onClick={() => setShowAddWalletModal(true)}
+                  >
+                    Add Wallet
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* Wallet List */
+            filteredWallets.map((wallet, index) => renderWalletItem(wallet, index))
+          )}
+
+          {/* Selected wallets actions */}
+          {selectedWallets.size > 0 && (
+            <div className="tracker-selection-actions">
+              <span className="tracker-selection-count">
+                {selectedWallets.size} wallet{selectedWallets.size !== 1 ? 's' : ''} selected
+              </span>
+              <button
+                className="tracker-selection-action-btn"
+                onClick={handleRemoveAll}
+              >
+                Remove All
+              </button>
+              <button
+                className="tracker-selection-action-btn"
+                onClick={() => setSelectedWallets(new Set())}
+              >
+                Clear Selection
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -1782,8 +1863,6 @@ const Tracker: React.FC<TrackerProps> = ({
     const isDragging = dragReorderState.draggedIndex === index && dragReorderState.draggedContainer === 'main';
     const isDragOver = dragReorderState.dragOverIndex === index && dragReorderState.dragOverContainer === 'main';
     const containerKey = 'tracker-wallets';
-
-    // Get token count for this wallet
     const getWalletTokenCount = (address: string) => {
       const balances = walletTokenBalances[address];
       if (!balances) return 0;
@@ -1907,15 +1986,37 @@ const Tracker: React.FC<TrackerProps> = ({
           />
         )}
 
+        {/* Empty space column */}
         <div style={{ width: '30px' }}></div>
 
+        {/* Drag handle column */}
         <div className="tracker-wallet-drag-handle">
           <Tooltip content="Drag to reorder wallet">
             <img src={circle} className="tracker-drag-handle-icon" alt="Drag" />
           </Tooltip>
         </div>
 
+        {/* Created column */}
+        <div className="tracker-wallet-created">
+          <span className="tracker-wallet-created-date">
+            {new Date(wallet.createdAt).toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric' 
+            })}
+          </span>
+          <span className="tracker-wallet-created-time">
+            {new Date(wallet.createdAt).toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })}
+          </span>
+        </div>
+
+        {/* Profile column */}
         <div className="tracker-wallet-profile">
+          <div className="tracker-wallet-avatar">
+            <img src={defaultPfp} alt={wallet.name} />
+          </div>
           <div className="tracker-wallet-name-container">
             {editingWallet === wallet.id ? (
               <div className="tracker-wallet-name-edit-container">
@@ -1939,6 +2040,21 @@ const Tracker: React.FC<TrackerProps> = ({
             ) : (
               <div className="tracker-wallet-name-display">
                 <span className="tracker-wallet-name">{wallet.name}</span>
+                {editingWallet !== wallet.id && (
+                  <div className="tracker-wallet-address">
+                    {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                    <img
+                      src={copy}
+                      className="tracker-copy-icon"
+                      alt="Copy"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(wallet.address);
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </div>
+                )}
                 <Edit2
                   size={12}
                   className="tracker-wallet-name-edit-icon"
@@ -1949,24 +2065,10 @@ const Tracker: React.FC<TrackerProps> = ({
                 />
               </div>
             )}
-            {editingWallet !== wallet.id && (
-              <div className="tracker-wallet-address">
-                {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                <img
-                  src={copy}
-                  className="tracker-copy-icon"
-                  alt="Copy"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigator.clipboard.writeText(wallet.address);
-                  }}
-                  style={{ cursor: 'pointer' }}
-                />
-              </div>
-            )}
           </div>
         </div>
 
+        {/* Balance column */}
         <div className="tracker-wallet-balance">
           <img src={monadicon} className="tracker-balance-icon" alt="MON" />
           <span className={isBlurred ? 'blurred' : ''}>
@@ -1985,6 +2087,7 @@ const Tracker: React.FC<TrackerProps> = ({
           </span>
         </div>
 
+        {/* Last Active column */}
         <div className="tracker-wallet-last-active">
           <div className="tracker-wallet-token-count">
             <div className="tracker-wallet-token-structure-icons">
@@ -1996,6 +2099,7 @@ const Tracker: React.FC<TrackerProps> = ({
           </div>
         </div>  
 
+        {/* Actions column */}
         <div className="tracker-wallet-actions">
           <Tooltip content="Export Private Key">
             <button 
@@ -2045,9 +2149,6 @@ const Tracker: React.FC<TrackerProps> = ({
             </button>
           </Tooltip>
         </div>
-
-
-        
       </div>
     );
   };
