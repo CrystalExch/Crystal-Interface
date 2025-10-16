@@ -1037,7 +1037,7 @@
   display: flex;
   align-items: center;
   border: 1px solid rgba(179, 184, 249, .1);
-  border-radius: 12px;
+  border-radius: 20px;
   padding: 0 .75rem;
   font-size: .9rem;
   gap: .25rem;

@@ -3345,13 +3345,6 @@ useEffect(() => {
                 onKeyPress={handleKeyPress}
               />
             </div>
-            <button
-              className={`wallet-search-confirm-button ${isButtonDisabled ? 'disabled' : ''}`}
-              onClick={isSpectating ? clearSpectating : handleConfirmSpectating}
-              disabled={isButtonDisabled}
-            >
-              {isSpectating ? 'Stop Spectating' : 'Spectate'}
-            </button>
           </div>
         </div>
         <div className="portfolio-content-container">
@@ -3403,13 +3396,6 @@ useEffect(() => {
                 onKeyPress={handleKeyPress}
               />
             </div>
-            <button
-              className={`wallet-search-confirm-button ${isButtonDisabled ? 'disabled' : ''}`}
-              onClick={isSpectating ? clearSpectating : handleConfirmSpectating}
-              disabled={isButtonDisabled}
-            >
-              {isSpectating ? 'Stop Spectating' : 'Spectate'}
-            </button>
           </div>
         </div>
         <div className="portfolio-content-container">
