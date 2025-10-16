@@ -299,9 +299,14 @@ const Loader = () => {
               volume
               latestPrice
               metadataCID
-              miniPoints(first: 24, orderBy: time, orderDirection: desc) {
-                price
+              klines(first: 1000, skip: 0, orderBy: time, orderDirection: desc) {
+                id
                 time
+                open
+                high
+                low
+                close
+                baseVolume
               }
               trades(first: 100, orderBy: timestamp, orderDirection: desc) {
                 id
@@ -682,7 +687,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   });
   
   const validOneCT = !!oneCTSigner
-  const oneCTNonceRef = useRef<number>(0);
   const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
     address: '0x0000000000000000000000000000000000000000' as `0x${string}`,
     signTransaction: async () => ''
@@ -880,6 +884,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         });
       }
       else if (validOneCT && !mainWallet) {
+        const wallet = nonces.current.get(onectclient.address);
         const tx = {
           to: params.uo.target,
           value: params.uo.value,
@@ -887,10 +892,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           gasLimit: gasLimit > 0n ? gasLimit : 500000n,
           maxFeePerGas: 100000000000n + (prioFee > 0n ? prioFee : 13000000000n),
           maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
-          nonce: oneCTNonceRef.current,
+          nonce: wallet.nonce,
           chainId: activechain
         }
-        oneCTNonceRef.current += 1;
+        if (wallet) wallet.nonce += 1;
         const signedTx = await onectclient.signTransaction(tx);
         hash = keccak256(signedTx) as `0x${string}`;
 
@@ -8875,11 +8880,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     (async () => {
       if (address) {
-        if (validOneCT) {
-          oneCTNonceRef.current = await getTransactionCount(config, {
-            address: (address as any),
-          })
-        }
         setTransactions([]);
         settradehistory([]);
         setorders([]);
