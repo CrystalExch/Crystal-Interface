@@ -616,7 +616,7 @@ const Perps: React.FC<PerpsProps> = ({
     const qs = buildSignatureBody(payload)
     const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "POST" + path + qs)).slice(2)
     const [metaRes] = await Promise.all([
-      fetch("/api/v1/private/order/createOrder", {
+      fetch("https://perps.crystal.exchange/api/v1/private/order/createOrder", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -793,8 +793,8 @@ const Perps: React.FC<PerpsProps> = ({
     const fetchData = async () => {
       try {
         const [metaRes, labelsRes] = await Promise.all([
-          fetch('/api/v1/public/meta/getMetaData', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json()),
-          fetch('/api/v1/public/contract-labels', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
+          fetch('https://perps.crystal.exchange/api/v1/public/meta/getMetaData', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json()),
+          fetch('https://perps.crystal.exchange/api/v1/public/contract-labels', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
         ])
         if (liveStreamCancelled) return;
         if (metaRes?.data) setExchangeConfig(metaRes.data)
@@ -1105,7 +1105,7 @@ const Perps: React.FC<PerpsProps> = ({
           signature: signer.signature
         }
         const [onboardRes] = await Promise.all([
-          fetch("/api/v1/public/user/onboardSite", {
+          fetch("https://perps.crystal.exchange/api/v1/public/user/onboardSite", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1123,7 +1123,7 @@ const Perps: React.FC<PerpsProps> = ({
         const regqs = buildSignatureBody(payload)
         const regsig = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(regts + "POST" + regpath + regqs)).slice(2)
         const [registerRes] = await Promise.all([
-          fetch("/api/v1/private/account/registerAccount", {
+          fetch("https://perps.crystal.exchange/api/v1/private/account/registerAccount", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1140,7 +1140,7 @@ const Perps: React.FC<PerpsProps> = ({
         const qs = 'size=100'
         const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "GET" + path + qs)).slice(2)
         const [metaRes] = await Promise.all([
-          fetch("/api/v1/private/account/getAccountPage?size=100", {
+          fetch("https://perps.crystal.exchange/api/v1/private/account/getAccountPage?size=100", {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
