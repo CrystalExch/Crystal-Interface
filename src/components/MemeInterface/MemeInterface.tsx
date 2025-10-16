@@ -31,7 +31,7 @@ import gas from '../../assets/gas.svg';
 import monadicon from '../../assets/monadlogo.svg';
 import slippage from '../../assets/slippage.svg';
 import trash from '../../assets/trash.svg';
-import walleticon from '../../assets/wallet_icon.png';
+import walleticon from '../../assets/wallet_icon.svg';
 import { loadBuyPresets, loadSellPresets, updateBuyPreset, updateSellPreset } from '../../utils/presetManager';
 
 import './MemeInterface.css';

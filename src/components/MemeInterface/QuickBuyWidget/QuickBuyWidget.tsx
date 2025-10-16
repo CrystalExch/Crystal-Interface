@@ -24,7 +24,7 @@ import merge from '../../../assets/merge.png';
 import monadicon from '../../../assets/monadlogo.svg';
 import slippage from '../../../assets/slippage.svg';
 import switchicon from '../../../assets/switch.svg';
-import walleticon from '../../../assets/wallet_icon.png';
+import walleticon from '../../../assets/wallet_icon.svg';
 import { settings } from '../../../settings';
 
 import './QuickBuyWidget.css';

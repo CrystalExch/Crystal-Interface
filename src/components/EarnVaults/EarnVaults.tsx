@@ -7,7 +7,7 @@ import { fetchLatestPrice } from '../../utils/getPrice.ts';
 import { settings } from '../../settings.ts';
 import { useSharedContext } from '../../contexts/SharedContext';
 import { CrystalLending } from '../../abis/CrystalLending.ts';
-import walleticon from '../../assets/wallet_icon.png';
+import walleticon from '../../assets/wallet_icon.svg';
 import './EarnVaults.css';
 
 

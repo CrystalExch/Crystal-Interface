@@ -21,7 +21,7 @@ import filtercup from '../../../assets/filtercup.svg';
 import lightning from '../../../assets/flash.png';
 import monadicon from '../../../assets/monadlogo.svg';
 import switchicon from '../../../assets/switch.svg';
-import walleticon from '../../../assets/wallet_icon.png';
+import walleticon from '../../../assets/wallet_icon.svg';
 import { useNavigate } from 'react-router-dom';
 
 import './MemeOrderCenter.css';

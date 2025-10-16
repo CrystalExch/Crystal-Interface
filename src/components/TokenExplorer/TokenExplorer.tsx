@@ -49,7 +49,7 @@ import stepaudio from '../../assets/step_audio.mp3';
 import telegram from '../../assets/telegram.png';
 import trash from '../../assets/trash.svg';
 import tweet from '../../assets/tweet.png';
-import walleticon from '../../assets/wallet_icon.png';
+import walleticon from '../../assets/wallet_icon.svg';
 import { TwitterHover } from '../TwitterHover/TwitterHover';
 
 import './TokenExplorer.css';
