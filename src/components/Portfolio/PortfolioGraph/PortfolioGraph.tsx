@@ -154,13 +154,9 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
         const change =
           firstValue !== 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
         onPercentageChange?.(change);
-        setColorValue?.(change >= 0 ? '#00b894' : '#d63031');
+        setColorValue?.(change >= 0 ? '#d8dcff' : 'rgb(235, 112, 112)');
         setHigh(Math.max(...chartData.map((d) => d.value)) || 0);
         setLow(Math.min(...chartData.map((d) => d.value)) || 0);
-      }
-      else {
-        onPercentageChange?.(0)
-        setColorValue?.('#00b894');
       }
     }, [chartData]);
 
@@ -340,8 +336,8 @@ const EmptyGraph: React.FC<{
         <ComposedChart data={data}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#00b894" stopOpacity={0.3} />
-              <stop offset="100%" stopColor="#00b894" stopOpacity={0} />
+              <stop offset="0%" stopColor="rgb(67, 254, 154)" stopOpacity={0.3} />
+              <stop offset="100%" stopColor="rgb(67, 254, 154)" stopOpacity={0} />
             </linearGradient>
           </defs>
           {!isPopup && (
@@ -393,12 +389,12 @@ const EmptyGraph: React.FC<{
           <Line
             type="monotone"
             dataKey="value"
-            stroke="#00b894"
+            stroke="rgb(67, 254, 154)"
             strokeWidth={2}
             dot={{ r: 0 }}
             activeDot={{
               r: 4,
-              stroke: '#00b894',
+              stroke: 'rgb(67, 254, 154)',
               strokeWidth: 2,
               fill: '#16171c',
             }}

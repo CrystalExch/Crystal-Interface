@@ -14,6 +14,8 @@ import settingsicon from '../../assets/settings.svg';
 import circle from '../../assets/circle_handle.png';
 import lightning from '../../assets/flash.png';
 import key from '../../assets/key.svg';
+import defaultPfp from '../../assets/leaderboard_default.png';
+
 
 
 import './Tracker.css';
@@ -85,7 +87,21 @@ export interface FilterState {
     max: string;
   };
 }
+interface SortPreset {
+  sortBy: string;
+  order: 'asc' | 'desc';
+}
 
+const SIMPLE_SORT_PRESETS: Record<string, SortPreset> = {
+  latest: { sortBy: 'lastTransaction', order: 'desc' },
+  marketCap: { sortBy: 'marketCap', order: 'desc' },
+  liquidity: { sortBy: 'liquidity', order: 'desc' },
+  txns: { sortBy: 'txCount', order: 'desc' },
+  holders: { sortBy: 'holders', order: 'desc' },
+  inflow: { sortBy: 'inflowVolume', order: 'desc' },
+  outflow: { sortBy: 'outflowVolume', order: 'desc' },
+  tokenAge: { sortBy: 'createdAt', order: 'asc' }
+};
 const Tooltip: React.FC<{
   content: string;
   children: React.ReactNode;
@@ -180,6 +196,7 @@ interface TrackedWallet {
   balance: number;
   lastActive: string;
   id: string;
+  createdAt: string;
 }
 
 interface LiveTrade {
@@ -270,17 +287,87 @@ const Tracker: React.FC<TrackerProps> = ({
   monUsdPrice,
   walletTokenBalances = {}
 }) => {
+  const [selectedSimpleFilter, setSelectedSimpleFilter] = useState<string | null>(null);
   const context = useSharedContext();
   const activechain = context?.activechain || 'monad';
   const [walletSortField, setWalletSortField] = useState<'balance' | 'lastActive' | null>(null);
   const [walletSortDirection, setWalletSortDirection] = useState<SortDirection>('desc');
   const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
-  const [trackedWalletTrades, setTrackedWalletTrades] = useState<LiveTrade[]>([]);
+  const [trackedWalletTrades, setTrackedWalletTrades] = useState<LiveTrade[]>([
+    {
+      id: '0x1234567890abcdef1234567890abcdef12345678-1',
+      walletName: 'Paper Hands',
+      emoji: '😀',
+      token: 'DOGE',
+      amount: 25.5,
+      marketCap: 1250,
+      time: '2m',
+      txHash: '0x1234567890abcdef1234567890abcdef12345678',
+      type: 'buy',
+      createdAt: new Date(Date.now() - 120000).toISOString(),
+    },
+    {
+      id: '0x1234567890abcdef1234567890abcdef12345679-2',
+      walletName: 'Whale Watcher',
+      emoji: '😈',
+      token: 'SHIB',
+      amount: 150.0,
+      marketCap: 5600,
+      time: '5m',
+      txHash: '0x1234567890abcdef1234567890abcdef12345679',
+      type: 'sell',
+      createdAt: new Date(Date.now() - 300000).toISOString(),
+    },
+    {
+      id: '0x1234567890abcdef1234567890abcdef12345680-3',
+      walletName: 'Diamond Hands',
+      emoji: '💎',
+      token: 'PEPE',
+      amount: 75.25,
+      marketCap: 3200,
+      time: '8m',
+      txHash: '0x1234567890abcdef1234567890abcdef12345680',
+      type: 'buy',
+      createdAt: new Date(Date.now() - 480000).toISOString(),
+    },
+    {
+      id: '0x1234567890abcdef1234567890abcdef12345681-4',
+      walletName: 'Moon Boy',
+      emoji: '🚀',
+      token: 'BONK',
+      amount: 200.75,
+      marketCap: 8900,
+      time: '12m',
+      txHash: '0x1234567890abcdef1234567890abcdef12345681',
+      type: 'sell',
+      createdAt: new Date(Date.now() - 720000).toISOString(),
+    },
+    {
+      id: '0x1234567890abcdef1234567890abcdef12345682-5',
+      walletName: 'Degen Trader',
+      emoji: '⚡',
+      token: 'WIF',
+      amount: 50.0,
+      marketCap: 2100,
+      time: '15m',
+      txHash: '0x1234567890abcdef1234567890abcdef12345682',
+      type: 'buy',
+      createdAt: new Date(Date.now() - 900000).toISOString(),
+    }
+  ]);
+
 
 
   const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>(() => {
     const stored = loadWalletsFromStorage();
-    return stored.length > 0 ? stored : [];
+    if (stored.length > 0) {
+      // Migrate existing wallets to add createdAt if missing
+      return stored.map(wallet => ({
+        ...wallet,
+        createdAt: wallet.createdAt || new Date().toISOString()
+      }));
+    }
+    return [];
   });
 
   const trackedWalletsRef = useRef(trackedWallets);
@@ -595,7 +682,162 @@ const Tracker: React.FC<TrackerProps> = ({
 
   
 
-  const [monitorTokens, setMonitorTokens] = useState<MonitorToken[]>([]);
+  const [monitorTokens, setMonitorTokens] = useState<MonitorToken[]>([
+    {
+      id: 'token-1',
+      tokenAddress: '0x1234567890abcdef1234567890abcdef12345678',
+      name: 'Doge Killer',
+      symbol: 'DOGEK',
+      emoji: '🐕',
+      price: 0.000125,
+      marketCap: 125000,
+      change24h: 15.6,
+      volume24h: 45000,
+      liquidity: 25000,
+      holders: 1250,
+      buyTransactions: 145,
+      sellTransactions: 89,
+      bondingCurveProgress: 85,
+      txCount: 234,
+      volume5m: 1200,
+      volume1h: 8500,
+      volume6h: 18000,
+      priceChange5m: 2.3,
+      priceChange1h: 8.7,
+      priceChange6h: 12.4,
+      priceChange24h: 15.6,
+      website: '',
+      twitter: '',
+      telegram: '',
+      createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+      lastTransaction: new Date(Date.now() - 300000).toISOString(), // 5 min ago
+      trades: [
+        {
+          id: 'trade-1',
+          wallet: 'Paper Hands',
+          emoji: '😀',
+          timeInTrade: '2h 15m',
+          bought: 150.5,
+          boughtTxns: 3,
+          sold: 45.2,
+          soldTxns: 1,
+          pnl: 25.8,
+          remaining: 105.3
+        },
+        {
+          id: 'trade-2',
+          wallet: 'Diamond Hands',
+          emoji: '💎',
+          timeInTrade: '6h 42m',
+          exitStatus: 'Exited' as const,
+          bought: 200.0,
+          boughtTxns: 2,
+          sold: 200.0,
+          soldTxns: 2,
+          pnl: 85.4,
+          remaining: 0
+        }
+      ]
+    },
+    {
+      id: 'token-2',
+      tokenAddress: '0x2345678901bcdef12345678901bcdef123456789',
+      name: 'Moon Rocket',
+      symbol: 'MOON',
+      emoji: '🚀',
+      price: 0.000890,
+      marketCap: 890000,
+      change24h: -8.3,
+      volume24h: 125000,
+      liquidity: 78000,
+      holders: 3450,
+      buyTransactions: 287,
+      sellTransactions: 194,
+      bondingCurveProgress: 67,
+      txCount: 481,
+      volume5m: 2100,
+      volume1h: 12500,
+      volume6h: 45000,
+      priceChange5m: -1.2,
+      priceChange1h: -3.8,
+      priceChange6h: -6.1,
+      priceChange24h: -8.3,
+      website: '',
+      twitter: '',
+      telegram: '',
+      createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+      lastTransaction: new Date(Date.now() - 120000).toISOString(), // 2 min ago
+      trades: [
+        {
+          id: 'trade-3',
+          wallet: 'Whale Watcher',
+          emoji: '😈',
+          timeInTrade: '1d 4h',
+          bought: 500.0,
+          boughtTxns: 5,
+          sold: 150.0,
+          soldTxns: 2,
+          pnl: -45.6,
+          remaining: 350.0
+        }
+      ]
+    },
+    {
+      id: 'token-3',
+      tokenAddress: '0x3456789012cdef123456789012cdef1234567890',
+      name: 'Shiba Inu 2.0',
+      symbol: 'SHIB2',
+      emoji: '🐕‍🦺',
+      price: 0.0000045,
+      marketCap: 4500,
+      change24h: 125.7,
+      volume24h: 8900,
+      liquidity: 3200,
+      holders: 890,
+      buyTransactions: 67,
+      sellTransactions: 23,
+      bondingCurveProgress: 15,
+      txCount: 90,
+      volume5m: 450,
+      volume1h: 2100,
+      volume6h: 5600,
+      priceChange5m: 8.9,
+      priceChange1h: 45.2,
+      priceChange6h: 89.3,
+      priceChange24h: 125.7,
+      website: '',
+      twitter: '',
+      telegram: '',
+      createdAt: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
+      lastTransaction: new Date(Date.now() - 60000).toISOString(), // 1 min ago
+      trades: [
+        {
+          id: 'trade-4',
+          wallet: 'Moon Boy',
+          emoji: '🚀',
+          timeInTrade: '8h 12m',
+          bought: 75.0,
+          boughtTxns: 2,
+          sold: 0,
+          soldTxns: 0,
+          pnl: 89.5,
+          remaining: 75.0
+        },
+        {
+          id: 'trade-5',
+          wallet: 'Degen Trader',
+          emoji: '⚡',
+          timeInTrade: '3h 45m',
+          bought: 25.5,
+          boughtTxns: 1,
+          sold: 0,
+          soldTxns: 0,
+          pnl: 15.2,
+          remaining: 25.5
+        }
+      ]
+    }
+  ]);
   const [isLoadingMonitor, setIsLoadingMonitor] = useState(false);
 
   const [showAddWalletModal, setShowAddWalletModal] = useState(false);
@@ -769,88 +1011,60 @@ const Tracker: React.FC<TrackerProps> = ({
   };
 
   const getFilteredMonitorTokens = () => {
-    const now = new Date();
-
-    const numOrNull = (v: string) => {
-      const t = (v ?? '').trim();
-      if (t === '' || t === '.') return null;
-      const n = Number(t);
-      return Number.isNaN(n) ? null : n;
-    };
-
-    let tokens = monitorTokens.filter((token) => {
-      {
-        const secs = numOrNull(monitorFilters.general.lastTransaction);
-        if (secs != null) {
-          const lastTxTime = new Date(token.lastTransaction);
-          const secondsAgo = (now.getTime() - lastTxTime.getTime()) / 1000;
-          if (secondsAgo > secs) return false;
-        }
-      }
-
-      {
-        const tokenCreatedTime = new Date(token.createdAt);
-        const tokenAgeMinutes = (now.getTime() - tokenCreatedTime.getTime()) / (1000 * 60);
-
-        const minMin = numOrNull(monitorFilters.general.tokenAgeMin); // minutes
-        const maxHr  = numOrNull(monitorFilters.general.tokenAgeMax); // hours, convert
-        const maxMin = maxHr != null ? maxHr * 60 : null;
-
-        if (minMin != null && tokenAgeMinutes < minMin) return false;
-        if (maxMin != null && tokenAgeMinutes > maxMin) return false;
-      }
-
-      {
-        const mcMin = numOrNull(monitorFilters.market.marketCapMin);
-        const mcMax = numOrNull(monitorFilters.market.marketCapMax);
-        if (mcMin != null && token.marketCap < mcMin) return false;
-        if (mcMax != null && token.marketCap > mcMax) return false;
-      }
-
-      {
-        const liqMin = numOrNull(monitorFilters.market.liquidityMin);
-        const liqMax = numOrNull(monitorFilters.market.liquidityMax);
-        if (liqMin != null && token.liquidity < liqMin) return false;
-        if (liqMax != null && token.liquidity > liqMax) return false;
-      }
-
-      {
-        const hMin = numOrNull(monitorFilters.market.holdersMin);
-        const hMax = numOrNull(monitorFilters.market.holdersMax);
-        if (hMin != null && token.holders < hMin) return false;
-        if (hMax != null && token.holders > hMax) return false;
-      }
-
-      {
-        const txMin = numOrNull(monitorFilters.transactions.transactionCountMin);
-        const txMax = numOrNull(monitorFilters.transactions.transactionCountMax);
-        const txCount = token.txCount ?? 0;
-        if (txMin != null && txCount < txMin) return false;
-        if (txMax != null && txCount > txMax) return false;
-      }
-
-      {
-        const trades = Array.isArray(token.trades) ? token.trades : [];
-        const inflow = trades.reduce((sum, t) => sum + (t?.bought ?? 0), 0);
-        const outflow = trades.reduce((sum, t) => sum + (t?.sold ?? 0), 0);
-
-        const inflowMin = numOrNull(monitorFilters.transactions.inflowVolumeMin);
-        const inflowMax = numOrNull(monitorFilters.transactions.inflowVolumeMax);
-        const outflowMin = numOrNull(monitorFilters.transactions.outflowVolumeMin);
-        const outflowMax = numOrNull(monitorFilters.transactions.outflowVolumeMax);
-
-        if (inflowMin != null && inflow < inflowMin) return false;
-        if (inflowMax != null && inflow > inflowMax) return false;
-        if (outflowMin != null && outflow < outflowMin) return false;
-        if (outflowMax != null && outflow > outflowMax) return false;
-      }
-
-      return true;
-    });
+    let tokens = [...monitorTokens];
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      tokens = tokens.filter((t) => t.name.toLowerCase().includes(q) || t.symbol.toLowerCase().includes(q));
+      tokens = tokens.filter((t) => 
+        t.name.toLowerCase().includes(q) || 
+        t.symbol.toLowerCase().includes(q)
+      );
+    }
+
+    if (selectedSimpleFilter && SIMPLE_SORT_PRESETS[selectedSimpleFilter]) {
+      const preset = SIMPLE_SORT_PRESETS[selectedSimpleFilter];
+      tokens = tokens.sort((a, b) => {
+        let aVal: number, bVal: number;
+        
+        switch (preset.sortBy) {
+          case 'lastTransaction':
+            aVal = new Date(a.lastTransaction || 0).getTime();
+            bVal = new Date(b.lastTransaction || 0).getTime();
+            break;
+          case 'marketCap':
+            aVal = a.marketCap;
+            bVal = b.marketCap;
+            break;
+          case 'liquidity':
+            aVal = a.liquidity;
+            bVal = b.liquidity;
+            break;
+          case 'txCount':
+            aVal = a.txCount;
+            bVal = b.txCount;
+            break;
+          case 'holders':
+            aVal = a.holders;
+            bVal = b.holders;
+            break;
+          case 'inflowVolume':
+            aVal = a.trades?.reduce((sum, t) => sum + (t?.bought ?? 0), 0) ?? 0;
+            bVal = b.trades?.reduce((sum, t) => sum + (t?.bought ?? 0), 0) ?? 0;
+            break;
+          case 'outflowVolume':
+            aVal = a.trades?.reduce((sum, t) => sum + (t?.sold ?? 0), 0) ?? 0;
+            bVal = b.trades?.reduce((sum, t) => sum + (t?.sold ?? 0), 0) ?? 0;
+            break;
+          case 'createdAt':
+            aVal = new Date(a.createdAt).getTime();
+            bVal = new Date(b.createdAt).getTime();
+            break;
+          default:
+            return 0;
+        }
+        
+        return preset.order === 'desc' ? bVal - aVal : aVal - bVal;
+      });
     }
 
     return tokens;
@@ -877,7 +1091,8 @@ const Tracker: React.FC<TrackerProps> = ({
       name: defaultName,
       emoji: newWalletEmoji,
       balance: 0,             
-      lastActive: '—'         
+      lastActive: '—',
+      createdAt: new Date().toISOString()         
     };
 
     setTrackedWallets(prev => [...prev, newWallet]);
@@ -927,7 +1142,8 @@ const Tracker: React.FC<TrackerProps> = ({
           name: walletName,
           emoji: item.emoji || '👻',
           balance: 0,
-          lastActive: '—'
+          lastActive: '—',
+          createdAt: new Date().toISOString()
         };
       });
 
@@ -1220,8 +1436,10 @@ const Tracker: React.FC<TrackerProps> = ({
 
     return (
       <div className="tracker-wallet-manager">
-        <div className="tracker-wallets-header">
+        <div className="tracker-wallets-header" data-wallet-count={filteredWallets.length}>
           <div className="tracker-wallet-header-cell"></div>
+          <div className="tracker-wallet-header-cell"></div>
+          <div className="tracker-wallet-header-cell">Created</div>
           <div className="tracker-wallet-header-cell">Name</div>
           <div
             className={`tracker-wallet-header-cell sortable ${walletSortField === 'balance' ? 'active' : ''}`}
@@ -1251,63 +1469,78 @@ const Tracker: React.FC<TrackerProps> = ({
           </div>
           <div className="tracker-wallet-header-cell">Actions</div>
         </div>
-        
-        {trackedWallets.length === 0 ? (
-          <div className="tracker-empty-state">
-            <div className="tracker-empty-content">
-              <h4>No Wallets Tracked</h4>
-              <p>Add wallets to track their activity and trades in real-time.</p>
+
+        {/* Wallet List Container */}
+        <div 
+          className={`tracker-wallets-container ${isSelecting ? 'selecting' : ''}`}
+          ref={mainWalletsRef}
+          onMouseDown={startSelection}
+          onMouseMove={(e) => updateSelection(e, e.currentTarget)}
+          onDrop={handleReorderDrop}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          {/* Selection Rectangle */}
+          {selectionRect && activeSelectionContainer === 'main' && (
+            <div
+              className="selection-rectangle"
+              style={{
+                left: Math.min(selectionRect.startX, selectionRect.currentX),
+                top: Math.min(selectionRect.startY, selectionRect.currentY),
+                width: Math.abs(selectionRect.currentX - selectionRect.startX),
+                height: Math.abs(selectionRect.currentY - selectionRect.startY),
+              }}
+            />
+          )}
+
+          {/* Empty State */}
+          {filteredWallets.length === 0 ? (
+            <div className="tracker-empty-state">
+              <div className="tracker-empty-content">
+                <h4>No Wallets Found</h4>
+                <p>
+                  {searchQuery.trim() 
+                    ? "No wallets match your search criteria." 
+                    : "Add your first wallet to start tracking."}
+                </p>
+                {!searchQuery.trim() && (
+                  <button
+                    className="tracker-add-wallet-empty-btn"
+                    onClick={() => setShowAddWalletModal(true)}
+                  >
+                    Add Wallet
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* Wallet List */
+            filteredWallets.map((wallet, index) => renderWalletItem(wallet, index))
+          )}
+
+          {/* Selected wallets actions */}
+          {selectedWallets.size > 0 && (
+            <div className="tracker-selection-actions">
+              <span className="tracker-selection-count">
+                {selectedWallets.size} wallet{selectedWallets.size !== 1 ? 's' : ''} selected
+              </span>
               <button
-                className="tracker-cta-button"
-                onClick={() => setShowAddWalletModal(true)}
+                className="tracker-selection-action-btn"
+                onClick={handleRemoveAll}
               >
-                Add Your First Wallet
+                Remove All
+              </button>
+              <button
+                className="tracker-selection-action-btn"
+                onClick={() => setSelectedWallets(new Set())}
+              >
+                Clear Selection
               </button>
             </div>
-          </div>
-        ) : (
-          <div
-            ref={mainWalletsRef}
-            className={`tracker-wallets-list ${isSelecting ? 'selecting' : ''}`}
-            onMouseDown={(e) => startSelection(e)}
-            onMouseMove={(e) => {
-              if (isSelecting && mainWalletsRef.current) {
-                updateSelection(e, mainWalletsRef.current);
-              }
-            }}
-            onMouseUp={(e) => {
-              e.stopPropagation();
-              endSelection();
-            }}
-            onMouseLeave={(e) => {
-              e.stopPropagation();
-              endSelection();
-            }}
-            style={{ position: 'relative' }}
-          >
-            {isSelecting && selectionRect && (
-              <div
-                className="tracker-selection-rectangle"
-                style={{
-                  left: Math.min(selectionRect.startX, selectionRect.currentX),
-                  top: Math.min(selectionRect.startY, selectionRect.currentY),
-                  width: Math.abs(selectionRect.currentX - selectionRect.startX),
-                  height: Math.abs(selectionRect.currentY - selectionRect.startY),
-                }}
-              />
-            )}
-            {filteredWallets.length === 0 ? (
-              <div className="tracker-empty-state">
-                <div className="tracker-empty-content">
-                  <h4>No Wallets Found</h4>
-                  <p>No wallets match your search criteria.</p>
-                </div>
-              </div>
-            ) : (
-              filteredWallets.map((wallet, index) => renderWalletItem(wallet, index))
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   };
@@ -1334,7 +1567,7 @@ const Tracker: React.FC<TrackerProps> = ({
               )}
             </div>
 
-            <div className="detail-trades-header-cell">Name</div>
+            <div className="detail-trades-header-cell">Account</div>
 
             <div className="detail-trades-header-cell">Type</div>
 
@@ -1369,7 +1602,6 @@ const Tracker: React.FC<TrackerProps> = ({
             </div>
           </div>
 
-          {/* Body */}
           <div className="detail-trades-body">
             {filteredTrades.length === 0 ? (
               <div className="tracker-empty-state">
@@ -1384,45 +1616,31 @@ const Tracker: React.FC<TrackerProps> = ({
                   key={trade.id}
                   className={`detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
                 >
-                  {/* Time */}
                   <div className="detail-trades-col detail-trades-time">
                     {trade.time}
                   </div>
 
-                  {/* Name (emoji + name, muted time like detail rows do) */}
                   <div className="detail-trades-col detail-trades-account">
                     <div className="detail-trades-avatar">
-                      {/* reuse emoji as avatar visual */}
-                      <div style={{
-                        width: 24, height: 24, display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', borderRadius: '50%', background: 'rgba(255,255,255,0.06)',
-                        border: '1px solid rgba(179,184,249,0.15)', fontSize: 12
-                      }}>
-                        {trade.emoji}
+                      <div>
+                        <img src={defaultPfp} alt="Avatar" />
                       </div>
                     </div>
                     <span className="detail-trades-address">
                       {trade.walletName}
-                      <span className="detail-trades-dev-tag" style={{ marginLeft: 8 }}>
-                        {/* small muted relative time dot, same tone as detail list uses for meta */}
-                        • {trade.time}
-                      </span>
                     </span>
                   </div>
 
-                  {/* Type */}
                   <div className="detail-trades-col">
-                    <span className={`detail-trades-type buy ${trade.type}`}>
+                    <span className={`detail-trade-type-badge ${trade.type}`}>
                       {trade.type === 'buy' ? 'Buy' : 'Sell'}
                     </span>
                   </div>
 
-                  {/* Token */}
                   <div className="detail-trades-col">
                     {trade.token}
                   </div>
 
-                  {/* Amount (colored, no token icon) */}
                   <div className="detail-trades-col">
                     <span
                       className={[
@@ -1435,7 +1653,6 @@ const Tracker: React.FC<TrackerProps> = ({
                     </span>
                   </div>
 
-                  {/* Market Cap */}
                   <div className="detail-trades-col">
                     <span className={isBlurred ? 'blurred' : ''}>
                       ${formatCompact(trade.marketCap)}
@@ -1446,7 +1663,6 @@ const Tracker: React.FC<TrackerProps> = ({
             )}
           </div>
         </div>
-
       </div>
     )
   };
@@ -1504,172 +1720,136 @@ const Tracker: React.FC<TrackerProps> = ({
                     className="tracker-monitor-card-header"
                     onClick={() => toggleTokenExpanded(token.id)}
                   >
-                    {/* Left: Token Icon & Info */}
-                    <div className="tracker-monitor-card-left">
-                      <div
-                        className="tracker-monitor-icon-container"
-                        style={{ '--progress': token.bondingCurveProgress } as React.CSSProperties}
-                      >
-                        <div className="tracker-monitor-icon-spacer">
-                          <span className="tracker-monitor-icon-emoji">{token.emoji}</span>
+                    <div className="tracker-monitor-card-row">
+                      {/* Top Row: Token Info */}
+                      <div className="tracker-monitor-card-top">
+                        <div
+                          className="tracker-monitor-icon-container"
+                          style={{ '--progress': token.bondingCurveProgress } as React.CSSProperties}
+                        >
+                          <div className="tracker-monitor-icon-spacer">
+                            <span className="tracker-monitor-icon-emoji">{token.emoji}</span>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="tracker-monitor-token-details">
-                        <div className="tracker-monitor-token-name-row">
-                          <span className="tracker-monitor-token-name-text">{token.name}</span>
-                          <button 
-                            className="tracker-monitor-copy-btn" 
+                        <div className="tracker-monitor-token-details">
+                          <div className="tracker-monitor-token-name-row">
+                            <span className="tracker-monitor-token-name-text">{token.name}</span>
+                            <button 
+                              className="tracker-monitor-copy-btn" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(token.tokenAddress);
+                              }}
+                              title="Copy Address"
+                            >
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                              </svg>
+                            </button>
+                            <button className="tracker-monitor-action-btn" onClick={(e) => e.stopPropagation()}>☆</button>
+                          </div>
+                          <div className="tracker-monitor-token-subtitle">
+                            <span className="tracker-monitor-token-symbol">{token.symbol}</span>
+                            <span className="tracker-monitor-token-ca">
+                              {token.tokenAddress.slice(0, 6)}...{token.tokenAddress.slice(-4)}
+                            </span>
+                            <span className="tracker-monitor-token-age">
+                              {getTimeAgo(token.createdAt)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="tracker-monitor-quickbuy-section">
+                          <button
+                            className="tracker-monitor-quickbuy-btn"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigator.clipboard.writeText(token.tokenAddress);
+                              // Handle quick buy
                             }}
-                            title="Copy Address"
                           >
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                            <svg
+                              className="tracker-monitor-quickbuy-icon"
+                              viewBox="0 0 72 72"
+                              fill="currentColor"
+                            >
+                              <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86 c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833 c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86 c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18 c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
                             </svg>
                           </button>
-                          <button className="tracker-monitor-action-btn" onClick={(e) => e.stopPropagation()}>☆</button>
-                        </div>
-                        <div className="tracker-monitor-token-subtitle">
-                          <span className="tracker-monitor-token-symbol">{token.symbol}</span>
-                          <span className="tracker-monitor-token-ca">
-                            {token.tokenAddress.slice(0, 6)}...{token.tokenAddress.slice(-4)}
-                          </span>
-                          <span className="tracker-monitor-token-age">
-                            {getTimeAgo(token.createdAt)}
-                          </span>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Middle: Stats */}
-                    <div className="tracker-monitor-stats-section">
-                      <div className="tracker-monitor-stat-compact">
-                        <span className="stat-label">H</span>
-                        <span className="stat-value">{token.holders}</span>
+                      {/* Bottom: Stats & Buy/Sell */}
+                      <div className="tracker-monitor-card-bottom">
+                        <div className="tracker-monitor-stats-section">
+                          <div className="tracker-monitor-stat-compact">
+                            <span className="stat-label">H</span>
+                            <span className="stat-value">{token.holders}</span>
+                          </div>
+
+                          <div className="tracker-monitor-stat-compact">
+                            <span className="stat-label">MC</span>
+                            <span className="stat-value">
+                              {monitorCurrency === 'USD' ? '$' : '≡'}
+                              {formatCompact(toDisplay(token.marketCap, monitorCurrency, monUsdPrice))}
+                            </span>
+                          </div>
+
+                          <div className="tracker-monitor-stat-compact">
+                            <span className="stat-label">L</span>
+                            <span className="stat-value">
+                              {monitorCurrency === 'USD' ? '$' : '≡'}
+                              {formatValue(token.liquidity)}
+                            </span>
+                          </div>
+
+                          <div className="tracker-monitor-stat-compact">
+                            <span className="stat-label">TX</span>
+                            <span className="stat-value">{token.txCount}</span>
+                          </div>
+                        </div>
+
+                        <div className="tracker-monitor-buy-sell-row">
+                          <div className="tracker-monitor-buy-sell-left">
+                            <div className="tracker-monitor-buy-amount">
+                              <span>{totalBuys}</span>
+                              <img src={monadicon} className="tracker-monitor-amount-icon" alt="MON" />
+                              <span className={isBlurred ? 'blurred' : ''}>{formatValue(totalBought)}</span>
+                            </div>
+
+                            <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
+
+                            <div className="tracker-monitor-sell-amount">
+                              <span>{totalSells}</span>
+                              <img src={monadicon} className="tracker-monitor-amount-icon" alt="MON" />
+                              <span className={isBlurred ? 'blurred' : ''}>{formatValue(totalSold)}</span>
+                            </div>
+                          </div>
+
+                          <div className="tracker-monitor-progress-section">
+                            <span style={{ fontSize: '.7rem', color: 'rgba(255,255,255,0.5)' }}>
+                              Last TX {getTimeAgo(token.lastTransaction || 0)}
+                            </span>
+                            <div className="tracker-monitor-progress-bar-inline">
+                              <div 
+                                className="tracker-monitor-progress-fill-inline"
+                                style={{ width: `${token.bondingCurveProgress}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-
-                      <div className="tracker-monitor-stat-compact">
-                        <span className="stat-label">MC</span>
-                        <span className="stat-value">
-                          {monitorCurrency === 'USD' ? '$' : '≡'}
-                          {formatCompact(toDisplay(token.marketCap, monitorCurrency, monUsdPrice))}
-                        </span>
-                      </div>
-
-                      <div className="tracker-monitor-stat-compact">
-                        <span className="stat-label">L</span>
-                        <span className="stat-value">
-                          {monitorCurrency === 'USD' ? '$' : '≡'}
-                          {formatValue(token.liquidity)}
-                        </span>
-                      </div>
-
-                      <div className="tracker-monitor-stat-compact">
-                        <span className="stat-label">TX</span>
-                        <span className="stat-value">{token.txCount}</span>
-                      </div>
-
-                      <div className="tracker-monitor-stat-compact">
-                        <span className="stat-label">Last TX</span>
-                        <span className="stat-value">
-                          {getTimeAgo(token.lastTransaction || 0)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Buy/Sell Amounts */}
-                    <div className="tracker-monitor-buy-sell-section">
-                      <div className="tracker-monitor-buy-amount">
-                        <span>{totalBuys}</span>
-                        <img src={monadicon} className="tracker-monitor-amount-icon" alt="MON" />
-                        <span className={isBlurred ? 'blurred' : ''}>{formatValue(totalBought)}</span>
-                      </div>
-
-                      <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
-
-                      <div className="tracker-monitor-sell-amount">
-                        <span>{totalSells}</span>
-                        <img src={monadicon} className="tracker-monitor-amount-icon" alt="MON" />
-                        <span className={isBlurred ? 'blurred' : ''}>{formatValue(totalSold)}</span>
-                      </div>
-
-                      <div className="tracker-monitor-progress-bar-inline">
-                        <div 
-                          className="tracker-monitor-progress-fill-inline"
-                          style={{ width: `${token.bondingCurveProgress}%` }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    {/* Right: Quick Buy */}
-                    <div className="tracker-monitor-quickbuy-section">
-                      <button
-                        className="tracker-monitor-quickbuy-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Handle quick buy
-                        }}
-                      >
-                        <svg
-                          className="tracker-monitor-quickbuy-icon"
-                          viewBox="0 0 72 72"
-                          fill="currentColor"
-                        >
-                          <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86 c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833 c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86 c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18 c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
-                        </svg>
-                      </button>
                     </div>
                   </div>
 
                   {isExpanded && token.trades.length > 0 && (
                     <div className="tracker-monitor-trades-expanded">
-                      <div className="tracker-monitor-trades-table-header">
-                        <div className="header-cell">Wallet</div>
-                        <div className="header-cell">Time</div>
-                        <div className="header-cell">Bought</div>
-                        <div className="header-cell">Sold</div>
-                        <div className="header-cell">PNL</div>
-                        <div className="header-cell">Remaining</div>
-                      </div>
-                      {token.trades.map((trade) => (
-                        <div key={trade.id} className="tracker-monitor-trade-row-expanded">
-                          <div className="trade-wallet-col">
-                            <span className="trade-emoji">{trade.emoji}</span>
-                            <span className="trade-wallet-name">{trade.wallet}</span>
-                          </div>
-                          <div className="trade-time-col">
-                            {trade.exitStatus && (
-                              <span className="exit-badge">{trade.exitStatus}</span>
-                            )}
-                            <span className="time-text">{trade.timeInTrade}</span>
-                          </div>
-                          <div className="trade-bought-col">
-                            <span className={`amount ${isBlurred ? 'blurred' : ''}`}>
-                              ≡ {formatValue(trade.bought)}
-                            </span>
-                            <span className="txns-text">{trade.boughtTxns} txns</span>
-                          </div>
-                          <div className="trade-sold-col">
-                            <span className={`amount ${isBlurred ? 'blurred' : ''}`}>
-                              ≡ {formatValue(trade.sold)}
-                            </span>
-                            <span className="txns-text">{trade.soldTxns} txns</span>
-                          </div>
-                          <div className={`trade-pnl-col ${trade.pnl >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}>
-                            ≡ {trade.pnl >= 0 ? '+' : ''}{formatValue(trade.pnl)}
-                          </div>
-                          <div className={`trade-remaining-col ${isBlurred ? 'blurred' : ''}`}>
-                            ≡ {formatValue(trade.remaining)}
-                          </div>
-                        </div>
-                      ))}
+                      {/* trades content remains the same */}
                     </div>
                   )}
                 </div>
               );
+
             })}
           </div>
         )}
@@ -1683,8 +1863,6 @@ const Tracker: React.FC<TrackerProps> = ({
     const isDragging = dragReorderState.draggedIndex === index && dragReorderState.draggedContainer === 'main';
     const isDragOver = dragReorderState.dragOverIndex === index && dragReorderState.dragOverContainer === 'main';
     const containerKey = 'tracker-wallets';
-
-    // Get token count for this wallet
     const getWalletTokenCount = (address: string) => {
       const balances = walletTokenBalances[address];
       if (!balances) return 0;
@@ -1808,15 +1986,37 @@ const Tracker: React.FC<TrackerProps> = ({
           />
         )}
 
+        {/* Empty space column */}
         <div style={{ width: '30px' }}></div>
 
+        {/* Drag handle column */}
         <div className="tracker-wallet-drag-handle">
           <Tooltip content="Drag to reorder wallet">
             <img src={circle} className="tracker-drag-handle-icon" alt="Drag" />
           </Tooltip>
         </div>
 
+        {/* Created column */}
+        <div className="tracker-wallet-created">
+          <span className="tracker-wallet-created-date">
+            {new Date(wallet.createdAt).toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric' 
+            })}
+          </span>
+          <span className="tracker-wallet-created-time">
+            {new Date(wallet.createdAt).toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })}
+          </span>
+        </div>
+
+        {/* Profile column */}
         <div className="tracker-wallet-profile">
+          <div className="tracker-wallet-avatar">
+            <img src={defaultPfp} alt={wallet.name} />
+          </div>
           <div className="tracker-wallet-name-container">
             {editingWallet === wallet.id ? (
               <div className="tracker-wallet-name-edit-container">
@@ -1840,6 +2040,21 @@ const Tracker: React.FC<TrackerProps> = ({
             ) : (
               <div className="tracker-wallet-name-display">
                 <span className="tracker-wallet-name">{wallet.name}</span>
+                {editingWallet !== wallet.id && (
+                  <div className="tracker-wallet-address">
+                    {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                    <img
+                      src={copy}
+                      className="tracker-copy-icon"
+                      alt="Copy"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(wallet.address);
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </div>
+                )}
                 <Edit2
                   size={12}
                   className="tracker-wallet-name-edit-icon"
@@ -1850,27 +2065,13 @@ const Tracker: React.FC<TrackerProps> = ({
                 />
               </div>
             )}
-            {editingWallet !== wallet.id && (
-              <div className="tracker-wallet-address">
-                {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                <img
-                  src={copy}
-                  className="tracker-copy-icon"
-                  alt="Copy"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigator.clipboard.writeText(wallet.address);
-                  }}
-                  style={{ cursor: 'pointer' }}
-                />
-              </div>
-            )}
           </div>
         </div>
 
+        {/* Balance column */}
         <div className="tracker-wallet-balance">
-          <div className={isBlurred ? 'blurred' : ''}>
-            <img src={monadicon} className="tracker-balance-icon" alt="MON" />
+          <img src={monadicon} className="tracker-balance-icon" alt="MON" />
+          <span className={isBlurred ? 'blurred' : ''}>
             {(() => {
               const b = walletTokenBalances[wallet.address];
               const ethToken = chainCfg?.eth;
@@ -1883,9 +2084,10 @@ const Tracker: React.FC<TrackerProps> = ({
               }
               return wallet.balance.toFixed(2);
             })()}
-          </div>
-        </div>  
+          </span>
+        </div>
 
+        {/* Last Active column */}
         <div className="tracker-wallet-last-active">
           <div className="tracker-wallet-token-count">
             <div className="tracker-wallet-token-structure-icons">
@@ -1897,6 +2099,7 @@ const Tracker: React.FC<TrackerProps> = ({
           </div>
         </div>  
 
+        {/* Actions column */}
         <div className="tracker-wallet-actions">
           <Tooltip content="Export Private Key">
             <button 
@@ -1946,9 +2149,6 @@ const Tracker: React.FC<TrackerProps> = ({
             </button>
           </Tooltip>
         </div>
-
-
-        
       </div>
     );
   };
@@ -2116,9 +2316,9 @@ const Tracker: React.FC<TrackerProps> = ({
             >
               {monitorCurrency === 'USD' ? 'USD' : 'MON'}
             </button>
-            <button className="tracker-header-button">P1</button>
+            <button className="tracker-header-button" onClick={() => setpopup(34)}>P1</button>
             <div style={{ display: 'flex' }}>
-              <button className="tracker-header-button flash-button">
+              <button className="tracker-header-button flash-button" onClick={() => setpopup(33)}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
@@ -2269,6 +2469,7 @@ const Tracker: React.FC<TrackerProps> = ({
         <MonitorFiltersPopup
           onClose={() => setShowMonitorFiltersPopup(false)}
           onApply={handleApplyMonitorFilters}
+          onSimpleSort={setSelectedSimpleFilter}
           initialFilters={monitorFilters}
         />
       )}

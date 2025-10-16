@@ -271,3 +271,105 @@
     opacity: 1;
   }
 }
+
+
+@media (max-width: 768px) {
+  .live-trades-settings-container {
+    max-width: 380px;
+    width: 92%;
+  }
+  
+  .live-trades-settings-header {
+    padding: 14px 18px;
+  }
+  
+  .live-trades-settings-content {
+    padding: 18px;
+  }
+  
+  .live-trades-settings-footer {
+    padding: 14px 18px;
+  }
+  
+  .live-trades-settings-title {
+    font-size: 0.95rem;
+  }
+  
+  .live-trades-settings-label {
+    font-size: 0.8rem;
+  }
+  
+  .live-trades-settings-sublabel {
+    font-size: 0.72rem;
+  }
+  
+  .live-trades-settings-volume-value {
+    font-size: 0.72rem;
+    padding: 3px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .live-trades-settings-container {
+    max-width: 340px;
+    width: 95%;
+    max-height: 85vh;
+  }
+  
+  .live-trades-settings-header {
+    padding: 12px 16px;
+  }
+  
+  .live-trades-settings-content {
+    padding: 16px;
+  }
+  
+  .live-trades-settings-footer {
+    padding: 12px 16px;
+  }
+  
+  .live-trades-settings-title {
+    font-size: 0.9rem;
+  }
+  
+  .live-trades-settings-label {
+    font-size: 0.78rem;
+  }
+  
+  .live-trades-settings-sublabel {
+    font-size: 0.7rem;
+  }
+  
+  .live-trades-settings-section {
+    gap: 14px;
+  }
+  
+  .live-trades-settings-volume {
+    gap: 10px;
+  }
+  
+  .live-trades-settings-volume-value {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+  }
+  
+  .live-trades-settings-slider-labels {
+    font-size: 0.65rem;
+  }
+  
+  .live-trades-settings-toggle {
+    width: 44px;
+    height: 24px;
+  }
+  
+  .live-trades-settings-toggle-slider:before {
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+  }
+  
+  .live-trades-settings-toggle input:checked + .live-trades-settings-toggle-slider:before {
+    transform: translateX(20px);
+  }
+}

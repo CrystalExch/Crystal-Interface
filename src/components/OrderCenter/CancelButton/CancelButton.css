@@ -9,7 +9,7 @@
     #7f82a1 100%
   );
   border: none;
-  border-radius: 5px;
+  border-radius: 20px;
   box-shadow:
     inset 0 1px 1px rgb(255 255 255/55%),
     inset 0 -1px 1px rgb(0 0 0/65%),
@@ -53,12 +53,12 @@
 }
 
 .cancel-button-loading-spinner {
-  animation: spin 1s linear infinite;
-  border: 2px solid #0f0f12;
+  animation: spin 0.75s linear infinite;
+  border: 1.5px solid black;
   border-radius: 50%;
-  border-top-color: #0f0f1230;
-  height: 14px;
-  width: 14px;
+  border-top-color: transparent;
+  height: 13px;
+  width: 13px;
 }
 
 @keyframes spin {

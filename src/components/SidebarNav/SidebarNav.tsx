@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import './SidebarNav.css';
 import { useLanguage } from '../../contexts/LanguageContext';
 import candlestick from '../../assets/candlestick.png';
-import portfolio from '../../assets/wallet_icon.png';
+import portfolio from '../../assets/wallet_icon.svg';
 import leaderboard from '../../assets/leaderboard.png';
 import swap from '../../assets/circulararrow.png';
 import twitter from '../../assets/twitter.png';

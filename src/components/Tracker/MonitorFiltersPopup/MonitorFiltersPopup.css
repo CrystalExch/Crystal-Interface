@@ -25,6 +25,7 @@
   flex-direction: column;
 }
 
+
 .monitor-filters-header {
   display: flex;
   justify-content: space-between;
@@ -263,20 +264,94 @@
 
 @media (max-width: 768px) {
   .monitor-filters-container {
+    max-width: 380px;
+    width: 92%;
+  }
+
+  .monitor-filters-header {
+    padding: 14px 18px;
+  }
+
+  .monitor-filters-content {
+    padding: 18px;
+  }
+
+  .monitor-filters-footer {
+    padding: 14px 18px;
+  }
+  
+  .monitor-filters-title {
+    font-size: 0.95rem;
+  }
+  
+  .monitor-filter-label {
+    font-size: 0.72rem;
+  }
+  
+  .monitor-filter-input {
+    font-size: 0.78rem;
+  }
+  
+  .monitor-filter-input-suffix {
+    font-size: 0.68rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .monitor-filters-container {
+    max-width: 340px;
     width: 95%;
     max-height: 85vh;
   }
 
   .monitor-filter-range {
     grid-template-columns: 1fr;
+    gap: 6px;
   }
 
   .monitor-filters-header {
-    padding: 14px 16px;
+    padding: 12px 16px;
+  }
+
+  .monitor-filters-content {
+    padding: 16px;
   }
 
   .monitor-filters-footer {
-    padding: 14px 16px;
+    padding: 12px 16px;
+  }
+  
+  .monitor-filters-title {
+    font-size: 0.9rem;
+  }
+  
+  .monitor-filter-label {
+    font-size: 0.7rem;
+  }
+  
+  .monitor-filter-input {
+    font-size: 0.75rem;
+  }
+  
+  .monitor-filter-input-suffix {
+    font-size: 0.65rem;
+  }
+  
+  .monitor-filter-group {
+    margin-bottom: 14px;
+  }
+  
+  .monitor-filter-input-wrapper {
+    padding: 6px 10px;
+  }
+  
+  .monitor-filters-simple-list {
+    gap: 6px;
+  }
+  
+  .monitor-simple-sort-option {
+    padding: 8px 10px;
+    font-size: 0.75rem;
   }
 }
 

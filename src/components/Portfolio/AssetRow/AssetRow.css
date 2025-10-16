@@ -10,6 +10,11 @@
   min-width: 410px;
   text-align: left;
   user-select: none;
+  padding: 4px 0;
+}
+
+.portfolio-row:hover .action-icons{
+  display: flex;
 }
 
 .portfolio-row:hover {
@@ -18,9 +23,9 @@
 
 .asset-icon {
   border-radius: 360px;
-  height: 25px;
+  height: 28px;
   margin-right: 7px;
-  width: 25px;
+  width: 28px;
 }
 
 .asset-details {
@@ -31,16 +36,17 @@
 .asset-ticker {
   color: #ffffffca;
   display: flex;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   gap: 3px;
   margin-bottom: -4px;
   font-weight: 450;
 }
 
 .asset-name {
-  color: rgb(255 255 255 / 50%);
-  font-size: 0.7rem;
+  color: rgb(143, 144, 150);
+  font-size: 0.75rem;
   line-height: 1.3;
+  font-weight: 400;
 }
 
 .amount-details,
@@ -51,13 +57,13 @@
 
 .usd-asset-amount {
   color: #ffffffca;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 300;
   margin-bottom: -3px;
 }
 
 .asset-amount {
-  color: #ffffff89;
+  color: rgb(143, 144, 150);
   font-size: 0.75rem;
   margin: 0;
   text-wrap: nowrap;
@@ -65,14 +71,16 @@
 
 .port-token-price {
   color: #ffffffca;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 300;
 }
 
 .action-icons {
   display: flex;
-  gap: 5px;
+  gap: 8px;
   margin-left: auto;
+  display: none;
+  margin-right: 10px;
 }
 
 /* shared */
@@ -90,30 +98,10 @@
 }
 
 .asset-price-change.positive {
-  color: #29ec97;
+  color: rgb(67, 254, 154);
 }
 
 .asset-price-change.negative {
-  color: #ec4343;
+  color: rgb(235, 112, 112);
 }
 
-@media (width >= 1720px) {
-  .asset-icon {
-    border-radius: 360px;
-    height: 26px;
-    margin-right: 8px;
-    width: 26px;
-  }
-
-  .asset-ticker {
-    color: white;
-    display: flex;
-    font-size: 0.75rem;
-    margin-bottom: -2px;
-  }
-
-  .asset-name {
-    color: rgb(255 255 255 / 70%);
-    font-size: 0.7rem;
-  }
-}

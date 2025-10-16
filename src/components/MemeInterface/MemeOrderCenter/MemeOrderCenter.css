@@ -1,7 +1,6 @@
 * {
   box-sizing: border-box;
 }
-
 .meme-oc-rectangle {
   background-color: rgb(6, 6, 6);
   border-right: none;
@@ -15,6 +14,7 @@
   pointer-events: auto;
   position: relative;
   width: 100%;
+  max-width: 100%;
 }
 
 @media(max-width: 1020px) {
@@ -27,8 +27,9 @@
 .meme-oc-top-bar {
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   min-width: 0;
-  overflow-x: scroll;
+  overflow-x: auto;
   width: 100%;
+  max-width: 100%;
 }
 
 .meme-oc-inner {
@@ -51,7 +52,7 @@
 .meme-oc-type {
   background: none;
   border: none;
-  color: #ffffff73;
+  color: #e0e8fd73;
   cursor: pointer;
   flex: 1;
   font-size: 0.8rem;
@@ -285,7 +286,6 @@
 .meme-wallet-tags,
 .meme-token-tags {
   display: flex;
-  flex-wrap: wrap;
   gap: 4px;
   width: 100%;
 }
@@ -1387,7 +1387,6 @@
 .meme-oc-dev-stats-value {
   font-size: 13px;
   color: rgb(206, 208, 223);
-  font-weight: 500;
 }
 
 .meme-oc-dev-stats-migration {

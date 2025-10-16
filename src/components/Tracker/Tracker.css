@@ -26,7 +26,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 10px;
+  padding: 10px 20px;
   min-height: 40px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   background: rgb(6, 6, 6);
@@ -122,8 +122,8 @@
   opacity: 0.7;
   filter: brightness(0) saturate(100%) invert(100%);
 }
-.flash-button { padding: 4px 6px !important; }
-.counter-button { padding: 2px 8px !important; min-width: 50px; max-width: 70px; }
+.flash-button { padding: 4px 6px; }
+.counter-button { padding: 2px 8px; min-width: 50px; max-width: 70px; }
 .tracker-counter-wrapper {
   display: flex; align-items: center; justify-content: center; width: 100%;
 }
@@ -142,18 +142,28 @@
 .tracker-add-button:hover { filter: brightness(1.1); }
 
 @media (max-width: 950px) {
-  .tracker-header { justify-content: center; }
+  .tracker-header { 
+    justify-content: center; 
+    padding-bottom: 20px;
+  }
   .tracker-tabs {
     flex: 1 1 100%; width: 100%; justify-content: center; order: -1;
     padding-bottom: 10px; border-bottom: 1px solid rgba(179,184,249,0.1); margin-bottom: 0;
   }
   .tracker-tab { flex: 1; text-align: center; justify-content: center; }
-  .tracker-header-actions { flex: 1 1 100%; width: 100%; justify-content: flex-start; }
+  .tracker-header-actions { 
+    flex: 1 1 100%; 
+    width: 100%; 
+    justify-content: center; 
+  }
 }
 
 /* Content + Empty */
-.tracker-content { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: rgb(6,6,6); }
-.tracker-empty-state { height: 100%; display: flex; align-items: center; justify-content: center; }
+.tracker-content {
+  width: 100% ;
+  max-width: none ;
+}
+.tracker-empty-state { padding-top: 10px; height: 100%; display: flex; align-items: center; justify-content: center; }
 .tracker-empty-content { text-align: center; max-width: 300px; }
 .tracker-empty-content h4 { color: #ebedfe; font-size: 1.1rem; margin: 0 0 8px; letter-spacing: -0.3px; }
 .tracker-empty-content p { color: rgba(255,255,255,.5); font-size: .9rem; margin: 0 0 16px; line-height: 1.4; letter-spacing: -0.3px; }
@@ -174,28 +184,161 @@
 .tracker-wallets-list::-webkit-scrollbar { width: 8px; }
 .tracker-wallets-list::-webkit-scrollbar-track { background: transparent; }
 .tracker-wallets-list::-webkit-scrollbar-thumb { background: rgba(170,174,207,0.2); border-radius: 4px; }
+
+
 .tracker-wallets-header {
-  display: grid; grid-template-columns: 30px 2fr 1.5fr 1fr 1fr; gap: 10px; padding: 6px 20px;
-  border-bottom: 1px solid rgba(179,184,249,0.1); position: sticky; top: 0; background: rgb(6,6,6); z-index: 1;
+  display: grid; 
+  grid-template-columns: 30px 20px 1fr 1fr 1fr 1fr 1fr; 
+  gap: 16px; 
+  padding: 8px 20px;
+  border-bottom: 1px solid rgba(179,184,249,0.1); 
+  position: sticky; 
+  top: 0; 
+  background: rgb(6,6,6); 
+  z-index: 1;
+  position: relative;
+}
+
+.tracker-wallet-item {
+  display: grid; 
+  grid-template-columns: 30px 20px 1fr 1fr 1fr 1fr 1fr; 
+  gap: 16px; 
+  padding: 8px 20px;
+  transition: all .2s ease; 
+  align-items: center; 
+  cursor: pointer; 
+  position: relative;
+  border-bottom: 1px solid rgba(179,184,249,0.05);
+}
+
+.tracker-wallet-created {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tracker-wallet-created-date {
+  display: block;
+  font-size: 0.75rem;
+}
+
+.tracker-wallet-created-time {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.tracker-wallets-header::after {
+  content: "Wallets (" attr(data-wallet-count) ")";
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  pointer-events: none;
 }
 .tracker-wallet-header-cell {
-  color: rgba(255,255,255,.5); font-size: .75rem; letter-spacing: -0.3px; font-weight: 300; display: flex; align-items: center; gap: 4px;
+  color: rgba(255,255,255,.5); font-size: .75rem; letter-spacing: -0.3px; font-weight: 300; 
+  display: flex; align-items: center; gap: 4px; padding: 0;
 }
 .tracker-wallet-header-cell.sortable { cursor: pointer; user-select: none; transition: color .2s; }
 .tracker-wallet-header-cell.sortable:hover { color: rgba(255,255,255,.8); }
 .tracker-wallet-header-cell.active { color: #d8dcff; }
 
 .tracker-wallet-item {
-  display: grid; grid-template-columns: 30px 2fr 1.5fr 1fr 1fr; gap: 16px; padding: 8px 20px;
-  transition: all .2s ease; align-items: center; cursor: pointer; position: relative;
+  display: grid; 
+  grid-template-columns: 30px 20px 1fr 1fr 1fr 1fr 1fr; 
+  gap: 16px; 
+  padding: 8px 20px;
+  transition: all .2s ease; 
+  align-items: center; 
+  cursor: pointer; 
+  position: relative;
   border-bottom: 1px solid rgba(179,184,249,0.05);
 }
-.tracker-wallet-item.handle-visible { grid-template-columns: 30px 20px 2fr 1fr 1fr 2fr; }
+
+.tracker-wallet-item.handle-visible { 
+  grid-template-columns: 30px 20px 1fr 1fr 1fr 1fr 1fr; 
+}
+
 .tracker-wallet-item:hover { background: rgba(179,183,239,0.05); }
 .tracker-wallet-item.selected,
 .tracker-wallet-item.preview-selected { background: rgba(95,99,145,0.15); }
 .tracker-wallet-item.dragging { transform: scale(1.02); box-shadow: 0 8px 16px rgba(0,0,0,0.3); opacity: 0.8; }
 .tracker-wallet-item.multi-drag-ghost { opacity: 0.5; }
+
+.tracker-wallet-avatar {
+  width: 24px; 
+  height: 24px; 
+  border-radius: 50%; 
+  overflow: hidden; 
+  flex-shrink: 0; 
+  border: 1px solid var(--c-border);
+  background: rgba(255, 255, 255, 0.04); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-size: 12px;
+  margin-right: 8px;
+}
+
+.tracker-wallet-avatar img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+}
+
+.tracker-wallet-avatar-placeholder {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.tracker-wallet-name-display {
+  display: flex; 
+  align-items: center; 
+  cursor: pointer; 
+  border-radius: 4px; 
+  transition: background-color .2s;
+  gap: 8px; 
+  padding: 4px 6px; 
+  padding-right: 4px; 
+  padding-left: 0; 
+  flex: 1; 
+  overflow: hidden;
+}
+.tracker-wallet-name { 
+  color: #fff; 
+  font-size: .85rem; 
+  letter-spacing: -0.3px; 
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  flex-shrink: 0;
+}
+.tracker-wallet-address {
+  color: rgba(242,242,245,0.329); 
+  font-size: .7rem; 
+  display: flex; 
+  align-items: center; 
+  gap: 4px; 
+  font-family: inherit;
+  letter-spacing: -0.2px;
+  opacity: 0.8;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.tracker-wallet-name-container { 
+  display: flex; flex-direction: column; gap: 0px; min-width: 0; flex: 1; 
+}
 
 .tracker-wallet-drag-handle { display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: grab; }
 .tracker-drag-handle-icon {
@@ -206,12 +349,7 @@
 .tracker-wallet-item:hover .tracker-drag-handle-icon { opacity: 0.7; }
 
 .tracker-wallet-profile { display: flex; gap: 4px; flex: 1; min-width: 0; }
-.tracker-wallet-name-container { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.tracker-wallet-name-display {
-  display: flex; align-items: center; cursor: pointer; border-radius: 4px; transition: background-color .2s;
-  gap: 6px; padding: 4px 6px; padding-right: 4px; padding-left: 0; flex: 1; overflow: hidden;
-}
-.tracker-wallet-name { color: #fff; font-size: .85rem; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 .tracker-wallet-name-edit-icon {
   color: rgba(255,255,255,0.4); opacity: 0; width: 0; transition: opacity .2s ease, width .2s ease; flex-shrink: 0; overflow: hidden;
 }
@@ -222,17 +360,19 @@
   font-size: .85rem; padding: 2px 4px; width: auto; overflow: hidden; outline: none; letter-spacing: -0.3px;
 }
 .tracker-wallet-name-input:focus { border-color: #d8dcff; }
-.tracker-wallet-address {
-  color: rgba(242,242,245,0.429); font-size: .8rem; display: flex; align-items: center; gap: 4px; font-family: 'Courier New', monospace;
-}
 .tracker-copy-icon { width: 12px; height: 12px; cursor: pointer; transition: opacity .2s; flex-shrink: 0; }
 .tracker-copy-icon:hover { opacity: 0.7; }
 .tracker-wallet-balance {
   display: flex; align-items: center; gap: 3px; color: #c8cae1; font-size: .8rem; letter-spacing: -0.2px;
-  border-radius: 20px; border: 1px solid rgba(206,208,223,0.1); padding: 2px 6px;
 }
 .tracker-balance-icon { width: 14px; height: 14px; flex-shrink: 0; }
-.tracker-wallet-last-active { display: flex; align-items: center; justify-content: center; }
+
+.tracker-wallet-last-active { 
+  display: flex; 
+  align-items: center; 
+  justify-content: flex-start; 
+}
+
 .tracker-wallet-token-count {
   display: flex; flex-shrink: 0; border-radius: 20px; border: 1px solid rgba(179,184,249,0.1); padding: 2px 6px; gap: 5px; align-items: center;
 }
@@ -350,13 +490,40 @@
 .tracker-trade-mc { color: rgba(255,255,255,0.9); font-size: .85rem; font-weight: 500; text-align: right; white-space: nowrap; justify-self: end; }
 
 /* Monitor */
-.tracker-monitor-grid { display: flex; flex-direction: column; gap: 8px; }
+.tracker-monitor-grid { 
+  display: grid !important; 
+  grid-template-columns: repeat(2, 1fr) !important; 
+  gap: 12px !important; 
+  padding: 0 8px !important;
+  width: 100% !important;
+}
+
+.tracker-monitor {
+  width: 100% !important;
+  overflow: visible !important;
+}
+
 .tracker-monitor-card {
-  background: transparent; border: 1px solid rgba(179,184,249,0.1); border-radius: 6px; transition: all .2s ease; cursor: pointer; overflow: hidden;
+  background: transparent; 
+  border: 1px solid rgba(179,184,249,0.1); 
+  border-radius: 6px; 
+  transition: all .2s ease; 
+  cursor: pointer; 
+  overflow: hidden; 
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
 }
 .tracker-monitor-card:hover { background: rgba(255,255,255,0.02); border-color: rgba(179,184,249,0.15); }
-.tracker-monitor-card-header { padding: 12px; display: flex; align-items: center; gap: 12px; position: relative; }
-.tracker-monitor-card-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.tracker-monitor-card-header { 
+  padding: 12px; display: flex; align-items: flex-start; gap: 8px; position: relative; 
+  flex-wrap: wrap;
+}
+.tracker-monitor-card-left { 
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0; 
+  width: 100%; margin-bottom: 8px;
+}
 .tracker-monitor-icon-container {
   position: relative; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   border-radius: 6px; overflow: hidden;
@@ -365,7 +532,9 @@
 }
 .tracker-monitor-icon-spacer { background: rgb(6,6,6); border-radius: 4px; display: flex; align-items: center; justify-content: center; width: 53px; height: 53px; }
 .tracker-monitor-icon-emoji { font-size: 1.8rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
-.tracker-monitor-token-details { flex: 0 0 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tracker-monitor-token-details { 
+  flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; 
+}
 .tracker-monitor-token-name-row { display: flex; align-items: center; gap: 6px; }
 .tracker-monitor-token-name-text {
   color: #fff; font-size: .95rem; font-weight: 500; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;
@@ -379,11 +548,19 @@
   display: flex; align-items: center; border-radius: 3px;
 }
 .tracker-monitor-copy-btn:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.05); }
-.tracker-monitor-stats-section { display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0; padding: 0 12px; }
-.tracker-monitor-stat-compact { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tracker-monitor-stats-section { 
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; 
+  width: 100%; padding: 8px 0;
+}
+.tracker-monitor-stat-compact { 
+  display: flex; flex-direction: column; gap: 2px; min-width: 0; text-align: center;
+}
 .tracker-monitor-stat-compact .stat-label { color: rgba(255,255,255,0.5); font-size: .65rem; letter-spacing: -0.2px; font-weight: 500; text-transform: uppercase; }
 .tracker-monitor-stat-compact .stat-value { color: #fff; font-size: .85rem; font-weight: 600; letter-spacing: -0.3px; white-space: nowrap; }
-.tracker-monitor-buy-sell-section { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.tracker-monitor-buy-sell-section { 
+  display: flex; align-items: center; justify-content: space-between; 
+  width: 100%; gap: 8px; margin-top: 8px;
+}
 .tracker-monitor-buy-amount { display: flex; align-items: center; gap: 4px; color: #00ff88; font-size: .85rem; font-weight: 600; }
 .tracker-monitor-sell-amount { display: flex; align-items: center; gap: 4px; color: #ff6b6b; font-size: .85rem; font-weight: 600; }
 .tracker-monitor-amount-icon { width: 14px; height: 14px; }
@@ -392,7 +569,10 @@
   height: 100%; background: linear-gradient(90deg, #aaaecf 0%, #9a9ec7 50%, #8b8eb8 100%);
   transition: width .5s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 6px rgba(170,174,207,0.4);
 }
-.tracker-monitor-quickbuy-section { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-right: 4px; }
+.tracker-monitor-quickbuy-section { 
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0; 
+  margin-left: auto;
+}
 .tracker-monitor-quickbuy-btn {
   background: #aaaecf; border: none; border-radius: 20px; color: #0f0f12; cursor: pointer; display: flex; align-items: center; gap: 4px;
   font-size: .7rem; font-weight: 700; padding: 6px 12px; transition: all .2s ease; letter-spacing: -0.5px;
@@ -539,3 +719,86 @@
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideDown { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 1000px; } }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.detail-trade-type-badge {
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.detail-trade-type-badge.buy {
+  color: var(--c-buy);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--c-buy) 30%, transparent);
+}
+
+.detail-trade-type-badge.sell {
+  color: var(--c-sell);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--c-sell) 30%, transparent);
+}
+
+@supports not (color-mix(in srgb, black, white)) {
+  .detail-trade-type-badge.buy,
+  .detail-trade-type-badge.sell { 
+    text-shadow: none; 
+  }
+}
+.detail-trades-amount {
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+.detail-trades-amount.amount-buy {
+  color: var(--c-buy);
+}
+
+.detail-trades-amount.amount-sell {
+  color: var(--c-sell);
+}
+
+.tracker-monitor-card-row {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.tracker-monitor-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.tracker-monitor-card-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.tracker-monitor-buy-sell-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tracker-monitor-buy-sell-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tracker-monitor-progress-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 1200px) {
+  .tracker-monitor-grid {
+    grid-template-columns: 1fr;
+  }
+}

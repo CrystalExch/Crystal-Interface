@@ -11,7 +11,6 @@ import CombinedHeaderFilter from './CombinedHeaderFilter/CombinedHeaderFilter';
 import FilterSelect from './FilterSelect/FilterSelect';
 import ToggleSwitch from '../ToggleSwitch/ToggleSwitch';
 
-// Perps specific imports
 import PerpsPositionsContent from './PerpsPositionsView/PerpsPositionContent';
 import PerpsOpenOrdersContent from './PerpsOpenOrdersView/PerpsOpenOrdersContent';
 import PerpsTradeHistoryContent from './PerpsTradeHistoryView/PerpsTradeHistoryContent';
@@ -475,9 +474,9 @@ const OrderCenter: React.FC<OrderCenterProps> = ({
     <div
       ref={containerRef}
       className="oc-rectangle"
-      style={{
+  style={{
         position: 'relative',
-        height: orderCenterHeight === 0 || isOrderCenterVisible == false ? '0px' : `${orderCenterHeight}px`,
+        height: isPortfolio ? '100%' : (orderCenterHeight === 0 || isOrderCenterVisible == false ? '0px' : `${orderCenterHeight}px`),
         transition: (isVertDragging || isResizing) ? 'none' : 'height 0.1s ease',
         overflow: 'visible',
       }}

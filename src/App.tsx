@@ -95,7 +95,7 @@ import { DataPoint } from './components/Chart/utils/chartDataGenerator.ts';
 import tradearrow from './assets/arrow.svg';
 import closebutton from './assets/close_button.png';
 import sendSwitch from './assets/send_arrow.svg';
-import walleticon from './assets/wallet_icon.png';
+import walleticon from './assets/wallet_icon.svg';
 import infoicon from './assets/icon.png';
 import refreshicon from './assets/circulararrow.png';
 import Xicon from './assets/Xicon.svg';

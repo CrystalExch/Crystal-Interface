@@ -9,7 +9,7 @@ import './Perps.css'
 import TooltipLabel from '../TooltipLabel/TooltipLabel';
 import { formatTime } from '../../utils/formatTime.ts'
 import { formatCommas } from '../../utils/numberDisplayFormat';
-import walleticon from '../../assets/wallet_icon.png'
+import walleticon from '../../assets/wallet_icon.svg'
 // @ts-ignore
 import { SignableOrder } from './edgeXsdk/src/starkex-lib'
 

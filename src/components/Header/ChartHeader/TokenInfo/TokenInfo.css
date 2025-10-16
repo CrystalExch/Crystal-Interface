@@ -127,14 +127,22 @@
   padding: 4px;
 }
 
-.token-icons-with-bonding.graduated {
+.meme-interface-token-icon-wrapper.graduated::before {
+  content: '';
+  position: absolute;
+  inset: 0; 
+  border-radius: 3px;
   background: conic-gradient(from 0deg,
       #ffd700 0deg,
       #ffed4e 90deg,
       #ffc107 180deg,
       #ff8f00 270deg,
       #ffd700 360deg);
+  z-index: 3;
+  opacity: 1;
+  pointer-events: none; 
 }
+
 
 .token-icons-inner {
   background: linear-gradient(135deg, #1a1a1c 0%, #2d2d30 100%);
@@ -799,8 +807,8 @@
   position: relative;
   width: 42px;
   height: 43px;
-  border-radius: 5px;
   display: flex;
+  border-radius: 3px;
   align-items: center;
   justify-content: center;
   background: conic-gradient(from 0deg,
@@ -814,7 +822,7 @@
   content: '';
   position: absolute;
   inset: 0; 
-  border-radius: 5px;
+  border-radius: 3px;
   background: conic-gradient(from 0deg,
       #aaaecf 0deg,
       #aaaecf var(--progress-angle),
@@ -830,11 +838,11 @@
 .meme-interface-token-icon {
   width: 37px;
   height: 37px;
-  border-radius: 3px;
+  border-radius: 1px;
   object-fit: cover;
   position: relative;
   z-index: 3;
-  box-shadow: 0px 0px 0 1.5px rgb(6, 6, 6);
+  box-shadow: 0px 0px 0 2px rgb(6, 6, 6);
   background-color: rgb(6,6,6);
 }
 
@@ -1841,7 +1849,13 @@
   z-index: 100;
 }
 
+.meme-interface-token-info-container-meme.graduated .header-launchpad-logo-container {
+  border-color: #ffd700;
+}
 
+.meme-interface-token-info-container-meme.graduated .header-launchpad-logo {
+  filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-rotate(311deg) brightness(117%) contrast(86%);
+}
 
 
 .low-liquidity {

@@ -14,7 +14,7 @@ import { settings } from '../../settings';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 
 import settingsicon from '../../assets/settings.svg';
-import walleticon from '../../assets/wallet_icon.png';
+import walleticon from '../../assets/wallet_icon.svg';
 import historyIcon from '../../assets/notification.svg';
 import monadicon from '../../assets/monadlogo.svg';
 import closebutton from '../../assets/close_button.png';

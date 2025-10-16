@@ -1799,7 +1799,7 @@ body {
 }
 
 .label-container {
-  color: #ffffff7b;
+  color: #e0e3f473;
   flex: 1;
   text-align: left;
 }
@@ -7411,7 +7411,7 @@ input::-webkit-inner-spin-button {
   border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 8px;
   background: transparent;
-  height: 40px;
+  height: 30px;
 }
 
 .edit-order-size-input {

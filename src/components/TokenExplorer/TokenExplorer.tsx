@@ -49,7 +49,7 @@ import stepaudio from '../../assets/step_audio.mp3';
 import telegram from '../../assets/telegram.png';
 import trash from '../../assets/trash.svg';
 import tweet from '../../assets/tweet.png';
-import walleticon from '../../assets/wallet_icon.png';
+import walleticon from '../../assets/wallet_icon.svg';
 import { TwitterHover } from '../TwitterHover/TwitterHover';
 
 import './TokenExplorer.css';
@@ -1081,7 +1081,7 @@ interface TabFilters {
 
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
-  quickBuySize: 'small',
+  quickBuySize: 'large',
   quickBuyStyle: 'color',
   ultraStyle: 'default',
   ultraColor: 'color',
@@ -2724,6 +2724,7 @@ const TokenRow = React.memo<{
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
                       >
+                        <Tooltip content="Website">
                         <svg
                           width="16"
                           height="16"
@@ -2732,6 +2733,7 @@ const TokenRow = React.memo<{
                         >
                           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
                         </svg>
+                        </Tooltip>
                       </a>
                     )}
 
@@ -2743,7 +2745,9 @@ const TokenRow = React.memo<{
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
                       >
+                        <Tooltip content="Telegram">
                         <img src={telegram} />
+                        </Tooltip>
                       </a>
                     )}
 
@@ -2755,7 +2759,9 @@ const TokenRow = React.memo<{
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
                       >
+                        <Tooltip content="Discord">
                         <img src={discord} />
+                        </Tooltip>
                       </a>
                     )}
 
@@ -2766,7 +2772,9 @@ const TokenRow = React.memo<{
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
                     >
+                      <Tooltip content="Search CA Twitter">
                       <Search size={14} />
+                      </Tooltip>
                     </a>
                   </>
                 )}
@@ -2852,9 +2860,19 @@ const TokenRow = React.memo<{
           {token.twitterHandle && !token.twitterHandle.includes('/i/communities/') && (() => {
             const username = extractTwitterUsername(token.twitterHandle);
             return username ? (
-              <div className="explorer-twitter-username">
-                @{username}
-              </div>
+              <a
+                href={`https://x.com/${username}`}
+                target="_blank"
+                rel="noreferrer"
+                className="explorer-twitter-username"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Tooltip content={`@${username} on X`}>
+
+                  @{username}
+                </Tooltip>
+
+              </a>
             ) : null;
           })()}
           <div className="explorer-holdings-section">

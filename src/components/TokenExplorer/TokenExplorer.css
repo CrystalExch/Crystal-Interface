@@ -822,8 +822,9 @@
 }
 
 .explorer-token-image-container.graduated .token-explorer-launchpad-logo {
-  filter: brightness(0) saturate(100%) invert(79%) sepia(97%) saturate(1345%) hue-rotate(359deg) brightness(104%) contrast(101%);
-}
+filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-rotate(311deg) brightness(117%) contrast(86%);}
+
+
 
 .camera-icon {
   height: 30px;
@@ -1216,6 +1217,12 @@
   width: 100%;
 }
 
+@media(max-width:1020px) {
+  .explorer-container {
+    height: calc(100vh - 131px) !important
+  }
+}
+
 .explorer-column:nth-child(1) .explorer-tokens-list {
   border-left: none;
 }
@@ -1285,6 +1292,10 @@
   opacity: 1;
 }
 
+.explorer-quick-buy-btn.style-grey .quickbuy-loading-spinner {
+  border: 1.5px solid #dedfeb;
+  border-top: 1.5px solid transparent;
+}
 
 .quickbuy-loading-spinner {
   animation: spin 1s linear infinite;
@@ -1786,6 +1797,33 @@
     bottom: 10px;
     left: 10px;
     margin-top: 0 !important;
+  }
+}
+
+@media(max-width:1020px) {
+  .explorer-holdings-section{
+    position: relative ;
+    bottom: -25px;
+     left: 0;
+    margin-top: 0;
+
+  }
+    .explorer-token-row {
+    height: 130px;
+  }
+  .explorer-actions-section{
+      margin-top: 15px;
+  }
+}
+@media(max-width:450px) {
+  .explorer-token-row {
+    height: 140px;
+  }
+  .explorer-holdings-section{
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    margin-top: 5px;
   }
 }
 @media(max-width:360px) {
@@ -3240,7 +3278,7 @@
 }
 
 .explorer-quick-buy-btn.style-grey {
-  background: rgba(166, 166, 180, 0.1);
+  background: rgb(34, 34, 38);
   box-shadow: none;
   color: #ffffffcc;
   font-weight: 500;
@@ -4577,6 +4615,12 @@
   letter-spacing: -0.2px;
   padding: 2px 0;
   margin-bottom: -15px;
+    width: max-content;
+
+}
+.explorer-twitter-username:hover {
+  text-decoration: underline ;
+  cursor: pointer;
 }
 
 .explorer-transparent-button {

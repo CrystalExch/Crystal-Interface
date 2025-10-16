@@ -536,6 +536,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
                 <div className="ref-url">{newRefCode}</div>
               </span>
             </div>
+            <div className="modal-actions-custom">
 
             <button
               className="referrals-customize-button"
@@ -555,6 +556,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
                 'Connect Wallet'
               )}
             </button>
+            </div>
           </div>
         </div>
       )}

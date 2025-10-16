@@ -1296,9 +1296,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       return <MemeTokenSkeleton />;
     }
     return (
-      <div
-        className="meme-interface-token-info-container-meme"
-      >
+<div className={`meme-interface-token-info-container-meme ${memeTokenData.status === 'graduated' ? 'graduated' : ''}`}>
+
         <div className="meme-interface-token-header-info">
           <div className="meme-interface-token-header-left">
             <div className="meme-interface-token-icon-container">
@@ -1441,8 +1440,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     document.body,
                   )}
                 <div className="header-launchpad-logo-container">
-                  <Tooltip content="crystal.fun V2">
-
+                  <Tooltip content="crystal.fun">
                     <img src={crystal} className="header-launchpad-logo" />
                   </Tooltip>
 

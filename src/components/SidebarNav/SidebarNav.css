@@ -67,7 +67,6 @@ body.sidebar-hover-overlay::before {
     padding: 0;
     border-right: none;
     border-top: 1px solid rgba(179, 184, 249, 0.1);
-    background-color: rgb(6,6,6);
     z-index: 10;
   }
   .sidebar-nav-inner{

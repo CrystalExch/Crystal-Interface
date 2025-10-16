@@ -1,0 +1,37 @@
+.order-section {
+  display: flex;
+  flex: 1;
+  min-height: 300px;
+}
+
+.portfolio-balance-wrapper {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.portfolio-order-center-wrapper {
+  flex: 2;
+  min-width: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 1020px) {
+  .order-section {
+    flex-direction: column;
+  }
+  
+  .portfolio-balance-wrapper,
+  .portfolio-order-center-wrapper {
+    flex: 1;
+  }
+}
+
+
+.portfolio-balance-content-wrapper{
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(170, 174, 207, 0.1) transparent;
+  height: calc(100% - 68px);
+}
