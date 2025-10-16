@@ -2,51 +2,20 @@
   align-items: center;
   cursor: pointer;
   display: inline-flex;
-  margin-left: 4px;
+  margin-left: 2px;
   margin-top: 1px;
   outline: none;
   user-select: none;
 }
 
 .sort-arrow-icon {
-  display: flex;
-  flex-direction: column;
-  height: 12px;
-  justify-content: space-between;
-  padding: 2px 0;
-  position: relative;
-  width: 12px;
-  color: #ffffff8d;
+  color: #6a6c71;
 }
 
-.sort-arrow-icon::before, .sort-arrow-icon::after {
-  border-left: 3px solid transparent;
-  border-radius: 1px;
-  border-right: 3px solid transparent;
-  content: '';
-  display: block;
-  height: 0;
-  opacity: 0.5;
-  transition: opacity 0.2s ease-in-out;
-  width: 0;
+.sort-arrow-icon.asc {
+  transform: rotate(0deg);
 }
 
-.sort-arrow-icon::before {
-  border-bottom: 3px solid currentcolor;
-}
-
-.sort-arrow-icon::after {
-  border-top: 3px solid currentcolor;
-}
-
-.sort-arrow-icon.desc::before {
-  opacity: 1;
-}
-
-.sort-arrow-icon.desc::after, .sort-arrow-icon.asc::before {
-  opacity: 0.3;
-}
-
-.sort-arrow-icon.asc::after {
-  opacity: 1;
+.sort-arrow-icon.desc {
+  transform: rotate(180deg);
 }
