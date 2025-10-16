@@ -18,7 +18,7 @@
 }
 
 .sidebar-title {
-  color: rgba(255, 255, 255, 0.5);
+  color: #e0e8fd90;
   font-size: 0.8rem;
   font-weight: 300;
   margin: 0;
@@ -132,9 +132,10 @@
 
 .ref-stat-label {
   font-size: .8rem;
-  color: #ffffff79;
+  color: #e0e8fd90;
   letter-spacing: -.3px;
   margin-bottom: -0.25rem;
+  font-weight: 300;
 }
 
 .claimable-section {
@@ -212,14 +213,14 @@
 .claim-button {
   align-items: center;
   border: none;
-  border-radius: 6px;
+  border-radius: 20px;
   color: #0f0f12;
   cursor: pointer;
   display: flex;
   font-size: 0.8rem;
   font-weight: 500;
   gap: 6px;
-  height: 32px;
+  height: 28px;
   justify-content: center;
   transition: all 0.2s;
   width: 100%;
@@ -292,17 +293,26 @@
 
 .create-link-btn,
 .enter-code-btn {
+  background: linear-gradient(
+    135deg,
+    #aaaecf 0,
+    #9a9ec7 25%,
+    #8b8eb8 50%,
+    #7f82ac 75%,
+    #7f82a1 100%
+  );
+  border: none;
+  border-radius: 20px;
   box-shadow:
-    inset 0 1px 1px rgb(255 255 255/35%),
-    inset 0 -1px 1px rgb(0 0 0/55%),
-    0 2px 8px rgb(170 174 207/10%);
-  background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
-  border-radius: 6px;
-  color: #0f0f12;
+    inset 0 1px 1px rgb(255 255 255/25%),
+    inset 0 -1px 1px rgb(0 0 0/35%),
+    0 2px 6px rgb(170 174 207/10%);  
+  border-radius: 20px;
+  color: black;
   font-weight: 500;
   cursor: pointer;
   font-size: 0.8rem;
-  height: 32px;
+  height: 27px;
   margin-top: 8px;
   transition: all 0.2s;
   width: 100%;
@@ -483,9 +493,9 @@
 
 .custom-modal-container {
   background: transparent;
-  background-color: rgb(6,6,6);
-  border: 1.5px solid #1a1a1d7d;
-  border-radius: 8px;
+  background-color: rgb(8, 8, 8);
+  border:1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 6px;
   max-width: 90vw;
   overflow: hidden;
   position: relative;
@@ -503,14 +513,14 @@
 }
 
 .custom-modal-header h2 {
-  color: #ffffffc8;
+  color: #ffffff;
   font-size: 1rem;
   font-weight: 100;
   margin: 0;
 }
 
 .ref-popup-title {
-  color: #ffffffc8;
+  color: #ffffff;
   font-size: 1rem;
   font-weight: 100;
   margin: 0;
@@ -549,13 +559,15 @@
 
 .custom-modal-input {
   background: #00000020;
-  border: 1.5px solid rgba(255, 255, 255, 0.07) !important;
-  border-radius: 6px;
+  border:1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 4px;
   color: #fff;
-  font-size: 0.8rem;
-  height: 34px;
+  font-size: 0.9rem;
+  height: 30px;
   padding: 10px;
   width: 100%;
+  letter-spacing: -0.3px;
+  margin: 4px 0;
 }
 
 .custom-modal-input::-moz-placeholder {
@@ -570,8 +582,6 @@
 
 .custom-modal-input:focus{
   outline: none;
-    border-color:#aaaecf !important;
-  box-shadow:0 0 0 2px rgba(170,174,207,.3) !important;
 }
 
 .custom-modal-input.has-error {
@@ -600,7 +610,7 @@
 }
 
 .ref-url {
-  color: #aaaecf;
+  color: #d8dcff;
 }
 
 .ref-link-structure {
@@ -620,7 +630,7 @@
     #7f82a1 100%
   );
   border: none;
-  border-radius: 6px;
+  border-radius: 20px;
   box-shadow:
     inset 0 1px 1px rgb(255 255 255/25%),
     inset 0 -1px 1px rgb(0 0 0/35%),
@@ -631,13 +641,13 @@
   font-size: 0.85rem;
   font-weight: 500;
   gap: 8px;
-  height: 33px;
+  height: 30px;
   justify-content: center;
   letter-spacing: -0.3px;
   padding: 10px;
   transition: all 0.2s;
-  width: calc(100% - 32px);
   margin:10px 0 15px 15px;
+  width: 100%;
 }
 
 .referrals-customize-button:hover:not(:disabled) {

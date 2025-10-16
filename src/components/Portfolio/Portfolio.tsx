@@ -20,6 +20,7 @@ import { createPortal } from 'react-dom';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import './Portfolio.css'
 import circle from '../../assets/circle_handle.png'
+import PortfolioBalance from './PortfolioBalance';
 
 
 const Tooltip: React.FC<{
@@ -355,9 +356,10 @@ const Portfolio: React.FC<PortfolioProps> = ({
   nonces
 }) => {
   const [activeTab, setActiveTab] = useState<PortfolioTab>('spot');
-  const [activeSection, setActiveSection] = useState<
-    'orders' | 'tradeHistory' | 'orderHistory' | 'balances'
-  >('balances');
+const [activeSection, setActiveSection] = useState<
+  'orders' | 'tradeHistory' | 'orderHistory'
+>('orders');
+
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     column: 'balance',
@@ -2201,6 +2203,7 @@ useEffect(() => {
       default:
         return (
           <div className="portfolio-layout-with-referrals">
+            <div className="port-top-section">
             <ReferralSidebar
               tokendict={tokendict}
               router={router}
@@ -2248,42 +2251,6 @@ useEffect(() => {
                     />
                   </div>
                 )}
-              </div>
-              <div className="order-section">
-                <div className="portfolio-order-center-wrapper">
-                  <OrderCenter
-                    orders={orders}
-                    tradehistory={tradehistory}
-                    canceledorders={canceledorders}
-                    router={router}
-                    address={getActiveAddress()}
-                    trades={trades}
-                    currentMarket={''}
-                    orderCenterHeight={orderCenterHeight}
-                    tokenList={tokenList}
-                    onMarketSelect={onMarketSelect}
-                    setSendTokenIn={setSendTokenIn}
-                    setpopup={setpopup}
-                    sortConfig={sortConfig}
-                    onSort={setSortConfig}
-                    tokenBalances={tokenBalances}
-                    hideMarketFilter={true}
-                    activeSection={activeSection}
-                    setActiveSection={setActiveSection}
-                    filter={filter}
-                    setFilter={setFilter}
-                    onlyThisMarket={onlyThisMarket}
-                    setOnlyThisMarket={setOnlyThisMarket}
-                    isPortfolio={true}
-                    refetch={refetch}
-                    sendUserOperationAsync={sendUserOperationAsync}
-                    setChain={setChain}
-                    isBlurred={isBlurred}
-                    openEditOrderPopup={() => { }}
-                    openEditOrderSizePopup={() => { }}
-                    marketsData={marketsData}
-                  />
-                </div>
               </div>
             </div>
 
@@ -2412,6 +2379,58 @@ useEffect(() => {
                 </div>
               </div>
             </div>
+            </div>
+   <div className="order-section">
+        <div className="portfolio-order-center-wrapper">
+          <OrderCenter
+            orders={orders}
+            tradehistory={tradehistory}
+            canceledorders={canceledorders}
+            router={router}
+            address={getActiveAddress()}
+            trades={trades}
+            currentMarket={''}
+            orderCenterHeight={orderCenterHeight}
+            tokenList={tokenList}
+            onMarketSelect={onMarketSelect}
+            setSendTokenIn={setSendTokenIn}
+            setpopup={setpopup}
+            sortConfig={sortConfig}
+            onSort={setSortConfig}
+            tokenBalances={tokenBalances}
+            hideMarketFilter={true}
+            hideBalances={true}
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+            filter={filter}
+            setFilter={setFilter}
+            onlyThisMarket={onlyThisMarket}
+            setOnlyThisMarket={setOnlyThisMarket}
+            isPortfolio={true}
+            refetch={refetch}
+            sendUserOperationAsync={sendUserOperationAsync}
+            setChain={setChain}
+            isBlurred={isBlurred}
+            openEditOrderPopup={() => {}}
+            openEditOrderSizePopup={() => {}}
+            marketsData={marketsData}
+          />
+        </div>
+                <div className="portfolio-balance-wrapper">
+                  <div className="portfolio-balance-header"><span className="portfolio-balance-header-title">Balances</span></div>
+          <PortfolioBalance
+            tokenList={tokenList}
+            onMarketSelect={onMarketSelect}
+            setSendTokenIn={setSendTokenIn}
+            setpopup={setpopup}
+            sortConfig={sortConfig}
+            onSort={setSortConfig}
+            tokenBalances={tokenBalances}
+            marketsData={marketsData}
+            isBlurred={isBlurred}
+          />
+        </div>
+      </div>
           </div>
         );
 

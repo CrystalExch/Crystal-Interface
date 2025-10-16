@@ -1,50 +1,47 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import './CopyButton.css';
 
 interface CopyButtonProps {
   textToCopy: string;
+  label?: string;
 }
 
-const CopyButton: React.FC<CopyButtonProps> = ({ textToCopy }) => {
-  const [copySuccess, setCopySuccess] = useState(false);
-
+const CopyButton: React.FC<CopyButtonProps> = ({ textToCopy, label = 'Address' }) => {
   const handleCopy = (e: any) => {
-    e.stopPropagation()
+    e.stopPropagation();
     navigator.clipboard.writeText(textToCopy);
-    setCopySuccess(true);
-
-    setTimeout(() => {
-      setCopySuccess(false);
-    }, 3000);
+    
+    const txId = `copy-${Date.now()}`;
+    
+    if (showLoadingPopup) {
+      showLoadingPopup(txId, {
+        title: 'Copied to Clipboard',
+        subtitle: `${label} copied successfully`
+      });
+    }
+    
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: 'Copied to Clipboard',
+        subtitle: `${label} copied successfully`,
+        variant: 'success',
+        confirmed: true,
+        isLoading: false
+      });
+    }
   };
 
   return (
-    <div className="copy-wrapper" onClick={(e) => {handleCopy(e)}}>
+    <div className="copy-wrapper" onClick={handleCopy}>
       <div className="icon-container">
         <svg
-          className={`copy-icon ${copySuccess ? 'hidden' : ''}`}
+          width="14"
+          height="14"
           viewBox="0 0 24 24"
-          fill="none"
-          stroke="#b8b7b7"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          fill="#b8b7b7"
         >
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
-
-        <svg
-          className={`check-icon ${copySuccess ? 'visible' : ''}`}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path d="M8 12l3 3 6-6" />
+          <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
         </svg>
       </div>
     </div>

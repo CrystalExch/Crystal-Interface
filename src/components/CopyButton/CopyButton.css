@@ -1,6 +1,7 @@
 .copy-wrapper {
   cursor: pointer;
   display: inline-flex;
+  margin-bottom: 2px;
 }
 
 .copy-wrapper,.icon-container {
