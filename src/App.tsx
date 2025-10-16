@@ -1447,6 +1447,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [recipient, setrecipient] = useState('');
   const [limitPrice, setlimitPrice] = useState(BigInt(0));
   const [limitChase, setlimitChase] = useState(true);
+  const [isLimitEditing, setLimitIsEditing] = useState(false)
   const [orders, setorders] = useState<any[]>([]);
   const [canceledorders, setcanceledorders] = useState<any[]>([]);
   const [tradehistory, settradehistory] = useState<any[]>([]);
@@ -3496,7 +3497,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       return { readContractData: groupResults, gasEstimate: gasEstimate }
     },
     enabled: !!activeMarket && !!tokendict && !!markets,
-    refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 500 : 5000,
+    refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 300 : 5000,
     gcTime: 0,
   })
 
@@ -10514,7 +10515,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   // limit chase
   useEffect(() => {
-    if (limitChase && mids?.[activeMarketKey]?.[0]) {
+    if (limitChase && !isLimitEditing && mids?.[activeMarketKey]?.[0]) {
       const price = tokenIn === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
       if (price) {
         setlimitPrice(price);
@@ -10625,7 +10626,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
       }
     }
-  }, [limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey, tokenIn, location.pathname.slice(1)]);
+  }, [limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey, tokenIn, location.pathname.slice(1), isLimitEditing]);
 
   // tx popup time
   useEffect(() => {
@@ -20871,6 +20872,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 ? 'exceed-balance'
                 : ''
                 }`}
+              onFocus={() => setLimitIsEditing(true)}
+              onBlur={() => setLimitIsEditing(false)}
               onCompositionStart={() => {
                 setIsComposing(true);
               }}
