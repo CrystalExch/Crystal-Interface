@@ -14,6 +14,8 @@ import settingsicon from '../../assets/settings.svg';
 import circle from '../../assets/circle_handle.png';
 import lightning from '../../assets/flash.png';
 import key from '../../assets/key.svg';
+import defaultPfp from '../../assets/leaderboard_default.png';
+
 
 
 import './Tracker.css';
@@ -1539,12 +1541,8 @@ const Tracker: React.FC<TrackerProps> = ({
 
                   <div className="detail-trades-col detail-trades-account">
                     <div className="detail-trades-avatar">
-                      <div style={{
-                        width: 24, height: 24, display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', borderRadius: '50%', background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid var(--c-border)', fontSize: 12
-                      }}>
-                        {trade.emoji}
+                      <div>
+                        <img src={defaultPfp} alt="Avatar" />
                       </div>
                     </div>
                     <span className="detail-trades-address">
