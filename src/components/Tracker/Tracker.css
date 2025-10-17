@@ -491,11 +491,7 @@
   gap: 12px !important; 
   padding: 0 8px !important;
   width: 100% !important;
-}
-
-.tracker-monitor {
-  width: 100% !important;
-  overflow: visible !important;
+  align-items: start !important; /* Add this to prevent grid stretching */
 }
 
 .tracker-monitor-card {
@@ -509,6 +505,12 @@
   max-width: none !important;
   min-width: 0 !important;
   box-sizing: border-box !important;
+  align-self: start !important; /* Add this */
+}
+
+.tracker-monitor {
+  width: 100% !important;
+  overflow: visible !important;
 }
 .tracker-monitor-card:hover { background: rgba(255,255,255,0.02); border-color: rgba(179,184,249,0.15); }
 .tracker-monitor-card-header { 
@@ -533,13 +535,45 @@
 .tracker-monitor-token-details { 
   flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; 
 }
-.tracker-monitor-token-name-row { display: flex; align-items: center; gap: 6px; }
+.tracker-monitor-token-name-row { 
+  display: flex; 
+  align-items: center; 
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
 .tracker-monitor-token-name-text {
-  color: #fff; font-size: .95rem; font-weight: 500; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;
+  color: #fff; 
+  font-size: .95rem; 
+  font-weight: 500; 
+  letter-spacing: -0.3px; 
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  max-width: 120px;
+  flex-shrink: 1;
 }
 .tracker-monitor-token-subtitle { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.5); font-size: .7rem; }
 .tracker-monitor-token-symbol { font-weight: 600; color: rgba(255,255,255,0.7); }
-.tracker-monitor-token-ca { color: rgba(255,255,255,0.4); font-family: 'Courier New', monospace; font-size: .7rem; }
+
+.tracker-monitor-address-copy-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 1;
+  min-width: 0;
+}
+.tracker-monitor-token-ca {
+  color: rgba(242,242,245,0.329);
+  font-family: inherit;
+  font-size: .65rem;
+  letter-spacing: -0.2px;
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70px;
+}
 .tracker-monitor-token-age { color: #90EE90; font-size: .85rem; font-weight: 500; margin-left: 4px; }
 .tracker-monitor-copy-btn {
   background: transparent; border: none; color: rgba(255,255,255,0.4); cursor: pointer; padding: 2px; transition: all .2s;
@@ -587,11 +621,49 @@
 }
 .tracker-monitor-quickbuy-btn:hover { filter: brightness(1.1); }
 .tracker-monitor-quickbuy-icon { width: 14px; height: 14px; }
+
 .tracker-monitor-action-btn {
-  background: transparent; border: none; color: rgba(255,255,255,0.4); cursor: pointer; padding: 4px; transition: all .2s;
-  font-size: .9rem; display: flex; align-items: center; justify-content: center; border-radius: 4px; flex-shrink: 0;
+  background: transparent; 
+  border: none; 
+  color: rgba(255,255,255,0.4); 
+  cursor: pointer; 
+  padding: 4px; 
+  transition: all .2s;
+  font-size: .9rem; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  border-radius: 4px; 
+  flex-shrink: 0;
 }
-.tracker-monitor-action-btn:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.05); }
+
+.tracker-monitor-copy-icon {
+  width: 10px;
+  height: 10px;
+  cursor: pointer;
+  transition: opacity .2s;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.tracker-monitor-copy-icon:hover {
+  opacity: 1;
+}
+
+.tracker-monitor-action-btn:hover { 
+  color: rgba(255,255,255,0.8); 
+  background: rgba(255,255,255,0.05); 
+}
+
+.tracker-monitor-action-btn.pinned {
+  color: #aaaecf;
+}
+
+.tracker-monitor-action-btn.pinned:hover {
+  color: #aaaecf;
+  background: rgba(255, 215, 0, 0.1);
+}
+
 
 .tracker-monitor-trades-expanded {
   padding: 16px; 
@@ -944,7 +1016,17 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 1999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
+
+.tracker-emoji-picker-positioned {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2000;
+  background: rgb(8, 8, 8);
+  border: 1px solid rgba(179, 184, 249, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
