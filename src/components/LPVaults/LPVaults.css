@@ -3416,9 +3416,9 @@
 
 .vault-strategy-type {
   background: 0 0;
-  color: #ffffff73;
+  color: #e0e8fd73;
   cursor: pointer;
-  font-size: .75rem;
+  font-size: .85rem;
   font-weight: 300;
   padding: 8px 20px;
   text-align: center;
@@ -3478,7 +3478,8 @@
 .vault-dh-col-header,
 .vault-oo-col-header,
 .vault-data-col-header {
-  text-align: left
+  text-align: left;
+  color: #e0e8fd73;
 }
 
 .vault-holdings-row,
@@ -3509,7 +3510,6 @@
 
 .vault-dh{
   display: flex;
-  align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
@@ -3518,8 +3518,7 @@
 }
 
 .vault-depositors{
-    display: flex;
-  align-items: center;
+  display: flex;
   justify-content: center;
   width: 100%;
   height: 100%;
@@ -4392,6 +4391,7 @@
   height: 100%;
   color: #dde0f379;
   font-size: 0.85rem;
+  font-weight: 300;
 }
 
 .create-vault-progress-container {
@@ -4575,4 +4575,12 @@
   100% {
     transform: scale(1);
   }
+}
+
+
+
+.vault-dh-table,
+.vault-depositors-table,
+.vaults-dh-table{
+  width: 100%;
 }

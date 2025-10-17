@@ -495,34 +495,34 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     await sendUserOperationAsync({ uo: deployUo });
   };
 
-  const updateVaultStrategyIndicatorPosition = useCallback(
-    (activeTab: string) => {
-      if (!vaultStrategyIndicatorRef.current || !vaultStrategyTabsRef.current) {
-        return;
-      }
+const updateVaultStrategyIndicatorPosition = useCallback(
+  (activeTab: string) => {
+    if (!vaultStrategyIndicatorRef.current || !vaultStrategyTabsRef.current) {
+      return;
+    }
 
-      const availableTabs = [
-        'Balances',
-        'Open Orders',
-        'Depositors',
-        'Deposit History',
-        'Withdraw History'
-      ];
-      const activeTabIndex = availableTabs.findIndex(
-        (tab) => tab === activeTab,
-      );
+    const availableTabs = [
+      'Balances',
+      'Open Orders',
+      'Depositors',
+      'Deposit History',
+      'Withdraw History'
+    ];
+    const activeTabIndex = availableTabs.findIndex(
+      (tab) => tab === activeTab,
+    );
 
-      if (activeTabIndex !== -1) {
-        const activeTabElement = vaultStrategyTabsRef.current[activeTabIndex];
-        if (activeTabElement && activeTabElement.parentElement) {
-          const indicator = vaultStrategyIndicatorRef.current;
-          indicator.style.width = `${activeTabElement.offsetWidth}px`;
-          indicator.style.left = `${activeTabElement.offsetLeft}px`;
-        }
+    if (activeTabIndex !== -1) {
+      const activeTabElement = vaultStrategyTabsRef.current[activeTabIndex];
+      if (activeTabElement) {  
+        const indicator = vaultStrategyIndicatorRef.current;
+        indicator.style.width = `${activeTabElement.offsetWidth}px`;
+        indicator.style.left = `${activeTabElement.offsetLeft}px`;
       }
-    },
-    [selectedVault?.type],
-  );
+    }
+  },
+  [],  
+);
 
   useEffect(() => {
     if (selectedVaultStrategy && selectedVault) {

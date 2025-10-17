@@ -16536,17 +16536,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               </div>
 
               <div className="modal-footer">
-                {depositVaultError && depositVaultStep === 'idle' && (
-                  <div className="create-vault-error">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-                      <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
-                      <path d="M8 4v5M8 11v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                    <span>{depositVaultError}</span>
-                  </div>
-                )}
-
-                <button
+               <button
                   className={`vault-confirm-button ${(depositVaultStep === 'idle' && (!isVaultDepositEnabled() || isVaultDepositSigning)) ? 'disabled' : ''
                     } ${depositVaultStep === 'success' ? 'success' : ''}`}
                   disabled={depositVaultStep === 'idle' && (!isVaultDepositEnabled() || isVaultDepositSigning)}
@@ -16864,16 +16854,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               </div>
 
               <div className="modal-footer">
-                {withdrawVaultError && withdrawVaultStep === 'idle' && (
-                  <div className="create-vault-error">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-                      <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
-                      <path d="M8 4v5M8 11v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                    <span>{withdrawVaultError}</span>
-                  </div>
-                )}
-
                 <button
                   className={`vault-confirm-button withdraw ${(withdrawVaultStep === 'idle' && (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
                     withdrawExceedsBalance || !withdrawPreview || isVaultWithdrawSigning)) ? 'disabled' : ''
@@ -16947,7 +16927,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     <div className="button-content">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                      </svg>c
                       Withdrawal Complete!
                     </div>
                   ) : withdrawVaultStep !== 'idle' ? (
@@ -18207,16 +18187,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               </div>
 
               <div className="modal-footer">
-                {createVaultError && createVaultStep === 'idle' && (
-                  <div className="create-vault-error">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-                      <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
-                      <path d="M8 4v5M8 11v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                    <span>{createVaultError}</span>
-                  </div>
-                )}
-
                 <button
                   className={`save-button ${(!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase) && createVaultStep === 'idle' ? 'disabled' : ''
                     } ${createVaultStep === 'success' ? 'success' : ''}`}
