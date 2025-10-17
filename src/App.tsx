@@ -9802,9 +9802,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               makerRebate
               volume
               latestPrice
-              miniPoints(first: 24, orderBy: time, orderDirection: desc) {
-                price
-                time
+              series(where:{intervalSeconds:3600}) {
+                intervalSeconds
+                klines(orderBy:time, orderDirection: desc) {
+                  time
+                  high
+                  low
+                  close
+                  usdVolume
+                }
               }
               trades(first: 100, orderBy: timestamp, orderDirection: desc) {
                 id
@@ -9927,6 +9933,28 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         });
 
         const rows: any[] = [];
+        const buildMiniPointsDesc = (mkt: any): Array<{ time: number; price: number; usdVolume?: string }> => {
+          const oneHourSeries = Array.isArray(mkt.series)
+            ? mkt.series.find((s: any) => Number(s?.intervalSeconds) === 3600)
+            : null;
+
+          const klinesDesc = Array.isArray(oneHourSeries?.klines) ? oneHourSeries.klines : [];
+
+          const nowSec = Math.floor(Date.now() / 1000);
+          const endBucket = Math.floor(nowSec / 3600) * 3600;
+          const startCutoff = endBucket - 24 * 3600;
+
+          return klinesDesc
+            .filter((k: any) => {
+              const t = Number(k.time ?? 0);
+              return t >= startCutoff && t <= endBucket;
+            })
+            .map((k: any) => ({
+              time: Number(k.time ?? 0),
+              price: Number(k.close ?? 0),
+              usdVolume: String(k.usdVolume ?? "0"),
+            }));
+        };
         for (const m of list) {
           const mk = addrToKey[String(m.id ?? '').toLowerCase()];
           if (!mk) continue;
@@ -9940,7 +9968,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           const lastRaw = Number(m.latestPrice ?? 0);
           const last = pf ? lastRaw / pf : 0;
 
-          const miniDesc = Array.isArray(m.miniPoints) ? m.miniPoints : [];
+          const miniDesc = buildMiniPointsDesc(m);
           const miniAsc = [...miniDesc].reverse().map((p: any) => ({
             time: Number(p.time) * 1000,
             value: pf ? Number(p.price) / pf : 0,

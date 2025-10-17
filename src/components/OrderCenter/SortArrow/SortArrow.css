@@ -2,8 +2,8 @@
   align-items: center;
   cursor: pointer;
   display: inline-flex;
-  margin-left: 2px;
-  margin-top: 1px;
+  margin-left: 1px;
+  margin-top: 2px;
   outline: none;
   user-select: none;
 }

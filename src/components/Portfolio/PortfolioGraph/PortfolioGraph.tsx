@@ -389,12 +389,12 @@ const EmptyGraph: React.FC<{
           <Line
             type="monotone"
             dataKey="value"
-            stroke="rgb(67, 254, 154)"
+            stroke="#d8dcff"
             strokeWidth={2}
             dot={{ r: 0 }}
             activeDot={{
               r: 4,
-              stroke: 'rgb(67, 254, 154)',
+              stroke: '#d8dcff',
               strokeWidth: 2,
               fill: '#16171c',
             }}
