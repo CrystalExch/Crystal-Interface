@@ -848,6 +848,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const sendUserOperationAsync = useCallback(
     async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n, mainWallet: boolean = false, pk: string = '', nonce: number = 0) => {
       let hash: `0x${string}`;
+      let err: any;
       if (!!pk) {
         const tx = {
           to: params.uo.target,
@@ -885,6 +886,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
       else if (validOneCT && !mainWallet) {
         const wallet = nonces.current.get(onectclient.address);
+        nonce = wallet.nonce
         const tx = {
           to: params.uo.target,
           value: params.uo.value,
@@ -892,9 +894,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           gasLimit: gasLimit > 0n ? gasLimit : 500000n,
           maxFeePerGas: 100000000000n + (prioFee > 0n ? prioFee : 13000000000n),
           maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
-          nonce: wallet.nonce,
+          nonce: nonce,
           chainId: activechain
         }
+        wallet?.pendingtxs.push([params, gasLimit, prioFee, mainWallet, pk, nonce]);
         if (wallet) wallet.nonce += 1;
         const signedTx = await onectclient.signTransaction(tx);
         hash = keccak256(signedTx) as `0x${string}`;
@@ -923,18 +926,31 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       else {
         hash = (await rawSendUserOperationAsync(params))?.hash
       }
-      await Promise.race([
-        new Promise<void>((resolve) => {
-          txReceiptResolvers.current.set(hash, resolve);
-        }),
-        waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
-          txReceiptResolvers.current.delete(hash);
-          hash = r.transactionHash;
-        }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('transaction timeout')), 10000)
-        ),
-      ]);
+      try {
+        await Promise.race([
+          new Promise<void>((resolve) => {
+            txReceiptResolvers.current.set(hash, resolve);
+          }),
+          waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
+            txReceiptResolvers.current.delete(hash);
+            hash = r.transactionHash;
+          }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('transaction timeout')), 10000)
+          ),
+        ]);
+      }
+      catch (e) {
+        err = e
+      } finally {
+        if (!pk && validOneCT && !mainWallet) {
+          const wallet = nonces.current.get(onectclient.address);
+          wallet.pendingtxs = wallet.pendingtxs.filter(
+            (p: any) => p[5] != nonce,
+          );
+        }
+      }
+      if (err) throw err
       return hash
     },
     [validOneCT]
@@ -8009,12 +8025,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           amountIn > tokenBalances[tokenIn] ||
           (
             ((scaleStart >= lowestAsk &&
-              tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
+              tokenIn == activeMarket.quoteAddress && (addliquidityonly)) ||
               (scaleStart <= highestBid &&
-                tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth)) || (scaleEnd >= lowestAsk &&
-                  tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
+                tokenIn == activeMarket.baseAddress && (addliquidityonly)) || (scaleEnd >= lowestAsk &&
+                  tokenIn == activeMarket.quoteAddress && (addliquidityonly)) ||
               (scaleEnd <= highestBid &&
-                tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth))))) &&
+                tokenIn == activeMarket.baseAddress && (addliquidityonly))))) &&
         connected &&
         userchain == activechain,
       );
@@ -8026,15 +8042,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               ? 1 : scaleEnd == BigInt(0) ? 2
                 : amountIn <= tokenBalances[tokenIn]
                   ? ((scaleStart >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
+                    tokenIn == activeMarket.quoteAddress && (addliquidityonly)) ||
                     (scaleStart <= highestBid &&
-                      tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth)))
+                      tokenIn == activeMarket.baseAddress && (addliquidityonly)))
                     ? tokenIn == activeMarket.quoteAddress
                       ? 3
                       : 4 : ((scaleEnd >= lowestAsk &&
-                        tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
+                        tokenIn == activeMarket.quoteAddress && (addliquidityonly)) ||
                         (scaleEnd <= highestBid &&
-                          tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth)))
+                          tokenIn == activeMarket.baseAddress && (addliquidityonly)))
                       ? tokenIn == activeMarket.quoteAddress
                         ? 5
                         : 6
@@ -23393,9 +23409,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               ) &&
               amountIn != BigInt(0) &&
               ((scaleStart >= lowestAsk &&
-                tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
+                tokenIn == activeMarket.quoteAddress && (addliquidityonly)) ||
                 (scaleStart <= highestBid &&
-                  tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth))) &&
+                  tokenIn == activeMarket.baseAddress && (addliquidityonly))) &&
               !(tokenIn == activeMarket.quoteAddress
                 ? amountIn < activeMarket.minSize
                 : (amountIn * scaleStart) / activeMarket.scaleFactor <
@@ -23416,9 +23432,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   ) &&
                   amountIn != BigInt(0) &&
                   ((scaleStart >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
+                    tokenIn == activeMarket.quoteAddress && (addliquidityonly)) ||
                     (scaleStart <= highestBid &&
-                      tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth))) &&
+                      tokenIn == activeMarket.baseAddress && (addliquidityonly))) &&
                   !(tokenIn == activeMarket.quoteAddress
                     ? amountIn < activeMarket.minSize
                     : (amountIn * scaleStart) / activeMarket.scaleFactor <
@@ -23482,9 +23498,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               ) &&
               amountIn != BigInt(0) &&
               ((scaleEnd >= lowestAsk &&
-                tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
+                tokenIn == activeMarket.quoteAddress && (addliquidityonly)) ||
                 (scaleEnd <= highestBid &&
-                  tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth))) &&
+                  tokenIn == activeMarket.baseAddress && (addliquidityonly))) &&
               !(tokenIn == activeMarket.quoteAddress
                 ? amountIn < activeMarket.minSize
                 : (amountIn * scaleEnd) / activeMarket.scaleFactor <
@@ -23505,9 +23521,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   ) &&
                   amountIn != BigInt(0) &&
                   ((scaleEnd >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
+                    tokenIn == activeMarket.quoteAddress && (addliquidityonly)) ||
                     (scaleEnd <= highestBid &&
-                      tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth))) &&
+                      tokenIn == activeMarket.baseAddress && (addliquidityonly))) &&
                   !(tokenIn == activeMarket.quoteAddress
                     ? amountIn < activeMarket.minSize
                     : (amountIn * scaleEnd) / activeMarket.scaleFactor <
@@ -24134,7 +24150,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 const k = activeMarket?.address
                 if (!orderbatch[k]) orderbatch[k] = []
                 orderbatch[k].push({
-                  isRequireSuccess: true,
+                  isRequireSuccess: false,
                   action: tokenIn == activeMarket.quoteAddress ? ((addliquidityonly) ? 2 : 4) : ((addliquidityonly) ? 3 : 5),
                   param1: order[0], // price
                   param2: tokenIn == activeMarket.quoteAddress ? order[2] : order[1], // size/id
