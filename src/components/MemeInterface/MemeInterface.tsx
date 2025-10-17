@@ -2556,10 +2556,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 trackedAddresses && trackedAddresses.length
                   ? trackedAddresses
                   : [
-                      String(address || '').toLowerCase(),
-                      String(token?.dev || '').toLowerCase(),
-                      ...subWallets.map(w => String(w.address || '').toLowerCase())
-                    ]
+                    String(address || '').toLowerCase(),
+                    String(token?.dev || '').toLowerCase(),
+                    ...subWallets.map(w => String(w.address || '').toLowerCase())
+                  ]
               }
               selectedIntervalRef={selectedIntervalRef}
             />
@@ -2980,18 +2980,28 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                               </div>
 
                               <div className="meme-wallet-balance">
-                                <Tooltip content="MON Balance">
-                                  <div
-                                    className={`meme-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}
-                                  >
-                                    <img
-                                      src={monadicon}
-                                      className="meme-wallet-mon-icon"
-                                      alt="MON"
-                                    />
-                                    {formatNumberWithCommas(balance, 2)}
-                                  </div>
-                                </Tooltip>
+                                {(() => {
+                                  const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                                  const balanceWei = walletTokenBalances[wallet.address]?.[
+                                    settings.chainConfig[activechain]?.eth
+                                  ] || 0n;
+                                  const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+
+                                  return (
+                                    <Tooltip content={hasInsufficientGas ? "Not enough for gas" : "MON Balance"}>
+                                      <div
+                                        className={`meme-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                      >
+                                        <img
+                                          src={monadicon}
+                                          className="meme-wallet-mon-icon"
+                                          alt="MON"
+                                        />
+                                        {formatNumberWithCommas(balance, 2)}
+                                      </div>
+                                    </Tooltip>
+                                  );
+                                })()}
                               </div>
 
                               <div className="meme-wallet-tokens">
@@ -3106,18 +3116,28 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                               </div>
 
                               <div className="meme-wallet-balance">
-                                <Tooltip content="MON Balance">
-                                  <div
-                                    className={`meme-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}
-                                  >
-                                    <img
-                                      src={monadicon}
-                                      className="meme-wallet-mon-icon"
-                                      alt="MON"
-                                    />
-                                    {formatNumberWithCommas(balance, 2)}
-                                  </div>
-                                </Tooltip>
+                                {(() => {
+                                  const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                                  const balanceWei = walletTokenBalances[wallet.address]?.[
+                                    settings.chainConfig[activechain]?.eth
+                                  ] || 0n;
+                                  const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+
+                                  return (
+                                    <Tooltip content={hasInsufficientGas ? "Not enough for gas" : "MON Balance"}>
+                                      <div
+                                        className={`meme-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                      >
+                                        <img
+                                          src={monadicon}
+                                          className="meme-wallet-mon-icon"
+                                          alt="MON"
+                                        />
+                                        {formatNumberWithCommas(balance, 2)}
+                                      </div>
+                                    </Tooltip>
+                                  );
+                                })()}
                               </div>
 
                               <div className="meme-wallet-tokens">

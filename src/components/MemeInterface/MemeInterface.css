@@ -3142,3 +3142,21 @@
   height: 13px;
   width: 13px;
 }
+
+.meme-wallet-balance-amount.insufficient-gas {
+  border-color: rgba(235, 112, 112, 0.3);
+  color: rgb(235, 112, 112);
+}
+
+.meme-wallet-balance-amount.insufficient-gas .meme-wallet-mon-icon {
+  opacity: 0.8;
+}
+
+.meme-mobile-wallet-balance-amount.insufficient-gas {
+  border-color: rgba(235, 112, 112, 0.3);
+  color: rgb(235, 112, 112);
+}
+
+.meme-mobile-wallet-balance-amount.insufficient-gas .meme-mobile-wallet-mon-icon {
+  opacity: 0.8;
+}

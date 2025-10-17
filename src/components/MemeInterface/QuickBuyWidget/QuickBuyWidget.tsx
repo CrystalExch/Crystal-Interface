@@ -2302,7 +2302,7 @@ const handleSellTrade = async (value: string) => {
     const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
     
     return (
-      <Tooltip content={hasInsufficientGas ? "Not enough for gas" : "MON Balance"}>
+      <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
         <div
           className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
         >
@@ -2463,7 +2463,7 @@ const handleSellTrade = async (value: string) => {
     const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
     
     return (
-      <Tooltip content={hasInsufficientGas ? "Not enough for gas" : "MON Balance"}>
+      <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
         <div
           className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
         >
