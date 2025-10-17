@@ -10,7 +10,7 @@
   min-width: 410px;
   text-align: left;
   user-select: none;
-  padding: 4px 0;
+  padding: 2px 0;
 }
 
 .portfolio-row:hover .action-icons{
@@ -67,6 +67,7 @@
   font-size: 0.75rem;
   margin: 0;
   text-wrap: nowrap;
+  font-weight: 400;
 }
 
 .port-token-price {

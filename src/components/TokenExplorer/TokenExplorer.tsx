@@ -31,6 +31,7 @@ import {
   showLoadingPopup,
   updatePopup,
 } from '../MemeTransactionPopup/MemeTransactionPopupManager';
+import { settings } from '../../settings';
 
 import avatar from '../../assets/avatar.png';
 import camera from '../../assets/camera.svg';
@@ -2725,14 +2726,14 @@ const TokenRow = React.memo<{
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Tooltip content="Website">
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                        >
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                        </svg>
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                          >
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                          </svg>
                         </Tooltip>
                       </a>
                     )}
@@ -2746,7 +2747,7 @@ const TokenRow = React.memo<{
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Tooltip content="Telegram">
-                        <img src={telegram} />
+                          <img src={telegram} />
                         </Tooltip>
                       </a>
                     )}
@@ -2760,7 +2761,7 @@ const TokenRow = React.memo<{
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Tooltip content="Discord">
-                        <img src={discord} />
+                          <img src={discord} />
                         </Tooltip>
                       </a>
                     )}
@@ -2773,7 +2774,7 @@ const TokenRow = React.memo<{
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Tooltip content="Search CA Twitter">
-                      <Search size={14} />
+                        <Search size={14} />
                       </Tooltip>
                     </a>
                   </>
@@ -4507,19 +4508,30 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                                 {wallet.address.slice(-4)}
                               </div>
                             </div>
-                            <Tooltip content="MON Balance">
                               <div className="wallet-dropdown-balance">
-                                <div
-                                  className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}
-                                >
-                                  <img
-                                    src={monadicon}
-                                    className="wallet-dropdown-mon-icon"
-                                  />
-                                  {formatNumberWithCommas(balance, 2)}
-                                </div>
+                                {(() => {
+                                  const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                                  const balanceWei = walletTokenBalances[wallet.address]?.[
+                                    settings.chainConfig[activechain]?.eth
+                                  ] || 0n;
+                                  const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+
+                                  return (
+                                    <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                      <div
+                                        className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                      >
+                                        <img
+                                          src={monadicon}
+                                          className="wallet-dropdown-mon-icon"
+                                          alt="MON"
+                                        />
+                                        {formatNumberWithCommas(balance, 2)}
+                                      </div>
+                                    </Tooltip>
+                                  );
+                                })()}
                               </div>
-                            </Tooltip>
                             <Tooltip content="Tokens">
                               <div className="wallet-drag-tokens">
                                 <div className="wallet-token-count">
