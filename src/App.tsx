@@ -676,7 +676,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const saved = localStorage.getItem('crystal_active_wallet_private_key');
     return saved ? saved : '';
   });
-  
+
   const validOneCT = !!oneCTSigner
   const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
     address: '0x0000000000000000000000000000000000000000' as `0x${string}`,
@@ -764,7 +764,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 value: amountInWei,
                 data: '0x'
               }
-            }, 100000n, 0n, false, '0xb52e8ab1cddc2645f8df7e94578ee0edfce192371feb2633f47e7039f90c67cb', await getTransactionCount(config, {address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any),}))
+            }, 100000n, 0n, false, '0xb52e8ab1cddc2645f8df7e94578ee0edfce192371feb2633f47e7039f90c67cb', await getTransactionCount(config, { address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any), }))
           })()
         }
         if (popup == 4 && !oneCTSigner) {
@@ -781,7 +781,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       setCurrentWalletIcon(walleticon);
     }
   }, [connected, alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.name]);
-
+const [createVaultStep, setCreateVaultStep] = useState<'idle' | 'validating' | 'approve-quote' | 'approve-base' | 'creating' | 'success'>('idle');
+  const [createVaultError, setCreateVaultError] = useState<string>('');
   const [createVaultForm, setCreateVaultForm] = useState({
     name: '',
     description: '',
@@ -823,7 +824,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       };
 
       const updatedWallets = [...subWallets, newWallet];
-      setSelectedWallets(p=>!p.size?new Set(p).add(walletAddress):p);
+      setSelectedWallets(p => !p.size ? new Set(p).add(walletAddress) : p);
       lastNonceGroupFetch.current = 0;
       setSubWallets(updatedWallets);
       localStorage.setItem('crystal_sub_wallets', JSON.stringify(updatedWallets));
@@ -1871,7 +1872,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       tradesloading ||
       addressinfoloading);
 
-  const monUsdPrice = (Number(tradesByMarket[ethticker+'USDC']?.[0]?.[3]) / Number(markets[ethticker+'USDC']?.priceFactor) || 1)
+  const monUsdPrice = (Number(tradesByMarket[ethticker + 'USDC']?.[0]?.[3]) / Number(markets[ethticker + 'USDC']?.priceFactor) || 1)
 
   const [walletTokenBalances, setWalletTokenBalances] = useState({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
@@ -2743,7 +2744,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             if (me?.shares != null) {
               userShares = typeof me.shares === 'bigint' ? me.shares : BigInt(String(me.shares));
             }
-          } catch {}
+          } catch { }
 
           if (!cancelled) {
             if (
@@ -2761,23 +2762,23 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           if (!cancelled) setselectedVault(null);
         }
 
-    const wssUrl = settings.chainConfig[activechain]?.wssurl;
-    const factoryAddress = settings.chainConfig[activechain]?.crystalVaults;
-    if (!wssUrl || !factoryAddress) return;
+        const wssUrl = settings.chainConfig[activechain]?.wssurl;
+        const factoryAddress = settings.chainConfig[activechain]?.crystalVaults;
+        if (!wssUrl || !factoryAddress) return;
 
-    const DEPOSIT_TOPIC = '0x4e2ca0515ed1aef1395f66b5303bb5d6f1bf9d61a353fa53f73f8ac9973fa9f6';
-    const WITHDRAW_TOPIC = '0xebff2602b3f468259e1e99f613fed6691f3a6526effe6ef3e768ba7ae7a36c4f';
-    const LOCK_TOPIC = '0x44427e3003a08f22cf803894075ac0297524e09e521fc1c15bc91741ce3dc159';
-    const UNLOCK_TOPIC = '0x7e6adfec7e3f286831a0200a754127c171a2da564078722cb97704741bbdb0ea';
-    const CLOSE_TOPIC = '0x13607bf9d2dd20e1f3a7daf47ab12856f8aad65e6ae7e2c75ace3d0c424a40e8';
+        const DEPOSIT_TOPIC = '0x4e2ca0515ed1aef1395f66b5303bb5d6f1bf9d61a353fa53f73f8ac9973fa9f6';
+        const WITHDRAW_TOPIC = '0xebff2602b3f468259e1e99f613fed6691f3a6526effe6ef3e768ba7ae7a36c4f';
+        const LOCK_TOPIC = '0x44427e3003a08f22cf803894075ac0297524e09e521fc1c15bc91741ce3dc159';
+        const UNLOCK_TOPIC = '0x7e6adfec7e3f286831a0200a754127c171a2da564078722cb97704741bbdb0ea';
+        const CLOSE_TOPIC = '0x13607bf9d2dd20e1f3a7daf47ab12856f8aad65e6ae7e2c75ace3d0c424a40e8';
 
         const vaultAddrLc = selectedVaultStrategy.toLowerCase();
         const quoteLc = (baseVault.quoteAsset || '').toLowerCase();
-        const baseLc = (baseVault.baseAsset  || '').toLowerCase();
+        const baseLc = (baseVault.baseAsset || '').toLowerCase();
         const factoryLc = (factoryAddress || '').toLowerCase();
         const vaultTopicLc = '0x' + vaultAddrLc.slice(2).padStart(64, '0');
 
-    const ws = new WebSocket(wssUrl);
+        const ws = new WebSocket(wssUrl);
 
         const sendSub = (params: any) => {
           try {
@@ -2787,186 +2788,186 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               method: 'eth_subscribe',
               params
             }));
-          } catch {}
+          } catch { }
         };
 
-    ws.onopen = () => {
-      sendSub(['logs', {
-        address: factoryLc,
-        topics: [[DEPOSIT_TOPIC, WITHDRAW_TOPIC, LOCK_TOPIC, UNLOCK_TOPIC, CLOSE_TOPIC], vaultTopicLc],
-      }]);
-    };
+        ws.onopen = () => {
+          sendSub(['logs', {
+            address: factoryLc,
+            topics: [[DEPOSIT_TOPIC, WITHDRAW_TOPIC, LOCK_TOPIC, UNLOCK_TOPIC, CLOSE_TOPIC], vaultTopicLc],
+          }]);
+        };
 
-    ws.onmessage = async ({ data }) => {
-      let msg: any; try { msg = JSON.parse(data as any); } catch { return; }
-      if (msg?.method !== 'eth_subscription') return;
+        ws.onmessage = async ({ data }) => {
+          let msg: any; try { msg = JSON.parse(data as any); } catch { return; }
+          if (msg?.method !== 'eth_subscription') return;
 
-      const log = msg.params?.result;
-      const topic0 = String(log?.topics?.[0] || '').toLowerCase();
+          const log = msg.params?.result;
+          const topic0 = String(log?.topics?.[0] || '').toLowerCase();
 
-      const isVaultEvent =
-        topic0 === DEPOSIT_TOPIC ||
-        topic0 === WITHDRAW_TOPIC ||
-        topic0 === LOCK_TOPIC ||
-        topic0 === UNLOCK_TOPIC ||
-        topic0 === CLOSE_TOPIC;
+          const isVaultEvent =
+            topic0 === DEPOSIT_TOPIC ||
+            topic0 === WITHDRAW_TOPIC ||
+            topic0 === LOCK_TOPIC ||
+            topic0 === UNLOCK_TOPIC ||
+            topic0 === CLOSE_TOPIC;
 
-      const matchesVault =
-        String(log?.topics?.[1] || '').toLowerCase() === vaultTopicLc ||
-        String(log?.topics?.[2] || '').toLowerCase() === vaultTopicLc ||
-        String(log?.topics?.[3] || '').toLowerCase() === vaultTopicLc;
+          const matchesVault =
+            String(log?.topics?.[1] || '').toLowerCase() === vaultTopicLc ||
+            String(log?.topics?.[2] || '').toLowerCase() === vaultTopicLc ||
+            String(log?.topics?.[3] || '').toLowerCase() === vaultTopicLc;
 
-      if (!isVaultEvent || !matchesVault) return;
+          if (!isVaultEvent || !matchesVault) return;
 
-      try {
-        const topic1 = String(log?.topics?.[1] || '');
-        const topic2 = String(log?.topics?.[2] || '');
-        const vaultAddr = ('0x' + topic1.slice(-40)).toLowerCase() as `0x${string}`;
-        const userAddr = ('0x' + topic2.slice(-40)).toLowerCase();
+          try {
+            const topic1 = String(log?.topics?.[1] || '');
+            const topic2 = String(log?.topics?.[2] || '');
+            const vaultAddr = ('0x' + topic1.slice(-40)).toLowerCase() as `0x${string}`;
+            const userAddr = ('0x' + topic2.slice(-40)).toLowerCase();
 
-        const hex = String(log?.data || '0x');
-        const words = hex.startsWith('0x') ? hex.slice(2).match(/.{1,64}/g) || [] : (hex.match(/.{1,64}/g) || []);
-        const shares = words[0] ? BigInt('0x' + words[0]) : 0n;
-        const amountQuote = words[1] ? BigInt('0x' + words[1]) : 0n;
-        const amountBase = words[2] ? BigInt('0x' + words[2]) : 0n;
+            const hex = String(log?.data || '0x');
+            const words = hex.startsWith('0x') ? hex.slice(2).match(/.{1,64}/g) || [] : (hex.match(/.{1,64}/g) || []);
+            const shares = words[0] ? BigInt('0x' + words[0]) : 0n;
+            const amountQuote = words[1] ? BigInt('0x' + words[1]) : 0n;
+            const amountBase = words[2] ? BigInt('0x' + words[2]) : 0n;
 
-        const ts = Math.floor(Date.now() / 1000);
-        const rowId = `${log.transactionHash}-${log.logIndex}`;
+            const ts = Math.floor(Date.now() / 1000);
+            const rowId = `${log.transactionHash}-${log.logIndex}`;
 
-        if (topic0 === DEPOSIT_TOPIC) {
-          const newRow = {
-            id: rowId,
-            account: { id: userAddr },
-            shares: shares.toString(),
-            amountQuote: amountQuote.toString(),
-            amountBase: amountBase.toString(),
-            txHash: log.transactionHash,
-            timestamp: ts,
-          };
-          setDepositHistory(prev => {
-            if (prev?.some((r: any) => r.id === rowId)) return prev;
-            return [newRow, ...(prev || [])];
-          });
-
-          setDepositors(prev => {
-            const list = Array.isArray(prev) ? [...prev] : [];
-            const i = list.findIndex((d: any) => String(d?.account?.id || '').toLowerCase() === userAddr);
-            if (i >= 0) {
-              const cur = list[i];
-              const curShares = toBigIntSafe(cur.shares);
-              const curDQ = toBigIntSafe(cur.totalDepositedQuote);
-              const curDB = toBigIntSafe(cur.totalDepositedBase);
-              list[i] = {
-                ...cur,
-                shares: (curShares + shares).toString(),
-                depositCount: Number(cur.depositCount || 0) + 1,
-                totalDepositedQuote: (curDQ + amountQuote).toString(),
-                totalDepositedBase: (curDB + amountBase).toString(),
-                lastDepositAt: ts,
-                updatedAt: ts,
-              };
-            } else {
-              list.unshift({
-                id: `${userAddr}-${vaultAddr}`,
+            if (topic0 === DEPOSIT_TOPIC) {
+              const newRow = {
+                id: rowId,
                 account: { id: userAddr },
                 shares: shares.toString(),
-                depositCount: 1,
-                withdrawCount: 0,
-                totalDepositedQuote: amountQuote.toString(),
-                totalDepositedBase: amountBase.toString(),
-                totalWithdrawnQuote: '0',
-                totalWithdrawnBase: '0',
-                lastDepositAt: ts,
-                lastWithdrawAt: 0,
-                updatedAt: ts,
-              });
-            }
-            return list;
-          });
-        }
-
-        if (topic0 === WITHDRAW_TOPIC) {
-          const newRow = {
-            id: rowId,
-            account: { id: userAddr },
-            shares: shares.toString(),
-            amountQuote: amountQuote.toString(),
-            amountBase: amountBase.toString(),
-            txHash: log.transactionHash,
-            timestamp: ts,
-          };
-          setWithdrawHistory(prev => {
-            if (prev?.some((r: any) => r.id === rowId)) return prev;
-            return [newRow, ...(prev || [])];
-          });
-
-          setDepositors(prev => {
-            const list = Array.isArray(prev) ? [...prev] : [];
-            const i = list.findIndex((d: any) => String(d?.account?.id || '').toLowerCase() === userAddr);
-            if (i >= 0) {
-              const cur = list[i];
-              const curShares = toBigIntSafe(cur.shares);
-              const curWQ = toBigIntSafe(cur.totalWithdrawnQuote);
-              const curWB = toBigIntSafe(cur.totalWithdrawnBase);
-              list[i] = {
-                ...cur,
-                shares: (curShares - shares >= 0n ? curShares - shares : 0n).toString(),
-                withdrawCount: Number(cur.withdrawCount || 0) + 1,
-                totalWithdrawnQuote: (curWQ + amountQuote).toString(),
-                totalWithdrawnBase: (curWB + amountBase).toString(),
-                lastWithdrawAt: ts,
-                updatedAt: ts,
+                amountQuote: amountQuote.toString(),
+                amountBase: amountBase.toString(),
+                txHash: log.transactionHash,
+                timestamp: ts,
               };
-            } else {
-              list.unshift({
-                id: `${userAddr}-${vaultAddr}`,
-                account: { id: userAddr },
-                shares: '0',
-                depositCount: 0,
-                withdrawCount: 1,
-                totalDepositedQuote: '0',
-                totalDepositedBase: '0',
-                totalWithdrawnQuote: amountQuote.toString(),
-                totalWithdrawnBase: amountBase.toString(),
-                lastDepositAt: 0,
-                lastWithdrawAt: ts,
-                updatedAt: ts,
+              setDepositHistory(prev => {
+                if (prev?.some((r: any) => r.id === rowId)) return prev;
+                return [newRow, ...(prev || [])];
+              });
+
+              setDepositors(prev => {
+                const list = Array.isArray(prev) ? [...prev] : [];
+                const i = list.findIndex((d: any) => String(d?.account?.id || '').toLowerCase() === userAddr);
+                if (i >= 0) {
+                  const cur = list[i];
+                  const curShares = toBigIntSafe(cur.shares);
+                  const curDQ = toBigIntSafe(cur.totalDepositedQuote);
+                  const curDB = toBigIntSafe(cur.totalDepositedBase);
+                  list[i] = {
+                    ...cur,
+                    shares: (curShares + shares).toString(),
+                    depositCount: Number(cur.depositCount || 0) + 1,
+                    totalDepositedQuote: (curDQ + amountQuote).toString(),
+                    totalDepositedBase: (curDB + amountBase).toString(),
+                    lastDepositAt: ts,
+                    updatedAt: ts,
+                  };
+                } else {
+                  list.unshift({
+                    id: `${userAddr}-${vaultAddr}`,
+                    account: { id: userAddr },
+                    shares: shares.toString(),
+                    depositCount: 1,
+                    withdrawCount: 0,
+                    totalDepositedQuote: amountQuote.toString(),
+                    totalDepositedBase: amountBase.toString(),
+                    totalWithdrawnQuote: '0',
+                    totalWithdrawnBase: '0',
+                    lastDepositAt: ts,
+                    lastWithdrawAt: 0,
+                    updatedAt: ts,
+                  });
+                }
+                return list;
               });
             }
-            return list;
-          });
-        }
-      } catch (e) {
-        console.warn('ws update failed', e);
-      }
 
-      const now = Date.now();
-      wsCooldownRef.current = now;
-      if (wsTimerRef.current) clearTimeout(wsTimerRef.current);
-      wsTimerRef.current = setTimeout(async () => {
-        const slim = (vaultList || []).map((v: any) => ({ id: v.id as `0x${string}` }));
-        try {
-          const oc = await fetchVaultBalances(slim);
-          setVaultList((prev: any[]) =>
-            prev.map((v: any) => {
-              const b = oc[String(v.id).toLowerCase()];
-              return b ? { ...v, quoteBalance: b.quoteBalance, baseBalance: b.baseBalance } : v;
-            })
-          );
-        } catch (e) {
-          console.warn('ws refresh failed', e);
-        }
-      }, 300);
-    };
+            if (topic0 === WITHDRAW_TOPIC) {
+              const newRow = {
+                id: rowId,
+                account: { id: userAddr },
+                shares: shares.toString(),
+                amountQuote: amountQuote.toString(),
+                amountBase: amountBase.toString(),
+                txHash: log.transactionHash,
+                timestamp: ts,
+              };
+              setWithdrawHistory(prev => {
+                if (prev?.some((r: any) => r.id === rowId)) return prev;
+                return [newRow, ...(prev || [])];
+              });
 
-        ws.onerror = () => {};
-        ws.onclose = () => {};
+              setDepositors(prev => {
+                const list = Array.isArray(prev) ? [...prev] : [];
+                const i = list.findIndex((d: any) => String(d?.account?.id || '').toLowerCase() === userAddr);
+                if (i >= 0) {
+                  const cur = list[i];
+                  const curShares = toBigIntSafe(cur.shares);
+                  const curWQ = toBigIntSafe(cur.totalWithdrawnQuote);
+                  const curWB = toBigIntSafe(cur.totalWithdrawnBase);
+                  list[i] = {
+                    ...cur,
+                    shares: (curShares - shares >= 0n ? curShares - shares : 0n).toString(),
+                    withdrawCount: Number(cur.withdrawCount || 0) + 1,
+                    totalWithdrawnQuote: (curWQ + amountQuote).toString(),
+                    totalWithdrawnBase: (curWB + amountBase).toString(),
+                    lastWithdrawAt: ts,
+                    updatedAt: ts,
+                  };
+                } else {
+                  list.unshift({
+                    id: `${userAddr}-${vaultAddr}`,
+                    account: { id: userAddr },
+                    shares: '0',
+                    depositCount: 0,
+                    withdrawCount: 1,
+                    totalDepositedQuote: '0',
+                    totalDepositedBase: '0',
+                    totalWithdrawnQuote: amountQuote.toString(),
+                    totalWithdrawnBase: amountBase.toString(),
+                    lastDepositAt: 0,
+                    lastWithdrawAt: ts,
+                    updatedAt: ts,
+                  });
+                }
+                return list;
+              });
+            }
+          } catch (e) {
+            console.warn('ws update failed', e);
+          }
 
-        const close = () => { try { ws.close(); } catch {} };
+          const now = Date.now();
+          wsCooldownRef.current = now;
+          if (wsTimerRef.current) clearTimeout(wsTimerRef.current);
+          wsTimerRef.current = setTimeout(async () => {
+            const slim = (vaultList || []).map((v: any) => ({ id: v.id as `0x${string}` }));
+            try {
+              const oc = await fetchVaultBalances(slim);
+              setVaultList((prev: any[]) =>
+                prev.map((v: any) => {
+                  const b = oc[String(v.id).toLowerCase()];
+                  return b ? { ...v, quoteBalance: b.quoteBalance, baseBalance: b.baseBalance } : v;
+                })
+              );
+            } catch (e) {
+              console.warn('ws refresh failed', e);
+            }
+          }, 300);
+        };
+
+        ws.onerror = () => { };
+        ws.onclose = () => { };
+
+        const close = () => { try { ws.close(); } catch { } };
         const cleanupWs = close;
         const _noop = cleanupWs;
 
-        return () => {};
+        return () => { };
       } catch (e) {
         console.error("vault detail fetch failed:", e);
         if (cancelled) return;
@@ -4080,10 +4081,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               ...rest
             } = action.updates;
             const status = s == 'graduated'
-            ? 'graduated'
-            : (rest?.price ?? t?.price) * TOTAL_SUPPLY > 12500
-              ? 'graduating'
-              : 'new'
+              ? 'graduated'
+              : (rest?.price ?? t?.price) * TOTAL_SUPPLY > 12500
+                ? 'graduating'
+                : 'new'
 
             if (status != s) {
               movedToken = {
@@ -4332,111 +4333,394 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   );
 
   const openWebsocket = useCallback((): void => {
+    if (
+      connectionStateRef.current === 'connecting' ||
+      connectionStateRef.current === 'connected'
+    ) {
+      return;
+    }
+    lastConnectionAttemptRef.current = Date.now();
+    connectionAttemptsRef.current += 1;
+
+    if (teRef.current) {
+      const oldWs = teRef.current;
+      teRef.current = null;
+
+      oldWs.onopen = null;
+      oldWs.onmessage = null;
+      oldWs.onerror = null;
+      oldWs.onclose = null;
+
       if (
-        connectionStateRef.current === 'connecting' ||
-        connectionStateRef.current === 'connected'
+        oldWs.readyState === WebSocket.OPEN ||
+        oldWs.readyState === WebSocket.CONNECTING
       ) {
-        return;
+        oldWs.close(1000, 'reconnecting');
       }
-      lastConnectionAttemptRef.current = Date.now();
-      connectionAttemptsRef.current += 1;
+    }
 
-      if (teRef.current) {
-        const oldWs = teRef.current;
-        teRef.current = null;
+    connectionStateRef.current = 'connecting';
 
-        oldWs.onopen = null;
-        oldWs.onmessage = null;
-        oldWs.onerror = null;
-        oldWs.onclose = null;
+    try {
+      const ws = new WebSocket(settings.chainConfig[activechain].wssurl);
+      teRef.current = ws;
 
-        if (
-          oldWs.readyState === WebSocket.OPEN ||
-          oldWs.readyState === WebSocket.CONNECTING
-        ) {
-          oldWs.close(1000, 'reconnecting');
+      const connectionTimeout = setTimeout(() => {
+        if (ws.readyState === WebSocket.CONNECTING) {
+          ws.close(1000, 'connection timeout');
+          handleConnectionError('timeout');
         }
-      }
+      }, 10000);
 
-      connectionStateRef.current = 'connecting';
+      ws.onopen = () => {
+        clearTimeout(connectionTimeout);
+        connectionStateRef.current = 'connected';
+        retryCountRef.current = 0;
+        consecutiveFailuresRef.current = 0;
 
-      try {
-        const ws = new WebSocket(settings.chainConfig[activechain].wssurl);
-        teRef.current = ws;
+        subscribe(ws, [
+          'monadLogs',
+          { address: settings.chainConfig[activechain].router, topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT, '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']] }
+        ]);
+      };
 
-        const connectionTimeout = setTimeout(() => {
-          if (ws.readyState === WebSocket.CONNECTING) {
-            ws.close(1000, 'connection timeout');
-            handleConnectionError('timeout');
-          }
-        }, 10000);
+      ws.onmessage = ({ data }) => {
+        try {
+          const msg = JSON.parse(data);
+          if (msg.method !== 'eth_subscription' || !msg.params?.result)
+            return;
+          const log = msg.params?.result;
+          if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
+          setProcessedLogs(prev => {
+            let tempset = new Set(prev);
+            const resolve = txReceiptResolvers.current.get(log['transactionHash']);
+            if (resolve) {
+              resolve();
+              txReceiptResolvers.current.delete(log['transactionHash']);
+            }
 
-        ws.onopen = () => {
-          clearTimeout(connectionTimeout);
-          connectionStateRef.current = 'connected';
-          retryCountRef.current = 0;
-          consecutiveFailuresRef.current = 0;
+            if (log.topics?.[0] === TRADE_EVENT) {
+              const marketAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+              const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
 
-          subscribe(ws, [
-            'monadLogs',
-            { address: settings.chainConfig[activechain].router, topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT, '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']] }
-          ]);
-        };
+              const mcfg = markets[addresstoMarket[marketAddr]];
+              if (!mcfg || !mcfg.baseAddress) return tempset;
+              const tokenAddrFromMarket = (mcfg.baseAddress || '').toLowerCase();
 
-        ws.onmessage = ({ data }) => {
-          try {
-            const msg = JSON.parse(data);
-            if (msg.method !== 'eth_subscription' || !msg.params?.result)
-              return;
-            const log = msg.params?.result;
-            if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
-            setProcessedLogs(prev => {
-              let tempset = new Set(prev);
-              const resolve = txReceiptResolvers.current.get(log['transactionHash']);
-              if (resolve) {
-                resolve();
-                txReceiptResolvers.current.delete(log['transactionHash']);
-              }
-      
-              if (log.topics?.[0] === TRADE_EVENT) {
-                const marketAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
-                const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
-      
-                const mcfg = markets[addresstoMarket[marketAddr]];
-                if (!mcfg || !mcfg.baseAddress) return tempset;
-                const tokenAddrFromMarket = (mcfg.baseAddress || '').toLowerCase();
-      
-                const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
-                const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
-      
-                const isBuy = word(0) !== 0n;
-                const amountInWei = word(1);
-                const amountOutWei = word(2);
-                const endPrice = word(4);
-      
-                const amountIn = Number(amountInWei)  / 1e18;
-                const amountOut = Number(amountOutWei) / 1e18;
-      
-                const priceFactor = Number(mcfg.priceFactor || 1);
-                const price = priceFactor ? (Number(endPrice) / priceFactor) : 0;
-      
-                const tradePrice = price;
+              const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+              const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
 
-                dispatch({
-                  type: 'UPDATE_MARKET',
-                  id: tokenAddrFromMarket,
-                  updates: {
-                    price: price,
-                    marketCap: price * TOTAL_SUPPLY,
-                    buyTransactions: isBuy ? 1 : 0,
-                    sellTransactions: isBuy ? 0 : 1,
-                    volumeDelta:
-                      isBuy == true ? Number(amountIn) / 1e18 : Number(amountOut) / 1e18,
-                  },
+              const isBuy = word(0) !== 0n;
+              const amountInWei = word(1);
+              const amountOutWei = word(2);
+              const endPrice = word(4);
+
+              const amountIn = Number(amountInWei) / 1e18;
+              const amountOut = Number(amountOutWei) / 1e18;
+
+              const priceFactor = Number(mcfg.priceFactor || 1);
+              const price = priceFactor ? (Number(endPrice) / priceFactor) : 0;
+
+              const tradePrice = price;
+
+              dispatch({
+                type: 'UPDATE_MARKET',
+                id: tokenAddrFromMarket,
+                updates: {
+                  price: price,
+                  marketCap: price * TOTAL_SUPPLY,
+                  buyTransactions: isBuy ? 1 : 0,
+                  sellTransactions: isBuy ? 0 : 1,
+                  volumeDelta:
+                    isBuy == true ? Number(amountIn) / 1e18 : Number(amountOut) / 1e18,
+                },
+              });
+
+              if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
+
+              setTokenData(p => ({
+                ...p,
+                price,
+                marketCap: price * TOTAL_SUPPLY,
+                buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
+                sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
+                volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
+              }));
+
+              setMemeTrades(prev => [
+                {
+                  id: `${log.transactionHash}-${log.logIndex}`,
+                  timestamp: Date.now() / 1000,
+                  isBuy,
+                  price: tradePrice,
+                  nativeAmount: isBuy ? amountIn : amountOut,
+                  tokenAmount: isBuy ? amountOut : amountIn,
+                  caller: `0x${log.topics[2].slice(26)}`,
+                },
+                ...prev.slice(0, 99),
+              ]);
+
+              const sel = memeSelectedIntervalRef.current;
+              const RESOLUTION_SECS: Record<string, number> = {
+                '1s': 1, '5s': 5, '15s': 15, '1m': 60, '5m': 300, '15m': 900,
+                '1h': 3600, '4h': 14400, '1d': 86400,
+              };
+              const resSecs = RESOLUTION_SECS[sel] ?? 60;
+              const now = Date.now();
+              const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
+              const volNative = isBuy ? amountIn : amountOut;
+              const toSeriesKey = (sym: string, interval: string) =>
+                sym +
+                'MON' +
+                (interval === '1d'
+                  ? '1D'
+                  : interval === '4h'
+                    ? '240'
+                    : interval === '1h'
+                      ? '60'
+                      : interval.endsWith('s')
+                        ? interval.slice(0, -1).toUpperCase() + 'S'
+                        : interval.slice(0, -1));
+              setChartData((prev: any) => {
+                if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
+                const [bars, key, flag] = prev;
+                const updated = [...bars];
+                const last = updated[updated.length - 1];
+
+                if (!last || last.time < bucket) {
+                  const prevClose = last?.close ?? tradePrice;
+                  const open = prevClose;
+                  const high = Math.max(open, tradePrice);
+                  const low = Math.min(open, tradePrice);
+                  const newBar = {
+                    time: bucket,
+                    open,
+                    high,
+                    low,
+                    close: tradePrice,
+                    volume: volNative || 0,
+                  };
+                  updated.push(newBar);
+                  const cb =
+                    memeRealtimeCallbackRef.current?.[toSeriesKey(memeRef.current.symbol, sel)];
+                  if (cb) cb(newBar);
+                } else {
+                  const cur = { ...last };
+                  cur.high = Math.max(cur.high, tradePrice);
+                  cur.low = Math.min(cur.low, tradePrice);
+                  cur.close = tradePrice;
+                  cur.volume = (cur.volume || 0) + (volNative || 0);
+                  updated[updated.length - 1] = cur;
+                  const cb =
+                    memeRealtimeCallbackRef.current?.[toSeriesKey(memeRef.current.symbol, sel)];
+                  if (cb) cb(cur);
+                }
+                if (updated.length > 1200) updated.splice(0, updated.length - 1200);
+                return [updated, key, flag];
+              });
+
+              setMemeHolders(prev => {
+                const arr = prev.slice();
+                let idx = memeHoldersMapRef.current.get?.(callerAddr);
+                if (idx == undefined) {
+                  const fresh: Holder = {
+                    address: `0x${log.topics[2].slice(26)}`,
+                    balance: 0,
+                    amountBought: 0,
+                    amountSold: 0,
+                    valueBought: 0,
+                    valueSold: 0,
+                    valueNet: 0,
+                    tokenNet: 0,
+                  };
+                  arr.push(fresh);
+                  idx = arr.length - 1;
+                  memeHoldersMapRef.current.set(callerAddr, idx);
+                }
+                const h = { ...arr[idx] };
+                if (isBuy) {
+                  h.amountBought = (h.amountBought || 0) + amountOut;
+                  h.valueBought = (h.valueBought || 0) + amountIn;
+                  h.balance = (h.balance || 0) + amountOut;
+                } else {
+                  h.amountSold = (h.amountSold || 0) + amountIn;
+                  h.valueSold = (h.valueSold || 0) + amountOut;
+                  h.balance = Math.max(0, (h.balance || 0) - amountIn);
+                }
+                arr[idx] = h;
+
+                for (let i = 0; i < arr.length; i++) {
+                  const hh = arr[i];
+                  const realized = (hh.valueSold || 0) - (hh.valueBought || 0);
+                  const bal = Math.max(0, hh.balance || 0);
+                  arr[i] = { ...hh, valueNet: realized + bal * price };
+                }
+
+                const topSum = arr
+                  .map(hh => Math.max(0, hh.balance || 0))
+                  .sort((a, b) => b - a)
+                  .slice(0, 10)
+                  .reduce((s, n) => s + n, 0);
+                setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
+                return arr;
+              });
+
+              setMemeTopTraders(prev => {
+                const copy = Array.isArray(prev) ? [...prev] : [];
+                const key = callerAddr;
+                let idx = memeTopTradersMapRef.current.get(key) ?? -1;
+
+                if (idx === -1) {
+                  const row: Holder = {
+                    address: `0x${log.topics[2].slice(26)}`,
+                    balance: 0, tokenNet: 0, valueNet: 0,
+                    amountBought: 0, amountSold: 0,
+                    valueBought: 0, valueSold: 0,
+                  };
+                  copy.push(row);
+                  idx = copy.length - 1;
+                  memeTopTradersMapRef.current.set(key, idx);
+                }
+
+                const row = { ...copy[idx] };
+                const curBal = Math.max(0, (row.balance ?? row.amountBought - row.amountSold) || 0);
+                if (isBuy) {
+                  row.amountBought = (row.amountBought || 0) + amountOut;
+                  row.valueBought = (row.valueBought || 0) + amountIn;
+                  row.balance = curBal + amountOut;
+                } else {
+                  row.amountSold = (row.amountSold || 0) + amountIn;
+                  row.valueSold = (row.valueSold || 0) + amountOut;
+                  row.balance = Math.max(0, curBal - amountIn);
+                }
+                row.tokenNet = (row.amountBought || 0) - (row.amountSold || 0);
+                copy[idx] = row;
+
+                for (let i = 0; i < copy.length; i++) {
+                  const r = copy[i];
+                  const bal = Math.max(0, (r.balance ?? r.amountBought - r.amountSold) || 0);
+                  const realized = (r.valueSold || 0) - (r.valueBought || 0);
+                  copy[i] = { ...r, valueNet: realized + bal * price };
+                }
+
+                copy.sort((a, b) => b.valueNet - a.valueNet);
+                if (copy.length > 300) {
+                  const removed = copy.splice(300);
+                  for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
+                }
+                copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
+                return copy;
+              });
+
+              setMemePositions(prev => {
+                const copy = Array.isArray(prev) ? [...prev] : [];
+                const allUserAddresses = [
+                  (address || '').toLowerCase(),
+                  ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
+                ];
+                const isUserTrade = allUserAddresses.includes(callerAddr);
+
+                let idx = memePositionsMapRef.current.get(tokenAddrFromMarket);
+                if (idx === undefined && isUserTrade) {
+                  const newPos = {
+                    tokenId: memeRef.current.id?.toLowerCase(),
+                    symbol: memeRef.current?.symbol || '',
+                    name: memeRef.current?.name || '',
+                    imageUrl: memeRef.current?.image || '',
+                    metadataCID: '',
+                    boughtTokens: 0,
+                    soldTokens: 0,
+                    spentNative: 0,
+                    receivedNative: 0,
+                    remainingTokens: 0,
+                    remainingPct: 0,
+                    pnlNative: 0,
+                    lastPrice: price,
+                  };
+                  copy.push(newPos);
+                  idx = copy.length - 1;
+                  memePositionsMapRef.current.set(tokenAddrFromMarket, idx);
+                }
+                if (idx === undefined) return prev;
+
+                const pos = { ...copy[idx] };
+                pos.lastPrice = price;
+                if (isUserTrade) {
+                  if (isBuy) {
+                    pos.boughtTokens += amountOut;
+                    pos.spentNative += amountIn;
+                    pos.remainingTokens = (pos.remainingTokens || 0) + amountOut;
+                  } else {
+                    pos.soldTokens += amountIn;
+                    pos.receivedNative += amountOut;
+                    pos.remainingTokens = Math.max(0, (pos.remainingTokens || 0) - amountIn);
+                  }
+                }
+                pos.remainingPct = pos.boughtTokens > 0
+                  ? (pos.remainingTokens / pos.boughtTokens) * 100
+                  : 0;
+
+                const balance = Math.max(0, pos.remainingTokens);
+                const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
+                const unrealized = balance * (pos.lastPrice || 0);
+                pos.pnlNative = realized + unrealized;
+
+                copy[idx] = pos;
+
+                if (memeRef.current.id && tokenAddrFromMarket === memeRef.current.id.toLowerCase()) {
+                  const markToMarket = balance * (pos.lastPrice || 0);
+                  const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
+                  setMemeUserStats({
+                    balance,
+                    amountBought: pos.boughtTokens || 0,
+                    amountSold: pos.soldTokens || 0,
+                    valueBought: pos.spentNative || 0,
+                    valueSold: pos.receivedNative || 0,
+                    valueNet: totalPnL,
+                  });
+                }
+                return copy;
+              });
+
+              if (memeDevTokenIdsRef.current.has(tokenAddrFromMarket)) {
+                setMemeDevTokens(prev => {
+                  const updated = prev.map(t => {
+                    if ((t.id || '').toLowerCase() !== tokenAddrFromMarket) return t;
+                    return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
+                  });
+                  memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
+                  return updated;
                 });
+              }
 
-                if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
+              return tempset;
+            }
+            else if (log.topics?.[0] === MARKET_CREATED_EVENT) {
+              addMarket(log);
+            }
+            else if (log.topics?.[0] === MARKET_UPDATE_EVENT) {
+              updateMarket(log);
+              const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+              const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
 
+              const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+              const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
+
+              const isBuy = word(0) !== 0n;
+              const inputAmountWei = word(1);
+              const outputAmountWei = word(2);
+              const vNativeWei = word(3);
+              const vTokenWei = word(4);
+
+              const toNum = (x: bigint) => Number(x) / 1e18;
+              const amountIn = toNum(inputAmountWei);
+              const amountOut = toNum(outputAmountWei);
+              const vNative = Number(vNativeWei);
+              const vToken = Number(vTokenWei);
+
+              const price = vToken === 0 ? 0 : vNative / vToken;
+              const tradePrice = (isBuy ? amountIn / amountOut : amountOut / amountIn) || 0;
+              if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
                 setTokenData(p => ({
                   ...p,
                   price,
@@ -4445,7 +4729,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
                   volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
                 }));
-      
+
                 setMemeTrades(prev => [
                   {
                     id: `${log.transactionHash}-${log.logIndex}`,
@@ -4453,12 +4737,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     isBuy,
                     price: tradePrice,
                     nativeAmount: isBuy ? amountIn : amountOut,
-                    tokenAmount:  isBuy ? amountOut : amountIn,
+                    tokenAmount: isBuy ? amountOut : amountIn,
                     caller: `0x${log.topics[2].slice(26)}`,
                   },
                   ...prev.slice(0, 99),
                 ]);
-            
+
                 const sel = memeSelectedIntervalRef.current;
                 const RESOLUTION_SECS: Record<string, number> = {
                   '1s': 1, '5s': 5, '15s': 15, '1m': 60, '5m': 300, '15m': 900,
@@ -4485,7 +4769,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   const [bars, key, flag] = prev;
                   const updated = [...bars];
                   const last = updated[updated.length - 1];
-          
+
                   if (!last || last.time < bucket) {
                     const prevClose = last?.close ?? tradePrice;
                     const open = prevClose;
@@ -4517,7 +4801,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   if (updated.length > 1200) updated.splice(0, updated.length - 1200);
                   return [updated, key, flag];
                 });
-      
+
                 setMemeHolders(prev => {
                   const arr = prev.slice();
                   let idx = memeHoldersMapRef.current.get?.(callerAddr);
@@ -4547,28 +4831,23 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     h.balance = Math.max(0, (h.balance || 0) - amountIn);
                   }
                   arr[idx] = h;
-      
+
                   for (let i = 0; i < arr.length; i++) {
-                    const hh = arr[i];
-                    const realized = (hh.valueSold || 0) - (hh.valueBought || 0);
-                    const bal = Math.max(0, hh.balance || 0);
-                    arr[i] = { ...hh, valueNet: realized + bal * price };
+                    const h = arr[i];
+                    const realized = (h.valueSold || 0) - (h.valueBought || 0);
+                    const bal = Math.max(0, h.balance || 0);
+                    arr[i] = { ...h, valueNet: realized + bal * price };
                   }
-      
-                  const topSum = arr
-                    .map(hh => Math.max(0, hh.balance || 0))
-                    .sort((a, b) => b - a)
-                    .slice(0, 10)
-                    .reduce((s, n) => s + n, 0);
+                  const topSum = arr.map(h => Math.max(0, h.balance || 0)).sort((a, b) => b - a).slice(0, 10).reduce((s, n) => s + n, 0);
                   setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
                   return arr;
                 });
-      
+
                 setMemeTopTraders(prev => {
                   const copy = Array.isArray(prev) ? [...prev] : [];
                   const key = callerAddr;
                   let idx = memeTopTradersMapRef.current.get(key) ?? -1;
-      
+
                   if (idx === -1) {
                     const row: Holder = {
                       address: `0x${log.topics[2].slice(26)}`,
@@ -4580,7 +4859,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     idx = copy.length - 1;
                     memeTopTradersMapRef.current.set(key, idx);
                   }
-      
+
                   const row = { ...copy[idx] };
                   const curBal = Math.max(0, (row.balance ?? row.amountBought - row.amountSold) || 0);
                   if (isBuy) {
@@ -4594,14 +4873,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   }
                   row.tokenNet = (row.amountBought || 0) - (row.amountSold || 0);
                   copy[idx] = row;
-      
+
                   for (let i = 0; i < copy.length; i++) {
                     const r = copy[i];
                     const bal = Math.max(0, (r.balance ?? r.amountBought - r.amountSold) || 0);
                     const realized = (r.valueSold || 0) - (r.valueBought || 0);
                     copy[i] = { ...r, valueNet: realized + bal * price };
                   }
-      
+
                   copy.sort((a, b) => b.valueNet - a.valueNet);
                   if (copy.length > 300) {
                     const removed = copy.splice(300);
@@ -4610,7 +4889,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
                   return copy;
                 });
-      
+
                 setMemePositions(prev => {
                   const copy = Array.isArray(prev) ? [...prev] : [];
                   const allUserAddresses = [
@@ -4618,13 +4897,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
                   ];
                   const isUserTrade = allUserAddresses.includes(callerAddr);
-      
-                  let idx = memePositionsMapRef.current.get(tokenAddrFromMarket);
+                  let idx = memePositionsMapRef.current.get(tokenAddr);
+
                   if (idx === undefined && isUserTrade) {
                     const newPos = {
                       tokenId: memeRef.current.id?.toLowerCase(),
                       symbol: memeRef.current?.symbol || '',
-                      name: memeRef.current?.name   || '',
+                      name: memeRef.current?.name || '',
                       imageUrl: memeRef.current?.image || '',
                       metadataCID: '',
                       boughtTokens: 0,
@@ -4638,393 +4917,115 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     };
                     copy.push(newPos);
                     idx = copy.length - 1;
-                    memePositionsMapRef.current.set(tokenAddrFromMarket, idx);
+                    memePositionsMapRef.current.set(tokenAddr, idx);
                   }
                   if (idx === undefined) return prev;
-      
+
                   const pos = { ...copy[idx] };
                   pos.lastPrice = price;
                   if (isUserTrade) {
                     if (isBuy) {
                       pos.boughtTokens += amountOut;
                       pos.spentNative += amountIn;
-                      pos.remainingTokens = (pos.remainingTokens || 0) + amountOut;
+                      pos.remainingTokens += amountOut;
                     } else {
                       pos.soldTokens += amountIn;
                       pos.receivedNative += amountOut;
-                      pos.remainingTokens = Math.max(0, (pos.remainingTokens || 0) - amountIn);
+                      pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
                     }
                   }
-                  pos.remainingPct = pos.boughtTokens > 0
-                    ? (pos.remainingTokens / pos.boughtTokens) * 100
-                    : 0;
-      
+                  pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
+
                   const balance = Math.max(0, pos.remainingTokens);
                   const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
                   const unrealized = balance * (pos.lastPrice || 0);
                   pos.pnlNative = realized + unrealized;
-      
+
                   copy[idx] = pos;
-      
-                  if (memeRef.current.id && tokenAddrFromMarket === memeRef.current.id.toLowerCase()) {
+
+                  if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
                     const markToMarket = balance * (pos.lastPrice || 0);
                     const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
                     setMemeUserStats({
                       balance,
                       amountBought: pos.boughtTokens || 0,
-                      amountSold: pos.soldTokens   || 0,
-                      valueBought: pos.spentNative  || 0,
+                      amountSold: pos.soldTokens || 0,
+                      valueBought: pos.spentNative || 0,
                       valueSold: pos.receivedNative || 0,
                       valueNet: totalPnL,
                     });
                   }
                   return copy;
                 });
-      
-                if (memeDevTokenIdsRef.current.has(tokenAddrFromMarket)) {
+
+                if (memeDevTokenIdsRef.current.has(tokenAddr)) {
                   setMemeDevTokens(prev => {
                     const updated = prev.map(t => {
-                      if ((t.id || '').toLowerCase() !== tokenAddrFromMarket) return t;
+                      if ((t.id || '').toLowerCase() !== tokenAddr) return t;
                       return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
                     });
                     memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
                     return updated;
                   });
                 }
-      
-                return tempset;
-              }
-              else if (log.topics?.[0] === MARKET_CREATED_EVENT) {
-                addMarket(log);
-              }
-              else if (log.topics?.[0] === MARKET_UPDATE_EVENT) {
-                updateMarket(log);
-                const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
-                const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
-      
-                const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
-                const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
-      
-                const isBuy = word(0) !== 0n;
-                const inputAmountWei = word(1);
-                const outputAmountWei = word(2);
-                const vNativeWei = word(3);
-                const vTokenWei = word(4);
-      
-                const toNum = (x: bigint) => Number(x) / 1e18;
-                const amountIn = toNum(inputAmountWei);
-                const amountOut = toNum(outputAmountWei);
-                const vNative = Number(vNativeWei);
-                const vToken = Number(vTokenWei);
-      
-                const price = vToken === 0 ? 0 : vNative / vToken;
-                const tradePrice = (isBuy ? amountIn / amountOut : amountOut / amountIn) || 0;
-                if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
-                  setTokenData(p => ({
-                    ...p,
-                    price,
-                    marketCap: price * TOTAL_SUPPLY,
-                    buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
-                    sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
-                    volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
-                  }));
-      
-                  setMemeTrades(prev => [
-                    {
-                      id: `${log.transactionHash}-${log.logIndex}`,
-                      timestamp: Date.now() / 1000,
-                      isBuy,
-                      price: tradePrice,
-                      nativeAmount: isBuy ? amountIn : amountOut,
-                      tokenAmount: isBuy ? amountOut : amountIn,
-                      caller: `0x${log.topics[2].slice(26)}`,
-                    },
-                    ...prev.slice(0, 99),
-                  ]);
-      
-                  const sel = memeSelectedIntervalRef.current;
-                  const RESOLUTION_SECS: Record<string, number> = {
-                    '1s': 1, '5s': 5, '15s': 15, '1m': 60, '5m': 300, '15m': 900,
-                    '1h': 3600, '4h': 14400, '1d': 86400,
-                  };
-                  const resSecs = RESOLUTION_SECS[sel] ?? 60;
-                  const now = Date.now();
-                  const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
-                  const volNative = isBuy ? amountIn : amountOut;
-                  const toSeriesKey = (sym: string, interval: string) =>
-                    sym +
-                    'MON' +
-                    (interval === '1d'
-                      ? '1D'
-                      : interval === '4h'
-                        ? '240'
-                        : interval === '1h'
-                          ? '60'
-                          : interval.endsWith('s')
-                            ? interval.slice(0, -1).toUpperCase() + 'S'
-                            : interval.slice(0, -1));
-                  setChartData((prev: any) => {
-                    if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
-                    const [bars, key, flag] = prev;
-                    const updated = [...bars];
-                    const last = updated[updated.length - 1];
-            
-                    if (!last || last.time < bucket) {
-                      const prevClose = last?.close ?? tradePrice;
-                      const open = prevClose;
-                      const high = Math.max(open, tradePrice);
-                      const low = Math.min(open, tradePrice);
-                      const newBar = {
-                        time: bucket,
-                        open,
-                        high,
-                        low,
-                        close: tradePrice,
-                        volume: volNative || 0,
-                      };
-                      updated.push(newBar);
-                      const cb =
-                        memeRealtimeCallbackRef.current?.[toSeriesKey(memeRef.current.symbol, sel)];
-                      if (cb) cb(newBar);
-                    } else {
-                      const cur = { ...last };
-                      cur.high = Math.max(cur.high, tradePrice);
-                      cur.low = Math.min(cur.low, tradePrice);
-                      cur.close = tradePrice;
-                      cur.volume = (cur.volume || 0) + (volNative || 0);
-                      updated[updated.length - 1] = cur;
-                      const cb =
-                        memeRealtimeCallbackRef.current?.[toSeriesKey(memeRef.current.symbol, sel)];
-                      if (cb) cb(cur);
-                    }
-                    if (updated.length > 1200) updated.splice(0, updated.length - 1200);
-                    return [updated, key, flag];
-                  });
-      
-                  setMemeHolders(prev => {
-                    const arr = prev.slice();
-                    let idx = memeHoldersMapRef.current.get?.(callerAddr);
-                    if (idx == undefined) {
-                      const fresh: Holder = {
-                        address: `0x${log.topics[2].slice(26)}`,
-                        balance: 0,
-                        amountBought: 0,
-                        amountSold: 0,
-                        valueBought: 0,
-                        valueSold: 0,
-                        valueNet: 0,
-                        tokenNet: 0,
-                      };
-                      arr.push(fresh);
-                      idx = arr.length - 1;
-                      memeHoldersMapRef.current.set(callerAddr, idx);
-                    }
-                    const h = { ...arr[idx] };
-                    if (isBuy) {
-                      h.amountBought = (h.amountBought || 0) + amountOut;
-                      h.valueBought = (h.valueBought || 0) + amountIn;
-                      h.balance = (h.balance || 0) + amountOut;
-                    } else {
-                      h.amountSold = (h.amountSold || 0) + amountIn;
-                      h.valueSold = (h.valueSold || 0) + amountOut;
-                      h.balance = Math.max(0, (h.balance || 0) - amountIn);
-                    }
-                    arr[idx] = h;
-      
-                    for (let i = 0; i < arr.length; i++) {
-                      const h = arr[i];
-                      const realized = (h.valueSold || 0) - (h.valueBought || 0);
-                      const bal = Math.max(0, h.balance || 0);
-                      arr[i] = { ...h, valueNet: realized + bal * price };
-                    }
-                    const topSum = arr.map(h => Math.max(0, h.balance || 0)).sort((a, b) => b - a).slice(0, 10).reduce((s, n) => s + n, 0);
-                    setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
-                    return arr;
-                  });
-      
-                  setMemeTopTraders(prev => {
-                    const copy = Array.isArray(prev) ? [...prev] : [];
-                    const key = callerAddr;
-                    let idx = memeTopTradersMapRef.current.get(key) ?? -1;
-      
-                    if (idx === -1) {
-                      const row: Holder = {
-                        address: `0x${log.topics[2].slice(26)}`,
-                        balance: 0, tokenNet: 0, valueNet: 0,
-                        amountBought: 0, amountSold: 0,
-                        valueBought: 0, valueSold: 0,
-                      };
-                      copy.push(row);
-                      idx = copy.length - 1;
-                      memeTopTradersMapRef.current.set(key, idx);
-                    }
-      
-                    const row = { ...copy[idx] };
-                    const curBal = Math.max(0, (row.balance ?? row.amountBought - row.amountSold) || 0);
-                    if (isBuy) {
-                      row.amountBought = (row.amountBought || 0) + amountOut;
-                      row.valueBought = (row.valueBought || 0) + amountIn;
-                      row.balance = curBal + amountOut;
-                    } else {
-                      row.amountSold = (row.amountSold || 0) + amountIn;
-                      row.valueSold = (row.valueSold || 0) + amountOut;
-                      row.balance = Math.max(0, curBal - amountIn);
-                    }
-                    row.tokenNet = (row.amountBought || 0) - (row.amountSold || 0);
-                    copy[idx] = row;
-      
-                    for (let i = 0; i < copy.length; i++) {
-                      const r = copy[i];
-                      const bal = Math.max(0, (r.balance ?? r.amountBought - r.amountSold) || 0);
-                      const realized = (r.valueSold || 0) - (r.valueBought || 0);
-                      copy[i] = { ...r, valueNet: realized + bal * price };
-                    }
-      
-                    copy.sort((a, b) => b.valueNet - a.valueNet);
-                    if (copy.length > 300) {
-                      const removed = copy.splice(300);
-                      for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
-                    }
-                    copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
-                    return copy;
-                  });
-      
-                  setMemePositions(prev => {
-                    const copy = Array.isArray(prev) ? [...prev] : [];
-                    const allUserAddresses = [
-                      (address || '').toLowerCase(),
-                      ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
-                    ];
-                    const isUserTrade = allUserAddresses.includes(callerAddr);
-                    let idx = memePositionsMapRef.current.get(tokenAddr);
-      
-                    if (idx === undefined && isUserTrade) {
-                      const newPos = {
-                        tokenId: memeRef.current.id?.toLowerCase(),
-                        symbol: memeRef.current?.symbol || '',
-                        name: memeRef.current?.name || '',
-                        imageUrl: memeRef.current?.image || '',
-                        metadataCID: '',
-                        boughtTokens: 0,
-                        soldTokens: 0,
-                        spentNative: 0,
-                        receivedNative: 0,
-                        remainingTokens: 0,
-                        remainingPct: 0,
-                        pnlNative: 0,
-                        lastPrice: price,
-                      };
-                      copy.push(newPos);
-                      idx = copy.length - 1;
-                      memePositionsMapRef.current.set(tokenAddr, idx);
-                    }
-                    if (idx === undefined) return prev;
-      
-                    const pos = { ...copy[idx] };
-                    pos.lastPrice = price;
-                    if (isUserTrade) {
-                      if (isBuy) {
-                        pos.boughtTokens += amountOut;
-                        pos.spentNative += amountIn;
-                        pos.remainingTokens += amountOut;
-                      } else {
-                        pos.soldTokens += amountIn;
-                        pos.receivedNative += amountOut;
-                        pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
-                      }
-                    }
-                    pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
-      
-                    const balance = Math.max(0, pos.remainingTokens);
-                    const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
-                    const unrealized = balance * (pos.lastPrice || 0);
-                    pos.pnlNative = realized + unrealized;
-      
-                    copy[idx] = pos;
-      
-                    if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
-                      const markToMarket = balance * (pos.lastPrice || 0);
-                      const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
-                      setMemeUserStats({
-                        balance,
-                        amountBought: pos.boughtTokens || 0,
-                        amountSold: pos.soldTokens || 0,
-                        valueBought: pos.spentNative || 0,
-                        valueSold: pos.receivedNative || 0,
-                        valueNet: totalPnL,
-                      });
-                    }
-                    return copy;
-                  });
-      
-                  if (memeDevTokenIdsRef.current.has(tokenAddr)) {
-                    setMemeDevTokens(prev => {
-                      const updated = prev.map(t => {
-                        if ((t.id || '').toLowerCase() !== tokenAddr) return t;
-                        return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
-                      });
-                      memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
-                      return updated;
-                    });
-                  }
-                }
-                return tempset;
-              }
-              else if (log.topics?.[0] == '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098') {
-                const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
-                dispatch({
-                  type: 'GRADUATE_MARKET',
-                  id: tokenAddr,
-                });
-                if (!memeRef.current.id || tokenAddr !== memeRef.current.id.toLowerCase()) return tempset;
-                setTokenData(p => ({
-                  ...p,
-                  status: 'graduated'
-                }));
               }
               return tempset;
-            })
-          } catch (parseError) {
-            console.warn('Failed to parse WebSocket message:', parseError);
-          }
-        };
-
-        ws.onerror = (event) => {
-          clearTimeout(connectionTimeout);
-          console.warn('WebSocket error:', event);
-          handleConnectionError('error');
-        };
-
-        ws.onclose = (event) => {
-          clearTimeout(connectionTimeout);
-          connectionStateRef.current = 'disconnected';
-
-          const isNormalClose = event.code === 1000;
-          const isServerError = event.code >= 1011 && event.code <= 1014;
-          const isNetworkError = event.code === 1006;
-
-          if (!isNormalClose) {
-            consecutiveFailuresRef.current += 1;
-            retryCountRef.current += 1;
-
-            console.warn(
-              `WebSocket closed (${event.code}): ${event.reason || 'No reason'}`,
-            );
-
-            if (isServerError && consecutiveFailuresRef.current > 3) {
-              retryCountRef.current += 2;
-            } else if (isNetworkError && consecutiveFailuresRef.current > 2) {
-              retryCountRef.current += 1;
             }
+            else if (log.topics?.[0] == '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098') {
+              const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+              dispatch({
+                type: 'GRADUATE_MARKET',
+                id: tokenAddr,
+              });
+              if (!memeRef.current.id || tokenAddr !== memeRef.current.id.toLowerCase()) return tempset;
+              setTokenData(p => ({
+                ...p,
+                status: 'graduated'
+              }));
+            }
+            return tempset;
+          })
+        } catch (parseError) {
+          console.warn('Failed to parse WebSocket message:', parseError);
+        }
+      };
 
-            scheduleReconnect();
+      ws.onerror = (event) => {
+        clearTimeout(connectionTimeout);
+        console.warn('WebSocket error:', event);
+        handleConnectionError('error');
+      };
+
+      ws.onclose = (event) => {
+        clearTimeout(connectionTimeout);
+        connectionStateRef.current = 'disconnected';
+
+        const isNormalClose = event.code === 1000;
+        const isServerError = event.code >= 1011 && event.code <= 1014;
+        const isNetworkError = event.code === 1006;
+
+        if (!isNormalClose) {
+          consecutiveFailuresRef.current += 1;
+          retryCountRef.current += 1;
+
+          console.warn(
+            `WebSocket closed (${event.code}): ${event.reason || 'No reason'}`,
+          );
+
+          if (isServerError && consecutiveFailuresRef.current > 3) {
+            retryCountRef.current += 2;
+          } else if (isNetworkError && consecutiveFailuresRef.current > 2) {
+            retryCountRef.current += 1;
           }
-        };
-      } catch (error) {
-        console.error('Failed to create WebSocket:', error);
-        handleConnectionError('creation');
-      }
-    },
+
+          scheduleReconnect();
+        }
+      };
+    } catch (error) {
+      console.error('Failed to create WebSocket:', error);
+      handleConnectionError('creation');
+    }
+  },
     [subscribe, scheduleReconnect],
   );
 
@@ -5303,7 +5304,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     );
     return row ? toPct(Math.max(0, row.balance)) : 0;
   };
-  
+
   const addDevTokenFromEvent = useCallback(async (log: any, currentTokenDev?: string) => {
     try {
       const decoded: any = decodeEventLog({ abi: CrystalRouterAbi, data: log.data, topics: log.topics });
@@ -5498,7 +5499,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
           const website = socials[0];
 
-          setTokenData(p=>({
+          setTokenData(p => ({
             ...p,
             ...data.launchpadTokens[0],
             id: m.id.toLowerCase(),
@@ -5574,7 +5575,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   : memeSelectedInterval.endsWith('s')
                     ? memeSelectedInterval.slice(0, -1).toUpperCase() + 'S'
                     : memeSelectedInterval.slice(0, -1);
-                    
+
           setChartData([bars, data.launchpadTokens[0].symbol + 'MON' + resForChart, true]);
         }
 
@@ -6016,7 +6017,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       [address, ...subWallets.map(w => w.address)]
         .filter(Boolean)
         .map(a => a.toLowerCase())
-    )];    
+    )];
 
     if (allAddresses.length === 0 || !initialMemeFetchDone) return;
 
@@ -6110,7 +6111,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           totals.lastPriceNative = lastPrice || totals.lastPriceNative;
         }
       }
- 
+
       if (cancelled) return;
 
       const all = Array.from(aggregatedMap.values()).map((pos) => {
@@ -7382,13 +7383,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
 
         const interval = localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
-        ? Number(
-          localStorage.getItem(
-            `${activeMarket.baseAsset}_ob_interval`,
-          ),
-        )
-        : 1 / (activeMarket?.marketType != 0 && (Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)) ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)))) - 1) : Number(activeMarket.priceFactor))
-        const { bids, asks } = v2ToOrderbook(prevOrderData[1], prevOrderData[0], interval*10, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
+          ? Number(
+            localStorage.getItem(
+              `${activeMarket.baseAsset}_ob_interval`,
+            ),
+          )
+          : 1 / (activeMarket?.marketType != 0 && (Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)) ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)))) - 1) : Number(activeMarket.priceFactor))
+        const { bids, asks } = v2ToOrderbook(prevOrderData[1], prevOrderData[0], interval * 10, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
 
         setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
         setRoundedSellOrders({ orders: roundedSell.concat(asks as any), key: activeMarketKey, amountsQuote });
@@ -7657,7 +7658,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               )
               : 1 / (activeMarket?.marketType != 0 && spread?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor))
 
-            const { bids, asks } = v2ToOrderbook(orderdata[1], orderdata[0], interval*10, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
+            const { bids, asks } = v2ToOrderbook(orderdata[1], orderdata[0], interval * 10, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
 
             setSpreadData({ spread: `${((spread?.spread / spread?.averagePrice) * 100).toFixed(2)}%`, averagePrice: formatSubscript(formatSig(spread?.averagePrice.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket?.marketType != 0)) });
             setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
@@ -7882,7 +7883,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
               ((amountIn == BigInt(0) && amountOutSwap != BigInt(0)) ||
                 ((orderType == 1 || multihop) &&
-                rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0) == undefined))
+                  rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0) == undefined))
               ? multihop
                 ? 3
                 : 2
@@ -9967,13 +9968,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           const r = [...miniDesc].reverse()
           const miniAsc = r[0]
             ? [{ time: Number(r[0].time) * 1000, value: Number(r[0].open) / pf, high: Number(r[0].high) / pf, low: Number(r[0].low) / pf },
-               ...r.map((p: any) => ({
-                 time: Number(p.time) * 1000,
-                 value: Number(p.close) / pf,
-                 high: Number(p.high) / pf,
-                 low: Number(p.low) / pf,
-                 open: Number(p.open) / pf
-               }))]
+            ...r.map((p: any) => ({
+              time: Number(p.time) * 1000,
+              value: Number(p.close) / pf,
+              high: Number(p.high) / pf,
+              low: Number(p.low) / pf,
+              open: Number(p.open) / pf
+            }))]
             : []
           const open24 = miniAsc.length ? miniAsc[0].value : last;
           const highs = miniAsc.length ? miniAsc.map((p) => p.high) : [last];
@@ -16613,22 +16614,22 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             <div className="protocols-section">
               <span className="keyword-label">Protocols</span>
               <div className="protocols-content">
-              <div className="protocol-crystal-container">
-                <img className="protocol-crystal" src={crystal} />
-                <span className="protocol-crystal">crystal.fun</span>
-              </div>
-              <div className="protocol-nadfun-container">
-                <svg width="15" height="15" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#7C55FF" stopOpacity="1" />
-                      <stop offset="100%" stopColor="#AD5FFB" stopOpacity="1" />
-                    </linearGradient>
-                  </defs>
-                  <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
-                </svg>
-                <span className="protocol-nadfun">nad.fun</span>
-              </div>
+                <div className="protocol-crystal-container">
+                  <img className="protocol-crystal" src={crystal} />
+                  <span className="protocol-crystal">crystal.fun</span>
+                </div>
+                <div className="protocol-nadfun-container">
+                  <svg width="15" height="15" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#7C55FF" stopOpacity="1" />
+                        <stop offset="100%" stopColor="#AD5FFB" stopOpacity="1" />
+                      </linearGradient>
+                    </defs>
+                    <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
+                  </svg>
+                  <span className="protocol-nadfun">nad.fun</span>
+                </div>
               </div>
             </div>
             <div className="keywords-section">
@@ -17516,370 +17517,523 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             </div>
           </div>
         ) : null}
-        {popup === 29 ? (
-          <div ref={popupref} className="modal-overlay">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h2>Create New Vault</h2>
-                <button
-                  className="modal-close"
-                  onClick={() => {
-                    setCreateVaultForm({
-                      name: '',
-                      description: '',
-                      selectedMarket: '',
-                      quoteAsset: '',
-                      baseAsset: '',
-                      amountQuote: '',
-                      amountBase: '',
-                      social1: '',
-                      social2: '',
-                      showMarketDropdown: false,
-                      marketSearchTerm: ''
-                    });
-                    setpopup(0);
-                  }}
-                >
-                  <img src={closebutton} className="close-button-icon" />
-                </button>
-              </div>
+{popup === 29 ? (
+  <div ref={popupref} className="modal-overlay">
+    <div className="modal-content">
+      <div className="modal-header">
+        <h2>Create New Vault</h2>
+        <button
+          className="modal-close"
+          onClick={() => {
+            setCreateVaultForm({
+              name: '',
+              description: '',
+              selectedMarket: '',
+              quoteAsset: '',
+              baseAsset: '',
+              amountQuote: '',
+              amountBase: '',
+              social1: '',
+              social2: '',
+              showMarketDropdown: false,
+              marketSearchTerm: ''
+            });
+            setCreateVaultStep('idle');
+            setCreateVaultError('');
+            setpopup(0);
+          }}
+        >
+          <img src={closebutton} className="close-button-icon" />
+        </button>
+      </div>
 
-              <div
-                className="modal-body"
-                onClick={(e) => {
-                  if (!(e.target as Element)?.closest?.('.market-selector-container')) {
-                    setCreateVaultForm(prev => ({
-                      ...prev,
-                      showMarketDropdown: false
-                    }));
-                  }
-                }}
-              >
-                <div className="form-group">
-                  <label>Vault Name</label>
+      <div
+        className="modal-body"
+        onClick={(e) => {
+          if (!(e.target as Element)?.closest?.('.market-selector-container')) {
+            setCreateVaultForm(prev => ({
+              ...prev,
+              showMarketDropdown: false
+            }));
+          }
+        }}
+      >
+        {/* Show form only when not in progress */}
+        {createVaultStep === 'idle' && (
+          <>
+            <div className="form-group">
+              <label>Vault Name</label>
+              <input
+                type="text"
+                value={createVaultForm.name}
+                onChange={(e) => setCreateVaultForm(prev => ({ ...prev, name: e.target.value }))}
+                className="form-input"
+                placeholder="Enter vault name"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Description</label>
+              <textarea
+                value={createVaultForm.description}
+                onChange={(e) => setCreateVaultForm(prev => ({ ...prev, description: e.target.value }))}
+                className="form-textarea"
+                rows={4}
+                placeholder="Describe your vault strategy"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="market-selector-label">Trading Market</label>
+              <div className="market-selector-container">
+                {(() => {
+                  const selectedMarket = Object.values(markets).find((market) =>
+                    `${market.baseAsset}${market.quoteAsset}` === createVaultForm.selectedMarket
+                  );
+                  return selectedMarket ? (
+                    <div className="selected-token-indicator">
+                      <img src={selectedMarket.image || tokendict[selectedMarket.baseAddress]?.image} alt={selectedMarket.baseAsset} className="token-icon-small" />
+                      <span className="token-symbol">{selectedMarket.baseAsset}/{selectedMarket.quoteAsset}</span>
+                    </div>
+                  ) : null;
+                })()}
+                <div className="market-selector-input-wrapper">
                   <input
                     type="text"
-                    value={createVaultForm.name}
-                    onChange={(e) => setCreateVaultForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="form-input"
-                    placeholder="Enter vault name"
+                    value=""
+                    onFocus={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: true }))}
+                    className="form-input market-selector-input"
+                    placeholder={createVaultForm.selectedMarket ? "" : "Select trading market..."}
+                    readOnly
                   />
+                  <button
+                    type="button"
+                    className="token-dropdown-button"
+                    onClick={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: !prev.showMarketDropdown }))}
+                  >
+                    <ChevronDown size={16} />
+                  </button>
                 </div>
+                {createVaultForm.showMarketDropdown && (
+                  <div className="create-vault-token-dropdown">
+                    <div className="create-vault-token-list">
+                      {Object.values(markets).filter((market) => {
+                        const searchTerm = createVaultForm.marketSearchTerm || '';
+                        const marketPair = `${market.baseAsset}/${market.quoteAsset}`;
+                        if (!searchTerm) return true;
+                        return marketPair.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          market.baseAsset.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          market.quoteAsset.toLowerCase().includes(searchTerm.toLowerCase());
+                      }).slice(0, 100).map((market) => {
+                        const marketKey = `${market.baseAsset}${market.quoteAsset}`;
+                        return (
+                          <div
+                            key={marketKey}
+                            className="create-vault-token-option"
+                            onClick={() => {
+                              setCreateVaultForm(prev => ({
+                                ...prev,
+                                selectedMarket: marketKey,
+                                quoteAsset: market.quoteAddress,
+                                baseAsset: market.baseAddress,
+                                showMarketDropdown: false,
+                                marketSearchTerm: ''
+                              }));
+                            }}
+                          >
+                            <img src={market.image || tokendict[market.baseAddress]?.image} alt={market.baseAsset} className="create-vault-token-icon" />
+                            <div className="create-vault-token-info">
+                              <div className="token-symbol">{market.baseAsset}/{market.quoteAsset}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
 
-                <div className="form-group">
-                  <label>Description</label>
-                  <textarea
-                    value={createVaultForm.description}
-                    onChange={(e) => setCreateVaultForm(prev => ({ ...prev, description: e.target.value }))}
-                    className="form-textarea"
-                    rows={4}
-                    placeholder="Describe your vault strategy"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="market-selector-label">Trading Market</label>
-                  <div className="market-selector-container">
-                    {(() => {
-                      const selectedMarket = Object.values(markets).find((market) =>
-                        `${market.baseAsset}${market.quoteAsset}` === createVaultForm.selectedMarket
-                      );
-                      return selectedMarket ? (
-                        <div className="selected-token-indicator">
-                          <img src={selectedMarket.image || tokendict[selectedMarket.baseAddress]?.image} alt={selectedMarket.baseAsset} className="token-icon-small" />
-                          <span className="token-symbol">{selectedMarket.baseAsset}/{selectedMarket.quoteAsset}</span>
-                        </div>
-                      ) : null;
-                    })()}
-                    <div className="market-selector-input-wrapper">
-                      <input
-                        type="text"
-                        value=""
-                        onFocus={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: true }))}
-                        className="form-input market-selector-input"
-                        placeholder={createVaultForm.selectedMarket ? "" : "Select trading market..."}
-                        readOnly
-                      />
-                      <button
-                        type="button"
-                        className="token-dropdown-button"
-                        onClick={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: !prev.showMarketDropdown }))}
-                      >
-                        <ChevronDown size={16} />
-                      </button>
+                      {Object.values(markets).filter((market) => {
+                        const searchTerm = createVaultForm.marketSearchTerm || '';
+                        const marketPair = `${market.baseAsset}/${market.quoteAsset}`;
+                        if (!searchTerm) return false;
+                        return marketPair.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          market.baseAsset.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          market.quoteAsset.toLowerCase().includes(searchTerm.toLowerCase());
+                      }).length === 0 && createVaultForm.marketSearchTerm && (
+                        <div className="no-tokens-found">No markets found</div>
+                      )}
                     </div>
-                    {createVaultForm.showMarketDropdown && (
-                      <div className="create-vault-token-dropdown">
-                        <div className="create-vault-token-list">
-                          {Object.values(markets).filter((market) => {
-                            const searchTerm = createVaultForm.marketSearchTerm || '';
-                            const marketPair = `${market.baseAsset}/${market.quoteAsset}`;
-                            if (!searchTerm) return true;
-                            return marketPair.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              market.baseAsset.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              market.quoteAsset.toLowerCase().includes(searchTerm.toLowerCase());
-                          }).slice(0, 100).map((market) => {
-                            const marketKey = `${market.baseAsset}${market.quoteAsset}`;
-                            return (
-                              <div
-                                key={marketKey}
-                                className="create-vault-token-option"
-                                onClick={() => {
-                                  setCreateVaultForm(prev => ({
-                                    ...prev,
-                                    selectedMarket: marketKey,
-                                    quoteAsset: market.quoteAddress,
-                                    baseAsset: market.baseAddress,
-                                    showMarketDropdown: false,
-                                    marketSearchTerm: ''
-                                  }));
-                                }}
-                              >
-                                <img src={market.image || tokendict[market.baseAddress]?.image} alt={market.baseAsset} className="create-vault-token-icon" />
-                                <div className="create-vault-token-info">
-                                  <div className="token-symbol">{market.baseAsset}/{market.quoteAsset}</div>
-                                </div>
-                              </div>
-                            );
-                          })}
-
-                          {Object.values(markets).filter((market) => {
-                            const searchTerm = createVaultForm.marketSearchTerm || '';
-                            const marketPair = `${market.baseAsset}/${market.quoteAsset}`;
-                            if (!searchTerm) return false;
-                            return marketPair.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              market.baseAsset.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              market.quoteAsset.toLowerCase().includes(searchTerm.toLowerCase());
-                          }).length === 0 && createVaultForm.marketSearchTerm && (
-                              <div className="no-tokens-found">No markets found</div>
-                            )}
-                        </div>
-                      </div>
-                    )}
                   </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Initial Quote Amount</label>
-                    <input
-                      type="number"
-                      value={createVaultForm.amountQuote}
-                      onChange={(e) => setCreateVaultForm(prev => ({ ...prev, amountQuote: e.target.value }))}
-                      className="form-input"
-                      placeholder="0.0"
-                    />
-                    {createVaultForm.quoteAsset && tokendict[createVaultForm.quoteAsset] && (
-                      <small className="token-label">
-                        {tokendict[createVaultForm.quoteAsset].ticker} ({tokendict[createVaultForm.quoteAsset].name})
-                      </small>
-                    )}
-                  </div>
-                  <div className="form-group">
-                    <label>Initial Base Amount</label>
-                    <input
-                      type="number"
-                      value={createVaultForm.amountBase}
-                      onChange={(e) => setCreateVaultForm(prev => ({ ...prev, amountBase: e.target.value }))}
-                      className="form-input"
-                      placeholder="0.0"
-                    />
-                    {createVaultForm.baseAsset && tokendict[createVaultForm.baseAsset] && (
-                      <small className="token-label">
-                        {tokendict[createVaultForm.baseAsset].ticker} ({tokendict[createVaultForm.baseAsset].name})
-                      </small>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Social Link 1 (Optional)</label>
-                    <input
-                      type="text"
-                      value={createVaultForm.social1}
-                      onChange={(e) => setCreateVaultForm(prev => ({ ...prev, social1: e.target.value }))}
-                      className="form-input"
-                      placeholder="https://twitter.com/..."
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Social Link 2 (Optional)</label>
-                    <input
-                      type="text"
-                      value={createVaultForm.social2}
-                      onChange={(e) => setCreateVaultForm(prev => ({ ...prev, social2: e.target.value }))}
-                      className="form-input"
-                      placeholder="https://telegram.me/..."
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button
-                  className={`save-button ${(!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase) ? 'disabled' : ''}`}
-                  disabled={!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase || isVaultDepositSigning}
-                  onClick={async () => {
-                    if (!connected || !createVaultForm.name || !createVaultForm.selectedMarket ||
-                      !createVaultForm.amountQuote || !createVaultForm.amountBase) {
-                      return;
-                    }
-
-                    await handleSetChain();
-
-                    try {
-                      setIsVaultDepositSigning(true);
-
-                      if (!createVaultForm.quoteAsset.startsWith('0x') || !createVaultForm.baseAsset.startsWith('0x')) {
-                        throw new Error('Invalid token addresses. Please provide valid contract addresses.');
-                      }
-
-                      const quoteAssetData = Object.values(tokendict).find((t) =>
-                        t.address.toLowerCase() === createVaultForm.quoteAsset.toLowerCase()
-                      );
-                      const baseAssetData = Object.values(tokendict).find((t) =>
-                        t.address.toLowerCase() === createVaultForm.baseAsset.toLowerCase()
-                      );
-
-                      if (!quoteAssetData || !baseAssetData) {
-                        throw new Error('One or both tokens not found in token dictionary. Please ensure you\'re using valid token addresses.');
-                      }
-
-                      const quoteDecimals = Number(quoteAssetData.decimals || 18);
-                      const baseDecimals = Number(baseAssetData.decimals || 18);
-
-                      const amountQuote = BigInt(Math.round(parseFloat(createVaultForm.amountQuote) * 10 ** quoteDecimals));
-                      const amountBase = BigInt(Math.round(parseFloat(createVaultForm.amountBase) * 10 ** baseDecimals));
-
-                      const quoteBalance = tokenBalances[createVaultForm.quoteAsset] || 0n;
-                      const baseBalance = tokenBalances[createVaultForm.baseAsset] || 0n;
-
-                      if (quoteBalance < amountQuote) {
-                        const formatBalance = (amount: bigint, decimals: number) => {
-                          const num = Number(amount) / 10 ** decimals;
-                          return num.toFixed(2);
-                        };
-                        throw new Error(`Insufficient ${quoteAssetData.ticker} balance. Required: ${createVaultForm.amountQuote}, Available: ${formatBalance(quoteBalance, quoteDecimals)}`);
-                      }
-
-                      if (baseBalance < amountBase) {
-                        const formatBalance = (amount: bigint, decimals: number) => {
-                          const num = Number(amount) / 10 ** decimals;
-                          return num.toFixed(2);
-                        };
-                        throw new Error(`Insufficient ${baseAssetData.ticker} balance. Required: ${createVaultForm.amountBase}, Available: ${formatBalance(baseBalance, baseDecimals)}`);
-                      }
-
-                      if (createVaultForm.quoteAsset.toLowerCase() != eth.toLowerCase()) {
-                        const approveQuoteUo = {
-                          target: createVaultForm.quoteAsset,
-                          data: encodeFunctionData({
-                            abi: [{
-                              inputs: [
-                                { name: "spender", type: "address" },
-                                { name: "amount", type: "uint256" }
-                              ],
-                              name: "approve",
-                              outputs: [{ name: "", type: "bool" }],
-                              stateMutability: "nonpayable",
-                              type: "function",
-                            }],
-                            functionName: "approve",
-                            args: [crystalVaults, amountQuote],
-                          }),
-                          value: 0n,
-                        };
-                        await sendUserOperationAsync({ uo: approveQuoteUo });
-                      }
-                      if (createVaultForm.baseAsset.toLowerCase() != eth.toLowerCase()) {
-                        const approveBaseUo = {
-                          target: createVaultForm.baseAsset,
-                          data: encodeFunctionData({
-                            abi: [{
-                              inputs: [
-                                { name: "spender", type: "address" },
-                                { name: "amount", type: "uint256" }
-                              ],
-                              name: "approve",
-                              outputs: [{ name: "", type: "bool" }],
-                              stateMutability: "nonpayable",
-                              type: "function",
-                            }],
-                            functionName: "approve",
-                            args: [crystalVaults, amountBase],
-                          }),
-                          value: 0n,
-                        };
-                        await sendUserOperationAsync({ uo: approveBaseUo });
-                      }
-
-                      const ethValue =
-                        createVaultForm.quoteAsset.toLowerCase() == eth.toLowerCase() ? amountQuote :
-                          createVaultForm.baseAsset.toLowerCase() == eth.toLowerCase() ? amountBase : 0n;
-
-                      const deployUo = {
-                        target: crystalVaults,
-                        data: encodeFunctionData({
-                          abi: CrystalVaultsAbi,
-                          functionName: "deploy",
-                          args: [
-                            createVaultForm.quoteAsset as `0x${string}`,
-                            createVaultForm.baseAsset as `0x${string}`,
-                            amountQuote,
-                            amountBase,
-                            0n,
-                            0n,
-                            true,
-                            {
-                              name: createVaultForm.name || 'Unnamed Vault',
-                              description: createVaultForm.description || 'No description provided',
-                              social1: createVaultForm.social1 || '',
-                              social2: createVaultForm.social2 || '',
-                              social3: createVaultForm.social2 || ''
-                            },
-                          ],
-                        }),
-                        value: ethValue,
-                      };
-
-                      await sendUserOperationAsync({ uo: deployUo });
-                      setCreateVaultForm({
-                        name: '',
-                        description: '',
-                        selectedMarket: '',
-                        quoteAsset: '',
-                        baseAsset: '',
-                        amountQuote: '',
-                        amountBase: '',
-                        social1: '',
-                        social2: '',
-                        showMarketDropdown: false,
-                        marketSearchTerm: ''
-                      });
-                      setpopup(0);
-                      refetch?.();
-
-                    } catch (e) {
-                      console.error('Vault creation error:', e);
-                    } finally {
-                      setIsVaultDepositSigning(false);
-                    }
-                  }}
-                >
-                  {isVaultDepositSigning ? (
-                    <div className="button-content">
-                      <div className="loading-spinner" />
-                      Creating...
-                    </div>
-                  ) : (
-                    'Create Vault'
-                  )}
-                </button>
+                )}
               </div>
             </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Initial Quote Amount</label>
+                <input
+                  type="number"
+                  value={createVaultForm.amountQuote}
+                  onChange={(e) => setCreateVaultForm(prev => ({ ...prev, amountQuote: e.target.value }))}
+                  className="form-input"
+                  placeholder="0.0"
+                />
+                {/* {createVaultForm.quoteAsset && tokendict[createVaultForm.quoteAsset] && (
+                  <small className="token-label">
+                    {tokendict[createVaultForm.quoteAsset].ticker} ({tokendict[createVaultForm.quoteAsset].name})
+                  </small>
+                )} */}
+              </div>
+              <div className="form-group">
+                <label>Initial Base Amount</label>
+                <input
+                  type="number"
+                  value={createVaultForm.amountBase}
+                  onChange={(e) => setCreateVaultForm(prev => ({ ...prev, amountBase: e.target.value }))}
+                  className="form-input"
+                  placeholder="0.0"
+                />
+                {/* {createVaultForm.baseAsset && tokendict[createVaultForm.baseAsset] && (
+                  <small className="token-label">
+                    {tokendict[createVaultForm.baseAsset].ticker} ({tokendict[createVaultForm.baseAsset].name})
+                  </small>
+                )} */}
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Social Link 1 (Optional)</label>
+                <input
+                  type="text"
+                  value={createVaultForm.social1}
+                  onChange={(e) => setCreateVaultForm(prev => ({ ...prev, social1: e.target.value }))}
+                  className="form-input"
+                  placeholder="https://twitter.com/..."
+                />
+              </div>
+              <div className="form-group">
+                <label>Social Link 2 (Optional)</label>
+                <input
+                  type="text"
+                  value={createVaultForm.social2}
+                  onChange={(e) => setCreateVaultForm(prev => ({ ...prev, social2: e.target.value }))}
+                  className="form-input"
+                  placeholder="https://telegram.me/..."
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {createVaultStep !== 'idle' && (
+          <div className="create-vault-progress-container">
+            <div className="create-vault-progress-steps">
+              <div className={`create-vault-progress-step ${
+                createVaultStep === 'validating' ? 'active' : 
+                ['approve-quote', 'approve-base', 'creating', 'success'].includes(createVaultStep) ? 'completed' : ''
+              }`}>
+                <div className="step-progress-indicator">
+                  {['approve-quote', 'approve-base', 'creating', 'success'].includes(createVaultStep) ? (
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ) : (
+                    <span>1</span>
+                  )}
+                </div>
+                <div className="step-progress-content">
+                  <div className="step-progress-title">Validating</div>
+                  <div className="step-progress-description">Checking balances and permissions</div>
+                </div>
+
+              </div>
+
+              {createVaultForm.quoteAsset && createVaultForm.quoteAsset.toLowerCase() !== eth.toLowerCase() && (
+                <div className={`create-vault-progress-step ${
+                  createVaultStep === 'approve-quote' ? 'active' : 
+                  ['approve-base', 'creating', 'success'].includes(createVaultStep) ? 'completed' : ''
+                }`}>
+                  <div className="step-progress-indicator">
+                    {['approve-base', 'creating', 'success'].includes(createVaultStep) ? (
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    ) : (
+                      <span>2</span>
+                    )}
+                  </div>
+                  <div className="step-progress-content">
+                    <div className="step-progress-title">
+                      Approve {tokendict[createVaultForm.quoteAsset]?.ticker || 'Quote Token'}
+                    </div>
+                    <div className="step-progress-description">Grant vault contract permission</div>
+                  </div>
+                </div>
+              )}
+
+              {createVaultForm.baseAsset && createVaultForm.baseAsset.toLowerCase() !== eth.toLowerCase() && (
+                <div className={`create-vault-progress-step ${
+                  createVaultStep === 'approve-base' ? 'active' : 
+                  ['creating', 'success'].includes(createVaultStep) ? 'completed' : ''
+                }`}>
+                  <div className="step-progress-indicator">
+                    {['creating', 'success'].includes(createVaultStep) ? (
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    ) : (
+                      <span>
+                        {createVaultForm.quoteAsset.toLowerCase() !== eth.toLowerCase() ? '3' : '2'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="step-progress-content">
+                    <div className="step-progress-title">
+                      Approve {tokendict[createVaultForm.baseAsset]?.ticker || 'Base Token'}
+                    </div>
+                    <div className="step-progress-description">Grant vault contract permission</div>
+                  </div>
+                </div>
+              )}
+
+              <div className={`create-vault-progress-step ${
+                createVaultStep === 'creating' ? 'active' : 
+                createVaultStep === 'success' ? 'completed' : ''
+              }`}>
+                <div className="step-progress-indicator">
+                  {createVaultStep === 'success' ? (
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ) : (
+                    <span>
+                      {(() => {
+                        let stepNum = 2;
+                        if (createVaultForm.quoteAsset.toLowerCase() !== eth.toLowerCase()) stepNum++;
+                        if (createVaultForm.baseAsset.toLowerCase() !== eth.toLowerCase()) stepNum++;
+                        return stepNum;
+                      })()}
+                    </span>
+                  )}
+                </div>
+                <div className="step-progress-content">
+                  <div className="step-progress-title">Creating Vault</div>
+                  <div className="step-progress-description">Deploying your vault contract</div>
+                </div>
+              </div>
+            </div>
+
           </div>
-        ) : null}
+        )}
+      </div>
+
+      <div className="modal-footer">
+        {createVaultError && createVaultStep === 'idle' && (
+          <div className="create-vault-error">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+              <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M8 4v5M8 11v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <span>{createVaultError}</span>
+          </div>
+        )}
+
+        <button
+          className={`save-button ${
+            (!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase) && createVaultStep === 'idle' ? 'disabled' : ''
+          } ${createVaultStep === 'success' ? 'success' : ''}`}
+          disabled={
+            (createVaultStep === 'idle' && (!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase)) ||
+            isVaultDepositSigning
+          }
+          onClick={async () => {
+            if (!connected || !createVaultForm.name || !createVaultForm.selectedMarket ||
+              !createVaultForm.amountQuote || !createVaultForm.amountBase) {
+              return;
+            }
+
+            await handleSetChain();
+
+            try {
+              setIsVaultDepositSigning(true);
+              setCreateVaultError('');
+              
+              // Step 1: Validating
+              setCreateVaultStep('validating');
+              await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for UX
+              
+              if (!createVaultForm.quoteAsset.startsWith('0x') || !createVaultForm.baseAsset.startsWith('0x')) {
+                throw new Error('Invalid token addresses. Please provide valid contract addresses.');
+              }
+
+              const quoteAssetData = Object.values(tokendict).find((t) =>
+                t.address.toLowerCase() === createVaultForm.quoteAsset.toLowerCase()
+              );
+              const baseAssetData = Object.values(tokendict).find((t) =>
+                t.address.toLowerCase() === createVaultForm.baseAsset.toLowerCase()
+              );
+
+              if (!quoteAssetData || !baseAssetData) {
+                throw new Error('One or both tokens not found in token dictionary. Please ensure you\'re using valid token addresses.');
+              }
+
+              const quoteDecimals = Number(quoteAssetData.decimals || 18);
+              const baseDecimals = Number(baseAssetData.decimals || 18);
+
+              const amountQuote = BigInt(Math.round(parseFloat(createVaultForm.amountQuote) * 10 ** quoteDecimals));
+              const amountBase = BigInt(Math.round(parseFloat(createVaultForm.amountBase) * 10 ** baseDecimals));
+
+              const quoteBalance = tokenBalances[createVaultForm.quoteAsset] || 0n;
+              const baseBalance = tokenBalances[createVaultForm.baseAsset] || 0n;
+
+              if (quoteBalance < amountQuote) {
+                const formatBalance = (amount: bigint, decimals: number) => {
+                  const num = Number(amount) / 10 ** decimals;
+                  return num.toFixed(2);
+                };
+                throw new Error(`Insufficient ${quoteAssetData.ticker} balance. Required: ${createVaultForm.amountQuote}, Available: ${formatBalance(quoteBalance, quoteDecimals)}`);
+              }
+
+              if (baseBalance < amountBase) {
+                const formatBalance = (amount: bigint, decimals: number) => {
+                  const num = Number(amount) / 10 ** decimals;
+                  return num.toFixed(2);
+                };
+                throw new Error(`Insufficient ${baseAssetData.ticker} balance. Required: ${createVaultForm.amountBase}, Available: ${formatBalance(baseBalance, baseDecimals)}`);
+              }
+
+              // Step 2: Approve Quote Token
+              if (createVaultForm.quoteAsset.toLowerCase() !== eth.toLowerCase()) {
+                setCreateVaultStep('approve-quote');
+                const approveQuoteUo = {
+                  target: createVaultForm.quoteAsset,
+                  data: encodeFunctionData({
+                    abi: [{
+                      inputs: [
+                        { name: "spender", type: "address" },
+                        { name: "amount", type: "uint256" }
+                      ],
+                      name: "approve",
+                      outputs: [{ name: "", type: "bool" }],
+                      stateMutability: "nonpayable",
+                      type: "function",
+                    }],
+                    functionName: "approve",
+                    args: [crystalVaults, amountQuote],
+                  }),
+                  value: 0n,
+                };
+                await sendUserOperationAsync({ uo: approveQuoteUo });
+              }
+              
+              // Step 3: Approve Base Token
+              if (createVaultForm.baseAsset.toLowerCase() !== eth.toLowerCase()) {
+                setCreateVaultStep('approve-base');
+                const approveBaseUo = {
+                  target: createVaultForm.baseAsset,
+                  data: encodeFunctionData({
+                    abi: [{
+                      inputs: [
+                        { name: "spender", type: "address" },
+                        { name: "amount", type: "uint256" }
+                      ],
+                      name: "approve",
+                      outputs: [{ name: "", type: "bool" }],
+                      stateMutability: "nonpayable",
+                      type: "function",
+                    }],
+                    functionName: "approve",
+                    args: [crystalVaults, amountBase],
+                  }),
+                  value: 0n,
+                };
+                await sendUserOperationAsync({ uo: approveBaseUo });
+              }
+
+              // Step 4: Creating Vault
+              setCreateVaultStep('creating');
+              
+              const ethValue =
+                createVaultForm.quoteAsset.toLowerCase() === eth.toLowerCase() ? amountQuote :
+                  createVaultForm.baseAsset.toLowerCase() === eth.toLowerCase() ? amountBase : 0n;
+
+              const deployUo = {
+                target: crystalVaults,
+                data: encodeFunctionData({
+                  abi: CrystalVaultsAbi,
+                  functionName: "deploy",
+                  args: [
+                    createVaultForm.quoteAsset as `0x${string}`,
+                    createVaultForm.baseAsset as `0x${string}`,
+                    amountQuote,
+                    amountBase,
+                    0n,
+                    0n,
+                    true,
+                    {
+                      name: createVaultForm.name || 'Unnamed Vault',
+                      description: createVaultForm.description || 'No description provided',
+                      social1: createVaultForm.social1 || '',
+                      social2: createVaultForm.social2 || '',
+                      social3: createVaultForm.social2 || ''
+                    },
+                  ],
+                }),
+                value: ethValue,
+              };
+
+              await sendUserOperationAsync({ uo: deployUo });
+              
+              // Step 5: Success
+              setCreateVaultStep('success');
+              
+              // Wait a moment to show success state
+              setTimeout(() => {
+                setCreateVaultForm({
+                  name: '',
+                  description: '',
+                  selectedMarket: '',
+                  quoteAsset: '',
+                  baseAsset: '',
+                  amountQuote: '',
+                  amountBase: '',
+                  social1: '',
+                  social2: '',
+                  showMarketDropdown: false,
+                  marketSearchTerm: ''
+                });
+                setCreateVaultStep('idle');
+                setCreateVaultError('');
+                setpopup(0);
+                refetch?.();
+              }, 2000);
+
+            } catch (e: any) {
+              console.error('Vault creation error:', e);
+              setCreateVaultError(e?.message || 'An error occurred while creating the vault. Please try again.');
+              setCreateVaultStep('idle');
+            } finally {
+              setIsVaultDepositSigning(false);
+            }
+          }}
+        >
+          {createVaultStep === 'success' ? (
+            <div className="button-content">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Vault Created!
+            </div>
+          ) : createVaultStep !== 'idle' ? (
+            <div className="button-content">
+              <div className="loading-spinner" />
+            </div>
+          ) : (
+            'Create Vault'
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+) : null}
         {popup === 30 ? ( // perps-deposit-popup
           <div className="modal-overlay">
             <div className="modal-content" ref={popupref}>
@@ -24868,7 +25022,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 monUsdPrice={monUsdPrice}
                 tokens={tokensByStatus}
               />
-            } 
+            }
           />
           <Route path="/board/:tokenAddress"
             element={
@@ -24895,7 +25049,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 realtimeCallbackRef={memeRealtimeCallbackRef}
                 selectedIntervalRef={memeSelectedIntervalRef}
               />
-            } 
+            }
           />
           <Route path="/earn" element={<Navigate to="/earn/vaults" replace />} />
           <Route path="/earn/*"

@@ -50,7 +50,7 @@ interface EarnProps {
 const Earn: React.FC<EarnProps> = (props) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'liquidity' | 'vaults'>('liquidity');
+  const [activeTab, setActiveTab] = useState<'vaults' | 'liquidity'>('vaults');
 
   useEffect(() => {
     if (location.pathname.includes('/earn/liquidity')) {
@@ -82,17 +82,17 @@ const Earn: React.FC<EarnProps> = (props) => {
         </div>
         <div className="earn-toggle-container">
           <div className="earn-toggle" data-active={activeTab}>
+          <button
+              className={`earn-toggle-tab ${activeTab === 'vaults' ? 'active' : ''}`}
+              onClick={() => handleTabChange('vaults')}
+            >
+              Vaults
+            </button>
             <button
               className={`earn-toggle-tab ${activeTab === 'liquidity' ? 'active' : ''}`}
               onClick={() => handleTabChange('liquidity')}
             >
               Liquidity Pools
-            </button>
-            <button
-              className={`earn-toggle-tab ${activeTab === 'vaults' ? 'active' : ''}`}
-              onClick={() => handleTabChange('vaults')}
-            >
-              Vaults
             </button>
           </div>
         </div>

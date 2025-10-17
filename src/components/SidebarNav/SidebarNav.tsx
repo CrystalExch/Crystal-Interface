@@ -196,7 +196,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             </Link>
             {!isMobile && (
               <Link
-                to="/earn/liquidity"
+                to="/earn/vaults"
                 className={`page-mode-button ${path.startsWith('/earn/liquidity') || path.startsWith('/earn/vaults')
                     ? 'active'
                     : ''
