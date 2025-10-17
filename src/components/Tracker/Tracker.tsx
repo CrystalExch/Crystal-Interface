@@ -289,6 +289,7 @@ const Tracker: React.FC<TrackerProps> = ({
   walletTokenBalances = {}
 }) => {
   const [selectedSimpleFilter, setSelectedSimpleFilter] = useState<string | null>(null);
+  const [emojiPickerPosition, setEmojiPickerPosition] = useState<{top: number, left: number} | null>(null);
   const context = useSharedContext();
   const activechain = context?.activechain || 'monad';
   const [walletSortField, setWalletSortField] = useState<'balance' | 'lastActive' | null>(null);
@@ -2203,19 +2204,29 @@ const Tracker: React.FC<TrackerProps> = ({
 
         {/* Balance column */}
         <div className="tracker-wallet-balance">
-          <img src={monadicon} className="tracker-balance-icon" alt="MON" />
+          {walletCurrency === 'USD' ? (
+            <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.75rem', marginRight: '-2px' }}>$</span>
+          ) : (
+            <img src={monadicon} className="tracker-balance-icon" alt="MON" />
+          )}
           <span className={isBlurred ? 'blurred' : ''}>
             {(() => {
               const b = walletTokenBalances[wallet.address];
               const ethToken = chainCfg?.eth;
 
+              let balanceInMON;
               if (b && ethToken) {
                 const bal = Number(b[ethToken] || 0) / 1e18;
-                return bal > 0
-                  ? (bal / DISPLAY_SCALE).toFixed(2)
-                  : '0.00';
+                balanceInMON = bal > 0 ? (bal / DISPLAY_SCALE) : 0;
+              } else {
+                balanceInMON = wallet.balance;
               }
-              return wallet.balance.toFixed(2);
+
+              const displayValue = walletCurrency === 'USD' 
+                ? (balanceInMON * monUsdPrice)
+                : balanceInMON;
+
+              return displayValue.toFixed(2);
             })()}
           </span>
         </div>
@@ -2495,7 +2506,16 @@ const Tracker: React.FC<TrackerProps> = ({
                 <div className="tracker-input-with-emoji">
                   <button 
                     className="tracker-emoji-picker-trigger"
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    onClick={(e) => {
+                      if (!showEmojiPicker) {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setEmojiPickerPosition({
+                          top: rect.bottom + window.scrollY + 8,
+                          left: rect.left + window.scrollX + (rect.width / 2)
+                        });
+                      }
+                      setShowEmojiPicker(!showEmojiPicker);
+                    }}
                     type="button"
                   >
                     {newWalletEmoji}
@@ -2534,13 +2554,25 @@ const Tracker: React.FC<TrackerProps> = ({
         </div>
       )}
 
-      {showEmojiPicker && (
-        <div className="tracker-emoji-picker-backdrop" onClick={() => setShowEmojiPicker(false)}>
-          <div className="tracker-emoji-picker-positioned" onClick={(e) => e.stopPropagation()}>
+      {showEmojiPicker && emojiPickerPosition && (
+        <div className="tracker-emoji-picker-backdrop" onClick={() => {
+          setShowEmojiPicker(false);
+          setEmojiPickerPosition(null);
+        }}>
+          <div 
+            className="tracker-emoji-picker-positioned" 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              top: `${emojiPickerPosition.top}px`,
+              left: `${emojiPickerPosition.left}px`,
+              transform: 'translateX(-50%)'
+            }}
+          >
             <EmojiPicker
               onEmojiClick={(emojiData) => {
                 setNewWalletEmoji(emojiData.emoji);
                 setShowEmojiPicker(false);
+                setEmojiPickerPosition(null);
               }}
               width={350}
               height={400}
@@ -2548,6 +2580,10 @@ const Tracker: React.FC<TrackerProps> = ({
               skinTonesDisabled={true}
               previewConfig={{
                 showPreview: false
+              }}
+              style={{
+                backgroundColor: '#000000',
+                border: '1px solid rgba(179, 184, 249, 0.2)'
               }}
             />
           </div>
