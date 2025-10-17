@@ -26,8 +26,8 @@ const SortArrow: React.FC<SortArrowProps> = ({
       {sortDirection && (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="13"
-          height="13"
+          width="15"
+          height="15"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -37,8 +37,7 @@ const SortArrow: React.FC<SortArrowProps> = ({
           className={`sort-arrow-icon ${sortDirection}`}
           aria-hidden="true"
         >
-          <path d="m5 12 7-7 7 7" />
-          <path d="M12 19V5" />
+          <path d="m6 9 6 6 6-6"/>
         </svg>
       )}
     </span>
