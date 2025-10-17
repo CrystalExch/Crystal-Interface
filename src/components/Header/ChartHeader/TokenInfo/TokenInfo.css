@@ -1220,7 +1220,7 @@
   justify-content: center;
   opacity: 0;
   transition: opacity 0.2s ease;
-  border-radius: 3px;
+  border-radius: 1px;
   z-index: 4;
 }
 
