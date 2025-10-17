@@ -2988,7 +2988,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                                   const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
 
                                   return (
-                                    <Tooltip content={hasInsufficientGas ? "Not enough for gas" : "MON Balance"}>
+                                    <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
                                       <div
                                         className={`meme-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
                                       >
@@ -3124,7 +3124,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                                   const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
 
                                   return (
-                                    <Tooltip content={hasInsufficientGas ? "Not enough for gas" : "MON Balance"}>
+                                    <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
                                       <div
                                         className={`meme-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
                                       >
