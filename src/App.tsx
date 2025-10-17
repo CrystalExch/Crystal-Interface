@@ -299,15 +299,6 @@ const Loader = () => {
               volume
               latestPrice
               metadataCID
-              klines(first: 1000, skip: 0, orderBy: time, orderDirection: desc) {
-                id
-                time
-                open
-                high
-                low
-                close
-                baseVolume
-              }
               trades(first: 100, orderBy: timestamp, orderDirection: desc) {
                 id
                 amountIn
@@ -9806,6 +9797,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 intervalSeconds
                 klines(orderBy:time, orderDirection: desc) {
                   time
+                  open
                   high
                   low
                   close
@@ -9933,7 +9925,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         });
 
         const rows: any[] = [];
-        const buildMiniPointsDesc = (mkt: any): Array<{ time: number; price: number; usdVolume?: string }> => {
+        const buildMiniPointsDesc = (mkt: any): Array<any> => {
           const oneHourSeries = Array.isArray(mkt.series)
             ? mkt.series.find((s: any) => Number(s?.intervalSeconds) === 3600)
             : null;
@@ -9951,7 +9943,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             })
             .map((k: any) => ({
               time: Number(k.time ?? 0),
-              price: Number(k.close ?? 0),
+              open: Number(k.open ?? 0),
+              close: Number(k.close ?? 0),
+              high: Number(k.high ?? 0),
+              low: Number(k.low ?? 0),
               usdVolume: String(k.usdVolume ?? "0"),
             }));
         };
@@ -9969,13 +9964,20 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           const last = pf ? lastRaw / pf : 0;
 
           const miniDesc = buildMiniPointsDesc(m);
-          const miniAsc = [...miniDesc].reverse().map((p: any) => ({
-            time: Number(p.time) * 1000,
-            value: pf ? Number(p.price) / pf : 0,
-          }));
+          const r = [...miniDesc].reverse()
+          const miniAsc = r[0]
+            ? [{ time: Number(r[0].time) * 1000, value: Number(r[0].open) / pf, high: Number(r[0].high) / pf, low: Number(r[0].low) / pf },
+               ...r.map((p: any) => ({
+                 time: Number(p.time) * 1000,
+                 value: Number(p.close) / pf,
+                 high: Number(p.high) / pf,
+                 low: Number(p.low) / pf,
+                 open: Number(p.open) / pf
+               }))]
+            : []
           const open24 = miniAsc.length ? miniAsc[0].value : last;
-          const highs = miniAsc.length ? miniAsc.map((p) => p.value) : [last];
-          const lows = miniAsc.length ? miniAsc.map((p) => p.value) : [last];
+          const highs = miniAsc.length ? miniAsc.map((p) => p.high) : [last];
+          const lows = miniAsc.length ? miniAsc.map((p) => p.low) : [last];
           const high24 = Math.max(...highs);
           const low24 = Math.min(...lows);
           const pct = open24 === 0 ? 0 : ((last - open24) / open24) * 100;
