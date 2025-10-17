@@ -412,13 +412,14 @@
   background: transparent;
   border: none;
   color: #ffffff79;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 300;
   cursor: pointer;
   transition: color .3s ease;
   white-space: nowrap;
   text-align: center;
   height: 30px;
+  letter-spacing: -0.5px;
 }
 
 .lp-tab:hover {
@@ -458,6 +459,7 @@
 
 .market-selector-container {
   align-self: flex-start;
+  width: 100%;
 }
 
 .lp-search-input {
@@ -1706,7 +1708,7 @@
 .lp-input-container-balance-error {
   animation: lp-pulse-error 2s infinite;
   background-color: #ff575709;
-  border: 1.5px solid #ff57576f !important;
+  border: 1px solid #ff57576f !important;
   box-shadow: 0 0 5px rgba(255, 87, 87, .2)
 }
 
@@ -1741,13 +1743,14 @@
   background: transparent;
   border: none;
   color: #ffffff79;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 300;
   cursor: pointer;
   transition: color .3s ease;
   white-space: nowrap;
   text-align: center;
   height: 30px;
+  letter-spacing: -0.5px;
 }
 
 .vault-tab:hover,
@@ -2255,8 +2258,8 @@
 .form-input,
 .form-textarea {
   background: 0 0;
-  border: 1.5px solid rgba(179, 184, 249, .1);
-  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, .15);
+  border-radius: 4px;
   color: #fff;
   font-size: .85rem;
   letter-spacing: -.3px;
@@ -2368,7 +2371,7 @@
   font-size: .85rem;
   font-weight: 500;
   letter-spacing: -.5px;
-  padding: .5rem 1rem;
+  padding: .3rem 1rem;
   transition: all.2s ease;
   width: 100%
 }
@@ -2441,7 +2444,7 @@
 .vault-metric-value {
   color: #fff;
   font-size: 1.1rem;
-  font-weight: 400
+  font-weight: 300
 }
 
 .metric-positive {
@@ -2994,6 +2997,10 @@
   gap: .3rem;
 }
 
+.vault-actions-col{
+  justify-content: flex-end
+}
+
 .vault-action-buttons-col {
   flex: 1.5;
   justify-content: flex-end
@@ -3215,17 +3222,16 @@
   align-items: center;
   background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
   border: none;
-  border-radius: 6px;
+  border-radius: 20px;
   box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
   color: #000;
   cursor: pointer;
   display: flex;
   font-size: .9rem;
   font-weight: 500;
-  height: 35px;
   justify-content: center;
   letter-spacing: -.5px;
-  padding: .5rem 1rem;
+  padding: .3rem 1rem;
   transition: all.2s ease;
   width: 100%
 }
@@ -4018,7 +4024,7 @@
 .withdraw-percentage-input-container {
   display: flex;
   justify-content: center;
-  padding-bottom: 1rem;
+  padding: 1rem 0;
   width: 100%;
 }
 
@@ -4031,7 +4037,7 @@
   background: none;
   border: none;
   color: #fff;
-  font-size: 4rem;
+  font-size: 3rem;
   font-variant-numeric: tabular-nums;
   font-weight: 300;
   letter-spacing: -0.5px;
@@ -4051,12 +4057,12 @@
 .percentage-btn {
   align-items: center;
   background: none;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 12px;
+  border: 1.5px solid rgba(151, 157, 237, 0.1);
+  border-radius: 20px;
   color: #ffffff79;
   cursor: pointer;
   display: flex;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 400;
   height: 32px;
   justify-content: center;
@@ -4068,8 +4074,7 @@
 }
 
 .percentage-btn:hover {
-  background-color: #ffffff05;
-  border-color: #2a2a2f;
+  border-color: rgba(151, 157, 237, 0.15);
   color: #fff;
 }
 
@@ -4363,7 +4368,7 @@
 }
 
 .withdraw-percentage-symbol {
-  font-size: 4rem;
+  font-size: 3rem;
   font-weight: 300;
   line-height: 1;
   margin-left: 0.25rem;

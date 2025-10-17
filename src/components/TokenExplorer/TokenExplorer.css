@@ -4681,3 +4681,13 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
   pointer-events: none;
   box-shadow: 0 0 4px black;
 }
+
+.wallet-dropdown-balance-amount.insufficient-gas {
+  border-color: rgba(235, 112, 112, 0.3);
+  color: rgb(235, 112, 112);
+}
+
+.wallet-dropdown-balance-amount.insufficient-gas .meme-wallet-mon-icon {
+  opacity: 0.8;
+}
+

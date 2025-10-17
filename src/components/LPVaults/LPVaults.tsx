@@ -21,6 +21,7 @@ import { settings } from '../../settings';
 import { formatSig } from '../OrderCenter/utils';
 
 import './LPVaults.css';
+import { createPortal } from 'react-dom';
 
 interface LPVaultsProps {
   setpopup: (value: number) => void;
@@ -133,7 +134,157 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({
     </div>
   );
 };
+const TooltipLabel: React.FC<{
+  content: string;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
+}> = ({ content, children, position = 'top' }) => {
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current || !tooltipRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+    let top = 0;
+    let left = 0;
+
+    switch (position) {
+      case 'top':
+        top = rect.top + scrollY - tooltipRect.height - 10;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'bottom':
+        top = rect.bottom + scrollY + 10;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'left':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.left + scrollX - tooltipRect.width - 10;
+        break;
+      case 'right':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.right + scrollX + 10;
+        break;
+    }
+
+    const margin = 10;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    if (position === 'top' || position === 'bottom') {
+      left = Math.min(
+        Math.max(left, margin + tooltipRect.width / 2),
+        viewportWidth - margin - tooltipRect.width / 2,
+      );
+    } else {
+      top = Math.min(
+        Math.max(top, margin),
+        viewportHeight - margin - tooltipRect.height,
+      );
+    }
+
+    setTooltipPosition({ top, left });
+  }, [position]);
+
+  const handleMouseEnter = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    setIsLeaving(false);
+    setShouldRender(true);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+      fadeTimeoutRef.current = null;
+    }, 10);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    setIsLeaving(true);
+    setIsVisible(false);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      setShouldRender(false);
+      setIsLeaving(false);
+      fadeTimeoutRef.current = null;
+    }, 150);
+  }, []);
+
+  useEffect(() => {
+    if (shouldRender && !isLeaving) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [shouldRender, updatePosition, isLeaving]);
+
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="tooltip-container"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {shouldRender &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+            style={{
+              position: 'absolute',
+              top: `${tooltipPosition.top - 20}px`,
+              left: `${tooltipPosition.left}px`,
+              transform: `${position === 'top' || position === 'bottom'
+                ? 'translateX(-50%)'
+                : position === 'left' || position === 'right'
+                  ? 'translateY(-50%)'
+                  : 'none'
+                } scale(${isVisible ? 1 : 0})`,
+              opacity: isVisible ? 1 : 0,
+              zIndex: 9999,
+              pointerEvents: 'none',
+              transition:
+                'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+              willChange: 'transform, opacity',
+            }}
+          >
+            <div className="tooltip-content">{content}</div>
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+};
 const LPVaults: React.FC<LPVaultsProps> = ({
   setpopup,
   tokendict,
@@ -249,13 +400,13 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       calculateUSDValue(
         vault.quoteBalance,
         tradesByMarket[
-          (({ baseAsset, quoteAsset }) =>
-            (baseAsset === settings.chainConfig[activechain].wethticker
-              ? settings.chainConfig[activechain].wethticker
-              : baseAsset) +
-            (quoteAsset === settings.chainConfig[activechain].wethticker
-              ? settings.chainConfig[activechain].wethticker
-              : quoteAsset))(getMarket(vault?.quoteAsset, vault?.baseAsset))
+        (({ baseAsset, quoteAsset }) =>
+          (baseAsset === settings.chainConfig[activechain].wethticker
+            ? settings.chainConfig[activechain].wethticker
+            : baseAsset) +
+          (quoteAsset === settings.chainConfig[activechain].wethticker
+            ? settings.chainConfig[activechain].wethticker
+            : quoteAsset))(getMarket(vault?.quoteAsset, vault?.baseAsset))
         ],
         vault?.quoteAsset,
         getMarket(vault?.quoteAsset, vault?.baseAsset),
@@ -263,13 +414,13 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       calculateUSDValue(
         vault.baseBalance,
         tradesByMarket[
-          (({ baseAsset, quoteAsset }) =>
-            (baseAsset === settings.chainConfig[activechain].wethticker
-              ? settings.chainConfig[activechain].wethticker
-              : baseAsset) +
-            (quoteAsset === settings.chainConfig[activechain].wethticker
-              ? settings.chainConfig[activechain].wethticker
-              : quoteAsset))(getMarket(vault?.quoteAsset, vault?.baseAsset))
+        (({ baseAsset, quoteAsset }) =>
+          (baseAsset === settings.chainConfig[activechain].wethticker
+            ? settings.chainConfig[activechain].wethticker
+            : baseAsset) +
+          (quoteAsset === settings.chainConfig[activechain].wethticker
+            ? settings.chainConfig[activechain].wethticker
+            : quoteAsset))(getMarket(vault?.quoteAsset, vault?.baseAsset))
         ],
         vault?.baseAsset,
         getMarket(vault?.quoteAsset, vault?.baseAsset),
@@ -280,7 +431,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const calculateUserPositionValue = (vault: any) => {
     return vault.totalShares
       ? (calculateTVL(vault) * Number(vault.userShares)) /
-          Number(vault.totalShares)
+      Number(vault.totalShares)
       : 0;
   };
 
@@ -309,28 +460,28 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       case 'disable-deposits':
         !selectedVault?.locked
           ? (deployUo.data = encodeFunctionData({
-              abi: CrystalVaultsAbi,
-              functionName: 'lock',
-              args: [selectedVault?.address],
-            }))
+            abi: CrystalVaultsAbi,
+            functionName: 'lock',
+            args: [selectedVault?.address],
+          }))
           : (deployUo.data = encodeFunctionData({
-              abi: CrystalVaultsAbi,
-              functionName: 'unlock',
-              args: [selectedVault?.address],
-            }));
+            abi: CrystalVaultsAbi,
+            functionName: 'unlock',
+            args: [selectedVault?.address],
+          }));
         break;
       case 'decrease':
         true
           ? (deployUo.data = encodeFunctionData({
-              abi: CrystalVaultsAbi,
-              functionName: 'changeDecreaseOnWithdraw',
-              args: [selectedVault?.address, true],
-            }))
+            abi: CrystalVaultsAbi,
+            functionName: 'changeDecreaseOnWithdraw',
+            args: [selectedVault?.address, true],
+          }))
           : (deployUo.data = encodeFunctionData({
-              abi: CrystalVaultsAbi,
-              functionName: 'changeDecreaseOnWithdraw',
-              args: [selectedVault?.address, false],
-            }));
+            abi: CrystalVaultsAbi,
+            functionName: 'changeDecreaseOnWithdraw',
+            args: [selectedVault?.address, false],
+          }));
         break;
       case 'close':
         deployUo.data = encodeFunctionData({
@@ -462,7 +613,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   className={`vault-tab ${activeVaultTab === 'all' ? 'active' : ''}`}
                   onClick={() => setActiveVaultTab('all')}
                 >
-                  All Vaults ({filteredVaultStrategies.length})
+                  All Vaults 
                 </button>
                 <button
                   className={`vault-tab ${activeVaultTab === 'my-vaults' ? 'active' : ''}`}
@@ -592,18 +743,22 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
                     <div className="col vault-tokens-col">
                       <div className="vault-tokens">
-                        <div className="quote-token">
-                          <img
-                            src={getTokenIcon(vault.quoteAsset)}
-                            className="vault-token-icon"
-                          />
-                        </div>
-                        <div className="base-token">
-                          <img
-                            src={getTokenIcon(vault.baseAsset)}
-                            className="vault-token-icon"
-                          />
-                        </div>
+                        <TooltipLabel content={getTokenName(vault.quoteAsset)}>
+                          <div className="quote-token">
+                            <img
+                              src={getTokenIcon(vault.quoteAsset)}
+                              className="vault-token-icon"
+                            />
+                          </div>
+                        </TooltipLabel>
+                        <TooltipLabel content={getTokenName(vault.baseAsset)}>
+                          <div className="base-token">
+                            <img
+                              src={getTokenIcon(vault.baseAsset)}
+                              className="vault-token-icon"
+                            />
+                          </div>
+                        </TooltipLabel>
                       </div>
                     </div>
 
@@ -707,7 +862,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
                   {address &&
                     stableSelectedVault.owner.toLowerCase() ===
-                      address.toLowerCase() && (
+                    address.toLowerCase() && (
                       <>
                         <button
                           className="vault-management-trigger"
@@ -1078,8 +1233,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                 BigInt(
                                   stableSelectedVault.totalShares
                                     ? (stableSelectedVault.quoteBalance *
-                                        stableSelectedVault.userShares) /
-                                        stableSelectedVault.totalShares
+                                      stableSelectedVault.userShares) /
+                                    stableSelectedVault.totalShares
                                     : 0n,
                                 ),
                                 Number(
@@ -1116,8 +1271,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                 BigInt(
                                   stableSelectedVault.totalShares
                                     ? (stableSelectedVault.baseBalance *
-                                        stableSelectedVault.userShares) /
-                                        stableSelectedVault.totalShares
+                                      stableSelectedVault.userShares) /
+                                    stableSelectedVault.totalShares
                                     : 0n,
                                 ),
                                 Number(
@@ -1270,12 +1425,12 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                       viewBox="0 0 24 24"
                                       fill="currentColor"
                                       onMouseEnter={(e) =>
-                                        (e.currentTarget.style.color =
-                                          '#73758b')
+                                      (e.currentTarget.style.color =
+                                        '#73758b')
                                       }
                                       onMouseLeave={(e) =>
-                                        (e.currentTarget.style.color =
-                                          '#b7bad8')
+                                      (e.currentTarget.style.color =
+                                        '#b7bad8')
                                       }
                                     >
                                       <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
@@ -1351,12 +1506,12 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                       viewBox="0 0 24 24"
                                       fill="currentColor"
                                       onMouseEnter={(e) =>
-                                        (e.currentTarget.style.color =
-                                          '#73758b')
+                                      (e.currentTarget.style.color =
+                                        '#73758b')
                                       }
                                       onMouseLeave={(e) =>
-                                        (e.currentTarget.style.color =
-                                          '#b7bad8')
+                                      (e.currentTarget.style.color =
+                                        '#b7bad8')
                                       }
                                     >
                                       <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
@@ -1405,7 +1560,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                   {(() => {
                                     const m =
                                       markets?.[
-                                        addresstomarket?.[o.market?.id]
+                                      addresstomarket?.[o.market?.id]
                                       ];
                                     return `${m.baseAsset} / ${m.quoteAsset}`;
                                   })()}
@@ -1417,7 +1572,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                   {(() => {
                                     const m =
                                       markets?.[
-                                        addresstomarket?.[o.market?.id]
+                                      addresstomarket?.[o.market?.id]
                                       ];
                                     if (!m) return String(o.price);
                                     const pf =
@@ -1432,7 +1587,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                   {(() => {
                                     const m =
                                       markets?.[
-                                        addresstomarket?.[o.market?.id]
+                                      addresstomarket?.[o.market?.id]
                                       ];
                                     if (!m) return String(o.originalSize);
                                     const dec = o.isBuy
@@ -1454,7 +1609,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                   {(() => {
                                     const m =
                                       markets?.[
-                                        addresstomarket?.[o.market?.id]
+                                      addresstomarket?.[o.market?.id]
                                       ];
                                     if (!m) return String(o.remainingSize);
                                     const dec = o.isBuy
@@ -1508,12 +1663,12 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                       viewBox="0 0 24 24"
                                       fill="currentColor"
                                       onMouseEnter={(e) =>
-                                        (e.currentTarget.style.color =
-                                          '#73758b')
+                                      (e.currentTarget.style.color =
+                                        '#73758b')
                                       }
                                       onMouseLeave={(e) =>
-                                        (e.currentTarget.style.color =
-                                          '#b7bad8')
+                                      (e.currentTarget.style.color =
+                                        '#b7bad8')
                                       }
                                     >
                                       <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />

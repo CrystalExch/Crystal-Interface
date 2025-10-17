@@ -829,8 +829,8 @@
     display: flex;
     flex-direction: column;
     margin-bottom: 5px;
-    border: 1.5px solid rgba(179, 184, 249, .1);
-    border-radius: 12px;
+    border: 1px solid rgba(179, 184, 249, .15);
+    border-radius: 4px;
 }
 
 .deposit-input-wrapper {
@@ -1172,7 +1172,7 @@
 
 .lp-input-container-balance-error {
     background-color: #ff575709;
-    border: 1.5px solid #ff57576f !important;
+    border: 1px solid #ff57576f !important;
     box-shadow: 0 0 5px rgba(255, 87, 87, .2);
     animation: lp-pulse-error 2s infinite;
 }
