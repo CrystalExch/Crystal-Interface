@@ -781,7 +781,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       setCurrentWalletIcon(walleticon);
     }
   }, [connected, alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.name]);
-const [createVaultStep, setCreateVaultStep] = useState<'idle' | 'validating' | 'approve-quote' | 'approve-base' | 'creating' | 'success'>('idle');
+  const [createVaultStep, setCreateVaultStep] = useState<'idle' | 'validating' | 'approve-quote' | 'approve-base' | 'creating' | 'success'>('idle');
+  const [depositVaultStep, setDepositVaultStep] = useState<'idle' | 'validating' | 'approve-quote' | 'approve-base' | 'depositing' | 'success'>('idle');
+  const [depositVaultError, setDepositVaultError] = useState<string>('');
+  const [withdrawVaultStep, setWithdrawVaultStep] = useState<'idle' | 'validating' | 'withdrawing' | 'success'>('idle');
+  const [withdrawVaultError, setWithdrawVaultError] = useState<string>('');
   const [createVaultError, setCreateVaultError] = useState<string>('');
   const [createVaultForm, setCreateVaultForm] = useState({
     name: '',
@@ -2258,6 +2262,11 @@ const [createVaultStep, setCreateVaultStep] = useState<'idle' | 'validating' | '
 
     try {
       setIsVaultDepositSigning(true);
+      setDepositVaultError('');
+
+      // Step 1: Validating
+      setDepositVaultStep('validating');
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
       const quoteTokenAddress = selectedVault.quoteAsset;
@@ -2269,8 +2278,9 @@ const [createVaultStep, setCreateVaultStep] = useState<'idle' | 'validating' | '
       const amountQuoteMin = (amountQuoteDesired * 50n) / 100n;
       const amountBaseMin = (amountBaseDesired * 50n) / 100n;
 
-      // Approve tokens if needed
+      // Step 2: Approve Quote Token
       if (quoteTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+        setDepositVaultStep('approve-quote');
         const approveQuoteUo = {
           target: quoteTokenAddress as `0x${string}`,
           data: encodeFunctionData({
@@ -2292,7 +2302,9 @@ const [createVaultStep, setCreateVaultStep] = useState<'idle' | 'validating' | '
         await sendUserOperationAsync({ uo: approveQuoteUo });
       }
 
+      // Step 3: Approve Base Token
       if (baseTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+        setDepositVaultStep('approve-base');
         const approveBaseUo = {
           target: baseTokenAddress as `0x${string}`,
           data: encodeFunctionData({
@@ -2311,10 +2323,12 @@ const [createVaultStep, setCreateVaultStep] = useState<'idle' | 'validating' | '
           }),
           value: 0n,
         };
-        const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
+        await sendUserOperationAsync({ uo: approveBaseUo });
       }
 
-      // Deposit into vault
+      // Step 4: Deposit into vault
+      setDepositVaultStep('depositing');
+
       const ethValue =
         quoteTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountQuoteDesired :
           baseTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountBaseDesired : 0n;
@@ -2339,17 +2353,26 @@ const [createVaultStep, setCreateVaultStep] = useState<'idle' | 'validating' | '
 
       await sendUserOperationAsync({ uo: depositUo });
 
-      setVaultDepositAmounts({ shares: 0n, quote: 0n, base: 0n });
-      setVaultInputStrings({ quote: '', base: '' })
-      setVaultQuoteExceedsBalance(false);
-      setVaultBaseExceedsBalance(false);
+      // Step 5: Success
+      setDepositVaultStep('success');
 
-      refetch();
-      setpopup(0);
-      setselectedVault(null);
+      setTimeout(() => {
+        setVaultDepositAmounts({ shares: 0n, quote: 0n, base: 0n });
+        setVaultInputStrings({ quote: '', base: '' });
+        setVaultQuoteExceedsBalance(false);
+        setVaultBaseExceedsBalance(false);
+        setDepositVaultStep('idle');
+        setDepositVaultError('');
+
+        refetch();
+        setpopup(0);
+        setselectedVault(null);
+      }, 2000);
 
     } catch (e: any) {
       console.error('Vault deposit error:', e);
+      setDepositVaultError(e?.message || 'An error occurred while depositing. Please try again.');
+      setDepositVaultStep('idle');
     } finally {
       setIsVaultDepositSigning(false);
     }
@@ -16189,9 +16212,11 @@ const [createVaultStep, setCreateVaultStep] = useState<'idle' | 'validating' | '
                     setpopup(0);
                     setselectedVault(null);
                     setVaultDepositAmounts({ shares: 0n, quote: 0n, base: 0n });
-                    setVaultInputStrings({ quote: '', base: '' })
+                    setVaultInputStrings({ quote: '', base: '' });
                     setVaultQuoteExceedsBalance(false);
                     setVaultBaseExceedsBalance(false);
+                    setDepositVaultStep('idle');
+                    setDepositVaultError('');
                   }}
                 >
                   <img src={closebutton} className="close-button-icon" />
@@ -16199,230 +16224,465 @@ const [createVaultStep, setCreateVaultStep] = useState<'idle' | 'validating' | '
               </div>
 
               <div className="modal-body">
-                <div className="vault-deposit-form">
-                  <div className="deposit-amounts-section">
-                    <div className={`deposit-input-group ${vaultQuoteExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
-                      <div className="deposit-input-wrapper">
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          className={`deposit-amount-input ${vaultQuoteExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                          value={vaultInputStrings.quote}
-                          onChange={(e) => handleVaultDepositAmountChange('quote', e.target.value)}
-                        />
-                        <div className="deposit-token-badge">
-                          <img
-                            src={tokendict[selectedVault?.quoteAsset]?.image}
-                            className="deposit-token-icon"
+                {depositVaultStep === 'idle' && (
+                  <div className="vault-deposit-form">
+                    <div className="deposit-amounts-section">
+                      <div className={`deposit-input-group ${vaultQuoteExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
+                        <div className="deposit-input-wrapper">
+                          <input
+                            type="text"
+                            placeholder="0.0"
+                            className={`deposit-amount-input ${vaultQuoteExceedsBalance ? 'lp-input-balance-error' : ''}`}
+                            value={vaultInputStrings.quote}
+                            onChange={(e) => handleVaultDepositAmountChange('quote', e.target.value)}
                           />
-                          <span>{tokendict[selectedVault?.quoteAsset]?.ticker}</span>
-                        </div>
-                      </div>
-
-                      <div className="lp-deposit-balance-wrapper">
-                        <div className={`lp-deposit-usd-value ${vaultQuoteExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                          {vaultDepositAmounts.quote == 0n
-                            ? '$0.00'
-                            : formatUSDDisplay(
-                              calculateUSDValue(
-                                vaultDepositAmounts.quote,
-                                tradesByMarket[
-                                (({ baseAsset, quoteAsset }) =>
-                                  (baseAsset === wethticker ? ethticker : baseAsset) +
-                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
-                                )(getMarket(selectedVault?.quoteAsset, selectedVault?.baseAsset))
-                                ],
-                                selectedVault?.quoteAsset,
-                                getMarket(
-                                  selectedVault?.quoteAsset,
-                                  selectedVault?.baseAsset,
-                                ),
-                              ),
-                            )}
-                        </div>
-                        <div className="deposit-balance">
-                          <div className="deposit-balance-value">
-                            <img src={walleticon} className="balance-wallet-icon" />
-                            {selectedVault?.quoteAsset ? formatDisplayValue(
-                              tokenBalances[selectedVault?.quoteAsset],
-                              Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18)
-                            ) : '0.00'}
-                          </div>
-                          <button
-                            className="vault-max-button"
-                            onClick={() => {
-                              if (selectedVault?.quoteAsset) {
-                                const maxAmount = formatDisplayValue(
-                                  tokenBalances[selectedVault?.quoteAsset],
-                                  Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18)
-                                ).replace(/,/g, '');
-                                handleVaultDepositAmountChange('quote', maxAmount);
-                              }
-                            }}
-                          >
-                            Max
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    <div className={`deposit-input-group ${vaultBaseExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
-                      <div className="deposit-input-wrapper">
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          className={`deposit-amount-input ${vaultBaseExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                          value={vaultInputStrings.base}
-                          onChange={(e) => handleVaultDepositAmountChange('base', e.target.value)}
-                        />
-                        <div className="deposit-token-badge">
-                          <img
-                            src={tokendict[selectedVault?.baseAsset]?.image}
-                            className="deposit-token-icon"
-                          />
-                          <span>{tokendict[selectedVault?.baseAsset]?.ticker}</span>
-                        </div>
-                      </div>
-
-                      <div className="lp-deposit-balance-wrapper">
-                        <div className={`lp-deposit-usd-value ${vaultBaseExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                          {vaultDepositAmounts.base == 0n
-                            ? '$0.00'
-                            : formatUSDDisplay(
-                              calculateUSDValue(
-                                vaultDepositAmounts.base,
-                                tradesByMarket[
-                                (({ baseAsset, quoteAsset }) =>
-                                  (baseAsset === wethticker ? ethticker : baseAsset) +
-                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
-                                )(getMarket(selectedVault?.quoteAsset, selectedVault?.baseAsset))
-                                ],
-                                selectedVault?.baseAsset,
-                                getMarket(
-                                  selectedVault?.quoteAsset,
-                                  selectedVault?.baseAsset,
-                                ),
-                              ),
-                            )}
-                        </div>
-                        <div className="deposit-balance">
-                          <div className="deposit-balance-value">
-                            <img src={walleticon} className="balance-wallet-icon" />
-                            {selectedVault?.baseAsset ? formatDisplayValue(
-                              tokenBalances[selectedVault?.baseAsset],
-                              Number(tokendict[selectedVault?.baseAsset]?.decimals || 18)
-                            ) : '0.00'}
-                          </div>
-                          <button
-                            className="vault-max-button"
-                            onClick={() => {
-                              if (selectedVault?.baseAsset) {
-                                const maxAmount = formatDisplayValue(
-                                  tokenBalances[selectedVault?.baseAsset],
-                                  Number(tokendict[selectedVault?.baseAsset]?.decimals || 18)
-                                ).replace(/,/g, '');
-                                handleVaultDepositAmountChange('base', maxAmount);
-                              }
-                            }}
-                          >
-                            Max
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {vaultDepositAmounts && (
-                    <div className="withdraw-preview">
-                      <div className="preview-title">Your position:</div>
-                      <div className="withdraw-token-preview">
-                        <div className="withdraw-token-item">
-                          <div className="deposit-token-info">
+                          <div className="deposit-token-badge">
                             <img
                               src={tokendict[selectedVault?.quoteAsset]?.image}
-                              className="withdraw-token-icon"
+                              className="deposit-token-icon"
                             />
-                            <span className="token-symbol">
-                              {tokendict[selectedVault?.quoteAsset]?.ticker}
-                            </span>
+                            <span>{tokendict[selectedVault?.quoteAsset]?.ticker}</span>
                           </div>
-                          <span className="token-amount">
-                            <span className="deposit-token-amount-before">
-                              {formatDisplayValue(BigInt(selectedVault?.quoteBalance * selectedVault?.userShares / selectedVault?.totalShares), Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18))}
-                            </span>
-                            {vaultDepositAmounts.quote > 0n && (
-                              <>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
-                                  <path d="M5 12h14" />
-                                  <path d="m12 5 7 7-7 7" />
-                                </svg>
-                                {formatDisplayValue(BigInt(selectedVault?.quoteBalance * selectedVault?.userShares / selectedVault?.totalShares) + vaultDepositAmounts.quote, Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18))}
-                              </>
-                            )}
-                          </span>
-
                         </div>
-                        <div className="withdraw-token-item">
-                          <div className="deposit-token-info">
+
+                        <div className="lp-deposit-balance-wrapper">
+                          <div className={`lp-deposit-usd-value ${vaultQuoteExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
+                            {vaultDepositAmounts.quote == 0n
+                              ? '$0.00'
+                              : formatUSDDisplay(
+                                calculateUSDValue(
+                                  vaultDepositAmounts.quote,
+                                  tradesByMarket[
+                                  (({ baseAsset, quoteAsset }) =>
+                                    (baseAsset === wethticker ? ethticker : baseAsset) +
+                                    (quoteAsset === wethticker ? ethticker : quoteAsset)
+                                  )(getMarket(selectedVault?.quoteAsset, selectedVault?.baseAsset))
+                                  ],
+                                  selectedVault?.quoteAsset,
+                                  getMarket(
+                                    selectedVault?.quoteAsset,
+                                    selectedVault?.baseAsset,
+                                  ),
+                                ),
+                              )}
+                          </div>
+                          <div className="deposit-balance">
+                            <div className="deposit-balance-value">
+                              <img src={walleticon} className="balance-wallet-icon" />
+                              {selectedVault?.quoteAsset ? formatDisplayValue(
+                                tokenBalances[selectedVault?.quoteAsset],
+                                Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18)
+                              ) : '0.00'}
+                            </div>
+                            <button
+                              className="vault-max-button"
+                              onClick={() => {
+                                if (selectedVault?.quoteAsset) {
+                                  const maxAmount = formatDisplayValue(
+                                    tokenBalances[selectedVault?.quoteAsset],
+                                    Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18)
+                                  ).replace(/,/g, '');
+                                  handleVaultDepositAmountChange('quote', maxAmount);
+                                }
+                              }}
+                            >
+                              Max
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`deposit-input-group ${vaultBaseExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
+                        <div className="deposit-input-wrapper">
+                          <input
+                            type="text"
+                            placeholder="0.0"
+                            className={`deposit-amount-input ${vaultBaseExceedsBalance ? 'lp-input-balance-error' : ''}`}
+                            value={vaultInputStrings.base}
+                            onChange={(e) => handleVaultDepositAmountChange('base', e.target.value)}
+                          />
+                          <div className="deposit-token-badge">
                             <img
                               src={tokendict[selectedVault?.baseAsset]?.image}
-                              className="withdraw-token-icon"
+                              className="deposit-token-icon"
                             />
-                            <span className="token-symbol">
-                              {tokendict[selectedVault?.baseAsset]?.ticker}
-                            </span>
+                            <span>{tokendict[selectedVault?.baseAsset]?.ticker}</span>
                           </div>
-                          <span className="token-amount">
-                            <span className="deposit-token-amount-before">
-                              {formatDisplayValue(BigInt(selectedVault?.baseBalance * selectedVault?.userShares / selectedVault?.totalShares), Number(tokendict[selectedVault?.baseAsset]?.decimals || 18))}
-                            </span>
-                            {vaultDepositAmounts.base > 0n && (
-                              <>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
-                                  <path d="M5 12h14" />
-                                  <path d="m12 5 7 7-7 7" />
-                                </svg>
-                                {formatDisplayValue(BigInt(selectedVault?.baseBalance * selectedVault?.userShares / selectedVault?.totalShares) + vaultDepositAmounts.base, Number(tokendict[selectedVault?.baseAsset]?.decimals || 18))}
-                              </>
-                            )}
-                          </span>
+                        </div>
 
+                        <div className="lp-deposit-balance-wrapper">
+                          <div className={`lp-deposit-usd-value ${vaultBaseExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
+                            {vaultDepositAmounts.base == 0n
+                              ? '$0.00'
+                              : formatUSDDisplay(
+                                calculateUSDValue(
+                                  vaultDepositAmounts.base,
+                                  tradesByMarket[
+                                  (({ baseAsset, quoteAsset }) =>
+                                    (baseAsset === wethticker ? ethticker : baseAsset) +
+                                    (quoteAsset === wethticker ? ethticker : quoteAsset)
+                                  )(getMarket(selectedVault?.quoteAsset, selectedVault?.baseAsset))
+                                  ],
+                                  selectedVault?.baseAsset,
+                                  getMarket(
+                                    selectedVault?.quoteAsset,
+                                    selectedVault?.baseAsset,
+                                  ),
+                                ),
+                              )}
+                          </div>
+                          <div className="deposit-balance">
+                            <div className="deposit-balance-value">
+                              <img src={walleticon} className="balance-wallet-icon" />
+                              {selectedVault?.baseAsset ? formatDisplayValue(
+                                tokenBalances[selectedVault?.baseAsset],
+                                Number(tokendict[selectedVault?.baseAsset]?.decimals || 18)
+                              ) : '0.00'}
+                            </div>
+                            <button
+                              className="vault-max-button"
+                              onClick={() => {
+                                if (selectedVault?.baseAsset) {
+                                  const maxAmount = formatDisplayValue(
+                                    tokenBalances[selectedVault?.baseAsset],
+                                    Number(tokendict[selectedVault?.baseAsset]?.decimals || 18)
+                                  ).replace(/,/g, '');
+                                  handleVaultDepositAmountChange('base', maxAmount);
+                                }
+                              }}
+                            >
+                              Max
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  )}
 
-                  <div className="deposit-summary">
-                    <div className="deposit-summary-row">
-                      <span className="preview-title">Share of vault:</span>
-                      <span className="token-amount">
-                        <span className="deposit-token-amount-before">
-                          {formatDisplayValue(Number(selectedVault?.userShares) / Number(selectedVault?.totalShares), -2)}%
+                    {vaultDepositAmounts && (
+                      <div className="withdraw-preview">
+                        <div className="preview-title">Your position:</div>
+                        <div className="withdraw-token-preview">
+                          <div className="withdraw-token-item">
+                            <div className="deposit-token-info">
+                              <img
+                                src={tokendict[selectedVault?.quoteAsset]?.image}
+                                className="withdraw-token-icon"
+                              />
+                              <span className="token-symbol">
+                                {tokendict[selectedVault?.quoteAsset]?.ticker}
+                              </span>
+                            </div>
+                            <span className="token-amount">
+                              <span className="deposit-token-amount-before">
+                                {formatDisplayValue(BigInt(selectedVault?.quoteBalance * selectedVault?.userShares / selectedVault?.totalShares), Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18))}
+                              </span>
+                              {vaultDepositAmounts.quote > 0n && (
+                                <>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
+                                    <path d="M5 12h14" />
+                                    <path d="m12 5 7 7-7 7" />
+                                  </svg>
+                                  {formatDisplayValue(BigInt(selectedVault?.quoteBalance * selectedVault?.userShares / selectedVault?.totalShares) + vaultDepositAmounts.quote, Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18))}
+                                </>
+                              )}
+                            </span>
+                          </div>
+                          <div className="withdraw-token-item">
+                            <div className="deposit-token-info">
+                              <img
+                                src={tokendict[selectedVault?.baseAsset]?.image}
+                                className="withdraw-token-icon"
+                              />
+                              <span className="token-symbol">
+                                {tokendict[selectedVault?.baseAsset]?.ticker}
+                              </span>
+                            </div>
+                            <span className="token-amount">
+                              <span className="deposit-token-amount-before">
+                                {formatDisplayValue(BigInt(selectedVault?.baseBalance * selectedVault?.userShares / selectedVault?.totalShares), Number(tokendict[selectedVault?.baseAsset]?.decimals || 18))}
+                              </span>
+                              {vaultDepositAmounts.base > 0n && (
+                                <>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
+                                    <path d="M5 12h14" />
+                                    <path d="m12 5 7 7-7 7" />
+                                  </svg>
+                                  {formatDisplayValue(BigInt(selectedVault?.baseBalance * selectedVault?.userShares / selectedVault?.totalShares) + vaultDepositAmounts.base, Number(tokendict[selectedVault?.baseAsset]?.decimals || 18))}
+                                </>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="deposit-summary">
+                      <div className="deposit-summary-row">
+                        <span className="preview-title">Share of vault:</span>
+                        <span className="token-amount">
+                          <span className="deposit-token-amount-before">
+                            {formatDisplayValue(Number(selectedVault?.userShares) / Number(selectedVault?.totalShares), -2)}%
+                          </span>
+                          {vaultDepositAmounts.shares > 0n && (
+                            <>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
+                                <path d="M5 12h14" />
+                                <path d="m12 5 7 7-7 7" />
+                              </svg>
+                              {formatDisplayValue((Number(selectedVault?.userShares) + Number(vaultDepositAmounts?.shares)) / (Number(selectedVault?.totalShares) + Number(vaultDepositAmounts?.shares)), -2)}%
+                            </>
+                          )}
                         </span>
-                        {vaultDepositAmounts.shares > 0n && (
-                          <>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
-                              <path d="M5 12h14" />
-                              <path d="m12 5 7 7-7 7" />
-                            </svg>
-                            {formatDisplayValue((Number(selectedVault?.userShares) + Number(vaultDepositAmounts?.shares)) / (Number(selectedVault?.totalShares) + Number(vaultDepositAmounts?.shares)), -2)}%
-                          </>
-                        )}
-                      </span>
-
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {depositVaultStep !== 'idle' && (
+                  <div className="create-vault-progress-container">
+                    <div className="create-vault-progress-steps">
+                      {/* Step 1: Validating */}
+                      <div className={`create-vault-progress-step ${depositVaultStep === 'validating' ? 'active' :
+                        ['approve-quote', 'approve-base', 'depositing', 'success'].includes(depositVaultStep) ? 'completed' : ''
+                        }`}>
+                        <div className="step-progress-indicator">
+                          {['approve-quote', 'approve-base', 'depositing', 'success'].includes(depositVaultStep) ? (
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          ) : (
+                            <span>1</span>
+                          )}
+                        </div>
+                        <div className="step-progress-content">
+                          <div className="step-progress-title">Validating</div>
+                          <div className="step-progress-description">Checking balances and amounts</div>
+                        </div>
+                      </div>
+
+                      {selectedVault?.quoteAsset && selectedVault.quoteAsset.toLowerCase() !== eth.toLowerCase() && vaultDepositAmounts.quote > 0n && (
+                        <div className={`create-vault-progress-step ${depositVaultStep === 'approve-quote' ? 'active' :
+                          ['approve-base', 'depositing', 'success'].includes(depositVaultStep) ? 'completed' : ''
+                          }`}>
+                          <div className="step-progress-indicator">
+                            {['approve-base', 'depositing', 'success'].includes(depositVaultStep) ? (
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            ) : (
+                              <span>2</span>
+                            )}
+                          </div>
+                          <div className="step-progress-content">
+                            <div className="step-progress-title">
+                              Approve {tokendict[selectedVault.quoteAsset]?.ticker || 'Quote Token'}
+                            </div>
+                            <div className="step-progress-description">Grant vault contract permission</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedVault?.baseAsset && selectedVault.baseAsset.toLowerCase() !== eth.toLowerCase() && vaultDepositAmounts.base > 0n && (
+                        <div className={`create-vault-progress-step ${depositVaultStep === 'approve-base' ? 'active' :
+                          ['depositing', 'success'].includes(depositVaultStep) ? 'completed' : ''
+                          }`}>
+                          <div className="step-progress-indicator">
+                            {['depositing', 'success'].includes(depositVaultStep) ? (
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            ) : (
+                              <span>
+                                {selectedVault.quoteAsset.toLowerCase() !== eth.toLowerCase() && vaultDepositAmounts.quote > 0n ? '3' : '2'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="step-progress-content">
+                            <div className="step-progress-title">
+                              Approve {tokendict[selectedVault.baseAsset]?.ticker || 'Base Token'}
+                            </div>
+                            <div className="step-progress-description">Grant vault contract permission</div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className={`create-vault-progress-step ${depositVaultStep === 'depositing' ? 'active' :
+                        depositVaultStep === 'success' ? 'completed' : ''
+                        }`}>
+                        <div className="step-progress-indicator">
+                          {depositVaultStep === 'success' ? (
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          ) : (
+                            <span>
+                              {(() => {
+                                let stepNum = 2;
+                                if (selectedVault?.quoteAsset?.toLowerCase() !== eth.toLowerCase() && vaultDepositAmounts.quote > 0n) stepNum++;
+                                if (selectedVault?.baseAsset?.toLowerCase() !== eth.toLowerCase() && vaultDepositAmounts.base > 0n) stepNum++;
+                                return stepNum;
+                              })()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="step-progress-content">
+                          <div className="step-progress-title">Depositing</div>
+                          <div className="step-progress-description">Sending tokens to vault</div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                )}
               </div>
 
               <div className="modal-footer">
+                {depositVaultError && depositVaultStep === 'idle' && (
+                  <div className="create-vault-error">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                      <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                      <path d="M8 4v5M8 11v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                    <span>{depositVaultError}</span>
+                  </div>
+                )}
+
                 <button
-                  className={`vault-confirm-button ${(!isVaultDepositEnabled() || isVaultDepositSigning) ? 'disabled' : ''}`}
-                  onClick={handleVaultDeposit}
-                  disabled={!isVaultDepositEnabled() || isVaultDepositSigning}
+                  className={`vault-confirm-button ${(depositVaultStep === 'idle' && (!isVaultDepositEnabled() || isVaultDepositSigning)) ? 'disabled' : ''
+                    } ${depositVaultStep === 'success' ? 'success' : ''}`}
+                  disabled={depositVaultStep === 'idle' && (!isVaultDepositEnabled() || isVaultDepositSigning)}
+                  onClick={async () => {
+                    if (!isVaultDepositEnabled()) return;
+
+                    try {
+                      setIsVaultDepositSigning(true);
+                      setDepositVaultError('');
+
+                      // Step 1: Validating
+                      setDepositVaultStep('validating');
+                      await new Promise(resolve => setTimeout(resolve, 500));
+
+                      await handleSetChain();
+
+                      const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
+                      const quoteTokenAddress = selectedVault.quoteAsset;
+                      const baseTokenAddress = selectedVault.baseAsset;
+
+                      const amountQuoteDesired = vaultDepositAmounts.quote;
+                      const amountBaseDesired = vaultDepositAmounts.base;
+
+                      const amountQuoteMin = (amountQuoteDesired * 50n) / 100n;
+                      const amountBaseMin = (amountBaseDesired * 50n) / 100n;
+
+                      // Step 2: Approve Quote Token if needed
+                      if (quoteTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' && vaultDepositAmounts.quote > 0n) {
+                        setDepositVaultStep('approve-quote');
+                        const approveQuoteUo = {
+                          target: quoteTokenAddress as `0x${string}`,
+                          data: encodeFunctionData({
+                            abi: [{
+                              inputs: [
+                                { name: "spender", type: "address" },
+                                { name: "amount", type: "uint256" }
+                              ],
+                              name: "approve",
+                              outputs: [{ name: "", type: "bool" }],
+                              stateMutability: "nonpayable",
+                              type: "function",
+                            }],
+                            functionName: "approve",
+                            args: [crystalVaultsAddress as `0x${string}`, maxUint256],
+                          }),
+                          value: 0n,
+                        };
+                        await sendUserOperationAsync({ uo: approveQuoteUo });
+                      }
+
+                      // Step 3: Approve Base Token if needed
+                      if (baseTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' && vaultDepositAmounts.base > 0n) {
+                        setDepositVaultStep('approve-base');
+                        const approveBaseUo = {
+                          target: baseTokenAddress as `0x${string}`,
+                          data: encodeFunctionData({
+                            abi: [{
+                              inputs: [
+                                { name: "spender", type: "address" },
+                                { name: "amount", type: "uint256" }
+                              ],
+                              name: "approve",
+                              outputs: [{ name: "", type: "bool" }],
+                              stateMutability: "nonpayable",
+                              type: "function",
+                            }],
+                            functionName: "approve",
+                            args: [crystalVaultsAddress as `0x${string}`, maxUint256],
+                          }),
+                          value: 0n,
+                        };
+                        await sendUserOperationAsync({ uo: approveBaseUo });
+                      }
+
+                      // Step 4: Deposit
+                      setDepositVaultStep('depositing');
+
+                      const ethValue =
+                        quoteTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountQuoteDesired :
+                          baseTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountBaseDesired : 0n;
+
+                      const depositUo = {
+                        target: crystalVaultsAddress as `0x${string}`,
+                        data: encodeFunctionData({
+                          abi: CrystalVaultsAbi,
+                          functionName: "deposit",
+                          args: [
+                            selectedVault.address as `0x${string}`,
+                            quoteTokenAddress as `0x${string}`,
+                            baseTokenAddress as `0x${string}`,
+                            amountQuoteDesired,
+                            amountBaseDesired,
+                            amountQuoteMin,
+                            amountBaseMin,
+                          ],
+                        }),
+                        value: ethValue,
+                      };
+
+                      await sendUserOperationAsync({ uo: depositUo });
+
+                      // Step 5: Success
+                      setDepositVaultStep('success');
+
+                      setTimeout(() => {
+                        setpopup(0);
+                        setselectedVault(null);
+                        setVaultDepositAmounts({ shares: 0n, quote: 0n, base: 0n });
+                        setVaultInputStrings({ quote: '', base: '' });
+                        setVaultQuoteExceedsBalance(false);
+                        setVaultBaseExceedsBalance(false);
+                        setDepositVaultStep('idle');
+                        setDepositVaultError('');
+                        refetch?.();
+                      }, 2000);
+
+                    } catch (e: any) {
+                      console.error('Vault deposit error:', e);
+                      setDepositVaultError(e?.message || 'An error occurred while depositing. Please try again.');
+                      setDepositVaultStep('idle');
+                    } finally {
+                      setIsVaultDepositSigning(false);
+                    }
+                  }}
                 >
-                  {isVaultDepositSigning ? (
+                  {depositVaultStep === 'success' ? (
+                    <div className="button-content">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Deposit Complete!
+                    </div>
+                  ) : depositVaultStep !== 'idle' ? (
                     <div className="button-content">
                       <div className="loading-spinner" />
+
                     </div>
                   ) : (
                     getVaultDepositButtonText()
@@ -16445,6 +16705,8 @@ const [createVaultStep, setCreateVaultStep] = useState<'idle' | 'validating' | '
                     setWithdrawPercentage('');
                     setWithdrawExceedsBalance(false);
                     setWithdrawPreview(null);
+                    setWithdrawVaultStep('idle');
+                    setWithdrawVaultError('');
                   }}
                 >
                   <img src={closebutton} className="close-button-icon" />
@@ -16452,122 +16714,245 @@ const [createVaultStep, setCreateVaultStep] = useState<'idle' | 'validating' | '
               </div>
 
               <div className="modal-body">
-                <div className="vault-withdraw-form">
-                  <div className="withdraw-section">
-                    <div className="withdraw-amount-section">
-                      <div className="withdraw-percentage-input-container">
-                        <div className="withdraw-percentage-display">
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            placeholder="0"
-                            value={withdrawPercentage}
-                            onChange={(e) => handleWithdrawPercentageChange(e.target.value.replace(/[^\d]/g, ''))}
-                            size={Math.max((withdrawPercentage || '0').length, 1)}
-                            style={{ width: `${Math.max((withdrawPercentage || '0').length, 1)}ch` }}
-                            className="withdraw-percentage-input"
-                          />
-                          <span style={{ color: `${withdrawPercentage ? '#FFF' : '#ededf571'}` }} className="withdraw-percentage-symbol">%</span>
+                {withdrawVaultStep === 'idle' && (
+                  <div className="vault-withdraw-form">
+                    <div className="withdraw-section">
+                      <div className="withdraw-amount-section">
+                        <div className="withdraw-percentage-input-container">
+                          <div className="withdraw-percentage-display">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              placeholder="0"
+                              value={withdrawPercentage}
+                              onChange={(e) => handleWithdrawPercentageChange(e.target.value.replace(/[^\d]/g, ''))}
+                              size={Math.max((withdrawPercentage || '0').length, 1)}
+                              style={{ width: `${Math.max((withdrawPercentage || '0').length, 1)}ch` }}
+                              className="withdraw-percentage-input"
+                            />
+                            <span style={{ color: `${withdrawPercentage ? '#FFF' : '#ededf571'}` }} className="withdraw-percentage-symbol">%</span>
+                          </div>
+                        </div>
+                        <div className="percentage-buttons">
+                          <button
+                            className={`percentage-btn ${withdrawPercentage === '25' ? 'active' : ''}`}
+                            onClick={() => handleWithdrawPercentageChange('25')}
+                          >
+                            25%
+                          </button>
+                          <button
+                            className={`percentage-btn ${withdrawPercentage === '50' ? 'active' : ''}`}
+                            onClick={() => handleWithdrawPercentageChange('50')}
+                          >
+                            50%
+                          </button>
+                          <button
+                            className={`percentage-btn ${withdrawPercentage === '75' ? 'active' : ''}`}
+                            onClick={() => handleWithdrawPercentageChange('75')}
+                          >
+                            75%
+                          </button>
+                          <button
+                            className={`percentage-btn ${withdrawPercentage === '100' ? 'active' : ''}`}
+                            onClick={() => handleWithdrawPercentageChange('100')}
+                          >
+                            Max
+                          </button>
                         </div>
                       </div>
-                      <div className="percentage-buttons">
-                        <button
-                          className={`percentage-btn ${withdrawPercentage === '25' ? 'active' : ''}`}
-                          onClick={() => handleWithdrawPercentageChange('25')}
-                        >
-                          25%
-                        </button>
-                        <button
-                          className={`percentage-btn ${withdrawPercentage === '50' ? 'active' : ''}`}
-                          onClick={() => handleWithdrawPercentageChange('50')}
-                        >
-                          50%
-                        </button>
-                        <button
-                          className={`percentage-btn ${withdrawPercentage === '75' ? 'active' : ''}`}
-                          onClick={() => handleWithdrawPercentageChange('75')}
-                        >
-                          75%
-                        </button>
-                        <button
-                          className={`percentage-btn ${withdrawPercentage === '100' ? 'active' : ''}`}
-                          onClick={() => handleWithdrawPercentageChange('100')}
-                        >
-                          Max
-                        </button>
-                      </div>
-                    </div>
-                    <div className="withdraw-preview">
-                      <div className="preview-title">Your position:</div>
-                      <div className="withdraw-token-preview">
-                        <div className="withdraw-token-item">
-                          <div className="deposit-token-info">
-                            <img
-                              src={tokendict[selectedVault?.quoteAsset]?.image}
-                              className="withdraw-token-icon"
-                            />
-                            <span className="token-symbol">
-                              {tokendict[selectedVault?.quoteAsset]?.ticker}
+                      <div className="withdraw-preview">
+                        <div className="preview-title">Your position:</div>
+                        <div className="withdraw-token-preview">
+                          <div className="withdraw-token-item">
+                            <div className="deposit-token-info">
+                              <img
+                                src={tokendict[selectedVault?.quoteAsset]?.image}
+                                className="withdraw-token-icon"
+                              />
+                              <span className="token-symbol">
+                                {tokendict[selectedVault?.quoteAsset]?.ticker}
+                              </span>
+                            </div>
+                            <span className="token-amount">
+                              <span className="deposit-token-amount-before">
+                                {formatDisplayValue(BigInt(selectedVault?.quoteBalance * selectedVault?.userShares / selectedVault?.totalShares), Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18))}
+                              </span>
+                              {withdrawPreview?.amountQuote != undefined && (
+                                <>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
+                                    <path d="M5 12h14" />
+                                    <path d="m12 5 7 7-7 7" />
+                                  </svg>
+                                  {formatDisplayValue(BigInt(selectedVault?.quoteBalance * selectedVault?.userShares / selectedVault?.totalShares) - withdrawPreview?.amountQuote, Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18))}
+                                </>
+                              )}
                             </span>
                           </div>
-                          <span className="token-amount">
-                            <span className="deposit-token-amount-before">
-                              {formatDisplayValue(BigInt(selectedVault?.quoteBalance * selectedVault?.userShares / selectedVault?.totalShares), Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18))}
-                            </span>
-                            {withdrawPreview?.amountQuote != undefined && (
-                              <>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
-                                  <path d="M5 12h14" />
-                                  <path d="m12 5 7 7-7 7" />
-                                </svg>
-                                {formatDisplayValue(BigInt(selectedVault?.quoteBalance * selectedVault?.userShares / selectedVault?.totalShares) - withdrawPreview?.amountQuote, Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18))}
-                              </>
-                            )}
-                          </span>
-                        </div>
-                        <div className="withdraw-token-item">
-                          <div className="deposit-token-info">
-                            <img
-                              src={tokendict[selectedVault?.baseAsset]?.image}
-                              className="withdraw-token-icon"
-                            />
-                            <span className="token-symbol">
-                              {tokendict[selectedVault?.baseAsset]?.ticker}
+                          <div className="withdraw-token-item">
+                            <div className="deposit-token-info">
+                              <img
+                                src={tokendict[selectedVault?.baseAsset]?.image}
+                                className="withdraw-token-icon"
+                              />
+                              <span className="token-symbol">
+                                {tokendict[selectedVault?.baseAsset]?.ticker}
+                              </span>
+                            </div>
+                            <span className="token-amount">
+                              <span className="deposit-token-amount-before">
+                                {formatDisplayValue(BigInt(selectedVault?.baseBalance * selectedVault?.userShares / selectedVault?.totalShares), Number(tokendict[selectedVault?.baseAsset]?.decimals || 18))}
+                              </span>
+                              {withdrawPreview?.amountBase != undefined && (
+                                <>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
+                                    <path d="M5 12h14" />
+                                    <path d="m12 5 7 7-7 7" />
+                                  </svg>
+                                  {formatDisplayValue(BigInt(selectedVault?.baseBalance * selectedVault?.userShares / selectedVault?.totalShares) - withdrawPreview?.amountBase, Number(tokendict[selectedVault?.baseAsset]?.decimals || 18))}
+                                </>
+                              )}
                             </span>
                           </div>
-                          <span className="token-amount">
-                            <span className="deposit-token-amount-before">
-                              {formatDisplayValue(BigInt(selectedVault?.baseBalance * selectedVault?.userShares / selectedVault?.totalShares), Number(tokendict[selectedVault?.baseAsset]?.decimals || 18))}
-                            </span>
-                            {withdrawPreview?.amountBase != undefined && (
-                              <>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
-                                  <path d="M5 12h14" />
-                                  <path d="m12 5 7 7-7 7" />
-                                </svg>
-                                {formatDisplayValue(BigInt(selectedVault?.baseBalance * selectedVault?.userShares / selectedVault?.totalShares) - withdrawPreview?.amountBase, Number(tokendict[selectedVault?.baseAsset]?.decimals || 18))}
-                              </>
-                            )}
-                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {withdrawVaultStep !== 'idle' && (
+                  <div className="create-vault-progress-container">
+                    <div className="create-vault-progress-steps">
+                      {/* Step 1: Validating */}
+                      <div className={`create-vault-progress-step ${withdrawVaultStep === 'validating' ? 'active' :
+                        ['withdrawing', 'success'].includes(withdrawVaultStep) ? 'completed' : ''
+                        }`}>
+                        <div className="step-progress-indicator">
+                          {['withdrawing', 'success'].includes(withdrawVaultStep) ? (
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          ) : (
+                            <span>1</span>
+                          )}
+                        </div>
+                        <div className="step-progress-content">
+                          <div className="step-progress-title">Validating</div>
+                          <div className="step-progress-description">Checking withdrawal amount</div>
+                        </div>
+                      </div>
+
+                      <div className={`create-vault-progress-step ${withdrawVaultStep === 'withdrawing' ? 'active' :
+                        withdrawVaultStep === 'success' ? 'completed' : ''
+                        }`}>
+                        <div className="step-progress-indicator">
+                          {withdrawVaultStep === 'success' ? (
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          ) : (
+                            <span>2</span>
+                          )}
+                        </div>
+                        <div className="step-progress-content">
+                          <div className="step-progress-title">Withdrawing</div>
+                          <div className="step-progress-description">Processing withdrawal from vault</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="modal-footer">
+                {withdrawVaultError && withdrawVaultStep === 'idle' && (
+                  <div className="create-vault-error">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                      <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                      <path d="M8 4v5M8 11v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                    <span>{withdrawVaultError}</span>
+                  </div>
+                )}
+
                 <button
-                  className={`vault-confirm-button withdraw ${(withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
-                    withdrawExceedsBalance || !withdrawPreview || isVaultWithdrawSigning) ? 'disabled' : ''}`}
-                  onClick={handleVaultWithdraw}
-                  disabled={(withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
+                  className={`vault-confirm-button withdraw ${(withdrawVaultStep === 'idle' && (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
+                    withdrawExceedsBalance || !withdrawPreview || isVaultWithdrawSigning)) ? 'disabled' : ''
+                    } ${withdrawVaultStep === 'success' ? 'success' : ''}`}
+                  disabled={withdrawVaultStep === 'idle' && (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
                     withdrawExceedsBalance || !withdrawPreview || isVaultWithdrawSigning)}
+                  onClick={async () => {
+                    if (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
+                      withdrawExceedsBalance || !withdrawPreview) return;
+
+                    try {
+                      setIsVaultWithdrawSigning(true);
+                      setWithdrawVaultError('');
+
+                      setWithdrawVaultStep('validating');
+                      await new Promise(resolve => setTimeout(resolve, 500));
+
+                      await handleSetChain();
+
+                      const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
+
+                      const amountQuoteMin = (withdrawPreview.amountQuote * 50n) / 100n;
+                      const amountBaseMin = (withdrawPreview.amountBase * 50n) / 100n;
+
+                      // Step 2: Withdrawing
+                      setWithdrawVaultStep('withdrawing');
+
+                      const withdrawUo = {
+                        target: crystalVaultsAddress as `0x${string}`,
+                        data: encodeFunctionData({
+                          abi: CrystalVaultsAbi,
+                          functionName: "withdraw",
+                          args: [
+                            selectedVault.address as `0x${string}`,
+                            selectedVault.quoteAsset as `0x${string}`,
+                            selectedVault.baseAsset as `0x${string}`,
+                            BigInt(withdrawShares),
+                            amountQuoteMin,
+                            amountBaseMin,
+                          ],
+                        }),
+                        value: 0n,
+                      };
+
+                      await sendUserOperationAsync({ uo: withdrawUo });
+
+                      // Step 3: Success
+                      setWithdrawVaultStep('success');
+
+                      setTimeout(() => {
+                        setpopup(0);
+                        setselectedVault(null);
+                        setWithdrawPercentage('');
+                        setWithdrawExceedsBalance(false);
+                        setWithdrawPreview(null);
+                        setWithdrawVaultStep('idle');
+                        setWithdrawVaultError('');
+                        refetch?.();
+                      }, 2000);
+
+                    } catch (e: any) {
+                      console.error('Vault withdrawal error:', e);
+                      setWithdrawVaultError(e?.message || 'An error occurred while withdrawing. Please try again.');
+                      setWithdrawVaultStep('idle');
+                    } finally {
+                      setIsVaultWithdrawSigning(false);
+                    }
+                  }}
                 >
-                  {isVaultWithdrawSigning ? (
+                  {withdrawVaultStep === 'success' ? (
+                    <div className="button-content">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Withdrawal Complete!
+                    </div>
+                  ) : withdrawVaultStep !== 'idle' ? (
                     <div className="button-content">
                       <div className="loading-spinner" />
-                      Withdrawing...
                     </div>
                   ) : (
                     getWithdrawButtonText()
@@ -17517,523 +17902,518 @@ const [createVaultStep, setCreateVaultStep] = useState<'idle' | 'validating' | '
             </div>
           </div>
         ) : null}
-{popup === 29 ? (
-  <div ref={popupref} className="modal-overlay">
-    <div className="modal-content">
-      <div className="modal-header">
-        <h2>Create New Vault</h2>
-        <button
-          className="modal-close"
-          onClick={() => {
-            setCreateVaultForm({
-              name: '',
-              description: '',
-              selectedMarket: '',
-              quoteAsset: '',
-              baseAsset: '',
-              amountQuote: '',
-              amountBase: '',
-              social1: '',
-              social2: '',
-              showMarketDropdown: false,
-              marketSearchTerm: ''
-            });
-            setCreateVaultStep('idle');
-            setCreateVaultError('');
-            setpopup(0);
-          }}
-        >
-          <img src={closebutton} className="close-button-icon" />
-        </button>
-      </div>
+        {popup === 29 ? (
+          <div ref={popupref} className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h2>Create New Vault</h2>
+                <button
+                  className="modal-close"
+                  onClick={() => {
+                    setCreateVaultForm({
+                      name: '',
+                      description: '',
+                      selectedMarket: '',
+                      quoteAsset: '',
+                      baseAsset: '',
+                      amountQuote: '',
+                      amountBase: '',
+                      social1: '',
+                      social2: '',
+                      showMarketDropdown: false,
+                      marketSearchTerm: ''
+                    });
+                    setCreateVaultStep('idle');
+                    setCreateVaultError('');
+                    setpopup(0);
+                  }}
+                >
+                  <img src={closebutton} className="close-button-icon" />
+                </button>
+              </div>
 
-      <div
-        className="modal-body"
-        onClick={(e) => {
-          if (!(e.target as Element)?.closest?.('.market-selector-container')) {
-            setCreateVaultForm(prev => ({
-              ...prev,
-              showMarketDropdown: false
-            }));
-          }
-        }}
-      >
-        {/* Show form only when not in progress */}
-        {createVaultStep === 'idle' && (
-          <>
-            <div className="form-group">
-              <label>Vault Name</label>
-              <input
-                type="text"
-                value={createVaultForm.name}
-                onChange={(e) => setCreateVaultForm(prev => ({ ...prev, name: e.target.value }))}
-                className="form-input"
-                placeholder="Enter vault name"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Description</label>
-              <textarea
-                value={createVaultForm.description}
-                onChange={(e) => setCreateVaultForm(prev => ({ ...prev, description: e.target.value }))}
-                className="form-textarea"
-                rows={4}
-                placeholder="Describe your vault strategy"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="market-selector-label">Trading Market</label>
-              <div className="market-selector-container">
-                {(() => {
-                  const selectedMarket = Object.values(markets).find((market) =>
-                    `${market.baseAsset}${market.quoteAsset}` === createVaultForm.selectedMarket
-                  );
-                  return selectedMarket ? (
-                    <div className="selected-token-indicator">
-                      <img src={selectedMarket.image || tokendict[selectedMarket.baseAddress]?.image} alt={selectedMarket.baseAsset} className="token-icon-small" />
-                      <span className="token-symbol">{selectedMarket.baseAsset}/{selectedMarket.quoteAsset}</span>
+              <div
+                className="modal-body"
+                onClick={(e) => {
+                  if (!(e.target as Element)?.closest?.('.market-selector-container')) {
+                    setCreateVaultForm(prev => ({
+                      ...prev,
+                      showMarketDropdown: false
+                    }));
+                  }
+                }}
+              >
+                {/* Show form only when not in progress */}
+                {createVaultStep === 'idle' && (
+                  <>
+                    <div className="form-group">
+                      <label>Vault Name</label>
+                      <input
+                        type="text"
+                        value={createVaultForm.name}
+                        onChange={(e) => setCreateVaultForm(prev => ({ ...prev, name: e.target.value }))}
+                        className="form-input"
+                        placeholder="Enter vault name"
+                      />
                     </div>
-                  ) : null;
-                })()}
-                <div className="market-selector-input-wrapper">
-                  <input
-                    type="text"
-                    value=""
-                    onFocus={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: true }))}
-                    className="form-input market-selector-input"
-                    placeholder={createVaultForm.selectedMarket ? "" : "Select trading market..."}
-                    readOnly
-                  />
-                  <button
-                    type="button"
-                    className="token-dropdown-button"
-                    onClick={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: !prev.showMarketDropdown }))}
-                  >
-                    <ChevronDown size={16} />
-                  </button>
-                </div>
-                {createVaultForm.showMarketDropdown && (
-                  <div className="create-vault-token-dropdown">
-                    <div className="create-vault-token-list">
-                      {Object.values(markets).filter((market) => {
-                        const searchTerm = createVaultForm.marketSearchTerm || '';
-                        const marketPair = `${market.baseAsset}/${market.quoteAsset}`;
-                        if (!searchTerm) return true;
-                        return marketPair.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          market.baseAsset.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          market.quoteAsset.toLowerCase().includes(searchTerm.toLowerCase());
-                      }).slice(0, 100).map((market) => {
-                        const marketKey = `${market.baseAsset}${market.quoteAsset}`;
-                        return (
-                          <div
-                            key={marketKey}
-                            className="create-vault-token-option"
-                            onClick={() => {
-                              setCreateVaultForm(prev => ({
-                                ...prev,
-                                selectedMarket: marketKey,
-                                quoteAsset: market.quoteAddress,
-                                baseAsset: market.baseAddress,
-                                showMarketDropdown: false,
-                                marketSearchTerm: ''
-                              }));
-                            }}
+
+                    <div className="form-group">
+                      <label>Description</label>
+                      <textarea
+                        value={createVaultForm.description}
+                        onChange={(e) => setCreateVaultForm(prev => ({ ...prev, description: e.target.value }))}
+                        className="form-textarea"
+                        rows={4}
+                        placeholder="Describe your vault strategy"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="market-selector-label">Trading Market</label>
+                      <div className="market-selector-container">
+                        {(() => {
+                          const selectedMarket = Object.values(markets).find((market) =>
+                            `${market.baseAsset}${market.quoteAsset}` === createVaultForm.selectedMarket
+                          );
+                          return selectedMarket ? (
+                            <div className="selected-token-indicator">
+                              <img src={selectedMarket.image || tokendict[selectedMarket.baseAddress]?.image} alt={selectedMarket.baseAsset} className="token-icon-small" />
+                              <span className="token-symbol">{selectedMarket.baseAsset}/{selectedMarket.quoteAsset}</span>
+                            </div>
+                          ) : null;
+                        })()}
+                        <div className="market-selector-input-wrapper">
+                          <input
+                            type="text"
+                            value=""
+                            onFocus={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: true }))}
+                            className="form-input market-selector-input"
+                            placeholder={createVaultForm.selectedMarket ? "" : "Select trading market..."}
+                            readOnly
+                          />
+                          <button
+                            type="button"
+                            className="token-dropdown-button"
+                            onClick={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: !prev.showMarketDropdown }))}
                           >
-                            <img src={market.image || tokendict[market.baseAddress]?.image} alt={market.baseAsset} className="create-vault-token-icon" />
-                            <div className="create-vault-token-info">
-                              <div className="token-symbol">{market.baseAsset}/{market.quoteAsset}</div>
+                            <ChevronDown size={16} />
+                          </button>
+                        </div>
+                        {createVaultForm.showMarketDropdown && (
+                          <div className="create-vault-token-dropdown">
+                            <div className="create-vault-token-list">
+                              {Object.values(markets).filter((market) => {
+                                const searchTerm = createVaultForm.marketSearchTerm || '';
+                                const marketPair = `${market.baseAsset}/${market.quoteAsset}`;
+                                if (!searchTerm) return true;
+                                return marketPair.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                  market.baseAsset.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                  market.quoteAsset.toLowerCase().includes(searchTerm.toLowerCase());
+                              }).slice(0, 100).map((market) => {
+                                const marketKey = `${market.baseAsset}${market.quoteAsset}`;
+                                return (
+                                  <div
+                                    key={marketKey}
+                                    className="create-vault-token-option"
+                                    onClick={() => {
+                                      setCreateVaultForm(prev => ({
+                                        ...prev,
+                                        selectedMarket: marketKey,
+                                        quoteAsset: market.quoteAddress,
+                                        baseAsset: market.baseAddress,
+                                        showMarketDropdown: false,
+                                        marketSearchTerm: ''
+                                      }));
+                                    }}
+                                  >
+                                    <img src={market.image || tokendict[market.baseAddress]?.image} alt={market.baseAsset} className="create-vault-token-icon" />
+                                    <div className="create-vault-token-info">
+                                      <div className="token-symbol">{market.baseAsset}/{market.quoteAsset}</div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+
+                              {Object.values(markets).filter((market) => {
+                                const searchTerm = createVaultForm.marketSearchTerm || '';
+                                const marketPair = `${market.baseAsset}/${market.quoteAsset}`;
+                                if (!searchTerm) return false;
+                                return marketPair.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                  market.baseAsset.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                  market.quoteAsset.toLowerCase().includes(searchTerm.toLowerCase());
+                              }).length === 0 && createVaultForm.marketSearchTerm && (
+                                  <div className="no-tokens-found">No markets found</div>
+                                )}
                             </div>
                           </div>
-                        );
-                      })}
-
-                      {Object.values(markets).filter((market) => {
-                        const searchTerm = createVaultForm.marketSearchTerm || '';
-                        const marketPair = `${market.baseAsset}/${market.quoteAsset}`;
-                        if (!searchTerm) return false;
-                        return marketPair.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          market.baseAsset.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          market.quoteAsset.toLowerCase().includes(searchTerm.toLowerCase());
-                      }).length === 0 && createVaultForm.marketSearchTerm && (
-                        <div className="no-tokens-found">No markets found</div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>Initial Quote Amount</label>
-                <input
-                  type="number"
-                  value={createVaultForm.amountQuote}
-                  onChange={(e) => setCreateVaultForm(prev => ({ ...prev, amountQuote: e.target.value }))}
-                  className="form-input"
-                  placeholder="0.0"
-                />
-                {/* {createVaultForm.quoteAsset && tokendict[createVaultForm.quoteAsset] && (
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Initial Quote Amount</label>
+                        <input
+                          type="number"
+                          value={createVaultForm.amountQuote}
+                          onChange={(e) => setCreateVaultForm(prev => ({ ...prev, amountQuote: e.target.value }))}
+                          className="form-input"
+                          placeholder="0.0"
+                        />
+                        {/* {createVaultForm.quoteAsset && tokendict[createVaultForm.quoteAsset] && (
                   <small className="token-label">
                     {tokendict[createVaultForm.quoteAsset].ticker} ({tokendict[createVaultForm.quoteAsset].name})
                   </small>
                 )} */}
-              </div>
-              <div className="form-group">
-                <label>Initial Base Amount</label>
-                <input
-                  type="number"
-                  value={createVaultForm.amountBase}
-                  onChange={(e) => setCreateVaultForm(prev => ({ ...prev, amountBase: e.target.value }))}
-                  className="form-input"
-                  placeholder="0.0"
-                />
-                {/* {createVaultForm.baseAsset && tokendict[createVaultForm.baseAsset] && (
+                      </div>
+                      <div className="form-group">
+                        <label>Initial Base Amount</label>
+                        <input
+                          type="number"
+                          value={createVaultForm.amountBase}
+                          onChange={(e) => setCreateVaultForm(prev => ({ ...prev, amountBase: e.target.value }))}
+                          className="form-input"
+                          placeholder="0.0"
+                        />
+                        {/* {createVaultForm.baseAsset && tokendict[createVaultForm.baseAsset] && (
                   <small className="token-label">
                     {tokendict[createVaultForm.baseAsset].ticker} ({tokendict[createVaultForm.baseAsset].name})
                   </small>
                 )} */}
-              </div>
-            </div>
+                      </div>
+                    </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>Social Link 1 (Optional)</label>
-                <input
-                  type="text"
-                  value={createVaultForm.social1}
-                  onChange={(e) => setCreateVaultForm(prev => ({ ...prev, social1: e.target.value }))}
-                  className="form-input"
-                  placeholder="https://twitter.com/..."
-                />
-              </div>
-              <div className="form-group">
-                <label>Social Link 2 (Optional)</label>
-                <input
-                  type="text"
-                  value={createVaultForm.social2}
-                  onChange={(e) => setCreateVaultForm(prev => ({ ...prev, social2: e.target.value }))}
-                  className="form-input"
-                  placeholder="https://telegram.me/..."
-                />
-              </div>
-            </div>
-          </>
-        )}
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Social Link 1 (Optional)</label>
+                        <input
+                          type="text"
+                          value={createVaultForm.social1}
+                          onChange={(e) => setCreateVaultForm(prev => ({ ...prev, social1: e.target.value }))}
+                          className="form-input"
+                          placeholder="https://twitter.com/..."
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Social Link 2 (Optional)</label>
+                        <input
+                          type="text"
+                          value={createVaultForm.social2}
+                          onChange={(e) => setCreateVaultForm(prev => ({ ...prev, social2: e.target.value }))}
+                          className="form-input"
+                          placeholder="https://telegram.me/..."
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
-        {createVaultStep !== 'idle' && (
-          <div className="create-vault-progress-container">
-            <div className="create-vault-progress-steps">
-              <div className={`create-vault-progress-step ${
-                createVaultStep === 'validating' ? 'active' : 
-                ['approve-quote', 'approve-base', 'creating', 'success'].includes(createVaultStep) ? 'completed' : ''
-              }`}>
-                <div className="step-progress-indicator">
-                  {['approve-quote', 'approve-base', 'creating', 'success'].includes(createVaultStep) ? (
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                      <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                {createVaultStep !== 'idle' && (
+                  <div className="create-vault-progress-container">
+                    <div className="create-vault-progress-steps">
+                      <div className={`create-vault-progress-step ${createVaultStep === 'validating' ? 'active' :
+                        ['approve-quote', 'approve-base', 'creating', 'success'].includes(createVaultStep) ? 'completed' : ''
+                        }`}>
+                        <div className="step-progress-indicator">
+                          {['approve-quote', 'approve-base', 'creating', 'success'].includes(createVaultStep) ? (
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                              <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          ) : (
+                            <span>1</span>
+                          )}
+                        </div>
+                        <div className="step-progress-content">
+                          <div className="step-progress-title">Validating</div>
+                          <div className="step-progress-description">Checking balances and permissions</div>
+                        </div>
+
+                      </div>
+
+                      {createVaultForm.quoteAsset && createVaultForm.quoteAsset.toLowerCase() !== eth.toLowerCase() && (
+                        <div className={`create-vault-progress-step ${createVaultStep === 'approve-quote' ? 'active' :
+                          ['approve-base', 'creating', 'success'].includes(createVaultStep) ? 'completed' : ''
+                          }`}>
+                          <div className="step-progress-indicator">
+                            {['approve-base', 'creating', 'success'].includes(createVaultStep) ? (
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            ) : (
+                              <span>2</span>
+                            )}
+                          </div>
+                          <div className="step-progress-content">
+                            <div className="step-progress-title">
+                              Approve {tokendict[createVaultForm.quoteAsset]?.ticker || 'Quote Token'}
+                            </div>
+                            <div className="step-progress-description">Grant vault contract permission</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {createVaultForm.baseAsset && createVaultForm.baseAsset.toLowerCase() !== eth.toLowerCase() && (
+                        <div className={`create-vault-progress-step ${createVaultStep === 'approve-base' ? 'active' :
+                          ['creating', 'success'].includes(createVaultStep) ? 'completed' : ''
+                          }`}>
+                          <div className="step-progress-indicator">
+                            {['creating', 'success'].includes(createVaultStep) ? (
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            ) : (
+                              <span>
+                                {createVaultForm.quoteAsset.toLowerCase() !== eth.toLowerCase() ? '3' : '2'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="step-progress-content">
+                            <div className="step-progress-title">
+                              Approve {tokendict[createVaultForm.baseAsset]?.ticker || 'Base Token'}
+                            </div>
+                            <div className="step-progress-description">Grant vault contract permission</div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className={`create-vault-progress-step ${createVaultStep === 'creating' ? 'active' :
+                        createVaultStep === 'success' ? 'completed' : ''
+                        }`}>
+                        <div className="step-progress-indicator">
+                          {createVaultStep === 'success' ? (
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                              <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          ) : (
+                            <span>
+                              {(() => {
+                                let stepNum = 2;
+                                if (createVaultForm.quoteAsset.toLowerCase() !== eth.toLowerCase()) stepNum++;
+                                if (createVaultForm.baseAsset.toLowerCase() !== eth.toLowerCase()) stepNum++;
+                                return stepNum;
+                              })()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="step-progress-content">
+                          <div className="step-progress-title">Creating Vault</div>
+                          <div className="step-progress-description">Deploying your vault contract</div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                )}
+              </div>
+
+              <div className="modal-footer">
+                {createVaultError && createVaultStep === 'idle' && (
+                  <div className="create-vault-error">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                      <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                      <path d="M8 4v5M8 11v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
-                  ) : (
-                    <span>1</span>
-                  )}
-                </div>
-                <div className="step-progress-content">
-                  <div className="step-progress-title">Validating</div>
-                  <div className="step-progress-description">Checking balances and permissions</div>
-                </div>
-
-              </div>
-
-              {createVaultForm.quoteAsset && createVaultForm.quoteAsset.toLowerCase() !== eth.toLowerCase() && (
-                <div className={`create-vault-progress-step ${
-                  createVaultStep === 'approve-quote' ? 'active' : 
-                  ['approve-base', 'creating', 'success'].includes(createVaultStep) ? 'completed' : ''
-                }`}>
-                  <div className="step-progress-indicator">
-                    {['approve-base', 'creating', 'success'].includes(createVaultStep) ? (
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                        <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    ) : (
-                      <span>2</span>
-                    )}
+                    <span>{createVaultError}</span>
                   </div>
-                  <div className="step-progress-content">
-                    <div className="step-progress-title">
-                      Approve {tokendict[createVaultForm.quoteAsset]?.ticker || 'Quote Token'}
-                    </div>
-                    <div className="step-progress-description">Grant vault contract permission</div>
-                  </div>
-                </div>
-              )}
+                )}
 
-              {createVaultForm.baseAsset && createVaultForm.baseAsset.toLowerCase() !== eth.toLowerCase() && (
-                <div className={`create-vault-progress-step ${
-                  createVaultStep === 'approve-base' ? 'active' : 
-                  ['creating', 'success'].includes(createVaultStep) ? 'completed' : ''
-                }`}>
-                  <div className="step-progress-indicator">
-                    {['creating', 'success'].includes(createVaultStep) ? (
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                        <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    ) : (
-                      <span>
-                        {createVaultForm.quoteAsset.toLowerCase() !== eth.toLowerCase() ? '3' : '2'}
-                      </span>
-                    )}
-                  </div>
-                  <div className="step-progress-content">
-                    <div className="step-progress-title">
-                      Approve {tokendict[createVaultForm.baseAsset]?.ticker || 'Base Token'}
-                    </div>
-                    <div className="step-progress-description">Grant vault contract permission</div>
-                  </div>
-                </div>
-              )}
+                <button
+                  className={`save-button ${(!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase) && createVaultStep === 'idle' ? 'disabled' : ''
+                    } ${createVaultStep === 'success' ? 'success' : ''}`}
+                  disabled={
+                    (createVaultStep === 'idle' && (!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase)) ||
+                    isVaultDepositSigning
+                  }
+                  onClick={async () => {
+                    if (!connected || !createVaultForm.name || !createVaultForm.selectedMarket ||
+                      !createVaultForm.amountQuote || !createVaultForm.amountBase) {
+                      return;
+                    }
 
-              <div className={`create-vault-progress-step ${
-                createVaultStep === 'creating' ? 'active' : 
-                createVaultStep === 'success' ? 'completed' : ''
-              }`}>
-                <div className="step-progress-indicator">
+                    await handleSetChain();
+
+                    try {
+                      setIsVaultDepositSigning(true);
+                      setCreateVaultError('');
+
+                      // Step 1: Validating
+                      setCreateVaultStep('validating');
+                      await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for UX
+
+                      if (!createVaultForm.quoteAsset.startsWith('0x') || !createVaultForm.baseAsset.startsWith('0x')) {
+                        throw new Error('Invalid token addresses. Please provide valid contract addresses.');
+                      }
+
+                      const quoteAssetData = Object.values(tokendict).find((t) =>
+                        t.address.toLowerCase() === createVaultForm.quoteAsset.toLowerCase()
+                      );
+                      const baseAssetData = Object.values(tokendict).find((t) =>
+                        t.address.toLowerCase() === createVaultForm.baseAsset.toLowerCase()
+                      );
+
+                      if (!quoteAssetData || !baseAssetData) {
+                        throw new Error('One or both tokens not found in token dictionary. Please ensure you\'re using valid token addresses.');
+                      }
+
+                      const quoteDecimals = Number(quoteAssetData.decimals || 18);
+                      const baseDecimals = Number(baseAssetData.decimals || 18);
+
+                      const amountQuote = BigInt(Math.round(parseFloat(createVaultForm.amountQuote) * 10 ** quoteDecimals));
+                      const amountBase = BigInt(Math.round(parseFloat(createVaultForm.amountBase) * 10 ** baseDecimals));
+
+                      const quoteBalance = tokenBalances[createVaultForm.quoteAsset] || 0n;
+                      const baseBalance = tokenBalances[createVaultForm.baseAsset] || 0n;
+
+                      if (quoteBalance < amountQuote) {
+                        const formatBalance = (amount: bigint, decimals: number) => {
+                          const num = Number(amount) / 10 ** decimals;
+                          return num.toFixed(2);
+                        };
+                        throw new Error(`Insufficient ${quoteAssetData.ticker} balance. Required: ${createVaultForm.amountQuote}, Available: ${formatBalance(quoteBalance, quoteDecimals)}`);
+                      }
+
+                      if (baseBalance < amountBase) {
+                        const formatBalance = (amount: bigint, decimals: number) => {
+                          const num = Number(amount) / 10 ** decimals;
+                          return num.toFixed(2);
+                        };
+                        throw new Error(`Insufficient ${baseAssetData.ticker} balance. Required: ${createVaultForm.amountBase}, Available: ${formatBalance(baseBalance, baseDecimals)}`);
+                      }
+
+                      // Step 2: Approve Quote Token
+                      if (createVaultForm.quoteAsset.toLowerCase() !== eth.toLowerCase()) {
+                        setCreateVaultStep('approve-quote');
+                        const approveQuoteUo = {
+                          target: createVaultForm.quoteAsset,
+                          data: encodeFunctionData({
+                            abi: [{
+                              inputs: [
+                                { name: "spender", type: "address" },
+                                { name: "amount", type: "uint256" }
+                              ],
+                              name: "approve",
+                              outputs: [{ name: "", type: "bool" }],
+                              stateMutability: "nonpayable",
+                              type: "function",
+                            }],
+                            functionName: "approve",
+                            args: [crystalVaults, amountQuote],
+                          }),
+                          value: 0n,
+                        };
+                        await sendUserOperationAsync({ uo: approveQuoteUo });
+                      }
+
+                      // Step 3: Approve Base Token
+                      if (createVaultForm.baseAsset.toLowerCase() !== eth.toLowerCase()) {
+                        setCreateVaultStep('approve-base');
+                        const approveBaseUo = {
+                          target: createVaultForm.baseAsset,
+                          data: encodeFunctionData({
+                            abi: [{
+                              inputs: [
+                                { name: "spender", type: "address" },
+                                { name: "amount", type: "uint256" }
+                              ],
+                              name: "approve",
+                              outputs: [{ name: "", type: "bool" }],
+                              stateMutability: "nonpayable",
+                              type: "function",
+                            }],
+                            functionName: "approve",
+                            args: [crystalVaults, amountBase],
+                          }),
+                          value: 0n,
+                        };
+                        await sendUserOperationAsync({ uo: approveBaseUo });
+                      }
+
+                      // Step 4: Creating Vault
+                      setCreateVaultStep('creating');
+
+                      const ethValue =
+                        createVaultForm.quoteAsset.toLowerCase() === eth.toLowerCase() ? amountQuote :
+                          createVaultForm.baseAsset.toLowerCase() === eth.toLowerCase() ? amountBase : 0n;
+
+                      const deployUo = {
+                        target: crystalVaults,
+                        data: encodeFunctionData({
+                          abi: CrystalVaultsAbi,
+                          functionName: "deploy",
+                          args: [
+                            createVaultForm.quoteAsset as `0x${string}`,
+                            createVaultForm.baseAsset as `0x${string}`,
+                            amountQuote,
+                            amountBase,
+                            0n,
+                            0n,
+                            true,
+                            {
+                              name: createVaultForm.name || 'Unnamed Vault',
+                              description: createVaultForm.description || 'No description provided',
+                              social1: createVaultForm.social1 || '',
+                              social2: createVaultForm.social2 || '',
+                              social3: createVaultForm.social2 || ''
+                            },
+                          ],
+                        }),
+                        value: ethValue,
+                      };
+
+                      await sendUserOperationAsync({ uo: deployUo });
+
+                      // Step 5: Success
+                      setCreateVaultStep('success');
+
+                      // Wait a moment to show success state
+                      setTimeout(() => {
+                        setCreateVaultForm({
+                          name: '',
+                          description: '',
+                          selectedMarket: '',
+                          quoteAsset: '',
+                          baseAsset: '',
+                          amountQuote: '',
+                          amountBase: '',
+                          social1: '',
+                          social2: '',
+                          showMarketDropdown: false,
+                          marketSearchTerm: ''
+                        });
+                        setCreateVaultStep('idle');
+                        setCreateVaultError('');
+                        setpopup(0);
+                        refetch?.();
+                      }, 2000);
+
+                    } catch (e: any) {
+                      console.error('Vault creation error:', e);
+                      setCreateVaultError(e?.message || 'An error occurred while creating the vault. Please try again.');
+                      setCreateVaultStep('idle');
+                    } finally {
+                      setIsVaultDepositSigning(false);
+                    }
+                  }}
+                >
                   {createVaultStep === 'success' ? (
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                      <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
+                    <div className="button-content">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Vault Created!
+                    </div>
+                  ) : createVaultStep !== 'idle' ? (
+                    <div className="button-content">
+                      <div className="loading-spinner" />
+                    </div>
                   ) : (
-                    <span>
-                      {(() => {
-                        let stepNum = 2;
-                        if (createVaultForm.quoteAsset.toLowerCase() !== eth.toLowerCase()) stepNum++;
-                        if (createVaultForm.baseAsset.toLowerCase() !== eth.toLowerCase()) stepNum++;
-                        return stepNum;
-                      })()}
-                    </span>
+                    'Create Vault'
                   )}
-                </div>
-                <div className="step-progress-content">
-                  <div className="step-progress-title">Creating Vault</div>
-                  <div className="step-progress-description">Deploying your vault contract</div>
-                </div>
+                </button>
               </div>
             </div>
-
           </div>
-        )}
-      </div>
-
-      <div className="modal-footer">
-        {createVaultError && createVaultStep === 'idle' && (
-          <div className="create-vault-error">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-              <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M8 4v5M8 11v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-            <span>{createVaultError}</span>
-          </div>
-        )}
-
-        <button
-          className={`save-button ${
-            (!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase) && createVaultStep === 'idle' ? 'disabled' : ''
-          } ${createVaultStep === 'success' ? 'success' : ''}`}
-          disabled={
-            (createVaultStep === 'idle' && (!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase)) ||
-            isVaultDepositSigning
-          }
-          onClick={async () => {
-            if (!connected || !createVaultForm.name || !createVaultForm.selectedMarket ||
-              !createVaultForm.amountQuote || !createVaultForm.amountBase) {
-              return;
-            }
-
-            await handleSetChain();
-
-            try {
-              setIsVaultDepositSigning(true);
-              setCreateVaultError('');
-              
-              // Step 1: Validating
-              setCreateVaultStep('validating');
-              await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for UX
-              
-              if (!createVaultForm.quoteAsset.startsWith('0x') || !createVaultForm.baseAsset.startsWith('0x')) {
-                throw new Error('Invalid token addresses. Please provide valid contract addresses.');
-              }
-
-              const quoteAssetData = Object.values(tokendict).find((t) =>
-                t.address.toLowerCase() === createVaultForm.quoteAsset.toLowerCase()
-              );
-              const baseAssetData = Object.values(tokendict).find((t) =>
-                t.address.toLowerCase() === createVaultForm.baseAsset.toLowerCase()
-              );
-
-              if (!quoteAssetData || !baseAssetData) {
-                throw new Error('One or both tokens not found in token dictionary. Please ensure you\'re using valid token addresses.');
-              }
-
-              const quoteDecimals = Number(quoteAssetData.decimals || 18);
-              const baseDecimals = Number(baseAssetData.decimals || 18);
-
-              const amountQuote = BigInt(Math.round(parseFloat(createVaultForm.amountQuote) * 10 ** quoteDecimals));
-              const amountBase = BigInt(Math.round(parseFloat(createVaultForm.amountBase) * 10 ** baseDecimals));
-
-              const quoteBalance = tokenBalances[createVaultForm.quoteAsset] || 0n;
-              const baseBalance = tokenBalances[createVaultForm.baseAsset] || 0n;
-
-              if (quoteBalance < amountQuote) {
-                const formatBalance = (amount: bigint, decimals: number) => {
-                  const num = Number(amount) / 10 ** decimals;
-                  return num.toFixed(2);
-                };
-                throw new Error(`Insufficient ${quoteAssetData.ticker} balance. Required: ${createVaultForm.amountQuote}, Available: ${formatBalance(quoteBalance, quoteDecimals)}`);
-              }
-
-              if (baseBalance < amountBase) {
-                const formatBalance = (amount: bigint, decimals: number) => {
-                  const num = Number(amount) / 10 ** decimals;
-                  return num.toFixed(2);
-                };
-                throw new Error(`Insufficient ${baseAssetData.ticker} balance. Required: ${createVaultForm.amountBase}, Available: ${formatBalance(baseBalance, baseDecimals)}`);
-              }
-
-              // Step 2: Approve Quote Token
-              if (createVaultForm.quoteAsset.toLowerCase() !== eth.toLowerCase()) {
-                setCreateVaultStep('approve-quote');
-                const approveQuoteUo = {
-                  target: createVaultForm.quoteAsset,
-                  data: encodeFunctionData({
-                    abi: [{
-                      inputs: [
-                        { name: "spender", type: "address" },
-                        { name: "amount", type: "uint256" }
-                      ],
-                      name: "approve",
-                      outputs: [{ name: "", type: "bool" }],
-                      stateMutability: "nonpayable",
-                      type: "function",
-                    }],
-                    functionName: "approve",
-                    args: [crystalVaults, amountQuote],
-                  }),
-                  value: 0n,
-                };
-                await sendUserOperationAsync({ uo: approveQuoteUo });
-              }
-              
-              // Step 3: Approve Base Token
-              if (createVaultForm.baseAsset.toLowerCase() !== eth.toLowerCase()) {
-                setCreateVaultStep('approve-base');
-                const approveBaseUo = {
-                  target: createVaultForm.baseAsset,
-                  data: encodeFunctionData({
-                    abi: [{
-                      inputs: [
-                        { name: "spender", type: "address" },
-                        { name: "amount", type: "uint256" }
-                      ],
-                      name: "approve",
-                      outputs: [{ name: "", type: "bool" }],
-                      stateMutability: "nonpayable",
-                      type: "function",
-                    }],
-                    functionName: "approve",
-                    args: [crystalVaults, amountBase],
-                  }),
-                  value: 0n,
-                };
-                await sendUserOperationAsync({ uo: approveBaseUo });
-              }
-
-              // Step 4: Creating Vault
-              setCreateVaultStep('creating');
-              
-              const ethValue =
-                createVaultForm.quoteAsset.toLowerCase() === eth.toLowerCase() ? amountQuote :
-                  createVaultForm.baseAsset.toLowerCase() === eth.toLowerCase() ? amountBase : 0n;
-
-              const deployUo = {
-                target: crystalVaults,
-                data: encodeFunctionData({
-                  abi: CrystalVaultsAbi,
-                  functionName: "deploy",
-                  args: [
-                    createVaultForm.quoteAsset as `0x${string}`,
-                    createVaultForm.baseAsset as `0x${string}`,
-                    amountQuote,
-                    amountBase,
-                    0n,
-                    0n,
-                    true,
-                    {
-                      name: createVaultForm.name || 'Unnamed Vault',
-                      description: createVaultForm.description || 'No description provided',
-                      social1: createVaultForm.social1 || '',
-                      social2: createVaultForm.social2 || '',
-                      social3: createVaultForm.social2 || ''
-                    },
-                  ],
-                }),
-                value: ethValue,
-              };
-
-              await sendUserOperationAsync({ uo: deployUo });
-              
-              // Step 5: Success
-              setCreateVaultStep('success');
-              
-              // Wait a moment to show success state
-              setTimeout(() => {
-                setCreateVaultForm({
-                  name: '',
-                  description: '',
-                  selectedMarket: '',
-                  quoteAsset: '',
-                  baseAsset: '',
-                  amountQuote: '',
-                  amountBase: '',
-                  social1: '',
-                  social2: '',
-                  showMarketDropdown: false,
-                  marketSearchTerm: ''
-                });
-                setCreateVaultStep('idle');
-                setCreateVaultError('');
-                setpopup(0);
-                refetch?.();
-              }, 2000);
-
-            } catch (e: any) {
-              console.error('Vault creation error:', e);
-              setCreateVaultError(e?.message || 'An error occurred while creating the vault. Please try again.');
-              setCreateVaultStep('idle');
-            } finally {
-              setIsVaultDepositSigning(false);
-            }
-          }}
-        >
-          {createVaultStep === 'success' ? (
-            <div className="button-content">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Vault Created!
-            </div>
-          ) : createVaultStep !== 'idle' ? (
-            <div className="button-content">
-              <div className="loading-spinner" />
-            </div>
-          ) : (
-            'Create Vault'
-          )}
-        </button>
-      </div>
-    </div>
-  </div>
-) : null}
+        ) : null}
         {popup === 30 ? ( // perps-deposit-popup
           <div className="modal-overlay">
             <div className="modal-content" ref={popupref}>

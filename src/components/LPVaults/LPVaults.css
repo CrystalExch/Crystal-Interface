@@ -3234,7 +3234,8 @@
   letter-spacing: -.5px;
   padding: .3rem 1rem;
   transition: all.2s ease;
-  width: 100%
+  width: 100%;
+  height: 30px;
 }
 
 .button-content {
