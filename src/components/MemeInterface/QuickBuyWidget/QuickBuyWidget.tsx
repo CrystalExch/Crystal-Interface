@@ -1045,7 +1045,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     return safe > pending ? safe - pending : 0n;
   };
 
-  const handleBuyTrade = async (amount: string) => {
+const handleBuyTrade = async (amount: string) => {
     if (!sendUserOperationAsync || !tokenAddress || !routerAddress) {
       setpopup?.(4);
       return;
@@ -1075,6 +1075,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
     // Filter out wallets that don't have enough balance to cover gas
     const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+    
+    // First pass: check if wallets have minimum balance for gas
     targets = targets.filter(addr => {
       const balances = walletTokenBalances[addr];
       if (!balances) return false;
@@ -1099,6 +1101,24 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       return;
     }
 
+    // Check if we have enough total balance (considering gas reserves)
+    let totalAvailable = 0n;
+    for (const addr of targets) {
+      const maxWei = getMaxSpendableWei(addr);
+      totalAvailable += maxWei;
+    }
+    
+    if (totalAvailable < totalWei) {
+      const txId = `quickbuy-error-${Date.now()}`;
+      updatePopup?.(txId, {
+        title: 'Insufficient Balance',
+        subtitle: `Need ${(Number(totalWei) / 1e18).toFixed(2)} MON but only ${(Number(totalAvailable) / 1e18).toFixed(2)} MON available after gas reserves`,
+        variant: 'error',
+        isLoading: false,
+      });
+      return;
+    }
+
     const txId = `quickbuy-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     showLoadingPopup?.(txId, {
       title: 'Sending batch buy...',
@@ -1108,20 +1128,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       tokenImage,
     });
 
-    // --- check total available (minus pending) ---
-    let totalAvailable = 0n;
-    for (const addr of targets) totalAvailable += getMaxSpendableWei(addr);
-    if (totalAvailable < totalWei) {
-      updatePopup?.(txId, {
-        title: 'Insufficient effective balance',
-        subtitle: 'Pending or used funds exceed available MON',
-        variant: 'error',
-        isLoading: false,
-      });
-      return;
-    }
-
-    // --- build plan ---
     let remaining = totalWei;
     const plan: { addr: string; amount: bigint }[] = [];
 
@@ -1248,7 +1254,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     }
   };
 
-  const handleSellTrade = async (value: string) => {
+const handleSellTrade = async (value: string) => {
     if (!sendUserOperationAsync || !tokenAddress || !routerAddress) {
       setpopup?.(4);
       return;
@@ -1259,7 +1265,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       setChain?.();
       return;
     }
-    const targets: string[] = Array.from(selectedWallets);
+    let targets: string[] = Array.from(selectedWallets);
     if (targets.length === 0) {
       const txId = `quicksell-error-${Date.now()}`;
       updatePopup?.(txId, {
@@ -1271,6 +1277,33 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       return;
     }
 
+    const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+    targets = targets.filter(addr => {
+      const tokenBalance = walletTokenBalances[addr]?.[tokenAddress] ?? 0n;
+      if (tokenBalance <= 0n) return false;
+      
+      const balances = walletTokenBalances[addr];
+      if (!balances) return false;
+
+      const ethToken = tokenList.find(
+        (t) => t.address === settings.chainConfig[activechain].eth,
+      );
+      if (!ethToken || !balances[ethToken.address]) return false;
+
+      const monBalance = balances[ethToken.address];
+      return monBalance > gasReserve
+    });
+
+    if (targets.length === 0) {
+      const txId = `quicksell-error-${Date.now()}`;
+      updatePopup?.(txId, {
+        title: 'Insufficient Balance',
+        subtitle: 'No wallets have both tokens to sell and enough MON for gas',
+        variant: 'error',
+        isLoading: false,
+      });
+      return;
+    }
     const txId = `quicksell-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     showLoadingPopup?.(txId, {
       title: 'Sending batch sell...',
@@ -2260,20 +2293,29 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 </svg>
                               </div>
                             </div>
-
-                            <div className="quickbuy-wallet-balance">
-                              <Tooltip content="MON Balance">
-                                <div
-                                  className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}
-                                >
-                                  <img
-                                    src={monadicon}
-                                    className="quickbuy-wallet-mon-icon"
-                                  />
-                                  {formatNumberWithCommas(balance, 2)}
-                                </div>
-                              </Tooltip>
-                            </div>
+<div className="quickbuy-wallet-balance">
+  {(() => {
+    const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+    const balanceWei = walletTokenBalances[wallet.address]?.[
+      tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth)?.address || ''
+    ] || 0n;
+    const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+    
+    return (
+      <Tooltip content={hasInsufficientGas ? "Not enough for gas" : "MON Balance"}>
+        <div
+          className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+        >
+          <img
+            src={monadicon}
+            className="quickbuy-wallet-mon-icon"
+          />
+          {formatNumberWithCommas(balance, 2)}
+        </div>
+      </Tooltip>
+    );
+  })()}
+</div>
 
                             <div className="quickbuy-wallet-tokens">
                               {(() => {
@@ -2412,21 +2454,30 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                               </div>
                             </div>
 
-                            <div className="quickbuy-wallet-balance">
-                              <Tooltip content="MON Balance">
-                                <div
-                                  className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}
-                                >
-                                  <img
-                                    src={monadicon}
-                                    className="quickbuy-wallet-mon-icon"
-                                    alt="MON"
-                                  />
-                                  {formatNumberWithCommas(balance, 2)}
-                                </div>
-                              </Tooltip>
-                            </div>
-
+                           <div className="quickbuy-wallet-balance">
+  {(() => {
+    const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+    const balanceWei = walletTokenBalances[wallet.address]?.[
+      tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth)?.address || ''
+    ] || 0n;
+    const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+    
+    return (
+      <Tooltip content={hasInsufficientGas ? "Not enough for gas" : "MON Balance"}>
+        <div
+          className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+        >
+          <img
+            src={monadicon}
+            className="quickbuy-wallet-mon-icon"
+            alt="MON"
+          />
+          {formatNumberWithCommas(balance, 2)}
+        </div>
+      </Tooltip>
+    );
+  })()}
+</div>
                             <div className="quickbuy-wallet-tokens">
                               {(() => {
                                 const tokenCount = getWalletTokenCount(

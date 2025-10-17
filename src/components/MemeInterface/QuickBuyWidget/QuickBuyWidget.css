@@ -1024,3 +1024,12 @@
   display: flex;
   gap: 2px;
 }
+
+.quickbuy-wallet-balance-amount.insufficient-gas {
+  border-color: rgba(235, 112, 112, 0.3);
+  color: rgb(235, 112, 112);
+}
+
+.quickbuy-wallet-balance-amount.insufficient-gas .quickbuy-wallet-mon-icon {
+  opacity: 0.8;
+}
