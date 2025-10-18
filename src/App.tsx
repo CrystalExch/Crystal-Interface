@@ -1881,7 +1881,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [walletTokenBalances, setWalletTokenBalances] = useState({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
   const [walletsLoading, _setWalletsLoading] = useState(false);
-  const [subwalletBalanceLoading, setSubwalletBalanceLoading] = useState({});
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState('forward');
   const [exitingChallenge, setExitingChallenge] = useState(false);
@@ -3314,7 +3313,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           functionName: 'batchBalanceOf',
           args: [
             address as `0x${string}`,
-            Object.values(tokendict).map((t: any) => t.address)
+            [...Object.values(tokendict).map((t: any) => t.address), ...Object.values(markets).map((t: any) => t.address)]
           ]
         },
         {
@@ -6210,59 +6209,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         ...(token.id ? [token.id] : [])
       ];
 
-      if (address && (amountIn || amountOutSwap)) {
+      if (address && (['board', 'spectra', 'meme'].includes(location.pathname.split('/')[1]))) {
         try {
           const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);
 
-          const path = activeMarket.path[0] === tokenIn ? activeMarket.path : [...activeMarket.path].reverse();
-
           let tx: any = null;
-
-          if (tokenIn === eth && tokenOut === weth) {
-            tx = wrapeth(amountIn, weth);
-          } else if (tokenIn === weth && tokenOut === eth) {
-            tx = unwrapeth(amountIn, weth);
-          } else if (tokenIn === eth && tokendict[tokenOut]?.lst && isStake) {
-            tx = stake(tokenOut, address, amountIn);
-          } else if (orderType === 1 || multihop) {
-            const slippageAmount = !switched
-              ? (amountOutSwap * slippage + 5000n) / 10000n
-              : (amountIn * 10000n + slippage / 2n) / slippage;
-
-            if (tokenIn === eth && tokenOut !== eth) {
-              tx = !switched
-                ? swapExactETHForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
-                : swapETHForExactTokens(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
-            } else if (tokenIn !== eth && tokenOut === eth) {
-              tx = !switched
-                ? swapExactTokensForETH(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
-                : swapTokensForExactETH(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
-            } else {
-              tx = !switched
-                ? swapExactTokensForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
-                : swapTokensForExactTokens(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
-            }
-          } else {
-            const amount = !switched ? amountIn : amountOutSwap;
-            const limitPrice = tokenIn === activeMarket.quoteAddress
-              ? (lowestAsk * 10000n + slippage / 2n) / slippage
-              : (highestBid * slippage + 5000n) / 10000n;
-
-            tx = _swap(
-              router,
-              tokenIn === eth
-                ? (!switched ? amountIn : BigInt((amountIn * 10000n + slippage / 2n) / slippage))
-                : BigInt(0),
-              activeMarket.path[0] === tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-              activeMarket.path[0] === tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-              !switched,
-              BigInt(0),
-              amount,
-              limitPrice,
-              deadline,
-              usedRefAddress
-            );
-          }
 
           if (tx) {
             gasEstimateCall = {
@@ -6282,11 +6233,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
       }
 
-      setSubwalletBalanceLoading(prev => ({
-        ...prev,
-        [scaAddress]: true,
-        ...Object.fromEntries(subWallets.map(w => [w.address, true]))
-      }))
       const mainGroup: any = [
         {
           disabled: !scaAddress,
@@ -6523,12 +6469,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         const reservesData = groupResults?.mainGroup?.at(-1)?.result;
         setTokenData((prev: any) => ({ ...prev, reserveQuote: reservesData[0], reserveBase: reservesData[1] }));
       }
-
-      setSubwalletBalanceLoading(prev => ({
-        ...prev,
-        [address]: false,
-        ...Object.fromEntries(subWallets.map(w => [w.address, false]))
-      }))
       return { readContractData: groupResults, gasEstimate: gasEstimate }
     },
     enabled: !!activeMarket && !!tokendict && !!markets,
@@ -7435,7 +7375,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
         let tempbalances = tokenBalances
         if (data?.[2]?.result || !address) {
-          tempbalances = Object.values(tokendict).reduce((acc, token, i) => {
+          tempbalances = [...Object.values(tokendict), ...Object.values(markets)].reduce((acc, token, i) => {
             const balance = data[2].result?.[i] || BigInt(0);
             acc[token.address] = balance;
             return acc;
@@ -16927,7 +16867,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     <div className="button-content">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>c
+                      </svg>
                       Withdrawal Complete!
                     </div>
                   ) : withdrawVaultStep !== 'idle' ? (
@@ -25562,7 +25502,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 walletTokenBalances={walletTokenBalances}
                 walletTotalValues={walletTotalValues}
                 walletsLoading={walletsLoading}
-                subwalletBalanceLoading={subwalletBalanceLoading}
                 terminalRefetch={terminalRefetch}
                 setOneCTSigner={setOneCTSigner}
                 isVaultDepositSigning={isVaultDepositSigning}

@@ -210,6 +210,7 @@ interface Position {
 
 interface WalletDragItem {
   address: string;
+  privateKey: string;
   name: string;
   balance: number;
   totalValue: number;
@@ -270,7 +271,6 @@ interface PortfolioProps {
   walletTokenBalances: { [address: string]: any };
   walletTotalValues: { [address: string]: number };
   walletsLoading: boolean;
-  subwalletBalanceLoading: { [address: string]: boolean };
   terminalRefetch: any;
   setOneCTSigner: (privateKey: string) => void;
   isVaultDepositSigning: boolean;
@@ -1345,6 +1345,7 @@ useEffect(() => {
 
         return {
           address: w.address,
+          privateKey: w.privateKey,
           name: getWalletName(w.address),
           balance: getWalletBalance(w.address),
           totalValue: getTotalWalletValue(w.address),
@@ -1715,6 +1716,7 @@ useEffect(() => {
           if (containerType === 'main') {
             const dragData = {
               address: wallet.address,
+              privateKey: wallet.privateKey,
               name: getWalletName(wallet.address, index),
               balance: getWalletBalance(wallet.address),
               totalValue: getTotalWalletValue(wallet.address),
@@ -1765,7 +1767,7 @@ useEffect(() => {
           const relatedTarget = e.relatedTarget as Node;
           if (!e.currentTarget.contains(relatedTarget)) {
             setDropPreviewLine(null);
-            setDragReorderState(prev => ({ ...prev, dragOverIndex: -1, dragOverPosition: null }));
+            setDragReorderState(prev => ({ ...prev, dragOverIndex: -1, dragOverPosition: null, draggedContainer: null }));
           }
         }}
         onDrop={(e) => {
@@ -2792,7 +2794,7 @@ useEffect(() => {
                             setImportPrivateKey(e.target.value);
                             setImportError('');
                           }}
-                          placeholder="0x... or without 0x prefix"
+                          placeholder="0x... prefix is optional"
                           autoComplete="off"
                           spellCheck="false"
                         />

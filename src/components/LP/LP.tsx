@@ -255,9 +255,9 @@ const LP: React.FC<LPProps> = ({
         market.quoteAsset === token.symbol ||
         market.baseAsset === token.symbol
       );
-  
-    const isDeposited = activeTab === 'deposited'
-      ? parseFloat(market?.userBalance) > 0
+
+      const isDeposited = activeTab === 'deposited'
+      ? parseFloat(tokenBalances?.[market.address]) > 0
       : true;
   
     let categoryMatch = true;
@@ -336,37 +336,6 @@ const LP: React.FC<LPProps> = ({
     }
     setActiveTokenSelection(null);
     setpopup(0);
-  };
-
-  const handleDepositAmountChange = (position: 'first' | 'second', value: string) => {
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setDepositAmounts(prev => ({
-        ...prev,
-        [position]: value
-      }));
-
-      if (value !== '') {
-        const tokenSymbol = position === 'first' ? addLiquidityTokens.first : addLiquidityTokens.second;
-        const userBalance = getTokenBalance(tokenSymbol);
-        const tokenDecimals = Number(
-          (Object.values(tokendict).find(t => t.ticker === tokenSymbol)?.decimals) || 18
-        );
-        const maxAllowedAmount = Number(userBalance) / 10 ** tokenDecimals;
-        const enteredAmount = parseFloat(value);
-
-        if (position === 'first') {
-          setFirstTokenExceedsBalance(enteredAmount > maxAllowedAmount);
-        } else {
-          setSecondTokenExceedsBalance(enteredAmount > maxAllowedAmount);
-        }
-      } else {
-        if (position === 'first') {
-          setFirstTokenExceedsBalance(false);
-        } else {
-          setSecondTokenExceedsBalance(false);
-        }
-      }
-    }
   };
 
   const handleVaultDepositAmountChange = (type: 'quote' | 'base', value: string) => {
@@ -609,7 +578,7 @@ const LP: React.FC<LPProps> = ({
 
       const amountQuoteMin = (withdrawPreview.amountQuote * 95n) / 100n;
       const amountBaseMin = (withdrawPreview.amountBase * 95n) / 100n;
-      console.log(selectedVaultData)
+
       const withdrawUo = (selectedVaultData.quoteAddress == settings.chainConfig[activechain]?.eth || selectedVaultData.baseAddress == settings.chainConfig[activechain]?.eth) ? {
         target: router as `0x${string}`,
         data: encodeFunctionData({
@@ -1062,7 +1031,14 @@ const LP: React.FC<LPProps> = ({
                 className={`lp-tab ${activeTab === 'deposited' ? 'active' : ''}`}
                 onClick={() => setActiveTab('deposited')}
               >
-                My Positions
+                My Positions (
+                  {
+                    (Object.values(filteredVaults) || []).filter(
+                      (market: any) =>
+                        address && parseFloat(tokenBalances?.[market.address]) > 0,
+                    ).length
+                  }
+                  )
               </button>
             </div>
 
@@ -1089,7 +1065,7 @@ const LP: React.FC<LPProps> = ({
 
                 {selectedTokens.map((token) => (
                   <div key={token.symbol} className="lp-search-selected-token">
-                    <img src={token.icon} alt={token.symbol} className="lp-search-selected-icon" />
+                    <img src={token.icon} className="lp-search-selected-icon" />
                     <span>{token.symbol}</span>
                     <button
                       className="lp-search-remove-token"
