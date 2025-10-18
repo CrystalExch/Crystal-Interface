@@ -176,7 +176,15 @@
 .tracker-cta-button:hover { filter: brightness(1.1); }
 
 /* Wallet Manager */
-.tracker-wallet-manager { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: rgb(6,6,6); width: 100%; }
+.tracker-wallet-manager { 
+  flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  overflow: hidden; 
+  background: rgb(6,6,6); 
+  width: 100%; 
+}
+
 .tracker-wallets-list {
   flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(170,174,207,0.2) transparent;
   display: flex; flex-direction: column; width: 100%; position: relative; user-select: none;
@@ -187,41 +195,46 @@
 
 
 .tracker-wallets-header {
-  display: grid; 
-  grid-template-columns: 120px 20px 1fr 1fr 1fr 1fr;
-  gap: 8px;
+  display: flex;
+  align-items: center;
   padding: 8px 20px;
   border-bottom: 1px solid rgba(179,184,249,0.1); 
   position: sticky; 
   top: 0; 
   background: rgb(6,6,6); 
   z-index: 1;
-  position: relative;
+  min-width: 800px;
 }
 
 
 .tracker-wallet-item {
-  display: grid; 
-  grid-template-columns: 120px 20px 1fr 1fr 1fr 1fr;
-  gap: 8px; 
+  display: flex;
+  align-items: center;
   padding: 8px 20px;
   transition: all .2s ease; 
-  align-items: center; 
   cursor: pointer; 
   position: relative;
   border-bottom: 1px solid rgba(179,184,249,0.05);
+  min-width: 800px;
+}
+
+.tracker-wallets-container {
+  flex: 1; 
+  overflow-x: auto;
+  overflow-y: auto; 
+  scrollbar-width: thin; 
+  scrollbar-color: rgba(170,174,207,0.2) transparent;
+  display: flex; 
+  flex-direction: column; 
+  width: 100%; 
+  position: relative; 
+  user-select: none;
 }
 
 .tracker-wallet-created {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.75rem;
-  letter-spacing: -0.2px;
-  white-space: nowrap;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding-right: 0; /* Remove any right padding */
-  margin-right: 0; /* Remove any right margin */
+  min-width: 120px;
+  width: 120px;
+  flex-shrink: 0;
 }
 
 .tracker-wallet-created-date {
@@ -248,9 +261,16 @@
   pointer-events: none;
 }
 .tracker-wallet-header-cell {
-  color: rgba(255,255,255,.5); font-size: .75rem; letter-spacing: -0.3px; font-weight: 300; 
-  display: flex; align-items: center; gap: 4px; padding: 0;
+  color: rgba(255,255,255,.5); 
+  font-size: .75rem; 
+  letter-spacing: -0.3px; 
+  font-weight: 300; 
+  display: flex; 
+  align-items: center; 
+  gap: 4px; 
+  padding: 0;
 }
+
 .tracker-wallet-header-cell.sortable { cursor: pointer; user-select: none; transition: color .2s; }
 .tracker-wallet-header-cell.sortable:hover { color: rgba(255,255,255,.8); }
 .tracker-wallet-header-cell.active { color: #d8dcff; }
@@ -328,14 +348,10 @@
   display: flex; flex-direction: column; gap: 0px; min-width: 0; flex: 1; 
 }
 
-.tracker-wallet-drag-handle { 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  flex-shrink: 0; 
-  cursor: grab;
-  padding-left: 0; /* Remove any left padding */
-  margin-left: 0; /* Remove any left margin */
+.tracker-wallet-drag-handle {
+  min-width: 20px;
+  width: 20px;
+  flex-shrink: 0;
 }
 
 .tracker-drag-handle-icon {
@@ -345,7 +361,11 @@
 .tracker-wallet-item.handle-visible .tracker-drag-handle-icon { opacity: 0.3; }
 .tracker-wallet-item:hover .tracker-drag-handle-icon { opacity: 0.7; }
 
-.tracker-wallet-profile { display: flex; gap: 4px; flex: 1; min-width: 0; }
+
+.tracker-wallet-profile {
+  min-width: 200px;
+  flex: 1;
+}
 
 .tracker-wallet-name-edit-icon {
   color: rgba(255,255,255,0.4); opacity: 0; width: 0; transition: opacity .2s ease, width .2s ease; flex-shrink: 0; overflow: hidden;
@@ -360,17 +380,24 @@
 .tracker-copy-icon { width: 12px; height: 12px; cursor: pointer; transition: opacity .2s; flex-shrink: 0; }
 .tracker-copy-icon:hover { opacity: 0.7; }
 .tracker-wallet-balance {
-  display: flex; align-items: center; gap: 3px; color: #c8cae1; font-size: .8rem; letter-spacing: -0.2px;
+  min-width: 120px;
+  width: 120px;
+  flex-shrink: 0;
 }
 .tracker-balance-icon { width: 14px; height: 14px; flex-shrink: 0; }
 
-.tracker-wallet-last-active { 
-  display: flex; 
-  align-items: center; 
-  justify-content: flex-start; 
+.tracker-wallet-last-active {
+  min-width: 100px;
+  width: 100px;
+  flex-shrink: 0;
 }
 
-.tracker-wallet-actions { display: none; gap: 15px; align-items: center; justify-content: flex-end; transition: opacity .2s ease; }
+.tracker-wallet-actions {
+  min-width: 120px;
+  width: 120px;
+  flex-shrink: 0;
+}
+
 .tracker-wallet-item:hover .tracker-wallet-actions { display: flex; }
 .tracker-action-button {
   background: transparent; border: none; color: rgba(255,255,255,0.4); cursor: pointer; padding: 4px; border-radius: 4px;
@@ -390,12 +417,27 @@
   display: flex; flex-direction: column; border: 1px solid var(--c-border); border-radius: var(--radius); overflow: hidden; background: transparent;
 }
 .tracker-live-trades .detail-trades-table-header {
-  display: grid; grid-template-columns: 1fr 2fr 0.8fr 1.2fr 1fr 1.2fr;
-  border-bottom: 1px solid rgba(179,184,249,0.1); padding: 6px 20px; position: sticky; top: 0; background: rgb(6,6,6); z-index: 1;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(179,184,249,0.1); 
+  padding: 6px 20px; 
+  position: sticky; 
+  top: 0; 
+  background: rgb(6,6,6); 
+  z-index: 1;
+  min-width: 780px;
 }
 .tracker-live-trades .detail-trades-header-cell {
-  padding: 0; color: rgba(255,255,255,0.5); font-size: .75rem; font-weight: 300; letter-spacing: -0.3px; display: flex; align-items: center; gap: 4px;
+  padding: 0; 
+  color: rgba(255,255,255,0.5); 
+  font-size: .75rem; 
+  font-weight: 300; 
+  letter-spacing: -0.3px; 
+  display: flex; 
+  align-items: center; 
+  gap: 4px;
 }
+
 .tracker-live-trades .detail-trades-header-cell.sortable { cursor: pointer; user-select: none; transition: color var(--tr-fast); }
 .tracker-live-trades .detail-trades-header-cell.sortable:hover { color: var(--c-text); }
 .tracker-live-trades .detail-trades-header-cell.active { color: #d8dcff; }
@@ -403,25 +445,72 @@
 .tracker-live-trades .detail-trades-sort-arrow.desc svg { transform: rotate(0deg); }
 .tracker-live-trades .detail-trades-sort-arrow.asc svg { transform: rotate(180deg); }
 
-.tracker-live-trades .detail-trades-body { max-height: 420px; overflow-y: auto; }
+
+.tracker-live-trades .detail-trades-body { 
+  max-height: 420px; 
+  overflow-x: auto;
+  overflow-y: auto; 
+}
+
 .tracker-live-trades .detail-trades-body::-webkit-scrollbar { width: 6px; }
 .tracker-live-trades .detail-trades-body::-webkit-scrollbar-track { background: rgba(179,184,249,0.05); }
 .tracker-live-trades .detail-trades-body::-webkit-scrollbar-thumb { background: rgba(179,184,249,0.2); border-radius: 3px; }
 .tracker-live-trades .detail-trades-body::-webkit-scrollbar-thumb:hover { background: rgba(179,184,249,0.3); }
 
 .tracker-live-trades .detail-trades-row {
-  display: grid; grid-template-columns: 1fr 2fr 0.8fr 1.2fr 1fr 1.2fr;
-  border-bottom: 1px solid rgba(179,184,249,0.05); transition: background var(--tr-fast); position: relative; padding: 8px 20px; align-items: center;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(179,184,249,0.05); 
+  transition: background var(--tr-fast); 
+  position: relative; 
+  padding: 8px 20px;
+  min-width: 780px;
 }
+
 .tracker-live-trades .detail-trades-row:hover { background: rgba(179,184,249,0.03); }
 .tracker-live-trades .detail-trades-row:last-child { border-bottom: none; }
 .tracker-live-trades .detail-trades-row.buy { background-image: linear-gradient(90deg, rgba(67,254,154,0.08), transparent); }
 .tracker-live-trades .detail-trades-row.sell { background-image: linear-gradient(90deg, rgba(235,112,112,0.08), transparent); }
 .tracker-live-trades .detail-trades-row.buy:hover { background-image: linear-gradient(90deg, rgba(67,254,154,0.08), transparent); background-color: rgba(179,184,249,0.03); }
 .tracker-live-trades .detail-trades-row.sell:hover { background-image: linear-gradient(90deg, rgba(235,112,112,0.08), transparent); background-color: rgba(179,184,249,0.03); }
-.tracker-live-trades .detail-trades-col { padding: 0; font-size: .85rem; color: var(--c-text); display: flex; align-items: center; min-width: 0; }
 
-.tracker-live-trades .detail-trades-account { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tracker-live-trades .detail-trades-col { 
+  padding: 0; 
+  font-size: .85rem; 
+  color: var(--c-text); 
+  display: flex; 
+  align-items: center; 
+}
+
+.tracker-live-trades .detail-trades-account {
+  min-width: 50px;
+  flex: 1;
+}
+
+.tracker-live-trades .detail-trades-col:nth-child(3) {
+  min-width: 10px;
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.tracker-live-trades .detail-trades-col:nth-child(4) {
+  min-width: 100px;
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.tracker-live-trades .detail-trades-col:nth-child(5) {
+  min-width: 100px;
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.tracker-live-trades .detail-trades-col:nth-child(6) {
+  min-width: 120px;
+  width: 120px;
+  flex-shrink: 0;
+}
+
 .tracker-live-trades .detail-trades-avatar {
   width: 24px; height: 24px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 1px solid var(--c-border);
   background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center; font-size: 12px;
@@ -431,7 +520,12 @@
   color: var(--c-text); font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.2px;
 }
 .tracker-live-trades .detail-trades-dev-tag { color: var(--c-muted); font-size: .75rem; margin-left: 6px; }
-.tracker-live-trades .detail-trades-time { color: var(--c-muted); font-size: .8rem; letter-spacing: -0.2px; }
+
+.tracker-live-trades .detail-trades-time {
+  min-width: 80px;
+  width: 80px;
+  flex-shrink: 0;
+}
 
 .tracker-live-trades .detail-trade-type-badge.buy { 
   color: var(--c-buy); 
@@ -1129,4 +1223,44 @@
   display: flex;
   align-items: center;
   gap: 2px;
+}
+
+@media (max-width: 1024px) {
+  .tracker-wallets-container {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .tracker-wallet-item,
+  .tracker-wallets-header {
+    min-width: 900px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .tracker-live-trades .detail-trades-body {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .tracker-live-trades .detail-trades-row,
+  .tracker-live-trades .detail-trades-table-header {
+    min-width: 850px;
+  }
+}
+
+.tracker-balance-value {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: -0.2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tracker-wallet-name {
+  max-width: 140px;
+}
+
+.tracker-wallet-address {
+  max-width: 140px;
 }

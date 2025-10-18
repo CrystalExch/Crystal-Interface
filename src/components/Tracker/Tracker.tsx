@@ -1588,16 +1588,22 @@ const Tracker: React.FC<TrackerProps> = ({
     return (
       <div className="tracker-wallet-manager">
         <div className="tracker-wallets-header" data-wallet-count={filteredWallets.length}>
-          <div className="tracker-wallet-header-cell">Created</div>
-          <div className="tracker-wallet-header-cell"></div>
-          <div className="tracker-wallet-header-cell">Name</div>
-          <div className={`tracker-wallet-header-cell sortable ${walletSortField === 'balance' ? 'active' : ''}`}>
+          <div className="tracker-wallet-header-cell tracker-wallet-created">Created</div>
+          <div className="tracker-wallet-header-cell tracker-wallet-drag-handle"></div>
+          <div className="tracker-wallet-header-cell tracker-wallet-profile">Name</div>
+          <div 
+            className={`tracker-wallet-header-cell tracker-wallet-balance sortable ${walletSortField === 'balance' ? 'active' : ''}`}
+            onClick={() => handleWalletSort('balance')}
+          >
             Balance
           </div>
-          <div className={`tracker-wallet-header-cell sortable ${walletSortField === 'lastActive' ? 'active' : ''}`}>
+          <div 
+            className={`tracker-wallet-header-cell tracker-wallet-last-active sortable ${walletSortField === 'lastActive' ? 'active' : ''}`}
+            onClick={() => handleWalletSort('lastActive')}
+          >
             Last Active
           </div>
-          <div className="tracker-wallet-header-cell">Actions</div>
+          <div className="tracker-wallet-header-cell tracker-wallet-actions">Actions</div>
         </div>
 
         {/* Wallet List Container */}
@@ -1665,51 +1671,28 @@ const Tracker: React.FC<TrackerProps> = ({
         <div className="detail-trades-table">
           <div className="detail-trades-table-header">
             <div
-              className={`detail-trades-header-cell sortable ${tradeSortField === 'dateCreated' ? 'active' : ''}`}
+              className={`detail-trades-header-cell detail-trades-time sortable ${tradeSortField === 'dateCreated' ? 'active' : ''}`}
               onClick={() => handleTradeSort('dateCreated')}
             >
               Time
-              {tradeSortField === 'dateCreated' && (
-                <span className={`detail-trades-sort-arrow ${tradeSortDirection}`}>
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-                    <path d="M5 7L2 3H8L5 7Z" />
-                  </svg>
-                </span>
-              )}
+              {/* ... */}
             </div>
-
-            <div className="detail-trades-header-cell">Account</div>
-
-            <div className="detail-trades-header-cell">Type</div>
-
-            <div className="detail-trades-header-cell">Token</div>
-
+            <div className="detail-trades-header-cell detail-trades-account">Account</div>
+            <div className="detail-trades-header-cell" style={{minWidth: '70px', width: '70px'}}>Type</div>
+            <div className="detail-trades-header-cell" style={{minWidth: '100px', width: '100px'}}>Token</div>
             <div
               className={`detail-trades-header-cell sortable ${tradeSortField === 'amount' ? 'active' : ''}`}
+              style={{minWidth: '100px', width: '100px'}}
               onClick={() => handleTradeSort('amount')}
             >
               Amount
-              {tradeSortField === 'amount' && (
-                <span className={`detail-trades-sort-arrow ${tradeSortDirection}`}>
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-                    <path d="M5 7L2 3H8L5 7Z" />
-                  </svg>
-                </span>
-              )}
             </div>
-
             <div
               className={`detail-trades-header-cell sortable ${tradeSortField === 'marketCap' ? 'active' : ''}`}
+              style={{minWidth: '120px', width: '120px'}}
               onClick={() => handleTradeSort('marketCap')}
             >
               Market Cap
-              {tradeSortField === 'marketCap' && (
-                <span className={`detail-trades-sort-arrow ${tradeSortDirection}`}>
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-                    <path d="M5 7L2 3H8L5 7Z" />
-                  </svg>
-                </span>
-              )}
             </div>
           </div>
 
@@ -1742,17 +1725,17 @@ const Tracker: React.FC<TrackerProps> = ({
                     </span>
                   </div>
 
-                  <div className="detail-trades-col">
+                  <div className="detail-trades-col" style={{minWidth: '70px', width: '70px'}}>
                     <span className={`detail-trade-type-badge ${trade.type}`}>
                       {trade.type === 'buy' ? 'Buy' : 'Sell'}
                     </span>
                   </div>
 
-                  <div className="detail-trades-col">
+                  <div className="detail-trades-col"  style={{minWidth: '100px', width: '100px'}}>
                     {trade.token}
                   </div>
 
-                  <div className="detail-trades-col">
+                  <div className="detail-trades-col" style={{minWidth: '100px', width: '100px'}}>
                     <span
                       className={[
                         'detail-trades-amount',
@@ -1764,7 +1747,7 @@ const Tracker: React.FC<TrackerProps> = ({
                     </span>
                   </div>
 
-                  <div className="detail-trades-col">
+                  <div className="detail-trades-col" style={{minWidth: '120px', width: '120px'}}>
                     <span className={isBlurred ? 'blurred' : ''}>
                       ${formatCompact(trade.marketCap)}
                     </span>
@@ -2226,12 +2209,7 @@ const Tracker: React.FC<TrackerProps> = ({
 
         {/* Balance column */}
         <div className="tracker-wallet-balance">
-          {walletCurrency === 'USD' ? (
-            <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.75rem', marginRight: '-2px' }}>$</span>
-          ) : (
-            <img src={monadicon} className="tracker-balance-icon" alt="MON" />
-          )}
-          <span className={isBlurred ? 'blurred' : ''}>
+          <span className={`tracker-balance-value ${isBlurred ? 'blurred' : ''}`}>
             {(() => {
               const b = walletTokenBalances[wallet.address];
               const ethToken = chainCfg?.eth;
@@ -2248,9 +2226,16 @@ const Tracker: React.FC<TrackerProps> = ({
                 ? (balanceInMON * monUsdPrice)
                 : balanceInMON;
 
-              return displayValue.toFixed(2);
+              if (walletCurrency === 'USD') {
+                return `$${displayValue.toFixed(2)}`;
+              } else {
+                return displayValue.toFixed(2);
+              }
             })()}
           </span>
+          {walletCurrency === 'MON' && (
+            <img src={monadicon} className="tracker-balance-icon" alt="MON" />
+          )}
         </div>
 
         <div className="tracker-wallet-last-active">
