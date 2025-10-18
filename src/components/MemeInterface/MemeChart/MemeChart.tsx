@@ -81,6 +81,8 @@ interface MemeChartProps {
   devAddress: any;
   trackedAddresses: string[];
   selectedIntervalRef: any;
+  memeOverlayVisible: any;
+  setMemeOverlayVisible: any;
 }
 
 const MemeChart: React.FC<MemeChartProps> = ({
@@ -95,14 +97,11 @@ const MemeChart: React.FC<MemeChartProps> = ({
   address,
   devAddress,
   trackedAddresses,
-  selectedIntervalRef
+  selectedIntervalRef,
+  memeOverlayVisible,
+  setMemeOverlayVisible
 }) => {
-  const [overlayVisible, setLocalOverlayVisible] = useState(true);
   const useAdvancedChart = settings.useAdv !== false;
-
-  const handleOverlayChange = (visible: boolean) => {
-    setLocalOverlayVisible(visible);
-  };
 
   return (
     <div className="meme-chartwrapper">
@@ -112,7 +111,7 @@ const MemeChart: React.FC<MemeChartProps> = ({
           token={token}
           selectedInterval={selectedInterval}
           setSelectedInterval={setSelectedInterval}
-          setOverlayVisible={handleOverlayChange}
+          setOverlayVisible={setMemeOverlayVisible}
           tradehistory={tradehistory}
           isMarksVisible={isMarksVisible}
           realtimeCallbackRef={realtimeCallbackRef}
@@ -140,7 +139,7 @@ const MemeChart: React.FC<MemeChartProps> = ({
       )}
 
       <Overlay
-        isVisible={overlayVisible}
+        isVisible={memeOverlayVisible}
         bgcolor={'rgb(6,6,6)'}
         height={15}
         maxLogoHeight={100}

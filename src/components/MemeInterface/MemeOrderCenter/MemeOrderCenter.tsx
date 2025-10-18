@@ -80,6 +80,7 @@ interface MemeOrderCenterProps {
   tokendict?: { [key: string]: any };
   nonces?: any;
   activeWalletPrivateKey?: string;
+  setMemeOverlayVisible: any;
 }
 
 interface DevToken {
@@ -384,6 +385,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   tokendict = {},
   nonces,
   activeWalletPrivateKey,
+  setMemeOverlayVisible
 }) => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<
@@ -737,7 +739,10 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                             )}
                             <span
                               className="oc-meme-wallet-address meme-clickable-token"
-                              onClick={() => navigate(`/meme/${p.tokenId}`)}
+                              onClick={() => {
+                                setMemeOverlayVisible(true)
+                                navigate(`/meme/${p.tokenId}`)
+                            }}
                               style={{ cursor: 'pointer' }}
                             >
                               {tokenShort}
@@ -1383,7 +1388,10 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                               <span
                              className="oc-meme-wallet-address meme-clickable-token"
                                 title={t.name || t.symbol || t.id}
-                                onClick={() => navigate(`/meme/${t.id}`)}
+                                onClick={() => {
+                                  setMemeOverlayVisible(true)
+                                  navigate(`/meme/${t.id}`)
+                                }}
                                 style={{ cursor: 'pointer' }}
                               >
                                 {(t.symbol || '').toUpperCase()}
@@ -1391,7 +1399,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                                   {timeAgo(t.timestamp)}
                                 </span>
                               </span>
-
                             </div>
                           </div>
                         </div>

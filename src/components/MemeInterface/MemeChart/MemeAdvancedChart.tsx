@@ -653,6 +653,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           realtimeCallbackRef.current[key] = onRealtimeCallback;
           subsRef.current[subscriberUID] = key;
         },
+        
         unsubscribeBars: () => {},
       },
     });
@@ -676,13 +677,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
             setShowUSD((prev) => {
               const next = !prev;
               localStorage.setItem('meme_chart_showUSD', JSON.stringify(next));
-              widgetRef.current
-                .activeChart()
-                .setSymbol(
-                  `${token.symbol}/${next ? 'USD' : 'MON'}`,
-                  widgetRef.current.activeChart().resolution(),
-                  () => setOverlayVisible(false),
-                );
               return next;
             });
           } catch (error) {
@@ -702,14 +696,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
             setShowMarketCap((prev) => {
               const next = !prev;
               localStorage.setItem('meme_chart_showMarketCap', JSON.stringify(next));
-              const currentResolution = widgetRef.current.activeChart().resolution();
-              setTimeout(() => {
-                widgetRef.current
-                  .activeChart()
-                  .setSymbol(tvSymbol(), currentResolution, () =>
-                    setOverlayVisible(false),
-                  );
-              }, 10);
               return next;
             });
           } catch (error) {
@@ -772,7 +758,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         widgetRef.current.remove();
       }
     };
-  }, [token.symbol]);
+  }, [token.symbol, showUSD, showMarketCap]);
 
   useEffect(() => {
     try {
@@ -800,7 +786,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
     } catch (e) {
       setOverlayVisible(false);
     }
-  }, [token.symbol, selectedInterval, showUSD]);
+  }, [token.symbol, selectedInterval]);
 
   return (
     <div className="advanced-chart-container">

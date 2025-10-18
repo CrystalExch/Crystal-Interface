@@ -269,6 +269,9 @@ interface AlertSettings {
   };
 }
 
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
+const crystal = '/CrystalLogo.png';
+
 const Loader = () => {
   const [ready, setReady] = useState(false);
   const [stateloading, setstateloading] = useState(true);
@@ -437,8 +440,6 @@ const Loader = () => {
   );
 }
 
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
-
 function App({ stateloading, setstateloading, addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
   // constants
   useEffect(() => {
@@ -446,7 +447,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       localStorage.setItem("noSSR", "true");
     }
   }, []);
-  const crystal = '/CrystalLogo.png';
 
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { client, address: scaAddress } = useSmartAccountClient({}) as { client: any; address: any };
@@ -5294,6 +5294,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     () => localStorage.getItem('meme_chart_timeframe') || '1m',
   );
   const memeSelectedIntervalRef = useRef<string>(memeSelectedInterval);
+  const [memeOverlayVisible, setMemeOverlayVisible] = useState(true);
   const [page, _setPage] = useState(0);
   const [initialMemeFetchDone, setInitialMemeFetchDone] = useState(false);
   const [currentPNLData, setCurrentPNLData] = useState({
@@ -5324,7 +5325,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const row = list.find(
       (h) => (h.address || '').toLowerCase() === dev.toLowerCase(),
     );
-    return row ? toPct(Math.max(0, row.balance)) : 0;
+    return row ? (Math.max(0, row.balance) / 1e9) * 100 : 0;
   };
 
   const addDevTokenFromEvent = useCallback(async (log: any, currentTokenDev?: string) => {
@@ -5357,8 +5358,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       console.error('failed to decode MARKET_CREATED_EVENT', e);
     }
   }, []);
-
-  const toPct = (balance: number) => (balance / 1e9) * 100;
 
   const token: Token = useMemo(() => {
     const baseDefaults: Token = {
@@ -5493,7 +5492,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (data.launchpadTokens?.length) {
           const m = data.launchpadTokens[0];
 
-          let imageUrl = token?.image || m.metadataCID || '';
+          let imageUrl = m.metadataCID || '';
 
           const price = Number(m.lastPriceNativePerTokenWad || 0) / 1e9;
           const socials = [m.social1, m.social2, m.social3, m.social4].map((s) =>
@@ -5670,13 +5669,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             };
           });
 
-        const top10Pct = toPct(
-          mapped
-            .map((h) => Math.max(0, h.balance))
-            .sort((a, b) => b - a)
-            .slice(0, 10)
-            .reduce((s, n) => s + n, 0),
-        );
+        const top10Pct = (mapped
+          .map((h) => Math.max(0, h.balance))
+          .sort((a, b) => b - a)
+          .slice(0, 10)
+          .reduce((s, n) => s + n, 0) / 1e9) * 100
 
         if (!cancelled) {
           setMemeTop10HoldingPct(top10Pct);
@@ -6185,7 +6182,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     }
 
     const row = memeHolders.find(h => (h.address || "").toLowerCase() === dev);
-    const pct = row ? toPct(Math.max(0, row.balance || 0)) : 0;
+    const pct = row ? (Math.max(0, row.balance || 0) / 1e9) * 100 : 0;
 
     setTokenData(p => ({ ...p, devHolding: pct }));
   }, [
@@ -25292,6 +25289,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 selectedWallets={selectedWallets}
                 setSelectedWallets={setSelectedWallets}
                 selectedIntervalRef={memeSelectedIntervalRef}
+                memeOverlayVisible={memeOverlayVisible}
+                setMemeOverlayVisible={setMemeOverlayVisible}
               />
             }
           />
@@ -25338,6 +25337,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 trades={memeTrades}
                 realtimeCallbackRef={memeRealtimeCallbackRef}
                 selectedIntervalRef={memeSelectedIntervalRef}
+                memeOverlayVisible={memeOverlayVisible}
+                setMemeOverlayVisible={setMemeOverlayVisible}
               />
             }
           />
