@@ -1920,15 +1920,13 @@ const Tracker: React.FC<TrackerProps> = ({
                       </div>
                       <div className="tracker-monitor-stat-compact">
                         <span className="stat-label">MC</span>
-                        <span className="stat-value">
+                        <span className={`stat-value ${monitorCurrency === 'MON' ? 'tracker-monitor-stat-value-with-icon' : ''}`}>
                           {monitorCurrency === 'USD' ? (
-                            <>
-                              $<span>{formatCompact(toDisplay(token.marketCap, monitorCurrency, monUsdPrice))}</span>
-                            </>
+                            <>$<span>{formatCompact(toDisplay(token.marketCap, monitorCurrency, monUsdPrice))}</span></>
                           ) : (
                             <>
                               <span>{formatCompact(toDisplay(token.marketCap, monitorCurrency, monUsdPrice))}</span>
-                              <img src={monadicon} style={{ width: '10px', height: '10px', marginLeft: '2px' }} alt="MON" />
+                              <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
                             </>
                           )}
                         </span>
@@ -1943,7 +1941,7 @@ const Tracker: React.FC<TrackerProps> = ({
                           ) : (
                             <>
                               <span>{formatValue(token.liquidity)}</span>
-                              <img src={monadicon} style={{ width: '10px', height: '10px', marginLeft: '2px' }} alt="MON" />
+                              <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
                             </>
                           )}
                         </span>
@@ -1990,7 +1988,7 @@ const Tracker: React.FC<TrackerProps> = ({
                             <span className="time-text">{trade.timeInTrade}</span>
                           </div>
                           <div className="trade-bought-col">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                            <div className="trade-amount-with-icon">
                               <span className="amount">{trade.bought.toFixed(3)}</span>
                               {monitorCurrency === 'MON' && (
                                 <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
@@ -1999,7 +1997,7 @@ const Tracker: React.FC<TrackerProps> = ({
                             <span className="txns-text">{trade.boughtTxns} txns</span>
                           </div>
                           <div className="trade-sold-col">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                            <div className="trade-amount-with-icon">
                               <span className="amount">{trade.sold.toFixed(3)}</span>
                               {monitorCurrency === 'MON' && (
                                 <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
@@ -2007,16 +2005,16 @@ const Tracker: React.FC<TrackerProps> = ({
                             </div>
                             <span className="txns-text">{trade.soldTxns} txns</span>
                           </div>
-                          <div className={`trade-pnl-col ${trade.pnl >= 0 ? 'positive' : 'negative'}`}>
+                          <div className={`trade-pnl-col ${trade.pnl >= 0 ? 'positive' : 'negative'} trade-pnl-with-icon`}>
                             <span>{trade.pnl >= 0 && '+'}{trade.pnl.toFixed(3)}</span>
                             {monitorCurrency === 'MON' && (
-                              <img src={monadicon} style={{ width: '10px', height: '10px', marginLeft: '2px' }} alt="MON" />
+                              <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
                             )}
                           </div>
-                          <div className="trade-remaining-col">
+                          <div className="trade-remaining-col trade-remaining-with-icon">
                             <span>{trade.remaining.toFixed(3)}</span>
                             {monitorCurrency === 'MON' && (
-                              <img src={monadicon} style={{ width: '10px', height: '10px', marginLeft: '2px' }} alt="MON" />
+                              <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
                             )}
                           </div>
                         </div>
@@ -2255,7 +2253,6 @@ const Tracker: React.FC<TrackerProps> = ({
           </span>
         </div>
 
-        {/* Last Active column - CLEANED UP */}
         <div className="tracker-wallet-last-active">
           <span className="tracker-wallet-last-active-time">
             {wallet.lastActive}

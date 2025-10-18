@@ -594,7 +594,17 @@
   display: flex; flex-direction: column; gap: 2px; min-width: 0; text-align: center;
 }
 .tracker-monitor-stat-compact .stat-label { color: rgba(255,255,255,0.5); font-size: .65rem; letter-spacing: -0.2px; font-weight: 500; text-transform: uppercase; }
-.tracker-monitor-stat-compact .stat-value { color: #fff; font-size: .85rem; font-weight: 600; letter-spacing: -0.3px; white-space: nowrap; }
+.tracker-monitor-stat-compact .stat-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  white-space: nowrap;
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
 .tracker-monitor-buy-sell-section { 
   display: flex; align-items: center; justify-content: space-between; 
   width: 100%; gap: 8px; margin-top: 8px;
@@ -678,20 +688,28 @@
 .tracker-monitor-trades-table-header {
   display: grid; 
   grid-template-columns: 1.2fr 1fr 1fr 1fr 0.8fr 0.8fr; 
-  gap: 12px; 
-  padding: 8px 12px;
-  border-bottom: 1px solid rgba(179,184,249,0.15); 
+  gap: 0; 
+  padding: 6px 12px;
+  border-bottom: 1px solid rgba(179,184,249,0.1); 
   margin-bottom: 8px;
 }
+
 .tracker-monitor-trades-table-header .header-cell {
-  color: rgba(255,255,255,0.5); font-size: .7rem; letter-spacing: -0.2px; font-weight: 600; text-transform: uppercase;
+  padding: 0; 
+  color: rgba(255,255,255,0.5); 
+  font-size: .75rem; 
+  font-weight: 300; 
+  letter-spacing: -0.3px; 
+  display: flex; 
+  align-items: center; 
+  gap: 4px;
 }
 
 .tracker-monitor-trade-row-expanded {
   display: grid; 
   grid-template-columns: 1.2fr 1fr 1fr 1fr 0.8fr 0.8fr; 
-  gap: 12px; 
-  padding: 12px; 
+  gap: 0; 
+  padding: 8px 12px; 
   align-items: center;
   border-bottom: 1px solid rgba(179,184,249,0.05); 
   transition: all .2s; 
@@ -775,17 +793,16 @@
 .blurred { filter: blur(6px); user-select: none; }
 
 @media (max-width: 1200px) {
-  .tracker-table-header,
-  .tracker-trade-row {
-    grid-template-columns: 100px 1fr 1fr 0.8fr 0.8fr; gap: 12px; padding: 10px 16px;
+  .tracker-monitor-card-header { flex-wrap: wrap; }
+  .tracker-monitor-stats-section {
+    order: 3; width: 100%; padding: 8px 0; border-top: 1px solid rgba(179,184,249,0.1);
   }
 }
+
 @media (max-width: 768px) {
-  .tracker-table-header,
-  .tracker-trade-row {
-    grid-template-columns: 80px 1fr 1fr 80px; gap: 8px; padding: 8px 12px;
+  .tracker-monitor-grid {
+    grid-template-columns: 1fr !important;
   }
-  .tracker-token-time, .tracker-trade-mc { display: none; }
 }
 
 .tracker-wallet-item.drag-over-top { border-top: 2px solid #aaaecf; }
@@ -1087,4 +1104,29 @@
   margin-left: 1px;
   flex-shrink: 0;
   opacity: 0.7;
+}
+
+.tracker-monitor-stat-value-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  justify-content: center;
+}
+
+.trade-amount-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.trade-pnl-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.trade-remaining-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
