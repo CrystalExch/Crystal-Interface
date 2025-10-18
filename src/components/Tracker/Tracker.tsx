@@ -1888,17 +1888,9 @@ const Tracker: React.FC<TrackerProps> = ({
 
                       <div className="tracker-monitor-right-section">
                         <div className="tracker-monitor-buy-sell-row">
-                          <div className="tracker-monitor-buy-amount">
-                            <span>{totalBuys}</span>
-                            <img src={monadicon} className="tracker-monitor-amount-icon" alt="MON" />
-                            <span className={isBlurred ? 'blurred' : ''}>{formatValue(totalBought)}</span>
-                          </div>
+                          <div className="tracker-monitor-buy-amount">...</div>
                           <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
-                          <div className="tracker-monitor-sell-amount">
-                            <span>{totalSells}</span>
-                            <img src={monadicon} className="tracker-monitor-amount-icon" alt="MON" />
-                            <span className={isBlurred ? 'blurred' : ''}>{formatValue(totalSold)}</span>
-                          </div>
+                          <div className="tracker-monitor-sell-amount">...</div>
                         </div>
 
                         <div className="tracker-monitor-quickbuy-section">
@@ -1929,15 +1921,31 @@ const Tracker: React.FC<TrackerProps> = ({
                       <div className="tracker-monitor-stat-compact">
                         <span className="stat-label">MC</span>
                         <span className="stat-value">
-                          {monitorCurrency === 'USD' ? '$' : ''}
-                          {formatCompact(toDisplay(token.marketCap, monitorCurrency, monUsdPrice))}
+                          {monitorCurrency === 'USD' ? (
+                            <>
+                              $<span>{formatCompact(toDisplay(token.marketCap, monitorCurrency, monUsdPrice))}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>{formatCompact(toDisplay(token.marketCap, monitorCurrency, monUsdPrice))}</span>
+                              <img src={monadicon} style={{ width: '10px', height: '10px', marginLeft: '2px' }} alt="MON" />
+                            </>
+                          )}
                         </span>
                       </div>
                       <div className="tracker-monitor-stat-compact">
                         <span className="stat-label">L</span>
                         <span className="stat-value">
-                          {monitorCurrency === 'USD' ? '$' : ''}
-                          {formatValue(token.liquidity)}
+                          {monitorCurrency === 'USD' ? (
+                            <>
+                              $<span>{formatValue(token.liquidity)}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>{formatValue(token.liquidity)}</span>
+                              <img src={monadicon} style={{ width: '10px', height: '10px', marginLeft: '2px' }} alt="MON" />
+                            </>
+                          )}
                         </span>
                       </div>
                       <div className="tracker-monitor-stat-compact">
@@ -1982,18 +1990,34 @@ const Tracker: React.FC<TrackerProps> = ({
                             <span className="time-text">{trade.timeInTrade}</span>
                           </div>
                           <div className="trade-bought-col">
-                            <span className="amount"> {trade.bought.toFixed(3)}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                              <span className="amount">{trade.bought.toFixed(3)}</span>
+                              {monitorCurrency === 'MON' && (
+                                <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
+                              )}
+                            </div>
                             <span className="txns-text">{trade.boughtTxns} txns</span>
                           </div>
                           <div className="trade-sold-col">
-                            <span className="amount"> {trade.sold.toFixed(3)}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                              <span className="amount">{trade.sold.toFixed(3)}</span>
+                              {monitorCurrency === 'MON' && (
+                                <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
+                              )}
+                            </div>
                             <span className="txns-text">{trade.soldTxns} txns</span>
                           </div>
                           <div className={`trade-pnl-col ${trade.pnl >= 0 ? 'positive' : 'negative'}`}>
-                            {trade.pnl >= 0 && '+'}{trade.pnl.toFixed(3)}
+                            <span>{trade.pnl >= 0 && '+'}{trade.pnl.toFixed(3)}</span>
+                            {monitorCurrency === 'MON' && (
+                              <img src={monadicon} style={{ width: '10px', height: '10px', marginLeft: '2px' }} alt="MON" />
+                            )}
                           </div>
                           <div className="trade-remaining-col">
-                             {trade.remaining.toFixed(3)}
+                            <span>{trade.remaining.toFixed(3)}</span>
+                            {monitorCurrency === 'MON' && (
+                              <img src={monadicon} style={{ width: '10px', height: '10px', marginLeft: '2px' }} alt="MON" />
+                            )}
                           </div>
                         </div>
                       ))}
@@ -2396,27 +2420,24 @@ const Tracker: React.FC<TrackerProps> = ({
               </svg>
             </button>
             <button className="tracker-header-button" onClick={() => setpopup(34)}>P1</button>
-            <div style={{ display: 'flex' }}>
-              <button className="tracker-header-button flash-button">
+            <div className="tracker-combined-flash-input">
+              <button className="tracker-combined-flash-btn" onClick={() => setpopup(33)}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
               </button>
-              <div className="tracker-header-button counter-button">
-                <div className="tracker-counter-wrapper">
-                  <input
-                    type="text"
-                    className="tracker-counter-input"
-                    placeholder="0.0"
-                    onFocus={(e) => e.target.placeholder = ''}
-                    onBlur={(e) => {
-                      if (e.target.value === '') {
-                        e.target.placeholder = '0.0';
-                      }
-                    }}
-                  />
-                </div>
-              </div>
+              <input
+                type="text"
+                className="tracker-combined-input"
+                placeholder="0.0"
+                onFocus={(e) => e.target.placeholder = ''}
+                onBlur={(e) => {
+                  if (e.target.value === '') {
+                    e.target.placeholder = '0.0';
+                  }
+                }}
+              />
+              <img src={monadicon} className="tracker-combined-mon-icon" alt="MON" />
             </div>
           </div>
         )}
@@ -2445,27 +2466,24 @@ const Tracker: React.FC<TrackerProps> = ({
               {monitorCurrency === 'USD' ? 'USD' : 'MON'}
             </button>
             <button className="tracker-header-button" onClick={() => setpopup(34)}>P1</button>
-            <div style={{ display: 'flex' }}>
-              <button className="tracker-header-button flash-button" onClick={() => setpopup(33)}>
+            <div className="tracker-combined-flash-input">
+              <button className="tracker-combined-flash-btn" onClick={() => setpopup(33)}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
               </button>
-              <div className="tracker-header-button counter-button">
-                <div className="tracker-counter-wrapper">
-                  <input
-                    type="text"
-                    className="tracker-counter-input"
-                    placeholder="0.0"
-                    onFocus={(e) => e.target.placeholder = ''}
-                    onBlur={(e) => {
-                      if (e.target.value === '') {
-                        e.target.placeholder = '0.0';
-                      }
-                    }}
-                  />
-                </div>
-              </div>
+              <input
+                type="text"
+                className="tracker-combined-input"
+                placeholder="0.0"
+                onFocus={(e) => e.target.placeholder = ''}
+                onBlur={(e) => {
+                  if (e.target.value === '') {
+                    e.target.placeholder = '0.0';
+                  }
+                }}
+              />
+              <img src={monadicon} className="tracker-combined-mon-icon" alt="MON" />
             </div>
           </div>
         )}

@@ -1027,3 +1027,64 @@
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
 }
 
+.tracker-combined-flash-input {
+  background: transparent;
+  border: 1.5px solid rgba(179, 184, 249, 0.1);
+  border-radius: 8px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+  overflow: hidden;
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.tracker-combined-flash-input:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(179, 184, 249, 0.2);
+}
+
+.tracker-combined-flash-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  padding: 3px 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  border-right: 1px solid rgba(179, 184, 249, 0.1);
+  flex-shrink: 0;
+}
+
+.tracker-combined-flash-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tracker-combined-input {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+  text-align: right;
+  outline: none;
+  padding: 2px 4px;
+  flex: 1;
+  min-width: 30px;
+}
+
+.tracker-combined-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.tracker-combined-mon-icon {
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+  margin-left: 1px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}

@@ -14,16 +14,6 @@ import { useWalletPopup } from '../MemeTransactionPopup/useWalletPopup';
 
 import './TokenDetail.css';
 
-interface Comment {
-  id: string;
-  user: string;
-  message: string;
-  userAddress: string;
-  timestamp: number;
-  likes: string[];
-  profilePic?: string;
-}
-
 type SendUserOperation = (args: { uo: { target: `0x${string}`; data: `0x${string}`; value?: bigint } }) => Promise<unknown>;
 
 interface TokenDetailProps {
@@ -172,10 +162,8 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const [tradesSortDirection, setTradesSortDirection] = useState<'asc' | 'desc'>('desc');
   const [tradesFilterEnabled, setTradesFilterEnabled] = useState(true);
   const [tradesFilterThreshold, setTradesFilterThreshold] = useState('1');
-  const [activeTab, setActiveTab] = useState<'comments' | 'trades'>('trades');
+  const [activeTab, setActiveTab] = useState<'trades' | 'holders'>('trades');
   const explorer = settings.chainConfig[activechain]?.explorer;
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [newComment, setNewComment] = useState('');
   const [tradeAmount, setTradeAmount] = useState('');
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [loading, setLoading] = useState<boolean>(() => !token);
@@ -221,28 +209,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     return getCurrentMONBalance();
   }, [getCurrentMONBalance]);
 
-  const handleLikeComment = (commentId: string) => {
-    if (!account.connected) {
-      walletPopup.showConnectionError();
-      return;
-    }
-
-    setComments((prev) =>
-      prev.map(comment => {
-        if (comment.id === commentId) {
-          const hasLiked = comment.likes.includes(account.address);
-          return {
-            ...comment,
-            likes: hasLiked
-              ? comment.likes.filter(addr => addr !== account.address)
-              : [...comment.likes, account.address]
-          };
-        }
-        return comment;
-      })
-    );
-  };
-
   const handleTradesSort = (field: 'type' | 'amount' | 'tokenAmount' | 'time') => {
     if (tradesSortField === field) {
       setTradesSortDirection(prev => prev === 'desc' ? 'asc' : 'desc');
@@ -250,37 +216,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       setTradesSortField(field);
       setTradesSortDirection('desc');
     }
-  };
-
-  const handleAddComment = () => {
-    if (!account.connected) {
-      walletPopup.showConnectionError();
-      return;
-    }
-
-    const msg = newComment.trim();
-    if (!msg) return;
-
-    const comment: Comment = {
-      id: Date.now().toString(),
-      user: account.address ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : 'Anonymous',
-      userAddress: account.address || '',
-      message: msg,
-      timestamp: Date.now(),
-      likes: [],
-      profilePic: undefined
-    };
-
-    setComments((prev) => [comment, ...prev]);
-    setNewComment('');
-  };
-
-  const getDefaultProfilePic = (address: string) => {
-    return defaultPfp;
-  };
-
-  const handleDeleteComment = (commentId: string) => {
-    setComments((prev) => prev.filter(comment => comment.id !== commentId));
   };
 
   const handleCurrencySwitch = () => {
@@ -610,92 +545,22 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
           <div className="detail-info-grid">
             <div className="detail-info-section">
-
               <div className="detail-tabs-header" data-active={activeTab}>
-                <button
-                  className={`detail-tab ${activeTab === 'comments' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('comments')}
-                >
-                  Comments
-                </button>
                 <button
                   className={`detail-tab ${activeTab === 'trades' ? 'active' : ''}`}
                   onClick={() => setActiveTab('trades')}
                 >
                   Trades
                 </button>
+                <button
+                  className={`detail-tab ${activeTab === 'holders' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('holders')}
+                >
+                  Holders
+                </button>
               </div>
 
-              {activeTab === 'comments' ? (
-
-                <div className="detail-comments-section">
-                  <div className="detail-comment-input">
-                    <input
-                      type="text"
-                      placeholder={account.connected ? "Add a comment..." : "Connect wallet to comment..."}
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
-                      className="detail-comment-field"
-                      disabled={!account.connected}
-                    />
-                    <button
-                      onClick={handleAddComment}
-                      className="detail-comment-submit"
-                      disabled={!account.connected || !newComment.trim()}
-                    >
-                      Post
-                    </button>
-                  </div>
-                  <div className="detail-comments-list">
-                    {comments.map((comment) => (
-                      <div key={comment.id} className="detail-comment">
-                        <div className="detail-comment-container">
-                          <div className="detail-comment-avatar">
-                            <img
-                              src={comment.profilePic || getDefaultProfilePic(comment.userAddress)}
-                              alt={`${comment.user} avatar`}
-                              className="detail-comment-avatar-img"
-                            />
-                          </div>
-
-                          <div className="detail-comment-content">
-                            <div className="detail-comment-header">
-                              <div className="detail-comment-user-info">
-                                <span className="detail-comment-user">{comment.user}</span>
-                                <span className="detail-comment-time">{Math.floor((Date.now() - comment.timestamp) / 60000)}m ago</span>
-                              </div>
-
-                              {account.connected && account.address === comment.userAddress && (
-                                <button
-                                  className="detail-comment-delete"
-                                  onClick={() => handleDeleteComment(comment.id)}
-                                >
-                                  ×
-                                </button>
-                              )}
-                            </div>
-
-                            <div className="detail-comment-message">{comment.message}</div>
-
-                            <div className="detail-comment-actions">
-                              <button
-                                className={`detail-comment-like ${comment.likes.includes(account.address) ? 'liked' : ''}`}
-                                onClick={() => handleLikeComment(comment.id)}
-                                disabled={!account.connected}
-                              >
-                                <span className="detail-comment-like-icon">♥</span>
-                                <span className="detail-comment-like-count">{comment.likes.length}</span>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {comments.length === 0 && <div className="detail-no-comments">No comments yet. Be the first!</div>}
-                  </div>
-                </div>
-              ) : (
+              {activeTab === 'trades' ? (
                 <div className="detail-trades-section">
                   <div className="detail-trades-header-controls">
                     <div className="detail-trades-filter-controls">
@@ -714,12 +579,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                         min="0"
                       />
                       <span className="detail-trades-filter-desc">(showing trades greater than {tradesFilterThreshold} MON)</span>
-                    </div>
-
-                    <div className="detail-trades-actions">
-                      <button className="detail-trades-action-button">
-                        Export
-                      </button>
                     </div>
                   </div>
 
@@ -822,8 +681,39 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                     </div>
                   </div>
                 </div>
+              ) : (
+                <div className="detail-holders-section">
+                  <div className="detail-holders-grid">
+                    {holders.length > 0 ? (
+                      holders.slice(0, 10).map((holder: any, index: any) => (
+                        <div key={holder.address} className="detail-holder-card">
+                          <div className="detail-holder-info">
+                            <div className="detail-holder-address-main">
+                              {holder.address === 'bonding curve' ? (
+                                <span>Liquidity pool</span>
+                              ) : (
+                                <CopyableAddress
+                                  address={holder.address}
+                                  className="detail-holder-address-copy"
+                                  truncate={{ start: 4, end: 4 }}
+                                />
+                              )}
+                            </div>
+                          </div>
+                          <span className="detail-holder-percentage-badge">
+                            {holder.percentage.toFixed(2)}%
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="detail-no-holders-main">
+                        <div className="detail-no-holders-icon">👥</div>
+                        <span>No holder data available</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
-
             </div>
           </div>
         </div>
@@ -997,40 +887,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                 <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
               </svg>
             </button>
-          </div>
-        </div>
-
-
-        <div className="detail-trading-panel">
-          <div>Top Holders</div>
-          <div className="detail-holders-grid">
-            {holders.length > 0 ? (
-              holders.slice(0, 10).map((holder: any, index: any) => (
-                <div key={holder.address} className="detail-holder-card">
-                  <div className="detail-holder-info">
-                    <div className="detail-holder-address-main">
-                      {holder.address === 'bonding curve' ? (
-                        <span>Liquidity pool</span>
-                      ) : (
-                        <CopyableAddress
-                          address={holder.address}
-                          className="detail-holder-address-copy"
-                          truncate={{ start: 4, end: 4 }}
-                        />
-                      )}
-                    </div>
-                  </div>
-                  <span className="detail-holder-percentage-badge">
-                    {holder.percentage.toFixed(2)}%
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div className="detail-no-holders-main">
-                <div className="detail-no-holders-icon">👥</div>
-                <span>No holder data available</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
