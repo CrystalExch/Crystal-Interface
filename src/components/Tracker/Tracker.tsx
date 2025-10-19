@@ -331,31 +331,36 @@ const Tracker: React.FC<TrackerProps> = ({
   const [walletSortField, setWalletSortField] = useState<'balance' | 'lastActive' | null>(null);
   const [walletSortDirection, setWalletSortDirection] = useState<SortDirection>('desc');
   const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
-  const [trackedWalletTrades, setTrackedWalletTrades] = useState<LiveTrade[]>(
-    SHOW_DEMO_TRADES ? DEMO_TRADES : []
-  );
+  const initialStoredWallets = (() => { try { const s = localStorage.getItem('tracked_wallets_data'); return s ? JSON.parse(s) : []; } catch { return []; } })();
+  const initialUsedDemoWallets = initialStoredWallets.length === 0 && SHOW_DEMO_WALLETS;
+  const [demoMode, setDemoMode] = useState({ wallets: initialUsedDemoWallets, trades: SHOW_DEMO_TRADES, monitor: SHOW_DEMO_MONITOR });
+  const disableDemo = (k: 'wallets'|'trades'|'monitor') => setDemoMode(m => ({ ...m, [k]: false }));
+  const [trackedWalletTrades, setTrackedWalletTrades] = useState<LiveTrade[]>(demoMode.trades ? DEMO_TRADES : []);
 
 
 
   const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>(() => {
     const stored = loadWalletsFromStorage();
-    const normalized =
-      stored.length > 0
-        ? stored.map(wallet => ({
-            ...wallet,
-            createdAt: wallet.createdAt || new Date().toISOString(),
-            lastActiveAt: (wallet as any).lastActiveAt ?? null
-          }))
-        : [];
-
-    if (normalized.length > 0) return normalized;
-    return SHOW_DEMO_WALLETS ? DEMO_WALLETS as any : [];
+    if (stored?.length) return stored.map(w => ({ ...w, createdAt: w.createdAt || new Date().toISOString(), lastActiveAt: (w as any).lastActiveAt ?? null }));
+    return SHOW_DEMO_WALLETS ? (DEMO_WALLETS as any) : [];
   });
 
 
   const trackedWalletsRef = useRef(trackedWallets);
+  const trackedWalletTradesRef = useRef(trackedWalletTrades);
   const [addressPositions, setAddressPositions] = useState<Record<string, GqlPosition[]>>({});
   useEffect(() => { trackedWalletsRef.current = trackedWallets; }, [trackedWallets]);
+  useEffect(() => { trackedWalletTradesRef.current = trackedWalletTrades; }, [trackedWalletTrades]);
+
+  const lastEventTsRef = useRef<number | null>(null);
+  const setStatus = (extra: Record<string, any> = {}) => ((window as any).__TRACKER_STATUS__ = {
+    chain: chainCfgOf(activechain)?.id,
+    demoMode,
+    trackedWalletsCount: trackedWalletsRef.current?.length ?? 0,
+    tradesCount: trackedWalletTradesRef.current?.length ?? 0,
+    lastEventAt: lastEventTsRef.current,
+    ...extra
+  });
   
 
   const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveTrade => {
@@ -495,60 +500,31 @@ const Tracker: React.FC<TrackerProps> = ({
 
   const push = useCallback((logs: any[], source: 'router' | 'market' | 'launchpad') => {
     if (!logs?.length) return;
+    if (demoMode.trades) { disableDemo('trades'); setTrackedWalletTrades([]); }
+    lastEventTsRef.current = Date.now();
+    setStatus({ lastPushSource: source });
 
     const lower = (s?: string) => (s || '').toLowerCase();
     const wallets = trackedWalletsRef.current;
-
     const touchWallet = (addr: string) => {
       const key = lower(addr);
       if (!trackedSetRef.current.has(key)) return;
-      setTrackedWallets(prev =>
-        prev.map(x =>
-          lower(x.address) === key ? { ...x, lastActiveAt: Date.now() } : x
-        )
-      );
+      setTrackedWallets(prev => prev.map(x => lower(x.address) === key ? { ...x, lastActiveAt: Date.now() } : x));
     };
-
-
     const pc = getRpcPublicClient(chainCfgOf(activechain));
 
     setTrackedWalletTrades(prev => {
       const next: LiveTrade[] = [...prev];
-
       for (const l of logs) {
         const args: any = l?.args ?? {};
         const txHash: string = l?.transactionHash ?? l?.transaction?.id ?? l?.id;
-
-        // 1) try event args
-        let accountAddr: string | null =
-          (args.account || args.trader || args.sender || args.owner || args.from) ?? null;
-
-        if (!accountAddr && txHash) {
-          const cached = txFromCacheRef.current.get(txHash);
-          if (cached) {
-            accountAddr = cached;
-          } else {
-            if (pc) {
-              pc.getTransaction({ hash: txHash as `0x${string}` })
-                .then(tx => {
-                  if (!tx?.from) return;
-                  txFromCacheRef.current.set(txHash, tx.from);
-                  if (trackedSetRef.current.has(lower(tx.from))) {
-                    touchWallet(tx.from);
-                  }
-                })
-                .catch(() => {});
-            }
-          }
-        }
-
+        let accountAddr: string | null = (args.account || args.trader || args.sender || args.owner || args.from) ?? null;
+        if (!accountAddr && txHash && pc) pc.getTransaction({ hash: txHash as `0x${string}` }).then(tx => { if (tx?.from && trackedSetRef.current.has(lower(tx.from))) touchWallet(tx.from); }).catch(()=>{});
         if (accountAddr) touchWallet(accountAddr);
-
-        const isBuy     = Boolean(args.isBuy ?? args.buy ?? (args.from && !args.to));
-        const amountIn  = Number(args.amountIn ?? 0n) / 1e18;
+        const isBuy = Boolean(args.isBuy ?? args.buy ?? (args.from && !args.to));
+        const amountIn = Number(args.amountIn ?? 0n) / 1e18;
         const amountOut = Number(args.amountOut ?? 0n) / 1e18;
-        const priceWad  = Number(args.priceNativePerTokenWad ?? args.price ?? 0n) / 1e18;
-
+        const priceWad = Number(args.priceNativePerTokenWad ?? args.price ?? 0n) / 1e18;
         const tradeLike = {
           id: txHash || `${Date.now()}_${Math.random()}`,
           account: { id: String(accountAddr || '') },
@@ -559,17 +535,13 @@ const Tracker: React.FC<TrackerProps> = ({
           token: { symbol: args.symbol || args.ticker || 'UNK' },
           timestamp: Math.floor(Date.now() / 1000),
         };
-
         next.unshift(normalizeTrade(tradeLike, wallets));
       }
-
-      // dedupe and trim
-      const seen = new Set<string>();
-      const out: LiveTrade[] = [];
-      for (const t of next) { if (!seen.has(t.id)) { seen.add(t.id); out.push(t); } }
+      const seen = new Set<string>(), out: LiveTrade[] = [];
+      for (const t of next) if (!seen.has(t.id)) { seen.add(t.id); out.push(t); }
       return out.slice(0, 500);
     });
-  }, [normalizeTrade, activechain]);
+  }, [normalizeTrade, activechain, demoMode.trades]);
 
 
 
@@ -633,6 +605,7 @@ const Tracker: React.FC<TrackerProps> = ({
 
   useEffect(() => {
     saveWalletsToStorage(trackedWallets);
+    setStatus();
   }, [trackedWallets]);
 
   useEffect(() => {
@@ -671,15 +644,11 @@ const Tracker: React.FC<TrackerProps> = ({
 
   useEffect(() => {
     if (Object.keys(walletTokenBalances).length === 0) return;
-
     setTrackedWallets(prev => prev.map(wallet => {
       const realBalance = walletTokenBalances[wallet.address];
       if (realBalance && chainCfg.eth) {
         const balance = Number(realBalance[chainCfg.eth] || 0) / 1e18;
-        return {
-          ...wallet,
-          balance: balance
-        };
+        return { ...wallet, balance };
       }
       return wallet;
     }));
@@ -688,7 +657,7 @@ const Tracker: React.FC<TrackerProps> = ({
   
 
   const [monitorTokens, setMonitorTokens] = useState<MonitorToken[]>(
-    SHOW_DEMO_MONITOR ? DEMO_MONITOR_TOKENS : []
+    demoMode.monitor ? DEMO_MONITOR_TOKENS : []
   );
   const [showAddWalletModal, setShowAddWalletModal] = useState(false);
   const [newWalletAddress, setNewWalletAddress] = useState('');
@@ -940,31 +909,13 @@ const Tracker: React.FC<TrackerProps> = ({
 
   const handleAddWallet = async () => {
     setAddWalletError('');
-
     if (!newWalletAddress.trim()) { setAddWalletError('Please enter a wallet address'); return; }
     if (!isValidAddress(newWalletAddress.trim())) { setAddWalletError('Invalid wallet address'); return; }
-    const exists = trackedWallets.some(w => w.address.toLowerCase() === newWalletAddress.trim().toLowerCase());
-    if (exists) { setAddWalletError('This wallet is already being tracked'); return; }
-
-    const addr = (newWalletAddress || '').trim();
-    dlog('ADD_WALLET click', { addr, valid: /^0x[a-fA-F0-9]{40}$/.test(addr) });
-
-
-    const defaultName =
-      newWalletName.trim() || `${newWalletAddress.slice(0, 6)}...${newWalletAddress.slice(-4)}`;
-
-    const newWallet: TrackedWallet = {
-      id: Date.now().toString(),
-      address: newWalletAddress.trim(),
-      name: defaultName,
-      emoji: newWalletEmoji,
-      balance: 0,
-      lastActiveAt: null,
-      createdAt: new Date().toISOString()
-    };
-
-
-    setTrackedWallets(prev => [...prev, newWallet]);
+    if (trackedWallets.some(w => w.address.toLowerCase() === newWalletAddress.trim().toLowerCase())) { setAddWalletError('This wallet is already being tracked'); return; }
+    const name = (newWalletName.trim() || `${newWalletAddress.slice(0, 6)}...${newWalletAddress.slice(-4)}`).slice(0, 20);
+    const nw: TrackedWallet = { id: Date.now().toString(), address: newWalletAddress.trim(), name, emoji: newWalletEmoji, balance: 0, lastActiveAt: null, createdAt: new Date().toISOString() };
+    setTrackedWallets(prev => demoMode.wallets ? [nw] : [...prev, nw]);
+    if (demoMode.wallets) disableDemo('wallets');
     closeAddWalletModal();
   };
 
@@ -988,45 +939,16 @@ const Tracker: React.FC<TrackerProps> = ({
 
   const handleImportWallets = async (walletsText: string) => {
     try {
-      const importedData = JSON.parse(walletsText);
-
-      if (!Array.isArray(importedData)) {
-        console.error('Invalid format: expected an array');
-        return;
-      }
-
-      const walletsToImport = importedData.filter(item => {
-        const exists = trackedWallets.some(
-          w => w.address.toLowerCase() === item.trackedWalletAddress.toLowerCase()
-        );
-        return !exists && item.trackedWalletAddress;
-      });
-
+      const imported = JSON.parse(walletsText);
+      if (!Array.isArray(imported)) return;
       const nowTag = Date.now().toString();
-      const newWallets: TrackedWallet[] = walletsToImport.map((item, i) => {
-        const walletName = (item.name || 'Imported Wallet').slice(0, 20);
-        return {
-          id: `${nowTag}_${i}_${Math.random().toString(36).slice(2)}`,
-          address: item.trackedWalletAddress,
-          name: walletName,
-          emoji: item.emoji || '👻',
-          balance: 0,
-          lastActiveAt: null,
-          createdAt: new Date().toISOString()
-        };
-      });
-
-
-
-      if (newWallets.length > 0) {
-        setTrackedWallets(prev => [...prev, ...newWallets]);
-        console.log(`Successfully imported ${newWallets.length} wallets`);
-      } else {
-        console.log('No new wallets to import');
-      }
-    } catch (error) {
-      console.error('Failed to import wallets:', error);
-    }
+      const toAdd = imported
+        .filter((it:any) => it?.trackedWalletAddress && !trackedWallets.some(w => w.address.toLowerCase() === it.trackedWalletAddress.toLowerCase()))
+        .map((it:any,i:number) => ({ id: `${nowTag}_${i}_${Math.random().toString(36).slice(2)}`, address: it.trackedWalletAddress, name: String(it.name || 'Imported Wallet').slice(0,20), emoji: it.emoji || '👻', balance: 0, lastActiveAt: null, createdAt: new Date().toISOString() })) as TrackedWallet[];
+      if (!toAdd.length) return;
+      setTrackedWallets(prev => demoMode.wallets ? toAdd : [...prev, ...toAdd]);
+      if (demoMode.wallets) disableDemo('wallets');
+    } catch {}
   };
 
   const closeAddWalletModal = () => {
@@ -1207,18 +1129,12 @@ const Tracker: React.FC<TrackerProps> = ({
 
   useEffect(() => {
     const cfg = chainCfgOf(activechain);
-    if (!cfg?.id || !cfg?.rpcUrl) {
-      dlog('BALANCE_QUERY skipped: invalid chain cfg for', activechain, cfg);
-      return;
-    }
-
+    if (!cfg?.id || !cfg?.rpcUrl) { dlog('BALANCE_QUERY skipped: invalid chain cfg for', activechain, cfg); return; }
     const pc = getRpcPublicClient(cfg);
     if (!pc) return;
-
     let ignore = false;
     const addresses = trackedWallets.map(w => w.address);
     dlog('BALANCE_QUERY start', { activechain, chainId: cfg.id, count: addresses.length, addresses });
-
     (async () => {
       try {
         const results = new Map<string, number>();
@@ -1226,28 +1142,43 @@ const Tracker: React.FC<TrackerProps> = ({
           try {
             const wei = await pc.getBalance({ address: a as `0x${string}` });
             if (ignore) return;
-            const thousands = Number(wei) / 1e18 / DISPLAY_SCALE;
-            results.set(a.toLowerCase(), thousands);
+            const mon = Number(wei) / 1e18;
+            results.set(a.toLowerCase(), mon);
           } catch (err) {
             dlog('BALANCE_QUERY ERROR', { address: a, err });
           }
         }
-
         setTrackedWallets(prev =>
           prev.map(w => {
             const v = results.get(w.address.toLowerCase());
             return v != null ? { ...w, balance: v } : w;
           })
         );
-
         dlog('BALANCE_QUERY done');
       } catch (e) {
         dlog('BALANCE_QUERY fatal', e);
       }
     })();
-
     return () => { ignore = true; };
   }, [activechain, JSON.stringify(trackedWallets.map(w => w.address))]);
+
+  useEffect(() => {
+    if (!demoMode.trades && trackedWalletTradesRef.current === DEMO_TRADES) setTrackedWalletTrades([]);
+    setStatus();
+  }, [demoMode.trades]);
+
+  const ingestExternalTrades = (items: any[]) => {
+    if (demoMode.trades) { disableDemo('trades'); setTrackedWalletTrades([]); }
+    const wallets = trackedWalletsRef.current;
+    setTrackedWalletTrades(prev => {
+      const next = [...items.map(x => normalizeTrade(x, wallets)), ...prev];
+      const seen = new Set<string>(), out: LiveTrade[] = [];
+      for (const t of next) if (!seen.has(t.id)) { seen.add(t.id); out.push(t); }
+      return out.slice(0,500);
+    });
+    lastEventTsRef.current = Date.now();
+    setStatus({ lastPushSource: 'external' });
+  };
 
 
 
@@ -1943,13 +1874,13 @@ const Tracker: React.FC<TrackerProps> = ({
           <span className={`tracker-balance-value ${isBlurred ? 'blurred' : ''}`}>
             {(() => {
               const b = walletTokenBalances[wallet.address];
-              const ethToken = chainCfg?.eth;
+              const ethToken = chainCfg?.eth; 
 
               let balanceInMON;
               if (b && ethToken) {
-                balanceInMON = Number(b[ethToken] || 0) / 1e18; // ✅ pure MON
+                balanceInMON = Number(b[ethToken] || 0) / 1e18; 
               } else {
-                balanceInMON = wallet.balance;                  // ✅ pure MON from state
+                balanceInMON = wallet.balance;                  
               }
 
 
