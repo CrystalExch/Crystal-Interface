@@ -50,9 +50,9 @@ export const overrides = {
   'mainSeriesProperties.baselineStyle.topLineWidth': 2,
   'mainSeriesProperties.baselineStyle.bottomLineWidth': 2,
 
-  charts_dialogs_background_color: 'rgb(6,6,6)',
-  charts_dialogs_text_color: 'rgb(209, 209, 250)',
-  charts_toggles_button_text_color: 'rgb(209, 209, 250)',
+  'charts_dialogs_background_color': 'rgb(6,6,6)',
+  'charts_dialogs_text_color': 'rgb(209, 209, 250)',
+  'charts_toggles_button_text_color': 'rgb(209, 209, 250)',
   'popup.background.color': 'rgb(6,6,6)',
   'popup.text.color': 'rgb(209, 209, 250)',
   'calendar.background.color': 'rgb(6,6,6)',

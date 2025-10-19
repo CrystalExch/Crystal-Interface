@@ -3384,14 +3384,11 @@ useEffect(() => {
             </span>
           </div>
           <div className="search-wallet-wrapper">
-            <button className="portfolio-selected-wallet">Main Wallet
-              <img src={cheveron} className="portfolio-wallet-selector" />
-            </button>
             <div className="portfolio-wallet-search-container">
               <Search size={16} className="search-icon" />
               <input
                 type="text"
-                placeholder="Search to track wallet..."
+                placeholder="View read-only address"
                 className="portfolio-wallet-search-input"
                 value={searchInput}
                 onChange={handleSearchInputChange}

@@ -740,8 +740,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                             <span
                               className="oc-meme-wallet-address meme-clickable-token"
                               onClick={() => {
-                                setMemeOverlayVisible(true)
-                                navigate(`/meme/${p.tokenId}`)
+                                if (p.tokenId != token.id) {
+                                  navigate(`/meme/${p.tokenId}`)
+                                }
                             }}
                               style={{ cursor: 'pointer' }}
                             >
@@ -1389,8 +1390,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                              className="oc-meme-wallet-address meme-clickable-token"
                                 title={t.name || t.symbol || t.id}
                                 onClick={() => {
-                                  setMemeOverlayVisible(true)
-                                  navigate(`/meme/${t.id}`)
+                                  if (t.id != token.id) {
+                                    navigate(`/meme/${t.id}`)
+                                  }
                                 }}
                                 style={{ cursor: 'pointer' }}
                               >

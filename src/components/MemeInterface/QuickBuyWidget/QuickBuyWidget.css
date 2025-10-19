@@ -117,6 +117,7 @@
   font-weight: 600;
   justify-content: space-between;
   margin-bottom: 4px;
+  gap: 4px;
 }
 
 .section-header span {
@@ -261,7 +262,8 @@
   align-items: center;
   color: #ced0df;
   display: flex;
-  font-weight: 400
+  font-weight: 400;
+  min-width: 0;
 }
 
 .quickbuy-percent {
@@ -399,7 +401,7 @@
   cursor: pointer;
   height: 16px;
   transform: rotate(-45deg);
-  width: 16px;
+  min-width: 16px;
 }
 
 .quickbuy-controls-left {
@@ -871,12 +873,14 @@
 .quickbuy-token-balance {
   display: flex;
   gap: 5px;
+  min-width: 0;
 }
 
 .quickbuy-mon-value {
   align-items: center;
   display: flex;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .keybind-indicator {
@@ -1032,4 +1036,12 @@
 
 .quickbuy-wallet-balance-amount.insufficient-gas .quickbuy-wallet-mon-icon {
   opacity: 0.8;
+}
+
+.quickbuy-token-amount {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
 }

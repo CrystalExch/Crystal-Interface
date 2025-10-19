@@ -137,9 +137,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       : [];
   }, [subWalletAddresses]);
 
-  const basePair = () => `${token.symbol}/${showUSD ? 'USD' : 'MON'}`;
-  const tvSymbol = () => `${basePair()}`;
-
   function enforceOpenEqualsPrevClose(bars: any[] = []) {
     if (!Array.isArray(bars) || bars.length === 0) return bars;
     const out = [...bars].sort((a, b) => a.time - b.time);
@@ -350,14 +347,14 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   useEffect(() => {
     dataRef.current[data[1]] = enforceOpenEqualsPrevClose(data[0]);
   }, [data]);
-  
+
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
     widgetRef.current = new (window as any).TradingView.widget({
       container: chartRef.current,
       library_path: '/charting_library/',
       autosize: true,
-      symbol: tvSymbol(),
+      symbol: `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,
       interval:
         selectedInterval === '1d'
           ? '1D'
@@ -497,6 +494,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           onHistoryCallback: Function,
           onErrorCallback: Function,
         ) => {
+          setOverlayVisible(true);
           const { from, to } = periodParams || {};
 
           try {
@@ -653,12 +651,12 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           realtimeCallbackRef.current[key] = onRealtimeCallback;
           subsRef.current[subscriberUID] = key;
         },
-        
+
         unsubscribeBars: () => {},
       },
     });
 
-    widgetRef.current.onChartReady(() => {
+    widgetRef.current.onChartReady(async () => {
       setChartReady(true);
       widgetRef.current.headerReady().then(() => {
         if (!widgetRef.current.activeChart()) {
@@ -749,26 +747,43 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           localAdapterRef.current?.saveChart(chartData);
         });
       });
+
+      widgetRef.current.activeChart().onIntervalChanged().subscribe(null, (interval: string) => {
+        const mapped =
+          interval.endsWith('S')
+            ? `${interval.slice(0, -1)}s`
+            : interval === '1D'
+              ? '1d'
+              : interval === '240'
+                ? '4h'
+                : interval === '60'
+                  ? '1h'
+                  : interval + 'm';
+        setSelectedInterval(mapped);
+      });
+
+      widgetRef.current.activeChart().onDataLoaded().subscribe(null, () => {
+        setOverlayVisible(false)
+      });
+
       setOverlayVisible(false);
     });
 
     return () => {
       setChartReady(false);
-      if (widgetRef.current) {
-        widgetRef.current.remove();
-      }
+      dataRef.current = {};
+      widgetRef.current.remove();
     };
-  }, [token.symbol, showUSD, showMarketCap]);
+  }, [showUSD, showMarketCap]);
 
   useEffect(() => {
     try {
       tokenRef.current = token;
-      if (chartReady && widgetRef.current) {
+      if (chartReady) {
         setOverlayVisible(true);
         localStorage.setItem('meme_chart_timeframe', selectedInterval);
-
         widgetRef.current.setSymbol(
-          tvSymbol(),
+          `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,
           selectedInterval === '1d'
             ? '1D'
             : selectedInterval === '4h'
@@ -784,9 +799,10 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         );
       }
     } catch (e) {
+      console.log(e)
       setOverlayVisible(false);
     }
-  }, [token.symbol, selectedInterval]);
+  }, [token.symbol]);
 
   return (
     <div className="advanced-chart-container">

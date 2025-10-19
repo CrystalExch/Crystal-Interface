@@ -411,7 +411,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
 
       {/* My Referral Link */}
       <div className="my-link-section">
-        <div className="section-header">
+        <div className="ref-section-header">
           <span className="section-title">My Link</span>
           {refLink && (
             <button

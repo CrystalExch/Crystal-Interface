@@ -497,6 +497,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         'edit_buttons_in_legend',
         'use_localstorage_for_settings',
         'symbol_info',
+        'create_volume_indicator_by_default'
       ],
       custom_css_url: '/AdvancedTradingChart.css',
       custom_font_family: 'Funnel Display',
@@ -579,6 +580,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           onHistoryCallback: Function,
           onErrorCallback: Function,
         ) => {
+          setOverlayVisible(true);
           const { from, to } = periodParams;
 
           try {
@@ -745,8 +747,15 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       },
     });
 
-    widgetRef.current.onChartReady(() => {
+    widgetRef.current.onChartReady(async () => {
       setChartReady(true);
+      await widgetRef.current.activeChart().createStudy('Volume', false, false)
+      const panes = widgetRef.current.activeChart().getPanes?.();
+      if (panes) {
+        for (const pane of panes) {
+          pane.setHeight?.(100);
+        }
+      }
       widgetRef.current.headerReady().then(() => {
         if (!widgetRef.current.activeChart() || perps) {
           return;
@@ -812,6 +821,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         .catch((err: string) => {
           console.error(err);
         });
+
       widgetRef.current.subscribe('onAutoSaveNeeded', () => {
         widgetRef.current.save((layout: any) => {
           if (layout.charts && Array.isArray(layout.charts)) {
@@ -840,6 +850,25 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           localAdapterRef.current?.saveChart(chartData);
         });
       });
+
+      widgetRef.current.activeChart().onIntervalChanged().subscribe(null, (interval: string) => {
+        const mapped =
+          interval.endsWith('S')
+            ? `${interval.slice(0, -1)}s`
+            : interval === '1D'
+              ? '1d'
+              : interval === '240'
+                ? '4h'
+                : interval === '60'
+                  ? '1h'
+                  : interval + 'm';
+        setSelectedInterval(mapped);
+      });
+
+      widgetRef.current.activeChart().onDataLoaded().subscribe(null, () => {
+        setOverlayVisible(false)
+      });
+      
       setOverlayVisible(false);
     });
 
@@ -895,7 +924,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               : selectedInterval === '1h'
                 ? '60'
                 : selectedInterval.slice(0, -1),
-
           () => {
             setOverlayVisible(false);
             updatePreviewOrderLine();
@@ -1059,8 +1087,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                 });
               }
             }
-          },
-        );
+          })
       }
     } catch (e) {
       setOverlayVisible(false);
@@ -1069,7 +1096,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     normalizeTicker(activeMarket.quoteAsset, activechain),
     normalizeTicker(activeMarket.baseAsset, activechain),
     activeMarket.priceFactor,
-    selectedInterval,
   ]);
 
   return (

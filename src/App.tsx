@@ -4482,33 +4482,20 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 ...prev.slice(0, 99),
               ]);
 
-              const sel = memeSelectedIntervalRef.current;
-              const RESOLUTION_SECS: Record<string, number> = {
-                '1s': 1, '5s': 5, '15s': 15, '1m': 60, '5m': 300, '15m': 900,
-                '1h': 3600, '4h': 14400, '1d': 86400,
-              };
-              const resSecs = RESOLUTION_SECS[sel] ?? 60;
-              const now = Date.now();
-              const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
-              const volNative = isBuy ? amountIn : amountOut;
-              const toSeriesKey = (sym: string, interval: string) =>
-                sym +
-                'MON' +
-                (interval === '1d'
-                  ? '1D'
-                  : interval === '4h'
-                    ? '240'
-                    : interval === '1h'
-                      ? '60'
-                      : interval.endsWith('s')
-                        ? interval.slice(0, -1).toUpperCase() + 'S'
-                        : interval.slice(0, -1));
               setChartData((prev: any) => {
                 if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
                 const [bars, key, flag] = prev;
+                const sel = key?.match(/^\D*/)?.[0];
+                const RESOLUTION_SECS: Record<string, number> = {
+                  '1s': 1, '5s': 5, '15s': 15, '1m': 60, '5m': 300, '15m': 900,
+                  '1h': 3600, '4h': 14400, '1d': 86400,
+                };
+                const resSecs = RESOLUTION_SECS[sel] ?? 60;
+                const now = Date.now();
+                const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
+                const volNative = isBuy ? amountIn : amountOut;
                 const updated = [...bars];
                 const last = updated[updated.length - 1];
-
                 if (!last || last.time < bucket) {
                   const prevClose = last?.close ?? tradePrice;
                   const open = prevClose;
@@ -4524,7 +4511,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   };
                   updated.push(newBar);
                   const cb =
-                    memeRealtimeCallbackRef.current?.[toSeriesKey(memeRef.current.symbol, sel)];
+                    memeRealtimeCallbackRef.current?.[key];
                   if (cb) cb(newBar);
                 } else {
                   const cur = { ...last };
@@ -4534,7 +4521,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   cur.volume = (cur.volume || 0) + (volNative || 0);
                   updated[updated.length - 1] = cur;
                   const cb =
-                    memeRealtimeCallbackRef.current?.[toSeriesKey(memeRef.current.symbol, sel)];
+                    memeRealtimeCallbackRef.current?.[key];
                   if (cb) cb(cur);
                 }
                 if (updated.length > 1200) updated.splice(0, updated.length - 1200);
@@ -4765,30 +4752,19 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   ...prev.slice(0, 99),
                 ]);
 
-                const sel = memeSelectedIntervalRef.current;
-                const RESOLUTION_SECS: Record<string, number> = {
-                  '1s': 1, '5s': 5, '15s': 15, '1m': 60, '5m': 300, '15m': 900,
-                  '1h': 3600, '4h': 14400, '1d': 86400,
-                };
-                const resSecs = RESOLUTION_SECS[sel] ?? 60;
-                const now = Date.now();
-                const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
-                const volNative = isBuy ? amountIn : amountOut;
-                const toSeriesKey = (sym: string, interval: string) =>
-                  sym +
-                  'MON' +
-                  (interval === '1d'
-                    ? '1D'
-                    : interval === '4h'
-                      ? '240'
-                      : interval === '1h'
-                        ? '60'
-                        : interval.endsWith('s')
-                          ? interval.slice(0, -1).toUpperCase() + 'S'
-                          : interval.slice(0, -1));
                 setChartData((prev: any) => {
                   if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
                   const [bars, key, flag] = prev;
+                  const sel = key?.match(/^\D*/)?.[0];
+                  const RESOLUTION_SECS: Record<string, number> = {
+                    '1s': 1, '5s': 5, '15s': 15, '1m': 60, '5m': 300, '15m': 900,
+                    '1h': 3600, '4h': 14400, '1d': 86400,
+                  };
+                  const resSecs = RESOLUTION_SECS[sel] ?? 60;
+                  const now = Date.now();
+                  const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
+                  const volNative = isBuy ? amountIn : amountOut;
+
                   const updated = [...bars];
                   const last = updated[updated.length - 1];
 
@@ -4807,7 +4783,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     };
                     updated.push(newBar);
                     const cb =
-                      memeRealtimeCallbackRef.current?.[toSeriesKey(memeRef.current.symbol, sel)];
+                      memeRealtimeCallbackRef.current?.[key];
                     if (cb) cb(newBar);
                   } else {
                     const cur = { ...last };
@@ -4817,7 +4793,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     cur.volume = (cur.volume || 0) + (volNative || 0);
                     updated[updated.length - 1] = cur;
                     const cb =
-                      memeRealtimeCallbackRef.current?.[toSeriesKey(memeRef.current.symbol, sel)];
+                      memeRealtimeCallbackRef.current?.[key];
                     if (cb) cb(cur);
                   }
                   if (updated.length > 1200) updated.splice(0, updated.length - 1200);
@@ -5419,6 +5395,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     const fetchMemeTokenData = async () => {
       try {
+        setMemeOverlayVisible(true);
         const response = await fetch(SUBGRAPH_URL, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },

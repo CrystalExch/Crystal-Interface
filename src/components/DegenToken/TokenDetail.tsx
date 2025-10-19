@@ -44,6 +44,8 @@ interface TokenDetailProps {
   trades: any;
   realtimeCallbackRef: any;
   selectedIntervalRef: any;
+  memeOverlayVisible: any;
+  setMemeOverlayVisible: any;
 }
 
 const TOTAL_SUPPLY = 1e9;
@@ -161,7 +163,9 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   chartData,
   trades,
   realtimeCallbackRef,
-  selectedIntervalRef
+  selectedIntervalRef,
+  memeOverlayVisible,
+  setMemeOverlayVisible,
 }) => {
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const navigate = useNavigate();
@@ -572,6 +576,8 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               devAddress={token.creator}
               trackedAddresses={[account.address]}
               selectedIntervalRef={selectedIntervalRef}
+              memeOverlayVisible={memeOverlayVisible}
+              setMemeOverlayVisible={setMemeOverlayVisible}
             />
           </div>
 

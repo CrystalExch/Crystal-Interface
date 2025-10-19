@@ -288,11 +288,11 @@ const Launchpad: React.FC<LaunchpadProps> = ({
                 )}
               </div>
               <div className="launchpad-preview-token-info">
-                <h3 className="launchpad-preview-name">
+                <span className="launchpad-preview-name">
                   {formData.name || 'Token Name'}
-                </h3>
+                </span>
                 <p className="launchpad-preview-ticker">
-                  ${formData.ticker || 'TICKER'}
+                  {formData.ticker || 'TICKER'}
                 </p>
               </div>
             </div>

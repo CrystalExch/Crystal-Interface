@@ -124,7 +124,6 @@ const LP: React.FC<LPProps> = ({
     }));
   }, [tokendict]);
 
-  const defaultTokens = ['MON', 'WMON', 'USDC'];
   const [selectedVaultData, setSelectedVaultData] = useState<any>(undefined);
 
   const hasInitializedFavorites = useRef(false);
@@ -680,7 +679,6 @@ const LP: React.FC<LPProps> = ({
 
   const handleFavoriteToggle = (token: Token, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (defaultTokens.includes(token.symbol)) return;
     toggleFavorite(token.address);
   };
 
@@ -694,17 +692,6 @@ const LP: React.FC<LPProps> = ({
 
   useEffect(() => {
     if (hasInitializedFavorites.current || availableTokens.length === 0) return;
-
-    const autoFavoriteDefaults = () => {
-      defaultTokens.forEach(symbol => {
-        const token = availableTokens.find(t => t.symbol === symbol);
-        if (token && !favorites.includes(token.address)) {
-          toggleFavorite(token.address);
-        }
-      });
-    };
-
-    autoFavoriteDefaults();
     hasInitializedFavorites.current = true;
   }, [availableTokens]);
 
@@ -786,7 +773,7 @@ const LP: React.FC<LPProps> = ({
                 <div className="step-number">1</div>
                 <div className="step-content">
                   <h3>Step 1</h3>
-                  <p>Select token pair and fees</p>
+                  <p>Select token pair</p>
                 </div>
               </div>
               <div
@@ -981,7 +968,7 @@ const LP: React.FC<LPProps> = ({
                       <div className="deposit-summary">
                         <div className="deposit-summary-row">
                           <span>Pool Share:</span>
-                          <span>~0.01%</span>
+                          <span>~{Math.min(((Number(vaultInputStrings.quote) * 10 ** Number(selectedVaultData.quoteDecimals)) / (Number(selectedVaultData.quoteBalance) + (Number(vaultInputStrings.quote) * 10 ** Number(selectedVaultData.quoteDecimals))) * 100) || 0, 100).toFixed(2)}%</span>
                         </div>
                         <div className="deposit-summary-row">
                           <span>Total Value:</span>
@@ -1100,22 +1087,18 @@ const LP: React.FC<LPProps> = ({
                           onClick={() => handleTokenToggle(token)}
                         >
                           <img src={token.icon} alt={token.symbol} className="lp-search-token-icon-favorite" />
-                          {!defaultTokens.includes(token.symbol) && (
-                            <div className="lp-token-favorites">
-                              <span className="lp-search-token-symbol-favorite">{token.symbol}</span>
-                            </div>
-                          )}
-                          {!defaultTokens.includes(token.symbol) && (
-                            <button
-                              className="lp-favorite-close-button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleFavorite(token.address);
-                              }}
-                            >
-                              ×
-                            </button>
-                          )}
+                          <div className="lp-token-favorites">
+                            <span className="lp-search-token-symbol-favorite">{token.symbol}</span>
+                          </div>
+                          <button
+                            className="lp-favorite-close-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(token.address);
+                            }}
+                          >
+                            ×
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -1538,7 +1521,7 @@ const LP: React.FC<LPProps> = ({
                       <div className="deposit-summary">
                         <div className="deposit-summary-row">
                           <span>Pool Share:</span>
-                          <span>~0.01%</span>
+                          <span>~{Math.min(((Number(vaultInputStrings.quote) * 10 ** Number(selectedVaultData.quoteDecimals)) / (Number(selectedVaultData.quoteBalance) + (Number(vaultInputStrings.quote) * 10 ** Number(selectedVaultData.quoteDecimals))) * 100) || 0, 100).toFixed(2)}%</span>
                         </div>
                         <div className="deposit-summary-row">
                           <span>Total Value:</span>
