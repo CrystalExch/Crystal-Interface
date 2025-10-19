@@ -1168,7 +1168,7 @@ const LP: React.FC<LPProps> = ({
                                 className="lp-search-token-star"
                                 onClick={(e) => handleFavoriteToggle(token, e)}
                                 fill="none"
-                                color="#ffffff79"
+                                color="#e0e8fd90"
                               />
                               <img src={token.icon} alt={token.symbol} className="lp-search-token-icon" />
                               <div className="lp-token-details">
@@ -1194,7 +1194,7 @@ const LP: React.FC<LPProps> = ({
                           className={`lp-search-token-star ${isTokenFavorited(token) ? 'favorited' : ''}`}
                           onClick={(e) => handleFavoriteToggle(token, e)}
                           fill={isTokenFavorited(token) ? '#aaaecf' : 'none'}
-                          color={isTokenFavorited(token) ? '#aaaecf' : '#ffffff79'}
+                          color={isTokenFavorited(token) ? '#aaaecf' : '#e0e8fd90'}
                         />
 
                         <img src={token.icon} alt={token.symbol} className="lp-search-token-icon" />
@@ -1440,7 +1440,7 @@ const LP: React.FC<LPProps> = ({
                             dataKey="name"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#ffffff79', fontSize: 12 }}
+                            tick={{ fill: '#e0e8fd90', fontSize: 12 }}
                           />
                           <YAxis hide />
                           <Tooltip

@@ -86,7 +86,7 @@
 }
 .earn-asset-ticker{
     font-size:.7rem;
-    color:#ffffff79;
+    color:#e0e8fd90;
     margin-left:4px;
     padding-top:2px
 }
@@ -134,7 +134,7 @@
 }
 .earn-apy-label,.earn-tvl-label{
     font-size:.7rem;
-    color:#ffffff79;
+    color:#e0e8fd90;
     margin-top:.2rem
 }
 .earn-action-col{
@@ -268,7 +268,7 @@
 }
 .earn-stat-label{
     font-size:.8rem;
-    color:#ffffff79
+    color:#e0e8fd90
 }
 .earn-stat-value{
     font-size:2.3rem;
@@ -287,7 +287,7 @@
 .earn-detail-description p{
     font-size:.8rem;
     line-height:1.5;
-    color:#ffffff79;
+    color:#e0e8fd90;
     margin-bottom:.75rem;
     font-weight:300;
     letter-spacing:-.3px;
@@ -363,7 +363,7 @@
     z-index:2;
     background:0 0;
     border:none;
-    color:#ffffff79;
+    color:#e0e8fd90;
     font-size:.75rem;
     font-weight:300;
     cursor:pointer;
@@ -480,7 +480,7 @@
 }
 .earn-search-token-name{
     font-size:.75rem;
-    color:#ffffff79;
+    color:#e0e8fd90;
     margin-top:-4px
 }
 .earn-search-dropdown::-webkit-scrollbar{
@@ -525,7 +525,7 @@
 }
 .earn-label-container{
     font-size:.85rem;
-    color:#ffffff79
+    color:#e0e8fd90
 }
 .earn-value-container{
     font-size:.85rem;
@@ -570,7 +570,7 @@
 }
 .earn-token-label{
     font-size:.8rem;
-    color:#ffffff79
+    color:#e0e8fd90
 }
 .earn-token-balance{
     display:flex;
@@ -618,7 +618,7 @@
 }
 .earn-token-usd-value{
     font-size:.75rem;
-    color:#ffffff79
+    color:#e0e8fd90
 }
 .earn-deposit-total-row{
     display:flex;
@@ -654,7 +654,7 @@
     justify-content:space-between;
     align-items:center;
     font-size:.85rem;
-    color:#ffffff79
+    color:#e0e8fd90
 }
 .earn-deposit-ratio-display{
     display:flex;
@@ -664,7 +664,7 @@
 .earn-search-section-header{
     font-size:.75rem;
     font-weight:500;
-    color:#ffffff79;
+    color:#e0e8fd90;
     padding:.75rem .5rem .25rem .5rem;
     text-transform:uppercase;
     letter-spacing:.05em;
@@ -718,7 +718,7 @@
 }
 .earn-search-token-name{
     font-size:.75rem;
-    color:#ffffff79;
+    color:#e0e8fd90;
     margin-top:-3px
 }
 .earn-search-tokens{
@@ -904,7 +904,7 @@
 }
 .tvl-title{
     font-size:1rem;
-    color:#ffffff79;
+    color:#e0e8fd90;
     margin-top:1rem;
     letter-spacing:-.5px
 }
@@ -917,7 +917,7 @@
 .earn-breadcrumb-back{
     background:0 0;
     border:none;
-    color:#ffffff79;
+    color:#e0e8fd90;
     cursor:pointer;
     padding:0;
     font-size:.85rem;
@@ -927,7 +927,7 @@
     color:#ffffffd8
 }
 .earn-breadcrumb-arrow{
-    color:#ffffff79;
+    color:#e0e8fd90;
     transform:rotate(180deg)
 }
 .earn-breadcrumb-current{
@@ -1021,7 +1021,7 @@
 .earn-chart-title{
     font-size:.9rem;
     font-weight:400;
-    color:#ffffff79;
+    color:#e0e8fd90;
     margin:0;
     letter-spacing:-.3px
 }
@@ -1054,7 +1054,7 @@
 .earn-chart-toggle-btn{
     background:0 0;
     border:none;
-    color:#ffffff79;
+    color:#e0e8fd90;
     font-size:.75rem;
     font-weight:300;
     padding:.4rem .8rem;
@@ -1074,7 +1074,7 @@
     background:rgba(0,0,0,.3);
     border:1px solid rgba(179,184,249,.1);
     border-radius:8px;
-    color:#ffffff79;
+    color:#e0e8fd90;
     font-size:.75rem;
     font-weight:300;
     padding:.4rem .8rem;
@@ -1099,7 +1099,7 @@
 }
 .earn-chart-borrowed-label{
     font-size:.8rem;
-    color:#ffffff79;
+    color:#e0e8fd90;
     font-weight:300;
     letter-spacing:-.3px
 }
@@ -1139,7 +1139,7 @@
 .earn-chart-dropdown-trigger{
     border:1px solid rgba(179,184,249,.1);
     border-radius:8px;
-    color:#ffffff79;
+    color:#e0e8fd90;
     font-size:.75rem;
     font-weight:300;
     padding:.4rem .8rem;
@@ -1185,7 +1185,7 @@
     padding:.5rem .8rem;
     background:0 0;
     border:none;
-    color:#ffffff79;
+    color:#e0e8fd90;
     font-size:.75rem;
     font-weight:300;
     text-align:left;
@@ -1234,7 +1234,7 @@
 .earn-apy-metric-label{
     align-self:center;
     font-size:.75rem;
-    color:#ffffff79;
+    color:#e0e8fd90;
     font-weight:300;
     letter-spacing:-.3px
 }
@@ -1263,7 +1263,7 @@
     flex:1;
     background:0 0;
     border:none;
-    color:#ffffff79;
+    color:#e0e8fd90;
     font-size:.75rem;
     font-weight:300;
     padding:.4rem .8rem;
@@ -1300,7 +1300,7 @@
 }
 .earn-collateral-label{
     font-size:.8rem;
-    color:#ffffff79;
+    color:#e0e8fd90;
     font-weight:300
 }
 .earn-borrow-token-icon{
@@ -1334,13 +1334,13 @@
 }
 .earn-ltv-max{
     font-size:.7rem;
-    color:#ffffff79;
+    color:#e0e8fd90;
     min-width:100px;
     margin-top:-5px
 }
 .earn-ltv-description{
     font-size:.7rem;
-    color:#ffffff79;
+    color:#e0e8fd90;
     line-height:1;
     font-weight:300
 }
@@ -1401,7 +1401,7 @@
     display:flex;
     justify-content:space-between;
     font-size:.65rem;
-    color:#ffffff79
+    color:#e0e8fd90
 }
 .earn-warning-text{
     font-size:.7rem;
@@ -1440,10 +1440,10 @@
 }
 .earn-collateral-placeholder{
     font-size:.8rem;
-    color:#ffffff79
+    color:#e0e8fd90
 }
 .earn-collateral-dropdown-icon{
-    color:#ffffff79;
+    color:#e0e8fd90;
     transition:transform .2s ease
 }
 .earn-collateral-selector-btn:hover .earn-collateral-dropdown-icon{
@@ -1677,7 +1677,7 @@
     color:#fff
 }
 .earn-repay-dropdown-icon{
-    color:#ffffff79
+    color:#e0e8fd90
 }
 .earn-repay-input-footer{
     display:flex;
@@ -1690,7 +1690,7 @@
 }
 .earn-repay-balance-text{
     font-size:.8rem;
-    color:#ffffff79;
+    color:#e0e8fd90;
     font-weight:300
 }
 .earn-repay-max-button{
@@ -1741,7 +1741,7 @@
 }
 .earn-repay-overview-title{
     font-size:.9rem;
-    color:#ffffff79;
+    color:#e0e8fd90;
     margin:0 0 16px 0;
     font-weight:300
 }
@@ -1763,7 +1763,7 @@
 }
 .earn-repay-overview-label{
     font-size:.85rem;
-    color:#ffffff79;
+    color:#e0e8fd90;
     min-width:120px
 }
 .earn-repay-overview-values{
@@ -1778,7 +1778,7 @@
 .earn-repay-overview-sub{
     display:flex;
     font-size:.75rem;
-    color:#ffffff79
+    color:#e0e8fd90
 }
 .earn-repay-health-bad{
     color:#ff4757

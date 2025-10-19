@@ -36,7 +36,7 @@
 
 .earn-subtitle {
   font-size: 1rem;
-  color: #ffffff79;
+  color: #e0e8fd90;
   letter-spacing: -0.5px;
   font-weight: 300;
   line-height: 1.4;
@@ -75,7 +75,7 @@
   z-index: 2;
   background: transparent;
   border: none;
-  color: #ffffff79;
+  color: #e0e8fd90;
   font-size: 1.1rem;
   cursor: pointer;
   transition: color .3s ease;

@@ -1,6 +1,6 @@
 :root {
   --c-text: #fff;
-  --c-muted: #ffffff79;
+  --c-muted: #e0e8fd90;
   --c-dim: #ffffff54;
   --c-border: rgba(179, 184, 249, 0.1);
   --c-gold: #ffd700;
@@ -100,7 +100,7 @@
   margin-bottom: var(--gap);
   font-size: 1rem;
   font-weight: 300;
-  color: #ffffff79;
+  color: #e0e8fd90;
 }
 
 .detail-token-meta {
@@ -122,7 +122,7 @@
   margin-bottom: 4px;
   font-size: .8rem;
   font-weight: 300;
-  color: #ffffff79;
+  color: #e0e8fd90;
 }
 
 .detail-stat-value {
@@ -1257,7 +1257,7 @@
   z-index: 2;
   background: transparent;
   border: none;
-  color: #ffffff79;
+  color: #e0e8fd90;
   font-size: .95rem;
   cursor: pointer;
   transition: color .3s ease;

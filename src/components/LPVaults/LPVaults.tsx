@@ -1130,7 +1130,7 @@ const updateVaultStrategyIndicatorPosition = useCallback(
                           dataKey="name"
                           axisLine={false}
                           tickLine={false}
-                          tick={{ fill: '#ffffff79', fontSize: 12 }}
+                          tick={{ fill: '#e0e8fd90', fontSize: 12 }}
                         />
                         <YAxis hide />
                         <Tooltip
