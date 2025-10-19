@@ -6,6 +6,8 @@ import closebutton from '../../assets/close_button.png'
 import monadicon from '../../assets/monadlogo.svg';
 import trash from '../../assets/trash.svg';
 import { settings } from '../../settings';
+import { fetchPortfolio, type GqlPosition } from './portfolioGql';
+import { createPublicClient, http } from 'viem';
 import ImportWalletsPopup from './ImportWalletsPopup';
 import LiveTradesFiltersPopup from './LiveTradesFiltersPopup/LiveTradesFiltersPopup';
 import EmojiPicker from 'emoji-picker-react';
@@ -16,6 +18,14 @@ import circle from '../../assets/circle_handle.png';
 import lightning from '../../assets/flash.png';
 import key from '../../assets/key.svg';
 import defaultPfp from '../../assets/leaderboard_default.png';
+import {
+  SHOW_DEMO_TRADES,
+  SHOW_DEMO_MONITOR,
+  SHOW_DEMO_WALLETS,
+  DEMO_TRADES,
+  DEMO_MONITOR_TOKENS,
+  DEMO_WALLETS,
+} from './trackerDemoData';
 
 
 
@@ -48,11 +58,35 @@ const saveWalletsToStorage = (wallets: TrackedWallet[]) => {
 
 function chainCfgOf(activechain?: string | number) {
   const cc: any = settings.chainConfig;
-  return cc?.[activechain as any]
-      || cc?.[Number(activechain) as any]
-      || cc?.monad
-      || cc?.[10143];
+  const raw =
+    cc?.[activechain as any] ??
+    cc?.[Number(activechain) as any] ??
+    cc?.monad ??
+    cc?.[10143];
+
+  if (!raw) return undefined;
+
+  const desiredId =
+    typeof activechain === 'number'
+      ? activechain
+      : Number.isFinite(Number(activechain))
+      ? Number(activechain)
+      : undefined;
+
+  const chainFromList =
+    settings.chains?.find((c: any) =>
+      desiredId != null ? c?.id === desiredId : (raw?.explorer && c?.blockExplorers?.default?.url?.includes(raw.explorer))
+    ) ?? settings.chains?.[0];
+
+  const id = chainFromList?.id;
+  const rpcUrl =
+    raw?.httpurl ??
+    chainFromList?.rpcUrls?.default?.http?.[0] ??
+    chainFromList?.rpcUrls?.alchemy?.http?.[0];
+
+  return { ...raw, id, rpcUrl };
 }
+
 
 const loadWalletsFromStorage = (): TrackedWallet[] => {
   try {
@@ -156,6 +190,8 @@ const Tooltip: React.FC<{
     }
   }, [vis, updatePosition]);
 
+  
+
   return (
     <div
       ref={containerRef}
@@ -194,8 +230,8 @@ interface TrackedWallet {
   address: string;
   name: string;
   emoji: string;
-  balance: number;
-  lastActive: string;
+  balance: number;          
+  lastActiveAt: number | null; 
   id: string;
   createdAt: string;
 }
@@ -295,84 +331,30 @@ const Tracker: React.FC<TrackerProps> = ({
   const [walletSortField, setWalletSortField] = useState<'balance' | 'lastActive' | null>(null);
   const [walletSortDirection, setWalletSortDirection] = useState<SortDirection>('desc');
   const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
-  const [trackedWalletTrades, setTrackedWalletTrades] = useState<LiveTrade[]>([
-    {
-      id: '0x1234567890abcdef1234567890abcdef12345678-1',
-      walletName: 'Paper Hands',
-      emoji: '😀',
-      token: 'DOGE',
-      amount: 25.5,
-      marketCap: 1250,
-      time: '2m',
-      txHash: '0x1234567890abcdef1234567890abcdef12345678',
-      type: 'buy',
-      createdAt: new Date(Date.now() - 120000).toISOString(),
-    },
-    {
-      id: '0x1234567890abcdef1234567890abcdef12345679-2',
-      walletName: 'Whale Watcher',
-      emoji: '😈',
-      token: 'SHIB',
-      amount: 150.0,
-      marketCap: 5600,
-      time: '5m',
-      txHash: '0x1234567890abcdef1234567890abcdef12345679',
-      type: 'sell',
-      createdAt: new Date(Date.now() - 300000).toISOString(),
-    },
-    {
-      id: '0x1234567890abcdef1234567890abcdef12345680-3',
-      walletName: 'Diamond Hands',
-      emoji: '💎',
-      token: 'PEPE',
-      amount: 75.25,
-      marketCap: 3200,
-      time: '8m',
-      txHash: '0x1234567890abcdef1234567890abcdef12345680',
-      type: 'buy',
-      createdAt: new Date(Date.now() - 480000).toISOString(),
-    },
-    {
-      id: '0x1234567890abcdef1234567890abcdef12345681-4',
-      walletName: 'Moon Boy',
-      emoji: '🚀',
-      token: 'BONK',
-      amount: 200.75,
-      marketCap: 8900,
-      time: '12m',
-      txHash: '0x1234567890abcdef1234567890abcdef12345681',
-      type: 'sell',
-      createdAt: new Date(Date.now() - 720000).toISOString(),
-    },
-    {
-      id: '0x1234567890abcdef1234567890abcdef12345682-5',
-      walletName: 'Degen Trader',
-      emoji: '⚡',
-      token: 'WIF',
-      amount: 50.0,
-      marketCap: 2100,
-      time: '15m',
-      txHash: '0x1234567890abcdef1234567890abcdef12345682',
-      type: 'buy',
-      createdAt: new Date(Date.now() - 900000).toISOString(),
-    }
-  ]);
+  const [trackedWalletTrades, setTrackedWalletTrades] = useState<LiveTrade[]>(
+    SHOW_DEMO_TRADES ? DEMO_TRADES : []
+  );
 
 
 
   const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>(() => {
     const stored = loadWalletsFromStorage();
-    if (stored.length > 0) {
-      // Migrate existing wallets to add createdAt if missing
-      return stored.map(wallet => ({
-        ...wallet,
-        createdAt: wallet.createdAt || new Date().toISOString()
-      }));
-    }
-    return [];
+    const normalized =
+      stored.length > 0
+        ? stored.map(wallet => ({
+            ...wallet,
+            createdAt: wallet.createdAt || new Date().toISOString(),
+            lastActiveAt: (wallet as any).lastActiveAt ?? null
+          }))
+        : [];
+
+    if (normalized.length > 0) return normalized;
+    return SHOW_DEMO_WALLETS ? DEMO_WALLETS as any : [];
   });
 
+
   const trackedWalletsRef = useRef(trackedWallets);
+  const [addressPositions, setAddressPositions] = useState<Record<string, GqlPosition[]>>({});
   useEffect(() => { trackedWalletsRef.current = trackedWallets; }, [trackedWallets]);
   
 
@@ -409,7 +391,7 @@ const Tracker: React.FC<TrackerProps> = ({
       createdAt: new Date(timestamp * 1000).toISOString(),
     };
   }, []);
-
+  const toMon = (x: number) => (x > 1e12 ? x / 1e18 : x);
   const dedupeTrades = (arr: LiveTrade[]) => {
     const seen = new Set<string>();
     const out: LiveTrade[] = [];
@@ -520,21 +502,15 @@ const Tracker: React.FC<TrackerProps> = ({
     const touchWallet = (addr: string) => {
       const key = lower(addr);
       if (!trackedSetRef.current.has(key)) return;
-      // avoid no-op updates
-      setTrackedWallets(prev => {
-        let changed = false;
-        const next = prev.map(x => {
-          if (lower(x.address) === key && x.lastActive !== '0s') {
-            changed = true;
-            return { ...x, lastActive: '0s' };
-          }
-          return x;
-        });
-        return changed ? next : prev;
-      });
+      setTrackedWallets(prev =>
+        prev.map(x =>
+          lower(x.address) === key ? { ...x, lastActiveAt: Date.now() } : x
+        )
+      );
     };
 
-    const pc = getPublicClient(config, { chainId: chainCfgOf(activechain)?.id });
+
+    const pc = getRpcPublicClient(chainCfgOf(activechain));
 
     setTrackedWalletTrades(prev => {
       const next: LiveTrade[] = [...prev];
@@ -552,15 +528,17 @@ const Tracker: React.FC<TrackerProps> = ({
           if (cached) {
             accountAddr = cached;
           } else {
-            pc.getTransaction({ hash: txHash as `0x${string}` })
-              .then(tx => {
-                if (!tx?.from) return;
-                txFromCacheRef.current.set(txHash, tx.from);
-                if (trackedSetRef.current.has(lower(tx.from))) {
-                  touchWallet(tx.from);
-                }
-              })
-              .catch(() => {});
+            if (pc) {
+              pc.getTransaction({ hash: txHash as `0x${string}` })
+                .then(tx => {
+                  if (!tx?.from) return;
+                  txFromCacheRef.current.set(txHash, tx.from);
+                  if (trackedSetRef.current.has(lower(tx.from))) {
+                    touchWallet(tx.from);
+                  }
+                })
+                .catch(() => {});
+            }
           }
         }
 
@@ -597,56 +575,59 @@ const Tracker: React.FC<TrackerProps> = ({
 
   useEffect(() => {
     const cfg = chainCfgOf(activechain);
-    const chainId = cfg?.id; // ensure your chainConfig exposes this
+    if (!cfg?.id || !cfg?.rpcUrl) {
+      dlog('WATCHERS skipped: invalid chain cfg', cfg);
+      return;
+    }
 
     const unsubs: Array<() => void> = [];
-    const common = { poll: true as const, chainId };
+    const common = { poll: true as const, chainId: cfg.id };
 
-    // router
-    if (cfg?.router) {
-      unsubs.push(watchContractEvent(config, {
-        address: cfg.router as `0x${string}`,
-        abi: CrystalRouterAbi,
-        eventName: 'Trade' as any,
-        onLogs: (logs) => push(logs, 'router'),
-        ...common,
-      }));
-    }
-
-    // market
-    if (cfg?.market) {
-      unsubs.push(watchContractEvent(config, {
-        address: cfg.market as `0x${string}`,
-        abi: CrystalMarketAbi,
-        eventName: 'Trade' as any,
-        onLogs: (logs) => push(logs, 'market'),
-        ...common,
-      }));
-    }
-
-    // launchpad/transfer
-    if ((cfg?.launchpadTokens ?? []).length) {
-      for (const a of cfg.launchpadTokens as `0x${string}`[]) {
+    try {
+      if (cfg?.router) {
         unsubs.push(watchContractEvent(config, {
-          address: a,
+          address: cfg.router as `0x${string}`,
+          abi: CrystalRouterAbi,
+          eventName: 'Trade' as any,
+          onLogs: (logs) => push(logs, 'router'),
+          ...common,
+        }));
+      }
+      if (cfg?.market) {
+        unsubs.push(watchContractEvent(config, {
+          address: cfg.market as `0x${string}`,
+          abi: CrystalMarketAbi,
+          eventName: 'Trade' as any,
+          onLogs: (logs) => push(logs, 'market'),
+          ...common,
+        }));
+      }
+      if ((cfg?.launchpadTokens ?? []).length) {
+        for (const a of cfg.launchpadTokens as `0x${string}`[]) {
+          unsubs.push(watchContractEvent(config, {
+            address: a,
+            abi: CrystalLaunchpadToken,
+            eventName: 'Transfer',
+            onLogs: (l) => push(l, 'launchpad'),
+            ...common,
+          }));
+        }
+      } else if (cfg?.launchpad) {
+        unsubs.push(watchContractEvent(config, {
+          address: cfg.launchpad as `0x${string}`,
           abi: CrystalLaunchpadToken,
           eventName: 'Transfer',
           onLogs: (l) => push(l, 'launchpad'),
           ...common,
         }));
       }
-    } else if (cfg?.launchpad) {
-      unsubs.push(watchContractEvent(config, {
-        address: cfg.launchpad as `0x${string}`,
-        abi: CrystalLaunchpadToken,
-        eventName: 'Transfer',
-        onLogs: (l) => push(l, 'launchpad'),
-        ...common,
-      }));
+    } catch (err) {
+      dlog('WATCHERS error', err);
     }
 
     return () => { try { unsubs.forEach(u => u?.()); } catch {} };
   }, [activechain, push]);
+
 
 
 
@@ -657,6 +638,29 @@ const Tracker: React.FC<TrackerProps> = ({
   useEffect(() => {
     setSearchQuery('');
   }, [activeTab]);
+
+  useEffect(() => {
+    let stop = false;
+    const run = async () => {
+      const addrs = trackedWalletsRef.current.map(w => w.address);
+      if (!addrs.length) return;
+      const results = await Promise.all(addrs.map(a => fetchPortfolio(a).catch(() => null)));
+      if (stop) return;
+      const pos: Record<string, GqlPosition[]> = {};
+      const bal = new Map<string, number>();
+      results.forEach((w, i) => {
+        if (!w) return;
+        bal.set(addrs[i].toLowerCase(), toMon(Number(w.nativeBalance)));
+        pos[addrs[i]] = w.positions || [];
+      });
+      setTrackedWallets(prev => prev.map(w => bal.has(w.address.toLowerCase()) ? { ...w, balance: bal.get(w.address.toLowerCase())! } : w));
+      setAddressPositions(prev => ({ ...prev, ...pos }));
+    };
+    run();
+    const id = setInterval(run, MONITOR_POLL_MS);
+    return () => { stop = true; clearInterval(id); };
+  }, [JSON.stringify(trackedWallets.map(w => w.address))]);
+
 
 
 
@@ -683,304 +687,9 @@ const Tracker: React.FC<TrackerProps> = ({
 
   
 
-  const [monitorTokens, setMonitorTokens] = useState<MonitorToken[]>([
-    {
-      id: 'token-1',
-      tokenAddress: '0x1234567890abcdef1234567890abcdef12345678',
-      name: 'Doge Killer',
-      symbol: 'DOGEK',
-      emoji: '🐕',
-      price: 0.000125,
-      marketCap: 125000,
-      change24h: 15.6,
-      volume24h: 45000,
-      liquidity: 25000,
-      holders: 1250,
-      buyTransactions: 145,
-      sellTransactions: 89,
-      bondingCurveProgress: 85,
-      txCount: 234,
-      volume5m: 1200,
-      volume1h: 8500,
-      volume6h: 18000,
-      priceChange5m: 2.3,
-      priceChange1h: 8.7,
-      priceChange6h: 12.4,
-      priceChange24h: 15.6,
-      website: '',
-      twitter: '',
-      telegram: '',
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      lastTransaction: new Date(Date.now() - 300000).toISOString(),
-      trades: [
-        {
-          id: 'trade-1',
-          wallet: 'Paper Hands', // CORRELATES to tracked wallet
-          emoji: '😀',
-          timeInTrade: '2h 15m',
-          bought: 150.5,
-          boughtTxns: 3,
-          sold: 45.2,
-          soldTxns: 1,
-          pnl: 25.8,
-          remaining: 105.3
-        },
-        {
-          id: 'trade-2',
-          wallet: 'Diamond Hands', // CORRELATES to tracked wallet
-          emoji: '💎',
-          timeInTrade: '6h 42m',
-          exitStatus: 'Exited' as const,
-          bought: 200.0,
-          boughtTxns: 2,
-          sold: 200.0,
-          soldTxns: 2,
-          pnl: 85.4,
-          remaining: 0
-        }
-      ]
-    },
-    {
-      id: 'token-2',
-      tokenAddress: '0x2345678901bcdef12345678901bcdef123456789',
-      name: 'Moon Rocket',
-      symbol: 'MOON',
-      emoji: '🚀',
-      price: 0.000890,
-      marketCap: 890000,
-      change24h: -8.3,
-      volume24h: 125000,
-      liquidity: 78000,
-      holders: 3450,
-      buyTransactions: 287,
-      sellTransactions: 194,
-      bondingCurveProgress: 67,
-      txCount: 481,
-      volume5m: 2100,
-      volume1h: 12500,
-      volume6h: 45000,
-      priceChange5m: -1.2,
-      priceChange1h: -3.8,
-      priceChange6h: -6.1,
-      priceChange24h: -8.3,
-      website: '',
-      twitter: '',
-      telegram: '',
-      createdAt: new Date(Date.now() - 172800000).toISOString(),
-      lastTransaction: new Date(Date.now() - 120000).toISOString(),
-      trades: [
-        {
-          id: 'trade-3',
-          wallet: 'Whale Watcher', // CORRELATES to tracked wallet
-          emoji: '😈',
-          timeInTrade: '1d 4h',
-          bought: 500.0,
-          boughtTxns: 5,
-          sold: 150.0,
-          soldTxns: 2,
-          pnl: -45.6,
-          remaining: 350.0
-        }
-      ]
-    },
-    {
-      id: 'token-3',
-      tokenAddress: '0x3456789012cdef123456789012cdef1234567890',
-      name: 'Shiba Inu 2.0',
-      symbol: 'SHIB2',
-      emoji: '🐕‍🦺',
-      price: 0.0000045,
-      marketCap: 4500,
-      change24h: 125.7,
-      volume24h: 8900,
-      liquidity: 3200,
-      holders: 890,
-      buyTransactions: 67,
-      sellTransactions: 23,
-      bondingCurveProgress: 15,
-      txCount: 90,
-      volume5m: 450,
-      volume1h: 2100,
-      volume6h: 5600,
-      priceChange5m: 8.9,
-      priceChange1h: 45.2,
-      priceChange6h: 89.3,
-      priceChange24h: 125.7,
-      website: '',
-      twitter: '',
-      telegram: '',
-      createdAt: new Date(Date.now() - 43200000).toISOString(),
-      lastTransaction: new Date(Date.now() - 60000).toISOString(),
-      trades: [
-        {
-          id: 'trade-4',
-          wallet: 'Moon Boy', // CORRELATES to tracked wallet
-          emoji: '🚀',
-          timeInTrade: '8h 12m',
-          bought: 75.0,
-          boughtTxns: 2,
-          sold: 0,
-          soldTxns: 0,
-          pnl: 89.5,
-          remaining: 75.0
-        },
-        {
-          id: 'trade-5',
-          wallet: 'Degen Trader', // CORRELATES to tracked wallet
-          emoji: '⚡',
-          timeInTrade: '3h 45m',
-          bought: 25.5,
-          boughtTxns: 1,
-          sold: 0,
-          soldTxns: 0,
-          pnl: 15.2,
-          remaining: 25.5
-        }
-      ]
-    },
-    {
-      id: 'token-4',
-      tokenAddress: '0x4567890123def1234567890123def12345678901',
-      name: 'Pepe Classic',
-      symbol: 'PEPEC',
-      emoji: '🐸',
-      price: 0.000234,
-      marketCap: 234000,
-      change24h: 45.2,
-      volume24h: 67000,
-      liquidity: 45000,
-      holders: 2150,
-      buyTransactions: 198,
-      sellTransactions: 76,
-      bondingCurveProgress: 92,
-      txCount: 274,
-      volume5m: 890,
-      volume1h: 6700,
-      volume6h: 23000,
-      priceChange5m: 3.1,
-      priceChange1h: 12.4,
-      priceChange6h: 28.7,
-      priceChange24h: 45.2,
-      website: '',
-      twitter: '',
-      telegram: '',
-      createdAt: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
-      lastTransaction: new Date(Date.now() - 180000).toISOString(), // 3 min ago
-      trades: [
-        {
-          id: 'trade-6',
-          wallet: 'Paper Hands', // CORRELATES to same wallet as token-1
-          emoji: '😀',
-          timeInTrade: '1d 12h',
-          bought: 89.3,
-          boughtTxns: 2,
-          sold: 25.1,
-          soldTxns: 1,
-          pnl: 34.7,
-          remaining: 64.2
-        }
-      ]
-    },
-    {
-      id: 'token-5',
-      tokenAddress: '0x5678901234ef12345678901234ef123456789012',
-      name: 'Bonk Inu',
-      symbol: 'BONK',
-      emoji: '🔨',
-      price: 0.00000789,
-      marketCap: 7890,
-      change24h: -23.4,
-      volume24h: 12000,
-      liquidity: 8900,
-      holders: 567,
-      buyTransactions: 89,
-      sellTransactions: 134,
-      bondingCurveProgress: 34,
-      txCount: 223,
-      volume5m: 234,
-      volume1h: 1890,
-      volume6h: 6700,
-      priceChange5m: -2.1,
-      priceChange1h: -8.9,
-      priceChange6h: -15.6,
-      priceChange24h: -23.4,
-      website: '',
-      twitter: '',
-      telegram: '',
-      createdAt: new Date(Date.now() - 604800000).toISOString(), // 1 week ago
-      lastTransaction: new Date(Date.now() - 900000).toISOString(), // 15 min ago
-      trades: [
-        {
-          id: 'trade-7',
-          wallet: 'Whale Watcher', // CORRELATES to same wallet as token-2
-          emoji: '😈',
-          timeInTrade: '4d 8h',
-          bought: 300.0,
-          boughtTxns: 4,
-          sold: 180.0,
-          soldTxns: 3,
-          pnl: -67.3,
-          remaining: 120.0
-        },
-        {
-          id: 'trade-8',
-          wallet: 'Diamond Hands', // CORRELATES to same wallet as token-1
-          emoji: '💎',
-          timeInTrade: '2d 15h',
-          exitStatus: 'Exited' as const,
-          bought: 50.0,
-          boughtTxns: 1,
-          sold: 50.0,
-          soldTxns: 1,
-          pnl: -12.4,
-          remaining: 0
-        }
-      ]
-    },
-    {
-      id: 'token-6',
-      tokenAddress: '0x6789012345f123456789012345f1234567890123',
-      name: 'Wojak Coin',
-      symbol: 'WOJ',
-      emoji: '😭',
-      price: 0.000056,
-      marketCap: 56000,
-      change24h: 78.9,
-      volume24h: 23000,
-      liquidity: 15000,
-      holders: 1890,
-      buyTransactions: 234,
-      sellTransactions: 45,
-      bondingCurveProgress: 78,
-      txCount: 279,
-      volume5m: 567,
-      volume1h: 4500,
-      volume6h: 12000,
-      priceChange5m: 5.6,
-      priceChange1h: 23.4,
-      priceChange6h: 45.8,
-      priceChange24h: 78.9,
-      website: '',
-      twitter: '',
-      telegram: '',
-      createdAt: new Date(Date.now() - 345600000).toISOString(), // 4 days ago
-      lastTransaction: new Date(Date.now() - 45000).toISOString(), // 45 sec ago
-      trades: [
-        {
-          id: 'trade-9',
-          wallet: 'Degen Trader', // CORRELATES to same wallet as token-3
-          emoji: '⚡',
-          timeInTrade: '12h 34m',
-          bought: 45.6,
-          boughtTxns: 3,
-          sold: 0,
-          soldTxns: 0,
-          pnl: 67.8,
-          remaining: 45.6
-        }
-      ]
-    }
-  ]);
+  const [monitorTokens, setMonitorTokens] = useState<MonitorToken[]>(
+    SHOW_DEMO_MONITOR ? DEMO_MONITOR_TOKENS : []
+  );
   const [showAddWalletModal, setShowAddWalletModal] = useState(false);
   const [newWalletAddress, setNewWalletAddress] = useState('');
   const [newWalletName, setNewWalletName] = useState('');
@@ -1012,12 +721,12 @@ const Tracker: React.FC<TrackerProps> = ({
     return /^0x[a-fA-F0-9]{40}$/.test(addr);
   };
 
-
-  const minutesFromAge = (s: string) =>
-    s.endsWith('m') ? +s.slice(0, -1)
-    : s.endsWith('h') ? +s.slice(0, -1) * 60
-    : s.endsWith('d') ? +s.slice(0, -1) * 1440
-    : 999999;
+  function getRpcPublicClient(chainCfg?: any) {
+    if (!chainCfg?.rpcUrl) return null;
+    return createPublicClient({
+      transport: http(chainCfg.rpcUrl),
+    });
+  }
 
 
   const formatCompact = (n: number, d = 2) => {
@@ -1061,8 +770,12 @@ const Tracker: React.FC<TrackerProps> = ({
 
       if (walletSortField === 'balance') {
         comparison = a.balance - b.balance;
-      } else if (walletSortField === 'lastActive') {
-        comparison = minutesFromAge(a.lastActive) - minutesFromAge(b.lastActive);
+      }
+      if (walletSortField === 'lastActive') {
+        const aTs = a.lastActiveAt ?? new Date(a.createdAt).getTime();
+        const bTs = b.lastActiveAt ?? new Date(b.createdAt).getTime();
+        // newer activity first when 'desc'
+        comparison = aTs - bTs;
       }
 
       return walletSortDirection === 'desc' ? -comparison : comparison;
@@ -1245,10 +958,11 @@ const Tracker: React.FC<TrackerProps> = ({
       address: newWalletAddress.trim(),
       name: defaultName,
       emoji: newWalletEmoji,
-      balance: 0,             
-      lastActive: '—',
-      createdAt: new Date().toISOString()         
+      balance: 0,
+      lastActiveAt: null,
+      createdAt: new Date().toISOString()
     };
+
 
     setTrackedWallets(prev => [...prev, newWallet]);
     closeAddWalletModal();
@@ -1297,10 +1011,11 @@ const Tracker: React.FC<TrackerProps> = ({
           name: walletName,
           emoji: item.emoji || '👻',
           balance: 0,
-          lastActive: '—',
+          lastActiveAt: null,
           createdAt: new Date().toISOString()
         };
       });
+
 
 
       if (newWallets.length > 0) {
@@ -1421,6 +1136,23 @@ const Tracker: React.FC<TrackerProps> = ({
     });
     setDropPreviewLine(null);
   };
+  // helper to format lastActiveAt → label
+  const lastActiveLabel = (w: TrackedWallet) => {
+    const ts = w.lastActiveAt ?? new Date(w.createdAt).getTime();
+    const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+    if (s < 60) return `${s}s`;
+    if (s < 3600) return `${Math.floor(s / 60)}m`;
+    if (s < 86400) return `${Math.floor(s / 3600)}h`;
+    return `${Math.floor(s / 86400)}d`;
+  };
+
+  // re-render every 30s so the label updates
+  const [, setTicker] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTicker(t => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
 
   const handleMultiDragStart = (e: React.DragEvent) => {
     e.stopPropagation();
@@ -1475,28 +1207,26 @@ const Tracker: React.FC<TrackerProps> = ({
 
   useEffect(() => {
     const cfg = chainCfgOf(activechain);
-    const chainId = cfg?.id;
-    if (!chainId) {
-      dlog('BALANCE_QUERY skipped: no chainId for', activechain);
+    if (!cfg?.id || !cfg?.rpcUrl) {
+      dlog('BALANCE_QUERY skipped: invalid chain cfg for', activechain, cfg);
       return;
     }
 
-    const pc = getPublicClient(config, { chainId });
-    let ignore = false;
+    const pc = getRpcPublicClient(cfg);
+    if (!pc) return;
 
+    let ignore = false;
     const addresses = trackedWallets.map(w => w.address);
-    dlog('BALANCE_QUERY start', { activechain, chainId, count: addresses.length, addresses });
+    dlog('BALANCE_QUERY start', { activechain, chainId: cfg.id, count: addresses.length, addresses });
 
     (async () => {
       try {
         const results = new Map<string, number>();
         for (const a of addresses) {
-          dlog('BALANCE_QUERY -> getBalance()', { address: a });
           try {
             const wei = await pc.getBalance({ address: a as `0x${string}` });
             if (ignore) return;
-            const thousands = Number(wei) / 1e18 / DISPLAY_SCALE; // your UI shows “K”
-            dlog('BALANCE_QUERY <- result', { address: a, wei: wei.toString(), thousands });
+            const thousands = Number(wei) / 1e18 / DISPLAY_SCALE;
             results.set(a.toLowerCase(), thousands);
           } catch (err) {
             dlog('BALANCE_QUERY ERROR', { address: a, err });
@@ -1518,6 +1248,7 @@ const Tracker: React.FC<TrackerProps> = ({
 
     return () => { ignore = true; };
   }, [activechain, JSON.stringify(trackedWallets.map(w => w.address))]);
+
 
 
 
@@ -2216,11 +1947,11 @@ const Tracker: React.FC<TrackerProps> = ({
 
               let balanceInMON;
               if (b && ethToken) {
-                const bal = Number(b[ethToken] || 0) / 1e18;
-                balanceInMON = bal > 0 ? (bal / DISPLAY_SCALE) : 0;
+                balanceInMON = Number(b[ethToken] || 0) / 1e18; // ✅ pure MON
               } else {
-                balanceInMON = wallet.balance;
+                balanceInMON = wallet.balance;                  // ✅ pure MON from state
               }
+
 
               const displayValue = walletCurrency === 'USD' 
                 ? (balanceInMON * monUsdPrice)
@@ -2240,7 +1971,7 @@ const Tracker: React.FC<TrackerProps> = ({
 
         <div className="tracker-wallet-last-active">
           <span className="tracker-wallet-last-active-time">
-            {wallet.lastActive}
+            {lastActiveLabel(wallet)}
           </span>
         </div>
 
