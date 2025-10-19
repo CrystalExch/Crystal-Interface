@@ -1470,6 +1470,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [tradehistory, settradehistory] = useState<any[]>([]);
   const [tradesByMarket, settradesByMarket] = useState<any>({});
   const [tokenBalances, setTokenBalances] = useState<any>({});
+  const [balanceAddress, setBalanceAddress] = useState<string>('')
   const [transactions, setTransactions] = useState<any[]>([]);
   const [mids, setmids] = useState<any>({});
   const [sliderPercent, setSliderPercent] = useState(0);
@@ -1648,7 +1649,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     setTotalAccountValue,
     marketsData,
     stateIsLoading,
-    (popup == 4 && connected) || location.pathname.slice(1) == 'portfolio'
+    (popup == 4 && connected) || location.pathname.slice(1) == 'portfolio',
+    balanceAddress
   );
   const [tokenData, setTokenData] = useState<Partial<Token>>();
   const [isVertDragging, setIsVertDragging] = useState(false);
@@ -5270,7 +5272,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     () => localStorage.getItem('meme_chart_timeframe') || '1m',
   );
   const memeSelectedIntervalRef = useRef<string>(memeSelectedInterval);
-  const [memeOverlayVisible, setMemeOverlayVisible] = useState(true);
   const [page, _setPage] = useState(0);
   const [initialMemeFetchDone, setInitialMemeFetchDone] = useState(false);
   const [currentPNLData, setCurrentPNLData] = useState({
@@ -5395,7 +5396,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     const fetchMemeTokenData = async () => {
       try {
-        setMemeOverlayVisible(true);
         const response = await fetch(SUBGRAPH_URL, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -7372,6 +7372,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
             }
           }
+          setBalanceAddress(address);
           setTokenBalances(tempbalances);
         }
         if (tokenIn === eth && tokendict[tokenOut]?.lst && isStake) {
@@ -18427,12 +18428,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           value: 0n,
                         }
                       });
-                      handleSetChain();
                       setPerpsDepositAmount('');
                       setpopup(0);
                     } catch (error) {
                       console.error('Perps deposit error:', error);
                     } finally {
+                      handleSetChain();
                       setIsVaultDepositSigning(false);
                     }
                   }}
@@ -25266,8 +25267,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 selectedWallets={selectedWallets}
                 setSelectedWallets={setSelectedWallets}
                 selectedIntervalRef={memeSelectedIntervalRef}
-                memeOverlayVisible={memeOverlayVisible}
-                setMemeOverlayVisible={setMemeOverlayVisible}
               />
             }
           />
@@ -25314,8 +25313,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 trades={memeTrades}
                 realtimeCallbackRef={memeRealtimeCallbackRef}
                 selectedIntervalRef={memeSelectedIntervalRef}
-                memeOverlayVisible={memeOverlayVisible}
-                setMemeOverlayVisible={setMemeOverlayVisible}
               />
             }
           />

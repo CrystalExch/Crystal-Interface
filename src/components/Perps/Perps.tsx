@@ -616,7 +616,7 @@ const Perps: React.FC<PerpsProps> = ({
     const qs = buildSignatureBody(payload)
     const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "POST" + path + qs)).slice(2)
     const [metaRes] = await Promise.all([
-      fetch("/api/v1/private/order/createOrder", {
+      fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/order/createOrder", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -642,14 +642,28 @@ const Perps: React.FC<PerpsProps> = ({
   useEffect(() => {
     if (Object.keys(perpsMarketsData).length == 0) return;
     let upnl = 0
+    let temppositions: any = []
     for (const position of fetchedpositions) {
       const marketData = (Object.values(perpsMarketsData).find((v: any) => v.contractId == position.contractId) as any)
       upnl += Number(marketData?.oraclePrice) * Number(position.openSize) - Number(position.openValue)
       if (marketData.contractName == perpsActiveMarketKey) {
         setCurrentPosition(Number(position.openSize))
       }
+
+      temppositions.push({
+        symbol: marketData.contractName,
+        size: Math.abs(position.openSize).toString(),
+        positionValue: Math.abs(Number(marketData?.oraclePrice) * Number(position.openSize)),
+        entryPrice: (Number(position.openValue) / Number(position.openSize)).toString(),
+        markPrice: Number(marketData?.oraclePrice).toFixed((marketData?.lastPrice.toString().split(".")[1] || "").length),
+        pnl: Number(marketData?.oraclePrice) * Number(position.openSize) - Number(position.openValue),
+        liqPrice: 0,
+        margin: 0,
+        funding: Number(position.fundingFee)
+      })
     }
     setUpnl(isNaN(upnl) ? '0.00' : upnl.toFixed(2))
+    setpositions(temppositions)
   }, [fetchedpositions, perpsMarketsData, perpsActiveMarketKey])
 
   useEffect(() => {
@@ -793,8 +807,8 @@ const Perps: React.FC<PerpsProps> = ({
     const fetchData = async () => {
       try {
         const [metaRes, labelsRes] = await Promise.all([
-          fetch('/api/v1/public/meta/getMetaData', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json()),
-          fetch('/api/v1/public/contract-labels', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
+          fetch('https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/public/meta/getMetaData', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json()),
+          fetch('https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/public/contract-labels', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
         ])
         if (liveStreamCancelled) return;
         if (metaRes?.data) setExchangeConfig(metaRes.data)
@@ -955,7 +969,7 @@ const Perps: React.FC<PerpsProps> = ({
             }
             else {
               const trades = msg.map((t: any) => {
-                const isBuy = t.isBuyerMaker
+                const isBuy = !t.isBuyerMaker
                 const priceFormatted = formatCommas(t.price)
                 const tradeValue = formatCommas(Number(t.value).toFixed(0))
                 const time = formatTime(Number(t.time) / 1000)
@@ -1105,7 +1119,7 @@ const Perps: React.FC<PerpsProps> = ({
           signature: signer.signature
         }
         const [onboardRes] = await Promise.all([
-          fetch("/api/v1/public/user/onboardSite", {
+          fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/public/user/onboardSite", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1123,7 +1137,7 @@ const Perps: React.FC<PerpsProps> = ({
         const regqs = buildSignatureBody(payload)
         const regsig = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(regts + "POST" + regpath + regqs)).slice(2)
         const [registerRes] = await Promise.all([
-          fetch("/api/v1/private/account/registerAccount", {
+          fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/account/registerAccount", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1140,7 +1154,7 @@ const Perps: React.FC<PerpsProps> = ({
         const qs = 'size=100'
         const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "GET" + path + qs)).slice(2)
         const [metaRes] = await Promise.all([
-          fetch("/api/v1/private/account/getAccountPage?size=100", {
+          fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/account/getAccountPage?size=100", {
             method: "GET",
             headers: {
               "Content-Type": "application/json",

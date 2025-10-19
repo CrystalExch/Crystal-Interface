@@ -154,7 +154,7 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
         const change =
           firstValue !== 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
         onPercentageChange?.(change);
-        setColorValue?.(change >= 0 ? '#d8dcff' : 'rgb(235, 112, 112)');
+        setColorValue?.(change >= 0 ? '#00b894' : 'rgb(235, 112, 112)');
         setHigh(Math.max(...chartData.map((d) => d.value)) || 0);
         setLow(Math.min(...chartData.map((d) => d.value)) || 0);
       }
@@ -389,12 +389,12 @@ const EmptyGraph: React.FC<{
           <Line
             type="monotone"
             dataKey="value"
-            stroke="#d8dcff"
+            stroke="#00b894"
             strokeWidth={2}
             dot={{ r: 0 }}
             activeDot={{
               r: 4,
-              stroke: '#d8dcff',
+              stroke: '#00b894',
               strokeWidth: 2,
               fill: '#16171c',
             }}

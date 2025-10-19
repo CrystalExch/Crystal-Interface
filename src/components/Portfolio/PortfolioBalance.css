@@ -1,17 +1,8 @@
 .order-section {
   display: flex;
-  flex: 1;
-  min-height: 300px;
 }
 
 .portfolio-balance-wrapper {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.portfolio-order-center-wrapper {
-  flex: 2;
   min-width: 0;
   overflow: hidden;
 }

@@ -57,7 +57,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
   const [referredCount, setReferredCount] = useState(0);
   const [commissionBonus, setCommissionBonus] = useState(0);
   const [username, setUsername] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const [isRemovingCode, setIsRemovingCode] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -363,7 +363,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
 
         <div className="token-list">
           {claimableFees == undefined ? (
-            [1, 2, 3].map((i) => (
+            [1].map((i) => (
               <div key={i} className="token-row">
                 <div className="skeleton skeleton-token-icon"></div>
                 <div className="skeleton skeleton-token-amount"></div>

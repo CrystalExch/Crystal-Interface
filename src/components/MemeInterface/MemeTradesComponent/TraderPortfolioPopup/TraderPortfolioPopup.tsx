@@ -57,6 +57,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
     marketsData,
     false, // stateIsLoading
     true, // shouldFetchGraph
+    traderAddress
   );
 
   useEffect(() => {

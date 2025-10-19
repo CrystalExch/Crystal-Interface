@@ -28,6 +28,7 @@
   color: #ffffff70;
   font-size: 0.75rem;
   margin-left: 6px;
+  white-space: nowrap;
 }
 
 @media (max-width: 1200px) {
@@ -49,7 +50,7 @@
   justify-content: space-between;
   background: none;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 20px;
+  border-radius: 4px;
   padding: 2px 6px;
   color: rgb(255 255 255 / 75%);
   font-size: 0.75rem;
@@ -152,7 +153,7 @@
   min-width: 15px; 
   border: 1px solid transparent;
   height: 18px;
-  border-radius: 5px;
+  border-radius: 4px;
   text-align: center;
   padding: 0;
   margin-left: -3px;

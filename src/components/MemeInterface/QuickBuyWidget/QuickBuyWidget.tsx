@@ -530,7 +530,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   );
 
   const formatNumberWithCommas = (num: number, decimals = 2) => {
-    if (num === 0) return '0';
+    if (num === 0) return '0.00';
     if (num >= 1e9) return `${(num / 1e9).toFixed(decimals)}B`;
     if (num >= 1e6) return `${(num / 1e6).toFixed(decimals)}M`;
     if (num >= 1e3) return `${(num / 1e3).toFixed(decimals)}K`;
@@ -1912,10 +1912,10 @@ const handleSellTrade = async (value: string) => {
                   <span className="quickbuy-usd-value">
                     $
                     {formatNumberWithCommas(
-                      Array.from(selectedWallets).reduce(
+                      (Array.from(selectedWallets).reduce(
                         (sum, addr) => sum + getWalletTokenBalance(addr),
                         0,
-                      ) * tokenPrice * monUsdPrice,
+                      ) * tokenPrice * monUsdPrice),
                       2,
                     )}
                   </span>
@@ -2293,30 +2293,29 @@ const handleSellTrade = async (value: string) => {
                                 </svg>
                               </div>
                             </div>
-<div className="quickbuy-wallet-balance">
-  {(() => {
-    const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-    const balanceWei = walletTokenBalances[wallet.address]?.[
-      tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth)?.address || ''
-    ] || 0n;
-    const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
-    
-    return (
-      <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
-        <div
-          className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
-        >
-          <img
-            src={monadicon}
-            className="quickbuy-wallet-mon-icon"
-          />
-          {formatNumberWithCommas(balance, 2)}
-        </div>
-      </Tooltip>
-    );
-  })()}
-</div>
-
+                            <div className="quickbuy-wallet-balance">
+                              {(() => {
+                                const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                                const balanceWei = walletTokenBalances[wallet.address]?.[
+                                  tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth)?.address || ''
+                                ] || 0n;
+                                const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+                                
+                                return (
+                                  <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                    <div
+                                      className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                    >
+                                      <img
+                                        src={monadicon}
+                                        className="quickbuy-wallet-mon-icon"
+                                      />
+                                      {formatNumberWithCommas(balance, 2)}
+                                    </div>
+                                  </Tooltip>
+                                );
+                              })()}
+                            </div>
                             <div className="quickbuy-wallet-tokens">
                               {(() => {
                                 const tokenBalance = getWalletTokenBalance(
@@ -2455,29 +2454,29 @@ const handleSellTrade = async (value: string) => {
                             </div>
 
                            <div className="quickbuy-wallet-balance">
-  {(() => {
-    const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-    const balanceWei = walletTokenBalances[wallet.address]?.[
-      tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth)?.address || ''
-    ] || 0n;
-    const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
-    
-    return (
-      <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
-        <div
-          className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
-        >
-          <img
-            src={monadicon}
-            className="quickbuy-wallet-mon-icon"
-            alt="MON"
-          />
-          {formatNumberWithCommas(balance, 2)}
-        </div>
-      </Tooltip>
-    );
-  })()}
-</div>
+                            {(() => {
+                              const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                              const balanceWei = walletTokenBalances[wallet.address]?.[
+                                tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth)?.address || ''
+                              ] || 0n;
+                              const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+                              
+                              return (
+                                <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                  <div
+                                    className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                  >
+                                    <img
+                                      src={monadicon}
+                                      className="quickbuy-wallet-mon-icon"
+                                      alt="MON"
+                                    />
+                                    {formatNumberWithCommas(balance, 2)}
+                                  </div>
+                                </Tooltip>
+                              );
+                            })()}
+                          </div>
                             <div className="quickbuy-wallet-tokens">
                               {(() => {
                                 const tokenCount = getWalletTokenCount(

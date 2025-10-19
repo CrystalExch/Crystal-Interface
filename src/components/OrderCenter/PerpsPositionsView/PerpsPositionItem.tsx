@@ -21,6 +21,8 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
 
   return (
     <div className="perps-position-item">
+      {/* Coin */}
+      <div className="oc-cell market-cell" onClick={() => onMarketSelect(position)}>
       <div className="order-favorite-cell">
         <div
           className="order-favorite-icon"
@@ -41,9 +43,6 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
           </svg>
         </div>
       </div>
-
-      {/* Coin */}
-      <div className="oc-cell market-cell" onClick={() => onMarketSelect(position)}>
         <img className="ordercenter-token-icon" src={position.image} />
         <div className="market-details">
           <div className="market-name">

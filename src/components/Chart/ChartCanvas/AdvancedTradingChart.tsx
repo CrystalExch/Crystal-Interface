@@ -580,7 +580,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           onHistoryCallback: Function,
           onErrorCallback: Function,
         ) => {
-          setOverlayVisible(true);
           const { from, to } = periodParams;
 
           try {
@@ -852,6 +851,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       });
 
       widgetRef.current.activeChart().onIntervalChanged().subscribe(null, (interval: string) => {
+        setOverlayVisible(true);
         const mapped =
           interval.endsWith('S')
             ? `${interval.slice(0, -1)}s`
@@ -868,7 +868,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       widgetRef.current.activeChart().onDataLoaded().subscribe(null, () => {
         setOverlayVisible(false)
       });
-      
+
       setOverlayVisible(false);
     });
 

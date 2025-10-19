@@ -19,6 +19,7 @@ export const usePortfolioData = (
   marketsData: any,
   stateIsLoading: boolean,
   shouldFetchGraph: boolean,
+  activeAddress: any,
 ): PortfolioData => {
   const [state, setState] = useState<PortfolioData>({
     chartData: [],
@@ -259,7 +260,7 @@ export const usePortfolioData = (
     fetchData();
 
     return () => { isFetching = false; };
-  }, [shouldFetchGraph, address, chartDays, marketsData.length]);
+  }, [shouldFetchGraph, activeAddress, chartDays, marketsData.length]);
 
   return state;
 };

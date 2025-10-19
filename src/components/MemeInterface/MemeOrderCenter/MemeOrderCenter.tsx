@@ -80,7 +80,6 @@ interface MemeOrderCenterProps {
   tokendict?: { [key: string]: any };
   nonces?: any;
   activeWalletPrivateKey?: string;
-  setMemeOverlayVisible: any;
 }
 
 interface DevToken {
@@ -385,7 +384,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   tokendict = {},
   nonces,
   activeWalletPrivateKey,
-  setMemeOverlayVisible
 }) => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<

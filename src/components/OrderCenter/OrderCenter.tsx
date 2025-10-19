@@ -474,9 +474,9 @@ const OrderCenter: React.FC<OrderCenterProps> = ({
     <div
       ref={containerRef}
       className="oc-rectangle"
-  style={{
+      style={{
         position: 'relative',
-        height: isPortfolio ? '100%' : (orderCenterHeight === 0 || isOrderCenterVisible == false ? '0px' : `${orderCenterHeight}px`),
+        height: (orderCenterHeight === 0 || isOrderCenterVisible == false ? '0px' : `${orderCenterHeight}px`),
         transition: (isVertDragging || isResizing) ? 'none' : 'height 0.1s ease',
         overflow: 'visible',
       }}

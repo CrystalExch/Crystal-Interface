@@ -109,12 +109,12 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({
               >
                 <stop
                   offset="0%"
-                  stopColor={isPositive ? '#aaaecf' : '#d63031'}
+                  stopColor={isPositive ? '#aaaecf' : 'rgb(235, 112, 112)'}
                   stopOpacity={0.3}
                 />
                 <stop
                   offset="100%"
-                  stopColor={isPositive ? '#aaaecf' : '#d63031'}
+                  stopColor={isPositive ? '#aaaecf' : 'rgb(235, 112, 112)'}
                   stopOpacity={0}
                 />
               </linearGradient>
@@ -122,7 +122,7 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({
             <Area
               type="monotone"
               dataKey="value"
-              stroke={isPositive ? '#aaaecf' : '#d63031'}
+              stroke={isPositive ? '#aaaecf' : 'rgb(235, 112, 112)'}
               strokeWidth={1.5}
               fill={`url(#gradient-${vaultId})`}
               dot={false}

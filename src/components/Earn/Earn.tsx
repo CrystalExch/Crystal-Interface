@@ -78,7 +78,7 @@ const Earn: React.FC<EarnProps> = (props) => {
       <div className="earn-page-header">
         <div className="earn-title-section">
           <h1 className="earn-main-title">Earn</h1>
-          <p className="earn-subtitle">Provide liquidity and earn rewards through both passive and automated strategies</p>
+          <p className="earn-subtitle">Earn rewards by providing liquidity to both passive and automated strategies</p>
         </div>
         <div className="earn-toggle-container">
           <div className="earn-toggle" data-active={activeTab}>

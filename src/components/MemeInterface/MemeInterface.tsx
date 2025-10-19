@@ -136,8 +136,6 @@ interface MemeInterfaceProps {
   selectedWallets: Set<string>;
   setSelectedWallets: React.Dispatch<React.SetStateAction<Set<string>>>;
   selectedIntervalRef: any;
-  memeOverlayVisible: any;
-  setMemeOverlayVisible: any;
 }
 
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
@@ -365,8 +363,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   selectedWallets,
   setSelectedWallets,
   selectedIntervalRef,
-  memeOverlayVisible,
-  setMemeOverlayVisible
 }) => {
   const getSliderPosition = (
     activeView: 'chart' | 'trades' | 'ordercenter',
@@ -2566,8 +2562,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   ]
               }
               selectedIntervalRef={selectedIntervalRef}
-              memeOverlayVisible={memeOverlayVisible}
-              setMemeOverlayVisible={setMemeOverlayVisible}
             />
           </div>
           <div
@@ -2650,7 +2644,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             userAddr={address ?? account?.address ?? ''}
             nonces={nonces}
             activeWalletPrivateKey={activeWalletPrivateKey}
-            setMemeOverlayVisible={setMemeOverlayVisible}
           />
         </div>
       </div>
