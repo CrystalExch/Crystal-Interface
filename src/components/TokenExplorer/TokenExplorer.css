@@ -683,6 +683,7 @@
 
 .tooltip-container {
   display: flex;
+  align-self: center;
   position: relative;
 }
 
