@@ -100,7 +100,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   const [chartReady, setChartReady] = useState(false);
 
   const dataRef = useRef<any>({});
-  const tokenRef = useRef(token);
   const tradeHistoryRef = useRef<any[]>(tradehistory ?? []);
   const addressRef = useRef<any>(address);
   const devAddressRef = useRef<any>(devAddress);
@@ -774,11 +773,10 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       dataRef.current = {};
       widgetRef.current.remove();
     };
-  }, [showUSD, showMarketCap]);
+  }, [token.symbol != 'UNKNOWN', showUSD, showMarketCap]);
 
   useEffect(() => {
     try {
-      tokenRef.current = token;
       if (chartReady) {
         setOverlayVisible(true);
         localStorage.setItem('meme_chart_timeframe', selectedInterval);
