@@ -15,8 +15,9 @@ interface PopupData {
   visible: boolean;
   confirmed?: boolean;
   targetIndex?: number;
+  onClick?: () => void;
+  isClickable?: boolean;
 }
-
 interface AudioSettings {
   soundAlertsEnabled: boolean;
   volume: number;
@@ -40,29 +41,29 @@ const getAudioSettings = (): { isAudioEnabled: boolean; audioGroups: AudioGroups
   try {
     const audioEnabled = localStorage.getItem('crystal_audio_notifications');
     const audioGroupsData = localStorage.getItem('crystal_audio_groups');
-    
+
     const isAudioEnabled = audioEnabled ? JSON.parse(audioEnabled) : false;
-    const audioGroups: AudioGroups = audioGroupsData 
-      ? JSON.parse(audioGroupsData) 
+    const audioGroups: AudioGroups = audioGroupsData
+      ? JSON.parse(audioGroupsData)
       : { swap: true, order: true, transfer: true, approve: true };
-    
+
     return { isAudioEnabled, audioGroups };
   } catch (error) {
     console.error('Error loading audio settings:', error);
-    return { 
-      isAudioEnabled: false, 
-      audioGroups: { swap: true, order: true, transfer: true, approve: true } 
+    return {
+      isAudioEnabled: false,
+      audioGroups: { swap: true, order: true, transfer: true, approve: true }
     };
   }
 };
 
 const playAudioIfEnabled = (audioType: keyof AudioGroups = 'swap') => {
   const { isAudioEnabled, audioGroups } = getAudioSettings();
-  
+
   if (!isAudioEnabled || !audioGroups[audioType]) {
-    return; 
+    return;
   }
-  
+
   try {
     const stepAudio = new Audio(stepaudio);
     stepAudio.volume = 0.8;
@@ -79,6 +80,8 @@ export const showLoadingPopup = (id: string, data: {
   amount?: string;
   amountUnit?: string;
   tokenImage?: string;
+  onClick?: () => void;
+  isClickable?: boolean;
 }) => {
   const newPopup: PopupData = {
     id,
@@ -91,8 +94,9 @@ export const showLoadingPopup = (id: string, data: {
     isLoading: true,
     visible: true,
     confirmed: false,
+    onClick: data.onClick,
+    isClickable: data.isClickable,
   };
-
   if (globalSetPopups) {
     globalSetPopups(prev => [newPopup, ...prev].slice(0, 7));
   }
@@ -105,6 +109,8 @@ export const updatePopup = (id: string, data: {
   confirmed?: boolean;
   isLoading?: boolean;
   tokenImage?: string;
+  onClick?: () => void;
+  isClickable?: boolean;
 }) => {
   if (globalSetPopups) {
     globalSetPopups(prev =>
@@ -118,14 +124,16 @@ export const updatePopup = (id: string, data: {
             isLoading: data.isLoading ?? p.isLoading,
             visible: true,
             confirmed: data.confirmed ?? true,
-            tokenImage: data.tokenImage || p.tokenImage, 
+            tokenImage: data.tokenImage || p.tokenImage,
+            onClick: data.onClick || p.onClick,
+            isClickable: data.isClickable !== undefined ? data.isClickable : p.isClickable,
           };
 
           if (data.variant === 'success' && data.confirmed !== false) {
             const titleLower = data.title.toLowerCase();
             const subtitleLower = (data.subtitle || '').toLowerCase();
-            
-            const isBuyOrSell = 
+
+            const isBuyOrSell =
               titleLower.includes('buy completed') ||
               titleLower.includes('sell completed') ||
               titleLower.includes('buy failed') ||
@@ -138,37 +146,37 @@ export const updatePopup = (id: string, data: {
               titleLower.includes('quickbuy') ||
               titleLower.includes('buy') ||
               titleLower.includes('sell');
-            
+
             if (isBuyOrSell) {
-              playAudioIfEnabled('swap'); 
+              playAudioIfEnabled('swap');
             }
-            
-            const isTransfer = 
+
+            const isTransfer =
               titleLower.includes('transfer') ||
               titleLower.includes('send') ||
               titleLower.includes('wrap') ||
               titleLower.includes('unwrap') ||
               titleLower.includes('stake');
-            
+
             if (isTransfer) {
               playAudioIfEnabled('transfer');
             }
-            
-            const isOrder = 
+
+            const isOrder =
               titleLower.includes('order') ||
               titleLower.includes('limit') ||
               titleLower.includes('filled') ||
               titleLower.includes('cancelled');
-            
+
             if (isOrder) {
               playAudioIfEnabled('order');
             }
-            
-            const isApproval = 
+
+            const isApproval =
               titleLower.includes('approval') ||
               titleLower.includes('approve') ||
               titleLower.includes('allowance');
-            
+
             if (isApproval) {
               playAudioIfEnabled('approve');
             }
@@ -226,7 +234,7 @@ const MemeTransactionPopupManager: React.FC = () => {
     <div className="meme-transaction-popup-manager">
       {visiblePopups.map((popup, index) => {
         const isNew = newPopupIds.has(popup.id);
-        const y = index * 60; 
+        const y = index * 60;
 
         return (
           <div
@@ -246,10 +254,12 @@ const MemeTransactionPopupManager: React.FC = () => {
                 amountUnit={popup.amountUnit}
                 variant={popup.variant}
                 onClose={() => closeTransactionPopup(popup.id)}
-                autoCloseDelay={popup.isLoading || !popup.confirmed ? 999999 : 6000}
+                autoCloseDelay={popup.isLoading || !popup.confirmed ? 999999 : popup.isClickable ? 10000 : 6000}
                 type="transfer"
                 isLoading={popup.isLoading}
                 tokenImage={popup.tokenImage}
+                onClick={popup.onClick}
+                isClickable={popup.isClickable}
               />
             </div>
           </div>

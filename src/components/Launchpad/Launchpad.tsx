@@ -113,54 +113,99 @@ const Launchpad: React.FC<LaunchpadProps> = ({
     (document.getElementById('file-input') as HTMLInputElement | null)?.click();
   };
 
-  const handleLaunch = async () => {
-    if (!formData.name || !formData.ticker || !formData.image) {
-      return;
-    }
-    if (!account.connected) return setpopup(4);
-    if (account.chainId !== 10143) return setChain();
+const handleLaunch = async () => {
+  if (!formData.name || !formData.ticker || !formData.image) {
+    return;
+  }
+  if (!account.connected) return setpopup(4);
+  if (account.chainId !== 10143) return setChain();
 
-    setIsLaunching(true);
-    try {
-      const timestamp = Date.now();
-      const imageKey = `img/${formData.ticker}-${timestamp}.${formData.image.name.split('.').pop()}`;
-      const uploadedImageUrl = await uploadToR2(
-        imageKey,
-        formData.image,
-        formData.image.type
-      );
-      let buyAmount = 0n;
-      if (prebuyAmount && parseFloat(prebuyAmount) > 0) {
-        buyAmount = BigInt(Math.floor(parseFloat(prebuyAmount) * 1e18));
-      }
-      await sendUserOperationAsync({
-        uo: {
-          target: ROUTER_ADDRESS,
-          data: encodeFunctionData({
-            abi: CrystalRouterAbi,
-            functionName: 'createToken',
-            args: [
-              formData.name,
-              formData.ticker,
-              uploadedImageUrl,
-              formData.description,
-              formData.twitter,
-              formData.website,
-              formData.telegram,
-              formData.discord
-            ],
-          }),
-          value: buyAmount,
-        },
-      }, 15000000n);
-
-      setIsLaunching(false);
-      navigate('/board');
-    } catch (err: any) {
-      setIsLaunching(false);
-      return;
+  setIsLaunching(true);
+  try {
+    const timestamp = Date.now();
+    const imageKey = `img/${formData.ticker}-${timestamp}.${formData.image.name.split('.').pop()}`;
+    const uploadedImageUrl = await uploadToR2(
+      imageKey,
+      formData.image,
+      formData.image.type
+    );
+    let buyAmount = 0n;
+    if (prebuyAmount && parseFloat(prebuyAmount) > 0) {
+      buyAmount = BigInt(Math.floor(parseFloat(prebuyAmount) * 1e18));
     }
-  };
+    
+    const txId = `create-token-${Date.now()}`;                         // NEW
+    
+    // Show loading popup                                               // NEW
+    const { showLoadingPopup, updatePopup } = await import('../MemeTransactionPopup/MemeTransactionPopupManager');  // NEW
+    
+    if (showLoadingPopup) {                                            // NEW
+      showLoadingPopup(txId, {                                         // NEW
+        title: 'Creating Token',                                       // NEW
+        subtitle: `Launching ${formData.name} (${formData.ticker})`,  // NEW
+        tokenImage: uploadedImageUrl,                                  // NEW
+      });                                                              // NEW
+    }                                                                  // NEW
+    
+    const result = await sendUserOperationAsync({                      // CHANGED
+      uo: {
+        target: ROUTER_ADDRESS,
+        data: encodeFunctionData({
+          abi: CrystalRouterAbi,
+          functionName: 'createToken',
+          args: [
+            formData.name,
+            formData.ticker,
+            uploadedImageUrl,
+            formData.description,
+            formData.twitter,
+            formData.website,
+            formData.telegram,
+            formData.discord
+          ],
+        }),
+        value: buyAmount,
+      },
+    }, 15000000n);
+
+    let tokenAddress = '';                                          
+    if (result?.logs) {                                              
+      const createLog = result.logs.find((log: any) => log.topics?.[0]?.toLowerCase().includes('created')); 
+      if (createLog?.topics?.[1]) {                                    
+        tokenAddress = '0x' + createLog.topics[1].slice(-40);         
+      }                                                               
+    }                                                            
+
+    if (updatePopup) {                                              
+      updatePopup(txId, {                                             
+        title: 'Token Created!',                                   
+        subtitle: `${formData.name} is now live! Click to view`,     
+        variant: 'success',                                    
+        isLoading: false,                                           
+        isClickable: true,                                             
+        onClick: () => {                                         
+          if (tokenAddress) {                                          
+          } else {                                                   
+            navigate('/board');                                   
+          }                                                      
+        },                                                        
+      });                                                         
+    }                                                             
+
+    setIsLaunching(false);
+    
+    setTimeout(() => {                                              
+      if (tokenAddress) {                                             
+        navigate(`/meme/${tokenAddress}`);                           
+      } else {                                                         
+        navigate('/board');                                          
+      }                                                             
+    }, 2000);                                                      
+  } catch (err: any) {
+    setIsLaunching(false);
+    return;
+  }
+};
 
   const isFormValid = !!formData.name && !!formData.ticker && !!formData.image;
 

@@ -61,13 +61,13 @@
   position: absolute;
   top: 4px;
   height: calc(100% - 4px);
-  width: calc(50% + 4px);
+   width: 130px;
   transition: transform .3s cubic-bezier(.4, 0, .2, 1);
   border-bottom: 1.5px solid #d8dcff;
 }
 
-.earn-toggle[data-active=liquidity]::before {
-  transform: translateX(105%);
+.earn-toggle[data-active=vaults]::before {
+ transform: translateX(134px);
 }
 
 .earn-toggle-tab {
@@ -107,7 +107,6 @@
   flex: 1;
 }
 
-/* Mobile Responsive */
 @media (max-width: 768px) {
   .earn-header {
     margin-top: 20px;
