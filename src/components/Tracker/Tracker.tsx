@@ -312,10 +312,10 @@ interface TokenTrade {
   remaining: number;
 }
 
-
+type MarketsMap = Map<string, MonitorToken>;
 type TrackerTab = 'wallets' | 'trades' | 'monitor';
 type SortDirection = 'asc' | 'desc';
-
+const SUPPLY = 1e9;
 
 const Tracker: React.FC<TrackerProps> = ({
   isBlurred,
@@ -337,9 +337,6 @@ const Tracker: React.FC<TrackerProps> = ({
   const [demoMode, setDemoMode] = useState({ wallets: initialUsedDemoWallets, trades: SHOW_DEMO_TRADES, monitor: SHOW_DEMO_MONITOR });
   const disableDemo = (k: 'wallets'|'trades'|'monitor') => setDemoMode(m => ({ ...m, [k]: false }));
   const [trackedWalletTrades, setTrackedWalletTrades] = useState<LiveTrade[]>(demoMode.trades ? DEMO_TRADES : []);
-
-
-
   const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>(() => {
     const stored = loadWalletsFromStorage();
     if (stored?.length) return stored.map(w => ({ ...w, createdAt: w.createdAt || new Date().toISOString(), lastActiveAt: (w as any).lastActiveAt ?? null }));
@@ -491,6 +488,8 @@ const Tracker: React.FC<TrackerProps> = ({
   const [dropPreviewLine, setDropPreviewLine] = useState<{ top: number; containerKey: string } | null>(null);
   const [expandedTokens, setExpandedTokens] = useState<Set<string>>(new Set());
   const [pinnedTokens, setPinnedTokens] = useState<Set<string>>(new Set());
+  const marketsRef = useRef<MarketsMap>(new Map());
+  const [marketsTick, setMarketsTick] = useState(0);
 
   const txFromCacheRef = useRef(new Map<string, string>());
 
@@ -520,26 +519,22 @@ const Tracker: React.FC<TrackerProps> = ({
         const args: any = l?.args ?? {};
         const txHash: string = l?.transactionHash ?? l?.transaction?.id ?? l?.id;
         let accountAddr: string | null = (args.account || args.trader || args.sender || args.owner || args.from) ?? null;
-        if (!accountAddr && txHash && pc) pc.getTransaction({ hash: txHash as `0x${string}` }).then(tx => { if (tx?.from && trackedSetRef.current.has(lower(tx.from))) touchWallet(tx.from); }).catch(()=>{});
+        if (!accountAddr && txHash) (async()=>{ try{ const tx=await getRpcPublicClient(chainCfgOf(activechain))?.getTransaction({ hash: txHash as `0x${string}` }); if (tx?.from && trackedSetRef.current.has(lower(tx.from))) touchWallet(tx.from); }catch{}})();
         if (accountAddr) touchWallet(accountAddr);
         const isBuy = Boolean(args.isBuy ?? args.buy ?? (args.from && !args.to));
         const amountIn = Number(args.amountIn ?? 0n) / 1e18;
         const amountOut = Number(args.amountOut ?? 0n) / 1e18;
         const priceWad = Number(args.priceNativePerTokenWad ?? args.price ?? 0n) / 1e18;
-        const tradeLike = {
-          id: txHash || `${Date.now()}_${Math.random()}`,
-          account: { id: String(accountAddr || '') },
-          isBuy,
-          amountIn: BigInt(Math.floor(amountIn * 1e18)),
-          amountOut: BigInt(Math.floor(amountOut * 1e18)),
-          priceNativePerTokenWad: BigInt(Math.floor(priceWad * 1e18)),
-          token: { symbol: args.symbol || args.ticker || 'UNK' },
-          timestamp: Math.floor(Date.now() / 1000),
-        };
+        const tokenAddr = String(args.token || args.tokenAddress || args.base || args.asset || args.tokenIn || args.tokenOut || (l as any)?.address || '').toLowerCase() || undefined;
+        const symbol = (args.symbol || args.ticker || '').toString() || undefined;
+        const ts = Math.floor(Date.now()/1000);
+        const tradeLike = { id: txHash || `${Date.now()}_${Math.random()}`, account: { id: String(accountAddr || '') }, isBuy, amountIn: BigInt(Math.floor(amountIn * 1e18)), amountOut: BigInt(Math.floor(amountOut * 1e18)), priceNativePerTokenWad: BigInt(Math.floor(priceWad * 1e18)), token: { symbol: symbol ?? 'UNK' }, timestamp: ts };
         next.unshift(normalizeTrade(tradeLike, wallets));
+        upsertMarket({ tokenAddr, symbol, price: priceWad, isBuy, amountNative: isBuy ? amountIn : amountOut, ts, wallet: wallets.find(w=>lower(w.address)===lower(accountAddr||''))?.name, emoji: wallets.find(w=>lower(w.address)===lower(accountAddr||''))?.emoji });
       }
       const seen = new Set<string>(), out: LiveTrade[] = [];
       for (const t of next) if (!seen.has(t.id)) { seen.add(t.id); out.push(t); }
+      flushMarketsToState();
       return out.slice(0, 500);
     });
   }, [normalizeTrade, activechain, demoMode.trades]);
@@ -1173,6 +1168,55 @@ const Tracker: React.FC<TrackerProps> = ({
     setStatus({ lastPushSource: 'external' });
   };
 
+  const upsertMarket = (t: { tokenAddr?: string; symbol?: string; name?: string; price?: number; isBuy?: boolean; amountNative?: number; ts?: number; wallet?: string; emoji?: string; }) => {
+    const id = (t.tokenAddr || t.symbol)?.toLowerCase();
+    if (!id) return;
+    const m = marketsRef.current.get(id);
+    const nowIso = new Date((t.ts ?? Math.floor(Date.now()/1000))*1000).toISOString();
+    const price = t.price ?? m?.price ?? 0;
+    const mk = price*SUPPLY;
+    const bought = t.isBuy ? (t.amountNative ?? 0) : 0;
+    const sold = !t.isBuy ? (t.amountNative ?? 0) : 0;
+    const trades = (m?.trades ?? []).slice(0,49);
+    if (t.wallet) trades.unshift({ id: `${id}_${Date.now()}`, wallet: t.wallet, emoji: t.emoji ?? '👤', timeInTrade: '—', bought, boughtTxns: t.isBuy ? 1 : 0, sold, soldTxns: t.isBuy ? 0 : 1, pnl: 0, remaining: 0 });
+    marketsRef.current.set(id, {
+      id,
+      tokenAddress: t.tokenAddr?.toLowerCase() || id,
+      name: t.name || m?.name || t.symbol || 'Token',
+      symbol: t.symbol || m?.symbol || 'TKN',
+      emoji: m?.emoji || '🪙',
+      price,
+      marketCap: mk || m?.marketCap || 0,
+      change24h: m?.change24h ?? 0,
+      volume24h: (m?.volume24h ?? 0) + (t.amountNative ?? 0),
+      liquidity: m?.liquidity ?? 0,
+      holders: m?.holders ?? 0,
+      buyTransactions: (m?.buyTransactions ?? 0) + (t.isBuy ? 1 : 0),
+      sellTransactions: (m?.sellTransactions ?? 0) + (!t.isBuy ? 1 : 0),
+      bondingCurveProgress: m?.bondingCurveProgress ?? 0,
+      txCount: (m?.txCount ?? 0) + 1,
+      volume5m: (m?.volume5m ?? 0) + (t.amountNative ?? 0),
+      volume1h: (m?.volume1h ?? 0) + (t.amountNative ?? 0),
+      volume6h: (m?.volume6h ?? 0) + (t.amountNative ?? 0),
+      priceChange5m: m?.priceChange5m ?? 0,
+      priceChange1h: m?.priceChange1h ?? 0,
+      priceChange6h: m?.priceChange6h ?? 0,
+      priceChange24h: m?.priceChange24h ?? 0,
+      website: m?.website ?? '',
+      twitter: m?.twitter ?? '',
+      telegram: m?.telegram ?? '',
+      createdAt: m?.createdAt ?? nowIso,
+      lastTransaction: nowIso,
+      trades
+    });
+    if (demoMode.monitor) { setDemoMode(v=>({...v, monitor:false})); if (!m) setMonitorTokens([]); }
+  };
+
+
+
+  const flushMarketsToState = () => setMonitorTokens(Array.from(marketsRef.current.values()));
+
+
 
 
 
@@ -1264,9 +1308,37 @@ const Tracker: React.FC<TrackerProps> = ({
           transaction: m.transaction,
         },
       ]);
+      const addr = String((m as any).address || (m as any).tokenAddress || (m as any).base || (m as any).asset || '').toLowerCase() || undefined;
+      const sym = ((m as any).token?.symbol ?? (m as any).symbol ?? '').toString() || undefined;
+      if (addr || sym) {
+        upsertMarket({
+          tokenAddr: addr,
+          symbol: sym,
+          price: Number(m.priceNativePerTokenWad || 0),
+          isBuy: Boolean(m.isBuy || m.side==='buy' || (m.from && !m.to)),
+          amountNative: Number((m.isBuy || m.side==='buy') ? m.amountIn || 0 : m.amountOut || 0),
+          ts: m.timestamp || Math.floor(Date.now()/1000),
+          wallet: trackedWalletsRef.current.find(w=>w.address.toLowerCase()===a)?.name,
+          emoji: trackedWalletsRef.current.find(w=>w.address.toLowerCase()===a)?.emoji
+        });
+        flushMarketsToState();
+      }
+
+
+
     });
     return off;
   }, [activechain]);
+
+  /*Monitor */
+
+  useEffect(()=>{
+    const id=setInterval(()=>setMarketsTick(x=>x+1),15000); return ()=>clearInterval(id); 
+  },[]);
+
+  useEffect(() => {
+    flushMarketsToState();
+  }, [marketsTick, selectedSimpleFilter]);
 
 
 
