@@ -1313,7 +1313,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                           className="vault-search-token-star"
                           onClick={(e) => handleEarnFavoriteToggle(vault, e)}
                           fill={isVaultFavorited(vault) ? "#aaaecf" : "none"}
-                          color={isVaultFavorited(vault) ? "#aaaecf" : "#ffffff79"}
+                          color={isVaultFavorited(vault) ? "#aaaecf" : "#e0e8fd90"}
                         />
                         <div className="earn-token-pair-icons">
                           <img
@@ -1570,7 +1570,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                     dataKey="date"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#ffffff79', fontSize: 12 }}
+                                    tick={{ fill: '#e0e8fd90', fontSize: 12 }}
                                   />
                                   <Area
                                     type="monotone"
@@ -1637,7 +1637,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                     dataKey="date"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#ffffff79', fontSize: 12 }}
+                                    tick={{ fill: '#e0e8fd90', fontSize: 12 }}
                                   />
                                   <Area
                                     type="monotone"
@@ -1672,7 +1672,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                       <stop offset="100%" stopColor="#9599bf" stopOpacity={0} />
                                     </linearGradient>
                                   </defs>
-                                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#ffffff79', fontSize: 12 }} />
+                                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#e0e8fd90', fontSize: 12 }} />
                                   <Area
                                     type="monotone"
                                     dataKey="value"

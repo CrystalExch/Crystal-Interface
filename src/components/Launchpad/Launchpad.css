@@ -39,7 +39,7 @@
 
 .launchpad-preview-header {
   font-size: 0.9rem;
-  color: #ffffff79;
+  color: #e0e8fd90;
   font-weight: 400;
   letter-spacing: -0.3px;
   margin: 0;
@@ -100,14 +100,14 @@
 
 .launchpad-preview-ticker {
   font-size: 0.9rem;
-  color: #ffffff79;
+  color: #e0e8fd90;
   margin: 0;
   letter-spacing: -0.3px;
 }
 
 .launchpad-preview-description {
   font-size: 0.85rem;
-  color: #ffffff79;
+  color: #e0e8fd90;
   line-height: 1.5;
   letter-spacing: -0.3px;
   margin: 0;
@@ -177,7 +177,7 @@
 .launchpad-nav-item {
   background: none;
   border: none;
-  color: #ffffff79;
+  color: #e0e8fd90;
   font-size: 0.9rem;
   font-weight: 400;
   cursor: pointer;
@@ -257,7 +257,7 @@
 
 .optional-text {
   font-size: 0.8rem;
-  color: #ffffff79;
+  color: #e0e8fd90;
 }
 
 .launchpad-input {
@@ -404,7 +404,7 @@
 
 .launchpad-cost-item span {
   font-size: 0.9rem;
-  color: #ffffff79;
+  color: #e0e8fd90;
   letter-spacing: -0.3px;
   font-weight: 300;
 }
@@ -890,7 +890,7 @@
 
 .prebuy-token-details p {
   font-size: 0.9rem;
-  color: #ffffff79;
+  color: #e0e8fd90;
   margin: 0;
   letter-spacing: -0.3px;
 }
@@ -909,14 +909,14 @@
   position: absolute;
   right: 1rem;
   font-size: 0.9rem;
-  color: #ffffff79;
+  color: #e0e8fd90;
   font-weight: 500;
   letter-spacing: -0.3px;
 }
 
 .prebuy-hint {
   font-size: 0.8rem;
-  color: #ffffff79;
+  color: #e0e8fd90;
   margin: 0.5rem 0 0 0;
   letter-spacing: -0.3px;
   line-height: 1.4;

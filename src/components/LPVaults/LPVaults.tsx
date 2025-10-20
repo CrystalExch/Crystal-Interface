@@ -771,7 +771,7 @@ const updateVaultStrategyIndicatorPosition = useCallback(
                     <div className="col vault-deposits-col">
                       <span className="deposits-value">
                         {BigInt(vault.maxShares) === 0n ? (
-                          <span>&#8734;</span>
+                          <span>None</span>
                         ) : (
                           `$${formatDisplayValue(BigInt(vault.maxShares), 0)}`
                         )}
@@ -941,7 +941,7 @@ const updateVaultStrategyIndicatorPosition = useCallback(
                     <span className="vault-metric-label">Deposit Cap</span>
                     <span className="vault-metric-value">
                       {BigInt(stableSelectedVault.maxShares) === 0n ? (
-                        <span>&#8734;</span>
+                        <span>None</span>
                       ) : (
                         `$${formatDisplayValue(BigInt(stableSelectedVault.maxShares), 0)}`
                       )}
@@ -1130,7 +1130,7 @@ const updateVaultStrategyIndicatorPosition = useCallback(
                           dataKey="name"
                           axisLine={false}
                           tickLine={false}
-                          tick={{ fill: '#ffffff79', fontSize: 12 }}
+                          tick={{ fill: '#e0e8fd90', fontSize: 12 }}
                         />
                         <YAxis hide />
                         <Tooltip

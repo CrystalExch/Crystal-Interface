@@ -19,8 +19,9 @@ interface WalletOperationPopupProps {
   autoCloseDelay?: number;
   variant?: Variant;
   isLoading?: boolean;
+  onClick?: () => void;
+  isClickable?: boolean;
 }
-
 const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
   isVisible,
   title,
@@ -30,6 +31,8 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
   autoCloseDelay = 4000,
   variant = 'info',
   isLoading = false,
+  onClick,
+  isClickable = false,
 }) => {
   const [shouldRender, setShouldRender] = useState(false);
   const [exiting, setExiting] = useState(false);
@@ -110,7 +113,6 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
       }
     }
 
-    // If no pattern matches, just show the subtitle normally
     return <span>{subtitle}</span>;
   };
 
@@ -123,7 +125,12 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
       aria-live="polite"
     >
       <div
-        className={`wallet-popup-container ${exiting ? 'slide-out' : 'slide-in'} variant-${variant}`}
+        className={`wallet-popup-container ${exiting ? 'slide-out' : 'slide-in'} variant-${variant} ${isClickable ? 'clickable' : ''}`}
+        onClick={isClickable && onClick ? () => {
+          onClick();
+          handleClose();
+        } : undefined}
+        style={{ cursor: isClickable ? 'pointer' : 'default' }}
       >
         <div className="wallet-popup-content">
           <div className="wallet-popup-header">
@@ -164,13 +171,21 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
               {subtitle && (
                 <p className="wallet-popup-subtitle">
                   {renderSubtitleWithImage()}
+                  {isClickable && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '4px', opacity: 0.7 }}>
+                      <path d="M7 17L17 7M17 7H7M17 7V17" />
+                    </svg>
+                  )}
                 </p>
               )}
             </div>
           </div>
         </div>
 
-        <button className="wallet-popup-close" onClick={handleClose}>
+        <button className="wallet-popup-close" onClick={(e) => {
+          e.stopPropagation();
+          handleClose();
+        }}>
           <img src={closebutton} className="close-button-icon" />
         </button>
       </div>

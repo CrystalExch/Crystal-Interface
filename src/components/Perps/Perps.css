@@ -977,7 +977,7 @@
     align-items: center;
     margin-top: 6px;
     font-size: 0.75rem;
-    color: #ffffff79;
+    color: #e0e8fd90;
     width: 100%;
     padding-left: 13px;
     padding-right: 5px;
@@ -1401,3 +1401,4 @@
 .leverage-update-button:active {
     transform: translateY(1px);
 }
+

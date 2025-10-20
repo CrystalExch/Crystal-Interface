@@ -36,7 +36,7 @@
 
 .earn-subtitle {
   font-size: 1rem;
-  color: #ffffff79;
+  color: #e0e8fd90;
   letter-spacing: -0.5px;
   font-weight: 300;
   line-height: 1.4;
@@ -61,13 +61,13 @@
   position: absolute;
   top: 4px;
   height: calc(100% - 4px);
-  width: calc(50% + 4px);
+   width: 130px;
   transition: transform .3s cubic-bezier(.4, 0, .2, 1);
   border-bottom: 1.5px solid #d8dcff;
 }
 
-.earn-toggle[data-active=liquidity]::before {
-  transform: translateX(105%);
+.earn-toggle[data-active=vaults]::before {
+ transform: translateX(134px);
 }
 
 .earn-toggle-tab {
@@ -75,7 +75,7 @@
   z-index: 2;
   background: transparent;
   border: none;
-  color: #ffffff79;
+  color: #e0e8fd90;
   font-size: 1.1rem;
   cursor: pointer;
   transition: color .3s ease;
@@ -107,7 +107,6 @@
   flex: 1;
 }
 
-/* Mobile Responsive */
 @media (max-width: 768px) {
   .earn-header {
     margin-top: 20px;

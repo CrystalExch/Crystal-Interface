@@ -32,13 +32,13 @@
     align-items: center;
     gap: .5rem;
     font-size: .9rem;
-    color: #ffffff79;
+    color: #e0e8fd90;
 }
 
 .breadcrumb-link {
     background: transparent;
     border: none;
-    color: #ffffff79;
+    color: #e0e8fd90;
     cursor: pointer;
     text-decoration: none;
     font-size: .9rem;
@@ -139,7 +139,7 @@
 .lp-search-remove-token {
     background: transparent;
     border: none;
-    color: #ffffff79;
+    color: #e0e8fd90;
     font-size: 1.2rem;
     line-height: 1;
     cursor: pointer;
@@ -223,7 +223,7 @@
 
 .lp-search-token-name {
     font-size: .75rem;
-    color: #ffffff79;
+    color: #e0e8fd90;
     margin-top: -4px;
 }
 
@@ -355,7 +355,7 @@
     display: flex;
     padding: .5rem .4rem;
     background-color: transparent;
-    color: #ffffff8b;
+    color: #e0e8fd90;
     font-size: .75rem;
     letter-spacing: -.3px;
     font-weight: 300;
@@ -467,21 +467,20 @@
 .lp-fee-amounts-detail {
     display: flex;
     gap: 6px;
-    margin-top: 4px;
 }
 
 .lp-fee-amount {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(217, 225, 251, .05);
-    color: #e6e6f399;
-    padding: 1px 6px;
-    border-radius: 10px;
-    font-size: .7rem;
-    margin-bottom: 2px;
+  align-items: center;
+  background: rgba(217, 225, 251, .05);
+  border-radius: 10px;
+  color: #e6e6f399;
+  display: flex;
+  font-size: .85rem;
+  justify-content: center;
+  margin-bottom: 2px;
+  padding: 1px 6px;
+  font-weight: 300;
 }
-
 .lp-overview-charts {
     display: flex;
     gap: 1rem;
@@ -511,7 +510,7 @@
 .lp-total-tvl-subtitle {
     font-weight: 100;
     font-size: .85rem;
-    color: #ffffff79;
+    color: #e0e8fd90;
 }
 
 .add-liquidity-button {
@@ -565,6 +564,9 @@
 }
 
 .continue-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
     border: none;
@@ -578,6 +580,7 @@
     margin-top: .5rem;
     box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
     letter-spacing: -.5px;
+    height: 34px;
 }
 
 .continue-button:disabled {
@@ -674,7 +677,7 @@
 
 .step:not(.active) .step-number {
     background-color: transparent;
-    color: #ffffff79;
+    color: #e0e8fd90;
 }
 
 .step-content h3 {
@@ -685,14 +688,14 @@
 
 .step-content p {
     font-size: .8rem;
-    color: #ffffff79;
+    color: #e0e8fd90;
     margin: 0;
     line-height: 1.4;
     letter-spacing: -.3px;
 }
 
 .step:not(.active) .step-content h3 {
-    color: #ffffff79;
+    color: #e0e8fd90;
 }
 
 .step:not(.active) .step-content p {
@@ -714,7 +717,7 @@
 
 .section-description {
     font-size: .9rem;
-    color: #ffffff79;
+    color: #e0e8fd90;
     margin-bottom: 1.5rem;
     letter-spacing: -.3px;
     line-height: 1;
@@ -816,7 +819,7 @@
 
 .fee-tier-subtitle {
     font-size: 12px;
-    color: #ffffff79;
+    color: #e0e8fd90;
     letter-spacing: -.3px;
     line-height: 1;
 }
@@ -895,14 +898,14 @@
 
 .lp-deposit-usd-value {
     font-size: .75rem;
-    color: #ffffff79;
+    color: #e0e8fd90;
 }
 
 .deposit-balance {
     display: flex;
     align-items: center;
     font-size: .75rem;
-    color: #ffffff79;
+    color: #e0e8fd90;
     margin-top: .25rem;
     letter-spacing: -.3px;
     gap: 5px;
@@ -916,12 +919,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: .5rem;
     font-size: .85rem;
 }
 
 .deposit-summary-row span {
-    color: #ffffff79;
+    color: #ffffffda;
     letter-spacing: -.3px;
 }
 
@@ -946,8 +948,8 @@
 .vault-actions-section {
     flex: 1;
     border: 1px solid rgba(179, 184, 249, .1);
-    border-radius: 12px;
-    padding: 1rem;
+    border-radius: 26px;
+    padding: .5rem;
     height: fit-content;
     top: 2rem;
     min-width: 300px;
@@ -1019,13 +1021,13 @@
 
 .lp-stat-label {
     font-size: .8rem;
-    color: #ffffff79;
+    color: #e0e8fd90;
 }
 
 .lp-stat-value {
     font-size: 1.1rem;
     font-weight: 400;
-    color: #ffffffcf;
+    color: #ffffffe9;
 }
 
 .lp-detail-description {
@@ -1041,7 +1043,7 @@
 .lp-detail-description p {
     font-size: .85rem;
     line-height: 1.2;
-    color: #ffffff79;
+    color: #e0e8fd90;
     margin-bottom: .75rem;
 }
 
@@ -1076,7 +1078,7 @@
 
 .lp-label-container {
     font-size: .85rem;
-    color: #ffffff79;
+    color: #e0e8fd90;
 }
 
 .lp-value-container {
@@ -1086,16 +1088,20 @@
 }
 
 .lp-performance-chart-container {
-    height: 200px;
+    border: 1px solid rgba(179, 184, 249, .1);
+    padding: 1rem;
+    border-radius: 20px;
+    height: 280px;
+    padding-bottom: 40px;
 }
 
 .lp-performance-chart-header {
     display: flex;
     align-items: center;
     gap: .5rem;
-    font-size: .8rem;
+    font-size: .85rem;
     margin-bottom: 1rem;
-    color: #ffffff82;
+    color: #e0e8fd90;
 }
 
 .vault-deposit-form,
@@ -1113,7 +1119,7 @@
 
 .vault-form-description {
     font-size: .75rem;
-    color: #ffffff79;
+    color: #e0e8fd90;
     margin-bottom: 1rem;
     line-height: 1.2;
     letter-spacing: -.2px;
@@ -1140,7 +1146,7 @@
     padding: .2rem;
     border-radius: 6px;
     font-size: .8rem;
-    color: #ffffff79;
+    color: #e0e8fd90;
 }
 
 .withdraw-token-icon {
@@ -1467,4 +1473,47 @@
     .vault-detail-layout {
         animation: none;
     }
+}
+
+.lp-vault-tab-deposit,
+.lp-vault-tab-withdraw {
+    width: 100%;
+    background-color: rgba(97, 99, 126, 0.05);
+    height: 30px;
+    letter-spacing: -0.4px;
+    font-size: 0.9rem;
+    color:rgb(205, 205, 205);
+}
+
+.lp-vault-tabs{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.lp-vault-tab-deposit{
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 5px;
+}
+.lp-vault-tab-withdraw{
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 5px;
+}
+
+.lp-vault-tab-deposit.active{
+    background-color: rgba(97, 99, 126, 0.15);
+    color: #eff0f6;
+}
+
+.lp-vault-tab-withdraw.active{
+    background-color: rgba(97, 99, 126, 0.15);
+    color: #eff0f6;
+}
+
+
+.deposit-summary-row-title{
+    font-size: 0.85rem;
+    color: #e0e8fd73 !important;
+    font-weight: 400;
+    letter-spacing: -0.3px;
 }

@@ -122,7 +122,7 @@
   flex: 1;
   background: transparent;
   border: none;
-  color: #ffffff79;
+  color: #e0e8fd90;
   padding: 6px 12px;
   font-size: 0.75rem;
   font-weight: 300;
@@ -154,7 +154,7 @@
   background: transparent;
   border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 4px;
-  color: #ffffff79;
+  color: #e0e8fd90;
   padding: 8px 12px;
   font-size: 0.75rem;
   font-weight: 300;
@@ -315,7 +315,7 @@
 .trading-max-fee-input:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-  color: #ffffff79;
+  color: #e0e8fd90;
 }
 
 .trading-max-fee-input::placeholder {
@@ -361,7 +361,7 @@
   background: transparent;
   border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 4px;
-  color: #ffffff79;
+  color: #e0e8fd90;
   padding: 8px 12px;
   font-size: 0.75rem;
   font-weight: 300;
