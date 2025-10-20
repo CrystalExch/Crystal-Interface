@@ -37,10 +37,6 @@
   min-width: 0;
 }
 
-.perps-trade-history-header .oc-cell:hover {
-  color: #ffffff95;
-}
-
 .trade-value-label,
 .closed-pnl-label {
   display: inline-flex;

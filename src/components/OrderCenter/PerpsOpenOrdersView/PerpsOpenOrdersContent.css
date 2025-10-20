@@ -40,10 +40,6 @@
   min-width: 0;
 }
 
-.perps-open-orders-header .oc-cell:hover {
-  color: #ffffff95;
-}
-
 .perps-open-orders-header .oc-cell.actions {
   cursor: default;
   justify-content: center;

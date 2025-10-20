@@ -41,10 +41,6 @@
   min-width: 0;
 }
 
-.perps-order-history-header .oc-cell:hover {
-  color: #ffffff95;
-}
-
 .filled-size-label,
 .reduce-only-label,
 .tpsl-label {

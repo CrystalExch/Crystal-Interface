@@ -42,9 +42,6 @@
   min-width: 0;
 }
 
-.perps-positions-header .oc-cell:hover {
-  color: #ffffff95;
-}
 
 .perps-positions-header .oc-cell.actions {
   cursor: default;
