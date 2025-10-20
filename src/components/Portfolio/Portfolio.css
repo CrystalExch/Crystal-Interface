@@ -922,7 +922,7 @@
     height: auto;
     padding-bottom: 10px
   }
-
+  
   .portfolio-left-column {
     display: contents;
     flex: 1;
@@ -931,7 +931,7 @@
     padding: 0;
     width: 100%
   }
-
+  
   .account-stats-wrapper {
     grid-area: stats;
     margin: 0;
@@ -939,91 +939,269 @@
     min-width: 100%;
     width: 100%
   }
-
+  
   .graph-outer-container {
     grid-area: graph;
     margin: 0;
     min-height: 300px;
     padding: 0
   }
-
+  
   .mobile-stats-container {
     display: flex;
     gap: 4px
   }
-
+  
   .portfolio-specific-page {
     height: auto;
     padding-bottom: 45px;
     overflow: visible
   }
-
+  
   .portfolio-wallet-search-container {
     min-width: 200px
   }
-
+  
   .portfolio-content-container {
     flex-direction: column;
     margin: 0;
     max-height: none;
     padding: 0
   }
-
+  
   .trading-stats-container,
   .account-summary-container {
     max-height: 100%;
     max-width: 100%;
     width: 100%
   }
-
+  
   .controls-container {
     flex-direction: row;
     height: auto;
     padding: 12px;
     display: none
   }
-
+  
   .control-button {
     flex-direction: row;
     gap: 8px;
     height: 40px
   }
-
+  
   .graph-container {
     height: 300px;
     margin: 0;
     border-bottom: 1px solid rgba(179, 184, 249, .09);
     padding-right: 0
   }
-
+  
   .portfolio-graph-container {
     margin: 0;
     padding: 0
   }
-
+  
   .order-section {
     height: fit-content;
     margin: 0;
     margin-bottom: 0;
     width: 100%
   }
-
+  
   .wallets-drag-drop-layout {
     flex-direction: column;
     height: auto;
     min-height: 80vh
   }
 
+  .wallets-left-panel {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(179, 184, 249, .09);
+    margin-bottom: 4px;
+  }
 
+  .wallets-right-panel {
+    width: 100%;
+    flex-direction: column;
+    border-right: none;
+  }
+
+  .drop-zone {
+    width: 100%;
+    margin-bottom: 4px;
+    border-right: none;
+    overflow: visible;
+  }
+
+  .source-zone,
+  .destination-zone {
+    width: 100%;
+    min-height: 200px;
+    flex: none;
+    height: auto;
+    overflow: visible;
+    border-right: none;
+    border-bottom: 1px solid rgba(179, 184, 249, .09);
+    margin-bottom: 4px;
+  }
+
+  .draggable-wallet-item {
+    cursor: default;
+    user-select: none;
+  }
+
+  .draggable-wallet-item[draggable] {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+  }
+
+  .wallet-drag-handle-icon {
+    display: none;
+  }
+
+  .selection-rectangle {
+    display: none;
+  }
+  
   .distribution-settings {
     flex-direction: column;
     gap: 16px;
     align-items: stretch
   }
-
-
+  
   .distribution-actions button {
     flex: 1
+  }
+
+  .drop-zone-header,
+  .drop-zone-header2 {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .drop-zone-wallets,
+  .drag-wallets-list {
+    width: 100%;
+    overflow-x: visible;
+    overflow-y: auto;
+  }
+
+  .dropped-wallet-item,
+  .draggable-wallet-item {
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  .wallets-drag-drop-layout * {
+    box-sizing: border-box;
+  }
+
+  .wallets-drag-drop-layout {
+    overflow: visible;
+  }
+
+  .wallets-right-panel {
+    width: 100%;
+    flex-direction: column;
+    border-right: none;
+    overflow: visible;
+  }
+
+  .wallets-drag-drop-layout {
+    flex-direction: column;
+    height: auto;
+    min-height: 80vh;
+    overflow: visible !important;
+  }
+
+  .wallets-left-panel {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(179, 184, 249, .09);
+    margin-bottom: 4px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .wallets-right-panel {
+    width: 100% !important;
+    flex-direction: column;
+    border-right: none !important;
+    position: relative;
+    z-index: 1;
+  }
+
+  .drop-zone,
+  .source-zone,
+  .destination-zone {
+    width: 100% !important;
+    margin-bottom: 4px;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(179, 184, 249, .09);
+    flex: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    position: relative;
+    z-index: 1;
+  }
+
+  .drop-zone-header,
+  .drop-zone-header2 {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    position: relative;
+    z-index: 2;
+  }
+
+  .drop-zone-wallets,
+  .drag-wallets-list {
+    width: 100% !important;
+    overflow-x: visible !important;
+    overflow-y: auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .dropped-wallet-item,
+  .draggable-wallet-item {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    position: relative;
+  }
+
+  /* Force box-sizing and remove any transforms that might cause issues */
+  .wallets-drag-drop-layout *,
+  .wallets-drag-drop-layout *::before,
+  .wallets-drag-drop-layout *::after {
+    box-sizing: border-box !important;
+  }
+
+  /* Disable problematic interactions */
+  .draggable-wallet-item {
+    cursor: default !important;
+    user-select: none !important;
+    transform: none !important;
+  }
+
+  .draggable-wallet-item[draggable] {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+  }
+
+  .wallet-drag-handle-icon {
+    display: none !important;
+  }
+
+  .selection-rectangle {
+    display: none !important;
   }
 }
 
