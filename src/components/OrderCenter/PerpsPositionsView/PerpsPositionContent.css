@@ -4,7 +4,7 @@
   font-size: 0.75rem;
   font-weight: 300;
   grid-template-columns: 
-    105px 
+    185px 
     minmax(80px, 1fr) 
     minmax(120px, 1fr) 
     minmax(100px, 1.2fr) 
@@ -24,6 +24,8 @@
   z-index: 1;
   width: 100%;
 }
+
+
 
 
 .perps-positions-header .oc-cell {
@@ -51,6 +53,10 @@
   font-weight: 400;
 }
 
+.perps-positions-header .oc-cell.close{
+  justify-content: flex-end;
+  margin-right: 10px;
+}
 .position-value-label, 
 .pnl-label, 
 .funding-label {

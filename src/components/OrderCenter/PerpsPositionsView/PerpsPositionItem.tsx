@@ -93,7 +93,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
           <span className="pnl-value">
             {isProfit ? '+' : ''}{formatBalance(pnlValue, 'usd')}
           </span>
-          <span className="pnl-percentage">
+          <span className="perps-pnl-percentage">
             ({isProfit ? '+' : ''}{pnlPercentage.toFixed(2)}%)
           </span>
         </div>
@@ -121,7 +121,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="oc-cell actions">
+      <div className="oc-cell perps-actions">
         <button 
           className="position-action-btn close-btn"
           onClick={(e) => {

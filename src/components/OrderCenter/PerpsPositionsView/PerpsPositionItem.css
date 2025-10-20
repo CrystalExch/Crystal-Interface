@@ -6,7 +6,7 @@
   display: grid;
   font-size: 0.8rem;
   grid-template-columns: 
-    105px 
+    185px 
     minmax(80px, 1fr) 
     minmax(120px, 1fr) 
     minmax(100px, 1.2fr) 
@@ -115,7 +115,7 @@
 
 .perps-position-item .order-value {
   font-size: 0.8rem;
-  font-weight: 500;
+  line-height: 1;
 }
 
 .perps-position-item .amount {
@@ -131,7 +131,6 @@
 .perps-position-item .pnl-container {
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
 
 .perps-position-item .pnl-container.profit {
@@ -144,12 +143,11 @@
 
 .perps-position-item .pnl-value {
   font-size: 0.8rem;
-  font-weight: 500;
+  line-height: 1;
 }
 
-.perps-position-item .pnl-percentage {
+.perps-position-item .perps-pnl-percentage {
   font-size: 0.7rem;
-  opacity: 0.8;
 }
 
 .perps-position-item .liq-price {
@@ -189,27 +187,17 @@
 }
 
 .perps-position-item .position-action-btn {
-  background: rgba(170, 174, 207, 0.1);
-  border: 1px solid rgba(170, 174, 207, 0.2);
   border-radius: 4px;
-  color: #aaaecf;
+  color: #d8dcff;
   cursor: pointer;
-  font-size: 0.7rem;
-  font-weight: 400;
-  padding: 4px 10px;
+  font-size: 0.75rem;
+  padding: 0 7px;
   transition: all 0.15s ease;
   white-space: nowrap;
-  min-width: 45px;
 }
 
-.perps-position-item .position-action-btn:hover {
-  background: rgba(170, 174, 207, 0.2);
-  border-color: rgba(170, 174, 207, 0.3);
-}
 
 .perps-position-item .position-action-btn.close-btn:hover {
-  background: rgba(240, 103, 103, 0.15);
-  border-color: rgba(240, 103, 103, 0.3);
   color: #f06767;
 }
 
@@ -218,3 +206,20 @@
   pointer-events: none;
 }
 
+
+
+.oc-cell.perps-actions {
+  cursor: default;
+  display: flex;
+  font-size: 0.75rem;
+  font-weight: 300;
+  justify-self: right;
+  margin-right: 15px;
+  padding: 0 0;
+  overflow: hidden;
+  position: relative;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  z-index: 0;
+  gap: 0;
+}
