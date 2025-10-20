@@ -208,7 +208,7 @@
 }
 
 .percentage-value.positive {
-  color: #d8dcff;
+  color: #00b894;
 }
 
 .percentage-value.negative {
@@ -4396,18 +4396,19 @@
   border-left: 1px solid rgba(179, 184, 249, 0.09);
   border-top: 1px solid rgba(179, 184, 249, 0.09);
   width: 100%;
-  min-width: 50% !important;
 }
 
 .portfolio-balance-container{
   overflow: hidden;
   height: 100%;
+  margin-right: 10px;
 }
 
 .port-top-section{
   display: flex;
   width: 100%;
   height: 100%;
+  flex: 1;
   min-height: 330px;
 }
 
@@ -4421,15 +4422,15 @@
 }
 
 .portfolio-balance-header-title{
-    background: none;
-    color: #dfe0ec;
-    cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 300;
-    padding-left: 10px;
-    text-align: center;
-    text-decoration: none;
-    transition: opacity 0.2s, color 0.3s, text-shadow 0.3s;
-    white-space: nowrap;
-    letter-spacing: -0.3px;
+  background: none;
+  color: #dfe0ec;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 300;
+  padding-left: 10px;
+  text-align: center;
+  text-decoration: none;
+  transition: opacity 0.2s, color 0.3s, text-shadow 0.3s;
+  white-space: nowrap;
+  letter-spacing: -0.3px;
 }

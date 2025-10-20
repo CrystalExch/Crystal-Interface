@@ -19,10 +19,8 @@
 }
 
 
-.portfolio-balance-content-wrapper{
+.portfolio-content {
   overflow-y: scroll;
   overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(170, 174, 207, 0.1) transparent;
-  height: calc(100% - 68px);
+  height: 100%;
 }

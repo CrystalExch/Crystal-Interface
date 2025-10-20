@@ -1703,7 +1703,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   });
   const [perpsActiveMarketKey, setperpsActiveMarketKey] = useState(
     location.pathname.startsWith("/perps")
-      ? location.pathname.split("/").pop()?.toUpperCase() || "BTCUSD"
+      ? location.pathname.split("/").pop()?.toUpperCase() == "PERPS" ? "BTCUSD" : location.pathname.split("/").pop()?.toUpperCase() || "BTCUSD"
       : "BTCUSD"
   );
   const [perpsMarketsData, setPerpsMarketsData] = useState<{ [key: string]: any }>({});
@@ -4487,9 +4487,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               setChartData((prev: any) => {
                 if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
                 const [bars, key, flag] = prev;
-                const sel = key?.match(/^\D*/)?.[0];
+                const sel = key?.split('MON').pop() || ''
                 const RESOLUTION_SECS: Record<string, number> = {
-                  '1s': 1, '5s': 5, '15s': 15, '1m': 60, '5m': 300, '15m': 900,
+                  '1S': 1, '5S': 5, '15S': 15, '1m': 60, '5m': 300, '15m': 900,
                   '1h': 3600, '4h': 14400, '1d': 86400,
                 };
                 const resSecs = RESOLUTION_SECS[sel] ?? 60;
@@ -4757,9 +4757,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setChartData((prev: any) => {
                   if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
                   const [bars, key, flag] = prev;
-                  const sel = key?.match(/^\D*/)?.[0];
+                  const sel = key?.split('MON').pop() || ''
                   const RESOLUTION_SECS: Record<string, number> = {
-                    '1s': 1, '5s': 5, '15s': 15, '1m': 60, '5m': 300, '15m': 900,
+                    '1S': 1, '5S': 5, '15S': 15, '1m': 60, '5m': 300, '15m': 900,
                     '1h': 3600, '4h': 14400, '1d': 86400,
                   };
                   const resSecs = RESOLUTION_SECS[sel] ?? 60;

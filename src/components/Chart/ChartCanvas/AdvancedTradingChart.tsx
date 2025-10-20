@@ -626,7 +626,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   })
 
                   const [kline0] = await Promise.all([
-                    fetch(`/api/v1/public/quote/getKline?${params}`, {
+                    fetch(`https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/public/quote/getKline?${params}`, {
                       method: 'GET',
                       headers: { 'Content-Type': 'application/json' }
                     }).then(r => r.json()),

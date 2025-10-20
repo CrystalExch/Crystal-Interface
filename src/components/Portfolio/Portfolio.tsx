@@ -353,7 +353,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   positions,
   onSellPosition,
   scaAddress,
-  nonces
+  nonces,
 }) => {
   const [activeTab, setActiveTab] = useState<PortfolioTab>('spot');
 const [activeSection, setActiveSection] = useState<
@@ -2383,42 +2383,40 @@ useEffect(() => {
             </div>
           </div>
           <div className="order-section">
-            <div className="portfolio-order-center-wrapper">
-              <OrderCenter
-                orders={orders}
-                tradehistory={tradehistory}
-                canceledorders={canceledorders}
-                router={router}
-                address={getActiveAddress()}
-                trades={trades}
-                currentMarket={''}
-                orderCenterHeight={orderCenterHeight}
-                tokenList={tokenList}
-                onMarketSelect={onMarketSelect}
-                setSendTokenIn={setSendTokenIn}
-                setpopup={setpopup}
-                sortConfig={sortConfig}
-                onSort={setSortConfig}
-                tokenBalances={tokenBalances}
-                hideMarketFilter={true}
-                hideBalances={true}
-                activeSection={activeSection}
-                setActiveSection={setActiveSection}
-                filter={filter}
-                setFilter={setFilter}
-                onlyThisMarket={onlyThisMarket}
-                setOnlyThisMarket={setOnlyThisMarket}
-                isPortfolio={true}
-                refetch={refetch}
-                sendUserOperationAsync={sendUserOperationAsync}
-                setChain={setChain}
-                isBlurred={isBlurred}
-                openEditOrderPopup={() => {}}
-                openEditOrderSizePopup={() => {}}
-                marketsData={marketsData}
-              />
-            </div>
-            <div className="portfolio-balance-wrapper">
+            <OrderCenter
+              orders={orders}
+              tradehistory={tradehistory}
+              canceledorders={canceledorders}
+              router={router}
+              address={getActiveAddress()}
+              trades={trades}
+              currentMarket={''}
+              orderCenterHeight={orderCenterHeight}
+              tokenList={tokenList}
+              onMarketSelect={onMarketSelect}
+              setSendTokenIn={setSendTokenIn}
+              setpopup={setpopup}
+              sortConfig={sortConfig}
+              onSort={setSortConfig}
+              tokenBalances={tokenBalances}
+              hideMarketFilter={true}
+              hideBalances={true}
+              activeSection={activeSection}
+              setActiveSection={setActiveSection}
+              filter={filter}
+              setFilter={setFilter}
+              onlyThisMarket={onlyThisMarket}
+              setOnlyThisMarket={setOnlyThisMarket}
+              isPortfolio={true}
+              refetch={refetch}
+              sendUserOperationAsync={sendUserOperationAsync}
+              setChain={setChain}
+              isBlurred={isBlurred}
+              openEditOrderPopup={() => {}}
+              openEditOrderSizePopup={() => {}}
+              marketsData={marketsData}
+            />
+            <div className="portfolio-balance-wrapper" style={{height: orderCenterHeight}}>
               <div className="portfolio-balance-header"><span className="portfolio-balance-header-title">Balances</span></div>
               <PortfolioBalance
                 tokenList={tokenList}

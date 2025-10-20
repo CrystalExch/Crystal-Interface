@@ -343,6 +343,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   }, [data]);
 
   useEffect(() => {
+    if (token.symbol == 'UNKNOWN') return;
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
     widgetRef.current = new (window as any).TradingView.widget({
       container: chartRef.current,
@@ -632,12 +633,12 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         },
 
         subscribeBars: (
-          _symbolInfo: any,
+          symbolInfo: any,
           resolution: string,
           onRealtimeCallback: (bar: any) => void,
           subscriberUID: string,
         ) => {
-          const key = `${token.symbol}MON${resolution}`;
+          const key = `${symbolInfo.name.split('/')[0]}MON${resolution}`;
           realtimeCallbackRef.current[key] = onRealtimeCallback;
           subsRef.current[subscriberUID] = key;
         },

@@ -36,18 +36,16 @@ const PortfolioBalance: React.FC<PortfolioBalanceProps> = ({
       <div className="portfolio-balance-header-wrapper">
         <PortfolioHeader onSort={onSort} sortConfig={sortConfig} />
       </div>
-      <div className="portfolio-balance-content-wrapper">
-        <PortfolioContent
-          tokenList={tokenList}
-          onMarketSelect={onMarketSelect}
-          setSendTokenIn={setSendTokenIn}
-          setpopup={setpopup}
-          sortConfig={sortConfig}
-          tokenBalances={tokenBalances}
-          isBlurred={isBlurred}
-          marketsData={marketsData}
-        />
-      </div>
+      <PortfolioContent
+        tokenList={tokenList}
+        onMarketSelect={onMarketSelect}
+        setSendTokenIn={setSendTokenIn}
+        setpopup={setpopup}
+        sortConfig={sortConfig}
+        tokenBalances={tokenBalances}
+        isBlurred={isBlurred}
+        marketsData={marketsData}
+      />
     </div>
   );
 };

@@ -655,7 +655,7 @@ const Perps: React.FC<PerpsProps> = ({
         size: Math.abs(position.openSize).toString(),
         positionValue: Math.abs(Number(marketData?.oraclePrice) * Number(position.openSize)),
         entryPrice: (Number(position.openValue) / Number(position.openSize)).toString(),
-        markPrice: Number(marketData?.oraclePrice).toFixed((marketData?.lastPrice.toString().split(".")[1] || "").length),
+        markPrice: Number(marketData?.oraclePrice).toFixed((marketData?.lastPrice?.toString().split(".")[1] || "").length),
         pnl: Number(marketData?.oraclePrice) * Number(position.openSize) - Number(position.openValue),
         liqPrice: 0,
         margin: 0,

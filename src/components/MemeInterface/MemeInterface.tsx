@@ -3031,7 +3031,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                           );
                         })}
 
-                        {/* Section divider if there are both types */}
                         {hasTokenHolders && walletsWithoutToken.length > 0 && (
                           <div className="meme-wallets-section-label">
                             <button
@@ -3064,7 +3063,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                           </div>
                         )}
 
-                        {/* Wallets without token section */}
                         {walletsWithoutToken.map((wallet, index) => {
                           const balance = getWalletBalance(wallet.address);
                           const isActive = isWalletActive(wallet.privateKey);
@@ -3179,9 +3177,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   </div>
                   <button
                     className="meme-balance-max-buy"
-                    onClick={() =>
+                    onClick={() => {
                       setTradeAmount(formatTradeAmount(getTotalSelectedWalletsBalance()))
-                    }
+                      setSliderPercent(100);
+                    }}
                   >
                     MAX
                   </button>
@@ -3197,24 +3196,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   <button
                     className="meme-balance-max-sell"
                     onClick={() => {
-                      if (!account?.address || !token.id) return;
-
-                      const balance =
-                        walletTokenBalances[account.address]?.[token.id];
-                      if (!balance || balance <= 0n) return;
-
-                      const decimals = tokendict?.[token.id]?.decimals || 18;
-                      let maxAmount = balance;
-
-                      if (maxAmount > 1n) {
-                        maxAmount = maxAmount - 1n;
-                      }
-
-                      const maxAmountFormatted = customRound(
-                        Number(maxAmount) / 10 ** Number(decimals),
-                        3,
-                      );
-                      setTradeAmount(maxAmountFormatted);
+                      setTradeAmount(formatTradeAmount(getTotalSelectedWalletsTokenBalance()));
                       setSliderPercent(100);
                     }}
                   >
@@ -3287,7 +3269,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     >
                       <img
                         src={editicon}
-                        alt="Edit"
                         className={`meme-preset-edit-icon ${isPresetEditMode ? 'active' : ''}`}
                       />
                     </button>
