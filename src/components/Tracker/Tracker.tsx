@@ -7,6 +7,7 @@ import monadicon from '../../assets/monadlogo.svg';
 import trash from '../../assets/trash.svg';
 import { settings } from '../../settings';
 import { fetchPortfolio, type GqlPosition } from './portfolioGql';
+import { initTradeStream, onTradeStream, type TradeMsg } from '../../shared/wsHijack';
 import { createPublicClient, http } from 'viem';
 import ImportWalletsPopup from './ImportWalletsPopup';
 import LiveTradesFiltersPopup from './LiveTradesFiltersPopup/LiveTradesFiltersPopup';
@@ -634,14 +635,6 @@ const Tracker: React.FC<TrackerProps> = ({
     return () => { stop = true; clearInterval(id); };
   }, [JSON.stringify(trackedWallets.map(w => w.address))]);
 
-
-
-
-
-
-
-
-
   useEffect(() => {
     if (Object.keys(walletTokenBalances).length === 0) return;
     setTrackedWallets(prev => prev.map(wallet => {
@@ -1242,6 +1235,42 @@ const Tracker: React.FC<TrackerProps> = ({
       document.removeEventListener('keydown', handleGlobalKeyDown);
     };
   }, []);
+
+  /*Live Trades */
+  useEffect(() => {
+    initTradeStream();
+    const off = onTradeStream((m: TradeMsg) => {
+      const a = String(
+        (typeof m.account === 'string' ? m.account : m.account?.id) ||
+        m.trader || m.sender || m.owner || m.from || ''
+      ).toLowerCase();
+      if (!a || !trackedSetRef.current.has(a)) return;
+
+      const ain = Number(m.amountIn ?? 0),
+            aout = Number(m.amountOut ?? 0),
+            price = Number(m.priceNativePerTokenWad ?? 0);
+      if ((ain <= 0 && aout <= 0) || price <= 0) return;
+
+      ingestExternalTrades([
+        {
+          id: m.id || m.transaction?.id || `${Date.now()}_${Math.random()}`,
+          account: { id: a },
+          isBuy: Boolean(m.isBuy || m.side === 'buy' || (m.from && !m.to)),
+          amountIn: BigInt(Math.floor(ain * 1e18)),
+          amountOut: BigInt(Math.floor(aout * 1e18)),
+          priceNativePerTokenWad: BigInt(Math.floor(price * 1e18)),
+          token: m.token || {},
+          timestamp: m.timestamp || Math.floor(Date.now() / 1000),
+          transaction: m.transaction,
+        },
+      ]);
+    });
+    return off;
+  }, [activechain]);
+
+
+
+
 
   const renderWalletManager = () => {
     const filteredWallets = getFilteredWallets();
