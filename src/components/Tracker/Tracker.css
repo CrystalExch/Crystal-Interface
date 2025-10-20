@@ -399,9 +399,18 @@
 .tracker-wallet-actions {
   min-width: 120px;
   flex: 0 0 120px;
+  display: flex;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
 }
 
-.tracker-wallet-item:hover .tracker-wallet-actions { display: flex; }
+
+.tracker-wallet-item:hover .tracker-wallet-actions { 
+  opacity: 1;
+  visibility: visible;
+}
+
 .tracker-action-button {
   background: transparent; border: none; color: rgba(255,255,255,0.4); cursor: pointer; padding: 4px; border-radius: 4px;
   transition: all .2s; display: flex; align-items: center; justify-content: center; min-width: fit-content;
@@ -870,11 +879,67 @@
 .tracker-delete-warning { color: rgba(255,255,255,0.8); font-size: .85rem; line-height: 1.4; margin-bottom: 20px; }
 .tracker-delete-warning p { margin: 8px 0; }
 .tracker-delete-confirm-button {
-  background: rgba(255,107,107,0.2); border: 1px solid rgba(255,107,107,0.3); border-radius: 8px; color: #ff6b6b;
-  padding: 10px 20px; font-size: .85rem; cursor: pointer; transition: all .2s; flex: 1;
+  background: rgba(235, 112, 112, 0.075);
+  border: none;
+  border-radius: 20px;
+  color: rgb(235, 112, 112);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 10px 20px;
+  transition: all 0.2s ease;
+  flex: 1;
 }
-.tracker-delete-confirm-button:hover { background: rgba(255,107,107,0.3); border-color: rgba(255,107,107,0.5); }
 
+.tracker-delete-confirm-button:hover {
+  background: rgba(235, 112, 112, 0.15);
+  color: rgb(255, 107, 107);
+}
+
+.checkbox-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.tracker-delete-checkbox {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: transparent;
+  border: 1px solid rgba(199, 198, 242, 0.1);
+  border-radius: 3px;
+  cursor: pointer;
+  height: 16px;
+  position: relative;
+  transition: all 0.2s ease;
+  width: 16px;
+}
+
+.tracker-delete-checkbox:checked {
+  border-color: #d8dcff;
+}
+
+.tracker-delete-checkbox:checked::after {
+  background-color: #d8dcff;
+  border-radius: 2px;
+  content: '';
+  height: 11px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  width: 10.5px;
+}
+
+.checkbox-label {
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 300;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
 .blurred { filter: blur(6px); user-select: none; }
 
 .tracker-wallet-item.drag-over-top { border-top: 2px solid #aaaecf; }
@@ -1085,6 +1150,27 @@
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.75rem;
   letter-spacing: -0.2px;
+}
+
+.tracker-add-wallet-empty-btn {
+  background: linear-gradient(135deg, #aaaecf 0%, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
+  border: none; 
+  color: #0f0f12; 
+  font-weight: 500;
+  box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
+  display: flex; 
+  align-items: center; 
+  padding: 8px 16px; 
+  font-size: .85rem; 
+  cursor: pointer;
+  transition: all .2s; 
+  letter-spacing: -.3px; 
+  border-radius: 8px;
+  margin: 0 auto;
+}
+
+.tracker-add-wallet-empty-btn:hover { 
+  filter: brightness(1.1); 
 }
 
 .tracker-emoji-picker-backdrop {
