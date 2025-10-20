@@ -1171,14 +1171,32 @@ const Tracker: React.FC<TrackerProps> = ({
   const upsertMarket = (t: { tokenAddr?: string; symbol?: string; name?: string; price?: number; isBuy?: boolean; amountNative?: number; ts?: number; wallet?: string; emoji?: string; }) => {
     const id = (t.tokenAddr || t.symbol)?.toLowerCase();
     if (!id) return;
+
     const m = marketsRef.current.get(id);
-    const nowIso = new Date((t.ts ?? Math.floor(Date.now()/1000))*1000).toISOString();
-    const price = t.price ?? m?.price ?? 0;
-    const mk = price*SUPPLY;
+    const nowIso = new Date((t.ts ?? Math.floor(Date.now()/1000)) * 1000).toISOString();
+
+    // keep last non-zero price if this update has no price
+    const price = (t.price != null && t.price > 0) ? t.price : (m?.price ?? 0);
+    const mk = (price || 0) * SUPPLY;
+
     const bought = t.isBuy ? (t.amountNative ?? 0) : 0;
-    const sold = !t.isBuy ? (t.amountNative ?? 0) : 0;
-    const trades = (m?.trades ?? []).slice(0,49);
-    if (t.wallet) trades.unshift({ id: `${id}_${Date.now()}`, wallet: t.wallet, emoji: t.emoji ?? '👤', timeInTrade: '—', bought, boughtTxns: t.isBuy ? 1 : 0, sold, soldTxns: t.isBuy ? 0 : 1, pnl: 0, remaining: 0 });
+    const sold   = !t.isBuy ? (t.amountNative ?? 0) : 0;
+
+    // Always record a trade row so the card can expand immediately
+    const trades = (m?.trades ?? []).slice(0, 49);
+    trades.unshift({
+      id: `${id}_${Date.now()}`,
+      wallet: t.wallet || 'Unknown',
+      emoji: (t.emoji || '👤'),
+      timeInTrade: '—',
+      bought,
+      boughtTxns: t.isBuy ? 1 : 0,
+      sold,
+      soldTxns: t.isBuy ? 0 : 1,
+      pnl: 0,
+      remaining: 0
+    });
+
     marketsRef.current.set(id, {
       id,
       tokenAddress: t.tokenAddr?.toLowerCase() || id,
@@ -1209,8 +1227,13 @@ const Tracker: React.FC<TrackerProps> = ({
       lastTransaction: nowIso,
       trades
     });
-    if (demoMode.monitor) { setDemoMode(v=>({...v, monitor:false})); if (!m) setMonitorTokens([]); }
+
+    if (demoMode.monitor) {
+      setDemoMode(v => ({ ...v, monitor: false }));
+      if (!m) setMonitorTokens([]);
+    }
   };
+
 
 
 
@@ -1634,10 +1657,17 @@ const Tracker: React.FC<TrackerProps> = ({
 
                       <div className="tracker-monitor-right-section">
                         <div className="tracker-monitor-buy-sell-row">
-                          <div className="tracker-monitor-buy-amount">...</div>
-                          <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
-                          <div className="tracker-monitor-sell-amount">...</div>
+                        <div className="tracker-monitor-buy-amount">
+                          +{formatValue(totalBought)}
+                          <span className="tracker-monitor-tx-mini"> ({totalBuys} tx)</span>
                         </div>
+                        <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
+                        <div className="tracker-monitor-sell-amount">
+                          −{formatValue(totalSold)}
+                          <span className="tracker-monitor-tx-mini"> ({totalSells} tx)</span>
+                        </div>
+                      </div>
+
 
                         <div className="tracker-monitor-quickbuy-section">
                           <button
@@ -1711,62 +1741,63 @@ const Tracker: React.FC<TrackerProps> = ({
                     </div>
                   </div>
 
-                  {isExpanded && token.trades.length > 0 && (
+                  {isExpanded && (
                     <div className="tracker-monitor-trades-expanded">
-                      <div className="tracker-monitor-trades-table-header">
-                        <div className="header-cell">Wallet</div>
-                        <div className="header-cell">Time in Trade</div>
-                        <div className="header-cell">Bought</div>
-                        <div className="header-cell">Sold</div>
-                        <div className="header-cell">PNL</div>
-                        <div className="header-cell">Remaining</div>
-                      </div>
-                      {token.trades.map((trade) => (
-                        <div key={trade.id} className="tracker-monitor-trade-row-expanded">
-                          <div className="trade-wallet-col">
-                            <span className="trade-emoji">{trade.emoji}</span>
-                            <span className="trade-wallet-name">{trade.wallet}</span>
-                          </div>
-                          <div className="trade-time-col">
-                            {trade.exitStatus && (
-                              <span className="exit-badge">{trade.exitStatus}</span>
-                            )}
-                            <span className="time-text">{trade.timeInTrade}</span>
-                          </div>
-                          <div className="trade-bought-col">
-                            <div className="trade-amount-with-icon">
-                              <span className="amount">{trade.bought.toFixed(3)}</span>
-                              {monitorCurrency === 'MON' && (
-                                <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
-                              )}
-                            </div>
-                            <span className="txns-text">{trade.boughtTxns} txns</span>
-                          </div>
-                          <div className="trade-sold-col">
-                            <div className="trade-amount-with-icon">
-                              <span className="amount">{trade.sold.toFixed(3)}</span>
-                              {monitorCurrency === 'MON' && (
-                                <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
-                              )}
-                            </div>
-                            <span className="txns-text">{trade.soldTxns} txns</span>
-                          </div>
-                          <div className={`trade-pnl-col ${trade.pnl >= 0 ? 'positive' : 'negative'} trade-pnl-with-icon`}>
-                            <span>{trade.pnl >= 0 && '+'}{trade.pnl.toFixed(3)}</span>
-                            {monitorCurrency === 'MON' && (
-                              <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
-                            )}
-                          </div>
-                          <div className="trade-remaining-col trade-remaining-with-icon">
-                            <span>{trade.remaining.toFixed(3)}</span>
-                            {monitorCurrency === 'MON' && (
-                              <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
-                            )}
+                      {token.trades.length === 0 ? (
+                        <div className="tracker-empty-state" style={{ padding: '12px 0' }}>
+                          <div className="tracker-empty-content">
+                            <p>No trades recorded yet.</p>
                           </div>
                         </div>
-                      ))}
+                      ) : (
+                        <>
+                          <div className="tracker-monitor-trades-table-header">
+                            <div className="header-cell">Wallet</div>
+                            <div className="header-cell">Time in Trade</div>
+                            <div className="header-cell">Bought</div>
+                            <div className="header-cell">Sold</div>
+                            <div className="header-cell">PNL</div>
+                            <div className="header-cell">Remaining</div>
+                          </div>
+                          {token.trades.map((trade) => (
+                            <div key={trade.id} className="tracker-monitor-trade-row-expanded">
+                              <div className="trade-wallet-col">
+                                <span className="trade-emoji">{trade.emoji}</span>
+                                <span className="trade-wallet-name">{trade.wallet}</span>
+                              </div>
+                              <div className="trade-time-col">
+                                {trade.exitStatus && <span className="exit-badge">{trade.exitStatus}</span>}
+                                <span className="time-text">{trade.timeInTrade}</span>
+                              </div>
+                              <div className="trade-bought-col">
+                                <div className="trade-amount-with-icon">
+                                  <span className="amount">{trade.bought.toFixed(3)}</span>
+                                  {monitorCurrency === 'MON' && <img src={monadicon} style={{ width: 10, height: 10 }} alt="MON" />}
+                                </div>
+                                <span className="txns-text">{trade.boughtTxns} txns</span>
+                              </div>
+                              <div className="trade-sold-col">
+                                <div className="trade-amount-with-icon">
+                                  <span className="amount">{trade.sold.toFixed(3)}</span>
+                                  {monitorCurrency === 'MON' && <img src={monadicon} style={{ width: 10, height: 10 }} alt="MON" />}
+                                </div>
+                                <span className="txns-text">{trade.soldTxns} txns</span>
+                              </div>
+                              <div className={`trade-pnl-col ${trade.pnl >= 0 ? 'positive' : 'negative'} trade-pnl-with-icon`}>
+                                <span>{trade.pnl >= 0 && '+'}{trade.pnl.toFixed(3)}</span>
+                                {monitorCurrency === 'MON' && <img src={monadicon} style={{ width: 10, height: 10 }} alt="MON" />}
+                              </div>
+                              <div className="trade-remaining-col trade-remaining-with-icon">
+                                <span>{trade.remaining.toFixed(3)}</span>
+                                {monitorCurrency === 'MON' && <img src={monadicon} style={{ width: 10, height: 10 }} alt="MON" />}
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
                     </div>
                   )}
+
                 </div>
               );
 
