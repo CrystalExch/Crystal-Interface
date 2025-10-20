@@ -4388,7 +4388,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     try {
       const ws = new WebSocket(settings.chainConfig[activechain].wssurl);
       teRef.current = ws;
-
       const connectionTimeout = setTimeout(() => {
         if (ws.readyState === WebSocket.CONNECTING) {
           ws.close(1000, 'connection timeout');

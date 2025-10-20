@@ -1280,8 +1280,7 @@ const Tracker: React.FC<TrackerProps> = ({
     };
   }, []);
 
-  /*Live Trades */
-  useEffect(() => {
+  /* useEffect(() => {
     initTradeStream();
     const off = onTradeStream((m: TradeMsg) => {
       const a = String(
@@ -1328,9 +1327,7 @@ const Tracker: React.FC<TrackerProps> = ({
 
     });
     return off;
-  }, [activechain]);
-
-  /*Monitor */
+  }, [activechain]); */
 
   useEffect(()=>{
     const id=setInterval(()=>setMarketsTick(x=>x+1),15000); return ()=>clearInterval(id); 

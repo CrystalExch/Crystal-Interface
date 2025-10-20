@@ -492,17 +492,18 @@ const LP: React.FC<LPProps> = ({
 
       // Step 1: Validating
       setDepositVaultStep('validating');
-      await new Promise(resolve => setTimeout(resolve, 500));
 
       const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
       if (account.chainId !== targetChainId) {
         await setChain();
       }
+      else {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
 
       const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultInputStrings.quote) * Number(10n ** tokendict[selectedVaultData?.quoteAddress]?.decimals)));
       const amountBaseDesired = BigInt(Math.round(parseFloat(vaultInputStrings.base) * Number(10n ** tokendict[selectedVaultData?.baseAddress]?.decimals)));
 
-      // Step 2: Approve Base Token if needed
       if (selectedVaultData?.baseAddress?.toLowerCase() !== settings.chainConfig[activechain]?.eth?.toLowerCase() && vaultInputStrings.base && parseFloat(vaultInputStrings.base) > 0) {
         setDepositVaultStep('approve-base');
         const approveFirstUo = {
@@ -526,7 +527,6 @@ const LP: React.FC<LPProps> = ({
         await sendUserOperationAsync({ uo: approveFirstUo });
       }
 
-      // Step 3: Approve Quote Token if needed
       if (selectedVaultData?.quoteAddress?.toLowerCase() !== settings.chainConfig[activechain]?.eth?.toLowerCase() && vaultInputStrings.quote && parseFloat(vaultInputStrings.quote) > 0) {
         setDepositVaultStep('approve-quote');
         const approveSecondUo = {
@@ -550,10 +550,9 @@ const LP: React.FC<LPProps> = ({
         await sendUserOperationAsync({ uo: approveSecondUo });
       }
 
-      // Step 4: Deposit
       setDepositVaultStep('depositing');
 
-      const ethValue = selectedVaultData.baseAddress?.toLowerCase() === settings.chainConfig[activechain]?.eth?.toLowerCase()
+      const ethValue = (selectedVaultData.baseAddress?.toLowerCase() == settings.chainConfig[activechain]?.eth?.toLowerCase() || selectedVaultData.quoteAddress?.toLowerCase() == settings.chainConfig[activechain]?.eth?.toLowerCase())
         ? amountBaseDesired
         : 0n;
 
@@ -1678,7 +1677,7 @@ const LP: React.FC<LPProps> = ({
 
                       <button
                         className={`continue-button ${(depositVaultStep === 'idle' && (!isVaultDepositEnabled() || isVaultDepositSigning)) ? '' : 'enabled'} ${depositVaultStep === 'success' ? 'success' : ''} ${(vaultFirstTokenExceedsBalance || vaultSecondTokenExceedsBalance) ? 'lp-button-balance-error' : ''}`}
-                        disabled={depositVaultStep === 'idle' && (!isVaultDepositEnabled() || isVaultDepositSigning)}
+                        disabled={(!isVaultDepositEnabled() || isVaultDepositSigning || depositVaultStep === 'success')}
                         onClick={handleVaultDeposit}
                       >
                         {depositVaultStep === 'success' ? (
@@ -1847,7 +1846,7 @@ const LP: React.FC<LPProps> = ({
                       )}
                       <button
                         className={`continue-button ${(withdrawVaultStep === 'idle' && (withdrawPercentage == '' || parseFloat(withdrawPercentage) == 0 || withdrawExceedsBalance || !withdrawPreview || isVaultWithdrawSigning)) ? '' : 'enabled'} ${withdrawVaultStep === 'success' ? 'success' : ''} ${withdrawExceedsBalance ? 'lp-button-balance-error' : ''}`}
-                        disabled={withdrawVaultStep === 'idle' && (withdrawPercentage == '' || parseFloat(withdrawPercentage) == 0 || withdrawExceedsBalance || !withdrawPreview || isVaultWithdrawSigning)}
+                        disabled={(withdrawVaultStep === 'success' || withdrawPercentage == '' || parseFloat(withdrawPercentage) == 0 || withdrawExceedsBalance || !withdrawPreview || isVaultWithdrawSigning)}
                         onClick={handleVaultWithdraw}
                       >
                         {withdrawVaultStep === 'success' ? (

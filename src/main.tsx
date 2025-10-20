@@ -1,10 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import './shared/wsHijack'
 import { Buffer } from 'buffer';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { WagmiProvider } from 'wagmi';
-import { initTradeStream } from './shared/wsHijack';
 import Loader from './App.tsx';
 import { alchemyconfig } from './config.ts';
 import { cookieToInitialState } from "@account-kit/core";
@@ -15,8 +13,6 @@ import { SharedContextProvider } from './contexts/SharedContext.tsx';
 import GlobalInitializer from './GlobalInitializer.tsx';
 
 import './index.css';
-
-initTradeStream();
 
 const originalFetch = window.fetch;
 

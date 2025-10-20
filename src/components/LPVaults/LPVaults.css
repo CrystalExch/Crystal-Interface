@@ -1243,14 +1243,14 @@
   width: 100%;
 }
 
-.add-liquidity-button:hover,
-.create-vault-button:hover,
-.deposit-button:hover,
-.create-button.enabled:hover,
-.save-button:hover,
-.vault-deposit-btn:hover,
-.vault-confirm-button:hover,
-.vault-detail-deposit-btn:hover {
+.add-liquidity-button:hover:not(:disabled),
+.create-vault-button:hover:not(:disabled),
+.deposit-button:hover:not(:disabled),
+.create-button.enabled:hover:not(:disabled),
+.save-button:hover:not(:disabled),
+.vault-deposit-btn:hover:not(:disabled),
+.vault-confirm-button:hover:not(:disabled),
+.vault-detail-deposit-btn:hover:not(:disabled) {
   filter: brightness(1.1)
 }
 
@@ -2307,11 +2307,6 @@
 .create-button:disabled {
   cursor: not-allowed;
   opacity: .5
-}
-
-.create-button.enabled:hover,
-.save-button:hover {
-  filter: brightness(1.1)
 }
 
 .vault-strategy-detail {
@@ -3423,7 +3418,7 @@
   gap: 1rem;
   height: 30px;
   margin-bottom: 2px;
-  padding: .2rem .8rem;
+  padding: .2rem 1rem;
   transition: background-color.2s ease
 }
 

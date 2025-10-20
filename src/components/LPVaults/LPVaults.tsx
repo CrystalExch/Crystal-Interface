@@ -1322,7 +1322,7 @@ const updateVaultStrategyIndicatorPosition = useCallback(
                                     : ''}
                                 </div>
                                 <div className="vault-depositors-col">
-                                  {(d.shares * 100 / Number(stableSelectedVault.totalShares)).toFixed(2)}%
+                                  {((d.shares * 100 / Number(stableSelectedVault.totalShares)) || 0).toFixed(2)}%
                                 </div>
                                 <div className="vault-depositors-col">
                                   {d.depositCount}

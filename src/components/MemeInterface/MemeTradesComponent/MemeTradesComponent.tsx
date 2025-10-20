@@ -853,7 +853,7 @@ export default function MemeTradesComponent({
           </button>
         </div>
 
-        {devActive && (
+        {false && (
           <div className="meme-filter-status">
             <div className="filter-status-text">
               Showing {viewTrades.length} transactions of maker{' '}
@@ -867,7 +867,7 @@ export default function MemeTradesComponent({
             </button>
           </div>
         )}
-        {youActive && (
+        {false && (
           <div className="meme-filter-status">
             <div className="filter-status-text">
               Showing {viewTrades.length} of your transactions
@@ -880,7 +880,7 @@ export default function MemeTradesComponent({
             </button>
           </div>
         )}
-        {hasActiveFilters && !devActive && !youActive && (
+        {false && !devActive && !youActive && (
           <div className="meme-filter-status">
             <div className="filter-status-text">
               Showing {viewTrades.length} filtered transactions

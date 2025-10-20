@@ -1852,11 +1852,6 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
   opacity: 1;
 }
 
-.pause-text {
-  font-weight: 500;
-  letter-spacing: -0.3px;
-}
-
 .explorer-column-title-section {
   align-items: center;
   display: flex;

@@ -172,7 +172,7 @@
 .meme-oc-item {
   align-items: center;
   display: grid;
-  height: 40px;
+  height: 42.2px;
   padding: 4px 15px;
   transition: background-color 0.2s ease;
   width: 100%;
@@ -353,7 +353,7 @@
 .meme-token-amount {
   color: #e3e5f39c;
   font-size: 0.7rem;
-  margin-top: -3px;
+  margin-top: -2px;
 }
 
 .meme-pnl {

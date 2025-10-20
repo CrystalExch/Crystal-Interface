@@ -1176,8 +1176,9 @@ const Perps: React.FC<PerpsProps> = ({
     };
 
     const connectWebSocket = async () => {
+      const accountInfo = await fetchData();
       if (liveStreamCancelled) return;
-      const accountId = (await fetchData()).id;
+      const accountId = accountInfo.id;
       setSigner((prev: any) => ({ ...prev, accountId }))
       const ts = Date.now().toString()
       const path = "/api/v1/private/ws";
