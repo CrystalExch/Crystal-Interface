@@ -13861,7 +13861,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           <div className="settings-section-subtitle">
                             {t('configureEachModeIndependently')}
                           </div>
-                          <div className="layout-section" style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                          <div className="layout-section" style={{ display: 'flex', gap: '12px' }}>
                             <button
                               className={`control-layout-option ${activeTradingMode === 'spot' ? 'active' : ''}`}
                               onClick={() => {
@@ -17290,7 +17290,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               <div className={`sendbg ${connected && sendAmountIn > mainWalletBalances[sendTokenIn] ? 'exceed-balance' : ''}`}>
 
                 <div className="sendbutton1container">
-                  <div className="send-Send">{t('send')}</div>
+                  <div className="send-Send">{t('deposit')}</div>
                   <button
                     className="send-button1"
                     onClick={() => {
@@ -17425,7 +17425,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   <div className="send-balance-max-container">
                     <div className="send-balance1">
                       <img src={walleticon} className="send-balance-wallet-icon" />{' '}
-                      {formatDisplayValue(mainWalletBalances[sendTokenIn], Number(tokendict[sendTokenIn].decimals))}
+                      {formatDisplayValue(mainWalletBalances[sendTokenIn] || 0, Number(tokendict[sendTokenIn].decimals))}
                     </div>
                     <div
                       className="send-max-button"
@@ -17509,8 +17509,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                         setrecipient(e.target.value);
                       }
                     }}
-                    value={recipient}
+                    value={address}
                     placeholder={t('enterWalletAddress')}
+                    disabled
                   />
                   <button
                     className="address-paste-button"
@@ -17556,10 +17557,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       if (sendTokenIn == eth) {
                         hash = await sendUserOperationAsync({
                           uo: sendeth(
-                            recipient as `0x${string}`,
+                            address as `0x${string}`,
                             sendAmountIn,
                           )
-                        });
+                        }, 0n, 0n, true, '', 0);
                         if (!client) {
                           txPending.current = true
                         }
@@ -17574,16 +17575,16 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           ),
                           0,
                           '',
-                          recipient,
+                          address,
                         );
                       } else {
                         hash = await sendUserOperationAsync({
                           uo: sendtokens(
                             sendTokenIn as `0x${string}`,
-                            recipient as `0x${string}`,
+                            address as `0x${string}`,
                             sendAmountIn,
                           )
-                        });
+                        }, 0n, 0n, true, '', 0);
                         if (!client) {
                           txPending.current = true
                         }
@@ -17599,9 +17600,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           ),
                           0,
                           '',
-                          recipient,
+                          address,
                         );
                       }
+                      setpopup(4)
                       setSendUsdValue('')
                       setSendInputAmount('');
                       setSendAmountIn(BigInt(0));
@@ -17623,7 +17625,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           ),
                           0,
                           "",
-                          recipient,
+                          address,
                         );
                       }
                     } finally {
@@ -17636,27 +17638,27 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       : handleSetChain()
                   }
                 }}
-                disabled={sendPopupButtonDisabled || isSigning}
+                disabled={(sendAmountIn === BigInt(0) ||
+                  sendAmountIn > tokenBalances[sendTokenIn] ||
+                  !/^(0x[0-9a-fA-F]{40})$/.test(address)) &&
+                connected &&
+                userchain == activechain || isSigning}
               >
                 {isSigning ? (
                   <div className="button-content">
                     <div className="loading-spinner" />
                     {validOneCT ? t('') : t('signTransaction')}
                   </div>
-                ) : !connected ? (
-                  t('connectWallet')
-                ) : sendPopupButton == 0 ? (
+                ) : sendAmountIn === BigInt(0) ? (
                   t('enterAmount')
-                ) : sendPopupButton == 1 ? (
-                  t('enterWalletAddress')
-                ) : sendPopupButton == 2 ? (
-                  t('send')
-                ) : sendPopupButton == 3 ? (
+                ) : sendAmountIn > tokenBalances[sendTokenIn] ? (
                   t('insufficient') +
                   (tokendict[sendTokenIn].ticker || '?') +
                   ' ' +
                   t('bal')
-                ) : sendPopupButton == 4 ? (
+                ) : connected && userchain == activechain ? (
+                  t('deposit')
+                ) : connected ? (
                   `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
                 ) : (
                   t('connectWallet')
@@ -17752,8 +17754,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       </svg>
                     </div>
                     <div className="trading-mode-info">
-                      <h3>Regular Trading</h3>
-                      <p>Standard wallet-based trading with manual approvals</p>
+                      <h3>Classic Trading</h3>
+                      <p>Trade and sign transactions with your self-custodial wallet</p>
                     </div>
                   </div>
 
@@ -17762,8 +17764,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" ><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
                     </div>
                     <div className="trading-mode-info">
-                      <h3>Enable 1CT</h3>
-                      <p>Faster execution, better prices, and advanced features</p>
+                      <h3>One Click Trading</h3>
+                      <p>Instantly sign transactions while retaining self-custody</p>
                     </div>
                     <div className="trading-mode-status">
                       <button
@@ -17772,7 +17774,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           try {
                             setIsUsernameSigning(true);
                             await createSubWallet();
-                            setpopup(12);
+                            setpopup(25);
                           } catch (error) {
                             console.error('Failed to enable 1CT:', error);
                           } finally {
@@ -17783,7 +17785,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       >
                         {isUsernameSigning ? (
                           <div className="button-content">
-                            <div className="loading-spinner" />
+                            <div style={{position: 'absolute'}} className="loading-spinner" />
+                            <span style={{ opacity: 0 }}>Enable 1CT</span>
                           </div>
                         ) : (
                           'Enable 1CT'

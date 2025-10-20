@@ -7,7 +7,6 @@ import monadicon from '../../assets/monadlogo.svg';
 import trash from '../../assets/trash.svg';
 import { settings } from '../../settings';
 import { fetchPortfolio, type GqlPosition } from './portfolioGql';
-import { initTradeStream, onTradeStream, type TradeMsg } from '../../shared/wsHijack';
 import { createPublicClient, http } from 'viem';
 import ImportWalletsPopup from './ImportWalletsPopup';
 import LiveTradesFiltersPopup from './LiveTradesFiltersPopup/LiveTradesFiltersPopup';

@@ -524,8 +524,13 @@ export const translations: any = {
     'resetKeybinds': 'Reset Keybinds',
     resetTab: 'Reset Tab',
     spectatedTradingStats:'SPECTATED TRADING STATS',
-    spectatingPerformance: 'SPECTATING PERFORMANCE'
-
+    spectatingPerformance: 'SPECTATING PERFORMANCE',
+    tradingModeSettings: 'Trading Mode',
+    configureEachModeIndependently: 'Select which trading interface to configure',
+    spot: 'Spot',
+    perps: 'Perps',
+    spectra: 'Spectra',
+    spectraUsesFixedLayout: 'Spectra uses a fixed layout',
   },
   CN: {
     trade: "交易",
