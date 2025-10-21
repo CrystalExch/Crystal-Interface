@@ -196,7 +196,7 @@
 .tracker-wallets-header {
   display: flex;
   align-items: center;
-  padding: 8px 20px;
+  padding: 6px 20px; 
   border-bottom: 1px solid rgba(179,184,249,0.1); 
   position: sticky; 
   top: 0; 
@@ -400,9 +400,12 @@
   min-width: 120px;
   flex: 0 0 120px;
   display: flex;
+  justify-content: flex-end;
+  gap: 8px;
   opacity: 0;
   visibility: hidden;
   transition: all 0.2s ease;
+  margin-left: auto;
 }
 
 
@@ -482,7 +485,17 @@
 }
 
 .tracker-live-trades .detail-trades-row:hover { background: rgba(179,184,249,0.03); }
-.tracker-live-trades .detail-trades-row:last-child { border-bottom: none; }
+.tracker-live-trades .detail-trades-row:last-child { 
+  border-bottom: none; 
+}
+
+.tracker-live-trades .tracker-empty-state {
+  border-bottom: none;
+}
+
+.tracker-live-trades .tracker-empty-content {
+  border-bottom: none;
+}
 .tracker-live-trades .detail-trades-row.buy { background-image: linear-gradient(90deg, rgba(67,254,154,0.08), transparent); }
 .tracker-live-trades .detail-trades-row.sell { background-image: linear-gradient(90deg, rgba(235,112,112,0.08), transparent); }
 .tracker-live-trades .detail-trades-row.buy:hover { background-image: linear-gradient(90deg, rgba(67,254,154,0.08), transparent); background-color: rgba(179,184,249,0.03); }
@@ -497,6 +510,7 @@
 }
 
 /* Live Trades Column Sizing - Consistent between header and rows */
+/* Updated column sizing for better distribution */
 .tracker-live-trades .detail-trades-time,
 .tracker-live-trades .detail-trades-header-cell.detail-trades-time,
 .tracker-live-trades .detail-trades-header-cell:nth-child(1) {
@@ -508,7 +522,7 @@
 .tracker-live-trades .detail-trades-header-cell.detail-trades-account,
 .tracker-live-trades .detail-trades-header-cell:nth-child(2) {
   min-width: 180px;
-  flex: 2;
+  flex: 2.5;
 }
 
 .tracker-live-trades .detail-trades-col:nth-child(3),
@@ -520,19 +534,21 @@
 .tracker-live-trades .detail-trades-col:nth-child(4),
 .tracker-live-trades .detail-trades-header-cell:nth-child(4) {
   min-width: 100px;
-  flex: 1;
+  flex: 1.5;
 }
 
 .tracker-live-trades .detail-trades-col:nth-child(5),
 .tracker-live-trades .detail-trades-header-cell:nth-child(5) {
   min-width: 120px;
-  flex: 1.2;
+  flex: 1.5;
 }
 
 .tracker-live-trades .detail-trades-col:nth-child(6),
 .tracker-live-trades .detail-trades-header-cell:nth-child(6) {
-  min-width: 120px;
-  flex: 1.2;
+  min-width: 140px;
+  flex: 0 0 140px;
+  justify-content: flex-end;
+  text-align: right;
 }
 
 /* Override inline styles that cause conflicts */

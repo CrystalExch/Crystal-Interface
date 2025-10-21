@@ -13,6 +13,7 @@ import defaultPfp from '../../assets/leaderboard_default.png';
 import { useWalletPopup } from '../MemeTransactionPopup/useWalletPopup';
 
 import './TokenDetail.css';
+import SlippageSettingsPopup from './SlippageSettingsPopup/SlippageSettingsPopup';
 
 type SendUserOperation = (args: { uo: { target: `0x${string}`; data: `0x${string}`; value?: bigint } }) => Promise<unknown>;
 
@@ -170,6 +171,11 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const [isSigning, setIsSigning] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<'MON' | 'TOKEN'>('MON');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [slippagePct, setSlippagePct] = useState('2');
+  const [txSpeed, setTxSpeed] = useState<'Fast'|'Turbo'|'Ultra'>('Turbo');
+  const [frontRunProt, setFrontRunProt] = useState(false);
+  const [tipAmount, setTipAmount] = useState('0.003');
   const ethToken = settings.chainConfig[activechain]?.eth;
   const [priceStats, setPriceStats] = useState({
     ath: 0,
@@ -475,7 +481,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                 <CopyableAddress address={token.creator?.id ?? null} className="detail-meta-address" labelPrefix="Created by " />
                 <span>•</span>
                 <span>{Math.floor((Date.now() / 1000 - token.created) / 3600)}h ago</span>
-                <span>•</span>
                 {token.status === 'graduated' ? <span>Coin has graduated!</span> : <span>{bondingProgress.toFixed(1)}% bonded</span>}
               </div>
             </div>
@@ -682,7 +687,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="detail-holders-section">
+                <div className="detail-holders-section holders--info">
                   <div className="detail-holders-grid">
                     {holders.length > 0 ? (
                       holders.slice(0, 10).map((holder: any, index: any) => (
@@ -759,10 +764,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               {tradeType === 'buy' && selectedCurrency === 'MON' ? (
                 <div className="detail-preset-buttons">
                   <div className="detail-preset-buttons-right">
-                    <button
-                      className="detail-preset-button-left"
-                      onClick={() => {/**/ }}
-                    >
+                    <button className="detail-preset-button-left" onClick={() => setIsSettingsOpen(true)}>
                       Slippage (%)
                     </button>
                     {['1', '10', '100'].map((amount) => (
@@ -831,6 +833,34 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           </div>
         </div>
 
+        <div className="detail-trading-panel holders--panel">
+          <div className="detail-holders-section">
+            <div className="detail-holders-grid">
+              {holders.length > 0 ? (
+                holders.slice(0, 10).map((holder: any) => (
+                  <div key={holder.address} className="detail-holder-card">
+                    <div className="detail-holder-info">
+                      <div className="detail-holder-address-main">
+                        {holder.address === 'bonding curve' ? (
+                          <span>Liquidity pool</span>
+                        ) : (
+                          <CopyableAddress address={holder.address} className="detail-holder-address-copy" truncate={{ start: 4, end: 4 }} />
+                        )}
+                      </div>
+                    </div>
+                    <span className="detail-holder-percentage-badge">{holder.percentage.toFixed(2)}%</span>
+                  </div>
+                ))
+              ) : (
+                <div className="detail-no-holders-main">
+                  <div className="detail-no-holders-icon">👥</div>
+                  <span>No holder data available</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="detail-trading-panel">
           <div className="detail-trade-stats">
             <div className="detail-stat-row">
@@ -855,7 +885,11 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             ) : (
               <div className="detail-bonding-info">
                 <span>{formatNumber(token.marketCap)} MON in curve</span>
-                <span>{formatNumber(GRADUATION_THRESHOLD - token.marketCap)} MON to graduate</span>
+                <span>
+                  {token.marketCap >= GRADUATION_THRESHOLD
+                    ? 'Graduated'
+                    : `${formatNumber(GRADUATION_THRESHOLD - token.marketCap)} MON to graduate`}
+                </span>
               </div>
             )}
           </div>
@@ -916,6 +950,19 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {isSettingsOpen && (
+        <SlippageSettingsPopup
+          onClose={() => setIsSettingsOpen(false)}
+          initial={{ slippage: slippagePct, fr: frontRunProt, tip: tipAmount }}
+          onApply={(v) => {
+            setSlippagePct(v.slippage);
+            setFrontRunProt(v.fr);
+            setTipAmount(v.tip);
+            setIsSettingsOpen(false);
+          }}
+        />
       )}
     </div>
   );

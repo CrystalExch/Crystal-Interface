@@ -109,7 +109,20 @@
   gap: var(--gap);
   font-size: .85rem;
   color: #ffffff54;
+  justify-content: flex-start;
+  text-align: left;
 }
+.detail-token-meta > * { text-align: left; }
+.detail-token-meta .copyable-address { align-items: center; }
+
+.holders--panel { display: block; }
+.holders--info  { display: none; }
+
+@media (min-width: 1020px) {
+  .holders--panel { display: none; }
+  .holders--info  { display: block; }
+}
+
 
 .detail-quick-stats {
   display: flex;

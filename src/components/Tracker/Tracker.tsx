@@ -27,8 +27,6 @@ import {
   DEMO_WALLETS,
 } from './trackerDemoData';
 
-
-
 import './Tracker.css';
 
 import { watchContractEvent, getPublicClient } from 'wagmi/actions';
@@ -37,15 +35,124 @@ import { CrystalMarketAbi } from '../../abis/CrystalMarketAbi';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi'; 
 import { CrystalLaunchpadToken } from '../../abis/CrystalLaunchpadToken';
 
-const dlog = (...args: any[]) => {
-  // flip to true to see logs; or set (window as any).DEBUG_TRACKER = true in devtools
-  const ON = (window as any).DEBUG_TRACKER ?? true;
-  if (ON) console.log('[Tracker]', ...args);
-};
+
+interface TrackedWallet {
+  address: string;
+  name: string;
+  emoji: string;
+  balance: number;          
+  lastActiveAt: number | null; 
+  id: string;
+  createdAt: string;
+}
+
+interface LiveTrade {
+  id: string;
+  walletName: string;
+  emoji: string;
+  token: string;
+  amount: number;
+  marketCap: number;
+  time: string;
+  txHash: string;
+  type: 'buy' | 'sell';
+  createdAt: string;
+}
+
+interface TrackerProps {
+  isBlurred: boolean;
+  setpopup: (value: number) => void;
+  onImportWallets?: (walletsText: string, addToSingleGroup: boolean) => void;
+  onApplyFilters?: (filters: FilterState) => void;
+  activeFilters?: FilterState;
+  monUsdPrice: number;
+  activechain?: string;
+  walletTokenBalances?: { [address: string]: any };
+  connected?: boolean;
+  address?: string | null;
+  getWalletIcon?: () => string;
+  onDepositClick?: () => void;
+  onDisconnect?: () => void;
+  t?: (k: string) => string;
+}
+
+interface MonitorToken {
+  id: string;
+  tokenAddress: string;
+  name: string;
+  symbol: string;
+  emoji: string;
+  price: number;
+  marketCap: number;
+  change24h: number;
+  volume24h: number;
+  liquidity: number;
+  holders: number;
+  buyTransactions: number;
+  sellTransactions: number;
+  bondingCurveProgress: number;
+  txCount: number;
+  volume5m: number;
+  volume1h: number;
+  volume6h: number;
+  priceChange5m: number;
+  priceChange1h: number;
+  priceChange6h: number;
+  priceChange24h: number;
+  website: string;
+  twitter: string;
+  telegram: string;
+  createdAt: string;
+  lastTransaction: string;
+  trades: TokenTrade[];
+}
+
+interface TokenTrade {
+  id: string;
+  wallet: string;
+  emoji: string;
+  timeInTrade: string;
+  exitStatus?: 'Exited';
+  bought: number;
+  boughtTxns: number;
+  sold: number;
+  soldTxns: number;
+  pnl: number;
+  remaining: number;
+}
+
+export interface FilterState {
+  transactionTypes: {
+    buyMore: boolean;
+    firstBuy: boolean;
+    sellPartial: boolean;
+    sellAll: boolean;
+    addLiquidity: boolean;
+    removeLiquidity: boolean;
+  };
+  marketCap: {
+    min: string;
+    max: string;
+  };
+  transactionAmount: {
+    min: string;
+    max: string;
+  };
+  tokenAge: {
+    min: string;
+    max: string;
+  };
+}
+interface SortPreset {
+  sortBy: string;
+  order: 'asc' | 'desc';
+}
+
 
 const STORAGE_KEY = 'tracked_wallets_data';
 const DISPLAY_SCALE = 1000;
 const MONITOR_POLL_MS = 15000;
+const SUPPLY = 1e9;
 
 
 const saveWalletsToStorage = (wallets: TrackedWallet[]) => {
@@ -100,32 +207,9 @@ const loadWalletsFromStorage = (): TrackedWallet[] => {
   return [];
 };
 
-export interface FilterState {
-  transactionTypes: {
-    buyMore: boolean;
-    firstBuy: boolean;
-    sellPartial: boolean;
-    sellAll: boolean;
-    addLiquidity: boolean;
-    removeLiquidity: boolean;
-  };
-  marketCap: {
-    min: string;
-    max: string;
-  };
-  transactionAmount: {
-    min: string;
-    max: string;
-  };
-  tokenAge: {
-    min: string;
-    max: string;
-  };
-}
-interface SortPreset {
-  sortBy: string;
-  order: 'asc' | 'desc';
-}
+const isValidAddress = (addr: string) => {
+  return /^0x[a-fA-F0-9]{40}$/.test(addr);
+};
 
 const SIMPLE_SORT_PRESETS: Record<string, SortPreset> = {
   latest: { sortBy: 'lastTransaction', order: 'desc' },
@@ -226,95 +310,9 @@ const Tooltip: React.FC<{
   );
 };
 
-interface TrackedWallet {
-  address: string;
-  name: string;
-  emoji: string;
-  balance: number;          
-  lastActiveAt: number | null; 
-  id: string;
-  createdAt: string;
-}
-
-interface LiveTrade {
-  id: string;
-  walletName: string;
-  emoji: string;
-  token: string;
-  amount: number;
-  marketCap: number;
-  time: string;
-  txHash: string;
-  type: 'buy' | 'sell';
-  createdAt: string;
-}
-
-interface TrackerProps {
-  isBlurred: boolean;
-  setpopup: (value: number) => void;
-  onImportWallets?: (walletsText: string, addToSingleGroup: boolean) => void;
-  onApplyFilters?: (filters: FilterState) => void;
-  activeFilters?: FilterState;
-  monUsdPrice: number;
-  activechain?: string;
-  walletTokenBalances?: { [address: string]: any };
-  connected?: boolean;
-  address?: string | null;
-  getWalletIcon?: () => string;
-  onDepositClick?: () => void;
-  onDisconnect?: () => void;
-  t?: (k: string) => string;
-}
-
-interface MonitorToken {
-  id: string;
-  tokenAddress: string;
-  name: string;
-  symbol: string;
-  emoji: string;
-  price: number;
-  marketCap: number;
-  change24h: number;
-  volume24h: number;
-  liquidity: number;
-  holders: number;
-  buyTransactions: number;
-  sellTransactions: number;
-  bondingCurveProgress: number;
-  txCount: number;
-  volume5m: number;
-  volume1h: number;
-  volume6h: number;
-  priceChange5m: number;
-  priceChange1h: number;
-  priceChange6h: number;
-  priceChange24h: number;
-  website: string;
-  twitter: string;
-  telegram: string;
-  createdAt: string;
-  lastTransaction: string;
-  trades: TokenTrade[];
-}
-
-interface TokenTrade {
-  id: string;
-  wallet: string;
-  emoji: string;
-  timeInTrade: string;
-  exitStatus?: 'Exited';
-  bought: number;
-  boughtTxns: number;
-  sold: number;
-  soldTxns: number;
-  pnl: number;
-  remaining: number;
-}
-
 type MarketsMap = Map<string, MonitorToken>;
 type TrackerTab = 'wallets' | 'trades' | 'monitor';
 type SortDirection = 'asc' | 'desc';
-const SUPPLY = 1e9;
 
 const Tracker: React.FC<TrackerProps> = ({
   isBlurred,
@@ -543,7 +541,7 @@ const Tracker: React.FC<TrackerProps> = ({
   useEffect(() => {
     const cfg = chainCfgOf(activechain);
     if (!cfg?.id || !cfg?.rpcUrl) {
-      dlog('WATCHERS skipped: invalid chain cfg', cfg);
+
       return;
     }
 
@@ -589,7 +587,6 @@ const Tracker: React.FC<TrackerProps> = ({
         }));
       }
     } catch (err) {
-      dlog('WATCHERS error', err);
     }
 
     return () => { try { unsubs.forEach(u => u?.()); } catch {} };
@@ -665,18 +662,12 @@ const Tracker: React.FC<TrackerProps> = ({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   
 
-  const isValidAddress = (addr: string) => {
-    return /^0x[a-fA-F0-9]{40}$/.test(addr);
-  };
-  
-
   function getRpcPublicClient(chainCfg?: any) {
     if (!chainCfg?.rpcUrl) return null;
     return createPublicClient({
       transport: http(chainCfg.rpcUrl),
     });
   }
-
 
   const formatCompact = (n: number, d = 2) => {
     if (n === 0) return '0';
@@ -1141,12 +1132,10 @@ const Tracker: React.FC<TrackerProps> = ({
 
   useEffect(() => {
     const cfg = chainCfgOf(activechain);
-    if (!cfg?.id || !cfg?.rpcUrl) { dlog('BALANCE_QUERY skipped: invalid chain cfg for', activechain, cfg); return; }
     const pc = getRpcPublicClient(cfg);
     if (!pc) return;
     let ignore = false;
     const addresses = trackedWallets.map(w => w.address);
-    dlog('BALANCE_QUERY start', { activechain, chainId: cfg.id, count: addresses.length, addresses });
     (async () => {
       try {
         const results = new Map<string, number>();
@@ -1157,7 +1146,6 @@ const Tracker: React.FC<TrackerProps> = ({
             const mon = Number(wei) / 1e18;
             results.set(a.toLowerCase(), mon);
           } catch (err) {
-            dlog('BALANCE_QUERY ERROR', { address: a, err });
           }
         }
         setTrackedWallets(prev =>
@@ -1166,9 +1154,7 @@ const Tracker: React.FC<TrackerProps> = ({
             return v != null ? { ...w, balance: v } : w;
           })
         );
-        dlog('BALANCE_QUERY done');
       } catch (e) {
-        dlog('BALANCE_QUERY fatal', e);
       }
     })();
     return () => { ignore = true; };
@@ -1327,55 +1313,6 @@ const Tracker: React.FC<TrackerProps> = ({
     };
   }, []);
 
-  /* useEffect(() => {
-    initTradeStream();
-    const off = onTradeStream((m: TradeMsg) => {
-      const a = String(
-        (typeof m.account === 'string' ? m.account : m.account?.id) ||
-        m.trader || m.sender || m.owner || m.from || ''
-      ).toLowerCase();
-      if (!a || !trackedSetRef.current.has(a)) return;
-
-      const ain = Number(m.amountIn ?? 0),
-            aout = Number(m.amountOut ?? 0),
-            price = Number(m.priceNativePerTokenWad ?? 0);
-      if ((ain <= 0 && aout <= 0) || price <= 0) return;
-
-      ingestExternalTrades([
-        {
-          id: m.id || m.transaction?.id || `${Date.now()}_${Math.random()}`,
-          account: { id: a },
-          isBuy: Boolean(m.isBuy || m.side === 'buy' || (m.from && !m.to)),
-          amountIn: BigInt(Math.floor(ain * 1e18)),
-          amountOut: BigInt(Math.floor(aout * 1e18)),
-          priceNativePerTokenWad: BigInt(Math.floor(price * 1e18)),
-          token: m.token || {},
-          timestamp: m.timestamp || Math.floor(Date.now() / 1000),
-          transaction: m.transaction,
-        },
-      ]);
-      const addr = String((m as any).address || (m as any).tokenAddress || (m as any).base || (m as any).asset || '').toLowerCase() || undefined;
-      const sym = ((m as any).token?.symbol ?? (m as any).symbol ?? '').toString() || undefined;
-      if (addr || sym) {
-        upsertMarket({
-          tokenAddr: addr,
-          symbol: sym,
-          price: Number(m.priceNativePerTokenWad || 0),
-          isBuy: Boolean(m.isBuy || m.side==='buy' || (m.from && !m.to)),
-          amountNative: Number((m.isBuy || m.side==='buy') ? m.amountIn || 0 : m.amountOut || 0),
-          ts: m.timestamp || Math.floor(Date.now()/1000),
-          wallet: trackedWalletsRef.current.find(w=>w.address.toLowerCase()===a)?.name,
-          emoji: trackedWalletsRef.current.find(w=>w.address.toLowerCase()===a)?.emoji
-        });
-        flushMarketsToState();
-      }
-
-
-
-    });
-    return off;
-  }, [activechain]); */
-
   useEffect(()=>{
     const id=setInterval(()=>setMarketsTick(x=>x+1),15000); return ()=>clearInterval(id); 
   },[]);
@@ -1383,9 +1320,6 @@ const Tracker: React.FC<TrackerProps> = ({
   useEffect(() => {
     flushMarketsToState();
   }, [marketsTick, selectedSimpleFilter]);
-
-
-
 
 
   const renderWalletManager = () => {
@@ -1496,7 +1430,6 @@ const Tracker: React.FC<TrackerProps> = ({
             </div>
             <div
               className={`detail-trades-header-cell sortable ${tradeSortField === 'marketCap' ? 'active' : ''}`}
-              style={{minWidth: '120px', width: '120px'}}
               onClick={() => handleTradeSort('marketCap')}
             >
               Market Cap
@@ -1538,11 +1471,11 @@ const Tracker: React.FC<TrackerProps> = ({
                     </span>
                   </div>
 
-                  <div className="detail-trades-col"  style={{minWidth: '100px', width: '100px'}}>
+                  <div className="detail-trades-col">
                     {trade.token}
                   </div>
 
-                  <div className="detail-trades-col" style={{minWidth: '100px', width: '100px'}}>
+                  <div className="detail-trades-col">
                     <span
                       className={[
                         'detail-trades-amount',
