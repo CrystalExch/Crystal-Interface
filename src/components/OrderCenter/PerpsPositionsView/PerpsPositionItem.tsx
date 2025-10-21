@@ -107,13 +107,21 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
         </span>
       </div>
 
-      {/* Funding */}
       <div className={`oc-cell ${isBlurred ? 'blurred' : ''}`}>
         <span className={`funding-value ${position.funding >= 0 ? 'positive' : 'negative'}`}>
           {position.funding >= 0 ? '+' : ''}{position.funding.toFixed(4)}%
         </span>
       </div>
-
+      <div className="oc-cell tpsl-actions">
+        <button 
+          className="position-action-btn tpsl-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          Add
+        </button>
+      </div>
       <div className="oc-cell perps-actions">
         <button 
           className="position-action-btn close-btn"
@@ -121,16 +129,15 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
             e.stopPropagation();
           }}
         >
-          Close
+          Limit
         </button>
         <button 
           className="position-action-btn edit-btn"
           onClick={(e) => {
             e.stopPropagation();
-            // Handle edit position
           }}
         >
-          Edit
+          Market
         </button>
       </div>
     </div>

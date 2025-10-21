@@ -14,6 +14,7 @@
     minmax(100px, 1.2fr) 
     minmax(90px, 1fr) 
     minmax(80px, 1fr) 
+    minmax(80px, 1fr) 
     minmax(120px, 1fr);
   position: relative;
   transition: background-color 0.15s ease;
@@ -194,6 +195,16 @@
   transition: all 0.15s ease;
   white-space: nowrap;
 }
+.perps-position-item .position-action-btn.tpsl-btn {
+  border-radius: 4px;
+  color: #d8dcff;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
 
 
 .perps-position-item .position-action-btn.close-btn:hover {

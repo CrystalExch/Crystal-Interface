@@ -148,6 +148,14 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
             className="funding-label"
           />
         </SortableHeaderCell>
+                <SortableHeaderCell
+          columnKey="tpsl"
+          sortColumn={sortColumn}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        >
+          {t('TP / SL')}
+        </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="close"
           sortColumn={sortColumn}
