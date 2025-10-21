@@ -3755,7 +3755,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           <button
             onClick={() => {
               if (!account.connected) {
-                walletPopup.showConnectionError();
+                setpopup(4);
               } else {
                 const targetChainId =
                   settings.chainConfig[activechain]?.chainId || activechain;
