@@ -657,25 +657,18 @@ const Tracker: React.FC<TrackerProps> = ({
 
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [walletToDelete, setWalletToDelete] = useState<string>('');
+  const [dontShowDeleteAgain, setDontShowDeleteAgain] = useState(false);
   const [showImportPopup, setShowImportPopup] = useState(false);
 
   const mainWalletsRef = useRef<HTMLDivElement>(null);
 
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [allEmojis] = useState([
-    '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '🥲', '☺️', '😊', '😇', '🙂', '🙃', '😉', '😌',
-    '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🥸',
-    '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢',
-    '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔',
-    '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤',
-    '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺',
-    '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀',
-    '😿', '😾', '🚀', '💎', '🔥', '⚡', '💰', '🎯', '👑', '🦄', '🐋', '🐸', '🤖', '👻', '🎪'
-  ]);
+  
 
   const isValidAddress = (addr: string) => {
     return /^0x[a-fA-F0-9]{40}$/.test(addr);
   };
+  
 
   function getRpcPublicClient(chainCfg?: any) {
     if (!chainCfg?.rpcUrl) return null;
@@ -963,15 +956,47 @@ const Tracker: React.FC<TrackerProps> = ({
   };
 
   const confirmDeleteWallet = (id: string) => {
-    setWalletToDelete(id);
-    setShowDeleteConfirmation(true);
+    const shouldSkip = getDeletePreference();
+    
+    if (shouldSkip) {
+      setTrackedWallets(prev => prev.filter(w => w.id !== id));
+    } else {
+      setWalletToDelete(id);
+      setShowDeleteConfirmation(true);
+    }
+  };
+
+  const getDeletePreference = (): boolean => {
+    try {
+      return localStorage.getItem('tracker_skip_delete_confirmation') === 'true';
+    } catch {
+      return false;
+    }
+  };
+
+  const saveDeletePreference = (skip: boolean) => {
+    try {
+      if (skip) {
+        localStorage.setItem('tracker_skip_delete_confirmation', 'true');
+      } else {
+        localStorage.removeItem('tracker_skip_delete_confirmation');
+      }
+    } catch {
+    }
   };
 
   const deleteWallet = () => {
+    if (dontShowDeleteAgain) {
+      saveDeletePreference(true);
+    }
+    
     setTrackedWallets(prev => prev.filter(w => w.id !== walletToDelete));
     setShowDeleteConfirmation(false);
     setWalletToDelete('');
+    setDontShowDeleteAgain(false);
   };
+
+
 
   const handleApplyFilters = (filters: FilterState) => {
     setActiveFilters(filters);
@@ -2390,11 +2415,17 @@ const Tracker: React.FC<TrackerProps> = ({
       )}
 
       {showDeleteConfirmation && (
-        <div className="tracker-modal-backdrop" onClick={() => setShowDeleteConfirmation(false)}>
+        <div className="tracker-modal-backdrop" onClick={() => {
+          setShowDeleteConfirmation(false);
+          setDontShowDeleteAgain(false);
+        }}>
           <div className="tracker-modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="tracker-modal-header">
               <h3 className="tracker-modal-title">Delete Wallet</h3>
-              <button className="tracker-modal-close" onClick={() => setShowDeleteConfirmation(false)}>
+              <button className="tracker-modal-close" onClick={() => {
+                setShowDeleteConfirmation(false);
+                setDontShowDeleteAgain(false);
+              }}>
                 <img src={closebutton} className="close-button-icon" />
               </button>
             </div>
@@ -2403,6 +2434,20 @@ const Tracker: React.FC<TrackerProps> = ({
                 <p>Are you sure you want to remove this wallet from tracking?</p>
                 <p>This action cannot be undone.</p>
               </div>
+              
+              <div className="checkbox-row">
+                <input
+                  type="checkbox"
+                  className="tracker-delete-checkbox"
+                  id="dontShowDeleteAgain"
+                  checked={dontShowDeleteAgain}
+                  onChange={(e) => setDontShowDeleteAgain(e.target.checked)}
+                />
+                <label className="checkbox-label" htmlFor="dontShowDeleteAgain">
+                  Don't show this confirmation again
+                </label>
+              </div>
+              
               <div className="tracker-modal-actions">
                 <button
                   className="tracker-delete-confirm-button"
