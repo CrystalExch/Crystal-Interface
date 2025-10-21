@@ -51,7 +51,7 @@
   background: none;
   color: #ffffff96;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 300;
   padding: 8px 20px; 
   text-align: center;
@@ -62,6 +62,7 @@
     text-shadow 0.3s;
   white-space: nowrap;
   flex: 1;
+  letter-spacing: -0.3px;
 }
 
 .ob-tab:hover {
