@@ -1,7 +1,6 @@
 .perps-position-item {
   align-items: center;
   background: transparent;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.05);
   color: #ffffff;
   display: grid;
   font-size: 0.8rem;
@@ -16,10 +15,10 @@
     minmax(90px, 1fr) 
     minmax(80px, 1fr) 
     minmax(120px, 1fr);
-  min-height: 52px;
   position: relative;
   transition: background-color 0.15s ease;
   width: 100%;
+  padding-left: 10px;
 }
 
 .perps-position-item:hover {

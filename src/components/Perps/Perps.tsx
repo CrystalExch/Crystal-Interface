@@ -1410,7 +1410,7 @@ const Perps: React.FC<PerpsProps> = ({
               <div className="perps-current-position-container">{t('Available to Trade')}</div>
             </div>
             <div className="value-container">
-              {Number(balance).toFixed(2)}
+              {Number(balance).toFixed(2)} USD
             </div>
           </div>
           <div className="perps-available-to-trade">

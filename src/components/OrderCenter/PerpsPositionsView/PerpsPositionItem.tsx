@@ -21,7 +21,6 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
 
   return (
     <div className="perps-position-item">
-      {/* Coin */}
       <div className="oc-cell market-cell" onClick={() => onMarketSelect(position)}>
       <div className="order-favorite-cell">
         <div
@@ -57,21 +56,16 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
         </div>
       </div>
 
-      {/* Size */}
       <div className={`oc-cell ${isBlurred ? 'blurred' : ''}`}>
         <span className="position-size">
           {formatDisplay(position.size)}
         </span>
       </div>
 
-      {/* Position Value */}
       <div className={`oc-cell value-cell ${isBlurred ? 'blurred' : ''}`}>
         <span className="order-value">
           {formatBalance(position.positionValue, 'usd')}
         </span>
-        <div className="amount">
-          {formatDisplay((position.size * position.markPrice).toFixed(2))} USD
-        </div>
       </div>
 
       <div className="oc-cell">
@@ -120,13 +114,11 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
         </span>
       </div>
 
-      {/* Actions */}
       <div className="oc-cell perps-actions">
         <button 
           className="position-action-btn close-btn"
           onClick={(e) => {
             e.stopPropagation();
-            // Handle close position
           }}
         >
           Close
