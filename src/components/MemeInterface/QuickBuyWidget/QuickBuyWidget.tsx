@@ -71,6 +71,7 @@ interface QuickBuyWidgetProps {
   nonces: any;
   selectedWallets: Set<string>;
   setSelectedWallets: React.Dispatch<React.SetStateAction<Set<string>>>;
+  isTerminalDataFetching: any;
 }
 
 const Tooltip: React.FC<{
@@ -263,6 +264,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   nonces,
   selectedWallets,
   setSelectedWallets,
+  isTerminalDataFetching
 }) => {
   const [position, setPosition] = useState(() => {
     try {
@@ -780,6 +782,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     );
     setSelectedWallets(new Set(walletsWithBalance.map((w) => w.address)));
   }, [subWallets, setSelectedWallets, getWalletTokenBalance, getWalletBalance]);
+
   const handleSplitTokens = async () => {
     if (selectedWallets.size === 0 || !tokenAddress) return;
 
@@ -986,12 +989,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   };
 
   useEffect(() => {
-    if (isOpen && account?.connected) {
-      terminalRefetch();
-    }
-  }, [isOpen, account?.connected]);
-
-  useEffect(() => {
     const handleResize = () => {
       if (!widgetRef.current) return;
 
@@ -1191,7 +1188,7 @@ const handleBuyTrade = async (amount: string) => {
         };
 
         const wallet = nonces.current.get(addr);
-        const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
+        const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, true];
         if (wallet) wallet.nonce += 1;
         wallet?.pendingtxs.push(params);
 
@@ -1225,7 +1222,6 @@ const handleBuyTrade = async (amount: string) => {
         (r) => r.status === 'fulfilled' && r.value === true,
       ).length;
 
-      terminalRefetch?.();
       const totalMonBought = Number(totalWei) / 1e18;
 
       updatePopup?.(txId, {
@@ -1254,7 +1250,7 @@ const handleBuyTrade = async (amount: string) => {
     }
   };
 
-const handleSellTrade = async (value: string) => {
+  const handleSellTrade = async (value: string) => {
     if (!sendUserOperationAsync || !tokenAddress || !routerAddress) {
       setpopup?.(4);
       return;
@@ -1347,7 +1343,7 @@ const handleSellTrade = async (value: string) => {
           };
 
           const wallet = nonces.current.get(addr);
-          const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
+          const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, true];
           if (wallet) wallet.nonce += 1;
           wallet?.pendingtxs.push(params);
           const transferPromise = sendUserOperationAsync(...params)
@@ -1420,7 +1416,7 @@ const handleSellTrade = async (value: string) => {
             value: 0n,
           };
           const wallet = nonces.current.get(addr);
-          const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
+          const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, true];
           if (wallet) wallet.nonce += 1;
           wallet?.pendingtxs.push(params);
           const transferPromise = sendUserOperationAsync(...params)
@@ -1445,7 +1441,6 @@ const handleSellTrade = async (value: string) => {
       const successfulTransfers = results.filter(
         (result) => result.status === 'fulfilled' && result.value === true,
       ).length;
-      terminalRefetch();
       const sellLabel =
         sellMode === 'percent' ? `${value} of Position` : `${value} MON`;
       updatePopup?.(txId, {

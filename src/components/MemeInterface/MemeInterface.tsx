@@ -136,6 +136,7 @@ interface MemeInterfaceProps {
   selectedWallets: Set<string>;
   setSelectedWallets: React.Dispatch<React.SetStateAction<Set<string>>>;
   selectedIntervalRef: any;
+  isTerminalDataFetching: any;
 }
 
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
@@ -363,6 +364,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   selectedWallets,
   setSelectedWallets,
   selectedIntervalRef,
+  isTerminalDataFetching
 }) => {
   const getSliderPosition = (
     activeView: 'chart' | 'trades' | 'ordercenter',
@@ -3342,6 +3344,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   onChange={(e) => {
                     const percent = parseInt(e.target.value);
                     setSliderPercent(percent);
+                    positionPopup(percent);
+                    if (percent == 0) {
+                      setTradeAmount('')
+                      return
+                    }
                     if (activeTradeType === 'buy') {
                       const currentBalance = getTotalSelectedWalletsBalance();
                       const newAmount = (currentBalance * percent) / 100;
@@ -3351,7 +3358,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       const newAmount = (currentBalance * percent) / 100;
                       setTradeAmount(formatTradeAmount(newAmount));
                     }
-                    positionPopup(percent);
                   }}
                   onMouseDown={() => {
                     setIsDragging(true);
@@ -4769,6 +4775,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         nonces={nonces}
         selectedWallets={selectedWallets}
         setSelectedWallets={setSelectedWallets}
+        isTerminalDataFetching={isTerminalDataFetching}
       />
 
       {hoveredSimilarTokenImage &&

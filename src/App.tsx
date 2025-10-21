@@ -842,7 +842,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   };
 
   const sendUserOperationAsync = useCallback(
-    async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n, mainWallet: boolean = false, pk: string = '', nonce: number = 0) => {
+    async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n, mainWallet: boolean = false, pk: string = '', nonce: number = 0, noReceipt: boolean = false) => {
       let hash: `0x${string}`;
       let err: any;
       if (!!pk) {
@@ -851,7 +851,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           value: params.uo.value,
           data: params.uo.data,
           gasLimit: gasLimit > 0n ? gasLimit : 500000n,
-          maxFeePerGas: 100000000000n + (prioFee > 0n ? prioFee : 13000000000n),
+          maxFeePerGas: 120000000000n + (prioFee > 0n ? prioFee : 13000000000n),
           maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
           nonce: nonce,
           chainId: activechain
@@ -859,13 +859,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         const signedTx = await (new Wallet(pk)).signTransaction(tx);
         hash = keccak256(signedTx) as `0x${string}`;
 
-        const RPC_URLS = [
+        const RPC_URLS = [...new Set([
           HTTP_URL,
+          'https://testnet-rpc.monad.xyz',
           'https://rpc.ankr.com/monad_testnet',
-          'https://monad-testnet.drpc.org',
           'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
           'https://quick-warmhearted-liquid.monad-testnet.quiknode.pro/f6b35b5a851643b1421398dcbccad4ca91ef6a68',
-        ];
+        ])];
         RPC_URLS.forEach(url => {
           fetch(url, {
             method: 'POST',
@@ -888,7 +888,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           value: params.uo.value,
           data: params.uo.data,
           gasLimit: gasLimit > 0n ? gasLimit : 500000n,
-          maxFeePerGas: 100000000000n + (prioFee > 0n ? prioFee : 13000000000n),
+          maxFeePerGas: 120000000000n + (prioFee > 0n ? prioFee : 13000000000n),
           maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
           nonce: nonce,
           chainId: activechain
@@ -898,13 +898,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         const signedTx = await onectclient.signTransaction(tx);
         hash = keccak256(signedTx) as `0x${string}`;
 
-        const RPC_URLS = [
+        const RPC_URLS = [...new Set([
           HTTP_URL,
+          'https://testnet-rpc.monad.xyz',
           'https://rpc.ankr.com/monad_testnet',
-          'https://monad-testnet.drpc.org',
           'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
           'https://quick-warmhearted-liquid.monad-testnet.quiknode.pro/f6b35b5a851643b1421398dcbccad4ca91ef6a68',
-        ];
+        ])];
         RPC_URLS.forEach(url => {
           fetch(url, {
             method: 'POST',
@@ -927,7 +927,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           new Promise<void>((resolve) => {
             txReceiptResolvers.current.set(hash, resolve);
           }),
-          waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
+          waitForTransactionReceipt(config, { hash, pollingInterval: noReceipt ? 2000 : 500 }).then((r) => {
             txReceiptResolvers.current.delete(hash);
             hash = r.transactionHash;
           }),
@@ -4444,6 +4444,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const priceFactor = Number(mcfg.priceFactor || 1);
               const price = priceFactor ? (Number(endPrice) / priceFactor) : 0;
 
+              const startPrice = priceFactor ? (Number(word(3)) / priceFactor) : 0
               const tradePrice = price;
 
               dispatch({
@@ -4498,7 +4499,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 const updated = [...bars];
                 const last = updated[updated.length - 1];
                 if (!last || last.time < bucket) {
-                  const prevClose = last?.close ?? tradePrice;
+                  const prevClose = last?.close ?? startPrice;
                   const open = prevClose;
                   const high = Math.max(open, tradePrice);
                   const low = Math.min(open, tradePrice);
@@ -6167,7 +6168,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   ]);
 
   // data loop, reuse to have every single rpc call method in this loop
-  const { data: terminalQueryData, isLoading: isTerminalDataLoading, dataUpdatedAt: terminalDataUpdatedAt, refetch: terminalRefetch } = useQuery({
+  const { data: terminalQueryData, isFetching: isTerminalDataFetching, dataUpdatedAt: terminalDataUpdatedAt, refetch: terminalRefetch } = useQuery({
     queryKey: [
       'crystal_rpc_terminal_reads',
       address,
@@ -25269,6 +25270,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 selectedWallets={selectedWallets}
                 setSelectedWallets={setSelectedWallets}
                 selectedIntervalRef={memeSelectedIntervalRef}
+                isTerminalDataFetching={isTerminalDataFetching}
               />
             }
           />
