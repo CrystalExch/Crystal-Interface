@@ -354,7 +354,7 @@ export const translations: any = {
     audioNotifications: "Audio Notifications",
     connectYourWallet: "Connect Your Wallet",
     connectYourWalletSubtitle: "Connect your wallet to view the leaderboard",
-    searchAMarket: "Search for a market",
+    searchAMarket: "Search for anything",
     browsePairs: "Browse trading pairs",
     custom: "Custom",
     confirmSwap: "Confirm Swap",

@@ -168,6 +168,8 @@ import PNLComponent from './components/PNLComponent/PNLComponent.tsx';
 import ImportWalletsPopup from './components/Tracker/ImportWalletsPopup.tsx';
 import TradingPresetsPopup from './components/Tracker/TradingPresetsPopup/TradingPresetsPopup';
 import LiveTradesSettingsPopup from './components/Tracker/ LiveTradesSettingsPopup/LiveTradesSettingsPopup.tsx';
+import MemeSearch from './components/MemeSearch/MemeSearch.tsx';
+import { showLoadingPopup, updatePopup } from './components/MemeTransactionPopup/MemeTransactionPopupManager';
 
 // import config
 import { ChevronDown, SearchIcon } from 'lucide-react';
@@ -12802,6 +12804,86 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(newTab);
   }, []);
+  const handleTokenClick = (token: any) => {
+    if (setTokenData) {
+      setTokenData(token);
+    }
+    navigate(`/meme/${token.tokenAddress}`);
+    setpopup(0);
+  };
+  const handleQuickBuy = useCallback(async (token: any, amt: string) => {
+    const val = BigInt(amt || '0') * 10n ** 18n;
+    if (val === 0n) return;
+
+    const routerAddress = settings.chainConfig[activechain]?.launchpadRouter?.toLowerCase();
+    if (!routerAddress) {
+      console.error('Router address not found');
+      return;
+    }
+
+    const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    try {
+      if (showLoadingPopup) {
+        showLoadingPopup(txId, {
+          title: 'Sending transaction...',
+          subtitle: `${amt} MON worth of ${token.symbol}`,
+          amount: amt,
+          amountUnit: 'MON',
+          tokenImage: token.image
+        });
+      }
+
+      const uo = {
+        target: routerAddress,
+        data: encodeFunctionData({
+          abi: CrystalRouterAbi,
+          functionName: 'buy',
+          args: [true, token.tokenAddress as `0x${string}`, val, 0n]
+        }),
+        value: val,
+      };
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Confirming transaction...',
+          subtitle: `${amt} MON worth of ${token.symbol}`,
+          variant: 'info',
+          tokenImage: token.image
+        });
+      }
+
+      await sendUserOperationAsync({ uo });
+
+      if (terminalRefetch) {
+        terminalRefetch();
+      }
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Quick Buy Complete',
+          subtitle: `Successfully bought ${token.symbol} with ${amt} MON`,
+          variant: 'success',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: token.image
+        });
+      }
+    } catch (e: any) {
+      console.error('Quick buy failed', e);
+      const msg = String(e?.message ?? '');
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
+          subtitle: msg || 'Please try again.',
+          variant: 'error',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: token.image
+        });
+      }
+    }
+  }, [sendUserOperationAsync, activechain, terminalRefetch]);
 
   //popup modals
   const Modals = (
@@ -16451,7 +16533,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               </div>
 
               <div className="modal-footer">
-               <button
+                <button
                   className={`vault-confirm-button ${(depositVaultStep === 'idle' && (!isVaultDepositEnabled() || isVaultDepositSigning)) ? 'disabled' : ''
                     } ${depositVaultStep === 'success' ? 'success' : ''}`}
                   disabled={depositVaultStep === 'idle' && (!isVaultDepositEnabled() || isVaultDepositSigning)}
@@ -17642,8 +17724,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 disabled={(sendAmountIn === BigInt(0) ||
                   sendAmountIn > tokenBalances[sendTokenIn] ||
                   !/^(0x[0-9a-fA-F]{40})$/.test(address)) &&
-                connected &&
-                userchain == activechain || isSigning}
+                  connected &&
+                  userchain == activechain || isSigning}
               >
                 {isSigning ? (
                   <div className="button-content">
@@ -17766,7 +17848,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     </div>
                     <div className="trading-mode-info">
                       <h3>One Click Trading</h3>
-                      <p>Instantly sign transactions while retaining self-custody</p>
+                      <p>Instantly sign transactions</p>
                     </div>
                     <div className="trading-mode-status">
                       <button
@@ -17786,7 +17868,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       >
                         {isUsernameSigning ? (
                           <div className="button-content">
-                            <div style={{position: 'absolute'}} className="loading-spinner" />
+                            <div style={{ position: 'absolute' }} className="loading-spinner" />
                             <span style={{ opacity: 0 }}>Enable 1CT</span>
                           </div>
                         ) : (
@@ -18534,7 +18616,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           </div>
         ) : null}
 
-        {popup === 32 ? ( // Import Wallets
+        {popup === 32 ? (
           <div ref={popupref}>
             <ImportWalletsPopup
               onClose={() => setpopup(0)}
@@ -18543,7 +18625,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           </div>
         ) : null}
 
-        {popup === 33 ? ( // Live Trades Settings
+        {popup === 33 ? (
           <div ref={popupref}>
             <LiveTradesSettingsPopup
               onClose={() => setpopup(0)}
@@ -18551,7 +18633,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           </div>
         ) : null}
 
-        {popup === 34 ? ( // Live Trades Presets Settings
+        {popup === 34 ? (
           <div ref={popupref}>
             <TradingPresetsPopup
               onClose={() => setpopup(0)}
@@ -18698,7 +18780,26 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             </div>
           </div>
         ) : null}
-
+        {popup === 36 ? ( 
+          <div ref={popupref}>
+            <MemeSearch
+              setpopup={setpopup}
+              monUsdPrice={monUsdPrice}
+              onTokenClick={handleTokenClick}
+              onQuickBuy={handleQuickBuy}
+              sendUserOperationAsync={sendUserOperationAsync}
+              quickAmounts={quickAmounts}
+              setQuickAmount={setQuickAmount}
+              activePresets={activePresets}
+              setActivePreset={setActivePreset}
+              handleInputFocus={handleInputFocus}
+              buyPresets={buyPresets}
+              marketsData={marketsData}
+              tokendict={tokendict}
+              onMarketSelect={onMarketSelect}
+            />
+          </div>
+        ) : null}
       </div>
     </>
   );

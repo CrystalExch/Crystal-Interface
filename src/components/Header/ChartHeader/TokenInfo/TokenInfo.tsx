@@ -1055,7 +1055,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     if (isAdvancedView) {
       toggleDropdown();
     } else {
-      setpopup(8);
+      setpopup(36);
     }
   };
 

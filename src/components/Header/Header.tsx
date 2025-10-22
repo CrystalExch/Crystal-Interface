@@ -381,6 +381,7 @@ const Header: React.FC<HeaderProps> = ({
       }
     }
   }, [sendUserOperationAsync, activechain, terminalRefetch]);
+
   const [pendingNotifs, setPendingNotifs] = useState(0);
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
@@ -633,18 +634,6 @@ const Header: React.FC<HeaderProps> = ({
             <span className="meme-search-keybind">/</span>
 
           </button> */}
-
-          {/* <NetworkSelector
-            isNetworkSelectorOpen={isNetworkSelectorOpen}
-            setNetworkSelectorOpen={setNetworkSelectorOpen}
-            setTokenIn={setTokenIn}
-            setTokenOut={setTokenOut}
-            setorders={setorders}
-            settradehistory={settradehistory}
-            settradesByMarket={settradesByMarket}
-            setcanceledorders={setcanceledorders}
-            setChain={setChain}
-          /> */}
           <button
             type="button"
             className="history-button"
@@ -679,7 +668,7 @@ const Header: React.FC<HeaderProps> = ({
                 isHeader={true}
               />
             )}
-            <MemeSearch
+            {/* <MemeSearch
               isOpen={isMemeSearchOpen}
               onClose={() => setIsMemeSearchOpen(false)}
               monUsdPrice={monUsdPrice}
@@ -695,7 +684,7 @@ const Header: React.FC<HeaderProps> = ({
               marketsData={marketsData}
               tokendict={tokendict}
               onMarketSelect={onMarketSelect}
-            />
+            /> */}
           </div>
 
           <div className="wallet-dropdown-container" ref={walletDropdownRef}>

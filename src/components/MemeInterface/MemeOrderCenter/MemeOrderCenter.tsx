@@ -1395,10 +1395,10 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                                 style={{ cursor: 'pointer' }}
                               >
                                 {(t.symbol || '').toUpperCase()}
-                                <span className="oc-meme-wallet-address-span">
+                              </span>
+                              <span className="oc-meme-wallet-address-span">
                                   {timeAgo(t.timestamp)}
                                 </span>
-                              </span>
                             </div>
                           </div>
                         </div>

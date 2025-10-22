@@ -9,8 +9,9 @@ import lightning from '../../assets/flash.png';
 import monadicon from '../../assets/monad.svg';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.5.8';
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 
 export interface Token {
     id: string;
@@ -49,8 +50,6 @@ export interface Market {
 }
 
 interface MemeSearchProps {
-    isOpen: boolean;
-    onClose: () => void;
     monUsdPrice: number;
     onTokenClick?: (token: Token) => void;
     onMarketSelect?: (market: Market) => void;
@@ -64,8 +63,159 @@ interface MemeSearchProps {
     buyPresets?: { [key: number]: { slippage: string; priority: string; amount: string } };
     marketsData?: Market[];
     tokendict: any;
+    setpopup: any;
 }
+const Tooltip: React.FC<{
+    content: string;
+    children: React.ReactNode;
+    position?: 'top' | 'bottom' | 'left' | 'right';
+}> = ({ content, children, position = 'top' }) => {
+    const [shouldRender, setShouldRender] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+    const [isLeaving, setIsLeaving] = useState(false);
+    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+    const containerRef = useRef<HTMLDivElement>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
+    const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    const updatePosition = useCallback(() => {
+        if (!containerRef.current || !tooltipRef.current) return;
+
+        const rect = containerRef.current.getBoundingClientRect();
+        const tooltipRect = tooltipRef.current.getBoundingClientRect();
+        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+        let top = 0;
+        let left = 0;
+
+        switch (position) {
+            case 'top':
+                top = rect.top + scrollY - tooltipRect.height - 5;
+                left = rect.left + scrollX + rect.width / 2;
+                break;
+            case 'bottom':
+                top = rect.bottom + scrollY + 10;
+                left = rect.left + scrollX + rect.width / 2;
+                break;
+            case 'left':
+                top = rect.top + scrollY + rect.height / 2;
+                left = rect.left + scrollX - tooltipRect.width - 10;
+                break;
+            case 'right':
+                top = rect.top + scrollY + rect.height / 2;
+                left = rect.right + scrollX + 10;
+                break;
+        }
+
+        const margin = 10;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        if (position === 'top' || position === 'bottom') {
+            left = Math.min(
+                Math.max(left, margin + tooltipRect.width / 2),
+                viewportWidth - margin - tooltipRect.width / 2,
+            );
+        } else {
+            top = Math.min(
+                Math.max(top, margin),
+                viewportHeight - margin - tooltipRect.height,
+            );
+        }
+
+        setTooltipPosition({ top, left });
+    }, [position]);
+
+    const handleMouseEnter = useCallback(() => {
+        if (fadeTimeoutRef.current) {
+            clearTimeout(fadeTimeoutRef.current);
+            fadeTimeoutRef.current = null;
+        }
+
+        setIsLeaving(false);
+        setShouldRender(true);
+
+        fadeTimeoutRef.current = setTimeout(() => {
+            setIsVisible(true);
+            fadeTimeoutRef.current = null;
+        }, 10);
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+        if (fadeTimeoutRef.current) {
+            clearTimeout(fadeTimeoutRef.current);
+            fadeTimeoutRef.current = null;
+        }
+
+        setIsLeaving(true);
+        setIsVisible(false);
+
+        fadeTimeoutRef.current = setTimeout(() => {
+            setShouldRender(false);
+            setIsLeaving(false);
+            fadeTimeoutRef.current = null;
+        }, 150);
+    }, []);
+
+    useEffect(() => {
+        if (shouldRender && !isLeaving) {
+            updatePosition();
+            window.addEventListener('scroll', updatePosition);
+            window.addEventListener('resize', updatePosition);
+            return () => {
+                window.removeEventListener('scroll', updatePosition);
+                window.removeEventListener('resize', updatePosition);
+            };
+        }
+    }, [shouldRender, updatePosition, isLeaving]);
+
+    useEffect(() => {
+        return () => {
+            if (fadeTimeoutRef.current) {
+                clearTimeout(fadeTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    return (
+        <div
+            ref={containerRef}
+            className="tooltip-container"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
+            {children}
+            {shouldRender &&
+                createPortal(
+                    <div
+                        ref={tooltipRef}
+                        className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+                        style={{
+                            position: 'absolute',
+                            top: `${tooltipPosition.top - 20}px`,
+                            left: `${tooltipPosition.left}px`,
+                            transform: `${position === 'top' || position === 'bottom'
+                                ? 'translateX(-50%)'
+                                : position === 'left' || position === 'right'
+                                    ? 'translateY(-50%)'
+                                    : 'none'
+                                } scale(${isVisible ? 1 : 0})`,
+                            opacity: isVisible ? 1 : 0,
+                            zIndex: 9999,
+                            pointerEvents: 'none',
+                            transition:
+                                'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+                            willChange: 'transform, opacity',
+                        }}
+                    >
+                        <div className="tooltip-content">{content}</div>
+                    </div>,
+                    document.body,
+                )}
+        </div>
+    );
+};
 const formatPrice = (p: number) => {
     if (p >= 1e12) return `${(p / 1e12).toFixed(1)}T`;
     if (p >= 1e9) return `${(p / 1e9).toFixed(1)}B`;
@@ -141,8 +291,6 @@ const TOKENS_QUERY = `
 `;
 
 const MemeSearch: React.FC<MemeSearchProps> = ({
-    isOpen,
-    onClose,
     monUsdPrice,
     onTokenClick,
     onMarketSelect,
@@ -156,8 +304,9 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
     buyPresets,
     marketsData = [],
     tokendict,
+    setpopup,
 }) => {
-        const navigate = useNavigate();
+    const navigate = useNavigate();
 
     const copyToClipboard = useCallback(async (text: string) => {
         const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -310,14 +459,14 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         addToRecentlyViewed(token);
         setSearchTerm('');
         onTokenClick?.(token);
-        onClose();
+        setpopup(0);
     };
 
     const handleMarketClick = (market: Market) => {
         addToRecentlyViewedMarkets(market);
         setSearchTerm('');
         onMarketSelect?.(market);
-        onClose();
+        setpopup(0);
     };
 
 
@@ -485,8 +634,6 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
     }, [mapGraphTokenToUi]);
 
     useEffect(() => {
-        if (!isOpen) return;
-
         const term = searchTerm.trim();
 
         if (term.length < 2) {
@@ -502,13 +649,8 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
 
         addToSearchHistory(term);
         fetchLatest();
-    }, [isOpen, searchTerm, recentlyViewed, fetchLatest, fetchRecentlyViewedFromSubgraph]);
+    }, [searchTerm, recentlyViewed, fetchLatest, fetchRecentlyViewedFromSubgraph]);
 
-    useEffect(() => {
-        if (!isOpen) {
-            abortRef.current?.abort();
-        }
-    }, [isOpen]);
 
     const filteredTokens = useMemo(() => {
         const t = searchTerm.trim().toLowerCase();
@@ -531,21 +673,20 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         );
     }, [searchTerm, marketsData]);
 
-    // Create combined list for display when no search term
     const combinedRecentlyViewed = useMemo(() => {
         if (searchTerm.trim().length > 0) return [];
-        
+
         const combined: Array<{ type: 'token' | 'market', data: Token | Market }> = [];
-        
+
         const tokensToUse = tokens.length > 0 ? tokens : recentlyViewed;
         tokensToUse.forEach(token => {
             combined.push({ type: 'token', data: token });
         });
-        
+
         recentlyViewedMarkets.forEach(market => {
             combined.push({ type: 'market', data: market });
         });
-        
+
         return combined;
     }, [tokens, recentlyViewed, recentlyViewedMarkets, searchTerm]);
 
@@ -553,35 +694,40 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         setSearchTerm(e.target.value);
     };
 
-    if (!isOpen) return null;
 
     const showMarkets = searchTerm.trim().length >= 1 && filteredMarkets.length > 0;
     const showTokens = searchTerm.trim().length > 0 && filteredTokens.length > 0;
     const showCombinedRecent = searchTerm.trim().length === 0 && combinedRecentlyViewed.length > 0;
 
     return (
-        <div className="meme-search-overlay" onClick={onClose}>
+        <div className="meme-search-overlay" onClick={() => setpopup(0)}>
             <div className="meme-search-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="meme-top-row">
                     <div className="meme-search-filters">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                            className="meme-search-time-active">
-                            <path d="M12 6v6l4-2" />
-                            <circle cx="12" cy="12" r="10" />
-                        </svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                            className="meme-search-market-cap">
-                            <path d="M3 3v16a2 2 0 0 0 2 2h16" />
-                            <path d="M7 11.207a.5.5 0 0 1 .146-.353l2-2a.5.5 0 0 1 .708 0l3.292 3.292a.5.5 0 0 0 .708 0l4.292-4.292a.5.5 0 0 1 .854.353V16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z" />
-                        </svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                            className="meme-search-liquidity">
-                            <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z" />
-                            <path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97" />
-                        </svg>
+                        <Tooltip content="Time Active">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                className="meme-search-time-active">
+                                <path d="M12 6v6l4-2" />
+                                <circle cx="12" cy="12" r="10" />
+                            </svg>
+                        </Tooltip>
+                        <Tooltip content="Market Cap">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                className="meme-search-market-cap">
+                                <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+                                <path d="M7 11.207a.5.5 0 0 1 .146-.353l2-2a.5.5 0 0 1 .708 0l3.292 3.292a.5.5 0 0 0 .708 0l4.292-4.292a.5.5 0 0 1 .854.353V16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z" />
+                            </svg>
+                        </Tooltip>
+                        <Tooltip content="Liquidity">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                className="meme-search-liquidity">
+                                <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z" />
+                                <path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97" />
+                            </svg>
+                        </Tooltip>
                     </div>
 
                     <div>
@@ -730,7 +876,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
 
                                                             <div className="meme-token-stats">
                                                                 <div className="meme-search-stat-item">
-                                                                    <p className="meme-search-stat-label">Price</p>
+                                                                    <p className="meme-search-stat-label">P</p>
                                                                     <p className="meme-search-stat-value">{market.currentPrice}</p>
                                                                 </div>
                                                                 <div className="meme-search-stat-item">
@@ -802,25 +948,25 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                                                 <div className="meme-token-details">
                                                                     <div className="meme-token-header">
                                                                         <h3 className="meme-search-token-symbol">{token.symbol}</h3>
-                                                                        <div className="meme-search-token-name-container">
-                                                                            <h3
-                                                                                className="meme-search-token-name"
-                                                                                onClick={(e) => { e.stopPropagation(); copyToClipboard(token.tokenAddress); }}
-                                                                                style={{ cursor: 'pointer' }}
-                                                                                title="Click to copy token address"
-                                                                            >
-                                                                                {token.name}
-                                                                            </h3>
-                                                                            <button
-                                                                                className="meme-search-copy-btn"
-                                                                                onClick={(e) => { e.stopPropagation(); copyToClipboard(token.tokenAddress); }}
-                                                                                title="Copy token address"
-                                                                            >
-                                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                                                                                    <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                                                                                </svg>
-                                                                            </button>
-                                                                        </div>
+                                                                        <Tooltip content={"Copy address to clipboard"}>
+                                                                            <div className="meme-search-token-name-container">
+                                                                                <h3
+                                                                                    className="meme-search-token-name"
+                                                                                    onClick={(e) => { e.stopPropagation(); copyToClipboard(token.tokenAddress); }}
+                                                                                    style={{ cursor: 'pointer' }}
+                                                                                >
+                                                                                    {token.name}
+                                                                                </h3>
+                                                                                <button
+                                                                                    className="meme-search-copy-btn"
+                                                                                    onClick={(e) => { e.stopPropagation(); copyToClipboard(token.tokenAddress); }}
+                                                                                >
+                                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                                                                        <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                                                                    </svg>
+                                                                                </button>
+                                                                            </div>
+                                                                        </Tooltip>
                                                                     </div>
 
                                                                     <div className="meme-token-meta">
@@ -843,41 +989,47 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                                                                     </a>
                                                                                 </TwitterHover>
                                                                             )}
-                                                                            {!!token.telegramHandle && (
-                                                                                <a
-                                                                                    className="meme-social-link meme-telegram-btn"
-                                                                                    href={token.telegramHandle}
-                                                                                    target="_blank"
-                                                                                    rel="noreferrer"
-                                                                                    onClick={e => e.stopPropagation()}
-                                                                                >
-                                                                                    <img src={telegram} alt="Telegram" />
-                                                                                </a>
-                                                                            )}
-                                                                            {!!token.discordHandle && (
-                                                                                <a
-                                                                                    className="meme-social-link meme-discord-btn"
-                                                                                    href={token.discordHandle}
-                                                                                    target="_blank"
-                                                                                    rel="noreferrer"
-                                                                                    onClick={e => e.stopPropagation()}
-                                                                                >
-                                                                                    <img src={discord} alt="Discord" />
-                                                                                </a>
-                                                                            )}
-                                                                            {!!token.website && (
-                                                                                <a
-                                                                                    className="meme-social-link meme-website-btn"
-                                                                                    href={token.website}
-                                                                                    target="_blank"
-                                                                                    rel="noreferrer"
-                                                                                    onClick={e => e.stopPropagation()}
-                                                                                >
-                                                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                                                                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                                                                                    </svg>
-                                                                                </a>
-                                                                            )}
+                                                                            <Tooltip content={"Telegram"}>
+                                                                                {!!token.telegramHandle && (
+                                                                                    <a
+                                                                                        className="meme-social-link meme-telegram-btn"
+                                                                                        href={token.telegramHandle}
+                                                                                        target="_blank"
+                                                                                        rel="noreferrer"
+                                                                                        onClick={e => e.stopPropagation()}
+                                                                                    >
+                                                                                        <img src={telegram} alt="Telegram" />
+                                                                                    </a>
+                                                                                )}
+                                                                            </Tooltip>
+                                                                            <Tooltip content={"Discord"}>
+                                                                                {!!token.discordHandle && (
+                                                                                    <a
+                                                                                        className="meme-social-link meme-discord-btn"
+                                                                                        href={token.discordHandle}
+                                                                                        target="_blank"
+                                                                                        rel="noreferrer"
+                                                                                        onClick={e => e.stopPropagation()}
+                                                                                    >
+                                                                                        <img src={discord} alt="Discord" />
+                                                                                    </a>
+                                                                                )}
+                                                                            </Tooltip>
+                                                                            <Tooltip content={"Website"}>
+                                                                                {!!token.website && (
+                                                                                    <a
+                                                                                        className="meme-social-link meme-website-btn"
+                                                                                        href={token.website}
+                                                                                        target="_blank"
+                                                                                        rel="noreferrer"
+                                                                                        onClick={e => e.stopPropagation()}
+                                                                                    >
+                                                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                                                                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                                                                                        </svg>
+                                                                                    </a>
+                                                                                )}
+                                                                            </Tooltip>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -900,13 +1052,12 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                                                     className={`meme-price-badge quickbuy-button ${buyingTokens.has(token.id) ? 'loading' : ''}`}
                                                                     onClick={(e) => handleQuickBuy(token, e)}
                                                                     disabled={buyingTokens.has(token.id) || !onQuickBuy}
-                                                                    title={`Quick buy ${getCurrentQuickBuyAmount()} MON`}
                                                                 >
                                                                     {buyingTokens.has(token.id) ? (
                                                                         <>
                                                                             <div className="quickbuy-loading-spinner" />
-                                                                            <img className="explorer-quick-buy-icon" src={lightning} style={{opacity: 0}}/>
-                                                                            <span style={{opacity: 0}}>{getCurrentQuickBuyAmount()} MON</span>
+                                                                            <img className="explorer-quick-buy-icon" src={lightning} style={{ opacity: 0 }} />
+                                                                            <span style={{ opacity: 0 }}>{getCurrentQuickBuyAmount()} MON</span>
                                                                         </>
                                                                     ) : (
                                                                         <>
@@ -980,8 +1131,8 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
 
                                                         <div className="meme-token-stats">
                                                             <div className="meme-search-stat-item">
-                                                                <p className="meme-search-stat-label">Price</p>
-                                                                <p className="meme-search-stat-value">{market.currentPrice}</p>
+                                                                <p className="meme-search-stat-label">P</p>
+                                                                <p className="meme-search-stat-value">${market.currentPrice}</p>
                                                             </div>
                                                             <div className="meme-search-stat-item">
                                                                 <p className="meme-search-stat-label">24h</p>
@@ -1071,25 +1222,25 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                                             <div className="meme-token-details">
                                                                 <div className="meme-token-header">
                                                                     <h3 className="meme-search-token-symbol">{token.symbol}</h3>
+                                                                    <Tooltip content={"Copy address to clipboard"}>
                                                                     <div className="meme-search-token-name-container">
                                                                         <h3
                                                                             className="meme-search-token-name"
                                                                             onClick={(e) => { e.stopPropagation(); copyToClipboard(token.tokenAddress); }}
                                                                             style={{ cursor: 'pointer' }}
-                                                                            title="Click to copy token address"
                                                                         >
                                                                             {token.name}
                                                                         </h3>
                                                                         <button
                                                                             className="meme-search-copy-btn"
                                                                             onClick={(e) => { e.stopPropagation(); copyToClipboard(token.tokenAddress); }}
-                                                                            title="Copy token address"
                                                                         >
                                                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                                                                                 <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
                                                                             </svg>
                                                                         </button>
                                                                     </div>
+                                                                    </Tooltip>
                                                                 </div>
 
                                                                 <div className="meme-token-meta">
@@ -1169,13 +1320,12 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                                                 className={`meme-price-badge quickbuy-button ${buyingTokens.has(token.id) ? 'loading' : ''}`}
                                                                 onClick={(e) => handleQuickBuy(token, e)}
                                                                 disabled={buyingTokens.has(token.id) || !onQuickBuy}
-                                                                title={`Quick buy ${getCurrentQuickBuyAmount()} MON`}
                                                             >
                                                                 {buyingTokens.has(token.id) ? (
                                                                     <>
                                                                         <div className="quickbuy-loading-spinner" />
-                                                                        <img className="explorer-quick-buy-icon" src={lightning} style={{opacity: 0}}/>
-                                                                        <span style={{opacity: 0}}>{getCurrentQuickBuyAmount()} MON</span>
+                                                                        <img className="explorer-quick-buy-icon" src={lightning} style={{ opacity: 0 }} />
+                                                                        <span style={{ opacity: 0 }}>{getCurrentQuickBuyAmount()} MON</span>
                                                                     </>
                                                                 ) : (
                                                                     <>
