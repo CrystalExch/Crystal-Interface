@@ -107,6 +107,48 @@ interface MonitorToken {
   trades: TokenTrade[];
 }
 
+// Helper: fetch recent trades
+const fetchRecentTradesForWallet = async (account: string, first = 50) => {
+  const url = (settings as any).graphqlUrl || (settings as any).api?.graphqlUrl;
+  if (!url) return [];
+
+  const tryPost = async (body: any) => {
+    const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return (await r.json());
+  };
+
+  // Try global trades query
+  const q1 = `query ($account: String!, $first: Int!) { trades(where: { account: $account }, orderBy: block, orderDirection: desc, first: $first) { id account { id } block isBuy priceNativePerTokenWad amountIn amountOut txHash } }`;
+  try {
+    const resp = await tryPost({ query: q1, variables: { account: account.toLowerCase(), first } });
+    const list = resp?.data?.trades;
+    if (Array.isArray(list) && list.length) return list;
+  } catch (e) {
+    // ignore, fall through
+  }
+
+  // Fallback: query trades per token
+  // Query launchpadTokens
+  const q2 = `query ($account: [Bytes!], $first: Int!) { launchpadTokens(first: 1000) { id trades(where: { account_in: $account }, orderBy: block, orderDirection: desc, first: $first) { id account { id } block isBuy priceNativePerTokenWad amountIn amountOut txHash } } }`;
+  try {
+    const resp2 = await tryPost({ query: q2, variables: { account: [account.toLowerCase()], first } });
+    const tokens = resp2?.data?.launchpadTokens;
+    if (Array.isArray(tokens)) {
+      const out: any[] = [];
+      for (const t of tokens) {
+        if (!t?.trades) continue;
+        for (const tr of t.trades) out.push(tr);
+      }
+  // sort desc and limit
+      out.sort((a,b) => (Number(b.block) || 0) - (Number(a.block) || 0));
+      return out.slice(0, first);
+    }
+  } catch (e) {}
+
+  return [];
+};
+
 interface TokenTrade {
   id: string;
   wallet: string;
@@ -487,6 +529,15 @@ const Tracker: React.FC<TrackerProps> = ({
   const [pinnedTokens, setPinnedTokens] = useState<Set<string>>(new Set());
   const marketsRef = useRef<MarketsMap>(new Map());
   const [marketsTick, setMarketsTick] = useState(0);
+  const wsRef = useRef<WebSocket | null>(null);
+  const marketSubsRef = useRef<Record<string, string>>({});
+  const subIdRef = useRef<number>(1);
+  // mappings addr/symbol -> market
+  const tokenToMarketRef = useRef<Record<string, string>>({});
+  const symbolToMarketRef = useRef<Record<string, string>>({});
+  // event topic constants
+  const ROUTER_EVENT = '0xfe210c99153843bc67efa2e9a61ec1d63c505e379b9dcf05a9520e84e36e6063';
+  const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
 
   const txFromCacheRef = useRef(new Map<string, string>());
 
@@ -495,7 +546,7 @@ const Tracker: React.FC<TrackerProps> = ({
     trackedSetRef.current = new Set(trackedWallets.map(w => w.address.toLowerCase()));
   }, [trackedWallets]);
 
-  const push = useCallback((logs: any[], source: 'router' | 'market' | 'launchpad') => {
+  const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'launchpad') => {
     if (!logs?.length) return;
     if (demoMode.trades) { disableDemo('trades'); setTrackedWalletTrades([]); }
     lastEventTsRef.current = Date.now();
@@ -508,33 +559,84 @@ const Tracker: React.FC<TrackerProps> = ({
       if (!trackedSetRef.current.has(key)) return;
       setTrackedWallets(prev => prev.map(x => lower(x.address) === key ? { ...x, lastActiveAt: Date.now() } : x));
     };
-    const pc = getRpcPublicClient(chainCfgOf(activechain));
+
+    const toAdd: LiveTrade[] = [];
+
+    for (const l of logs) {
+      const args: any = l?.args ?? {};
+      const txHash: string = l?.transactionHash ?? l?.transaction?.id ?? l?.id ?? '';
+
+      let accountAddr: string | null = (args.account || args.trader || args.sender || args.owner || args.from || args.buyer || args.seller) ?? null;
+
+  // if no account, try RPC lookup
+      if (!accountAddr && txHash) {
+        try {
+          const pc = getRpcPublicClient(chainCfgOf(activechain));
+          const tx = pc ? await safeGetTransaction(pc, txHash as `0x${string}`) : null;
+          if (tx?.from) accountAddr = tx.from;
+          else if (tx?.to) accountAddr = tx.to;
+          if (tx?.from) touchWallet(tx.from);
+          if (tx?.to) touchWallet(tx.to);
+        } catch (e) {}
+      } else if (accountAddr) {
+        touchWallet(accountAddr);
+      }
+
+  if (!accountAddr) continue; // skip if unresolved
+
+      // only process trades from tracked wallets
+      if (!trackedSetRef.current.has(lower(accountAddr))) continue;
+
+      const isBuy = Boolean(args.isBuy ?? args.buy ?? (args.from && !args.to));
+      const amountIn = Number(args.amountIn ?? 0n) / 1e18;
+      const amountOut = Number(args.amountOut ?? 0n) / 1e18;
+      const priceWad = Number(args.priceNativePerTokenWad ?? args.price ?? 0n) / 1e18;
+      const tokenAddr = String(args.token || args.tokenAddress || args.base || args.asset || args.tokenIn || args.tokenOut || (l as any)?.address || '').toLowerCase() || undefined;
+      const symbol = (args.symbol || args.ticker || '').toString() || undefined;
+      const ts = Math.floor(Date.now()/1000);
+
+  // prefer live price when available
+    // resolve market id
+      const symbolLower = (symbol || '').toLowerCase();
+      const addrLower = tokenAddr ? tokenAddr.toLowerCase() : undefined;
+      const resolvedMarketId = (addrLower && tokenToMarketRef.current[addrLower])
+        || (symbolLower && symbolToMarketRef.current[symbolLower])
+        || addrLower
+        || symbolLower;
+      const live = marketsRef.current.get(resolvedMarketId || '');
+  const chosenPrice = (live?.price != null && live.price > 0) ? live.price : priceWad;
+  const tradeLike = { id: txHash || `${Date.now()}_${Math.random()}`, account: { id: String(accountAddr || '') }, isBuy, amountIn: BigInt(Math.floor(amountIn * 1e18)), amountOut: BigInt(Math.floor(amountOut * 1e18)), priceNativePerTokenWad: BigInt(Math.floor(chosenPrice * 1e18)), token: { symbol: (live?.symbol ?? symbol ?? 'UNK') }, timestamp: ts };
+
+      toAdd.push(normalizeTrade(tradeLike, wallets));
+
+  upsertMarket({ tokenAddr, symbol, price: priceWad, isBuy, amountNative: isBuy ? amountIn : amountOut, ts, wallet: wallets.find(w=>lower(w.address)===lower(accountAddr||''))?.name, emoji: wallets.find(w=>lower(w.address)===lower(accountAddr||''))?.emoji });
+    }
+
+    if (toAdd.length === 0) return;
 
     setTrackedWalletTrades(prev => {
-      const next: LiveTrade[] = [...prev];
-      for (const l of logs) {
-        const args: any = l?.args ?? {};
-        const txHash: string = l?.transactionHash ?? l?.transaction?.id ?? l?.id;
-        let accountAddr: string | null = (args.account || args.trader || args.sender || args.owner || args.from) ?? null;
-        if (!accountAddr && txHash) (async()=>{ try{ const tx=await getRpcPublicClient(chainCfgOf(activechain))?.getTransaction({ hash: txHash as `0x${string}` }); if (tx?.from && trackedSetRef.current.has(lower(tx.from))) touchWallet(tx.from); }catch{}})();
-        if (accountAddr) touchWallet(accountAddr);
-        const isBuy = Boolean(args.isBuy ?? args.buy ?? (args.from && !args.to));
-        const amountIn = Number(args.amountIn ?? 0n) / 1e18;
-        const amountOut = Number(args.amountOut ?? 0n) / 1e18;
-        const priceWad = Number(args.priceNativePerTokenWad ?? args.price ?? 0n) / 1e18;
-        const tokenAddr = String(args.token || args.tokenAddress || args.base || args.asset || args.tokenIn || args.tokenOut || (l as any)?.address || '').toLowerCase() || undefined;
-        const symbol = (args.symbol || args.ticker || '').toString() || undefined;
-        const ts = Math.floor(Date.now()/1000);
-        const tradeLike = { id: txHash || `${Date.now()}_${Math.random()}`, account: { id: String(accountAddr || '') }, isBuy, amountIn: BigInt(Math.floor(amountIn * 1e18)), amountOut: BigInt(Math.floor(amountOut * 1e18)), priceNativePerTokenWad: BigInt(Math.floor(priceWad * 1e18)), token: { symbol: symbol ?? 'UNK' }, timestamp: ts };
-        next.unshift(normalizeTrade(tradeLike, wallets));
-        upsertMarket({ tokenAddr, symbol, price: priceWad, isBuy, amountNative: isBuy ? amountIn : amountOut, ts, wallet: wallets.find(w=>lower(w.address)===lower(accountAddr||''))?.name, emoji: wallets.find(w=>lower(w.address)===lower(accountAddr||''))?.emoji });
-      }
+      const next: LiveTrade[] = [...toAdd, ...prev];
       const seen = new Set<string>(), out: LiveTrade[] = [];
       for (const t of next) if (!seen.has(t.id)) { seen.add(t.id); out.push(t); }
       flushMarketsToState();
       return out.slice(0, 500);
     });
   }, [normalizeTrade, activechain, demoMode.trades]);
+
+  // safe RPC wrapper to avoid noisy errors
+  const safeGetTransaction = async (pc: any, hash: string) => {
+    try {
+      return await pc.getTransaction({ hash: hash as `0x${string}` });
+    } catch (e: any) {
+  // handle provider rejection/network errors
+      if (e?.code === 4001) {
+        console.info('[Tracker] provider request rejected by user');
+      } else {
+        console.warn('[Tracker] getTransaction failed', e?.message || e);
+      }
+      return null;
+    }
+  };
 
 
 
@@ -714,7 +816,7 @@ const Tracker: React.FC<TrackerProps> = ({
       if (walletSortField === 'lastActive') {
         const aTs = a.lastActiveAt ?? new Date(a.createdAt).getTime();
         const bTs = b.lastActiveAt ?? new Date(b.createdAt).getTime();
-        // newer activity first when 'desc'
+  // newer first when 'desc'
         comparison = aTs - bTs;
       }
 
@@ -871,7 +973,7 @@ const Tracker: React.FC<TrackerProps> = ({
       });
     }
 
-    // Sort pinned tokens to the top
+  // Sort pinned tokens top
     const pinned = tokens.filter(t => pinnedTokens.has(t.id));
     const unpinned = tokens.filter(t => !pinnedTokens.has(t.id));
     
@@ -887,6 +989,12 @@ const Tracker: React.FC<TrackerProps> = ({
     const nw: TrackedWallet = { id: Date.now().toString(), address: newWalletAddress.trim(), name, emoji: newWalletEmoji, balance: 0, lastActiveAt: null, createdAt: new Date().toISOString() };
     setTrackedWallets(prev => demoMode.wallets ? [nw] : [...prev, nw]);
     if (demoMode.wallets) disableDemo('wallets');
+  // fetch recent trades (up to 50)
+    try {
+      fetchRecentTradesForWallet(nw.address, 50).then(items => {
+        if (items && items.length) ingestExternalTrades(items);
+      }).catch(() => {});
+    } catch (e) {}
     closeAddWalletModal();
   };
 
@@ -919,6 +1027,17 @@ const Tracker: React.FC<TrackerProps> = ({
       if (!toAdd.length) return;
       setTrackedWallets(prev => demoMode.wallets ? toAdd : [...prev, ...toAdd]);
       if (demoMode.wallets) disableDemo('wallets');
+  // fetch recent trades for imports
+      (async () => {
+        try {
+          const all: any[] = [];
+          for (const w of toAdd) {
+            const items = await fetchRecentTradesForWallet(w.address, 50);
+            if (items && items.length) all.push(...items);
+          }
+          if (all.length) ingestExternalTrades(all.slice(0, 500));
+        } catch (e) {}
+      })();
     } catch {}
   };
 
@@ -1061,7 +1180,7 @@ const Tracker: React.FC<TrackerProps> = ({
     });
     setDropPreviewLine(null);
   };
-  // helper to format lastActiveAt → label
+  // helper: format lastActiveAt
   const lastActiveLabel = (w: TrackedWallet) => {
     const ts = w.lastActiveAt ?? new Date(w.createdAt).getTime();
     const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
@@ -1071,7 +1190,7 @@ const Tracker: React.FC<TrackerProps> = ({
     return `${Math.floor(s / 86400)}d`;
   };
 
-  // re-render every 30s so the label updates
+  // rerender every 30s
   const [, setTicker] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTicker(t => t + 1), 30_000);
@@ -1168,6 +1287,17 @@ const Tracker: React.FC<TrackerProps> = ({
   const ingestExternalTrades = (items: any[]) => {
     if (demoMode.trades) { disableDemo('trades'); setTrackedWalletTrades([]); }
     const wallets = trackedWalletsRef.current;
+    console.debug('[Tracker] ingestExternalTrades count=', items?.length || 0);
+    try {
+      for (const it of items) {
+        try {
+          const tokenAddr = (it.token?.id || it.tokenAddress || it.base || it.asset || it.tokenIn || it.tokenOut || '').toString().toLowerCase();
+          const symbol = (it.token?.symbol || it.symbol || it.ticker || '').toString();
+          const price = Number(it.priceNativePerTokenWad ?? it.price ?? 0) / 1e18;
+          upsertMarket({ tokenAddr: tokenAddr || undefined, symbol: symbol || undefined, price: price || 0, ts: Number(it.block || it.timestamp) || undefined });
+        } catch (e) { /* per-item ignore */ }
+      }
+    } catch (e) { console.error('[Tracker] ingestExternalTrades upsertMarket loop error', e); }
     setTrackedWalletTrades(prev => {
       const next = [...items.map(x => normalizeTrade(x, wallets)), ...prev];
       const seen = new Set<string>(), out: LiveTrade[] = [];
@@ -1185,14 +1315,14 @@ const Tracker: React.FC<TrackerProps> = ({
     const m = marketsRef.current.get(id);
     const nowIso = new Date((t.ts ?? Math.floor(Date.now()/1000)) * 1000).toISOString();
 
-    // keep last non-zero price if this update has no price
+  // keep last non-zero price
     const price = (t.price != null && t.price > 0) ? t.price : (m?.price ?? 0);
     const mk = (price || 0) * SUPPLY;
 
     const bought = t.isBuy ? (t.amountNative ?? 0) : 0;
     const sold   = !t.isBuy ? (t.amountNative ?? 0) : 0;
 
-    // Always record a trade row so the card can expand immediately
+  // Always record a trade row
     const trades = (m?.trades ?? []).slice(0, 49);
     trades.unshift({
       id: `${id}_${Date.now()}`,
@@ -1242,7 +1372,254 @@ const Tracker: React.FC<TrackerProps> = ({
       setDemoMode(v => ({ ...v, monitor: false }));
       if (!m) setMonitorTokens([]);
     }
+  // ensure ws subscription for market
+    try {
+      const cfg = chainCfgOf(activechain);
+      const wss = cfg?.wssurl;
+      if (wss && wsRef.current && !marketSubsRef.current[id]) {
+  // ask for logs via eth_subscribe
+        try {
+          console.debug('[Tracker] subscribing to market via subscribe helper', id);
+          subscribe(wsRef.current, ['logs', { address: id }], (subId) => {
+            try {
+              marketSubsRef.current[id] = subId;
+              console.debug('[Tracker] market subscription acked', id, 'subId=', subId);
+            } catch (e) { console.error('[Tracker] market sub ack handler error', e); }
+          });
+        } catch (e) { console.error('[Tracker] subscribe helper failed', e); }
+      }
+    } catch (e) {}
   };
+
+  // websocket helpers (subscribe style)
+  const subscribe = useCallback((ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
+    try {
+      const reqId = subIdRef.current++;
+      ws.send(JSON.stringify({ id: reqId, jsonrpc: '2.0', method: 'eth_subscribe', params }));
+      if (!onAck) return;
+      const handler = (evt: MessageEvent) => {
+        try {
+          const msg = JSON.parse(evt.data);
+          console.debug('[Tracker] subscribe helper got message for reqId=', reqId, msg);
+          if (msg.id === reqId && msg.result) {
+            console.debug('[Tracker] subscribe helper ack result=', msg.result);
+            onAck(msg.result);
+            ws.removeEventListener('message', handler);
+          }
+        } catch (e) { console.error('[Tracker] subscribe handler parse error', e); }
+      };
+      ws.addEventListener('message', handler);
+    } catch (e) {}
+  }, []);
+
+  const addMarketFromLog = useCallback(async (log: any) => {
+  // parse add-market logs: extract id/token/symbol
+    try {
+      const topics = log.topics || [];
+      const data = log.data || '';
+      const market = `0x${(topics[1] || '').slice(26)}`.toLowerCase();
+      const tokenAddr = `0x${(topics[2] || '').slice(26)}`.toLowerCase();
+  // attempt to read strings from data
+      const hex = data.replace(/^0x/, '');
+      const offs = [parseInt(hex.slice(0, 64) || '0', 16), parseInt(hex.slice(64, 128) || '0', 16), parseInt(hex.slice(128, 192) || '0', 16)];
+      const read = (at: number) => {
+        const start = at * 2;
+        const len = parseInt(hex.slice(start, start + 64) || '0', 16) || 0;
+        const strHex = hex.slice(start + 64, start + 64 + len * 2) || '';
+  const bytes = strHex.match(/.{2}/g) ?? [];
+  return bytes.map((b: string) => String.fromCharCode(parseInt(b, 16))).join('');
+      };
+      const name = read(offs[0]) || 'Token';
+      const symbol = (read(offs[1]) || 'TKN').toLowerCase();
+      const marketId = market;
+  // register mappings
+      if (tokenAddr) {
+        tokenToMarketRef.current[tokenAddr] = marketId;
+        console.debug('[Tracker] token->market mapping set', tokenAddr, '->', marketId);
+      }
+      if (symbol) {
+        symbolToMarketRef.current[symbol] = marketId;
+        console.debug('[Tracker] symbol->market mapping set', symbol, '->', marketId);
+      }
+      upsertMarket({ tokenAddr: tokenAddr, symbol: symbol.toUpperCase(), name, price: 0 });
+  // subscribe to market logs
+      try {
+        if (wsRef.current && !marketSubsRef.current[marketId]) {
+          const reqId = subIdRef.current++;
+          console.debug('[Tracker] addMarketFromLog subscribing to market', marketId, 'reqId=', reqId);
+          wsRef.current.send(JSON.stringify({ id: reqId, jsonrpc: '2.0', method: 'eth_subscribe', params: ['logs', { address: marketId }] }));
+        }
+      } catch (e) { console.error('[Tracker] addMarketFromLog subscribe error', e); }
+    } catch (e) {}
+  }, [upsertMarket]);
+
+  const updateMarketFromLog = useCallback((log: any) => {
+    try {
+      const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
+      if ((log.topics || [])[0] !== MARKET_UPDATE_EVENT) return;
+  const id = (log.address || '').toLowerCase();
+      const hex = (log.data || '').replace(/^0x/, '');
+      console.debug('[Tracker] updateMarketFromLog raw data for', id, hex.slice(0,120));
+      const words: string[] = [];
+      for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
+      const amounts = BigInt('0x' + (words[0] || '0'));
+      const isBuy = BigInt('0x' + (words[1] || '0'));
+      const priceRaw = BigInt('0x' + (words[2] || '0'));
+      const counts = BigInt('0x' + (words[3] || '0'));
+      const priceEth = Number(priceRaw) / 1e18;
+      const buys = Number(counts >> 128n);
+      const sells = Number(counts & ((1n << 128n) - 1n));
+      const amountIn = Number(amounts >> 128n) / 1e18;
+      const amountOut = Number(amounts & ((1n << 128n) - 1n)) / 1e18;
+      const m = marketsRef.current.get(id) || { symbol: id, emoji: '🪙' } as MonitorToken;
+  // Populate mappings from market data
+      try {
+  // best-effort mapping
+        if (m.tokenAddress) {
+          tokenToMarketRef.current[m.tokenAddress.toLowerCase()] = id;
+          console.debug('[Tracker] tokenToMarketRef populated from market data', m.tokenAddress.toLowerCase(), '->', id);
+        }
+        if (m.symbol) {
+          symbolToMarketRef.current[m.symbol.toLowerCase()] = id;
+          console.debug('[Tracker] symbolToMarketRef populated from market data', m.symbol.toLowerCase(), '->', id);
+        }
+      } catch (e) { console.error('[Tracker] mapping populate error', e); }
+      marketsRef.current.set(id, {
+        ...m,
+        id,
+        tokenAddress: m.tokenAddress || id,
+        name: m.name || m.symbol || id,
+        symbol: m.symbol || id,
+        emoji: m.emoji || '🪙',
+        price: priceEth || m.price || 0,
+        marketCap: (priceEth || m.price || 0) * SUPPLY,
+        buyTransactions: (m.buyTransactions ?? 0) + buys,
+        sellTransactions: (m.sellTransactions ?? 0) + sells,
+        volume24h: (m.volume24h ?? 0) + (isBuy > 0 ? amountIn : amountOut),
+        lastTransaction: new Date().toISOString(),
+        trades: m.trades ?? []
+      });
+      flushMarketsToState();
+    } catch (e) {}
+  }, []);
+
+  // open websocket to chain wssurl and subscribe to router logs
+  useEffect(() => {
+  const cfg = chainCfgOf(activechain);
+  // Force dev/test WSS for debugging (temporary)
+  const primaryWss = 'wss://testnet-rpc.monad.xyz';
+  const devFallbackWss = 'wss://testnet-rpc.monad.xyz';
+
+    let mounted = true;
+    let attempt = 0;
+    let currentWs: WebSocket | null = null;
+    const maxBackoff = 30_000; // 30s
+
+    const connect = (wssUrl: string) => {
+      attempt++;
+      const backoff = Math.min(1000 * Math.pow(2, attempt - 1), maxBackoff);
+      try {
+        const ws = new WebSocket(wssUrl);
+        currentWs = ws;
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          attempt = 0; // reset backoff on success
+          if (!mounted) return tryClose(ws);
+          // subscribe to router event
+          try { subscribe(ws, ['logs', { address: cfg.router, topics: [ROUTER_EVENT] }]); } catch (e) {}
+          // subscribe to any known market addresses
+          try {
+            for (const k of marketsRef.current.keys()) {
+              subscribe(ws, ['logs', { address: k }], (sub) => { marketSubsRef.current[k] = sub; });
+            }
+          } catch (e) {}
+          console.debug('[Tracker] websocket opened', wssUrl);
+        };
+
+        ws.onmessage = ({ data }) => {
+          try {
+            const msg = JSON.parse(data as any);
+            if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
+            const log = msg.params.result;
+            if ((log.topics || [])[0] === ROUTER_EVENT) addMarketFromLog(log);
+            else if ((log.topics || [])[0] === MARKET_UPDATE_EVENT) updateMarketFromLog(log);
+          } catch (e) {}
+        };
+
+        ws.onerror = (_e) => {
+          try {
+            console.warn('[Tracker] websocket error connecting to', wssUrl, 'readyState=', ws.readyState);
+          } catch (err) { console.warn('[Tracker] websocket error'); }
+        };
+
+        ws.onclose = (ev) => {
+          try {
+            console.debug('[Tracker] websocket closed', wssUrl, 'code=', ev?.code, 'reason=', ev?.reason, 'readyState=', ws.readyState);
+          } catch (e) {}
+          // try reconnect with backoff if still mounted
+          if (!mounted) return;
+          setTimeout(() => {
+            // if primary failed, try fallback once
+            if (wssUrl === primaryWss && devFallbackWss && devFallbackWss !== primaryWss) {
+              console.debug('[Tracker] trying dev fallback wss', devFallbackWss);
+              connect(devFallbackWss);
+              return;
+            }
+            // otherwise, retry same url with backoff
+            connect(wssUrl);
+          }, Math.min(Math.max(500, 1000 * Math.pow(2, Math.max(0, attempt - 1))), maxBackoff));
+        };
+
+      } catch (e) {
+        // schedule retry
+        if (!mounted) return;
+        setTimeout(() => connect(wssUrl), Math.min(1000 * Math.pow(2, attempt), maxBackoff));
+      }
+    };
+
+    const tryClose = (ws: WebSocket) => { try { ws.close(); } catch (e) {} };
+
+  // start with primary (forced to dev WSS for debugging)
+  connect(primaryWss);
+
+    return () => {
+      mounted = false;
+      try { if (currentWs) tryClose(currentWs); } catch (e) {}
+      if (wsRef.current && wsRef.current === currentWs) wsRef.current = null;
+    };
+  }, [activechain, addMarketFromLog, updateMarketFromLog, subscribe]);
+
+  // Bootstrap: fetch existing launchpadTokens / markets from the GraphQL endpoint
+  useEffect(() => {
+    let cancelled = false;
+    const url = (settings as any).graphqlUrl || (settings as any).api?.graphqlUrl;
+    if (!url) return;
+
+    (async () => {
+      try {
+        const q = `query { launchpadTokens(first: 100, orderBy: createdAt, orderDirection: desc) { id tokenAddress name symbol lastPriceNativePerTokenWad createdAt metadataCID } }`;
+        const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query: q }) });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (cancelled) return;
+        const list = json?.data?.launchpadTokens || [];
+        for (const m of list) {
+          try {
+            const tokenAddr = (m.tokenAddress || m.id || '').toString().toLowerCase();
+            const symbol = (m.symbol || '').toString();
+            const price = Number(m.lastPriceNativePerTokenWad ?? 0) / 1e18;
+            const ts = Number(m.createdAt) || undefined;
+            upsertMarket({ tokenAddr: tokenAddr || undefined, symbol: symbol || undefined, name: m.name, price: price || 0, ts });
+          } catch (e) { /* per-item ignore */ }
+        }
+      } catch (e) {
+        console.warn('[Tracker] bootstrap fetch failed', e);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [activechain]);
 
 
 
