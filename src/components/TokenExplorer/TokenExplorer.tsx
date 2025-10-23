@@ -3495,27 +3495,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     };
   }, []);
 
-  // Sync active wallet from localStorage
-  useEffect(() => {
-    const storedActiveWalletPrivateKey = localStorage.getItem(
-      'crystal_active_wallet_private_key',
-    );
-
-    if (storedActiveWalletPrivateKey && subWallets.length > 0) {
-      const isValidWallet = subWallets.some(
-        (wallet) => wallet.privateKey === storedActiveWalletPrivateKey,
-      );
-
-      if (isValidWallet) {
-        if (activeWalletPrivateKey !== storedActiveWalletPrivateKey) {
-          setOneCTSigner(storedActiveWalletPrivateKey);
-        }
-      } else {
-        localStorage.removeItem('crystal_active_wallet_private_key');
-      }
-    }
-  }, [subWallets, setOneCTSigner, activeWalletPrivateKey]);
-
   // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

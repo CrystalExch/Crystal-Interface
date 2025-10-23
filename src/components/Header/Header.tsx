@@ -427,22 +427,6 @@ const Header: React.FC<HeaderProps> = ({
   }, []);
 
   useEffect(() => {
-    const storedActiveWalletPrivateKey = localStorage.getItem('crystal_active_wallet_private_key');
-
-    if (storedActiveWalletPrivateKey && subWallets.length > 0) {
-      const isValidWallet = subWallets.some(wallet => wallet.privateKey === storedActiveWalletPrivateKey);
-
-      if (isValidWallet) {
-        if (activeWalletPrivateKey !== storedActiveWalletPrivateKey) {
-          setOneCTSigner(storedActiveWalletPrivateKey);
-        }
-      } else {
-        localStorage.removeItem('crystal_active_wallet_private_key');
-      }
-    }
-  }, [subWallets, setOneCTSigner, activeWalletPrivateKey]);
-
-  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (walletDropdownRef.current && !walletDropdownRef.current.contains(event.target as Node)) {
         setIsWalletDropdownOpen(false);
@@ -588,9 +572,7 @@ const Header: React.FC<HeaderProps> = ({
             }
             priceChangeAmount={isMemeTokenPage && memeTokenData ?
               memeTokenData.change24h?.toString() || 'n/a' :
-              formatCommas(
-                (marketHeader?.priceChangeAmount / Number(activeMarket?.priceFactor || 1)).toString()
-              ) || 'n/a'
+              formatSubscript(marketHeader?.priceChangeAmount) || 'n/a'
             }
             priceChangePercent={isMemeTokenPage && memeTokenData ?
               `${memeTokenData.change24h >= 0 ? '+' : ''}${memeTokenData.change24h.toFixed(2)}` :

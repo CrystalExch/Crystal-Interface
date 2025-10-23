@@ -109,7 +109,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
 
       <div className={`oc-cell ${isBlurred ? 'blurred' : ''}`}>
         <span className={`funding-value ${position.funding >= 0 ? 'positive' : 'negative'}`}>
-          {position.funding >= 0 ? '+' : ''}{position.funding.toFixed(4)}%
+          {position.funding >= 0 ? '+' : ''}{position.funding.toFixed(4)}
         </span>
       </div>
       <div className="oc-cell tpsl-actions">

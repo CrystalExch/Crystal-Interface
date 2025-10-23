@@ -679,6 +679,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return saved ? saved : '';
   });
 
+  const [oneCTSig, setOneCTSig] = useState(() => {
+    const saved = localStorage.getItem('crystal_onect_signature');
+    return saved ? saved : '';
+  });
+
   const validOneCT = !!oneCTSigner
   const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
     address: '0x0000000000000000000000000000000000000000' as `0x${string}`,
@@ -769,7 +774,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             }, 100000n, 0n, false, '0xb52e8ab1cddc2645f8df7e94578ee0edfce192371feb2633f47e7039f90c67cb', await getTransactionCount(config, { address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any), }))
           })()
         }
-        if (popup == 4 && !oneCTSigner) {
+        if (!oneCTSigner) {
           setpopup(28)
         }
       }
@@ -803,23 +808,34 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     marketSearchTerm: ''
   });
 
-  const createSubWallet = async () => {
+  const createSubWallet = async (setMain: boolean = false) => {
     try {
-      const privateKey = '0x' + (BigInt(keccak256(await signTypedDataAsync({
-        typedData: {
-          types: {
-            createCrystalOneCT: [
-              { name: 'version', type: 'string' },
-              { name: 'account', type: 'uint256' },
-            ],
-          },
-          primaryType: 'createCrystalOneCT',
-          message: {
-            version: 'Crystal v0.0.1 Testnet',
-            account: BigInt(subWallets.length + 1),
+      if (subWallets.length > 9) return;
+      let tempsig
+      if (oneCTSig) {
+        tempsig = oneCTSig
+      }
+      else {
+        tempsig = await signTypedDataAsync({
+          typedData: {
+            types: {
+              CrystalOneCT: [
+                { name: 'version', type: 'string' },
+                { name: 'account', type: 'uint256' },
+              ],
+            },
+            primaryType: 'CrystalOneCT',
+            message: {
+              version: 'Crystal v0.0.1 Testnet',
+              account: 1,
+            }
           }
-        }
-      }))) % BigInt("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141")).toString(16).padStart(64, "0");
+        })
+        localStorage.setItem('crystal_onect_signature', tempsig)
+        setOneCTSig(tempsig)
+      }
+
+      const privateKey = '0x' + (BigInt(keccak256('0x' + (BigInt(tempsig) + BigInt(subWallets.length + 1)).toString(16))) % BigInt("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141")).toString(16).padStart(64, "0");
 
       const tempWallet = new Wallet(privateKey);
       const walletAddress = tempWallet.address as string;
@@ -834,10 +850,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       lastNonceGroupFetch.current = 0;
       setSubWallets(updatedWallets);
       localStorage.setItem('crystal_sub_wallets', JSON.stringify(updatedWallets));
-      if (!validOneCT && updatedWallets.length === 1) {
+      if (setMain || (!validOneCT && updatedWallets.length === 1)) {
         setOneCTSigner(privateKey);
         refetch();
       }
+      return walletAddress
     } catch (error) {
       console.error('Error creating subwallet:', error);
     }
@@ -4438,23 +4455,21 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const isBuy = word(0) !== 0n;
               const amountInWei = word(1);
               const amountOutWei = word(2);
-              const endPrice = word(4);
 
               const amountIn = Number(amountInWei) / 1e18;
               const amountOut = Number(amountOutWei) / 1e18;
 
               const priceFactor = Number(mcfg.priceFactor || 1);
-              const price = priceFactor ? (Number(endPrice) / priceFactor) : 0;
 
               const startPrice = priceFactor ? (Number(word(3)) / priceFactor) : 0
-              const tradePrice = price;
+              const endPrice = priceFactor ? (Number(word(4)) / priceFactor) : 0
 
               dispatch({
                 type: 'UPDATE_MARKET',
                 id: tokenAddrFromMarket,
                 updates: {
-                  price: price,
-                  marketCap: price * TOTAL_SUPPLY,
+                  price: endPrice,
+                  marketCap: endPrice * TOTAL_SUPPLY,
                   buyTransactions: isBuy ? 1 : 0,
                   sellTransactions: isBuy ? 0 : 1,
                   volumeDelta:
@@ -4466,8 +4481,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               setTokenData(p => ({
                 ...p,
-                price,
-                marketCap: price * TOTAL_SUPPLY,
+                price: endPrice,
+                marketCap: endPrice * TOTAL_SUPPLY,
                 buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
                 sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
                 volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
@@ -4478,7 +4493,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   id: `${log.transactionHash}-${log.logIndex}`,
                   timestamp: Date.now() / 1000,
                   isBuy,
-                  price: tradePrice,
+                  price: endPrice,
                   nativeAmount: isBuy ? amountIn : amountOut,
                   tokenAmount: isBuy ? amountOut : amountIn,
                   caller: `0x${log.topics[2].slice(26)}`,
@@ -4503,14 +4518,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 if (!last || last.time < bucket) {
                   const prevClose = last?.close ?? startPrice;
                   const open = prevClose;
-                  const high = Math.max(open, tradePrice);
-                  const low = Math.min(open, tradePrice);
+                  const high = Math.max(open, Math.max(startPrice, endPrice));
+                  const low = Math.min(open, Math.min(startPrice, endPrice));
                   const newBar = {
                     time: bucket,
                     open,
                     high,
                     low,
-                    close: tradePrice,
+                    close: endPrice,
                     volume: volNative || 0,
                   };
                   updated.push(newBar);
@@ -4519,9 +4534,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   if (cb) cb(newBar);
                 } else {
                   const cur = { ...last };
-                  cur.high = Math.max(cur.high, tradePrice);
-                  cur.low = Math.min(cur.low, tradePrice);
-                  cur.close = tradePrice;
+                  cur.high = Math.max(cur.high, Math.max(startPrice, endPrice));
+                  cur.low = Math.min(cur.low, Math.min(startPrice, endPrice));
+                  cur.close = endPrice;
                   cur.volume = (cur.volume || 0) + (volNative || 0);
                   updated[updated.length - 1] = cur;
                   const cb =
@@ -4566,7 +4581,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   const hh = arr[i];
                   const realized = (hh.valueSold || 0) - (hh.valueBought || 0);
                   const bal = Math.max(0, hh.balance || 0);
-                  arr[i] = { ...hh, valueNet: realized + bal * price };
+                  arr[i] = { ...hh, valueNet: realized + bal * endPrice };
                 }
 
                 const topSum = arr
@@ -4613,7 +4628,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   const r = copy[i];
                   const bal = Math.max(0, (r.balance ?? r.amountBought - r.amountSold) || 0);
                   const realized = (r.valueSold || 0) - (r.valueBought || 0);
-                  copy[i] = { ...r, valueNet: realized + bal * price };
+                  copy[i] = { ...r, valueNet: realized + bal * endPrice };
                 }
 
                 copy.sort((a, b) => b.valueNet - a.valueNet);
@@ -4648,7 +4663,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     remainingTokens: 0,
                     remainingPct: 0,
                     pnlNative: 0,
-                    lastPrice: price,
+                    lastPrice: endPrice,
                   };
                   copy.push(newPos);
                   idx = copy.length - 1;
@@ -4657,7 +4672,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 if (idx === undefined) return prev;
 
                 const pos = { ...copy[idx] };
-                pos.lastPrice = price;
+                pos.lastPrice = endPrice;
                 if (isUserTrade) {
                   if (isBuy) {
                     pos.boughtTokens += amountOut;
@@ -4699,7 +4714,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setMemeDevTokens(prev => {
                   const updated = prev.map(t => {
                     if ((t.id || '').toLowerCase() !== tokenAddrFromMarket) return t;
-                    return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
+                    return { ...t, endPrice, marketCap: endPrice * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
                   });
                   memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
                   return updated;
@@ -4732,7 +4747,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const vToken = Number(vTokenWei);
 
               const price = vToken === 0 ? 0 : vNative / vToken;
-              const tradePrice = (isBuy ? amountIn / amountOut : amountOut / amountIn) || 0;
               if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
                 setTokenData(p => ({
                   ...p,
@@ -4748,7 +4762,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     id: `${log.transactionHash}-${log.logIndex}`,
                     timestamp: Date.now() / 1000,
                     isBuy,
-                    price: tradePrice,
+                    price: price,
                     nativeAmount: isBuy ? amountIn : amountOut,
                     tokenAmount: isBuy ? amountOut : amountIn,
                     caller: `0x${log.topics[2].slice(26)}`,
@@ -4773,16 +4787,16 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   const last = updated[updated.length - 1];
 
                   if (!last || last.time < bucket) {
-                    const prevClose = last?.close ?? tradePrice;
+                    const prevClose = last?.close ?? price;
                     const open = prevClose;
-                    const high = Math.max(open, tradePrice);
-                    const low = Math.min(open, tradePrice);
+                    const high = Math.max(open, price);
+                    const low = Math.min(open, price);
                     const newBar = {
                       time: bucket,
                       open,
                       high,
                       low,
-                      close: tradePrice,
+                      close: price,
                       volume: volNative || 0,
                     };
                     updated.push(newBar);
@@ -4791,9 +4805,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     if (cb) cb(newBar);
                   } else {
                     const cur = { ...last };
-                    cur.high = Math.max(cur.high, tradePrice);
-                    cur.low = Math.min(cur.low, tradePrice);
-                    cur.close = tradePrice;
+                    cur.high = Math.max(cur.high, price);
+                    cur.low = Math.min(cur.low, price);
+                    cur.close = price;
                     cur.volume = (cur.volume || 0) + (volNative || 0);
                     updated[updated.length - 1] = cur;
                     const cb =
@@ -8472,7 +8486,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                         (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
                       ),
                       priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-                      priceChangeAmount: currentPriceRaw - firstKlineOpen,
+                      priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0),
                       ...(high != null && {
                         high24h: formatSig(
                           high.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
@@ -9323,7 +9337,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
                         ),
                         priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-                        priceChangeAmount: currentPriceRaw - firstKlineOpen,
+                        priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0),
                         ...(high != null && {
                           high24h: formatSig(
                             high.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
@@ -9954,8 +9968,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               low24h: formatSig(low24.toFixed(decs), m.marketType != 0),
               volume: volumeDisplay,
               priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
-              priceChangeAmount: deltaRaw,
-              latestPrice: pf ? m.latestPrice / pf : 0,
+              priceChangeAmount: formatSig(deltaRaw.toFixed(decs), m.marketType != 0),
             });
           }
 
@@ -9982,10 +9995,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 const pf2 = Number(siblingCfg.priceFactor);
                 const decs2 = Math.max(0, Math.floor(Math.log10(pf2)));
                 const last2 = pf2 ? lastRaw / pf2 : 0;
-                const miniAsc2 = miniAsc.map((p: any) => ({
-                  time: p.time,
-                  value: pf2 ? (p.value * pf) / pf2 : 0,
-                }));
 
                 if (trades.length && temptradesByMarket[siblingKey]) {
                   for (const t of trades) {
@@ -10004,14 +10013,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 rows.push({
                   ...siblingCfg,
                   pair: `${siblingCfg.baseAsset}/${siblingCfg.quoteAsset}`,
-                  mini: miniAsc2,
+                  mini: miniAsc,
                   currentPrice: formatSig(last2.toFixed(decs2), m.marketType != 0),
-                  high24h: formatSig(Math.max(...miniAsc2.map(p => p.value)).toFixed(decs2), m.marketType != 0),
-                  low24h: formatSig(Math.min(...miniAsc2.map(p => p.value)).toFixed(decs2), m.marketType != 0),
+                  high24h: formatSig(high24.toFixed(decs2), m.marketType != 0),
+                  low24h: formatSig(low24.toFixed(decs2), m.marketType != 0),
                   volume: volumeDisplay,
                   priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
-                  priceChangeAmount: deltaRaw,
-                  latestPrice: pf2 ? m.latestPrice / pf2 : 0,
+                  priceChangeAmount: formatSig(deltaRaw.toFixed(decs2), m.marketType != 0),
                 });
               }
             }
@@ -15040,9 +15048,19 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           <div ref={popupref} className="deposit-page-container" onClick={(e) => e.stopPropagation()}>
             <div className="deposit-page-header">
               <h2>{t("deposit")}</h2>
-              <button className="deposit-close-button" onClick={() => { setpopup(0) }}>
-                <img src={closebutton} className="deposit-close-icon" />
-              </button>
+              <div className="deposit-right-header">
+                {!client && validOneCT && (<button
+                    className={`deposit-right-header-btn`}
+                    onClick={() => {
+                      setpopup(25)
+                    }}
+                  >
+                    Deposit from EOA
+                </button>)}
+                <button className="deposit-close-button" onClick={() => { setpopup(0) }}>
+                  <img src={closebutton} className="deposit-close-icon" />
+                </button>
+              </div>
             </div>
             <div className={`token-dropdown-container ${dropdownOpen ? 'open' : ''}`}>
               <div
@@ -17370,14 +17388,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         {popup === 25 ? ( // deposit popup
           <div ref={popupref} className="send-popup-container">
             <div className="send-popup-background">
-              <div className={`sendbg ${connected && sendAmountIn > mainWalletBalances[sendTokenIn] ? 'exceed-balance' : ''}`}>
+              <div className={`sendbg ${connected && sendAmountIn > mainWalletBalances[sendTokenIn] && !txPending.current ? 'exceed-balance' : ''}`}>
 
                 <div className="sendbutton1container">
                   <div className="send-Send">{t('deposit')}</div>
                   <button
                     className="send-button1"
                     onClick={() => {
-                      setpopup(10);
+                      setpopup(26);
                     }}
                   >
                     <img className="send-button1pic" src={tokendict[sendTokenIn].image} />
@@ -17388,7 +17406,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 <div className="sendinputcontainer">
                   <input
                     inputMode="decimal"
-                    className={`send-input ${connected && sendAmountIn > mainWalletBalances[sendTokenIn] ? 'exceed-balance' : ''}`}
+                    className={`send-input ${connected && sendAmountIn > mainWalletBalances[sendTokenIn] && !txPending.current ? 'exceed-balance' : ''}`}
                     onCompositionStart={() => {
                       setIsComposing(true);
                     }}
@@ -17722,7 +17740,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   }
                 }}
                 disabled={(sendAmountIn === BigInt(0) ||
-                  sendAmountIn > tokenBalances[sendTokenIn] ||
+                  sendAmountIn > mainWalletBalances[sendTokenIn] ||
                   !/^(0x[0-9a-fA-F]{40})$/.test(address)) &&
                   connected &&
                   userchain == activechain || isSigning}
@@ -17734,7 +17752,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   </div>
                 ) : sendAmountIn === BigInt(0) ? (
                   t('enterAmount')
-                ) : sendAmountIn > tokenBalances[sendTokenIn] ? (
+                ) : sendAmountIn > mainWalletBalances[sendTokenIn] ? (
                   t('insufficient') +
                   (tokendict[sendTokenIn].ticker || '?') +
                   ' ' +
@@ -17751,51 +17769,159 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           </div>
         ) : null}
         {popup === 26 ? (
-          <div
-            className="layout-settings-background"
-            ref={popupref}
-          >
-            <div className="layout-settings-header">
+          <div ref={popupref} className="sendselectbg">
+            <div className="send-top-row">
+              <input
+                className="sendselect"
+                onChange={(e) => {
+                  settokenString(e.target.value);
+                }}
+                placeholder={t('searchToken')}
+                autoFocus={!(windowWidth <= 1020)}
+              />
+              {tokenString && (
+                <button
+                  className="sendselect-clear visible"
+                  onClick={() => {
+                    settokenString('');
+                    const input = document.querySelector('.sendselect') as HTMLInputElement;
+                    if (input) {
+                      input.value = '';
+                      input.focus();
+                    }
+                  }}
+                >
+                  {t('clear')}
+                </button>
+              )}
               <button
-                className="layout-settings-close-button"
-                onClick={() => setpopup(0)}
+                className="sendselect-back"
+                onClick={() => {
+                  setpopup(25);
+                }}
               >
-                <img src={closebutton} className="close-button-icon" />
+                <img src={closebutton} className="send-close-button-icon" />
               </button>
-              <div className="layout-settings-title">Import Wallet</div>
             </div>
 
-            <div className="settings-main-container">
-              <div className="import-wallet-content">
-                <div className="import-wallet-section">
-                  <div className="layout-section-title">Import Existing Wallet</div>
-                  <div className="settings-section-subtitle">
-                    Enter the private key of an existing wallet to import it
-                  </div>
-
-                  <div className="input-group">
-                    <label className="input-label">Private Key</label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      placeholder="0x... or without 0x prefix"
-                      style={{ fontFamily: 'monospace' }}
-                    />
-                  </div>
-
-                  <div className="import-actions">
-                    <button
-                      className="reset-tab-button"
-                      onClick={() => {
-                        setpopup(0);
-                      }}
+            <ul className="sendtokenlist">
+              {Object.values(tokendict)
+                .filter(
+                  (token) =>
+                    token.ticker.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
+                    token.name.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
+                    token.address.toLowerCase().includes(tokenString.trim().toLowerCase())
+                ).length === 0 ? (
+                <div className="empty-token-list">
+                  <div className="empty-token-list-content">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="empty-token-list-icon"
                     >
-                      Import Wallet
-                    </button>
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="M21 21l-4.35-4.35" />
+                    </svg>
+                    <div className="empty-token-list-text">{t('noTokens')}</div>
                   </div>
                 </div>
-              </div>
-            </div>
+              ) : (
+                Object.values(tokendict)
+                  .filter(
+                    (token) =>
+                      token.ticker.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
+                      token.name.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
+                      token.address.toLowerCase().includes(tokenString.trim().toLowerCase())
+                  )
+                  .map((token) => (
+                    <button
+                      className="sendtokenbutton"
+                      key={token.address}
+                      onClick={() => {
+                        setSendTokenIn(token.address);
+                        setSendUsdValue('');
+                        setSendInputAmount('');
+                        setSendAmountIn(BigInt(0));
+                        settokenString('');
+                        setpopup(25);
+                      }}
+                    >
+                      <img className="tokenlistimage" src={token.image} />
+                      <div className="tokenlisttext">
+                        <div className="tokenlistname">{token.ticker}</div>
+                        <div className="tokenlistticker">{token.name}</div>
+                      </div>
+                      <div className="token-right-content">
+                        <div className="tokenlistbalance">
+                          {formatDisplayValue(mainWalletBalances[token.address], Number(token.decimals))}
+                        </div>
+                        <div className="token-address-container">
+                          <span className="token-address">
+                            {`${token.address.slice(0, 6)}...${token.address.slice(-4)}`}
+                          </span>
+                          <div
+                            className="copy-address-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(token.address);
+                              const copyIcon =
+                                e.currentTarget.querySelector('.copy-icon');
+                              const checkIcon =
+                                e.currentTarget.querySelector('.check-icon');
+                              if (copyIcon && checkIcon) {
+                                copyIcon.classList.add('hidden');
+                                checkIcon.classList.add('visible');
+                                setTimeout(() => {
+                                  copyIcon.classList.remove('hidden');
+                                  checkIcon.classList.remove('visible');
+                                }, 2000);
+                              }
+                            }}
+                          >
+                            <svg
+                              className="copy-icon"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <rect
+                                x="9"
+                                y="9"
+                                width="13"
+                                height="13"
+                                rx="2"
+                                ry="2"
+                              ></rect>
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            <svg
+                              className="check-icon"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M8 12l3 3 6-6" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+              )}
+            </ul>
           </div>
         ) : null}
         {popup === 27 ? ( // PNL
@@ -17847,8 +17973,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" ><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
                     </div>
                     <div className="trading-mode-info">
-                      <h3>One Click Trading</h3>
-                      <p>Instantly sign transactions</p>
+                      <h3>One-Click Trading</h3>
+                      <p>Approve transactions instantly from an embedded wallet</p>
                     </div>
                     <div className="trading-mode-status">
                       <button
@@ -17856,8 +17982,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                         onClick={async () => {
                           try {
                             setIsUsernameSigning(true);
-                            await createSubWallet();
-                            setpopup(25);
+                            let isSuccess = await createSubWallet(true);
+                            if (isSuccess) setpopup(25);
                           } catch (error) {
                             console.error('Failed to enable 1CT:', error);
                           } finally {
@@ -18908,7 +19034,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       </div>
       <div className="swapmodal">
         <div
-          className={`inputbg ${connected && amountIn > tokenBalances[tokenIn]
+          className={`inputbg ${connected && amountIn > tokenBalances[tokenIn] && !txPending.current
             ? 'exceed-balance'
             : ''
             }`}
@@ -18923,7 +19049,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               <input
                 inputMode="decimal"
                 className={`input ${connected &&
-                  amountIn > tokenBalances[tokenIn]
+                  amountIn > tokenBalances[tokenIn] && !txPending.current
                   ? 'exceed-balance'
                   : ''
                   }`}
@@ -19040,7 +19166,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             )}
             <button
               className={`button1 ${connected &&
-                amountIn > tokenBalances[tokenIn]
+                amountIn > tokenBalances[tokenIn] && !txPending.current
                 ? 'exceed-balance'
                 : ''
                 }`}
@@ -20692,7 +20818,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 (tokenIn == activeMarket.quoteAddress
                   ? amountIn < activeMarket.minSize
                   : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                  activeMarket.minSize)))
+                  activeMarket.minSize))) && !txPending.current
             ? 'exceed-balance'
             : ''
             }`}
@@ -20707,7 +20833,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     (tokenIn === activeMarket.quoteAddress
                       ? amountIn < activeMarket.minSize
                       : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                      activeMarket.minSize)))
+                      activeMarket.minSize))) && !txPending.current
                 ? 'exceed-balance'
                 : ''
                 }`}
@@ -20891,7 +21017,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     (tokenIn == activeMarket.quoteAddress
                       ? amountIn < activeMarket.minSize
                       : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                      activeMarket.minSize)))
+                      activeMarket.minSize))) && !txPending.current
                 ? 'exceed-balance'
                 : ''
                 }`}
@@ -21390,7 +21516,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             !(tokenIn == activeMarket.quoteAddress
               ? amountIn < activeMarket.minSize
               : (amountIn * limitPrice) / activeMarket.scaleFactor <
-              activeMarket.minSize)
+              activeMarket.minSize) && !txPending.current
             ? 'exceed-balance'
             : ''
             }`}
@@ -21436,7 +21562,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 !(tokenIn == activeMarket.quoteAddress
                   ? amountIn < activeMarket.minSize
                   : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                  activeMarket.minSize)
+                  activeMarket.minSize) && !txPending.current
                 ? 'exceed-balance'
                 : ''
                 }`}
@@ -22678,7 +22804,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       <div className="swapmodal">
         <div
           className={`sendbg ${connected && amountIn > tokenBalances[tokenIn]
-            ? 'exceed-balance'
+            ? 'exceed-balance' && !txPending.current
             : ''
             }`}
         >
@@ -22698,7 +22824,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             <input
               inputMode="decimal"
               className={`send-input ${connected &&
-                amountIn > tokenBalances[tokenIn]
+                amountIn > tokenBalances[tokenIn] && !txPending.current
                 ? 'exceed-balance'
                 : ''
                 }`}
@@ -23376,7 +23502,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 (tokenIn == activeMarket.quoteAddress
                   ? amountIn < activeMarket.minSize
                   : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                  activeMarket.minSize)))
+                  activeMarket.minSize))) && !txPending.current
             ? 'exceed-balance'
             : ''
             }`}
@@ -23393,7 +23519,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     (tokenIn === activeMarket.quoteAddress
                       ? amountIn < activeMarket.minSize
                       : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                      activeMarket.minSize)))
+                      activeMarket.minSize))) && !txPending.current
                 ? 'exceed-balance'
                 : ''
                 }`}
@@ -23521,7 +23647,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     (tokenIn == activeMarket.quoteAddress
                       ? amountIn < activeMarket.minSize
                       : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                      activeMarket.minSize)))
+                      activeMarket.minSize))) && !txPending.current
                 ? 'exceed-balance'
                 : ''
                 }`}
@@ -23968,7 +24094,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               !(tokenIn == activeMarket.quoteAddress
                 ? amountIn < activeMarket.minSize
                 : (amountIn * scaleStart) / activeMarket.scaleFactor <
-                activeMarket.minSize)
+                activeMarket.minSize) && !txPending.current
               ? 'exceed-balance'
               : ''
               }`}
@@ -23991,7 +24117,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   !(tokenIn == activeMarket.quoteAddress
                     ? amountIn < activeMarket.minSize
                     : (amountIn * scaleStart) / activeMarket.scaleFactor <
-                    activeMarket.minSize)
+                    activeMarket.minSize) && !txPending.current
                   ? 'exceed-balance'
                   : ''
                   }`}
@@ -24057,7 +24183,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               !(tokenIn == activeMarket.quoteAddress
                 ? amountIn < activeMarket.minSize
                 : (amountIn * scaleEnd) / activeMarket.scaleFactor <
-                activeMarket.minSize)
+                activeMarket.minSize) && !txPending.current
               ? 'exceed-balance'
               : ''
               }`}
@@ -24080,7 +24206,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   !(tokenIn == activeMarket.quoteAddress
                     ? amountIn < activeMarket.minSize
                     : (amountIn * scaleEnd) / activeMarket.scaleFactor <
-                    activeMarket.minSize)
+                    activeMarket.minSize) && !txPending.current
                   ? 'exceed-balance'
                   : ''
                   }`}

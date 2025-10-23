@@ -110,17 +110,17 @@ export const usePortfolioData = (
         const normalized = normalizeTicker(token.ticker, activechain);
         let price = 0;
         const usdcMkt = marketDataMap[`${normalized}USDC`];
-        if (usdcMkt?.latestPrice) {
-          price = usdcMkt.latestPrice;
+        if (usdcMkt?.currentPrice) {
+          price = parseFloat(usdcMkt.currentPrice);
         } else if (normalized === 'USDC') {
           price = 1;
         } else {
           const tokenEth = marketDataMap[`${normalized}${ethTicker}`];
           if (
-            tokenEth?.latestPrice &&
-            ethMarket?.latestPrice
+            tokenEth?.currentPrice &&
+            ethMarket?.currentPrice
           ) {
-            price = tokenEth.latestPrice * ethMarket.latestPrice;
+            price = parseFloat(tokenEth.currentPrice) * parseFloat(ethMarket.currentPrice);
           }
         }
   

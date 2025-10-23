@@ -150,6 +150,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [maintenanceMargin, setMaintenanceMargin] = useState('0.00');
   const [availableBalance, setAvailableBalance] = useState('0.00');
   const [balance, setBalance] = useState('0.00');
+  const [liqPrice, setLiqPrice] = useState('0.00')
   const [upnl, setUpnl] = useState('0.00')
   const [userFees, setUserFees] = useState(["0.00038", "0.00012"]);
   const [amountIn, setAmountIn] = useState(BigInt(0));
@@ -525,7 +526,9 @@ const Perps: React.FC<PerpsProps> = ({
   const handleSliderChange = useCallback((percent: number) => {
     setSliderPercent(percent);
     positionPopup(percent);
-    setInputString(Number((Number(balance) * Number(leverage) * percent / 100)) == 0 ? '' : (Number(balance) * Number(leverage) * percent / 100).toFixed(2))
+    let inputString = Number((Number(balance) * Number(leverage) * percent / 100)) == 0 ? '' : (Number(balance) * Number(leverage) * percent / 100).toFixed(2)
+    setInputString(inputString)
+    //setLiqPrice()
   }, [balance, leverage]);
 
   const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
@@ -651,15 +654,18 @@ const Perps: React.FC<PerpsProps> = ({
       }
 
       temppositions.push({
+        leverage: marketData?.displayMaxLeverage,
+        image: marketData?.iconURL,
+        direction: position.openSize > 0 ? 'long' : 'short',
         symbol: marketData.contractName,
         size: Math.abs(position.openSize).toString(),
         positionValue: Math.abs(Number(marketData?.oraclePrice) * Number(position.openSize)),
-        entryPrice: (Number(position.openValue) / Number(position.openSize)).toString(),
+        entryPrice: (Number(position.openValue) / Number(position.openSize)).toFixed((marketData?.lastPrice?.toString().split(".")[1] || "").length),
         markPrice: Number(marketData?.oraclePrice).toFixed((marketData?.lastPrice?.toString().split(".")[1] || "").length),
         pnl: Number(marketData?.oraclePrice) * Number(position.openSize) - Number(position.openValue),
         liqPrice: 0,
         margin: 0,
-        funding: Number(position.fundingFee)
+        funding: -Number(position.fundingFee)
       })
     }
     setUpnl(isNaN(upnl) ? '0.00' : upnl.toFixed(2))
@@ -1407,14 +1413,6 @@ const Perps: React.FC<PerpsProps> = ({
         <div className="perps-amount-section">
           <div className="perps-available-to-trade">
             <div className="label-container">
-              <div className="perps-current-position-container">{t('Available to Trade')}</div>
-            </div>
-            <div className="value-container">
-              {Number(balance).toFixed(2)} USD
-            </div>
-          </div>
-          <div className="perps-available-to-trade">
-            <div className="label-container">
               <div className="perps-current-position-container">{t('Current Position')}</div>
             </div>
             <div className={`value-container ${currentPosition > 0 ? 'positive' : currentPosition < 0 ? 'negative' : 0}`}>
@@ -1425,7 +1423,7 @@ const Perps: React.FC<PerpsProps> = ({
             <div className="perps-balance-container">
               <img className="perps-wallet-icon" src={walleticon} />
               <div className="balance-value-container">
-                {Number(availableBalance).toFixed(2)}
+                {Number(balance).toFixed(2)}
               </div>
             </div>
             <button
@@ -1714,7 +1712,7 @@ const Perps: React.FC<PerpsProps> = ({
                 />
               </div>
               <div className="value-container">
-                0.00
+                {liqPrice}
               </div>
             </div>
             <div className="price-impact">

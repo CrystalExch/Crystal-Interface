@@ -17,7 +17,9 @@ export const formatBalance = (
 ): string => {
   let valueStr = typeof rawValue === 'number' ? rawValue.toString() : rawValue;
   let num = parseFloat(valueStr);
-
+  const isNegative = num < 0
+  num = Math.abs(num)
+  valueStr = num.toString();
   if (num === 0) {
     return mode === 'usd' ? '$0.00' : '0.00';
   }
@@ -39,7 +41,7 @@ export const formatBalance = (
 
   if (mode === 'usd') {
     fracPart = fracPart.padEnd(2, '0').slice(0, 2);
-    return `${prefix}${intPart}.${fracPart}`;
+    return `${isNegative ? '-' : ''}${prefix}${intPart}.${fracPart}`;
   }
 
   if (fracPart) {
@@ -60,13 +62,13 @@ export const formatBalance = (
         .map((digit) => subscriptMap[digit] || digit)
         .join('');
 
-      return `${intPart}.0${zerosSubscript}${remainder}`;
+      return `${isNegative ? '-' : ''}${intPart}.0${zerosSubscript}${remainder}`;
     } else {
-      return `${intPart}.${fracPart}`;
+      return `${isNegative ? '-' : ''}${intPart}.${fracPart}`;
     }
   }
 
-  return intPart;
+  return `${isNegative ? '-' : ''}${intPart}`;
 };
 
 export const formatSubscript = (value: string): string => {

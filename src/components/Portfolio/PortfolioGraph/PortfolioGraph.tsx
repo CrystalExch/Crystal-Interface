@@ -152,7 +152,7 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
         const firstValue = chartData[0].value;
         const lastValue = chartData[chartData.length - 1].value;
         const change =
-          firstValue !== 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
+          firstValue !== 0 ? ((lastValue - firstValue) / firstValue) * 100 : ((lastValue - 1) / 1) * 100;
         onPercentageChange?.(change);
         setColorValue?.(change >= 0 ? '#00b894' : 'rgb(235, 112, 112)');
         setHigh(Math.max(...chartData.map((d) => d.value)) || 0);

@@ -276,7 +276,7 @@ interface PortfolioProps {
   isVaultDepositSigning: boolean;
   setIsVaultDepositSigning: (signing: boolean) => void;
   handleSetChain: () => Promise<void>;
-  createSubWallet?: () => Promise<void>;
+  createSubWallet?: any;
   Wallet?: any;
   activeWalletPrivateKey?: string;
   lastRefGroupFetch: any;
@@ -390,7 +390,6 @@ const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(()
   const [isSliderDragging, setIsSliderDragging] = useState(false);
   const sliderRef = useRef<HTMLInputElement>(null);
   const sliderPopupRef = useRef<HTMLDivElement>(null);
-  const [showDepositModal, setShowDepositModal] = useState(false);
   const [depositTargetWallet, setDepositTargetWallet] = useState<string>('');
   const [depositAmount, setDepositAmount] = useState<string>('');
 
@@ -1106,61 +1105,9 @@ useEffect(() => {
     const actualIndex = subWallets.findIndex(w => w.address === address);
     return `Wallet ${actualIndex !== -1 ? actualIndex + 1 : (walletIndex !== undefined ? walletIndex + 1 : 1)}`;
   };
-  const [isDepositing, setIsDepositing] = useState(false);
-
-  const openDepositModal = (targetWallet: React.SetStateAction<string>) => {
-    setDepositTargetWallet(targetWallet);
-    setDepositAmount('');
-    setShowDepositModal(true);
-  };
-
-  const closeDepositModal = () => {
-    setShowDepositModal(false);
-    setDepositTargetWallet('');
-    setDepositAmount('');
-  };
 
   const [showPNLCalendar, setShowPNLCalendar] = useState(false);
   const [pnlCalendarLoading, setPNLCalendarLoading] = useState(false);
-
-  const handleDepositFromEOA = async () => {
-    if (!depositAmount || !depositTargetWallet) {
-      return;
-    }
-
-    try {
-      setIsDepositing(true);
-
-      await handleSetChain();
-
-      const ethAmount = BigInt(Math.round(parseFloat(depositAmount) * 1e18));
-
-      const mainWalletBalance = getMainWalletBalance();
-      if (parseFloat(depositAmount) > mainWalletBalance) {
-        throw new Error(`Insufficient balance in main wallet. Available: ${mainWalletBalance.toFixed(4)} MON`);
-      }
-
-      await sendUserOperationAsync({
-        uo: {
-          target: depositTargetWallet,
-          value: ethAmount,
-          data: '0x'
-        }
-      });
-
-      setTimeout(() => {
-        terminalRefetch();
-        refetch();
-      }, 0);
-
-      closeDepositModal();
-      showDepositSuccess(depositAmount, depositTargetWallet);
-
-    } catch (error) {
-    } finally {
-      setIsDepositing(false);
-    }
-  };
 
   const [walletSearchQuery, setWalletSearchQuery] = useState<string>('');
 
@@ -1934,7 +1881,7 @@ useEffect(() => {
               className="wallet-icon-button"
               onClick={(e) => {
                 e.stopPropagation();
-                openDepositModal(wallet.address);
+                setpopup(25)
               }}
             >
               <Plus size={14} className="wallet-action-icon" />
@@ -2128,9 +2075,6 @@ useEffect(() => {
     }
   };
 
-  const handlePercentageChange = (value: number) => {
-    setPercentage(value);
-  };
   useEffect(() => {
     const totalSelected = Object.values(selectedWalletsPerContainer).reduce((sum, set) => sum + set.size, 0);
     if (totalSelected <= 1) {
@@ -2161,18 +2105,6 @@ useEffect(() => {
       localStorage.setItem('crystal_active_wallet_private_key', activeWalletPrivateKey);
     }
   }, [activeWalletPrivateKey]);
-
-  useEffect(() => {
-    const savedActivePrivateKey = localStorage.getItem('crystal_active_wallet_private_key');
-
-    if (savedActivePrivateKey && subWallets.length > 0) {
-      const savedWalletExists = subWallets.some(wallet => wallet.privateKey === savedActivePrivateKey);
-
-      if (savedWalletExists && activeWalletPrivateKey !== savedActivePrivateKey) {
-        setOneCTSigner(savedActivePrivateKey);
-      }
-    }
-  }, [subWallets, activeWalletPrivateKey, setOneCTSigner]);
 
   useEffect(() => {
     const now = Date.now() / 1000;
@@ -2244,7 +2176,7 @@ useEffect(() => {
                       colorValue={portfolioColorValue}
                       setColorValue={setPortfolioColorValue}
                       isPopup={false}
-                      onPercentageChange={handlePercentageChange}
+                      onPercentageChange={setPercentage}
                       chartData={chartData}
                       portChartLoading={portChartLoading}
                       chartDays={chartDays}
@@ -2893,85 +2825,6 @@ useEffect(() => {
                         onClick={() => deleteWallet(walletToDelete)}
                       >
                         Delete Wallet
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            {showDepositModal && (
-              <div className="pk-modal-backdrop" onClick={closeDepositModal}>
-                <div className="pk-modal-container" onClick={(e) => e.stopPropagation()}>
-                  <div className="pk-modal-header">
-                    <h3 className="pk-modal-title">Deposit MON</h3>
-                    <button
-                      className="pk-modal-close"
-                      onClick={() => setShowDistributionModal(false)}
-                      disabled={isVaultDepositSigning}
-                      style={{ opacity: isVaultDepositSigning ? 0.5 : 1, cursor: isVaultDepositSigning ? 'not-allowed' : 'pointer' }}
-                    >
-                      <img src={closebutton} className="close-button-icon" />
-                    </button>
-                  </div>
-                  <div className="pk-modal-content">
-                    <div className="pk-input-section">
-                    <div className="main-wallet-balance-container">
-                        <span className="main-wallet-balance-label">Available Balance:</span>
-                        <div className="main-wallet-balance-value">
-                          <img src={monadicon} className="main-wallet-balance-icon" alt="MON" />
-                          <span className={`main-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}>
-                            {getMainWalletBalance().toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="pk-input-container">
-                        <div className="deposit-amount-input-container">
-                          <input
-                            type="text"
-                            className="pk-input"
-                            value={depositAmount}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (/^\d*\.?\d{0,18}$/.test(value)) {
-                                setDepositAmount(value);
-                              }
-                            }}
-                            placeholder="0.00"
-                            autoComplete="off"
-                          />
-                          <button
-                            className="deposit-main-max-button"
-                            onClick={() => {
-                              const maxBalance = getMainWalletBalance();
-                              const gasAmount = Number(settings.chainConfig[activechain].gasamount || BigInt(0)) / 10 ** 18;
-                              const maxDepositAmount = Math.max(0, maxBalance - gasAmount - 0.01);
-                              setDepositAmount(maxDepositAmount.toFixed(6));
-                            }}
-                            disabled={getMainWalletBalance() <= 0.001}
-                          >
-                            Max
-                          </button>
-                        </div>
-                        {depositAmount && parseFloat(depositAmount) > getMainWalletBalance() && (
-                          <div className="pk-error-message">
-                            Insufficient balance. Available: {getMainWalletBalance().toFixed(4)} MON
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="pk-modal-actions">
-                      <button
-                        className={`pk-confirm-button ${isDepositing ? 'loading' : ''}`}
-                        onClick={handleDepositFromEOA}
-                        disabled={
-                          !depositAmount ||
-                          parseFloat(depositAmount) <= 0 ||
-                          parseFloat(depositAmount) > getMainWalletBalance() ||
-                          isDepositing
-                        }
-                      >
-                        {isDepositing ? '' : 'Deposit'}
                       </button>
                     </div>
                   </div>
