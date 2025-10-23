@@ -1384,3 +1384,322 @@
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideDown { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 1000px; } }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+
+/* Monitor Loading States */
+.tracker-loading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-sm);
+  padding: var(--gap-xl);
+  color: var(--c-muted);
+  font-size: 0.85rem;
+  letter-spacing: -0.3px;
+}
+
+.tracker-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(179, 184, 249, 0.2);
+  border-top: 2px solid rgba(179, 184, 249, 0.6);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Monitor Header */
+.tracker-monitor-header {
+  padding: var(--gap-sm) 20px;
+  border-bottom: 1px solid var(--c-border);
+  background: rgb(6, 6, 6);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.tracker-monitor-subtitle {
+  font-size: 0.75rem;
+  color: var(--c-dim);
+  letter-spacing: -0.3px;
+  font-weight: 300;
+}
+
+/* Monitor List Container */
+.tracker-monitor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgb(6, 6, 6);
+  width: 100%;
+}
+
+.tracker-monitor-list {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(170, 174, 207, 0.2) transparent;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.tracker-monitor-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tracker-monitor-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tracker-monitor-list::-webkit-scrollbar-thumb {
+  background: rgba(170, 174, 207, 0.2);
+  border-radius: 4px;
+}
+
+/* Monitor Items */
+.tracker-monitor-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--gap) 20px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.05);
+  transition: var(--tr-fast);
+  cursor: pointer;
+}
+
+.tracker-monitor-item:hover {
+  background: rgba(179, 183, 239, 0.05);
+}
+
+.tracker-monitor-token-info {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  flex: 1;
+  min-width: 0;
+}
+
+.tracker-monitor-emoji {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tracker-monitor-token-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tracker-monitor-token-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--c-text);
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tracker-monitor-data-source {
+  font-size: 10px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.tracker-monitor-token-symbol {
+  font-size: 0.75rem;
+  color: var(--c-muted);
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Monitor Metrics */
+.tracker-monitor-metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.tracker-monitor-main-metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.tracker-monitor-price {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--c-text);
+  letter-spacing: -0.1px;
+}
+
+.tracker-monitor-market-cap {
+  font-size: 0.75rem;
+  color: var(--c-muted);
+  letter-spacing: -0.2px;
+}
+
+.tracker-monitor-estimated {
+  font-size: 10px;
+  color: var(--c-dim);
+  margin-left: 2px;
+}
+
+/* Position Data */
+.tracker-monitor-position-data {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 0.7rem;
+  opacity: 0.9;
+}
+
+.tracker-monitor-position-metric {
+  color: var(--c-muted);
+  letter-spacing: -0.2px;
+}
+
+.tracker-monitor-pnl.positive {
+  color: var(--c-buy);
+  font-weight: 500;
+}
+
+.tracker-monitor-pnl.negative {
+  color: var(--c-sell);
+  font-weight: 500;
+}
+
+/* Demo Metrics */
+.tracker-monitor-demo-metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 0.7rem;
+}
+
+.tracker-monitor-change.positive {
+  color: var(--c-buy);
+  font-weight: 500;
+}
+
+.tracker-monitor-change.negative {
+  color: var(--c-sell);
+  font-weight: 500;
+}
+
+.tracker-monitor-volume {
+  color: var(--c-muted);
+  letter-spacing: -0.2px;
+}
+
+/* Monitor Footer */
+.tracker-monitor-footer {
+  padding: var(--gap-sm) 20px;
+  border-top: 1px solid var(--c-border);
+  background: rgb(6, 6, 6);
+  text-align: center;
+}
+
+.tracker-monitor-footer small {
+  color: var(--c-dim);
+  font-size: 0.7rem;
+  letter-spacing: -0.2px;
+  line-height: 1.4;
+}
+
+/* Empty State - Enhanced */
+.tracker-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--c-muted);
+  flex: 1;
+}
+
+.tracker-empty-state p {
+  margin: 4px 0;
+  font-size: 0.85rem;
+  letter-spacing: -0.3px;
+  line-height: 1.4;
+}
+
+.tracker-empty-state p:first-child {
+  font-weight: 500;
+  color: var(--c-text);
+  font-size: 0.9rem;
+}
+
+/* Responsive Adjustments for Monitor */
+@media (max-width: 768px) {
+  .tracker-monitor-item {
+    padding: var(--gap-sm) 16px;
+  }
+  
+  .tracker-monitor-token-name {
+    font-size: 0.8rem;
+  }
+  
+  .tracker-monitor-token-symbol {
+    font-size: 0.7rem;
+  }
+  
+  .tracker-monitor-price {
+    font-size: 0.75rem;
+  }
+  
+  .tracker-monitor-market-cap {
+    font-size: 0.7rem;
+  }
+  
+  .tracker-monitor-position-data,
+  .tracker-monitor-demo-metrics {
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .tracker-monitor-header {
+    padding: var(--gap-sm) 16px;
+  }
+  
+  .tracker-monitor-item {
+    padding: 10px 16px;
+  }
+  
+  .tracker-monitor-footer {
+    padding: var(--gap-sm) 16px;
+  }
+  
+  .tracker-monitor-token-details {
+    gap: 1px;
+  }
+  
+  .tracker-monitor-metrics {
+    gap: 3px;
+  }
+  
+  .tracker-monitor-main-metrics {
+    gap: 1px;
+  }
+}
