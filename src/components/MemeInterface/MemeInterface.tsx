@@ -380,7 +380,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         return 0;
     }
   };
-
+  const [memeImageError, setMemeImageError] = useState(false);
   const getWalletBalance = (address: string) => {
     const balances = walletTokenBalances[address];
     if (!balances) return 0;
@@ -817,6 +817,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [hoveredStatsContainer, setHoveredStatsContainer] = useState(false);
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
   const [similarTokensExpanded, setSimilarTokensExpanded] = useState(true);
+  const [tokenImageErrors, setTokenImageErrors] = useState<Record<string, boolean>>({});
   const [selectedMonPreset, setSelectedMonPreset] = useState<number | null>(
     null,
   );
@@ -4427,15 +4428,34 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                           onMouseLeave={() => setHoveredSimilarTokenImage(null)}
                           style={{ cursor: img ? 'pointer' : 'default' }}
                         >
-                          {img ? (
-                            <img src={img} alt={`${t.symbol || t.name} logo`} />
+                          {img && !tokenImageErrors[t.id] ? (
+                            <img
+                              src={img}
+                              alt={`${t.symbol || t.name} logo`}
+                              onError={() => {
+                                setTokenImageErrors(prev => ({ ...prev, [t.id]: true }));
+                              }}
+                            />
                           ) : (
-                            <div className="meme-similar-token-avatar-fallback">
+                            <div className="meme-similar-token-avatar-fallback" style={{
+                              backgroundColor: 'rgba(35, 34, 41, 0.7)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: (t.symbol || '').length <= 2 ? '14px' : '14px',
+                              fontWeight: '200',
+                              color: '#ffffff',
+                              borderRadius: '3px',
+                              letterSpacing: (t.symbol || '').length > 2 ? '-0.5px' : '0',
+                              width: '43px',
+                              height: '43px',
+                            }}>
                               {(t.symbol || t.name || '?')
-                                .slice(0, 3)
+                                .slice(0, 2)
                                 .toUpperCase()}
                             </div>
                           )}
+
                         </div>
 
                         <div className="meme-similar-token-meta">
@@ -4794,21 +4814,62 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             }}
           >
             <div className="explorer-preview-content">
-              <img
-                src={
-                  similarTokens.find(
-                    (t: any) => String(t.id) === hoveredSimilarTokenImage,
-                  )?.imageUrl || ''
-                }
-                alt="Token preview"
-                style={{
-                  width: '220px',
-                  height: '220px',
-                  borderRadius: '6px',
-                  objectFit: 'cover',
-                  display: 'block',
-                }}
-              />
+              {(() => {
+                const token = similarTokens.find(
+                  (t: any) => String(t.id) === hoveredSimilarTokenImage,
+                );
+                const imageUrl = token?.imageUrl || '';
+                const hasError = tokenImageErrors[hoveredSimilarTokenImage];
+
+                return imageUrl && !hasError ? (
+                  <img
+                    src={imageUrl}
+                    alt="Token preview"
+                    style={{
+                      width: '220px',
+                      height: '220px',
+                      borderRadius: '6px',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: '220px',
+                      height: '220px',
+                      borderRadius: '6px',
+                      backgroundColor: 'rgb(6,6,6)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid rgba(179, 184, 249, 0.15)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: (token?.symbol || '').length <= 3 ? '72px' : '56px',
+                        fontWeight: '200',
+                        color: '#ffffff',
+                        letterSpacing: (token?.symbol || '').length > 3 ? '-4px' : '0',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      {(token?.symbol || token?.name || '?').slice(0, 3).toUpperCase()}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: '300',
+                        color: 'rgba(255, 255, 255, 0.5)',
+                      }}
+                    >
+                      {token?.name || 'Unknown Token'}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>,
           document.body,

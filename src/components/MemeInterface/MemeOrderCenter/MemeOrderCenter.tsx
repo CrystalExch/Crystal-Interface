@@ -403,7 +403,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   const [sellAmount, setSellAmount] = useState('');
   const [sellSliderPercent, setSellSliderPercent] = useState(0);
   const [showTokenBalance, setShowTokenBalance] = useState(false);
-
+  const [tokenImageErrors, setTokenImageErrors] = useState<Record<string, boolean>>({});
   const handleSellClose = useCallback(() => {
     setShowSellPopup(false);
     setSelectedPosition(null);
@@ -1374,16 +1374,33 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                               className="meme-token-info"
                               style={{ display: 'flex', alignItems: 'center' }}
                             >
-                              {t.imageUrl && (
-                                <img
-                                  src={t.imageUrl}
-                                  alt={t.symbol || t.name || t.id}
-                                  className="meme-token-icon"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
-                                  }}
-                                />
-                              )}
+                            {t.imageUrl && !tokenImageErrors[t.id] ? (
+  <img
+    src={t.imageUrl}
+    alt={t.symbol || t.name || t.id}
+    className="meme-token-icon"
+    onError={() => {
+      setTokenImageErrors(prev => ({ ...prev, [t.id]: true }));
+    }}
+  />
+) : (
+  <div
+    className="meme-token-icon"
+    style={{
+      backgroundColor: 'rgba(35, 34, 41, .7)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: (t.symbol || '').length <= 3 ? '14px' : '12px',
+      fontWeight: '200',
+      color: '#ffffff',
+      borderRadius: '3px',
+      letterSpacing: (t.symbol || '').length > 3 ? '-0.5px' : '0',
+    }}
+  >
+    {(t.symbol || t.name || '?').slice(0, 2).toUpperCase()}
+  </div>
+)}
                               <span
                              className="oc-meme-wallet-address meme-clickable-token"
                                 title={t.name || t.symbol || t.id}

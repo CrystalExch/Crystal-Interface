@@ -1252,6 +1252,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   }, [perpsSearchQuery, perpsActiveFilter]);
 
   const perpsTokenInfo = perpsMarketsData[perpsActiveMarketKey];
+  const [memeImageError, setMemeImageError] = useState(false);
 
   const [remaining, setRemaining] = useState("")
   const [priceColor, setPriceColor] = useState<string>("")
@@ -1322,15 +1323,17 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 onMouseLeave={() => setHoveredMemeImage(false)}
               >
                 <div className="meme-interface-image-container">
-                  {memeTokenData.image ? (
-                    <img 
-                      key={memeTokenData.tokenAddress} // ADD THIS KEY
-                      src={memeTokenData.image} 
-                      className="meme-interface-token-icon" 
+                  {memeTokenData.image && !memeImageError ? (
+                    <img
+                      key={memeTokenData.tokenAddress}
+                      src={memeTokenData.image}
+                      className="meme-interface-token-icon"
+                      onError={() => setMemeImageError(true)}
+                      alt={memeTokenData.symbol}
                     />
                   ) : (
                     <div
-                      key={memeTokenData.tokenAddress} // ADD THIS KEY TOO
+                      key={memeTokenData.tokenAddress}
                       className="meme-interface-token-icon"
                       style={{
                         width: '37px',
@@ -1339,15 +1342,16 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '24px',
+                        fontSize: memeTokenData.symbol.length <= 2 ? '18px' : '14px',
                         color: '#ffffff',
                         borderRadius: '3px',
                         boxShadow: '0px 0px 0 1.5px rgb(6, 6, 6)',
                         position: 'relative',
-                        zIndex: 3
+                        zIndex: 3,
+                        letterSpacing: memeTokenData.symbol.length > 2 ? '-.5px' : '0',
                       }}
                     >
-                      {memeTokenData.symbol.charAt(0).toUpperCase()}
+                      {memeTokenData.symbol.slice(0, 2).toUpperCase()}
                     </div>
                   )}
                   <div className="meme-interface-image-overlay">
@@ -1410,7 +1414,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   </Tooltip>
                 </div>
                 {hoveredMemeImage &&
-                  memeTokenData?.image &&
                   showPreview &&
                   createPortal(
                     <div
@@ -1426,16 +1429,53 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                       }}
                     >
                       <div className="explorer-preview-content">
-                        <img
-                          src={memeTokenData.image}
-                          style={{
-                            width: '220px',
-                            height: '220px',
-                            borderRadius: '6px',
-                            objectFit: 'cover',
-                            display: 'block',
-                          }}
-                        />
+                        {memeTokenData?.image && !memeImageError ? (
+                          <img
+                            src={memeTokenData.image}
+                            style={{
+                              width: '220px',
+                              height: '220px',
+                              borderRadius: '6px',
+                              objectFit: 'cover',
+                              display: 'block',
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: '220px',
+                              height: '220px',
+                              borderRadius: '6px',
+                              backgroundColor: 'rgb(6,6,6)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              border: '1px solid rgba(179, 184, 249, 0.15)',
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontSize: memeTokenData?.symbol?.length <= 3 ? '72px' : '56px',
+                                fontWeight: '200',
+                                color: '#ffffff',
+                                letterSpacing: memeTokenData?.symbol?.length > 3 ? '-4px' : '0',
+                                marginBottom: '8px',
+                              }}
+                            >
+                              {(memeTokenData?.symbol || '?').slice(0, 3).toUpperCase()}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: '14px',
+                                fontWeight: '300',
+                                color: 'rgba(255, 255, 255, 0.5)',
+                              }}
+                            >
+                              {memeTokenData?.name || 'Unknown Token'}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>,
                     document.body,

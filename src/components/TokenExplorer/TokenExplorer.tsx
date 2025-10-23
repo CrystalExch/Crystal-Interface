@@ -2549,33 +2549,33 @@ const TokenRow = React.memo<{
               <div
                 className={`explorer-image-wrapper ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
               >
-               {token.image && !imageError ? (
-  <img
-    src={token.image}
-    className={`explorer-token-image ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
-    onError={() => setImageError(true)}
-    alt={token.symbol}
-  />
-) : (
-  <div
-    className={`explorer-token-letter ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
-    style={{
-      width: '100%',
-      height: '100%',
-      backgroundColor: 'rgb(6,6,6)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: token.symbol.length <= 3 ? '34px' : '28px',
-      fontWeight: '200',
-      color: '#ffffff',
-      letterSpacing: token.symbol.length > 3 ? '-2px' : '0',
-      borderRadius: displaySettings.squareImages ? '8px' : '50%',
-    }}
-  >
-    {token.symbol.slice(0, 2).toUpperCase()}
-  </div>
-)}
+                {token.image && !imageError ? (
+                  <img
+                    src={token.image}
+                    className={`explorer-token-image ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
+                    onError={() => setImageError(true)}
+                    alt={token.symbol}
+                  />
+                ) : (
+                  <div
+                    className={`explorer-token-letter ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      backgroundColor: 'rgb(6,6,6)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: token.symbol.length <= 3 ? '34px' : '28px',
+                      fontWeight: '200',
+                      color: '#ffffff',
+                      letterSpacing: token.symbol.length > 3 ? '-1px' : '0',
+                      borderRadius: displaySettings.squareImages ? '8px' : '50%',
+                    }}
+                  >
+                    {token.symbol.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
                 <div
                   className={`explorer-image-overlay ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
                   onMouseEnter={() => onImageHover(token.id)}
@@ -2590,9 +2590,7 @@ const TokenRow = React.memo<{
                 </div>
               </div>
             </div>
-
             {hoveredImage === token.id &&
-              token.image &&
               showPreview &&
               createPortal(
                 <div
@@ -2608,17 +2606,54 @@ const TokenRow = React.memo<{
                   }}
                 >
                   <div className="explorer-preview-content">
-                    <img
-                      src={token.image}
-                      alt={token.name}
-                      style={{
-                        width: '220px',
-                        height: '220px',
-                        borderRadius: '6px',
-                        objectFit: 'cover',
-                        display: 'block',
-                      }}
-                    />
+                    {token.image && !imageError ? (
+                      <img
+                        src={token.image}
+                        alt={token.name}
+                        style={{
+                          width: '220px',
+                          height: '220px',
+                          borderRadius: '6px',
+                          objectFit: 'cover',
+                          display: 'block',
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '220px',
+                          height: '220px',
+                          borderRadius: '6px',
+                          backgroundColor: 'rgb(6,6,6)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: '1px solid rgba(179, 184, 249, 0.15)',
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: token.symbol.length <= 3 ? '72px' : '56px',
+                            fontWeight: '200',
+                            color: '#ffffff',
+                            letterSpacing: token.symbol.length > 3 ? '-2px' : '0',
+                            marginBottom: '8px',
+                          }}
+                        >
+                          {token.symbol.slice(0, 3).toUpperCase()}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '14px',
+                            fontWeight: '300',
+                            color: 'rgba(255, 255, 255, 0.5)',
+                          }}
+                        >
+                          {token.name}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>,
                 document.body,
@@ -4487,30 +4522,30 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                                 {wallet.address.slice(-4)}
                               </div>
                             </div>
-                              <div className="wallet-dropdown-balance">
-                                {(() => {
-                                  const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-                                  const balanceWei = walletTokenBalances[wallet.address]?.[
-                                    settings.chainConfig[activechain]?.eth
-                                  ] || 0n;
-                                  const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+                            <div className="wallet-dropdown-balance">
+                              {(() => {
+                                const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                                const balanceWei = walletTokenBalances[wallet.address]?.[
+                                  settings.chainConfig[activechain]?.eth
+                                ] || 0n;
+                                const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
 
-                                  return (
-                                    <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
-                                      <div
-                                        className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
-                                      >
-                                        <img
-                                          src={monadicon}
-                                          className="wallet-dropdown-mon-icon"
-                                          alt="MON"
-                                        />
-                                        {formatNumberWithCommas(balance, 2)}
-                                      </div>
-                                    </Tooltip>
-                                  );
-                                })()}
-                              </div>
+                                return (
+                                  <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                    <div
+                                      className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                    >
+                                      <img
+                                        src={monadicon}
+                                        className="wallet-dropdown-mon-icon"
+                                        alt="MON"
+                                      />
+                                      {formatNumberWithCommas(balance, 2)}
+                                    </div>
+                                  </Tooltip>
+                                );
+                              })()}
+                            </div>
                             <Tooltip content="Tokens">
                               <div className="wallet-drag-tokens">
                                 <div className="wallet-token-count">

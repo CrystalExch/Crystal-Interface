@@ -2632,6 +2632,8 @@
   align-items: center;
   justify-content: center;
   background-color: rgb(6, 6, 6);
+    flex-shrink: 0;
+
 }
 
 .meme-similar-token-avatar img {
@@ -2640,11 +2642,7 @@
   object-fit: cover;
   display: block;
 }
-.meme-similar-token-avatar-fallback {
-  font-size: 10px;
-  font-weight: 600;
-  opacity: 0.8;
-}
+
 
 .meme-similar-token-meta {
   display: grid;
@@ -3155,4 +3153,8 @@
 
 .meme-mobile-wallet-balance-amount.insufficient-gas .meme-mobile-wallet-mon-icon {
   opacity: 0.8;
+}
+
+.meme-similar-token-name{
+  color: rgba(239, 239, 250, 0.85);
 }
