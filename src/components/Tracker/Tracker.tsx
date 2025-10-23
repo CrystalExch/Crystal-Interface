@@ -1,11 +1,16 @@
-import { Search, Edit2 } from 'lucide-react';
+import { Search, Edit2, Bell } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import copy from '../../assets/copy.svg'
 import closebutton from '../../assets/close_button.png'
 import monadicon from '../../assets/monadlogo.svg';
 import trash from '../../assets/trash.svg';
+import lightning from '../../assets/flash.png';
+import filter from '../../assets/filter.svg';
+import gas from '../../assets/gas.svg';
+import slippage from '../../assets/slippage.svg';
 import { settings } from '../../settings';
+import { loadBuyPresets } from '../../utils/presetManager';
 import AssetRow from '../Portfolio/AssetRow/AssetRow';
 import { createPublicClient, http } from 'viem';
 import ImportWalletsPopup from './ImportWalletsPopup';
@@ -106,7 +111,6 @@ import { useSharedContext } from '../../contexts/SharedContext';
 import MonitorFiltersPopup, { MonitorFilterState } from './MonitorFiltersPopup/MonitorFiltersPopup';
 import settingsicon from '../../assets/settings.svg';
 import circle from '../../assets/circle_handle.png';
-import lightning from '../../assets/flash.png';
 import key from '../../assets/key.svg';
 import defaultPfp from '../../assets/leaderboard_default.png';
 import {
@@ -376,10 +380,11 @@ const SIMPLE_SORT_PRESETS: Record<string, SortPreset> = {
   tokenAge: { sortBy: 'createdAt', order: 'asc' }
 };
 const Tooltip: React.FC<{
-  content: string;
+  content: string | React.ReactNode;
   children: React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
-}> = ({ content, children, position = 'top' }) => {
+  offset?: number;
+}> = ({ content, children, position = 'top', offset }) => {
   const [vis, setVis] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -595,6 +600,30 @@ const Tracker: React.FC<TrackerProps> = ({
   const [monitorCurrency, setMonitorCurrency] = useState<'USD' | 'MON'>('USD');
   const [isLoadingPortfolioMarkets, setIsLoadingPortfolioMarkets] = useState(false);
   const [walletCurrency, setWalletCurrency] = useState<'USD' | 'MON'>('USD');
+
+  // Monitor column state
+  const [quickAmounts, setQuickAmounts] = useState({ launchpad: '', orderbook: '' });
+  const [activePresets, setActivePresets] = useState<Record<string, number>>({ launchpad: 1, orderbook: 1 });
+  const [pausedColumn, setPausedColumn] = useState<string | null>(null);
+  const [buyPresets, setBuyPresets] = useState<Record<number, any>>({});
+
+  useEffect(() => {
+    const presets = loadBuyPresets();
+    setBuyPresets(presets);
+  }, []);
+
+  const setQuickAmount = (column: string, value: string) => {
+    setQuickAmounts(prev => ({ ...prev, [column]: value }));
+  };
+
+  const setActivePreset = (column: string, preset: number) => {
+    setActivePresets(prev => ({ ...prev, [column]: preset }));
+  };
+
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.select();
+  };
+
   const [activeFilters, setActiveFilters] = useState<FilterState>(externalActiveFilters || {
     transactionTypes: {
       buyMore: true,
@@ -721,38 +750,35 @@ const Tracker: React.FC<TrackerProps> = ({
 
       const isBuy = Boolean(args.isBuy ?? args.buy ?? (args.from && !args.to));
 
-      // Convert amounts - following the old WebSocket implementation pattern
-      // The contract might be sending amounts in a scaled-down format
-      const amountInRaw = Number(args.amountIn ?? 0);
-      const amountOutRaw = Number(args.amountOut ?? 0);
-      const priceRaw = Number(args.priceNativePerTokenWad ?? args.price ?? args.endPrice ?? args.startPrice ?? 0);
-
-      // Convert to BigInt wei (multiply by 1e18 like the old WebSocket code)
-      const amountInWei = BigInt(Math.floor(amountInRaw * 1e18));
-      const amountOutWei = BigInt(Math.floor(amountOutRaw * 1e18));
-      const priceWad = BigInt(Math.floor(priceRaw * 1e18));
+      // Keep amounts as BigInt - they're already in wei from the contract
+      const amountInWei = BigInt(args.amountIn ?? 0);
+      const amountOutWei = BigInt(args.amountOut ?? 0);
+      const priceWad = BigInt(args.priceNativePerTokenWad ?? args.price ?? args.endPrice ?? args.startPrice ?? 0);
 
       // For display/debug only
       const amountInEth = Number(amountInWei) / 1e18;
       const amountOutEth = Number(amountOutWei) / 1e18;
       const priceEth = Number(priceWad) / 1e18;
 
-      console.log('[Tracker] Trade details (ETH):', { isBuy, amountIn: amountInEth, amountOut: amountOutEth, price: priceEth });
-      console.log('[Tracker] Trade details (wei):', { amountInWei, amountOutWei, priceWad });
-
       const tokenAddr = String(args.market || args.token || args.tokenAddress || args.base || args.asset || args.tokenIn || args.tokenOut || (l as any)?.address || '').toLowerCase() || undefined;
       const symbol = (args.symbol || args.ticker || '').toString() || undefined;
       const ts = Math.floor(Date.now()/1000);
 
   // prefer live price when available
-    // resolve market id
-      const symbolLower = (symbol || '').toLowerCase();
+    // resolve market id - try token address first since that's most reliable
       const addrLower = tokenAddr ? tokenAddr.toLowerCase() : undefined;
-      const resolvedMarketId = (addrLower && tokenToMarketRef.current[addrLower])
-        || (symbolLower && symbolToMarketRef.current[symbolLower])
-        || addrLower
-        || symbolLower;
-      const live = marketsRef.current.get(resolvedMarketId || '');
+      const symbolLower = (symbol || '').toLowerCase();
+
+      // Try to find the token in marketsRef using address directly first
+      const live = addrLower ? marketsRef.current.get(addrLower) : null;
+
+      console.log('[Tracker] Token resolution:', {
+        tokenAddr: addrLower,
+        symbol,
+        foundInMarkets: !!live,
+        liveSymbol: live?.symbol,
+        liveName: live?.name
+      });
 
       // Use live price if available, convert to BigInt
       const livePriceWad = live?.price != null && live.price > 0
@@ -2363,8 +2389,122 @@ const Tracker: React.FC<TrackerProps> = ({
             </div>
           </div>
         ) : (
-          <div className="tracker-monitor-grid">
-            {positions.map((pos) => {
+          <div className="explorer-columns">
+            <div className="explorer-column">
+              <div className="explorer-column-header">
+                <div className="explorer-column-title-section">
+                  <h2 className="explorer-column-title">Launchpad</h2>
+                </div>
+                <div className="explorer-column-title-right">
+                  <div
+                    className={`column-pause-icon ${pausedColumn === 'launchpad' ? 'visible' : ''}`}
+                    onClick={() => setPausedColumn(prev => prev === 'launchpad' ? null : 'launchpad')}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                    </svg>
+                  </div>
+                  <div className="explorer-quickbuy-container">
+                    <img
+                      className="explorer-quick-buy-search-icon"
+                      src={lightning}
+                      alt=""
+                    />
+                    <input
+                      type="text"
+                      placeholder="0.0"
+                      value={quickAmounts.launchpad}
+                      onChange={(e) => setQuickAmount('launchpad', e.target.value)}
+                      onFocus={handleInputFocus}
+                      className="explorer-quickbuy-input"
+                    />
+                    <img
+                      className="quickbuy-monad-icon"
+                      src={monadicon}
+                    />
+                    <div className="explorer-preset-controls">
+                      {[1, 2, 3].map((p) => (
+                        <Tooltip
+                          key={p}
+                          offset={35}
+                          content={
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '4px',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                }}
+                              >
+                                <img
+                                  src={slippage}
+                                  style={{
+                                    width: '14px',
+                                    height: '14px',
+                                  }}
+                                  alt="Slippage"
+                                />
+                                <span>
+                                  {buyPresets[p]?.slippage || '0'}%
+                                </span>
+                              </div>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                }}
+                              >
+                                <img
+                                  src={gas}
+                                  style={{
+                                    width: '14px',
+                                    height: '14px',
+                                  }}
+                                  alt="Priority"
+                                />
+                                <span>
+                                  {buyPresets[p]?.priority || '0'}{' '}
+                                </span>
+                              </div>
+                            </div>
+                          }
+                        >
+                          <button
+                            className={`explorer-preset-pill ${activePresets.launchpad === p ? 'active' : ''}`}
+                            onClick={() => setActivePreset('launchpad', p)}
+                          >
+                            P{p}
+                          </button>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  </div>
+                  <Tooltip content="Filters">
+                    <button
+                      className="column-filter-icon"
+                      onClick={() => setShowMonitorFiltersPopup(true)}
+                      title="filter launchpad"
+                    >
+                      <img className="filter-icon" src={filter} />
+                    </button>
+                  </Tooltip>
+                </div>
+              </div>
+              <div className="explorer-tokens-list">
+                <div className="tracker-monitor-grid">
+                  {positions.map((pos) => {
               const tokenName = pos.name || pos.symbol || 'Unknown';
               const tokenSymbol = pos.symbol || 'UNK';
               const walletName = (pos as any).walletName || 'Unknown';
@@ -2517,6 +2657,128 @@ const Tracker: React.FC<TrackerProps> = ({
                 </div>
               );
             })}
+                </div>
+              </div>
+            </div>
+
+            <div className="explorer-column">
+              <div className="explorer-column-header">
+                <div className="explorer-column-title-section">
+                  <h2 className="explorer-column-title">Orderbook</h2>
+                </div>
+                <div className="explorer-column-title-right">
+                  <div
+                    className={`column-pause-icon ${pausedColumn === 'orderbook' ? 'visible' : ''}`}
+                    onClick={() => setPausedColumn(prev => prev === 'orderbook' ? null : 'orderbook')}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                    </svg>
+                  </div>
+                  <div className="explorer-quickbuy-container">
+                    <img
+                      className="explorer-quick-buy-search-icon"
+                      src={lightning}
+                      alt=""
+                    />
+                    <input
+                      type="text"
+                      placeholder="0.0"
+                      value={quickAmounts.orderbook}
+                      onChange={(e) => setQuickAmount('orderbook', e.target.value)}
+                      onFocus={handleInputFocus}
+                      className="explorer-quickbuy-input"
+                    />
+                    <img
+                      className="quickbuy-monad-icon"
+                      src={monadicon}
+                    />
+                    <div className="explorer-preset-controls">
+                      {[1, 2, 3].map((p) => (
+                        <Tooltip
+                          key={p}
+                          offset={35}
+                          content={
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '4px',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                }}
+                              >
+                                <img
+                                  src={slippage}
+                                  style={{
+                                    width: '14px',
+                                    height: '14px',
+                                  }}
+                                  alt="Slippage"
+                                />
+                                <span>
+                                  {buyPresets[p]?.slippage || '0'}%
+                                </span>
+                              </div>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                }}
+                              >
+                                <img
+                                  src={gas}
+                                  style={{
+                                    width: '14px',
+                                    height: '14px',
+                                  }}
+                                  alt="Priority"
+                                />
+                                <span>
+                                  {buyPresets[p]?.priority || '0'}{' '}
+                                </span>
+                              </div>
+                            </div>
+                          }
+                        >
+                          <button
+                            className={`explorer-preset-pill ${activePresets.orderbook === p ? 'active' : ''}`}
+                            onClick={() => setActivePreset('orderbook', p)}
+                          >
+                            P{p}
+                          </button>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  </div>
+                  <Tooltip content="Filters">
+                    <button
+                      className="column-filter-icon"
+                      onClick={() => setShowMonitorFiltersPopup(true)}
+                      title="filter orderbook"
+                    >
+                      <img className="filter-icon" src={filter} />
+                    </button>
+                  </Tooltip>
+                </div>
+              </div>
+              <div className="explorer-tokens-list">
+                <div className="tracker-monitor-grid">
+                  {/* Orderbook tokens will be displayed here */}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
