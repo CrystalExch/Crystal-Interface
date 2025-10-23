@@ -2472,6 +2472,7 @@ const TokenRow = React.memo<{
     ? getMetricColorClasses(token, displaySettings)
     : null;
   const cssVariables: CSSVars = metricData?.cssVars || {};
+  const [imageError, setImageError] = useState(false);
 
 
   return (
@@ -2548,32 +2549,33 @@ const TokenRow = React.memo<{
               <div
                 className={`explorer-image-wrapper ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
               >
-                {token.image ? (
-                  <img
-                    src={token.image}
-                    className={`explorer-token-image ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
-                  />
-                ) : (
-                  <div
-                    className={`explorer-token-letter ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      backgroundColor: 'rgb(6,6,6)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '40px',
-                      fontWeight: '200',
-                      color: '#ffffff',
-                      borderRadius: displaySettings.squareImages
-                        ? '8px'
-                        : '50%',
-                    }}
-                  >
-                    {token.symbol.charAt(0).toUpperCase()}
-                  </div>
-                )}
+               {token.image && !imageError ? (
+  <img
+    src={token.image}
+    className={`explorer-token-image ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
+    onError={() => setImageError(true)}
+    alt={token.symbol}
+  />
+) : (
+  <div
+    className={`explorer-token-letter ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
+    style={{
+      width: '100%',
+      height: '100%',
+      backgroundColor: 'rgb(6,6,6)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: token.symbol.length <= 3 ? '34px' : '28px',
+      fontWeight: '200',
+      color: '#ffffff',
+      letterSpacing: token.symbol.length > 3 ? '-2px' : '0',
+      borderRadius: displaySettings.squareImages ? '8px' : '50%',
+    }}
+  >
+    {token.symbol.slice(0, 2).toUpperCase()}
+  </div>
+)}
                 <div
                   className={`explorer-image-overlay ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
                   onMouseEnter={() => onImageHover(token.id)}

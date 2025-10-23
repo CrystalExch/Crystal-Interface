@@ -18535,7 +18535,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                         Converting
                         <div className="">
                           <span>Balance: </span>
-                          <span>0.00</span>
+                          <span>1.81K</span>
                           <button
                             className="perps-max-button"
                             onClick={() => {
