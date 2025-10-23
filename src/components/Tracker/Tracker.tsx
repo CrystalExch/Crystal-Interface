@@ -143,7 +143,9 @@ interface LiveTrade {
   walletName: string;
   emoji: string;
   token: string;
+  tokenName: string;
   amount: number;
+  price: number;
   marketCap: number;
   time: string;
   txHash: string;
@@ -542,7 +544,9 @@ const Tracker: React.FC<TrackerProps> = ({
       walletName: trackedWallet?.name || 'Unknown',
       emoji: trackedWallet?.emoji || '👻',
       token: trade.token?.symbol || 'Unknown',
+      tokenName: trade.token?.name || trade.token?.symbol || 'Unknown',
       amount: nativeAmount,
+      price: price,
       marketCap: marketCap / DISPLAY_SCALE,
       time: timeAgo,
       txHash: trade.transaction?.id || trade.id,
@@ -791,13 +795,12 @@ const Tracker: React.FC<TrackerProps> = ({
       const results = await Promise.all(addrs.map(a => fetchPortfolio(a).catch(() => null)));
       if (stop) return;
       const pos: Record<string, GqlPosition[]> = {};
-      const bal = new Map<string, number>();
+      // Don't update balances from fetchPortfolio since it doesn't fetch native balance
+      // Balance updates come from walletTokenBalances prop via the useEffect below
       results.forEach((w, i) => {
         if (!w) return;
-        bal.set(addrs[i].toLowerCase(), toMon(Number(w.nativeBalance)));
         pos[addrs[i]] = w.positions || [];
       });
-      setTrackedWallets(prev => prev.map(w => bal.has(w.address.toLowerCase()) ? { ...w, balance: bal.get(w.address.toLowerCase())! } : w));
       setAddressPositions(prev => ({ ...prev, ...pos }));
     };
     run();
@@ -925,25 +928,10 @@ const Tracker: React.FC<TrackerProps> = ({
       }
 
       setIsLoadingPortfolioMarkets(true);
-      
-      try {
-        console.log(`[Tracker] Starting portfolio fetch for ${trackedWallets.length} wallets`);
-        
-        // Fetch markets from tracked wallet positions
-        const portfolioMarkets = await fetchPortfolioMarketsForWallets(trackedWallets);
-        setPortfolioMarkets(portfolioMarkets);
-        
-        // Use portfolio markets as monitor tokens
-        setMonitorTokens(portfolioMarkets);
-        
-        console.log(`[Tracker] Portfolio fetch completed: ${portfolioMarkets.length} markets found`);
-      } catch (error) {
-        console.error('[Tracker] Failed to fetch portfolio markets:', error);
-        // On error, keep existing data or fall back to empty array
-        setMonitorTokens([]);
-      } finally {
-        setIsLoadingPortfolioMarkets(false);
-      }
+
+      // NOTE: Disabled fetchPortfolioMarketsForWallets because it requires graphqlUrl which is not configured
+      // Monitor tab will use positions from addressPositions state instead (fetched via fetchPortfolio)
+      setIsLoadingPortfolioMarkets(false);
     };
 
     // Initial fetch
@@ -1622,6 +1610,61 @@ const Tracker: React.FC<TrackerProps> = ({
     setStatus();
   }, [demoMode.trades]);
 
+  // Watch contract events for live trades
+  useEffect(() => {
+    const cfg = chainCfgOf(activechain);
+    if (!cfg?.id || !cfg?.rpcUrl) {
+      return;
+    }
+
+    const unsubs: Array<() => void> = [];
+    const common = { poll: true as const, chainId: cfg.id };
+
+    try {
+      if (cfg?.router) {
+        unsubs.push(watchContractEvent(config, {
+          address: cfg.router as `0x${string}`,
+          abi: CrystalRouterAbi,
+          eventName: 'Trade' as any,
+          onLogs: (logs) => push(logs, 'router'),
+          ...common,
+        }));
+      }
+      if (cfg?.market) {
+        unsubs.push(watchContractEvent(config, {
+          address: cfg.market as `0x${string}`,
+          abi: CrystalMarketAbi,
+          eventName: 'Trade' as any,
+          onLogs: (logs) => push(logs, 'market'),
+          ...common,
+        }));
+      }
+      if ((cfg?.launchpadTokens ?? []).length) {
+        for (const a of cfg.launchpadTokens as `0x${string}`[]) {
+          unsubs.push(watchContractEvent(config, {
+            address: a,
+            abi: CrystalLaunchpadToken,
+            eventName: 'Transfer',
+            onLogs: (l) => push(l, 'launchpad'),
+            ...common,
+          }));
+        }
+      } else if (cfg?.launchpad) {
+        unsubs.push(watchContractEvent(config, {
+          address: cfg.launchpad as `0x${string}`,
+          abi: CrystalLaunchpadToken,
+          eventName: 'Transfer',
+          onLogs: (l) => push(l, 'launchpad'),
+          ...common,
+        }));
+      }
+    } catch (err) {
+      console.error('[Tracker] Error setting up contract event watchers:', err);
+    }
+
+    return () => { try { unsubs.forEach(u => u?.()); } catch {} };
+  }, [activechain, push]);
+
   const ingestExternalTrades = (items: any[]) => {
     if (demoMode.trades) { disableDemo('trades'); setTrackedWalletTrades([]); }
     const wallets = trackedWalletsRef.current;
@@ -1871,6 +1914,8 @@ const Tracker: React.FC<TrackerProps> = ({
         if (!log || !log.topics?.length) return;
         if (log.commitState && log.commitState !== 'Proposed') return;
 
+        console.log('[Tracker] Received chainLog event, topic:', log.topics[0]);
+
         if (log.topics[0] === MARKET_CREATED_EVENT) {
           addMarketFromLog(log);
           return;
@@ -1883,6 +1928,8 @@ const Tracker: React.FC<TrackerProps> = ({
         if (log.topics[0] === TRADE_EVENT) {
           const marketAddr = `0x${(log.topics[1] || '').slice(26)}`.toLowerCase();
           const callerAddr = `0x${(log.topics[2] || '').slice(26)}`.toLowerCase();
+
+          console.log('[Tracker] TRADE_EVENT - caller:', callerAddr, 'tracked?', trackedSetRef.current.has(callerAddr));
 
           if (!trackedSetRef.current.has(callerAddr)) return;
 
@@ -1903,6 +1950,7 @@ const Tracker: React.FC<TrackerProps> = ({
           try { upsertMarket({ tokenAddr: tokenAddrFromMarket || marketAddr, price: price || 0, isBuy, amountNative: isBuy ? amountIn : amountOut, ts: Math.floor(Date.now() / 1000) }); } catch (e) {}
 
           try {
+            const market = marketsRef.current.get(tokenAddrFromMarket || '');
             const tradeLike = {
               id: `${log.transactionHash || ''}-${log.logIndex || ''}`,
               account: { id: callerAddr },
@@ -1910,7 +1958,10 @@ const Tracker: React.FC<TrackerProps> = ({
               amountIn: BigInt(Math.floor((isBuy ? amountIn : amountOut) * 1e18)),
               amountOut: BigInt(Math.floor((isBuy ? amountOut : amountIn) * 1e18)),
               priceNativePerTokenWad: BigInt(Math.floor((price || 0) * 1e18)),
-              token: { symbol: (marketsRef.current.get(tokenAddrFromMarket || '')?.symbol || '').toString() },
+              token: {
+                symbol: (market?.symbol || '').toString(),
+                name: (market?.name || market?.symbol || '').toString()
+              },
               timestamp: Math.floor(Date.now() / 1000),
             };
             ingestExternalTrades([tradeLike]);
