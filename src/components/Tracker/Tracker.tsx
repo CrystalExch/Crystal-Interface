@@ -27,7 +27,6 @@ export type GqlPosition = {
   lastPrice: number;
 };
 
-// Fetch portfolio positions for a wallet (copied from App.tsx logic)
 const fetchPortfolio = async (address: string) => {
   try {
     const response = await fetch(SUBGRAPH_URL, {
@@ -224,7 +223,7 @@ interface MonitorToken {
 
 // Helper: fetch recent trades
 const fetchRecentTradesForWallet = async (account: string, first = 50) => {
-  const url = (settings as any).graphqlUrl || (settings as any).api?.graphqlUrl;
+  const url = SUBGRAPH_URL;
   if (!url) return [];
 
   const tryPost = async (body: any) => {
@@ -233,19 +232,15 @@ const fetchRecentTradesForWallet = async (account: string, first = 50) => {
     return (await r.json());
   };
 
-  // Try global trades query (request token info if available)
-  const q1 = `query ($account: String!, $first: Int!) { trades(where: { account: $account }, orderBy: block, orderDirection: desc, first: $first) { id token { id symbol } account { id } block isBuy priceNativePerTokenWad amountIn amountOut txHash } }`;
+  const q1 = `query ($account: String!, $first: Int!) { trades(where: { account: $account }, orderBy: block, orderDirection: desc, first: $first) { id token { id symbol name } account { id } block isBuy priceNativePerTokenWad amountIn amountOut txHash } }`;
   try {
     const resp = await tryPost({ query: q1, variables: { account: account.toLowerCase(), first } });
     const list = resp?.data?.trades;
     if (Array.isArray(list) && list.length) return list;
   } catch (e) {
-    // ignore, fall through
   }
 
-  // Fallback: query trades per token
-  // Query launchpadTokens
-  const q2 = `query ($account: [Bytes!], $first: Int!) { launchpadTokens(first: 1000) { id symbol trades(where: { account_in: $account }, orderBy: block, orderDirection: desc, first: $first) { id account { id } block isBuy priceNativePerTokenWad amountIn amountOut txHash } } }`;
+  const q2 = `query ($account: [Bytes!], $first: Int!) { launchpadTokens(first: 1000) { id symbol name trades(where: { account_in: $account }, orderBy: block, orderDirection: desc, first: $first) { id account { id } block isBuy priceNativePerTokenWad amountIn amountOut txHash } } }`;
   try {
     const resp2 = await tryPost({ query: q2, variables: { account: [account.toLowerCase()], first } });
     const tokens = resp2?.data?.launchpadTokens;
@@ -254,12 +249,10 @@ const fetchRecentTradesForWallet = async (account: string, first = 50) => {
       for (const t of tokens) {
         if (!t?.trades) continue;
         for (const tr of t.trades) {
-          // Attach token metadata so ingestExternalTrades can upsert markets
-          try { tr.token = tr.token || { id: t.id, symbol: t.symbol }; } catch (e) {}
+          try { tr.token = tr.token || { id: t.id, symbol: t.symbol, name: t.name }; } catch (e) {}
           out.push(tr);
         }
       }
-  // sort desc and limit
       out.sort((a,b) => (Number(b.block) || 0) - (Number(a.block) || 0));
       return out.slice(0, first);
     }
@@ -676,12 +669,15 @@ const Tracker: React.FC<TrackerProps> = ({
 
   const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'launchpad') => {
     if (!logs?.length) return;
+    console.log('[Tracker] push called with', logs.length, 'logs from', source);
     if (demoMode.trades) { disableDemo('trades'); setTrackedWalletTrades([]); }
     lastEventTsRef.current = Date.now();
     setStatus({ lastPushSource: source });
 
     const lower = (s?: string) => (s || '').toLowerCase();
     const wallets = trackedWalletsRef.current;
+    console.log('[Tracker] Tracked wallets:', wallets.map(w => w.address.toLowerCase()));
+    console.log('[Tracker] trackedSetRef contents:', Array.from(trackedSetRef.current));
     const touchWallet = (addr: string) => {
       const key = lower(addr);
       if (!trackedSetRef.current.has(key)) return;
@@ -693,33 +689,58 @@ const Tracker: React.FC<TrackerProps> = ({
     for (const l of logs) {
       const args: any = l?.args ?? {};
       const txHash: string = l?.transactionHash ?? l?.transaction?.id ?? l?.id ?? '';
+      console.log('[Tracker] Processing log:', { eventName: l.eventName, args, txHash });
 
-      let accountAddr: string | null = (args.account || args.trader || args.sender || args.owner || args.from || args.buyer || args.seller) ?? null;
+      let accountAddr: string | null = (args.user || args.account || args.trader || args.sender || args.owner || args.from || args.buyer || args.seller) ?? null;
 
-  // if no account, try RPC lookup
-      if (!accountAddr && txHash) {
-        try {
-          const pc = getRpcPublicClient(chainCfgOf(activechain));
-          const tx = pc ? await safeGetTransaction(pc, txHash as `0x${string}`) : null;
-          if (tx?.from) accountAddr = tx.from;
-          else if (tx?.to) accountAddr = tx.to;
-          if (tx?.from) touchWallet(tx.from);
-          if (tx?.to) touchWallet(tx.to);
-        } catch (e) {}
-      } else if (accountAddr) {
+      if (accountAddr) {
         touchWallet(accountAddr);
+      } else {
+        console.log('[Tracker] Skipping log - no account address found');
+        continue;
       }
 
-  if (!accountAddr) continue; // skip if unresolved
+      const lowerAccountAddr = lower(accountAddr);
+      console.log('[Tracker] Checking if wallet is tracked:', {
+        original: accountAddr,
+        lowercase: lowerAccountAddr,
+        isTracked: trackedSetRef.current.has(lowerAccountAddr),
+        trackedSet: Array.from(trackedSetRef.current)
+      });
 
-      // only process trades from tracked wallets
-      if (!trackedSetRef.current.has(lower(accountAddr))) continue;
+      if (!trackedSetRef.current.has(lowerAccountAddr)) {
+        console.log('[Tracker] ❌ Skipping trade - wallet not tracked:', accountAddr);
+        console.log('[Tracker] Add this exact address to your Wallet Manager:', accountAddr);
+        continue;
+      }
+
+      console.log('[Tracker] Processing trade for tracked wallet:', accountAddr);
+      console.log('[Tracker] Raw event args:', JSON.stringify(args, (key, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+      , 2));
 
       const isBuy = Boolean(args.isBuy ?? args.buy ?? (args.from && !args.to));
-      const amountIn = Number(args.amountIn ?? 0n) / 1e18;
-      const amountOut = Number(args.amountOut ?? 0n) / 1e18;
-      const priceWad = Number(args.priceNativePerTokenWad ?? args.price ?? 0n) / 1e18;
-      const tokenAddr = String(args.token || args.tokenAddress || args.base || args.asset || args.tokenIn || args.tokenOut || (l as any)?.address || '').toLowerCase() || undefined;
+
+      // Convert amounts - following the old WebSocket implementation pattern
+      // The contract might be sending amounts in a scaled-down format
+      const amountInRaw = Number(args.amountIn ?? 0);
+      const amountOutRaw = Number(args.amountOut ?? 0);
+      const priceRaw = Number(args.priceNativePerTokenWad ?? args.price ?? args.endPrice ?? args.startPrice ?? 0);
+
+      // Convert to BigInt wei (multiply by 1e18 like the old WebSocket code)
+      const amountInWei = BigInt(Math.floor(amountInRaw * 1e18));
+      const amountOutWei = BigInt(Math.floor(amountOutRaw * 1e18));
+      const priceWad = BigInt(Math.floor(priceRaw * 1e18));
+
+      // For display/debug only
+      const amountInEth = Number(amountInWei) / 1e18;
+      const amountOutEth = Number(amountOutWei) / 1e18;
+      const priceEth = Number(priceWad) / 1e18;
+
+      console.log('[Tracker] Trade details (ETH):', { isBuy, amountIn: amountInEth, amountOut: amountOutEth, price: priceEth });
+      console.log('[Tracker] Trade details (wei):', { amountInWei, amountOutWei, priceWad });
+
+      const tokenAddr = String(args.market || args.token || args.tokenAddress || args.base || args.asset || args.tokenIn || args.tokenOut || (l as any)?.address || '').toLowerCase() || undefined;
       const symbol = (args.symbol || args.ticker || '').toString() || undefined;
       const ts = Math.floor(Date.now()/1000);
 
@@ -732,40 +753,56 @@ const Tracker: React.FC<TrackerProps> = ({
         || addrLower
         || symbolLower;
       const live = marketsRef.current.get(resolvedMarketId || '');
-  const chosenPrice = (live?.price != null && live.price > 0) ? live.price : priceWad;
-  const tradeLike = { id: txHash || `${Date.now()}_${Math.random()}`, account: { id: String(accountAddr || '') }, isBuy, amountIn: BigInt(Math.floor(amountIn * 1e18)), amountOut: BigInt(Math.floor(amountOut * 1e18)), priceNativePerTokenWad: BigInt(Math.floor(chosenPrice * 1e18)), token: { symbol: (live?.symbol ?? symbol ?? 'UNK') }, timestamp: ts };
 
-      toAdd.push(normalizeTrade(tradeLike, wallets));
+      // Use live price if available, convert to BigInt
+      const livePriceWad = live?.price != null && live.price > 0
+        ? BigInt(Math.floor(live.price * 1e18))
+        : priceWad;
 
-  upsertMarket({ tokenAddr, symbol, price: priceWad, isBuy, amountNative: isBuy ? amountIn : amountOut, ts, wallet: wallets.find(w=>lower(w.address)===lower(accountAddr||''))?.name, emoji: wallets.find(w=>lower(w.address)===lower(accountAddr||''))?.emoji });
+      const tradeLike = {
+        id: txHash || `${Date.now()}_${Math.random()}`,
+        account: { id: String(accountAddr || '') },
+        isBuy,
+        amountIn: amountInWei,
+        amountOut: amountOutWei,
+        priceNativePerTokenWad: livePriceWad,
+        token: {
+          symbol: (live?.symbol ?? symbol ?? 'UNK'),
+          name: (live?.name ?? live?.symbol ?? symbol ?? 'Unknown')
+        },
+        timestamp: ts
+      };
+
+      console.log('[Tracker] Created tradeLike:', tradeLike);
+
+      // Debug: Log what normalizeTrade will produce
+      const normalized = normalizeTrade(tradeLike, wallets);
+      console.log('[Tracker] Normalized trade:', normalized);
+
+      toAdd.push(normalized);
+
+  upsertMarket({ tokenAddr, symbol, price: priceEth, isBuy, amountNative: isBuy ? amountInEth : amountOutEth, ts, wallet: wallets.find(w=>lower(w.address)===lower(accountAddr||''))?.name, emoji: wallets.find(w=>lower(w.address)===lower(accountAddr||''))?.emoji });
     }
 
-    if (toAdd.length === 0) return;
+    if (toAdd.length === 0) {
+      console.log('[Tracker] No trades to add after filtering');
+      return;
+    }
+
+    console.log('[Tracker] Adding', toAdd.length, 'trades to LiveTrades');
+    console.log('[Tracker] Trades to add:', toAdd);
 
     setTrackedWalletTrades(prev => {
       const next: LiveTrade[] = [...toAdd, ...prev];
       const seen = new Set<string>(), out: LiveTrade[] = [];
       for (const t of next) if (!seen.has(t.id)) { seen.add(t.id); out.push(t); }
       flushMarketsToState();
+      console.log('[Tracker] Updated trackedWalletTrades, total count:', out.length);
       return out.slice(0, 500);
     });
   }, [normalizeTrade, activechain, demoMode.trades]);
 
   // safe RPC wrapper to avoid noisy errors
-  const safeGetTransaction = async (pc: any, hash: string) => {
-    try {
-      return await pc.getTransaction({ hash: hash as `0x${string}` });
-    } catch (e: any) {
-  // handle provider rejection/network errors
-      if (e?.code === 4001) {
-        console.info('[Tracker] provider request rejected by user');
-      } else {
-        console.warn('[Tracker] getTransaction failed', e?.message || e);
-      }
-      return null;
-    }
-  };
-
 
 
   useEffect(() => {
@@ -1610,10 +1647,33 @@ const Tracker: React.FC<TrackerProps> = ({
     setStatus();
   }, [demoMode.trades]);
 
-  // Watch contract events for live trades
+  // Update trade times every minute
   useEffect(() => {
+    const interval = setInterval(() => {
+      setTrackedWalletTrades(prev =>
+        prev.map(trade => {
+          const timestamp = new Date(trade.createdAt).getTime() / 1000;
+          const now = Date.now() / 1000;
+          const secondsAgo = Math.max(0, now - timestamp);
+          let timeAgo = 'now';
+          if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
+          else if (secondsAgo < 3600) timeAgo = `${Math.floor(secondsAgo / 60)}m`;
+          else if (secondsAgo < 86400) timeAgo = `${Math.floor(secondsAgo / 3600)}h`;
+          else timeAgo = `${Math.floor(secondsAgo / 86400)}d`;
+          return { ...trade, time: timeAgo };
+        })
+      );
+    }, 10000); // Update every 10 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    console.log('[Tracker] Setting up watchContractEvent for activechain:', activechain);
     const cfg = chainCfgOf(activechain);
+    console.log('[Tracker] Chain config:', { id: cfg?.id, rpcUrl: cfg?.rpcUrl, router: cfg?.router, market: cfg?.market });
+
     if (!cfg?.id || !cfg?.rpcUrl) {
+      console.log('[Tracker] Missing chain config, skipping watchContractEvent setup');
       return;
     }
 
@@ -1622,20 +1682,28 @@ const Tracker: React.FC<TrackerProps> = ({
 
     try {
       if (cfg?.router) {
+        console.log('[Tracker] Setting up router Trade event watcher:', cfg.router);
         unsubs.push(watchContractEvent(config, {
           address: cfg.router as `0x${string}`,
           abi: CrystalRouterAbi,
           eventName: 'Trade' as any,
-          onLogs: (logs) => push(logs, 'router'),
+          onLogs: (logs) => {
+            console.log('[Tracker] Router Trade event received, logs:', logs);
+            push(logs, 'router');
+          },
           ...common,
         }));
       }
       if (cfg?.market) {
+        console.log('[Tracker] Setting up market Trade event watcher:', cfg.market);
         unsubs.push(watchContractEvent(config, {
           address: cfg.market as `0x${string}`,
           abi: CrystalMarketAbi,
           eventName: 'Trade' as any,
-          onLogs: (logs) => push(logs, 'market'),
+          onLogs: (logs) => {
+            console.log('[Tracker] Market Trade event received, logs:', logs);
+            push(logs, 'market');
+          },
           ...common,
         }));
       }
@@ -1703,13 +1771,11 @@ const Tracker: React.FC<TrackerProps> = ({
     const bought = t.isBuy ? (t.amountNative ?? 0) : 0;
     const sold   = !t.isBuy ? (t.amountNative ?? 0) : 0;
 
-  // Aggregate trades by wallet - only track positions from tracked wallets
     const trades = (m?.trades ?? []).slice();
     const walletName = t.wallet || 'Unknown';
     const existingTradeIndex = trades.findIndex(tr => tr.wallet === walletName);
 
     if (existingTradeIndex >= 0) {
-      // Update existing wallet's trade data
       const existing = trades[existingTradeIndex];
       trades[existingTradeIndex] = {
         ...existing,
@@ -1772,7 +1838,6 @@ const Tracker: React.FC<TrackerProps> = ({
       setDemoMode(v => ({ ...v, monitor: false }));
       if (!m) setMonitorTokens([]);
     }
-  // ensure ws subscription for market
     try {
       const cfg = chainCfgOf(activechain);
       const wss = cfg?.wssurl;
@@ -1790,7 +1855,8 @@ const Tracker: React.FC<TrackerProps> = ({
     } catch (e) {}
   };
 
-  // websocket helpers (subscribe style)
+  // websocket helpers
+
   const subscribe = useCallback((ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
     try {
       const reqId = subIdRef.current++;
@@ -2250,7 +2316,9 @@ const Tracker: React.FC<TrackerProps> = ({
                         isBlurred ? 'blurred' : ''
                       ].join(' ')}
                     >
-                      {trade.amount.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                      {trade.amount < 0.0001
+                        ? trade.amount.toExponential(2)
+                        : trade.amount.toLocaleString(undefined, { maximumFractionDigits: 4 })}
                     </span>
                   </div>
 
