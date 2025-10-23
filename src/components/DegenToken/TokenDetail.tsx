@@ -229,32 +229,29 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     setTradeAmount('');
   };
 
-  const currentCurrency = (tradeType === 'sell') ? (token?.symbol || 'TOKEN') :
-    (selectedCurrency === 'MON' ? 'MON' : token?.symbol || 'TOKEN');
-  const currentBalance = (tradeType === 'sell') ? walletTokenBalance :
-    (selectedCurrency === 'MON' ? walletMonBalance : walletTokenBalance);
+  const currentCurrency = selectedCurrency === 'MON' ? 'MON' : (token?.symbol || 'TOKEN');
+  const currentBalance =
+    tradeType === 'buy'
+      ? (selectedCurrency === 'MON' ? walletMonBalance : walletTokenBalance)
+      : walletTokenBalance;
 
   const handleMaxClick = () => {
     if (tradeType === 'sell') {
-      setTradeAmount(formatTradeAmount(walletTokenBalance));
-    } else if (selectedCurrency === 'MON') {
-      const monBalance = getCurrentMONBalance();
-      setTradeAmount(formatTradeAmount(monBalance));
+      if (selectedCurrency === 'MON') setTradeAmount(formatTradeAmount(walletTokenBalance * (token?.price || 0)));
+      else setTradeAmount(formatTradeAmount(walletTokenBalance));
     } else {
-      setTradeAmount(formatTradeAmount(walletTokenBalance));
+      if (selectedCurrency === 'MON') setTradeAmount(formatTradeAmount(getCurrentMONBalance()));
+      else setTradeAmount(formatTradeAmount(walletTokenBalance));
     }
   };
 
   const handlePercentageClick = (percentage: number) => {
     if (tradeType === 'sell') {
-      const amount = (walletTokenBalance * percentage) / 100;
-      setTradeAmount(formatTradeAmount(amount));
-    } else if (selectedCurrency === 'MON') {
-      const amount = (walletMonBalance * percentage) / 100;
-      setTradeAmount(formatTradeAmount(amount));
+      const base = (walletTokenBalance * percentage) / 100;
+      setTradeAmount(formatTradeAmount(selectedCurrency === 'MON' ? base * (token?.price || 0) : base));
     } else {
-      const amount = (walletTokenBalance * percentage) / 100;
-      setTradeAmount(formatTradeAmount(amount));
+      const base = selectedCurrency === 'MON' ? walletMonBalance : walletTokenBalance;
+      setTradeAmount(formatTradeAmount((base * percentage) / 100));
     }
   };
 
@@ -329,18 +326,23 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           isLoading: false,
         });
       } else {
+        const isMonInput = selectedCurrency === 'MON';
+        const tokenPrice = token?.price || 0;
+        const tokensToSell = isMonInput ? (tokenPrice > 0 ? parsedAmount / tokenPrice : 0) : parsedAmount;
+        if (!Number.isFinite(tokensToSell) || tokensToSell <= 0) return;
+
         showLoadingPopup(txId, {
           title: 'Sending transaction...',
-          subtitle: `Selling ${tradeAmount} ${token.symbol}`,
+          subtitle: isMonInput ? `Selling for ${tradeAmount} MON` : `Selling ${tradeAmount} ${token.symbol}`,
           amount: tradeAmount,
-          amountUnit: token.symbol,
+          amountUnit: isMonInput ? 'MON' : token.symbol,
         });
 
-        const amountTokenWei = BigInt(Math.round(parsedAmount * 1e18));
+        const amountTokenWei = BigInt(Math.round(tokensToSell * 1e18));
 
         updatePopup(txId, {
           title: 'Confirming sell...',
-          subtitle: `Selling ${tradeAmount} ${token.symbol}`,
+          subtitle: isMonInput ? `Selling for ${tradeAmount} MON` : `Selling ${tradeAmount} ${token.symbol}`,
           variant: 'info',
         });
 
@@ -394,6 +396,8 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
     if (!tradeAmount) return true;
     return false;
   };
+
+  useEffect(() => setSelectedCurrency(tradeType === 'buy' ? 'MON' : 'TOKEN'), [tradeType]);
 
   if (loading) {
     return (
@@ -738,16 +742,14 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           <div className="detail-trade-form">
             <div className="detail-trade-input-group">
               <div className="detail-balance-info">
-                {tradeType === 'buy' && (
-                  <button
-                    className="detail-currency-switch-button"
-                    onClick={handleCurrencySwitch}
-                  >
-                    Switch to {(selectedCurrency === 'MON' ? token?.symbol || 'TOKEN' : 'MON')}
-                  </button>
-                )}
+                <button
+                  className="detail-currency-switch-button"
+                  onClick={handleCurrencySwitch}
+                >
+                  Switch to {(selectedCurrency === 'MON' ? (token?.symbol || 'TOKEN') : 'MON')}
+                </button>
                 <span>
-                  Balance: {formatNumber(currentBalance)} {currentCurrency}
+                  Balance: {formatNumber(walletTokenBalance)} {token.symbol}{tradeType === 'buy' && selectedCurrency === 'MON' ? '' : ''}
                 </span>
               </div>
               <div className="detail-trade-input-wrapper">
@@ -764,40 +766,29 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               {tradeType === 'buy' && selectedCurrency === 'MON' ? (
                 <div className="detail-preset-buttons">
                   <div className="detail-preset-buttons-right">
-                    <button className="detail-preset-button-left" onClick={() => setIsSettingsOpen(true)}>
-                      Slippage (%)
-                    </button>
-                    {['1', '10', '100'].map((amount) => (
-                      <button
-                        key={amount}
-                        onClick={() => setTradeAmount(amount)}
-                        className="detail-preset-button"
-                      >
-                        {amount} MON
-                      </button>
+                    <button className="detail-preset-button-left" onClick={() => setIsSettingsOpen(true)}>Slippage (%)</button>
+                    {['1', '10', '100'].map(a => (
+                      <button key={a} onClick={() => setTradeAmount(a)} className="detail-preset-button">{a} MON</button>
                     ))}
-                    <button onClick={handleMaxClick} className="detail-preset-button">
-                      Max
-                    </button>
+                    <button onClick={handleMaxClick} className="detail-preset-button">Max</button>
+                  </div>
+                </div>
+              ) : tradeType === 'sell' && selectedCurrency === 'MON' ? (
+                <div className="detail-preset-buttons">
+                  <div className="detail-preset-buttons-right">
+                    <button className="detail-preset-button-left" onClick={() => setIsSettingsOpen(true)}>Slippage (%)</button>
+                    {['25', '50', '75', '100'].map(p => (
+                      <button key={p} onClick={() => handlePercentageClick(Number(p))} className="detail-preset-button">{p}%</button>
+                    ))}
+                    <button onClick={handleMaxClick} className="detail-preset-button">Max</button>
                   </div>
                 </div>
               ) : (
                 <div className="detail-preset-buttons">
                   <div className="detail-preset-buttons-right">
-                    <button
-                      className="detail-preset-button-left"
-                      onClick={() => {/* your custom action */ }}
-                    >
-                      Slippage (%)
-                    </button>
-                    {['25', '50', '75', '100'].map((percentage) => (
-                      <button
-                        key={percentage}
-                        onClick={() => handlePercentageClick(Number(percentage))}
-                        className="detail-preset-button"
-                      >
-                        {percentage}%
-                      </button>
+                    <button className="detail-preset-button-left" onClick={() => {}}>Slippage (%)</button>
+                    {['25', '50', '75', '100'].map(p => (
+                      <button key={p} onClick={() => handlePercentageClick(Number(p))} className="detail-preset-button">{p}%</button>
                     ))}
                   </div>
                 </div>
