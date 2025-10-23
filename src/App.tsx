@@ -22803,8 +22803,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       </div>
       <div className="swapmodal">
         <div
-          className={`sendbg ${connected && amountIn > tokenBalances[tokenIn]
-            ? 'exceed-balance' && !txPending.current
+          className={`sendbg ${connected && amountIn > tokenBalances[tokenIn] && !txPending.current
+            ? 'exceed-balance'
             : ''
             }`}
         >
