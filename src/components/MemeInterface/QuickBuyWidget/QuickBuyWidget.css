@@ -15,7 +15,7 @@
 }
 
 .quickbuy-widget.dragging {
-  cursor: grabbing;
+  cursor: move;
   filter: blur(0.5px);
   opacity: 0.8;
   transform: scale(1.02);
@@ -31,14 +31,14 @@
   align-items: center;
   border-bottom: 1px solid rgba(207, 210, 252, 0.15);
   border-radius: 8px 8px 0 0;
-  cursor: grab;
+  cursor: move;
   display: flex;
   justify-content: space-between;
   padding: 8px 12px;
 }
 
 .quickbuy-header:active {
-  cursor: grabbing;
+  cursor: move;
 }
 
 .quickbuy-tabs {
@@ -309,7 +309,7 @@
 
 .quickbuy-drag-handle {
   align-items: center;
-  cursor: grab;
+  cursor: move;
   display: flex;
   flex-direction: column;
   gap: 2px;

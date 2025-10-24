@@ -170,6 +170,7 @@ import TradingPresetsPopup from './components/Tracker/TradingPresetsPopup/Tradin
 import LiveTradesSettingsPopup from './components/Tracker/ LiveTradesSettingsPopup/LiveTradesSettingsPopup.tsx';
 import MemeSearch from './components/MemeSearch/MemeSearch.tsx';
 import { showLoadingPopup, updatePopup } from './components/MemeTransactionPopup/MemeTransactionPopupManager';
+import TrackerWidget from './components/TrackerWidget/TrackerWidget.tsx';
 
 // import config
 import { ChevronDown, SearchIcon } from 'lucide-react';
@@ -468,6 +469,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const userchain = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.chainId || client?.chain?.id
   const location = useLocation();
   const navigate = useNavigate();
+  const [isTrackerWidgetOpen, setIsTrackerWidgetOpen] = useState(true); 
+const [trackerWidgetSnap, setTrackerWidgetSnap] = useState<'left' | 'right' | null>(null);
+const [trackerWidgetWidth, setTrackerWidgetWidth] = useState(400);
+
+const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | null, width: number) => {
+  setTrackerWidgetSnap(snapSide);
+  setTrackerWidgetWidth(width);
+}, []);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const TOTAL_SUPPLY = 1e9;
   const HTTP_URL = settings.chainConfig[activechain].httpurl;
@@ -25410,7 +25419,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           />
         </div>
       }
-      <div className="app-container">
+      <div className="app-container"  style={{
+    marginLeft: trackerWidgetSnap === 'left' ? `${trackerWidgetWidth}px` : undefined,
+    marginRight: trackerWidgetSnap === 'right' ? `${trackerWidgetWidth}px` : undefined,
+    transition: 'margin 0.3s ease',
+  }}>
         <Routes>
           <Route path="/" element={<Navigate to="/market" replace />} />
           <Route path="*" element={<Navigate to="/market" replace />} />
@@ -25888,6 +25901,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           previewPosition={previewPosition}
           previewExiting={previewExiting}
         />
+{/* <TrackerWidget 
+  isOpen={isTrackerWidgetOpen}
+  onClose={() => setIsTrackerWidgetOpen(false)}
+  onSnapChange={handleTrackerWidgetSnapChange}
+/> */}
         {/* <WidgetExplorer
   isOpen={isWidgetExplorerOpen}
   onClose={handleCloseWidgetExplorer}
