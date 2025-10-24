@@ -259,7 +259,8 @@ type Action =
   | { type: 'GRADUATE_MARKET'; id: string }
   | { type: 'HIDE_TOKEN'; id: string }
   | { type: 'SHOW_TOKEN'; id: string }
-  | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' };
+  | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' }
+  | { type: 'ADD_QUEUED_TOKENS'; payload: { status: Token['status']; tokens: Token[] } };
 
 interface AlertSettings {
   soundAlertsEnabled: boolean;

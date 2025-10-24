@@ -90,8 +90,8 @@
 .transparent-button {
   background: none;
   border: none;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, 0.125);
+  border-radius: 15px;
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -154,8 +154,8 @@
   transition: all.2s cubic-bezier(0.2, 0, 0.1, 1);
   width: 35px;
   height: 35px;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, 0.125);
+  border-radius: 15px;
 }
 
 .app-settings-button:hover {
@@ -172,8 +172,8 @@
   transition: all.2s cubic-bezier(0.2, 0, 0.1, 1);
   width: 35px;
   height: 35px;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, 0.125);
+  border-radius: 15px;
 }
 
 .history-button:hover {
@@ -271,7 +271,7 @@
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
   padding-right: 5px;
-  gap: 6px;
+  gap: 8px;
 }
 
 @media(max-width:1020px){
