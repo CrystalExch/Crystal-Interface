@@ -628,6 +628,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       setShowPreview(false);
     }
   }, [hoveredMemeImage, memeTokenData?.image, updatePreviewPosition]);
+  
   const navigate = useNavigate()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);

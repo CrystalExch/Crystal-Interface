@@ -3962,14 +3962,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 </div>
                 <div className="meme-settings-grid">
                   <div className="meme-setting-item">
-                    <label className="meme-setting-label">
-                      <img
-                        src={slippage}
-                        alt="Slippage"
-                        className="meme-setting-label-icon-slippage"
-                      />
-                      Slippage
-                    </label>
                     <div className="meme-setting-input-wrapper">
                       <input
                         type="number"
@@ -3990,17 +3982,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       />
                       <span className="meme-setting-unit">%</span>
                     </div>
+                                        <label className="meme-setting-label">
+                      <img
+                        src={slippage}
+                        alt="Slippage"
+                        className="meme-setting-label-icon-slippage"
+                      />
+                      SLIPPAGE
+                    </label>
                   </div>
 
                   <div className="meme-setting-item">
-                    <label className="meme-setting-label">
-                      <img
-                        src={gas}
-                        alt="Priority Fee"
-                        className="meme-setting-label-icon"
-                      />
-                      Priority
-                    </label>
                     <div className="meme-setting-input-wrapper">
                       <input
                         type="number"
@@ -4020,6 +4012,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       />
                       <span className="meme-setting-unit">MON</span>
                     </div>
+                  <label className="meme-setting-label">
+                      <img
+                        src={gas}
+                        alt="Priority Fee"
+                        className="meme-setting-label-icon"
+                      />
+                      PRIORITY
+                    </label>
                   </div>
                 </div>
               </div>
