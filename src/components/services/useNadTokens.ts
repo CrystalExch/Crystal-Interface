@@ -6,7 +6,7 @@ import {
   fetchNadTokens,
   fetchRecentlyCreatedTokens,
 } from '../services/nadfunApi';
-import { fetchAndTransformTokens } from '../services/nadfunTransformer';
+//import { fetchAndTransformTokens } from '../services/nadfunTransformer';
 
 interface UseNadTokensOptions {
   autoRefresh?: boolean;
@@ -43,12 +43,12 @@ export function useNadTokens(options: UseNadTokensOptions = {}) {
       });
 
       // Fetch and transform token details
-      const transformedTokens = await fetchAndTransformTokens(tokenAddresses);
+      //const transformedTokens = await fetchAndTransformTokens(tokenAddresses);
       
       // Sort by most recent
-      transformedTokens.sort((a, b) => b.created - a.created);
+      //transformedTokens.sort((a: any, b: any) => b.created - a.created);
       
-      setTokens(transformedTokens);
+      //setTokens(transformedTokens);
     } catch (err) {
       setError(err as Error);
       console.error('Failed to fetch nad.fun tokens:', err);
@@ -94,9 +94,9 @@ export function useRecentNadTokens(limit: number = 20) {
       
       // Transform to Token format
       const tokenAddresses = recentTokens.map(t => t.token);
-      const transformedTokens = await fetchAndTransformTokens(tokenAddresses);
+      //const transformedTokens = await fetchAndTransformTokens(tokenAddresses);
       
-      setTokens(transformedTokens);
+      //setTokens(transformedTokens);
     } catch (err) {
       setError(err as Error);
       console.error('Failed to fetch recent tokens:', err);
