@@ -3375,10 +3375,10 @@ interface TokenExplorerProps {
   alertSettingsRef: any;
   pausedColumnRef: any;
   pausedTokenQueueRef: React.MutableRefObject<{
-  new: Token[];
-  graduating: Token[];
-  graduated: Token[];
-}>;
+    new: Token[];
+    graduating: Token[];
+    graduated: Token[];
+  }>;
   dispatch: any;
   hidden: any;
   tokensByStatus: any;
@@ -3814,31 +3814,31 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     [],
   );
 
-const handleColumnHover = useCallback((columnType: Token['status']) => {
-  pausedColumnRef.current = columnType;
-  setPausedColumn(columnType);
-  pausedTokenQueueRef.current[columnType] = [];
-}, []);
+  const handleColumnHover = useCallback((columnType: Token['status']) => {
+    pausedColumnRef.current = columnType;
+    setPausedColumn(columnType);
+    pausedTokenQueueRef.current[columnType] = [];
+  }, []);
 
-const handleColumnLeave = useCallback(() => {
-  const wasPaused = pausedColumnRef.current;
-  pausedColumnRef.current = null;
-  setPausedColumn(null);
-  
-  if (wasPaused) {
-    const status = wasPaused as Token['status']; 
-    if (pausedTokenQueueRef.current[status].length > 0) {
-      dispatch({
-        type: 'ADD_QUEUED_TOKENS',
-        payload: {
-          status: status,
-          tokens: pausedTokenQueueRef.current[status]
-        }
-      });
-      pausedTokenQueueRef.current[status] = [];
+  const handleColumnLeave = useCallback(() => {
+    const wasPaused = pausedColumnRef.current;
+    pausedColumnRef.current = null;
+    setPausedColumn(null);
+
+    if (wasPaused) {
+      const status = wasPaused as Token['status'];
+      if (pausedTokenQueueRef.current[status].length > 0) {
+        dispatch({
+          type: 'ADD_QUEUED_TOKENS',
+          payload: {
+            status: status,
+            tokens: pausedTokenQueueRef.current[status]
+          }
+        });
+        pausedTokenQueueRef.current[status] = [];
+      }
     }
-  }
-}, [dispatch]);
+  }, [dispatch]);
   const copyToClipboard = useCallback(
     async (
       text: string,
@@ -4521,67 +4521,92 @@ const handleColumnLeave = useCallback(() => {
                         const isSelected = selectedWallets.has(wallet.address);
 
                         return (
-                          <div
-                            key={wallet.address}
-                            className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
-                            onClick={() => toggleWalletSelection(wallet.address)}
-                          >
-                            <div className="quickbuy-wallet-checkbox-container">
-                              <input
-                                type="checkbox"
-                                className="quickbuy-wallet-checkbox selection"
-                                checked={isSelected}
-                                readOnly
-                              />
-                            </div>
-                            <div className="wallet-dropdown-info">
-                              <div className="wallet-dropdown-name">
-                                {getWalletName(wallet.address, index)}
+                          <>
+                            <div
+                              key={wallet.address}
+                              className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                              onClick={() => toggleWalletSelection(wallet.address)}
+                            >
+                              <div className="quickbuy-wallet-checkbox-container">
+                                <input
+                                  type="checkbox"
+                                  className="quickbuy-wallet-checkbox selection"
+                                  checked={isSelected}
+                                  readOnly
+                                />
                               </div>
-                              <div className="wallet-dropdown-address">
-                                {wallet.address.slice(0, 6)}...
-                                {wallet.address.slice(-4)}
-                              </div>
-                            </div>
-                            <div className="wallet-dropdown-balance">
-                              {(() => {
-                                const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-                                const balanceWei = walletTokenBalances[wallet.address]?.[
-                                  settings.chainConfig[activechain]?.eth
-                                ] || 0n;
-                                const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
-
-                                return (
-                                  <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
-                                    <div
-                                      className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
-                                    >
-                                      <img
-                                        src={monadicon}
-                                        className="wallet-dropdown-mon-icon"
-                                        alt="MON"
-                                      />
-                                      {formatNumberWithCommas(balance, 2)}
-                                    </div>
-                                  </Tooltip>
-                                );
-                              })()}
-                            </div>
-                            <Tooltip content="Tokens">
-                              <div className="wallet-drag-tokens">
-                                <div className="wallet-token-count">
-                                  <div className="wallet-token-structure-icons">
-                                    <div className="token1"></div>
-                                    <div className="token2"></div>
-                                    <div className="token3"></div>
-                                  </div>
-                                  <span className="wallet-total-tokens">
-                                    {getWalletTokenCount(wallet.address)}
-                                  </span>
+                              <div className="wallet-dropdown-info">
+                                <div className="wallet-dropdown-name">
+                                  {getWalletName(wallet.address, index)}
+                                </div>
+                                <div className="wallet-dropdown-address">
+                                  {wallet.address.slice(0, 6)}...
+                                  {wallet.address.slice(-4)}
                                 </div>
                               </div>
-                            </Tooltip>
-                          </div>
+                              <div className="wallet-dropdown-balance">
+                                {(() => {
+                                  const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                                  const balanceWei = walletTokenBalances[wallet.address]?.[
+                                    settings.chainConfig[activechain]?.eth
+                                  ] || 0n;
+                                  const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+
+                                  return (
+                                    <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                      <div
+                                        className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                      >
+                                        <img
+                                          src={monadicon}
+                                          className="wallet-dropdown-mon-icon"
+                                          alt="MON"
+                                        />
+                                        {formatNumberWithCommas(balance, 2)}
+                                      </div>
+                                    </Tooltip>
+                                  );
+                                })()}
+                              </div>
+                              <Tooltip content="Tokens">
+                                <div className="wallet-drag-tokens">
+                                  <div className="wallet-token-count">
+                                    <div className="wallet-token-structure-icons">
+                                      <div className="token1"></div>
+                                      <div className="token2"></div>
+                                      <div className="token3"></div>
+                                    </div>
+                                    <span className="wallet-total-tokens">
+                                      {getWalletTokenCount(wallet.address)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </Tooltip>
+                            </div>
+                            {subWallets.length === 1 && (
+                              <div
+                                className="quickbuy-add-wallet-button"
+                                onClick={() => {
+                                  window.location.href = '/portfolio?tab=wallets';
+                                }}
+                              >
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                <span>Add Wallet</span>
+                              </div>
+                            )}
+                          </>
                         );
                       })
                     ) : (

@@ -2515,6 +2515,31 @@ const handleBuyTrade = async (amount: string) => {
                       })}
                     </>
                   )}
+                  
+                  {/* Add Wallet button - shown only when there's exactly 1 subwallet */}
+                  {subWallets.length === 1 && (
+                    <div 
+                      className="quickbuy-add-wallet-button"
+                      onClick={() => {
+                        window.location.href = '/portfolio?tab=wallets';
+                      }}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                      </svg>
+                      <span>Add Wallet</span>
+                    </div>
+                  )}
                 </div>
               </>
             );

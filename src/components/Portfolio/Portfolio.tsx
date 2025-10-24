@@ -489,6 +489,19 @@ const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(()
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Handle URL tab parameter (e.g., ?tab=wallets)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    
+    if (tabParam) {
+      const validTabs: PortfolioTab[] = ['spot', 'Perpetuals', 'wallets', 'trenches'];
+      if (validTabs.includes(tabParam as PortfolioTab)) {
+        setActiveTab(tabParam as PortfolioTab);
+      }
+    }
+  }, []);
+
   const { high, low, days, percentage, timeRange, setPercentage } = useSharedContext();
 
   const activeOrders = orders.length;

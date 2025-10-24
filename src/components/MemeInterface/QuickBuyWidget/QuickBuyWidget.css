@@ -501,7 +501,7 @@
 .quickbuy-wallets-panel {
   animation: slideInFromRight 0.3s ease;
   backdrop-filter: blur(20px);
-  background: linear-gradient(0deg, rgba(6, 6, 6, 1) 0%, rgb(13, 14, 17) 100%);
+  background: linear-gradient(0deg, rgba(6, 6, 6, 0.7) 0%, rgb(13, 14, 17, 0.7) 100%);
   border: 1px solid rgba(179, 184, 249, 0.03);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   color: #fff;
@@ -1044,4 +1044,28 @@
   text-overflow: ellipsis;
   flex-shrink: 1;
   min-width: 0;
+}
+
+.quickbuy-add-wallet-button {
+  align-items: center;
+  color: #ced0df;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.9rem;
+  gap: 8px;
+  letter-spacing: -0.3px;
+  padding: 13px 16px;
+  transition: all 0.2s ease;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+.quickbuy-add-wallet-button:hover {
+  background: rgba(179, 184, 249, 0.04);
+}
+
+
+.quickbuy-add-wallet-button svg {
+  flex-shrink: 0;
 }

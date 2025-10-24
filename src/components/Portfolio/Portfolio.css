@@ -3076,11 +3076,16 @@
   width: 15px;
   height: 15px;
   transition: opacity 0.2s ease;
+  flex-shrink: 0;
 }
 
 .wallet-action-icon,
 .wallet-action-icon-svg {
   filter: brightness(0) saturate(100%) invert(100%) sepia(86%) saturate(659%) hue-rotate(178deg) brightness(89%) contrast(85%);
+}
+
+.wallet-icon-button{
+  flex-shrink: 0;
 }
 
 .wallet-icon-button:hover .wallet-action-icon {
