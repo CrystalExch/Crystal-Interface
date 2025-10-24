@@ -1986,6 +1986,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const teRef = useRef<WebSocket | null>(null);
   const subIdRef = useRef(1);
   const pausedColumnRef = useRef<any>(null);
+  const pausedTokenQueueRef = useRef<{
+    new: Token[];
+    graduating: Token[];
+    graduated: Token[];
+  }>({
+    new: [],
+    graduating: [],
+    graduated: []
+  });
   const alertSettingsRef = useRef<any>(alertSettings);
   const connectionStateRef = useRef<
     'disconnected' | 'connecting' | 'connected' | 'reconnecting'
@@ -4197,6 +4206,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         h.delete(action.id);
         return { ...state, hidden: h };
       }
+      case 'ADD_QUEUED_TOKENS': {
+        return {
+          ...state,
+          tokensByStatus: {
+            ...state.tokensByStatus,
+            [action.payload.status]: [
+              ...action.payload.tokens,
+              ...state.tokensByStatus[action.payload.status]
+            ]
+          }
+        };
+      }
       default:
         return state;
     }
@@ -4280,9 +4301,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         graduatedTokens: 0,
       };
 
-      if (pausedColumnRef.current == token.status) return;
+      if (pausedColumnRef.current == token.status) {
+        pausedTokenQueueRef.current[token.status].push(token);
+        return;
+      }
       dispatch({ type: 'ADD_MARKET', token });
-
       if (alertSettingsRef.current.soundAlertsEnabled) {
         try {
           const audio = new Audio(alertSettingsRef.current.sounds.newPairs);
@@ -15050,12 +15073,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               <h2>{t("deposit")}</h2>
               <div className="deposit-right-header">
                 {!client && validOneCT && (<button
-                    className={`deposit-right-header-btn`}
-                    onClick={() => {
-                      setpopup(25)
-                    }}
-                  >
-                    Deposit from EOA
+                  className={`deposit-right-header-btn`}
+                  onClick={() => {
+                    setpopup(25)
+                  }}
+                >
+                  Deposit from EOA
                 </button>)}
                 <button className="deposit-close-button" onClick={() => { setpopup(0) }}>
                   <img src={closebutton} className="deposit-close-icon" />
@@ -18906,7 +18929,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             </div>
           </div>
         ) : null}
-        {popup === 36 ? ( 
+        {popup === 36 ? (
           <div ref={popupref}>
             <MemeSearch
               setpopup={setpopup}
@@ -25422,6 +25445,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setQuickAmounts={setQuickAmounts}
                 alertSettingsRef={alertSettingsRef}
                 pausedColumnRef={pausedColumnRef}
+                pausedTokenQueueRef={pausedTokenQueueRef}
                 dispatch={dispatch}
                 hidden={hidden}
                 tokensByStatus={tokensByStatus}

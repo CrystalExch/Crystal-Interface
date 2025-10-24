@@ -3374,6 +3374,11 @@ interface TokenExplorerProps {
   setQuickAmounts: any;
   alertSettingsRef: any;
   pausedColumnRef: any;
+  pausedTokenQueueRef: React.MutableRefObject<{
+  new: Token[];
+  graduating: Token[];
+  graduated: Token[];
+}>;
   dispatch: any;
   hidden: any;
   tokensByStatus: any;
@@ -3412,6 +3417,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   setQuickAmounts,
   alertSettingsRef,
   pausedColumnRef,
+  pausedTokenQueueRef,
   dispatch,
   hidden,
   tokensByStatus,
@@ -3808,16 +3814,31 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     [],
   );
 
-  const handleColumnHover = useCallback((columnType: Token['status']) => {
-    pausedColumnRef.current = columnType
-    setPausedColumn(columnType)
-  }, []);
+const handleColumnHover = useCallback((columnType: Token['status']) => {
+  pausedColumnRef.current = columnType;
+  setPausedColumn(columnType);
+  pausedTokenQueueRef.current[columnType] = [];
+}, []);
 
-  const handleColumnLeave = useCallback(() => {
-    pausedColumnRef.current = null
-    setPausedColumn(null)
-  }, []);
-
+const handleColumnLeave = useCallback(() => {
+  const wasPaused = pausedColumnRef.current;
+  pausedColumnRef.current = null;
+  setPausedColumn(null);
+  
+  if (wasPaused) {
+    const status = wasPaused as Token['status']; 
+    if (pausedTokenQueueRef.current[status].length > 0) {
+      dispatch({
+        type: 'ADD_QUEUED_TOKENS',
+        payload: {
+          status: status,
+          tokens: pausedTokenQueueRef.current[status]
+        }
+      });
+      pausedTokenQueueRef.current[status] = [];
+    }
+  }
+}, [dispatch]);
   const copyToClipboard = useCallback(
     async (
       text: string,
