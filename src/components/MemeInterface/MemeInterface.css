@@ -985,7 +985,7 @@
 .meme-settings-preset {
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 4px;
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   flex: 1;

@@ -608,7 +608,7 @@
   align-items: center;
   cursor: pointer;
   display: flex;
-  filter: opacity(0.7);
+  filter: brightness(0) saturate(100%) invert(99%) sepia(77%) saturate(520%) hue-rotate(177deg) brightness(90%) contrast(94%);
   height: 18px;
   justify-content: center;
   transition: all 0.2s ease;
