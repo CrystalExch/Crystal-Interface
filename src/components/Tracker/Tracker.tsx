@@ -47,7 +47,15 @@ const fetchPortfolio = async (address: string) => {
               orderDirection: desc
               first: 1000
             ) {
-              token { id symbol name lastPriceNativePerTokenWad metadataCID }
+              token {
+                id
+                symbol
+                name
+                lastPriceNativePerTokenWad
+                metadataCID
+                migrated
+                migratedMarket { id }
+              }
               account { id }
               tokenBought
               tokenSold
@@ -70,11 +78,14 @@ const fetchPortfolio = async (address: string) => {
       console.error('[Tracker] GraphQL errors:', errors);
     }
 
-    const launchpadRows: any[] = data?.launchpadPositions ?? [];
-    // TODO: Add orderbookPositions query once we confirm the schema field name
-    const orderbookRows: any[] = [];
+    const allPositions: any[] = data?.launchpadPositions ?? [];
+
+    // Separate launchpad (not migrated) and orderbook (migrated) positions
+    const launchpadRows = allPositions.filter((p: any) => !p.token.migrated);
+    const orderbookRows = allPositions.filter((p: any) => p.token.migrated);
 
     console.log('[Tracker] fetchPortfolio parsed:', {
+      totalPositions: allPositions.length,
       launchpadCount: launchpadRows.length,
       orderbookCount: orderbookRows.length,
       address
@@ -2604,7 +2615,91 @@ const Tracker: React.FC<TrackerProps> = ({
   const renderMonitor = () => {
     const allPositions = getFilteredPositions();
     const launchpadPositions = allPositions.filter(p => !p.isOrderbook);
-    const orderbookPositions = allPositions.filter(p => p.isOrderbook);
+    let orderbookPositions = allPositions.filter(p => p.isOrderbook);
+
+    // Add ALL token balances from walletTokenBalances to orderbook column
+    const spotTokenPositions: GqlPosition[] = [];
+    const chainCfg = settings.chainConfig?.[activechain];
+
+    console.log('[Monitor] activechain:', activechain);
+    console.log('[Monitor] walletTokenBalances:', walletTokenBalances);
+    console.log('[Monitor] trackedWallets:', trackedWallets);
+
+    if (walletTokenBalances) {
+      trackedWallets.forEach(wallet => {
+        const walletBalances = walletTokenBalances[wallet.address];
+        console.log(`[Monitor] Wallet ${wallet.address} balances:`, walletBalances);
+        if (!walletBalances) return;
+
+        // Iterate through ALL tokens in walletBalances
+        Object.keys(walletBalances).forEach((tokenAddress: string) => {
+          const balanceWei = walletBalances[tokenAddress];
+          console.log(`[Monitor] Checking token ${tokenAddress}:`, balanceWei);
+          if (!balanceWei || balanceWei === 0n) return;
+
+          // Skip if this token is already shown in launchpad positions
+          const isInLaunchpad = launchpadPositions.some(p => p.tokenId.toLowerCase() === tokenAddress.toLowerCase());
+          if (isInLaunchpad) {
+            console.log(`[Monitor] Skipping ${tokenAddress} - already in launchpad`);
+            return;
+          }
+
+          // Try to get token info from tokenList or marketsRef
+          const tokenInfo = chainCfg?.tokenList?.find((t: any) => t.address.toLowerCase() === tokenAddress.toLowerCase());
+          const market = marketsRef.current.get(tokenAddress.toLowerCase());
+
+          console.log(`[Monitor] Token ${tokenAddress} - market data:`, market);
+
+          // Get decimals and calculate balance
+          const decimals = tokenInfo?.decimals || market?.decimals || 18;
+          const balance = Number(balanceWei) / (10 ** Number(decimals));
+
+          if (balance <= 0) return;
+
+          const price = market?.price || 0;
+
+          // Get symbol and name - prioritize tokenInfo, then market data, then truncated address
+          let symbol = tokenInfo?.ticker || market?.symbol || tokenAddress.slice(0, 6);
+          let name = tokenInfo?.name || market?.name || 'Unknown Token';
+          let imageUrl = tokenInfo?.image || market?.imageUrl || '';
+
+          // Special handling for native token
+          if (tokenAddress.toLowerCase() === chainCfg?.eth?.toLowerCase()) {
+            symbol = chainCfg?.ethticker || 'MON';
+            name = 'Monad';
+          }
+
+          const position: GqlPosition = {
+            tokenId: tokenAddress,
+            symbol: symbol,
+            name: name,
+            imageUrl: imageUrl,
+            boughtTokens: balance,
+            soldTokens: 0,
+            spentNative: 0,
+            receivedNative: 0,
+            remainingTokens: balance,
+            remainingPct: 100,
+            pnlNative: 0,
+            lastPrice: price,
+            isOrderbook: true,
+          };
+
+          // Add wallet info
+          (position as any).walletName = wallet.name;
+          (position as any).walletEmoji = wallet.emoji;
+          (position as any).walletAddress = wallet.address;
+
+          console.log(`[Monitor] Added position for ${position.symbol}:`, position);
+          spotTokenPositions.push(position);
+        });
+      });
+    }
+
+    // Combine migrated launchpad positions and spot token positions
+    console.log('[Monitor] spotTokenPositions count:', spotTokenPositions.length);
+    console.log('[Monitor] spotTokenPositions:', spotTokenPositions);
+    orderbookPositions = [...orderbookPositions, ...spotTokenPositions];
 
     const formatValue = (value: number): string => {
       const converted = monitorCurrency === 'USD' ? value * monUsdPrice : value;
@@ -2627,8 +2722,56 @@ const Tracker: React.FC<TrackerProps> = ({
       const walletEmoji = (pos as any).walletEmoji || '👤';
       const isPinned = pinnedTokens.has(pos.tokenId);
 
+      // Get market data for metric coloring
+      const market = marketsRef.current.get(pos.tokenId.toLowerCase());
+      const classes: string[] = ['tracker-monitor-card'];
+
+      // Add metric coloring classes
+      if (market) {
+        classes.push('metric-colored');
+
+        // Market cap coloring
+        const marketCap = pos.lastPrice * 1e9;
+        if (marketCap < 30000) {
+          classes.push('market-cap-range1');
+        } else if (marketCap < 150000) {
+          classes.push('market-cap-range2');
+        } else {
+          classes.push('market-cap-range3');
+        }
+
+        // Volume coloring
+        if (market.volume24h) {
+          const volume = Number(market.volume24h);
+          if (volume < 1000) {
+            classes.push('volume-range1');
+          } else if (volume < 2000) {
+            classes.push('volume-range2');
+          } else {
+            classes.push('volume-range3');
+          }
+        }
+
+        // Holders coloring
+        if (market.holders) {
+          const holders = Number(market.holders);
+          if (holders < 10) {
+            classes.push('holders-range1');
+          } else if (holders < 50) {
+            classes.push('holders-range2');
+          } else {
+            classes.push('holders-range3');
+          }
+        }
+      }
+
+      // Add graduated class
+      if (pos.isOrderbook) {
+        classes.push('graduated');
+      }
+
       return (
-        <div key={`${pos.tokenId}_${(pos as any).walletAddress}`} className="tracker-monitor-card">
+        <div key={`${pos.tokenId}_${(pos as any).walletAddress}`} className={classes.join(' ')}>
           <div
             className="tracker-monitor-card-header"
             style={{ cursor: 'pointer' }}
@@ -2694,6 +2837,11 @@ const Tracker: React.FC<TrackerProps> = ({
                   </div>
                   <div className="tracker-monitor-token-subtitle">
                     <span className="tracker-monitor-token-symbol">{tokenSymbol}</span>
+                    {pos.isOrderbook && (
+                      <span className="tracker-monitor-graduated-badge" title="Graduated to Orderbook">
+                        🎓
+                      </span>
+                    )}
                     <span className="tracker-monitor-wallet-badge">
                       {walletEmoji} {walletName}
                     </span>
