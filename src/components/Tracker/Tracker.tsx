@@ -30,6 +30,7 @@ export type GqlPosition = {
   remainingPct: number;
   pnlNative: number;
   lastPrice: number;
+  isOrderbook?: boolean;
 };
 
 const fetchPortfolio = async (address: string) => {
@@ -46,7 +47,15 @@ const fetchPortfolio = async (address: string) => {
               orderDirection: desc
               first: 1000
             ) {
-              token { id symbol name lastPriceNativePerTokenWad metadataCID }
+              token {
+                id
+                symbol
+                name
+                lastPriceNativePerTokenWad
+                metadataCID
+                migrated
+                migratedMarket { id }
+              }
               account { id }
               tokenBought
               tokenSold
@@ -61,34 +70,81 @@ const fetchPortfolio = async (address: string) => {
       }),
     });
 
-    const { data } = await response.json();
-    const rows: any[] = data?.launchpadPositions ?? [];
+    const result = await response.json();
+    console.log('[Tracker] fetchPortfolio response for', address, ':', result);
 
-    const positions: GqlPosition[] = rows.map((p: any) => {
-      const boughtTokens = Number(p.tokenBought) / 1e18;
-      const soldTokens = Number(p.tokenSold) / 1e18;
-      const spentNative = Number(p.nativeSpent) / 1e18;
-      const receivedNative = Number(p.nativeReceived) / 1e18;
-      const remainingTokens = Number(p.tokens) / 1e18;
-      const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e9;
+    const { data, errors } = result;
+    if (errors) {
+      console.error('[Tracker] GraphQL errors:', errors);
+    }
 
-      return {
-        tokenId: p.token.id,
-        symbol: p.token.symbol,
-        name: p.token.name,
-        imageUrl: p.token.metadataCID
-          ? `https://pub-8aff0f9ec88b4fff8cdce3f213f21b7f.r2.dev/img/${p.token.metadataCID}.png`
-          : undefined,
-        boughtTokens,
-        soldTokens,
-        spentNative,
-        receivedNative,
-        remainingTokens,
-        remainingPct: boughtTokens > 0 ? (remainingTokens / boughtTokens) * 100 : 0,
-        pnlNative: (remainingTokens * lastPrice) + receivedNative - spentNative,
-        lastPrice,
-      };
+    const allPositions: any[] = data?.launchpadPositions ?? [];
+
+    // Separate launchpad (not migrated) and orderbook (migrated) positions
+    const launchpadRows = allPositions.filter((p: any) => !p.token.migrated);
+    const orderbookRows = allPositions.filter((p: any) => p.token.migrated);
+
+    console.log('[Tracker] fetchPortfolio parsed:', {
+      totalPositions: allPositions.length,
+      launchpadCount: launchpadRows.length,
+      orderbookCount: orderbookRows.length,
+      address
     });
+
+    const positions: GqlPosition[] = [
+      ...launchpadRows.map((p: any) => {
+        const boughtTokens = Number(p.tokenBought) / 1e18;
+        const soldTokens = Number(p.tokenSold) / 1e18;
+        const spentNative = Number(p.nativeSpent) / 1e18;
+        const receivedNative = Number(p.nativeReceived) / 1e18;
+        const remainingTokens = Number(p.tokens) / 1e18;
+        const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e9;
+
+        return {
+          tokenId: p.token.id,
+          symbol: p.token.symbol,
+          name: p.token.name,
+          imageUrl: p.token.metadataCID
+            ? `https://pub-8aff0f9ec88b4fff8cdce3f213f21b7f.r2.dev/img/${p.token.metadataCID}.png`
+            : undefined,
+          boughtTokens,
+          soldTokens,
+          spentNative,
+          receivedNative,
+          remainingTokens,
+          remainingPct: boughtTokens > 0 ? (remainingTokens / boughtTokens) * 100 : 0,
+          pnlNative: (remainingTokens * lastPrice) + receivedNative - spentNative,
+          lastPrice,
+          isOrderbook: false,
+        };
+      }),
+      ...orderbookRows.map((p: any) => {
+        const boughtTokens = Number(p.tokenBought) / 1e18;
+        const soldTokens = Number(p.tokenSold) / 1e18;
+        const spentNative = Number(p.nativeSpent) / 1e18;
+        const receivedNative = Number(p.nativeReceived) / 1e18;
+        const remainingTokens = Number(p.tokens) / 1e18;
+        const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e9;
+
+        return {
+          tokenId: p.token.id,
+          symbol: p.token.symbol,
+          name: p.token.name,
+          imageUrl: p.token.metadataCID
+            ? `https://pub-8aff0f9ec88b4fff8cdce3f213f21b7f.r2.dev/img/${p.token.metadataCID}.png`
+            : undefined,
+          boughtTokens,
+          soldTokens,
+          spentNative,
+          receivedNative,
+          remainingTokens,
+          remainingPct: boughtTokens > 0 ? (remainingTokens / boughtTokens) * 100 : 0,
+          pnlNative: (remainingTokens * lastPrice) + receivedNative - spentNative,
+          lastPrice,
+          isOrderbook: true,
+        };
+      }),
+    ];
 
     return {
       address,
@@ -1218,10 +1274,204 @@ const Tracker: React.FC<TrackerProps> = ({
       );
     }
 
-    // Sort by PnL (like MemeOrderCenter does)
-    positions.sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0));
+    // Apply monitor filters
+    positions = positions.filter(pos => {
+      const market = marketsRef.current.get(pos.tokenId.toLowerCase());
 
-    return positions;
+      // General filters
+      if (monitorFilters.general.lastTransaction) {
+        const maxAge = Number(monitorFilters.general.lastTransaction);
+        if (!isNaN(maxAge) && market?.lastTransaction) {
+          const lastTxTime = new Date(market.lastTransaction).getTime();
+          const ageSeconds = (Date.now() - lastTxTime) / 1000;
+          if (ageSeconds > maxAge) return false;
+        }
+      }
+
+      if (monitorFilters.general.tokenAgeMin) {
+        const minAgeMinutes = Number(monitorFilters.general.tokenAgeMin);
+        if (!isNaN(minAgeMinutes) && market?.createdAt) {
+          const ageMinutes = (Date.now() - new Date(market.createdAt).getTime()) / 60000;
+          if (ageMinutes < minAgeMinutes) return false;
+        }
+      }
+
+      if (monitorFilters.general.tokenAgeMax) {
+        const maxAgeHours = Number(monitorFilters.general.tokenAgeMax);
+        if (!isNaN(maxAgeHours) && market?.createdAt) {
+          const ageHours = (Date.now() - new Date(market.createdAt).getTime()) / 3600000;
+          if (ageHours > maxAgeHours) return false;
+        }
+      }
+
+      // Market filters
+      if (monitorFilters.market.marketCapMin) {
+        const minMC = Number(monitorFilters.market.marketCapMin);
+        if (!isNaN(minMC)) {
+          const marketCap = pos.lastPrice * 1e9; // total supply is 1e9
+          if (marketCap < minMC) return false;
+        }
+      }
+
+      if (monitorFilters.market.marketCapMax) {
+        const maxMC = Number(monitorFilters.market.marketCapMax);
+        if (!isNaN(maxMC)) {
+          const marketCap = pos.lastPrice * 1e9;
+          if (marketCap > maxMC) return false;
+        }
+      }
+
+      if (monitorFilters.market.liquidityMin) {
+        const minLiq = Number(monitorFilters.market.liquidityMin);
+        if (!isNaN(minLiq) && market?.liquidity !== undefined) {
+          if (market.liquidity < minLiq) return false;
+        }
+      }
+
+      if (monitorFilters.market.liquidityMax) {
+        const maxLiq = Number(monitorFilters.market.liquidityMax);
+        if (!isNaN(maxLiq) && market?.liquidity !== undefined) {
+          if (market.liquidity > maxLiq) return false;
+        }
+      }
+
+      if (monitorFilters.market.holdersMin) {
+        const minHolders = Number(monitorFilters.market.holdersMin);
+        if (!isNaN(minHolders) && market?.holders !== undefined) {
+          if (market.holders < minHolders) return false;
+        }
+      }
+
+      if (monitorFilters.market.holdersMax) {
+        const maxHolders = Number(monitorFilters.market.holdersMax);
+        if (!isNaN(maxHolders) && market?.holders !== undefined) {
+          if (market.holders > maxHolders) return false;
+        }
+      }
+
+      // Transaction filters
+      if (monitorFilters.transactions.transactionCountMin) {
+        const minTx = Number(monitorFilters.transactions.transactionCountMin);
+        if (!isNaN(minTx) && market?.txCount !== undefined) {
+          if (market.txCount < minTx) return false;
+        }
+      }
+
+      if (monitorFilters.transactions.transactionCountMax) {
+        const maxTx = Number(monitorFilters.transactions.transactionCountMax);
+        if (!isNaN(maxTx) && market?.txCount !== undefined) {
+          if (market.txCount > maxTx) return false;
+        }
+      }
+
+      if (monitorFilters.transactions.inflowVolumeMin) {
+        const minInflow = Number(monitorFilters.transactions.inflowVolumeMin);
+        if (!isNaN(minInflow) && market?.volume24h !== undefined) {
+          if (market.volume24h < minInflow) return false;
+        }
+      }
+
+      if (monitorFilters.transactions.inflowVolumeMax) {
+        const maxInflow = Number(monitorFilters.transactions.inflowVolumeMax);
+        if (!isNaN(maxInflow) && market?.volume24h !== undefined) {
+          if (market.volume24h > maxInflow) return false;
+        }
+      }
+
+      if (monitorFilters.transactions.outflowVolumeMin) {
+        const minOutflow = Number(monitorFilters.transactions.outflowVolumeMin);
+        if (!isNaN(minOutflow) && market?.volume24h !== undefined) {
+          if (market.volume24h < minOutflow) return false;
+        }
+      }
+
+      if (monitorFilters.transactions.outflowVolumeMax) {
+        const maxOutflow = Number(monitorFilters.transactions.outflowVolumeMax);
+        if (!isNaN(maxOutflow) && market?.volume24h !== undefined) {
+          if (market.volume24h > maxOutflow) return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Apply sorting based on selectedSimpleFilter
+    if (selectedSimpleFilter) {
+      switch (selectedSimpleFilter) {
+        case 'latest':
+          positions.sort((a, b) => {
+            const aMarket = marketsRef.current.get(a.tokenId.toLowerCase());
+            const bMarket = marketsRef.current.get(b.tokenId.toLowerCase());
+            const aTime = aMarket?.lastTransaction ? new Date(aMarket.lastTransaction).getTime() : 0;
+            const bTime = bMarket?.lastTransaction ? new Date(bMarket.lastTransaction).getTime() : 0;
+            return bTime - aTime;
+          });
+          break;
+        case 'marketCap':
+          positions.sort((a, b) => {
+            const aMC = a.lastPrice * 1e9;
+            const bMC = b.lastPrice * 1e9;
+            return bMC - aMC;
+          });
+          break;
+        case 'liquidity':
+          positions.sort((a, b) => {
+            const aMarket = marketsRef.current.get(a.tokenId.toLowerCase());
+            const bMarket = marketsRef.current.get(b.tokenId.toLowerCase());
+            return (bMarket?.liquidity || 0) - (aMarket?.liquidity || 0);
+          });
+          break;
+        case 'txns':
+          positions.sort((a, b) => {
+            const aMarket = marketsRef.current.get(a.tokenId.toLowerCase());
+            const bMarket = marketsRef.current.get(b.tokenId.toLowerCase());
+            return (bMarket?.txCount || 0) - (aMarket?.txCount || 0);
+          });
+          break;
+        case 'holders':
+          positions.sort((a, b) => {
+            const aMarket = marketsRef.current.get(a.tokenId.toLowerCase());
+            const bMarket = marketsRef.current.get(b.tokenId.toLowerCase());
+            return (bMarket?.holders || 0) - (aMarket?.holders || 0);
+          });
+          break;
+        case 'inflow':
+          positions.sort((a, b) => {
+            const aMarket = marketsRef.current.get(a.tokenId.toLowerCase());
+            const bMarket = marketsRef.current.get(b.tokenId.toLowerCase());
+            return (bMarket?.volume24h || 0) - (aMarket?.volume24h || 0);
+          });
+          break;
+        case 'outflow':
+          positions.sort((a, b) => {
+            const aMarket = marketsRef.current.get(a.tokenId.toLowerCase());
+            const bMarket = marketsRef.current.get(b.tokenId.toLowerCase());
+            return (bMarket?.volume24h || 0) - (aMarket?.volume24h || 0);
+          });
+          break;
+        case 'tokenAge':
+          positions.sort((a, b) => {
+            const aMarket = marketsRef.current.get(a.tokenId.toLowerCase());
+            const bMarket = marketsRef.current.get(b.tokenId.toLowerCase());
+            const aTime = aMarket?.createdAt ? new Date(aMarket.createdAt).getTime() : 0;
+            const bTime = bMarket?.createdAt ? new Date(bMarket.createdAt).getTime() : 0;
+            return aTime - bTime; // Ascending for token age (oldest first)
+          });
+          break;
+        default:
+          // Default sort by PnL
+          positions.sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0));
+      }
+    } else {
+      // Default sort by PnL if no simple filter selected
+      positions.sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0));
+    }
+
+    // Move pinned tokens to top
+    const pinned = positions.filter(p => pinnedTokens.has(p.tokenId));
+    const unpinned = positions.filter(p => !pinnedTokens.has(p.tokenId));
+
+    return [...pinned, ...unpinned];
   };
 
   const handleAddWallet = async () => {
@@ -2363,7 +2613,93 @@ const Tracker: React.FC<TrackerProps> = ({
   };
 
   const renderMonitor = () => {
-    const positions = getFilteredPositions();
+    const allPositions = getFilteredPositions();
+    const launchpadPositions = allPositions.filter(p => !p.isOrderbook);
+    let orderbookPositions = allPositions.filter(p => p.isOrderbook);
+
+    // Add ALL token balances from walletTokenBalances to orderbook column
+    const spotTokenPositions: GqlPosition[] = [];
+    const chainCfg = settings.chainConfig?.[activechain];
+
+    console.log('[Monitor] activechain:', activechain);
+    console.log('[Monitor] walletTokenBalances:', walletTokenBalances);
+    console.log('[Monitor] trackedWallets:', trackedWallets);
+
+    if (walletTokenBalances) {
+      trackedWallets.forEach(wallet => {
+        const walletBalances = walletTokenBalances[wallet.address];
+        console.log(`[Monitor] Wallet ${wallet.address} balances:`, walletBalances);
+        if (!walletBalances) return;
+
+        // Iterate through ALL tokens in walletBalances
+        Object.keys(walletBalances).forEach((tokenAddress: string) => {
+          const balanceWei = walletBalances[tokenAddress];
+          console.log(`[Monitor] Checking token ${tokenAddress}:`, balanceWei);
+          if (!balanceWei || balanceWei === 0n) return;
+
+          // Skip if this token is already shown in launchpad positions
+          const isInLaunchpad = launchpadPositions.some(p => p.tokenId.toLowerCase() === tokenAddress.toLowerCase());
+          if (isInLaunchpad) {
+            console.log(`[Monitor] Skipping ${tokenAddress} - already in launchpad`);
+            return;
+          }
+
+          // Try to get token info from tokenList or marketsRef
+          const tokenInfo = chainCfg?.tokenList?.find((t: any) => t.address.toLowerCase() === tokenAddress.toLowerCase());
+          const market = marketsRef.current.get(tokenAddress.toLowerCase());
+
+          console.log(`[Monitor] Token ${tokenAddress} - market data:`, market);
+
+          // Get decimals and calculate balance
+          const decimals = tokenInfo?.decimals || market?.decimals || 18;
+          const balance = Number(balanceWei) / (10 ** Number(decimals));
+
+          if (balance <= 0) return;
+
+          const price = market?.price || 0;
+
+          // Get symbol and name - prioritize tokenInfo, then market data, then truncated address
+          let symbol = tokenInfo?.ticker || market?.symbol || tokenAddress.slice(0, 6);
+          let name = tokenInfo?.name || market?.name || 'Unknown Token';
+          let imageUrl = tokenInfo?.image || market?.imageUrl || '';
+
+          // Special handling for native token
+          if (tokenAddress.toLowerCase() === chainCfg?.eth?.toLowerCase()) {
+            symbol = chainCfg?.ethticker || 'MON';
+            name = 'Monad';
+          }
+
+          const position: GqlPosition = {
+            tokenId: tokenAddress,
+            symbol: symbol,
+            name: name,
+            imageUrl: imageUrl,
+            boughtTokens: balance,
+            soldTokens: 0,
+            spentNative: 0,
+            receivedNative: 0,
+            remainingTokens: balance,
+            remainingPct: 100,
+            pnlNative: 0,
+            lastPrice: price,
+            isOrderbook: true,
+          };
+
+          // Add wallet info
+          (position as any).walletName = wallet.name;
+          (position as any).walletEmoji = wallet.emoji;
+          (position as any).walletAddress = wallet.address;
+
+          console.log(`[Monitor] Added position for ${position.symbol}:`, position);
+          spotTokenPositions.push(position);
+        });
+      });
+    }
+
+    // Combine migrated launchpad positions and spot token positions
+    console.log('[Monitor] spotTokenPositions count:', spotTokenPositions.length);
+    console.log('[Monitor] spotTokenPositions:', spotTokenPositions);
+    orderbookPositions = [...orderbookPositions, ...spotTokenPositions];
 
     const formatValue = (value: number): string => {
       const converted = monitorCurrency === 'USD' ? value * monUsdPrice : value;
@@ -2379,9 +2715,216 @@ const Tracker: React.FC<TrackerProps> = ({
       return `${sign}${absNum.toFixed(2)}`;
     };
 
+    const renderPositionCard = (pos: GqlPosition) => {
+      const tokenName = pos.name || pos.symbol || 'Unknown';
+      const tokenSymbol = pos.symbol || 'UNK';
+      const walletName = (pos as any).walletName || 'Unknown';
+      const walletEmoji = (pos as any).walletEmoji || '👤';
+      const isPinned = pinnedTokens.has(pos.tokenId);
+
+      // Get market data for metric coloring
+      const market = marketsRef.current.get(pos.tokenId.toLowerCase());
+      const classes: string[] = ['tracker-monitor-card'];
+
+      // Add metric coloring classes
+      if (market) {
+        classes.push('metric-colored');
+
+        // Market cap coloring
+        const marketCap = pos.lastPrice * 1e9;
+        if (marketCap < 30000) {
+          classes.push('market-cap-range1');
+        } else if (marketCap < 150000) {
+          classes.push('market-cap-range2');
+        } else {
+          classes.push('market-cap-range3');
+        }
+
+        // Volume coloring
+        if (market.volume24h) {
+          const volume = Number(market.volume24h);
+          if (volume < 1000) {
+            classes.push('volume-range1');
+          } else if (volume < 2000) {
+            classes.push('volume-range2');
+          } else {
+            classes.push('volume-range3');
+          }
+        }
+
+        // Holders coloring
+        if (market.holders) {
+          const holders = Number(market.holders);
+          if (holders < 10) {
+            classes.push('holders-range1');
+          } else if (holders < 50) {
+            classes.push('holders-range2');
+          } else {
+            classes.push('holders-range3');
+          }
+        }
+      }
+
+      // Add graduated class
+      if (pos.isOrderbook) {
+        classes.push('graduated');
+      }
+
+      return (
+        <div key={`${pos.tokenId}_${(pos as any).walletAddress}`} className={classes.join(' ')}>
+          <div
+            className="tracker-monitor-card-header"
+            style={{ cursor: 'pointer' }}
+          >
+            <div className="tracker-monitor-card-top">
+              <div className="tracker-monitor-left-section">
+                <div
+                  className="tracker-monitor-icon-container"
+                  style={{ '--progress': 0 } as React.CSSProperties}
+                >
+                  <div className="tracker-monitor-icon-spacer">
+                    {pos.imageUrl ? (
+                      <img
+                        src={pos.imageUrl}
+                        alt={tokenSymbol}
+                        className="tracker-monitor-token-image"
+                        style={{ width: '40px', height: '40px', borderRadius: '50%' }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <span className="tracker-monitor-icon-emoji">🪙</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="tracker-monitor-token-details">
+                  <div className="tracker-monitor-token-name-row">
+                    <span className="tracker-monitor-token-name-text">{tokenName}</span>
+                    <div className="tracker-monitor-address-copy-group">
+                      <span className="tracker-monitor-token-ca">
+                        {pos.tokenId.slice(0, 6)}...{pos.tokenId.slice(-4)}
+                      </span>
+                      <img
+                        src={copy}
+                        className="tracker-monitor-copy-icon"
+                        alt="Copy"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(pos.tokenId);
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </div>
+                    <button
+                      className={`tracker-monitor-action-btn ${isPinned ? 'pinned' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPinnedTokens(prev => {
+                          const newSet = new Set(prev);
+                          if (newSet.has(pos.tokenId)) {
+                            newSet.delete(pos.tokenId);
+                          } else {
+                            newSet.add(pos.tokenId);
+                          }
+                          return newSet;
+                        });
+                      }}
+                    >
+                      {isPinned ? '★' : '☆'}
+                    </button>
+                  </div>
+                  <div className="tracker-monitor-token-subtitle">
+                    <span className="tracker-monitor-token-symbol">{tokenSymbol}</span>
+                    {pos.isOrderbook && (
+                      <span className="tracker-monitor-graduated-badge" title="Graduated to Orderbook">
+                        🎓
+                      </span>
+                    )}
+                    <span className="tracker-monitor-wallet-badge">
+                      {walletEmoji} {walletName}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="tracker-monitor-right-section">
+                <div className="tracker-monitor-buy-sell-row">
+                  <div className="tracker-monitor-buy-amount">
+                    +{formatValue(pos.spentNative)}
+                    <span className="tracker-monitor-tx-mini"> (bought)</span>
+                  </div>
+                  <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
+                  <div className="tracker-monitor-sell-amount">
+                    −{formatValue(pos.receivedNative)}
+                    <span className="tracker-monitor-tx-mini"> (sold)</span>
+                  </div>
+                </div>
+
+                <div className="tracker-monitor-quickbuy-section">
+                  <button
+                    className="tracker-monitor-quickbuy-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Handle quick buy/sell
+                    }}
+                  >
+                    <svg
+                      className="tracker-monitor-quickbuy-icon"
+                      viewBox="0 0 72 72"
+                      fill="currentColor"
+                    >
+                      <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86 c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833 c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86 c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18 c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="tracker-monitor-stats-section">
+              <div className="tracker-monitor-stat-compact">
+                <span className="stat-label">Remaining</span>
+                <span className="stat-value">{pos.remainingTokens?.toFixed(2) || 0}</span>
+              </div>
+              <div className="tracker-monitor-stat-compact">
+                <span className="stat-label">Price</span>
+                <span className={`stat-value ${monitorCurrency === 'MON' ? 'tracker-monitor-stat-value-with-icon' : ''}`}>
+                  {monitorCurrency === 'USD' ? (
+                    <>$<span>{(pos.lastPrice * monUsdPrice).toFixed(6)}</span></>
+                  ) : (
+                    <>
+                      <span>{pos.lastPrice?.toFixed(6) || 0}</span>
+                      <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
+                    </>
+                  )}
+                </span>
+              </div>
+              <div className="tracker-monitor-stat-compact">
+                <span className="stat-label">PNL</span>
+                <span
+                  className="stat-value"
+                  style={{ color: (pos.pnlNative ?? 0) >= 0 ? '#4ade80' : '#f87171' }}
+                >
+                  {monitorCurrency === 'USD' ? (
+                    <>$<span>{formatValue(pos.pnlNative)}</span></>
+                  ) : (
+                    <>
+                      <span>{formatValue(pos.pnlNative)}</span>
+                      <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
+                    </>
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
     return (
       <div className="tracker-monitor">
-        {positions.length === 0 ? (
+        {allPositions.length === 0 ? (
           <div className="tracker-empty-state">
             <div className="tracker-empty-content">
               <h4>No Open Positions</h4>
@@ -2504,159 +3047,7 @@ const Tracker: React.FC<TrackerProps> = ({
               </div>
               <div className="explorer-tokens-list">
                 <div className="tracker-monitor-grid">
-                  {positions.map((pos) => {
-              const tokenName = pos.name || pos.symbol || 'Unknown';
-              const tokenSymbol = pos.symbol || 'UNK';
-              const walletName = (pos as any).walletName || 'Unknown';
-              const walletEmoji = (pos as any).walletEmoji || '👤';
-              const isPinned = pinnedTokens.has(pos.tokenId);
-
-              return (
-                <div key={`${pos.tokenId}_${(pos as any).walletAddress}`} className="tracker-monitor-card">
-                  <div
-                    className="tracker-monitor-card-header"
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="tracker-monitor-card-top">
-                      <div className="tracker-monitor-left-section">
-                        <div
-                          className="tracker-monitor-icon-container"
-                          style={{ '--progress': 0 } as React.CSSProperties}
-                        >
-                          <div className="tracker-monitor-icon-spacer">
-                            {pos.imageUrl ? (
-                              <img
-                                src={pos.imageUrl}
-                                alt={tokenSymbol}
-                                className="tracker-monitor-token-image"
-                                style={{ width: '40px', height: '40px', borderRadius: '50%' }}
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            ) : (
-                              <span className="tracker-monitor-icon-emoji">🪙</span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="tracker-monitor-token-details">
-                          <div className="tracker-monitor-token-name-row">
-                            <span className="tracker-monitor-token-name-text">{tokenName}</span>
-                            <div className="tracker-monitor-address-copy-group">
-                              <span className="tracker-monitor-token-ca">
-                                {pos.tokenId.slice(0, 6)}...{pos.tokenId.slice(-4)}
-                              </span>
-                              <img
-                                src={copy}
-                                className="tracker-monitor-copy-icon"
-                                alt="Copy"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigator.clipboard.writeText(pos.tokenId);
-                                }}
-                                style={{ cursor: 'pointer' }}
-                              />
-                            </div>
-                            <button
-                              className={`tracker-monitor-action-btn ${isPinned ? 'pinned' : ''}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPinnedTokens(prev => {
-                                  const newSet = new Set(prev);
-                                  if (newSet.has(pos.tokenId)) {
-                                    newSet.delete(pos.tokenId);
-                                  } else {
-                                    newSet.add(pos.tokenId);
-                                  }
-                                  return newSet;
-                                });
-                              }}
-                            >
-                              {isPinned ? '★' : '☆'}
-                            </button>
-                          </div>
-                          <div className="tracker-monitor-token-subtitle">
-                            <span className="tracker-monitor-token-symbol">{tokenSymbol}</span>
-                            <span className="tracker-monitor-wallet-badge">
-                              {walletEmoji} {walletName}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="tracker-monitor-right-section">
-                        <div className="tracker-monitor-buy-sell-row">
-                          <div className="tracker-monitor-buy-amount">
-                            +{formatValue(pos.spentNative)}
-                            <span className="tracker-monitor-tx-mini"> (bought)</span>
-                          </div>
-                          <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
-                          <div className="tracker-monitor-sell-amount">
-                            −{formatValue(pos.receivedNative)}
-                            <span className="tracker-monitor-tx-mini"> (sold)</span>
-                          </div>
-                        </div>
-
-                        <div className="tracker-monitor-quickbuy-section">
-                          <button
-                            className="tracker-monitor-quickbuy-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Handle quick buy/sell
-                            }}
-                          >
-                            <svg
-                              className="tracker-monitor-quickbuy-icon"
-                              viewBox="0 0 72 72"
-                              fill="currentColor"
-                            >
-                              <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86 c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833 c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86 c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18 c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="tracker-monitor-stats-section">
-                      <div className="tracker-monitor-stat-compact">
-                        <span className="stat-label">Remaining</span>
-                        <span className="stat-value">{pos.remainingTokens?.toFixed(2) || 0}</span>
-                      </div>
-                      <div className="tracker-monitor-stat-compact">
-                        <span className="stat-label">Price</span>
-                        <span className={`stat-value ${monitorCurrency === 'MON' ? 'tracker-monitor-stat-value-with-icon' : ''}`}>
-                          {monitorCurrency === 'USD' ? (
-                            <>$<span>{(pos.lastPrice * monUsdPrice).toFixed(6)}</span></>
-                          ) : (
-                            <>
-                              <span>{pos.lastPrice?.toFixed(6) || 0}</span>
-                              <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
-                            </>
-                          )}
-                        </span>
-                      </div>
-                      <div className="tracker-monitor-stat-compact">
-                        <span className="stat-label">PNL</span>
-                        <span
-                          className="stat-value"
-                          style={{ color: (pos.pnlNative ?? 0) >= 0 ? '#4ade80' : '#f87171' }}
-                        >
-                          {monitorCurrency === 'USD' ? (
-                            <>$<span>{formatValue(pos.pnlNative)}</span></>
-                          ) : (
-                            <>
-                              <span>{formatValue(pos.pnlNative)}</span>
-                              <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
-                            </>
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                  {launchpadPositions.map((pos) => renderPositionCard(pos))}
                 </div>
               </div>
             </div>
@@ -2775,7 +3166,7 @@ const Tracker: React.FC<TrackerProps> = ({
               </div>
               <div className="explorer-tokens-list">
                 <div className="tracker-monitor-grid">
-                  {/* Orderbook tokens will be displayed here */}
+                  {orderbookPositions.map((pos) => renderPositionCard(pos))}
                 </div>
               </div>
             </div>

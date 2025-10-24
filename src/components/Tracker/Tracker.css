@@ -603,40 +603,65 @@
 .tracker-trade-mc { color: rgba(255,255,255,0.9); font-size: .85rem; font-weight: 500; text-align: right; white-space: nowrap; justify-self: end; }
 
 /* Monitor */
-.tracker-monitor-grid { 
-  display: grid !important; 
-  grid-template-columns: repeat(2, 1fr) !important; 
-  gap: 12px !important; 
-  padding: 0 8px !important;
+.tracker-monitor-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 12px !important;
+  padding: 0 !important;
   width: 100% !important;
   align-items: start !important;
 }
 
 .tracker-monitor-card {
-  background: transparent; 
-  border: 1px solid rgba(179,184,249,0.1); 
-  border-radius: 6px; 
-  transition: all .2s ease; 
-  cursor: pointer; 
-  overflow: hidden; 
-  width: 100% !important;
-  max-width: none !important;
-  min-width: 0 !important;
-  box-sizing: border-box !important;
-  align-self: start !important;
+  background: transparent;
+  border-bottom: 1px solid rgba(179,184,249,0.1);
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  padding: .75rem;
+  padding-bottom: 0.5rem;
+  position: relative;
+  transition: all 0.2s ease;
+  width: 100%;
 }
 
 .tracker-monitor {
   width: 100% !important;
   overflow: visible !important;
 }
-.tracker-monitor-card:hover { background: rgba(255,255,255,0.02); border-color: rgba(179,184,249,0.15); }
-.tracker-monitor-card-header { 
-  padding: 12px; 
-  display: flex; 
+
+.tracker-monitor-card:hover {
+  background-color: rgb(17, 17, 21);
+}
+
+.tracker-monitor-card:hover .tracker-monitor-stats-section,
+.tracker-monitor-card:hover .tracker-monitor-right-section {
+  background-color: rgb(17, 17, 21);
+  box-shadow: 0 0 10px 4px rgb(17, 17, 21);
+}
+
+.tracker-monitor-card:last-child {
+  border-bottom: none;
+}
+
+/* Graduated token styling */
+.tracker-monitor-card.graduated .tracker-monitor-icon-container {
+  background: conic-gradient(from 0deg,
+      #ffd700 0deg,
+      #ffed4e 90deg,
+      #ffc107 180deg,
+      #ff8f00 270deg,
+      #ffd700 360deg);
+}
+
+.tracker-monitor-card-header {
+  padding: 0;
+  display: flex;
   flex-direction: column;
-  gap: 12px; 
+  gap: 8px;
   position: relative;
+  width: 100%;
 }
 .tracker-monitor-card-left { 
   display: flex; align-items: center; gap: 8px; flex-shrink: 0; 
@@ -673,6 +698,55 @@
 }
 .tracker-monitor-token-subtitle { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.5); font-size: .7rem; }
 .tracker-monitor-token-symbol { font-weight: 600; color: rgba(255,255,255,0.7); }
+.tracker-monitor-graduated-badge {
+  font-size: 0.75rem;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  cursor: help;
+}
+
+/* Metric Coloring */
+.tracker-monitor-card.metric-colored:hover {
+  background: rgba(170, 174, 207, 0.03);
+}
+
+.tracker-monitor-card.metric-colored.market-cap-range1 .tracker-monitor-market-cap {
+  color: var(--metric-market-cap-range1, #d8dcff) !important;
+}
+
+.tracker-monitor-card.metric-colored.market-cap-range2 .tracker-monitor-market-cap {
+  color: var(--metric-market-cap-range2, #eab308) !important;
+}
+
+.tracker-monitor-card.metric-colored.market-cap-range3 .tracker-monitor-market-cap {
+  color: var(--metric-market-cap-range3, #14b8a6) !important;
+}
+
+.tracker-monitor-card.metric-colored.volume-range1 .tracker-monitor-volume {
+  color: var(--metric-volume-range1, #ffffff) !important;
+}
+
+.tracker-monitor-card.metric-colored.volume-range2 .tracker-monitor-volume {
+  color: var(--metric-volume-range2, #ffffff) !important;
+}
+
+.tracker-monitor-card.metric-colored.volume-range3 .tracker-monitor-volume {
+  color: var(--metric-volume-range3, #ffffff) !important;
+}
+
+.tracker-monitor-card.metric-colored.holders-range1 .tracker-monitor-holders {
+  color: var(--metric-holders-range1, #ffffff) !important;
+}
+
+.tracker-monitor-card.metric-colored.holders-range2 .tracker-monitor-holders {
+  color: var(--metric-holders-range2, #ffffff) !important;
+}
+
+.tracker-monitor-card.metric-colored.holders-range3 .tracker-monitor-holders {
+  color: var(--metric-holders-range3, #ffffff) !important;
+}
 
 .tracker-monitor-address-copy-group {
   display: flex;

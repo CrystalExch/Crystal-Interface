@@ -25773,6 +25773,8 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                 setpopup={setpopup}
                 onImportWallets={handleImportWallets}
                 monUsdPrice={monUsdPrice}
+                walletTokenBalances={walletTokenBalances}
+                activechain={activechain}
               />
             } />
           <Route path="/perps" element={<Navigate to={`/perps/${perpsActiveMarketKey}`} replace />} />

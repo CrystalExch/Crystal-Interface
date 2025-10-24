@@ -41,45 +41,45 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
 }) => {
 
   const SIMPLE_PRESETS: Record<string, MonitorFilterState> = {
-    latest: { 
-      general: { lastTransaction: '86400', tokenAgeMin: '', tokenAgeMax: '' }, 
-      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' }, 
-      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' } 
+    latest: {
+      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' },
+      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' },
+      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' }
     },
-    marketCap: { 
-      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' }, 
-      market: { marketCapMin: '20000', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' }, 
-      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' } 
+    marketCap: {
+      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' },
+      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' },
+      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' }
     },
-    liquidity: { 
-      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' }, 
-      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '10000', liquidityMax: '', holdersMin: '', holdersMax: '' }, 
-      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' } 
+    liquidity: {
+      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' },
+      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' },
+      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' }
     },
-    txns: { 
-      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' }, 
-      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' }, 
-      transactions: { transactionCountMin: '2000', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' } 
+    txns: {
+      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' },
+      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' },
+      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' }
     },
-    holders: { 
-      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' }, 
-      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '2000', holdersMax: '' }, 
-      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' } 
+    holders: {
+      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' },
+      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' },
+      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' }
     },
-    inflow: { 
-      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' }, 
-      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' }, 
-      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '3000', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' } 
+    inflow: {
+      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' },
+      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' },
+      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' }
     },
-    outflow: { 
-      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' }, 
-      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' }, 
-      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '1500', outflowVolumeMax: '' } 
+    outflow: {
+      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' },
+      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' },
+      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' }
     },
-    tokenAge: { 
-      general: { lastTransaction: '', tokenAgeMin: '0', tokenAgeMax: '24' }, 
-      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' }, 
-      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' } 
+    tokenAge: {
+      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' },
+      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' },
+      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' }
     }
   };
   const detectSimplePreset = (currentFilters: MonitorFilterState): string | null => {
@@ -163,11 +163,11 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
         market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' },
         transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' }
       });
-      onSimpleSort?.(null);
+      // Don't call onSimpleSort here - wait for Apply button
     } else {
       setSelectedSimpleFilter(t);
       setFilters(computeSimpleFilters(t));
-      onSimpleSort?.(t);
+      // Don't call onSimpleSort here - wait for Apply button
     }
   };
 
@@ -197,6 +197,7 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
 
   const handleApply = () => {
     onApply(JSON.parse(JSON.stringify(filters)));
+    onSimpleSort?.(selectedSimpleFilter);
     onClose();
   };
 
