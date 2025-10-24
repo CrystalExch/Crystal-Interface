@@ -725,16 +725,34 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                             className="meme-token-info"
                             style={{ display: 'flex', alignItems: 'center' }}
                           >
-                            {tokenImageUrl && (
-                              <img
-                                src={tokenImageUrl}
-                                alt={p.symbol}
-                                className="meme-token-icon"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            )}
+   {tokenImageUrl && !tokenImageErrors[p.tokenId] ? (
+     <img
+       src={tokenImageUrl}
+       alt={p.symbol}
+       className="meme-token-icon"
+       onError={() => {
+         setTokenImageErrors(prev => ({ ...prev, [p.tokenId]: true }));
+       }}
+     />
+   ) : (
+     <div
+       className="meme-token-icon"
+       style={{
+         backgroundColor: 'rgba(35, 34, 41, .7)',
+         display: 'flex',
+         alignItems: 'center',
+         justifyContent: 'center',
+         fontSize: (p.symbol || '').length <= 3 ? '14px' : '12px',
+         fontWeight: '200',
+         color: '#ffffff',
+         borderRadius: '3px',
+         letterSpacing: (p.symbol || '').length > 3 ? '-0.5px' : '0',
+       }}
+     >
+       {(p.symbol || p.name || '?').slice(0, 2).toUpperCase()}
+     </div>
+   )}
+
                             <span
                               className="oc-meme-wallet-address meme-clickable-token"
                               onClick={() => {
