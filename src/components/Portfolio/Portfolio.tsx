@@ -284,6 +284,7 @@ interface PortfolioProps {
   onSellPosition?: (position: Position, monAmount: string) => void;
   scaAddress: any;
   nonces: any;
+  setOneCTDepositAddress: any;
 }
 
 type PortfolioTab = 'spot' | 'Perpetuals' | 'wallets' | 'trenches';
@@ -354,6 +355,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   onSellPosition,
   scaAddress,
   nonces,
+  setOneCTDepositAddress
 }) => {
   const [activeTab, setActiveTab] = useState<PortfolioTab>('spot');
 const [activeSection, setActiveSection] = useState<
@@ -1881,6 +1883,7 @@ useEffect(() => {
               className="wallet-icon-button"
               onClick={(e) => {
                 e.stopPropagation();
+                setOneCTDepositAddress(wallet.address);
                 setpopup(25)
               }}
             >

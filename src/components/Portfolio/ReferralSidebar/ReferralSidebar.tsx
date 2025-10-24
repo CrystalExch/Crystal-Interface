@@ -10,6 +10,7 @@ import customRound from '../../../utils/customRound';
 import defaultPfp from '../../../assets/leaderboard_default.png';
 import closebutton from '../../../assets/close_button.png';
 import './ReferralSidebar.css';
+import { formatSubscript } from '../../../utils/numberDisplayFormat';
 
 interface ReferralSidebarProps {
   tokendict: { [key: string]: any };
@@ -332,7 +333,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         <div className="stat-item">
           <div className="stat-content">
             <div className={`stat-value ${isBlurred ? 'blurred' : ''}`}>
-              {isLoading ? <div className="skeleton skeleton-referred"></div> : referredCount}
+              {isLoading ? <div className="skeleton skeleton-referred"></div> : 6}
             </div>
             <div className="ref-stat-label">Referred</div>
           </div>
@@ -341,7 +342,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         <div className="stat-item">
           <div className="stat-content">
             <div className={`stat-value ${isBlurred ? 'blurred' : ''}`}>
-              {isLoading ? <div className="skeleton skeleton-referred"></div> : commissionBonus}
+              {isLoading ? <div className="skeleton skeleton-referred"></div> : 7.41}
             </div>
             <div className="ref-stat-label">Crystals</div>
           </div>
@@ -355,7 +356,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
               {claimableFees == undefined ? (
                 <div className="skeleton skeleton-claimable"></div>
               ) : (
-                `${totalClaimableFees ? '$' + customRound(totalClaimableFees, 2) : '$0.00'}`
+                `${totalClaimableFees ? '$' + formatSubscript(customRound(totalClaimableFees, 2)) : '$0.00'}`
               )}            </div>
             <div className="ref-stat-label">Claimable</div>
           </div>

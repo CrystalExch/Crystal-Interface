@@ -971,6 +971,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     [validOneCT]
   );
 
+  const [OneCTDepositAddress, setOneCTDepositAddress] = useState('');
   const [perpsKeystore, setPerpsKeystore] = useState<any>(() => {
     const saved = localStorage.getItem('crystal_perps_signer');
     return saved !== null ? JSON.parse(saved) : {};
@@ -3351,7 +3352,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             router, Array.from(new Set(Object.values(markets).map((m: any) => m.address)))
           ]
         },
-        ...(isStake && tokenIn === eth && (tokendict[tokenOut] as any)?.lst && (switched ? amountOutSwap : amountIn) > maxUint256
+        ...(isStake && tokenIn == eth && (tokendict[tokenOut] as any)?.lst
           ? [{
             to: tokenOut,
             abi: tokenOut === '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5' ? sMonAbi : shMonadAbi,
@@ -15052,6 +15053,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 {!client && validOneCT && (<button
                     className={`deposit-right-header-btn`}
                     onClick={() => {
+                      setOneCTDepositAddress(address);
                       setpopup(25)
                     }}
                   >
@@ -17610,7 +17612,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                         setrecipient(e.target.value);
                       }
                     }}
-                    value={address}
+                    value={OneCTDepositAddress}
                     placeholder={t('enterWalletAddress')}
                     disabled
                   />
@@ -17658,7 +17660,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       if (sendTokenIn == eth) {
                         hash = await sendUserOperationAsync({
                           uo: sendeth(
-                            address as `0x${string}`,
+                            OneCTDepositAddress as `0x${string}`,
                             sendAmountIn,
                           )
                         }, 0n, 0n, true, '', 0);
@@ -17676,13 +17678,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           ),
                           0,
                           '',
-                          address,
+                          OneCTDepositAddress,
                         );
                       } else {
                         hash = await sendUserOperationAsync({
                           uo: sendtokens(
                             sendTokenIn as `0x${string}`,
-                            address as `0x${string}`,
+                            OneCTDepositAddress as `0x${string}`,
                             sendAmountIn,
                           )
                         }, 0n, 0n, true, '', 0);
@@ -17701,7 +17703,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           ),
                           0,
                           '',
-                          address,
+                          OneCTDepositAddress,
                         );
                       }
                       setpopup(4)
@@ -17726,7 +17728,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           ),
                           0,
                           "",
-                          address,
+                          OneCTDepositAddress,
                         );
                       }
                     } finally {
@@ -17741,7 +17743,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 }}
                 disabled={(sendAmountIn === BigInt(0) ||
                   sendAmountIn > mainWalletBalances[sendTokenIn] ||
-                  !/^(0x[0-9a-fA-F]{40})$/.test(address)) &&
+                  !/^(0x[0-9a-fA-F]{40})$/.test(OneCTDepositAddress)) &&
                   connected &&
                   userchain == activechain || isSigning}
               >
@@ -17983,7 +17985,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           try {
                             setIsUsernameSigning(true);
                             let isSuccess = await createSubWallet(true);
-                            if (isSuccess) setpopup(25);
+                            if (isSuccess) {
+                              setOneCTDepositAddress(isSuccess);
+                              setpopup(25);
+                            }
                           } catch (error) {
                             console.error('Failed to enable 1CT:', error);
                           } finally {
@@ -18535,7 +18540,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                         Converting
                         <div className="">
                           <span>Balance: </span>
-                          <span>1.81K</span>
+                          <span>0.00</span>
                           <button
                             className="perps-max-button"
                             onClick={() => {
@@ -25720,6 +25725,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 lastRefGroupFetch={lastRefGroupFetch}
                 scaAddress={scaAddress}
                 nonces={nonces}
+                setOneCTDepositAddress={setOneCTDepositAddress}
               />
             } />
           <Route path="/trackers"

@@ -1044,7 +1044,7 @@ body {
 }
 
 .total-account-summary-value .percentage-change.positive {
-  color: #00b894;
+  color: rgb(67, 254, 154);
 }
 
 .total-account-summary-value .percentage-change.negative {
