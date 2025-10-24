@@ -3010,7 +3010,7 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
 }
 
 .explorer-quick-buy-btn.size-small {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   gap: 2px;
   padding: 0.2rem 0.35rem;
   border-radius: 20px;

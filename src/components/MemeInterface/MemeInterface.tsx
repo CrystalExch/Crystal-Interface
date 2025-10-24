@@ -849,6 +849,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [limitPrice, setLimitPrice] = useState('');
   const [quoteValue, setQuoteValue] = useState<number | undefined>(undefined);
   const [inputCurrency, setInputCurrency] = useState<'MON' | 'TOKEN'>('MON');
+  const [sellInputMode, setSellInputMode] = useState<'percentage' | 'token'>('percentage');
   const [sliderPercent, setSliderPercent] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [settingsExpanded, setSettingsExpanded] = useState(false);
@@ -1089,6 +1090,24 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       }
     }
   }, []);
+
+  // Handle switching between buy and sell modes
+  useEffect(() => {
+    if (activeTradeType === 'sell') {
+      // When switching to sell, default to percentage mode
+      setSellInputMode('percentage');
+      // Convert current token amount to percentage if there's a value
+      if (tradeAmount && sellInputMode === 'token') {
+        const currentBalance = getTotalSelectedWalletsTokenBalance();
+        if (currentBalance > 0) {
+          const currentAmount = parseFloat(tradeAmount) || 0;
+          const percentage = (currentAmount / currentBalance) * 100;
+          setTradeAmount(percentage.toFixed(2));
+          setSliderPercent(Math.min(100, percentage));
+        }
+      }
+    }
+  }, [activeTradeType]);
 
   const openInExplorer = (addr: string) =>
     window.open(`${explorer}/token/${addr}`, '_blank');
@@ -2137,7 +2156,16 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           let totalTokensToSell = 0;
           let estimatedMON = 0;
 
-          if (inputCurrency === 'TOKEN') {
+          // Handle percentage mode for sell
+          if (sellInputMode === 'percentage') {
+            const percentage = parseFloat(tradeAmount);
+            const totalAvailable = walletsWithTokens.reduce((sum, addr) => {
+              const balance = walletTokenBalances?.[addr]?.[token.id] || 0n;
+              return sum + Number(balance) / 10 ** Number(decimals);
+            }, 0);
+            totalTokensToSell = (totalAvailable * percentage) / 100;
+            estimatedMON = totalTokensToSell * currentPrice;
+          } else if (inputCurrency === 'TOKEN') {
             totalTokensToSell = parseFloat(tradeAmount);
             estimatedMON = totalTokensToSell * currentPrice;
           } else {
@@ -2154,9 +2182,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           });
           const sellPromises = [];
 
-          if (inputCurrency === 'TOKEN') {
-            // Divide token amount across wallets
-            const totalTokenAmount = parseFloat(tradeAmount);
+          if (sellInputMode === 'percentage' || inputCurrency === 'TOKEN') {
+            // Divide token amount across wallets (works for both percentage and token modes)
+            const totalTokenAmount = totalTokensToSell;
             const totalTokenWei = BigInt(
               Math.round(totalTokenAmount * 10 ** Number(decimals)),
             );
@@ -3251,7 +3279,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   <button
                     className="meme-balance-max-sell"
                     onClick={() => {
-                      setTradeAmount(formatTradeAmount(getTotalSelectedWalletsTokenBalance()));
+                      if (sellInputMode === 'percentage') {
+                        setTradeAmount('100');
+                      } else {
+                        setTradeAmount(formatTradeAmount(getTotalSelectedWalletsTokenBalance()));
+                      }
                       setSliderPercent(100);
                     }}
                   >
@@ -3266,12 +3298,57 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               type="number"
               placeholder="0.00"
               value={tradeAmount}
-              onChange={(e) => setTradeAmount(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setTradeAmount(value);
+                
+                // If in sell mode and percentage mode, update the slider
+                if (activeTradeType === 'sell' && sellInputMode === 'percentage') {
+                  const percent = parseFloat(value) || 0;
+                  setSliderPercent(Math.min(100, Math.max(0, percent)));
+                }
+              }}
               className="meme-trade-input"
               autoFocus
             />
-            <div className="meme-trade-currency">
-              <img className="meme-currency-monad-icon" src={monadicon} />
+            <div 
+              className="meme-trade-currency"
+              style={{ cursor: activeTradeType === 'sell' ? 'pointer' : 'default' }}
+              onClick={() => {
+                if (activeTradeType === 'sell') {
+                  // Toggle between percentage and token mode
+                  setSellInputMode(prev => {
+                    const newMode = prev === 'percentage' ? 'token' : 'percentage';
+                    
+                    // Convert the current value when switching modes
+                    const currentBalance = getTotalSelectedWalletsTokenBalance();
+                    if (newMode === 'percentage') {
+                      // Converting from token amount to percentage
+                      const currentAmount = parseFloat(tradeAmount) || 0;
+                      const percentage = currentBalance > 0 ? (currentAmount / currentBalance) * 100 : 0;
+                      setTradeAmount(percentage.toFixed(2));
+                      setSliderPercent(percentage);
+                    } else {
+                      // Converting from percentage to token amount
+                      const percentage = parseFloat(tradeAmount) || 0;
+                      const tokenAmount = (currentBalance * percentage) / 100;
+                      setTradeAmount(formatTradeAmount(tokenAmount));
+                    }
+                    
+                    return newMode;
+                  });
+                }
+              }}
+            >
+              {activeTradeType === 'buy' ? (
+                <img className="meme-currency-monad-icon" src={monadicon} />
+              ) : (
+                sellInputMode === 'percentage' ? (
+                  <span style={{ fontSize: '1rem', fontWeight: '500' }}>%</span>
+                ) : (
+                  <img className="meme-currency-monad-icon" src={monadicon} />
+                )
+              )}
             </div>
           </div>
           {activeOrderType === 'Limit' && (
@@ -3347,8 +3424,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       setTradeAmount(newAmount.toString());
                     } else {
                       const currentBalance = getTotalSelectedWalletsTokenBalance();
-                      const newAmount = (currentBalance * newPercent) / 100;
-                      setTradeAmount(newAmount.toString());
+                      if (sellInputMode === 'percentage') {
+                        // In percentage mode, just show the percentage
+                        setTradeAmount(newPercent.toString());
+                      } else {
+                        // In token mode, calculate token amount
+                        const newAmount = (currentBalance * newPercent) / 100;
+                        setTradeAmount(newAmount.toString());
+                      }
                     }
                   }}
                   disabled={sliderPercent === 0}
@@ -3374,8 +3457,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       setTradeAmount(newAmount.toString());
                     } else {
                       const currentBalance = getTotalSelectedWalletsTokenBalance();
-                      const newAmount = (currentBalance * newPercent) / 100;
-                      setTradeAmount(newAmount.toString());
+                      if (sellInputMode === 'percentage') {
+                        // In percentage mode, just show the percentage
+                        setTradeAmount(newPercent.toString());
+                      } else {
+                        // In token mode, calculate token amount
+                        const newAmount = (currentBalance * newPercent) / 100;
+                        setTradeAmount(newAmount.toString());
+                      }
                     }
                   }}
                   disabled={sliderPercent === 100}
@@ -3408,8 +3497,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       setTradeAmount(formatTradeAmount(newAmount));
                     } else {
                       const currentBalance = getTotalSelectedWalletsTokenBalance();
-                      const newAmount = (currentBalance * percent) / 100;
-                      setTradeAmount(formatTradeAmount(newAmount));
+                      if (sellInputMode === 'percentage') {
+                        // In percentage mode, just show the percentage
+                        setTradeAmount(percent.toString());
+                      } else {
+                        // In token mode, calculate token amount
+                        const newAmount = (currentBalance * percent) / 100;
+                        setTradeAmount(formatTradeAmount(newAmount));
+                      }
                     }
                   }}
                   onMouseDown={() => {
@@ -3444,9 +3539,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                           setTradeAmount(formatTradeAmount(newAmount));
                         } else {
                           const currentBalance = getTotalSelectedWalletsTokenBalance();
-                          const newAmount =
-                            (currentBalance * markPercent) / 100;
-                          setTradeAmount(formatTradeAmount(newAmount));
+                          if (sellInputMode === 'percentage') {
+                            // In percentage mode, just show the percentage
+                            setTradeAmount(markPercent.toString());
+                          } else {
+                            // In token mode, calculate token amount
+                            const newAmount =
+                              (currentBalance * markPercent) / 100;
+                            setTradeAmount(formatTradeAmount(newAmount));
+                          }
                         }
                         positionPopup(markPercent);
                       }}
