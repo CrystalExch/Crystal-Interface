@@ -3761,10 +3761,10 @@ body:has(.popup-blur) {
 }
 
 .akui-input {
-  border: 1.5px solid #a0a8f61e !important;
+  border: 1px solid #a0a8f61e !important;
   background: transparent !important;
   height: 34px !important;
-  border-radius: 6px !important;
+  border-radius: 20px !important;
 }
 
 .akui-input svg>* {
@@ -3792,8 +3792,9 @@ body:has(.popup-blur) {
 }
 
 input[inputmode="numeric"][pattern="[0-9]*"] {
-  border-width: 1.5px !important;
+  border-width: 1px !important;
   border-color: #a0a8f61e !important;
+  border-radius: 14px !important;
 }
 
 input[name="email"],
@@ -3860,13 +3861,19 @@ input[type="email"] {
       #7f82ac 75%,
       #7f82a1 100%) !important;
   border: none !important;
-  border-radius: 6px !important;
+  border-radius: 20px !important;
   box-shadow:
     inset 0 1px 1px rgb(255 255 255/35%),
     inset 0 -1px 1px rgb(0 0 0/55%),
     0 2px 8px rgb(170 174 207/10%) !important;
-  height: 35px !important;
+  height: 30px !important;
+  font-size: 1rem !important;
 }
+
+.text-fg-disabled{
+  display: none !important;
+}
+
 
 .akui-btn-secondary {
   background: linear-gradient(135deg,
@@ -3876,7 +3883,7 @@ input[type="email"] {
       #7f82ac 75%,
       #7f82a1 100%) !important;
   border: none !important;
-  border-radius: 6px !important;
+  border-radius: 20px !important;
   box-shadow:
     inset 0 1px 1px rgb(255 255 255/35%),
     inset 0 -1px 1px rgb(0 0 0/55%),
@@ -3909,8 +3916,8 @@ input[type="email"] {
   height: 30px !important;
   border: none !important;
   background: none !important;
-  border: 1.5px solid #a0a8f61e !important;
-  border-radius: 6px !important;
+  border: 1px solid #a0a8f61e !important;
+  border-radius:20px !important;
 }
 
 .akui-btn-content {
@@ -3921,8 +3928,8 @@ input[type="email"] {
 .akui-btn-auth {
   height: 30px !important;
   border: none !important;
-  border: 1.5px solid #a0a8f61e !important;
-  border-radius: 6px !important;
+  border: 1px solid #a0a8f61e !important;
+  border-radius: 20px !important;
 }
 
 .text-xs {
