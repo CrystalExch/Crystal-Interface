@@ -2614,66 +2614,54 @@ const Tracker: React.FC<TrackerProps> = ({
 
   const renderMonitor = () => {
     const allPositions = getFilteredPositions();
-    const launchpadPositions = allPositions.filter(p => !p.isOrderbook);
-    let orderbookPositions = allPositions.filter(p => p.isOrderbook);
 
-    // Add ALL token balances from walletTokenBalances to orderbook column
+    // Separate graduated and non-graduated launchpad positions
+    const graduatedPositions = allPositions.filter(p => p.isOrderbook);
+    const nonGraduatedPositions = allPositions.filter(p => !p.isOrderbook);
+
+    // Launchpad column: graduated tokens at top, then non-graduated
+    let launchpadPositions = [...graduatedPositions, ...nonGraduatedPositions];
+
+    // Orderbook column: only major tokens from tokenList
     const spotTokenPositions: GqlPosition[] = [];
     const chainCfg = settings.chainConfig?.[activechain];
 
-    console.log('[Monitor] activechain:', activechain);
-    console.log('[Monitor] walletTokenBalances:', walletTokenBalances);
-    console.log('[Monitor] trackedWallets:', trackedWallets);
+    console.log('Monitor Debug - walletTokenBalances:', walletTokenBalances);
+    console.log('Monitor Debug - chainCfg:', chainCfg);
+    console.log('Monitor Debug - tokenList:', chainCfg?.tokenList);
+    console.log('Monitor Debug - trackedWallets:', trackedWallets);
 
-    if (walletTokenBalances) {
+    if (walletTokenBalances && chainCfg?.tokenList) {
       trackedWallets.forEach(wallet => {
+        console.log('Monitor Debug - checking wallet:', wallet.address);
         const walletBalances = walletTokenBalances[wallet.address];
-        console.log(`[Monitor] Wallet ${wallet.address} balances:`, walletBalances);
+        console.log('Monitor Debug - walletBalances for', wallet.address, ':', walletBalances);
         if (!walletBalances) return;
 
-        // Iterate through ALL tokens in walletBalances
-        Object.keys(walletBalances).forEach((tokenAddress: string) => {
-          const balanceWei = walletBalances[tokenAddress];
-          console.log(`[Monitor] Checking token ${tokenAddress}:`, balanceWei);
+        // Only iterate through tokens in tokenList (major tokens)
+        chainCfg.tokenList.forEach((token: any) => {
+          console.log('Monitor Debug - checking token:', token);
+          const tokenAddr = token.address?.toLowerCase();
+          if (!tokenAddr) return;
+
+          console.log('Monitor Debug - looking for balance at key:', tokenAddr);
+          const balanceWei = walletBalances[tokenAddr];
+          console.log('Monitor Debug - balanceWei:', balanceWei);
           if (!balanceWei || balanceWei === 0n) return;
 
-          // Skip if this token is already shown in launchpad positions
-          const isInLaunchpad = launchpadPositions.some(p => p.tokenId.toLowerCase() === tokenAddress.toLowerCase());
-          if (isInLaunchpad) {
-            console.log(`[Monitor] Skipping ${tokenAddress} - already in launchpad`);
-            return;
-          }
-
-          // Try to get token info from tokenList or marketsRef
-          const tokenInfo = chainCfg?.tokenList?.find((t: any) => t.address.toLowerCase() === tokenAddress.toLowerCase());
-          const market = marketsRef.current.get(tokenAddress.toLowerCase());
-
-          console.log(`[Monitor] Token ${tokenAddress} - market data:`, market);
-
-          // Get decimals and calculate balance
-          const decimals = tokenInfo?.decimals || market?.decimals || 18;
+          const decimals = token.decimals || 18;
           const balance = Number(balanceWei) / (10 ** Number(decimals));
 
           if (balance <= 0) return;
 
+          const market = marketsRef.current.get(tokenAddr);
           const price = market?.price || 0;
 
-          // Get symbol and name - prioritize tokenInfo, then market data, then truncated address
-          let symbol = tokenInfo?.ticker || market?.symbol || tokenAddress.slice(0, 6);
-          let name = tokenInfo?.name || market?.name || 'Unknown Token';
-          let imageUrl = tokenInfo?.image || market?.imageUrl || '';
-
-          // Special handling for native token
-          if (tokenAddress.toLowerCase() === chainCfg?.eth?.toLowerCase()) {
-            symbol = chainCfg?.ethticker || 'MON';
-            name = 'Monad';
-          }
-
           const position: GqlPosition = {
-            tokenId: tokenAddress,
-            symbol: symbol,
-            name: name,
-            imageUrl: imageUrl,
+            tokenId: tokenAddr,
+            symbol: token.ticker,
+            name: token.name,
+            imageUrl: token.image,
             boughtTokens: balance,
             soldTokens: 0,
             spentNative: 0,
@@ -2682,24 +2670,21 @@ const Tracker: React.FC<TrackerProps> = ({
             remainingPct: 100,
             pnlNative: 0,
             lastPrice: price,
-            isOrderbook: true,
+            isOrderbook: false,
           };
 
-          // Add wallet info
           (position as any).walletName = wallet.name;
           (position as any).walletEmoji = wallet.emoji;
           (position as any).walletAddress = wallet.address;
 
-          console.log(`[Monitor] Added position for ${position.symbol}:`, position);
+          console.log('Monitor Debug - adding position:', position);
           spotTokenPositions.push(position);
         });
       });
     }
 
-    // Combine migrated launchpad positions and spot token positions
-    console.log('[Monitor] spotTokenPositions count:', spotTokenPositions.length);
-    console.log('[Monitor] spotTokenPositions:', spotTokenPositions);
-    orderbookPositions = [...orderbookPositions, ...spotTokenPositions];
+    console.log('Monitor - spotTokenPositions:', spotTokenPositions.length, spotTokenPositions);
+    const orderbookPositions = spotTokenPositions;
 
     const formatValue = (value: number): string => {
       const converted = monitorCurrency === 'USD' ? value * monUsdPrice : value;
@@ -2837,11 +2822,6 @@ const Tracker: React.FC<TrackerProps> = ({
                   </div>
                   <div className="tracker-monitor-token-subtitle">
                     <span className="tracker-monitor-token-symbol">{tokenSymbol}</span>
-                    {pos.isOrderbook && (
-                      <span className="tracker-monitor-graduated-badge" title="Graduated to Orderbook">
-                        🎓
-                      </span>
-                    )}
                     <span className="tracker-monitor-wallet-badge">
                       {walletEmoji} {walletName}
                     </span>
@@ -2924,7 +2904,7 @@ const Tracker: React.FC<TrackerProps> = ({
 
     return (
       <div className="tracker-monitor">
-        {allPositions.length === 0 ? (
+        {allPositions.length === 0 && orderbookPositions.length === 0 ? (
           <div className="tracker-empty-state">
             <div className="tracker-empty-content">
               <h4>No Open Positions</h4>

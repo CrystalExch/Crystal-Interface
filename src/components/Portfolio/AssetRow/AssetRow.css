@@ -12,6 +12,10 @@
   user-select: none;
 }
 
+.oc-cell {
+  min-width: 85px;
+}
+
 .portfolio-row:hover {
   background: #ffffff04;
 }

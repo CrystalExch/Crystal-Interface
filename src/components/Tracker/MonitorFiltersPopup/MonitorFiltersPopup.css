@@ -426,6 +426,9 @@
   cursor: pointer;
   transition: all 0.2s ease;
   letter-spacing: -0.3px;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
 }
 
 .monitor-simple-sort-option:hover {
