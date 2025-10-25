@@ -64,3 +64,85 @@
     display: none;
   }
 }
+
+.footer-transparent-button {
+    background: none;
+    border: 1px solid rgba(179, 184, 249, 0.15);
+    border-radius: 20px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 300;
+    height: 23px;
+    overflow: hidden;
+    padding: 6px 8px 6px 12px;
+    transition: all .1s 
+ease;
+    align-items: center;
+    display: flex
+;
+    justify-content: center;
+}
+
+
+.footer-widget-button{
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #b1b1b7;
+  cursor: pointer;
+  padding: 1px 4px;
+  border-radius: 4px;
+  letter-spacing: -0.4px;
+}
+.footer-widget-button:hover{
+  background-color: rgba(216, 218, 240, 0.05);
+}
+.footer-widget-icon{
+  height: 16px;
+  margin-right: 4px;
+  filter: brightness(0) saturate(100%) invert(54%) sepia(1%) saturate(3304%) hue-rotate(201deg) brightness(99%) contrast(77%);
+}
+
+.footer-left-side{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.widget-toggle-buttons{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-left: 1.5px solid rgba(179, 184, 249, 0.15);
+  border-right: 1.5px solid rgba(179, 184, 249, 0.15);
+  padding: 0 10px;
+}
+
+
+
+.footer-preset-button{
+    background: rgb(170, 174, 207, 0.08);
+    border: 1px solid #aaaecf66;
+    box-shadow: 0 0 0 1px rgba(170, 174, 207, 0.6);
+    color: #d8dcff;
+    padding: 0px 10px;
+    border-radius: 4px;
+    margin-left: 4px;
+}
+
+
+
+.footer-crystal-logo{
+  width: 10px;  
+}
+
+.crystal-migration-mc{
+  display: flex;
+  align-items: center;
+  filter: brightness(0) saturate(100%) invert(54%) sepia(4%) saturate(755%) hue-rotate(201deg) brightness(87%) contrast(84%);
+  gap: 4px;
+  letter-spacing: -0.3px;
+  font-weight: 300;
+  cursor: pointer;
+}

@@ -1972,6 +1972,7 @@ body {
   flex-direction: column;
   height: calc(100vh);
   overflow: auto;
+  padding-bottom: 32px;
 }
 
 .trade-container {
