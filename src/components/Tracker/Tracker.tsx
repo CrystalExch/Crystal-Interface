@@ -219,7 +219,7 @@ interface TrackerProps {
   onApplyFilters?: (filters: FilterState) => void;
   activeFilters?: FilterState;
   monUsdPrice: number;
-  activechain?: string;
+  activechain?: number;
   walletTokenBalances?: { [address: string]: any };
   connected?: boolean;
   address?: string | null;

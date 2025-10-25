@@ -36,9 +36,8 @@
   box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
   background: rgb(9, 9, 9);
   border: 1px solid rgba(179, 184, 249, 0.1);
-  color: #ffffff6e;
-  font-size: 0.8rem;
-  font-weight: 300;
+  color: #ffffff97;
+  font-size: 0.75rem;
   right: 0px;
   list-style: none;
   margin: 0;
@@ -86,5 +85,5 @@
 }
 
 .oc-filter-dropdown-item:hover {
-  background: rgb(255 255 255 / 10%);
+  background: #2a2a2e8e;
 }

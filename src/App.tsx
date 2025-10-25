@@ -961,7 +961,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
             hash = r.transactionHash;
           }),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('transaction timeout')), 10000)
+            setTimeout(() => reject(new Error('transaction timeout')), 5000)
           ),
         ]);
       }
@@ -4312,8 +4312,8 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
         graduatedTokens: 0,
       };
 
-      if (pausedColumnRef.current == token.status) {
-        pausedTokenQueueRef.current[token.status].push(token);
+      if (token.status && pausedColumnRef.current == token.status) {
+        pausedTokenQueueRef.current[token.status].push(token as any);
         return;
       }
       dispatch({ type: 'ADD_MARKET', token });
@@ -9970,7 +9970,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
           const high24 = Math.max(...highs);
           const low24 = Math.min(...lows);
           const pct = open24 === 0 ? 0 : ((last - open24) / open24) * 100;
-          const deltaRaw = lastRaw - open24 * pf;
+          const deltaRaw = last - open24;
 
           const volQ = Number((m.volume ?? 0) / 10 ** Number(6));
           const volumeDisplay = formatCommas(volQ.toFixed(2));
@@ -16589,7 +16589,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                 <button
                   className={`vault-confirm-button ${(depositVaultStep === 'idle' && (!isVaultDepositEnabled() || isVaultDepositSigning)) ? 'disabled' : ''
                     } ${depositVaultStep === 'success' ? 'success' : ''}`}
-                  disabled={depositVaultStep === 'idle' && (!isVaultDepositEnabled() || isVaultDepositSigning)}
+                  disabled={(!isVaultDepositEnabled() || isVaultDepositSigning || depositVaultStep === 'success')}
                   onClick={async () => {
                     if (!isVaultDepositEnabled()) return;
 
@@ -16908,7 +16908,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                   className={`vault-confirm-button withdraw ${(withdrawVaultStep === 'idle' && (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
                     withdrawExceedsBalance || !withdrawPreview || isVaultWithdrawSigning)) ? 'disabled' : ''
                     } ${withdrawVaultStep === 'success' ? 'success' : ''}`}
-                  disabled={withdrawVaultStep === 'idle' && (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
+                  disabled={withdrawVaultStep == 'success' || (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
                     withdrawExceedsBalance || !withdrawPreview || isVaultWithdrawSigning)}
                   onClick={async () => {
                     if (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
@@ -18355,7 +18355,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                   className={`save-button ${(!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase) && createVaultStep === 'idle' ? 'disabled' : ''
                     } ${createVaultStep === 'success' ? 'success' : ''}`}
                   disabled={
-                    (createVaultStep === 'idle' && (!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase)) ||
+                    (createVaultStep === 'success' || (!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase)) ||
                     isVaultDepositSigning
                   }
                   onClick={async () => {
@@ -25475,6 +25475,8 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                 nonces={nonces}
                 selectedWallets={selectedWallets}
                 setSelectedWallets={setSelectedWallets}
+                createSubWallet={createSubWallet}
+                setOneCTDepositAddress={setOneCTDepositAddress}
               />
             }
           />

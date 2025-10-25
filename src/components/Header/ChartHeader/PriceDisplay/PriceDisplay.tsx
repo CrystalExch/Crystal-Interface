@@ -7,12 +7,29 @@ interface PriceDisplayProps {
   isLoading?: boolean; 
 }
 
+function valueCheck(value: React.ReactNode): boolean {
+  if (typeof value === 'string') {
+    return value === 'n/a' || value === '$n/a';
+  }
+
+  if (React.isValidElement(value)) {
+    const children = value.props.children;
+
+    if (typeof children === 'string') {
+      return children === 'n/a' || children === '$n/a';
+    }
+  }
+
+  return false;
+}
+
 const PriceDisplay: React.FC<PriceDisplayProps> = ({ 
   price, 
   isLoading,
 }) => {
+  const shouldShowLoading = isLoading === true || valueCheck(price);
 
-  if (isLoading) {
+  if (shouldShowLoading) {
     return (
       <div className="price-container">
         <div className="price-label">{t('price')}</div>

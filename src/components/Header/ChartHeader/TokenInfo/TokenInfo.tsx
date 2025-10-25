@@ -1254,13 +1254,14 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   const perpsTokenInfo = perpsMarketsData[perpsActiveMarketKey];
   const [memeImageError, setMemeImageError] = useState(false);
-useEffect(() => {
-  setMemeImageError(false);
-}, [memeTokenData?.tokenAddress, memeTokenData?.image]);
   const [remaining, setRemaining] = useState("")
   const [priceColor, setPriceColor] = useState<string>("")
   const prevPriceRef = useRef<number | null>(null)
 
+  useEffect(() => {
+    setMemeImageError(false);
+  }, [memeTokenData?.tokenAddress, memeTokenData?.image]);
+  
   useEffect(() => {
     if (!perpsTokenInfo?.lastPrice) return
     const current = Number(perpsTokenInfo.lastPrice)

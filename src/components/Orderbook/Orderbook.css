@@ -151,14 +151,13 @@
 .layout-dropdown-option {
   background: none;
   border: none;
-  color: #ffffff96;
+  color: #ffffff97;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 3px 8px 3px 10px;
   font-size: 0.75rem;
-  font-weight: 300;
   transition: all 0.2s ease;
   width: 100%;
   text-align: left;
@@ -166,8 +165,7 @@
 }
 
 .layout-dropdown-option:hover {
-  background: rgb(58 58 63 / 15%);
-  color: #ffffffd8;
+  background: #2a2a2e8e;
 }
 
 .layout-dropdown-option.active {
