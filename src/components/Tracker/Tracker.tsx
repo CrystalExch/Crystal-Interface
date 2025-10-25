@@ -11,7 +11,8 @@ import gas from '../../assets/gas.svg';
 import slippage from '../../assets/slippage.svg';
 import { settings } from '../../settings';
 import { loadBuyPresets } from '../../utils/presetManager';
-import AssetRow from '../Portfolio/AssetRow/AssetRow';
+import PortfolioContent from '../Portfolio/BalancesContent/BalancesContent';
+import PortfolioHeader from '../Portfolio/BalancesHeader/PortfolioHeader';
 import { createPublicClient, http } from 'viem';
 import ImportWalletsPopup from './ImportWalletsPopup';
 
@@ -535,7 +536,9 @@ const Tracker: React.FC<TrackerProps> = ({
   onApplyFilters: externalOnApplyFilters,
   activeFilters: externalActiveFilters,
   monUsdPrice,
-  walletTokenBalances = {}
+  walletTokenBalances = {},
+  tokenList = [],
+  marketsData = []
 }) => {
   const [selectedSimpleFilter, setSelectedSimpleFilter] = useState<string | null>(null);
   const [emojiPickerPosition, setEmojiPickerPosition] = useState<{top: number, left: number} | null>(null);
@@ -2239,6 +2242,189 @@ const Tracker: React.FC<TrackerProps> = ({
       flushMarketsToState();
     } catch (e) {}
   }, []);
+
+  // Subscribe to all markets that tracked wallets have positions in
+  const subscribeToMarkets = useCallback((ws: WebSocket, marketAddresses: string[]) => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+    marketAddresses.forEach(addr => {
+      const marketAddr = addr.toLowerCase();
+      if (!marketSubsRef.current[marketAddr]) {
+        subscribe(ws, ['logs', { address: marketAddr }], (subId) => {
+          marketSubsRef.current[marketAddr] = subId;
+          console.log('[Tracker] Subscribed to market:', marketAddr, 'subId:', subId);
+        });
+      }
+    });
+  }, [subscribe]);
+
+  // Initialize websocket for memecoin trades
+  const openWebsocket = useCallback(() => {
+    const cfg = chainCfgOf(activechain);
+    const wssUrl = cfg?.wssurl;
+    if (!wssUrl) {
+      console.log('[Tracker] No websocket URL configured for chain:', activechain);
+      return;
+    }
+
+    console.log('[Tracker] Opening websocket connection:', wssUrl);
+    const ws = new WebSocket(wssUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log('[Tracker] Websocket connected');
+
+      // Subscribe to router events (new markets)
+      const routerAddress = cfg.router;
+      if (routerAddress) {
+        subscribe(ws, ['logs', { address: routerAddress, topics: [ROUTER_EVENT] }]);
+        console.log('[Tracker] Subscribed to router events:', routerAddress);
+      }
+
+      // Subscribe to all markets from current positions
+      const allMarkets = new Set<string>();
+      Object.values(addressPositions).forEach(positions => {
+        positions.forEach(pos => {
+          // Get market address - try from tokenToMarketRef first, then from marketsRef
+          const tokenAddr = pos.tokenId.toLowerCase();
+          const marketAddr = tokenToMarketRef.current[tokenAddr] ||
+                           Object.keys(tokenToMarketRef.current).find(k =>
+                             tokenToMarketRef.current[k].toLowerCase() === tokenAddr
+                           );
+          if (marketAddr) {
+            allMarkets.add(marketAddr.toLowerCase());
+          } else {
+            // If no market mapping, use token address as market address (might be the same)
+            allMarkets.add(tokenAddr);
+          }
+        });
+      });
+
+      if (allMarkets.size > 0) {
+        console.log('[Tracker] Subscribing to', allMarkets.size, 'markets from positions');
+        subscribeToMarkets(ws, Array.from(allMarkets));
+      }
+    };
+
+    ws.onmessage = ({ data }) => {
+      try {
+        const msg = JSON.parse(data);
+        if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
+
+        const log = msg.params.result;
+        const topic = log.topics?.[0];
+        console.log('[Tracker] Websocket message received, topic:', topic);
+
+        const TRADE_EVENT = '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982';
+
+        // Handle router events (new markets)
+        if (topic === ROUTER_EVENT) {
+          console.log('[Tracker] New market created via websocket');
+          addMarketFromLog(log);
+        }
+        // Handle market update events
+        else if (topic === MARKET_UPDATE_EVENT) {
+          console.log('[Tracker] Market update via websocket');
+          updateMarketFromLog(log);
+        }
+        // Handle trade events
+        else if (topic === TRADE_EVENT) {
+          console.log('[Tracker] Trade event via websocket');
+
+          // Extract wallet address from trade event
+          const marketAddr = `0x${(log.topics[1] || '').slice(26)}`.toLowerCase();
+          const callerAddr = `0x${(log.topics[2] || '').slice(26)}`.toLowerCase();
+
+          console.log('[Tracker] Trade - market:', marketAddr, 'caller:', callerAddr, 'tracked?', trackedSetRef.current.has(callerAddr));
+
+          // Only process if wallet is tracked
+          if (!trackedSetRef.current.has(callerAddr)) {
+            console.log('[Tracker] Wallet not tracked, skipping trade');
+            return;
+          }
+
+          // Parse trade data
+          const hex = (log.data || '').startsWith('0x') ? (log.data || '').slice(2) : (log.data || '');
+          const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
+          const isBuy = word(0) !== 0n;
+          const amountIn = Number(word(1) || 0n) / 1e18;
+          const amountOut = Number(word(2) || 0n) / 1e18;
+          const priceRaw = word(4) || 0n;
+          const price = Number(priceRaw) / 1e18;
+
+          // Get token address from market mapping
+          let tokenAddrFromMarket = tokenToMarketRef.current[marketAddr] || marketsRef.current.get(marketAddr)?.tokenAddress;
+          if (tokenAddrFromMarket) tokenAddrFromMarket = tokenAddrFromMarket.toLowerCase();
+
+          // Update market with new trade
+          try {
+            upsertMarket({
+              tokenAddr: tokenAddrFromMarket || marketAddr,
+              price: price || 0,
+              isBuy,
+              amountNative: isBuy ? amountIn : amountOut,
+              ts: Math.floor(Date.now() / 1000)
+            });
+          } catch (e) {
+            console.error('[Tracker] Failed to upsert market:', e);
+          }
+
+          // Add to recent trades
+          try {
+            const market = marketsRef.current.get(tokenAddrFromMarket || '');
+            const tradeLike = {
+              id: `${log.transactionHash || ''}-${log.logIndex || ''}`,
+              account: { id: callerAddr },
+              isBuy,
+              amountIn: BigInt(Math.floor((isBuy ? amountIn : amountOut) * 1e18)),
+              amountOut: BigInt(Math.floor((isBuy ? amountOut : amountIn) * 1e18)),
+              priceNativePerTokenWad: BigInt(Math.floor((price || 0) * 1e18)),
+              token: {
+                symbol: (market?.symbol || '').toString(),
+                name: (market?.name || market?.symbol || '').toString()
+              },
+              timestamp: Date.now().toString(),
+              transactionHash: log.transactionHash || '',
+            };
+
+            setRecentTrades(prev => {
+              const newTrades = [tradeLike, ...prev].slice(0, 100);
+              return newTrades;
+            });
+
+            console.log('[Tracker] Added trade to recent trades:', tradeLike);
+          } catch (e) {
+            console.error('[Tracker] Failed to add trade:', e);
+          }
+        }
+      } catch (e) {
+        console.error('[Tracker] Websocket message error:', e);
+      }
+    };
+
+    ws.onerror = (e) => {
+      console.error('[Tracker] Websocket error:', e);
+    };
+
+    ws.onclose = () => {
+      console.log('[Tracker] Websocket closed');
+      wsRef.current = null;
+    };
+  }, [activechain, subscribe, addMarketFromLog, updateMarketFromLog, subscribeToMarkets, addressPositions, upsertMarket]);
+
+  // Open websocket when component mounts or chain changes
+  useEffect(() => {
+    openWebsocket();
+
+    return () => {
+      if (wsRef.current) {
+        console.log('[Tracker] Closing websocket');
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
+  }, [openWebsocket]);
+
   useEffect(() => {
     const TRADE_EVENT = '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982';
     const MARKET_CREATED_EVENT = '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
@@ -2615,76 +2801,37 @@ const Tracker: React.FC<TrackerProps> = ({
   const renderMonitor = () => {
     const allPositions = getFilteredPositions();
 
+    console.log('[Tracker] Monitor - allPositions:', allPositions.length);
+
     // Separate graduated and non-graduated launchpad positions
     const graduatedPositions = allPositions.filter(p => p.isOrderbook);
     const nonGraduatedPositions = allPositions.filter(p => !p.isOrderbook);
 
+    console.log('[Tracker] Monitor - graduated:', graduatedPositions.length, 'non-graduated:', nonGraduatedPositions.length);
+
     // Launchpad column: graduated tokens at top, then non-graduated
     let launchpadPositions = [...graduatedPositions, ...nonGraduatedPositions];
 
-    // Orderbook column: only major tokens from tokenList
-    const spotTokenPositions: GqlPosition[] = [];
-    const chainCfg = settings.chainConfig?.[activechain];
+    console.log('[Tracker] Monitor - launchpadPositions:', launchpadPositions.length);
 
-    console.log('Monitor Debug - walletTokenBalances:', walletTokenBalances);
-    console.log('Monitor Debug - chainCfg:', chainCfg);
-    console.log('Monitor Debug - tokenList:', chainCfg?.tokenList);
-    console.log('Monitor Debug - trackedWallets:', trackedWallets);
+    // Orderbook column: Aggregate balances across all wallets and pass to PortfolioContent
+    // Aggregate balances across all tracked wallets into a single tokenBalances object
+    const aggregatedTokenBalances: { [address: string]: bigint } = {};
+    trackedWallets.forEach(wallet => {
+      const tokenBalances = walletTokenBalances?.[wallet.address];
+      if (!tokenBalances) return;
 
-    if (walletTokenBalances && chainCfg?.tokenList) {
-      trackedWallets.forEach(wallet => {
-        console.log('Monitor Debug - checking wallet:', wallet.address);
-        const walletBalances = walletTokenBalances[wallet.address];
-        console.log('Monitor Debug - walletBalances for', wallet.address, ':', walletBalances);
-        if (!walletBalances) return;
-
-        // Only iterate through tokens in tokenList (major tokens)
-        chainCfg.tokenList.forEach((token: any) => {
-          console.log('Monitor Debug - checking token:', token);
-          const tokenAddr = token.address?.toLowerCase();
-          if (!tokenAddr) return;
-
-          console.log('Monitor Debug - looking for balance at key:', tokenAddr);
-          const balanceWei = walletBalances[tokenAddr];
-          console.log('Monitor Debug - balanceWei:', balanceWei);
-          if (!balanceWei || balanceWei === 0n) return;
-
-          const decimals = token.decimals || 18;
-          const balance = Number(balanceWei) / (10 ** Number(decimals));
-
-          if (balance <= 0) return;
-
-          const market = marketsRef.current.get(tokenAddr);
-          const price = market?.price || 0;
-
-          const position: GqlPosition = {
-            tokenId: tokenAddr,
-            symbol: token.ticker,
-            name: token.name,
-            imageUrl: token.image,
-            boughtTokens: balance,
-            soldTokens: 0,
-            spentNative: 0,
-            receivedNative: 0,
-            remainingTokens: balance,
-            remainingPct: 100,
-            pnlNative: 0,
-            lastPrice: price,
-            isOrderbook: false,
-          };
-
-          (position as any).walletName = wallet.name;
-          (position as any).walletEmoji = wallet.emoji;
-          (position as any).walletAddress = wallet.address;
-
-          console.log('Monitor Debug - adding position:', position);
-          spotTokenPositions.push(position);
-        });
+      Object.entries(tokenBalances).forEach(([tokenAddress, balance]) => {
+        if (!aggregatedTokenBalances[tokenAddress]) {
+          aggregatedTokenBalances[tokenAddress] = 0n;
+        }
+        aggregatedTokenBalances[tokenAddress] += balance as bigint;
       });
-    }
+    });
 
-    console.log('Monitor - spotTokenPositions:', spotTokenPositions.length, spotTokenPositions);
-    const orderbookPositions = spotTokenPositions;
+    console.log('Monitor Debug - tokenList:', tokenList);
+    console.log('Monitor Debug - marketsData:', marketsData);
+    console.log('Monitor Debug - aggregatedTokenBalances:', aggregatedTokenBalances);
 
     const formatValue = (value: number): string => {
       const converted = monitorCurrency === 'USD' ? value * monUsdPrice : value;
@@ -2904,7 +3051,7 @@ const Tracker: React.FC<TrackerProps> = ({
 
     return (
       <div className="tracker-monitor">
-        {allPositions.length === 0 && orderbookPositions.length === 0 ? (
+        {allPositions.length === 0 && Object.keys(aggregatedTokenBalances).length === 0 ? (
           <div className="tracker-empty-state">
             <div className="tracker-empty-content">
               <h4>No Open Positions</h4>
@@ -3145,9 +3292,20 @@ const Tracker: React.FC<TrackerProps> = ({
                 </div>
               </div>
               <div className="explorer-tokens-list">
-                <div className="tracker-monitor-grid">
-                  {orderbookPositions.map((pos) => renderPositionCard(pos))}
-                </div>
+                <PortfolioHeader
+                  onSort={() => {}}
+                  sortConfig={{ column: 'assets', direction: 'asc' }}
+                />
+                <PortfolioContent
+                  tokenList={tokenList || []}
+                  onMarketSelect={() => {}}
+                  setSendTokenIn={() => {}}
+                  setpopup={setpopup}
+                  sortConfig={{ column: 'assets', direction: 'asc' }}
+                  tokenBalances={aggregatedTokenBalances}
+                  marketsData={marketsData || []}
+                  isBlurred={isBlurred}
+                />
               </div>
             </div>
           </div>
