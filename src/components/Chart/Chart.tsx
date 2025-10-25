@@ -109,33 +109,46 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         let allCandles: any[] = [];
         const query = `
           query {
-            series_collection(where: { id: "${seriesId}" }) {
-              series1: klines(first: 1000, skip: 0, orderBy: time, orderDirection: desc) {
-                id
-                time
-                open
-                high
-                low
-                close
-                baseVolume
-              }
-              series2: klines(first: 1000, skip: 1000, orderBy: time, orderDirection: desc) {
-                id
-                time
-                open
-                high
-                low
-                close
-                baseVolume
-              }
-              series3: klines(first: 1000, skip: 2000, orderBy: time, orderDirection: desc) {
-                id
-                time
-                open
-                high
-                low
-                close
-                baseVolume
+            markets(where: { id: "${activeMarket.address}" }) {
+              series(where:{intervalSeconds: ${selectedInterval === '1m'
+              ? 60
+              : selectedInterval === '5m'
+                ? 300
+                : selectedInterval === '15m'
+                  ? 900
+                  : selectedInterval === '1h'
+                    ? 3600
+                    : selectedInterval === '4h'
+                      ? 14400
+                      : 86400} }) {
+                intervalSeconds
+                series1: klines(first: 1000, skip: 0, orderBy: time, orderDirection: desc) {
+                  id
+                  time
+                  open
+                  high
+                  low
+                  close
+                  baseVolume
+                }
+                series2: klines(first: 1000, skip: 1000, orderBy: time, orderDirection: desc) {
+                  id
+                  time
+                  open
+                  high
+                  low
+                  close
+                  baseVolume
+                }
+                series3: klines(first: 1000, skip: 2000, orderBy: time, orderDirection: desc) {
+                  id
+                  time
+                  open
+                  high
+                  low
+                  close
+                  baseVolume
+                }
               }
             }
           }
@@ -148,10 +161,11 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             body: JSON.stringify({ query }),
           });
           const json = await res1.json();
+
           allCandles = allCandles
-            .concat(json.data.series_collection?.[0]?.series1 || [])
-            .concat(json.data.series_collection?.[0]?.series2 || [])
-            .concat(json.data.series_collection?.[0]?.series3 || []);
+            .concat(json.data.markets?.[0]?.series?.[0]?.series1 || [])
+            .concat(json.data.markets?.[0]?.series?.[0]?.series2 || [])
+            .concat(json.data.markets?.[0]?.series?.[0]?.series3 || []);
         } catch (err) {
           console.error('Error fetching from subgraph:', err);
         }

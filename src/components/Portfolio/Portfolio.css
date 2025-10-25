@@ -4581,8 +4581,8 @@
 }
 
 .portfolio-balance-container{
-  overflow: hidden;
-  height: 100%;
+  overflow: visible;
+  height: calc(100% - 70px);
   margin-right: 10px;
 }
 

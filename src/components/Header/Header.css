@@ -90,8 +90,8 @@
 .transparent-button {
   background: none;
   border: none;
-  border: 1px solid rgba(179, 184, 249, 0.125);
-  border-radius: 15px;
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 6px;
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -99,7 +99,7 @@
   font-weight: 300;
   height: 35px;
   overflow: hidden;
-  padding: 6px 8px 6px 12px;
+  padding: 6px 6px 6px 10px;
   transition: all.1s ease;
 }
 
@@ -154,8 +154,8 @@
   transition: all.2s cubic-bezier(0.2, 0, 0.1, 1);
   width: 35px;
   height: 35px;
-  border: 1px solid rgba(179, 184, 249, 0.125);
-  border-radius: 15px;
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 6px;
 }
 
 .app-settings-button:hover {
@@ -172,8 +172,8 @@
   transition: all.2s cubic-bezier(0.2, 0, 0.1, 1);
   width: 35px;
   height: 35px;
-  border: 1px solid rgba(179, 184, 249, 0.125);
-  border-radius: 15px;
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 6px;
 }
 
 .history-button:hover {
@@ -271,7 +271,7 @@
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
   padding-right: 5px;
-  gap: 8px;
+  gap: 6px;
 }
 
 @media(max-width:1020px){
@@ -362,7 +362,7 @@
 
 .wallet-count {
   border-radius: 4px;
-  margin-right: 12px;
+  margin-right: 6px;
   text-align: center;
   line-height: 1.2;
 }
@@ -626,10 +626,6 @@
   color: #e04e4e;
 }
 
-.wallet-dropdown-action-btn.portfolio-btn:hover {
-  background: rgba(170, 174, 207, 0.1);
-}
-
 .wallet-dropdown-action-btn.logout-btn:hover .wallet-dropdown-action-icon {
   filter: brightness(1);
 }
@@ -720,8 +716,8 @@
   align-items: center;
   gap: 12px;
   padding: 6px 14px 10px 10px;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 6px;
   transition: all 0.2s ease;
 }
 

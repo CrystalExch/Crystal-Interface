@@ -961,7 +961,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             hash = r.transactionHash;
           }),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('transaction timeout')), 10000)
+            setTimeout(() => reject(new Error('transaction timeout')), 5000)
           ),
         ]);
       }
@@ -4312,8 +4312,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         graduatedTokens: 0,
       };
 
-      if (pausedColumnRef.current == token.status) {
-        pausedTokenQueueRef.current[token.status].push(token);
+      if (token.status && pausedColumnRef.current == token.status) {
+        pausedTokenQueueRef.current[token.status].push(token as any);
         return;
       }
       dispatch({ type: 'ADD_MARKET', token });
@@ -5135,6 +5135,49 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 tokens
               }
             }
+            graduating: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{lastPriceNativePerTokenWad_gt:5000}) {
+              id
+              creator {
+                id
+                tokensLaunched
+                tokensGraduated
+              }
+              name
+              symbol
+              metadataCID
+              description
+              social1
+              social2
+              social3	
+              social4
+              decimals
+              initialSupply
+              timestamp
+              migrated
+              migratedAt
+              migratedMarket {
+                id
+              }
+              volumeNative
+              volumeToken
+              buyTxs
+              sellTxs
+              distinctBuyers
+              distinctSellers
+              lastPriceNativePerTokenWad
+              lastUpdatedAt
+              trades {
+                id
+                amountIn
+                amountOut
+              }
+              totalHolders
+              devHoldingAmount
+              holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
+                account { id }
+                tokens
+              }
+            }
             migrated: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:true}) {
               id
               creator {
@@ -5184,6 +5227,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         const json = await res.json();
         const rawMarkets = [
           ...(json.data?.active ?? []),
+          ...(json.data?.graduating ?? []),
           ...(json.data?.migrated ?? []),
         ];
 
@@ -6449,7 +6493,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       if (shouldFetchNonce) {
         subWallets.forEach((w, i) => {
           const old = nonces.current?.get(w.address) || { pendingtxs: [] }
-          old.nonce = parseInt(json[i + (gasEstimateCall ? 2 : 1)].result, 16) + old.pendingtxs.length
+          if (old.pendingtxs.length == 0) old.nonce = parseInt(json[i + (gasEstimateCall ? 2 : 1)].result, 16)
           nonces.current.set(w.address, old)
         })
       }
@@ -8520,7 +8564,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                         (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
                       ),
                       priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-                      priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0),
+                      priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(formatSig(
+                        (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+                      ).split('.')[1]?.length || 0)),
                       ...(high != null && {
                         high24h: formatSig(
                           high.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
@@ -9371,7 +9417,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
                         ),
                         priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-                        priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0),
+                        priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(formatSig(
+                          (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+                        ).split('.')[1]?.length || 0)),
                         ...(high != null && {
                           high24h: formatSig(
                             high.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
@@ -9970,7 +10018,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           const high24 = Math.max(...highs);
           const low24 = Math.min(...lows);
           const pct = open24 === 0 ? 0 : ((last - open24) / open24) * 100;
-          const deltaRaw = lastRaw - open24 * pf;
+          const deltaRaw = last - open24;
 
           const volQ = Number((m.volume ?? 0) / 10 ** Number(6));
           const volumeDisplay = formatCommas(volQ.toFixed(2));
@@ -10002,7 +10050,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               low24h: formatSig(low24.toFixed(decs), m.marketType != 0),
               volume: volumeDisplay,
               priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
-              priceChangeAmount: formatSig(deltaRaw.toFixed(decs), m.marketType != 0),
+              priceChangeAmount: formatSig(deltaRaw.toFixed(formatSig(last.toFixed(decs), m.marketType != 0).split('.')[1]?.length || 0)),
             });
           }
 
@@ -10053,7 +10101,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   low24h: formatSig(low24.toFixed(decs2), m.marketType != 0),
                   volume: volumeDisplay,
                   priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
-                  priceChangeAmount: formatSig(deltaRaw.toFixed(decs2), m.marketType != 0),
+                  priceChangeAmount: formatSig(deltaRaw.toFixed(formatSig(last.toFixed(decs2), m.marketType != 0).split('.')[1]?.length || 0)),
                 });
               }
             }
@@ -12028,13 +12076,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 </div>
                 <div className="token-right-content">
                   <div className="tokenlistbalance">
-                    {customRound(
+                    {formatSubscript(customRound(
                       Number(tokenBalances[token.address] ?? 0) /
                       10 ** Number(token.decimals ?? 18),
                       3,
                     )
                       .replace(/(\.\d*?[1-9])0+$/g, '$1')
-                      .replace(/\.0+$/, '')}
+                      .replace(/\.0+$/, ''))}
                   </div>
                   <div className="token-address-container">
                     <span className="token-address">
@@ -12592,13 +12640,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 </div>
                 <div className="token-right-content">
                   <div className="tokenlistbalance">
-                    {customRound(
+                    {formatSubscript(customRound(
                       Number(tokenBalances[token.address] ?? 0) /
                       10 ** Number(token.decimals ?? 18),
                       3,
                     )
                       .replace(/(\.\d*?[1-9])0+$/g, '$1')
-                      .replace(/\.0+$/, '')}
+                      .replace(/\.0+$/, ''))}
                   </div>
                   <div className="token-address-container">
                     <span className="token-address">
@@ -12846,6 +12894,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(newTab);
   }, []);
+
   const handleTokenClick = (token: any) => {
     if (setTokenData) {
       setTokenData(token);
@@ -12853,6 +12902,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     navigate(`/meme/${token.tokenAddress}`);
     setpopup(0);
   };
+
   const handleQuickBuy = useCallback(async (token: any, amt: string) => {
     const val = BigInt(amt || '0') * 10n ** 18n;
     if (val === 0n) return;
@@ -16589,7 +16639,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 <button
                   className={`vault-confirm-button ${(depositVaultStep === 'idle' && (!isVaultDepositEnabled() || isVaultDepositSigning)) ? 'disabled' : ''
                     } ${depositVaultStep === 'success' ? 'success' : ''}`}
-                  disabled={depositVaultStep === 'idle' && (!isVaultDepositEnabled() || isVaultDepositSigning)}
+                  disabled={(!isVaultDepositEnabled() || isVaultDepositSigning || depositVaultStep === 'success')}
                   onClick={async () => {
                     if (!isVaultDepositEnabled()) return;
 
@@ -16908,7 +16958,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   className={`vault-confirm-button withdraw ${(withdrawVaultStep === 'idle' && (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
                     withdrawExceedsBalance || !withdrawPreview || isVaultWithdrawSigning)) ? 'disabled' : ''
                     } ${withdrawVaultStep === 'success' ? 'success' : ''}`}
-                  disabled={withdrawVaultStep === 'idle' && (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
+                  disabled={withdrawVaultStep == 'success' || (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
                     withdrawExceedsBalance || !withdrawPreview || isVaultWithdrawSigning)}
                   onClick={async () => {
                     if (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
@@ -18355,7 +18405,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   className={`save-button ${(!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase) && createVaultStep === 'idle' ? 'disabled' : ''
                     } ${createVaultStep === 'success' ? 'success' : ''}`}
                   disabled={
-                    (createVaultStep === 'idle' && (!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase)) ||
+                    (createVaultStep === 'success' || (!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase)) ||
                     isVaultDepositSigning
                   }
                   onClick={async () => {
@@ -19267,10 +19317,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             )}
             <div className="balance1">
               <img src={walleticon} className="balance-wallet-icon" />{' '}
-              {formatDisplayValue(
+              {formatSubscript(formatDisplayValue(
                 tokenBalances[tokenIn],
                 Number(tokendict[tokenIn].decimals),
-              )}
+              ))}
             </div>
             <div
               className="max-button"
@@ -19559,10 +19609,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             )}
             <div className="balance2">
               <img src={walleticon} className="balance-wallet-icon" />{' '}
-              {formatDisplayValue(
+              {formatSubscript(formatDisplayValue(
                 tokenBalances[tokenOut],
                 Number(tokendict[tokenOut].decimals),
-              )}
+              ))}
             </div>
           </div>
         </div>
@@ -21112,10 +21162,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             </span>
             <div className="balance1">
               <img src={walleticon} className="balance-wallet-icon" />{' '}
-              {formatDisplayValue(
+              {formatSubscript(formatDisplayValue(
                 tokenBalances[tokenIn],
                 Number(tokendict[tokenIn].decimals),
-              )}
+              ))}
             </div>
             <div
               className="max-button"
@@ -21533,10 +21583,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             </div>
             <div className="balance2">
               <img src={walleticon} className="balance-wallet-icon" />{' '}
-              {formatDisplayValue(
+              {formatSubscript(formatDisplayValue(
                 tokenBalances[tokenOut],
                 Number(tokendict[tokenOut].decimals),
-              )}
+              ))}
             </div>
           </div>
         </div>
@@ -23147,10 +23197,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             <div className="send-balance-max-container">
               <div className="send-balance1">
                 <img src={walleticon} className="send-balance-wallet-icon" />{' '}
-                {formatDisplayValue(
+                {formatSubscript(formatDisplayValue(
                   tokenBalances[tokenIn],
                   Number(tokendict[tokenIn].decimals),
-                )}
+                ))}
               </div>
               <div
                 className="send-max-button"
@@ -23742,10 +23792,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             </span>
             <div className="balance1">
               <img src={walleticon} className="balance-wallet-icon" />{' '}
-              {formatDisplayValue(
+              {formatSubscript(formatDisplayValue(
                 tokenBalances[tokenIn],
                 Number(tokendict[tokenIn].decimals),
-              )}
+              ))}
             </div>
             <div
               className="max-button"
@@ -24109,10 +24159,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             </div>
             <div className="balance2">
               <img src={walleticon} className="balance-wallet-icon" />{" "}
-              {formatDisplayValue(
+              {formatSubscript(formatDisplayValue(
                 tokenBalances[tokenOut],
                 Number(tokendict[tokenOut].decimals)
-              )}
+              ))}
             </div>
           </div>
         </div>
@@ -25475,6 +25525,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 nonces={nonces}
                 selectedWallets={selectedWallets}
                 setSelectedWallets={setSelectedWallets}
+                createSubWallet={createSubWallet}
+                setOneCTDepositAddress={setOneCTDepositAddress}
               />
             }
           />
@@ -25796,7 +25848,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 address={address}
                 orderCenterHeight={orderCenterHeight}
                 tokenList={memoizedTokenList}
-                onMarketSelect={onMarketSelect}
                 setSendTokenIn={setSendTokenIn}
                 setpopup={setpopup}
                 sortConfig={memoizedSortConfig}
@@ -25837,6 +25888,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setOrderCenterHeight={setOrderCenterHeight}
                 isMarksVisible={isMarksVisible}
                 setIsMarksVisible={setIsMarksVisible}
+                navigate={navigate}
               />
             } />
           <Route path="/leaderboard"

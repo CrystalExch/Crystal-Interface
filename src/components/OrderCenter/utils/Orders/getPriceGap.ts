@@ -23,10 +23,11 @@ export function getPriceGap(
   const gapColor = isPositiveGap ? '#65ed92' : 'rgb(240, 103, 103)';
   const gapSign = isPositiveGap ? '+' : '';
 
-  const formattedPriceGap = `${gapSign}${priceGap.toFixed(Math.floor(Math.log10(Number(priceFactor))))}`;
+  const formattedCurrentPrice = formatSig(currentPrice.toFixed(Math.floor(Math.log10(Number(priceFactor)))), marketType != 0)
+  const formattedPriceGap = `${gapSign}${priceGap.toFixed(formattedCurrentPrice.split('.')[1]?.length || 0)}`;
   const formattedGapPercentage = `${gapSign}${gapPercentage.toFixed(2)}%`;
 
-  const formattedGap = `${formatSubscript(formatSig(formattedPriceGap, marketType != 0))} / ${formattedGapPercentage}`;
+  const formattedGap = `${formatSubscript(formattedPriceGap)} / ${formattedGapPercentage}`;
 
   return { formattedGap, gapColor };
 }

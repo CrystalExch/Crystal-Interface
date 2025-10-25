@@ -65,7 +65,8 @@ interface OrderCenterProps {
   perpsPositions?: any[]; 
   perpsOpenOrders?: any[]; 
   perpsTradeHistory?: any[];
-  perpsOrderHistory?: any[]; 
+  perpsOrderHistory?: any[];
+  handleClose?: any;
 }
 
 const OrderCenter: React.FC<OrderCenterProps> = ({
@@ -108,6 +109,7 @@ const OrderCenter: React.FC<OrderCenterProps> = ({
   perpsOpenOrders = [],
   perpsTradeHistory = [],
   perpsOrderHistory = [],
+  handleClose = [],
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const [isResizing, setIsResizing] = useState<boolean>(false);
@@ -368,6 +370,7 @@ const OrderCenter: React.FC<OrderCenterProps> = ({
               currentPage={currentPage}
               onMarketSelect={onMarketSelect}
               isBlurred={isBlurred}
+              handleClose={handleClose}
             />
           );
         case 'openOrders':

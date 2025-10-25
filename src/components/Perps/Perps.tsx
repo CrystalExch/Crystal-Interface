@@ -29,7 +29,6 @@ interface PerpsProps {
   address: any;
   orderCenterHeight: number;
   tokenList: any[];
-  onMarketSelect: (token: any) => void;
   setSendTokenIn: any;
   setpopup: (value: number) => void;
   hideMarketFilter?: boolean;
@@ -74,6 +73,7 @@ interface PerpsProps {
   setOrderCenterHeight: (height: number) => void;
   isMarksVisible: any;
   setIsMarksVisible: any;
+  navigate: any;
 }
 
 const Perps: React.FC<PerpsProps> = ({
@@ -93,7 +93,6 @@ const Perps: React.FC<PerpsProps> = ({
   orderCenterHeight,
   hideMarketFilter = false,
   tokenList,
-  onMarketSelect,
   setSendTokenIn,
   setpopup,
   sortConfig,
@@ -137,6 +136,7 @@ const Perps: React.FC<PerpsProps> = ({
   setOrderCenterHeight,
   isMarksVisible,
   setIsMarksVisible,
+  navigate
 }) => {
   const [exchangeConfig, setExchangeConfig] = useState<any>();
   const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
@@ -517,6 +517,11 @@ const Perps: React.FC<PerpsProps> = ({
     popup.style.transform = 'translateX(-50%)';
   }, []);
 
+  const handlePerpsMarketSelect = useCallback((market: any) => {
+    setperpsActiveMarketKey(market.symbol);
+    navigate(`/perps/${market.symbol}`);
+  }, [navigate, setperpsActiveMarketKey]);
+
   const handlePresetEditToggle = useCallback(() => {
     setIsPresetEditMode(!isPresetEditMode);
     setEditingPresetIndex(null);
@@ -544,7 +549,8 @@ const Perps: React.FC<PerpsProps> = ({
     symbol: string,
     l2PrivateKey: string,
     activeMarket: any,
-    userFees: any
+    userFees: any,
+    reduceOnly: any,
   ): Promise<any> {
     const ts = Date.now().toString()
     const l2ExpireTime = (Date.now() + 30 * 24 * 60 * 60 * 1000)
@@ -585,7 +591,7 @@ const Perps: React.FC<PerpsProps> = ({
       size: size.toFixed(Math.floor(Math.log10(Math.max(1, 1/Number(activeMarket?.stepSize))))),
       type,
       timeInForce: type == 'MARKET' ? 'IMMEDIATE_OR_CANCEL' : 'GOOD_TIL_CANCEL',
-      reduceOnly: false,
+      reduceOnly,
       isPositionTpsl: false,
       isSetOpenTp: false,
       isSetOpenSl: false,
@@ -609,11 +615,39 @@ const Perps: React.FC<PerpsProps> = ({
     }
   }
 
+  const handleClose = async (
+    marketKey: any,
+    ordersize: any,
+    side: any,
+  ) => {
+    if (Object.keys(perpsMarketsData).length == 0) return;
+    const size = Math.floor(Number(ordersize) / Number(perpsMarketsData[marketKey]?.stepSize)) * Number(perpsMarketsData[marketKey]?.stepSize)
+    const payload = await generateSignedOrder(size, (side === "long" ? "SELL" : "BUY"), "MARKET", Number(perpsMarketsData[marketKey]?.lastPrice), signer.accountId, perpsMarketsData[marketKey].contractId, marketKey, signer.privateKey, perpsMarketsData[marketKey], userFees, true)
+    const ts = Date.now().toString()
+    const path = '/api/v1/private/order/createOrder'
+    const qs = buildSignatureBody(payload)
+    const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "POST" + path + qs)).slice(2)
+    const [metaRes] = await Promise.all([
+      fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/order/createOrder", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-edgeX-Timestamp": ts,
+          "X-edgeX-Signature": signature,
+          "X-edgeX-Passphrase": signer.apiPassphrase,
+          "X-edgeX-Api-Key": signer.apiKey
+        },
+        body: JSON.stringify(payload)
+      }).then(r => r.json())
+    ])
+    console.log(metaRes)
+  }
+
   const handleTrade = async () => {
     if (Object.keys(perpsMarketsData).length == 0) return;
     setIsSigning(true);
-    const size = Math.floor(Number(inputString) / Number(perpsMarketsData[perpsActiveMarketKey]?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize)
-    const payload = await generateSignedOrder(size, (activeTradeType === "long" ? "BUY" : "SELL"), "MARKET", Number(perpsMarketsData[perpsActiveMarketKey]?.lastPrice), signer.accountId, activeMarket.contractId, perpsActiveMarketKey, signer.privateKey, activeMarket, userFees)
+    const size = Math.floor(Number(inputString) / Number(activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize)
+    const payload = await generateSignedOrder(size, (activeTradeType === "long" ? "BUY" : "SELL"), "MARKET", Number(activeMarket?.lastPrice), signer.accountId, activeMarket.contractId, perpsActiveMarketKey, signer.privateKey, activeMarket, userFees, false)
     const ts = Date.now().toString()
     const path = '/api/v1/private/order/createOrder'
     const qs = buildSignatureBody(payload)
@@ -1239,6 +1273,20 @@ const Perps: React.FC<PerpsProps> = ({
                 setBalance(msg.collateral[0].amount)
               }
             }
+            else if (message.content.event == 'ORDER_UPDATE') {
+              setfetchedpositions(prev => {
+                const updated = msg.position || []
+                const merged = [...prev]
+            
+                for (const pos of updated) {
+                  const i = merged.findIndex(p => p.contractId === pos.contractId)
+                  if (i !== -1) merged[i] = pos
+                  else merged.push(pos)
+                }
+                
+                return merged.filter(p => parseFloat(p.openValue) !== 0)
+              })
+            }
           }
         }
       }
@@ -1439,6 +1487,7 @@ const Perps: React.FC<PerpsProps> = ({
               Price
               <input
                 type="text"
+                inputMode="decimal"
                 placeholder="0.00"
                 value={limitPriceString}
                 onChange={(e) => {
@@ -1463,6 +1512,7 @@ const Perps: React.FC<PerpsProps> = ({
             Size
             <input
               type="text"
+              inputMode="decimal"
               placeholder="0.00"
               value={inputString}
               onChange={(e) => {
@@ -2019,7 +2069,7 @@ const Perps: React.FC<PerpsProps> = ({
           orderCenterHeight={orderCenterHeight}
           hideBalances={true}
           tokenList={memoizedTokenList}
-          onMarketSelect={onMarketSelect}
+          onMarketSelect={handlePerpsMarketSelect}
           setSendTokenIn={setSendTokenIn}
           setpopup={setpopup}
           sortConfig={memoizedSortConfig}
@@ -2042,6 +2092,7 @@ const Perps: React.FC<PerpsProps> = ({
           marketsData={{}}
           isPerps={true}
           perpsPositions={positions}
+          handleClose={handleClose}
         />
       </div>
       {layoutSettings === 'default' && (

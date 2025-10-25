@@ -55,7 +55,7 @@
 }
 
 .interval-option:hover {
-  background-color: rgb(255 255 255 / 20%);
+  background-color: #2a2a2e8e;
 }
 
 .interval-option.selected {

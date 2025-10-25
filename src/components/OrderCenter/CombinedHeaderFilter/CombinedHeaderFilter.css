@@ -57,7 +57,6 @@
   cursor: pointer;
   transition: all 0.2s ease;
   min-width: 35px;
-  height: 20px;
 }
  
 .page-size-display {
@@ -89,7 +88,7 @@
 
 .page-size-option {
   padding: 3px 9px;
-  color: #ffffff6e;
+  color: #ffffff97;
   font-size: 0.75rem;
   cursor: pointer;
   transition: background 0.2s ease;
@@ -98,7 +97,6 @@
 
 .page-size-option:hover {
   background: #2a2a2e8e;
-  color: #ffffffd1;
 }
 
 .page-size-option.selected {

@@ -12,16 +12,12 @@
   user-select: none;
 }
 
-.oc-cell {
-  min-width: 85px;
-}
-
 .portfolio-row:hover {
   background: #ffffff04;
 }
 
 .asset-icon {
-  border-radius: 360px;
+  border-radius: 50%;
   height: 28px;
   margin-right: 7px;
   width: 28px;

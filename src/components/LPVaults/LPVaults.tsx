@@ -314,10 +314,10 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   setSelectedVaultStrategy,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>(
-    'All',
+  const [vaultFilter, setVaultFilter] = useState<'Active' | 'Closed' | 'All'>(
+    'Active',
   );
-  const [activeVaultTab, setActiveVaultTab] = useState<'all' | 'my-vaults'>(
+  const [activeVaultTab, setActiveVaultTab] = useState<'all' | 'deposited' | 'my-vaults'>(
     'all',
   );
   const [showManagementMenu, setShowManagementMenu] = useState(false);
@@ -349,9 +349,11 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const markets = settings.chainConfig[activechain].markets;
 
   const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
-    const typeMatch = vaultFilter === 'All' || vault.type === vaultFilter;
+    const typeMatch = vaultFilter === 'All' || (vaultFilter == 'Active' && vault.closed == false) || (vaultFilter == 'Closed' && vault.closed == true);
     const myVaultsMatch =
-      activeVaultTab === 'all' ||
+      activeVaultTab === 'all' || (activeVaultTab === 'deposited' &&
+      address &&
+      vault.userShares > 0) ||
       (activeVaultTab === 'my-vaults' &&
         address &&
         vault.owner.toLowerCase() === address.toLowerCase());
@@ -616,15 +618,29 @@ const updateVaultStrategyIndicatorPosition = useCallback(
                   All Vaults 
                 </button>
                 <button
+                  className={`vault-tab ${activeVaultTab === 'deposited' ? 'active' : ''}`}
+                  onClick={() => setActiveVaultTab('deposited')}
+                >
+                  Deposited (
+                  {
+                    (vaultList || []).filter(
+                      (vault: any) =>
+                        address &&
+                        vault.userShares > 0 && (vaultFilter === 'All' || (vaultFilter == 'Active' && vault.closed == false) || (vaultFilter == 'Closed' && vault.closed == true)),
+                    ).length
+                  }
+                  )
+                </button>
+                <button
                   className={`vault-tab ${activeVaultTab === 'my-vaults' ? 'active' : ''}`}
                   onClick={() => setActiveVaultTab('my-vaults')}
                 >
                   My Vaults (
                   {
                     (vaultList || []).filter(
-                      (v: any) =>
+                      (vault: any) =>
                         address &&
-                        v.owner.toLowerCase() === address.toLowerCase(),
+                        vault.owner.toLowerCase() === address.toLowerCase() && (vaultFilter === 'All' || (vaultFilter == 'Active' && vault.closed == false) || (vaultFilter == 'Closed' && vault.closed == true)),
                     ).length
                   }
                   )
@@ -633,7 +649,7 @@ const updateVaultStrategyIndicatorPosition = useCallback(
 
               <div className="filter-controls">
                 <div className="type-filters">
-                  {(['All', 'Spot', 'Margin'] as const).map((filter) => (
+                  {(['Active', 'Closed', 'All'] as const).map((filter) => (
                     <button
                       key={filter}
                       className={`filter-button ${vaultFilter === filter ? 'active' : ''}`}
