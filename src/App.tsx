@@ -6449,7 +6449,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
       if (shouldFetchNonce) {
         subWallets.forEach((w, i) => {
           const old = nonces.current?.get(w.address) || { pendingtxs: [] }
-          old.nonce = parseInt(json[i + (gasEstimateCall ? 2 : 1)].result, 16) + old.pendingtxs.length
+          if (old.pendingtxs.length == 0) old.nonce = parseInt(json[i + (gasEstimateCall ? 2 : 1)].result, 16)
           nonces.current.set(w.address, old)
         })
       }
@@ -8520,7 +8520,9 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                         (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
                       ),
                       priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-                      priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0),
+                      priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(formatSig(
+                        (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+                      ).split('.')[1]?.length || 0)),
                       ...(high != null && {
                         high24h: formatSig(
                           high.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
@@ -9371,7 +9373,9 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                           (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
                         ),
                         priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-                        priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0),
+                        priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(formatSig(
+                          (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+                        ).split('.')[1]?.length || 0)),
                         ...(high != null && {
                           high24h: formatSig(
                             high.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
@@ -10002,7 +10006,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
               low24h: formatSig(low24.toFixed(decs), m.marketType != 0),
               volume: volumeDisplay,
               priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
-              priceChangeAmount: formatSig(deltaRaw.toFixed(decs), m.marketType != 0),
+              priceChangeAmount: formatSig(deltaRaw.toFixed(formatSig(last.toFixed(decs), m.marketType != 0).split('.')[1]?.length || 0)),
             });
           }
 
@@ -10053,7 +10057,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                   low24h: formatSig(low24.toFixed(decs2), m.marketType != 0),
                   volume: volumeDisplay,
                   priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
-                  priceChangeAmount: formatSig(deltaRaw.toFixed(decs2), m.marketType != 0),
+                  priceChangeAmount: formatSig(deltaRaw.toFixed(formatSig(last.toFixed(decs2), m.marketType != 0).split('.')[1]?.length || 0)),
                 });
               }
             }
@@ -12028,13 +12032,13 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                 </div>
                 <div className="token-right-content">
                   <div className="tokenlistbalance">
-                    {customRound(
+                    {formatSubscript(customRound(
                       Number(tokenBalances[token.address] ?? 0) /
                       10 ** Number(token.decimals ?? 18),
                       3,
                     )
                       .replace(/(\.\d*?[1-9])0+$/g, '$1')
-                      .replace(/\.0+$/, '')}
+                      .replace(/\.0+$/, ''))}
                   </div>
                   <div className="token-address-container">
                     <span className="token-address">
@@ -12592,13 +12596,13 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                 </div>
                 <div className="token-right-content">
                   <div className="tokenlistbalance">
-                    {customRound(
+                    {formatSubscript(customRound(
                       Number(tokenBalances[token.address] ?? 0) /
                       10 ** Number(token.decimals ?? 18),
                       3,
                     )
                       .replace(/(\.\d*?[1-9])0+$/g, '$1')
-                      .replace(/\.0+$/, '')}
+                      .replace(/\.0+$/, ''))}
                   </div>
                   <div className="token-address-container">
                     <span className="token-address">
@@ -12846,6 +12850,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
   const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(newTab);
   }, []);
+
   const handleTokenClick = (token: any) => {
     if (setTokenData) {
       setTokenData(token);
@@ -12853,6 +12858,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
     navigate(`/meme/${token.tokenAddress}`);
     setpopup(0);
   };
+
   const handleQuickBuy = useCallback(async (token: any, amt: string) => {
     const val = BigInt(amt || '0') * 10n ** 18n;
     if (val === 0n) return;
@@ -19267,10 +19273,10 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
             )}
             <div className="balance1">
               <img src={walleticon} className="balance-wallet-icon" />{' '}
-              {formatDisplayValue(
+              {formatSubscript(formatDisplayValue(
                 tokenBalances[tokenIn],
                 Number(tokendict[tokenIn].decimals),
-              )}
+              ))}
             </div>
             <div
               className="max-button"
@@ -19559,10 +19565,10 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
             )}
             <div className="balance2">
               <img src={walleticon} className="balance-wallet-icon" />{' '}
-              {formatDisplayValue(
+              {formatSubscript(formatDisplayValue(
                 tokenBalances[tokenOut],
                 Number(tokendict[tokenOut].decimals),
-              )}
+              ))}
             </div>
           </div>
         </div>
@@ -21112,10 +21118,10 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
             </span>
             <div className="balance1">
               <img src={walleticon} className="balance-wallet-icon" />{' '}
-              {formatDisplayValue(
+              {formatSubscript(formatDisplayValue(
                 tokenBalances[tokenIn],
                 Number(tokendict[tokenIn].decimals),
-              )}
+              ))}
             </div>
             <div
               className="max-button"
@@ -21533,10 +21539,10 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
             </div>
             <div className="balance2">
               <img src={walleticon} className="balance-wallet-icon" />{' '}
-              {formatDisplayValue(
+              {formatSubscript(formatDisplayValue(
                 tokenBalances[tokenOut],
                 Number(tokendict[tokenOut].decimals),
-              )}
+              ))}
             </div>
           </div>
         </div>
@@ -23147,10 +23153,10 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
             <div className="send-balance-max-container">
               <div className="send-balance1">
                 <img src={walleticon} className="send-balance-wallet-icon" />{' '}
-                {formatDisplayValue(
+                {formatSubscript(formatDisplayValue(
                   tokenBalances[tokenIn],
                   Number(tokendict[tokenIn].decimals),
-                )}
+                ))}
               </div>
               <div
                 className="send-max-button"
@@ -23742,10 +23748,10 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
             </span>
             <div className="balance1">
               <img src={walleticon} className="balance-wallet-icon" />{' '}
-              {formatDisplayValue(
+              {formatSubscript(formatDisplayValue(
                 tokenBalances[tokenIn],
                 Number(tokendict[tokenIn].decimals),
-              )}
+              ))}
             </div>
             <div
               className="max-button"
@@ -24109,10 +24115,10 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
             </div>
             <div className="balance2">
               <img src={walleticon} className="balance-wallet-icon" />{" "}
-              {formatDisplayValue(
+              {formatSubscript(formatDisplayValue(
                 tokenBalances[tokenOut],
                 Number(tokendict[tokenOut].decimals)
-              )}
+              ))}
             </div>
           </div>
         </div>
@@ -25798,7 +25804,6 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                 address={address}
                 orderCenterHeight={orderCenterHeight}
                 tokenList={memoizedTokenList}
-                onMarketSelect={onMarketSelect}
                 setSendTokenIn={setSendTokenIn}
                 setpopup={setpopup}
                 sortConfig={memoizedSortConfig}
@@ -25839,6 +25844,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                 setOrderCenterHeight={setOrderCenterHeight}
                 isMarksVisible={isMarksVisible}
                 setIsMarksVisible={setIsMarksVisible}
+                navigate={navigate}
               />
             } />
           <Route path="/leaderboard"

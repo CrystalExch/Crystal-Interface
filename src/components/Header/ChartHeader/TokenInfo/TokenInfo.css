@@ -1151,7 +1151,6 @@
   position: relative;
 }
 
-
 .perps-skeleton-text{
     background: #1f1f23;
   border-radius: 4px;
@@ -1252,15 +1251,12 @@
 
 }
 
-
-
 .perps-interface-token-info-container {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 53px;
 }
-
 
 .perps-interface-token-header-info {
   display: flex;

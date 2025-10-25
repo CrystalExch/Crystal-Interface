@@ -2019,6 +2019,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             </div>
           )}
         </div>
+
         <div className="markets-dropdown" ref={dropdownRef}>
           {isDropdownOpen && (
             <div
@@ -2193,6 +2194,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             </div>
           )}
         </div>
+        
         <div className="ctrlktooltip">
           Ctrl+K
         </div>

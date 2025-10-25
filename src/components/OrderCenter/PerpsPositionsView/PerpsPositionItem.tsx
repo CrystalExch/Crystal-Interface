@@ -8,15 +8,17 @@ interface PerpsPositionItemProps {
   position: any;
   onMarketSelect: any;
   isBlurred?: boolean;
+  handleClose: any;
 }
 
 const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
   position,
   onMarketSelect,
-  isBlurred
+  isBlurred,
+  handleClose
 }) => {
   const pnlValue = position.pnl || 0;
-  const pnlPercentage = position.entryPrice ? ((position.markPrice - position.entryPrice) / position.entryPrice * 100) : 0;
+  const pnlPercentage = position.direction === 'long' ? (position.entryPrice ? ((position.markPrice - position.entryPrice) / position.entryPrice * 100) : 0) : position.entryPrice ? ((position.entryPrice - position.markPrice) / position.entryPrice * 100) : 0;
   const isProfit = pnlValue >= 0;
 
   return (
@@ -134,6 +136,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
         <button 
           className="position-action-btn edit-btn"
           onClick={(e) => {
+            handleClose(position.symbol, position.size, position.direction)
             e.stopPropagation();
           }}
         >

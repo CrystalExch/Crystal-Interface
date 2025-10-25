@@ -11,6 +11,7 @@ interface PerpsPositionsContentProps {
   currentPage: number;
   onMarketSelect: any;
   isBlurred?: boolean;
+  handleClose: any;
 }
 
 const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
@@ -18,7 +19,8 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
   pageSize,
   currentPage,
   onMarketSelect,
-  isBlurred
+  isBlurred,
+  handleClose
 }) => {
   const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
     {},
@@ -173,6 +175,7 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
             position={item}
             onMarketSelect={onMarketSelect}
             isBlurred={isBlurred}
+            handleClose={handleClose}
           />
         ))
       ) : null}

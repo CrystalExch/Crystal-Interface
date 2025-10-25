@@ -139,7 +139,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
     {
       label: t('dayChange'),
       value: (
-        <span className={`price-change ${parseFloat(priceChangeAmount) > 0 ? 'positive' : parseFloat(priceChangeAmount) < 0 ? 'negative' : 'neutral'}`}>
+        <span className={`price-change ${priceChangeAmount.trim().startsWith('-') ? 'negative' : priceChangeAmount.replace(/[^0-9]/g, '').split('').every(c => c == '0') ? 'neutral' : 'positive'}`}>
           {priceChangeAmount !== 'n/a'
             ? `${priceChangeAmount} / ${priceChangePercent}%`
             : 'n/a'}
