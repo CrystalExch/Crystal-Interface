@@ -2280,30 +2280,6 @@ const Tracker: React.FC<TrackerProps> = ({
         subscribe(ws, ['logs', { address: routerAddress, topics: [ROUTER_EVENT] }]);
         console.log('[Tracker] Subscribed to router events:', routerAddress);
       }
-
-      // Subscribe to all markets from current positions
-      const allMarkets = new Set<string>();
-      Object.values(addressPositions).forEach(positions => {
-        positions.forEach(pos => {
-          // Get market address - try from tokenToMarketRef first, then from marketsRef
-          const tokenAddr = pos.tokenId.toLowerCase();
-          const marketAddr = tokenToMarketRef.current[tokenAddr] ||
-                           Object.keys(tokenToMarketRef.current).find(k =>
-                             tokenToMarketRef.current[k].toLowerCase() === tokenAddr
-                           );
-          if (marketAddr) {
-            allMarkets.add(marketAddr.toLowerCase());
-          } else {
-            // If no market mapping, use token address as market address (might be the same)
-            allMarkets.add(tokenAddr);
-          }
-        });
-      });
-
-      if (allMarkets.size > 0) {
-        console.log('[Tracker] Subscribing to', allMarkets.size, 'markets from positions');
-        subscribeToMarkets(ws, Array.from(allMarkets));
-      }
     };
 
     ws.onmessage = ({ data }) => {
@@ -2369,7 +2345,7 @@ const Tracker: React.FC<TrackerProps> = ({
             console.error('[Tracker] Failed to upsert market:', e);
           }
 
-          // Add to recent trades
+          // Add to tracked wallet trades
           try {
             const market = marketsRef.current.get(tokenAddrFromMarket || '');
             const tradeLike = {
@@ -2383,16 +2359,27 @@ const Tracker: React.FC<TrackerProps> = ({
                 symbol: (market?.symbol || '').toString(),
                 name: (market?.name || market?.symbol || '').toString()
               },
-              timestamp: Date.now().toString(),
+              timestamp: Math.floor(Date.now() / 1000).toString(),
               transactionHash: log.transactionHash || '',
             };
 
-            setRecentTrades(prev => {
-              const newTrades = [tradeLike, ...prev].slice(0, 100);
-              return newTrades;
+            // Use normalizeTrade to format it properly
+            const normalizedTrade = normalizeTrade(tradeLike, trackedWalletsRef.current);
+
+            setTrackedWalletTrades(prev => {
+              const next = [normalizedTrade, ...prev];
+              const seen = new Set<string>();
+              const out: LiveTrade[] = [];
+              for (const t of next) {
+                if (!seen.has(t.id)) {
+                  seen.add(t.id);
+                  out.push(t);
+                }
+              }
+              return out.slice(0, 500);
             });
 
-            console.log('[Tracker] Added trade to recent trades:', tradeLike);
+            console.log('[Tracker] Added memecoin trade to LiveTrades:', normalizedTrade);
           } catch (e) {
             console.error('[Tracker] Failed to add trade:', e);
           }
@@ -2410,7 +2397,7 @@ const Tracker: React.FC<TrackerProps> = ({
       console.log('[Tracker] Websocket closed');
       wsRef.current = null;
     };
-  }, [activechain, subscribe, addMarketFromLog, updateMarketFromLog, subscribeToMarkets, addressPositions, upsertMarket]);
+  }, [activechain, subscribe, addMarketFromLog, updateMarketFromLog, upsertMarket]);
 
   // Open websocket when component mounts or chain changes
   useEffect(() => {
@@ -2424,6 +2411,33 @@ const Tracker: React.FC<TrackerProps> = ({
       }
     };
   }, [openWebsocket]);
+
+  // Subscribe to markets when positions change
+  useEffect(() => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+
+    const allMarkets = new Set<string>();
+    Object.values(addressPositions).forEach(positions => {
+      positions.forEach(pos => {
+        const tokenAddr = pos.tokenId.toLowerCase();
+        const marketAddr = tokenToMarketRef.current[tokenAddr] ||
+                         Object.keys(tokenToMarketRef.current).find(k =>
+                           tokenToMarketRef.current[k].toLowerCase() === tokenAddr
+                         );
+        if (marketAddr) {
+          allMarkets.add(marketAddr.toLowerCase());
+        } else {
+          allMarkets.add(tokenAddr);
+        }
+      });
+    });
+
+    const newMarkets = Array.from(allMarkets).filter(m => !marketSubsRef.current[m]);
+    if (newMarkets.length > 0) {
+      console.log('[Tracker] Subscribing to', newMarkets.length, 'new markets');
+      subscribeToMarkets(wsRef.current, newMarkets);
+    }
+  }, [addressPositions, subscribeToMarkets]);
 
   useEffect(() => {
     const TRADE_EVENT = '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982';
@@ -2907,6 +2921,10 @@ const Tracker: React.FC<TrackerProps> = ({
           <div
             className="tracker-monitor-card-header"
             style={{ cursor: 'pointer' }}
+            onClick={() => {
+              // Navigate to token detail page
+              window.location.href = `/board/${pos.tokenId}`;
+            }}
           >
             <div className="tracker-monitor-card-top">
               <div className="tracker-monitor-left-section">
@@ -3174,7 +3192,10 @@ const Tracker: React.FC<TrackerProps> = ({
               </div>
               <div className="explorer-tokens-list">
                 <div className="tracker-monitor-grid">
-                  {launchpadPositions.map((pos) => renderPositionCard(pos))}
+                  {launchpadPositions.map((pos, idx) => {
+                    if (idx === 0) console.log('[Tracker] Rendering first launchpad position:', pos);
+                    return renderPositionCard(pos);
+                  })}
                 </div>
               </div>
             </div>
