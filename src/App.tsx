@@ -5135,6 +5135,49 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                 tokens
               }
             }
+            graduating: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{lastPriceNativePerTokenWad_gt:5000}) {
+              id
+              creator {
+                id
+                tokensLaunched
+                tokensGraduated
+              }
+              name
+              symbol
+              metadataCID
+              description
+              social1
+              social2
+              social3	
+              social4
+              decimals
+              initialSupply
+              timestamp
+              migrated
+              migratedAt
+              migratedMarket {
+                id
+              }
+              volumeNative
+              volumeToken
+              buyTxs
+              sellTxs
+              distinctBuyers
+              distinctSellers
+              lastPriceNativePerTokenWad
+              lastUpdatedAt
+              trades {
+                id
+                amountIn
+                amountOut
+              }
+              totalHolders
+              devHoldingAmount
+              holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
+                account { id }
+                tokens
+              }
+            }
             migrated: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:true}) {
               id
               creator {
@@ -5184,6 +5227,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
         const json = await res.json();
         const rawMarkets = [
           ...(json.data?.active ?? []),
+          ...(json.data?.graduating ?? []),
           ...(json.data?.migrated ?? []),
         ];
 
@@ -25783,8 +25827,6 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                 monUsdPrice={monUsdPrice}
                 walletTokenBalances={walletTokenBalances}
                 activechain={activechain}
-                tokenList={memoizedTokenList}
-                marketsData={marketsData}
               />
             } />
           <Route path="/perps" element={<Navigate to={`/perps/${perpsActiveMarketKey}`} replace />} />

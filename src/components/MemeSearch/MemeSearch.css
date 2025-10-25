@@ -127,12 +127,6 @@
   justify-content: space-between;
 }
 
-.meme-token-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
 .meme-token-avatar {
   width: 56;
   height: 56;
@@ -579,12 +573,6 @@
   top: 0;
   left: 0;
   box-shadow: 0 0 0 2px rgb(9, 9, 9);
-}
-
-.meme-token-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
 }
 
 .meme-token-avatar {
