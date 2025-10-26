@@ -25799,6 +25799,27 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                 activechain={activechain}
                 tokenList={memoizedTokenList}
                 marketsData={marketsData}
+                sendUserOperationAsync={sendUserOperationAsync}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: userchain,
+                }}
+                setChain={handleSetChain}
+                terminalQueryData={terminalQueryData}
+                terminalRefetch={terminalRefetch}
+                holders={memeHolders}
+                chartData={chartData}
+                trades={memeTrades}
+                selectedInterval={memeSelectedInterval}
+                setSelectedInterval={setMemeSelectedInterval}
+                realtimeCallbackRef={memeRealtimeCallbackRef}
+                selectedIntervalRef={memeSelectedIntervalRef}
+                orders={orders}
+                tradehistory={tradehistory}
+                canceledorders={canceledorders}
+                router={router}
+                refetch={refetch}
               />
             } />
           <Route path="/perps" element={<Navigate to={`/perps/${perpsActiveMarketKey}`} replace />} />

@@ -615,9 +615,8 @@
   background: transparent;
   border-bottom: 1px solid rgba(179,184,249,0.1);
   box-sizing: border-box;
-  cursor: pointer;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   padding: .75rem;
   padding-bottom: 0.5rem;
   position: relative;
@@ -1788,4 +1787,91 @@
   .tracker-monitor-main-metrics {
     gap: 1px;
   }
+}
+
+/* Expanded card section */
+.tracker-monitor-card-expanded {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
+  animation: expandCard 0.3s ease-out;
+}
+
+@keyframes expandCard {
+  from {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+}
+
+.expanded-header {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.expanded-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.expanded-trades-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.expanded-trades-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.expanded-trades-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  transition: background 0.2s ease;
+}
+
+.expanded-trades-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.expanded-col {
+  display: flex;
+  align-items: center;
+}
+
+.tx-count {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-left: 4px;
+}
+
+.expanded-trades-empty {
+  padding: 24px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.85rem;
 }
