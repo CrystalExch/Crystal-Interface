@@ -228,6 +228,8 @@ interface TrackerProps {
   onDepositClick?: () => void;
   onDisconnect?: () => void;
   t?: (k: string) => string;
+  tokenList: any;
+  marketsData: any;
 }
 
 // Add Position interface from MemeOrderCenter

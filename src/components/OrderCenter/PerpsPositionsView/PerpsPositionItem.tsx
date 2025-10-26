@@ -1,5 +1,5 @@
 import React from 'react';
-import CopyButton from '../../CopyButton/CopyButton';
+import CancelButton from '../PerpsCancelButton/PerpsCancelButton';
 import { formatBalance } from '../../../utils/numberDisplayFormat';
 import { formatDisplay, formatSig } from '../utils';
 import './PerpsPositionItem.css';
@@ -125,23 +125,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
         </button>
       </div>
       <div className="oc-cell perps-actions">
-        <button 
-          className="position-action-btn close-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-          Limit
-        </button>
-        <button 
-          className="position-action-btn edit-btn"
-          onClick={(e) => {
-            handleClose(position.symbol, position.size, position.direction)
-            e.stopPropagation();
-          }}
-        >
-          Market
-        </button>
+        <CancelButton callback={() => handleClose(position.symbol, position.size, position.direction)} />
       </div>
     </div>
   );

@@ -710,9 +710,9 @@ const Perps: React.FC<PerpsProps> = ({
         mmr: parseFloat(marketData?.riskTierList.find((t: any) => positionValue <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? marketData?.riskTierList.at(-1).maintenanceMarginRate)
       })
     }
-
+    const tempmaintenancemargin = positions.reduce((t, p) => t + Number(p.maintenanceMargin || 0), 0)
     for (const position of temppositions) {
-      position.liqPrice = (Number(position.entryPrice) * Number(position.leverage) / (Number(position.leverage) + ((Number(balance) + Number(tempupnl)) / position.positionValue) - (position.mmr * Number(position.leverage)))).toFixed((position.markPrice.toString().split(".")[1] || "").length)
+      position.liqPrice = (position.direction == 'long' ? (Number(position.entryPrice) - ((Number(balance) + Number(tempupnl)) - tempmaintenancemargin) / Number(position.size)) : (Number(position.entryPrice) + ((Number(balance) + Number(tempupnl)) - tempmaintenancemargin) / Number(position.size))).toFixed((position.markPrice.toString().split(".")[1] || "").length)
     }
 
     setUpnl(isNaN(tempupnl) ? '0.00' : tempupnl.toFixed(2))
@@ -1780,7 +1780,7 @@ const Perps: React.FC<PerpsProps> = ({
                 />
               </div>
               <div className="value-container">
-                {(activeMarket?.lastPrice && (Number(balance) + Number(upnl)) && (Number(inputString) + (Number(activeMarket.oraclePrice) * Math.abs(currentPosition)))) ? formatCommas((Number(activeTradeType == 'long' ? activeMarket.bestAskPrice : activeMarket.bestBidPrice) * Number(leverage) / (Number(leverage) + ((Number(balance) + Number(upnl)) / (Number(inputString) + (Number(activeMarket.oraclePrice) * Math.abs(currentPosition)))) - (parseFloat(activeMarket?.riskTierList?.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList?.at(-1).maintenanceMarginRate) * Number(leverage)))).toFixed((activeMarket.lastPrice.toString().split(".")[1] || "").length)) : '0.00'}
+                {(activeMarket?.lastPrice && (Number(balance) + Number(upnl)) && (Number(inputString) + (Number(activeMarket.oraclePrice) * Math.abs(currentPosition)))) ? formatCommas((activeTradeType == 'long' ? (Number(activeTradeType == 'long' ? activeMarket.bestAskPrice : activeMarket.bestBidPrice) - ((Number(balance) + Number(upnl)) - (Number(inputString) * (parseFloat(activeMarket?.riskTierList?.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList?.at(-1).maintenanceMarginRate)))) / (Number(inputString) / Number(activeMarket.oraclePrice) - Math.abs(currentPosition))) : (Number(activeMarket.bestBidPrice) + ((Number(balance) + Number(upnl)) - (Number(inputString) * (parseFloat(activeMarket?.riskTierList?.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList?.at(-1).maintenanceMarginRate)))) / (Number(inputString) / Number(activeMarket.oraclePrice) + Math.abs(currentPosition)))).toFixed((activeMarket.lastPrice.toString().split(".")[1] || "").length)) : '0.00'}
               </div>
             </div>
             <div className="price-impact">
