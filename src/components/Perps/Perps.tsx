@@ -68,6 +68,8 @@ interface PerpsProps {
   signTypedDataAsync: any;
   leverage: string;
   setLeverage: (value: string) => void;
+  userLeverage: any;
+  setUserLeverage: any;
   signer: any;
   setSigner: any;
   setOrderCenterHeight: (height: number) => void;
@@ -131,6 +133,8 @@ const Perps: React.FC<PerpsProps> = ({
   signTypedDataAsync,
   leverage,
   setLeverage,
+  userLeverage,
+  setUserLeverage,
   signer,
   setSigner,
   setOrderCenterHeight,
@@ -148,7 +152,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [limitPriceString, setlimitPriceString] = useState('');
   const [limitChase, setlimitChase] = useState(true);
   const [maintenanceMargin, setMaintenanceMargin] = useState('0.00');
-  const [availableBalance, setAvailableBalance] = useState('0.00');
+  const [usedMargin, setUsedMargin] = useState('0.00');
   const [balance, setBalance] = useState('0.00');
   const [liqPrice, setLiqPrice] = useState('0.00')
   const [upnl, setUpnl] = useState('0.00')
@@ -485,6 +489,7 @@ const Perps: React.FC<PerpsProps> = ({
   const prevAmountsQuote = useRef(amountsQuote)
   const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
   const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
+  const availableBalance = (activeMarket?.oraclePrice ? Math.max((Number(balance) - positions.reduce((t, p) => t + Number(p.margin || 0), 0) + ((activeTradeType == "long" == currentPosition < 0) ? Math.abs(currentPosition) * 2 * activeMarket?.oraclePrice / Number(leverage) : 0)), 0) : 0);
 
   const handleVertMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -531,10 +536,10 @@ const Perps: React.FC<PerpsProps> = ({
   const handleSliderChange = useCallback((percent: number) => {
     setSliderPercent(percent);
     positionPopup(percent);
-    let inputString = Number((Number(balance) * Number(leverage) * percent / 100)) == 0 ? '' : (Number(balance) * Number(leverage) * percent / 100).toFixed(2)
+    let inputString = Number((Number(availableBalance) * Number(leverage) * percent / 100)) == 0 ? '' : (Number(availableBalance) * Number(leverage) * percent / 100).toFixed(2)
     setInputString(inputString)
     //setLiqPrice()
-  }, [balance, leverage]);
+  }, [availableBalance, leverage]);
 
   const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
   }, []);
@@ -555,7 +560,7 @@ const Perps: React.FC<PerpsProps> = ({
     const ts = Date.now().toString()
     const l2ExpireTime = (Date.now() + 30 * 24 * 60 * 60 * 1000)
     const l1ExpireTime = (Number(l2ExpireTime) - 9 * 24 * 60 * 60 * 1000)
-    const l2Price = type == 'MARKET' ? (side == 'BUY' ? (price * 10) : (price / 10)) : price
+    const l2Price = type == 'MARKET' ? (side == 'BUY' ? (price * (1 + (10000 - Number(slippage)) / 10000)) : (price / (1 + (10000 - Number(slippage)) / 10000))) : price
     const l2Value = Number((l2Price * size).toFixed(2))
     const limitFee = Math.ceil(l2Value * Number(userFees[0])).toString()
     const clientOrderId = Math.random().toString().slice(2).replace(/^0+/, '');
@@ -621,7 +626,7 @@ const Perps: React.FC<PerpsProps> = ({
     side: any,
   ) => {
     if (Object.keys(perpsMarketsData).length == 0) return;
-    const size = Math.floor(Number(ordersize) / Number(perpsMarketsData[marketKey]?.stepSize)) * Number(perpsMarketsData[marketKey]?.stepSize)
+    const size = Math.ceil(Number(ordersize) / Number(perpsMarketsData[marketKey]?.stepSize)) * Number(perpsMarketsData[marketKey]?.stepSize)
     const payload = await generateSignedOrder(size, (side === "long" ? "SELL" : "BUY"), "MARKET", Number(perpsMarketsData[marketKey]?.lastPrice), signer.accountId, perpsMarketsData[marketKey].contractId, marketKey, signer.privateKey, perpsMarketsData[marketKey], userFees, true)
     const ts = Date.now().toString()
     const path = '/api/v1/private/order/createOrder'
@@ -646,7 +651,7 @@ const Perps: React.FC<PerpsProps> = ({
   const handleTrade = async () => {
     if (Object.keys(perpsMarketsData).length == 0) return;
     setIsSigning(true);
-    const size = Math.floor(Number(inputString) / Number(activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize)
+    const size = Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize)
     const payload = await generateSignedOrder(size, (activeTradeType === "long" ? "BUY" : "SELL"), "MARKET", Number(activeMarket?.lastPrice), signer.accountId, activeMarket.contractId, perpsActiveMarketKey, signer.privateKey, activeMarket, userFees, false)
     const ts = Date.now().toString()
     const path = '/api/v1/private/order/createOrder'
@@ -678,38 +683,47 @@ const Perps: React.FC<PerpsProps> = ({
 
   useEffect(() => {
     if (Object.keys(perpsMarketsData).length == 0) return;
-    let upnl = 0
+    let tempupnl = 0
     let temppositions: any = []
+    let tempcurrentposition: any = 0
     for (const position of fetchedpositions) {
       const marketData = (Object.values(perpsMarketsData).find((v: any) => v.contractId == position.contractId) as any)
-      upnl += Number(marketData?.oraclePrice) * Number(position.openSize) - Number(position.openValue)
+      tempupnl += Number(marketData?.oraclePrice) * Number(position.openSize) - Number(position.openValue)
       if (marketData.contractName == perpsActiveMarketKey) {
-        setCurrentPosition(Number(position.openSize))
+        tempcurrentposition = Number(position.openSize)
       }
-
+      const positionValue = Math.abs(Number(marketData?.oraclePrice) * Number(position.openSize));
       temppositions.push({
-        leverage: marketData?.displayMaxLeverage,
+        leverage: userLeverage?.[marketData?.contractId]?.maxLeverage ? userLeverage?.[marketData?.contractId]?.maxLeverage : marketData?.displayMaxLeverage,
         image: marketData?.iconURL,
         direction: position.openSize > 0 ? 'long' : 'short',
         symbol: marketData.contractName,
         size: Math.abs(position.openSize).toString(),
-        positionValue: Math.abs(Number(marketData?.oraclePrice) * Number(position.openSize)),
+        positionValue: positionValue,
         entryPrice: (Number(position.openValue) / Number(position.openSize)).toFixed((marketData?.lastPrice?.toString().split(".")[1] || "").length),
         markPrice: Number(marketData?.oraclePrice).toFixed((marketData?.lastPrice?.toString().split(".")[1] || "").length),
         pnl: Number(marketData?.oraclePrice) * Number(position.openSize) - Number(position.openValue),
         liqPrice: 0,
-        margin: 0,
-        funding: -Number(position.fundingFee)
+        margin: positionValue / (userLeverage?.[marketData?.contractId]?.maxLeverage ? userLeverage?.[marketData?.contractId]?.maxLeverage : marketData?.displayMaxLeverage),
+        funding: -Number(position.fundingFee),
+        maintenanceMargin: positionValue * parseFloat(marketData?.riskTierList.find((t: any) => positionValue <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? marketData?.riskTierList.at(-1).maintenanceMarginRate),
+        mmr: parseFloat(marketData?.riskTierList.find((t: any) => positionValue <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? marketData?.riskTierList.at(-1).maintenanceMarginRate)
       })
     }
-    setUpnl(isNaN(upnl) ? '0.00' : upnl.toFixed(2))
+
+    for (const position of temppositions) {
+      position.liqPrice = (Number(position.entryPrice) * Number(position.leverage) / (Number(position.leverage) + ((Number(balance) + Number(tempupnl)) / position.positionValue) - (position.mmr * Number(position.leverage)))).toFixed((position.markPrice.toString().split(".")[1] || "").length)
+    }
+
+    setUpnl(isNaN(tempupnl) ? '0.00' : tempupnl.toFixed(2))
     setpositions(temppositions)
+    setCurrentPosition(tempcurrentposition)
   }, [fetchedpositions, perpsMarketsData, perpsActiveMarketKey])
 
   useEffect(() => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
     if (!activeMarket?.contractId) return
-    setLeverage(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage)
+    setLeverage(userLeverage?.[activeMarket?.contractId]?.maxLeverage ? userLeverage?.[activeMarket?.contractId]?.maxLeverage : activeMarket?.displayMaxLeverage)
     setInputString('')
     setSliderPercent(0);
     const slider = document.querySelector(
@@ -752,7 +766,7 @@ const Perps: React.FC<PerpsProps> = ({
 
     subRefs.current = subs
 
-  }, [activeMarket?.contractId, selectedInterval, wsRef.current])
+  }, [activeMarket?.contractId, selectedInterval, wsRef.current, userLeverage])
 
   useEffect(() => {
     if (!orderdata || !Array.isArray(orderdata) || orderdata.length < 3 || orderdata[2] != perpsActiveMarketKey) return
@@ -1267,6 +1281,7 @@ const Perps: React.FC<PerpsProps> = ({
               }
               setfetchedpositions(msg.position)
               setBalance(balance.toFixed(2))
+              setUserLeverage(msg.account[0].contractIdToTradeSetting)
             }
             else if (message.content.event == 'TRANSFER_IN_UPDATE') {
               if (msg?.collateral?.[0]?.amount) {
@@ -1464,14 +1479,14 @@ const Perps: React.FC<PerpsProps> = ({
               <div className="perps-current-position-container">{t('Current Position')}</div>
             </div>
             <div className={`value-container ${currentPosition > 0 ? 'positive' : currentPosition < 0 ? 'negative' : 0}`}>
-              {currentPosition.toFixed(activeMarket?.stepSize ? (activeMarket?.stepSize.split('.')[1] || '').length : 2) + (activeMarket?.baseAsset ? ' ' + activeMarket.baseAsset : '')}
+              {formatCommas(currentPosition.toFixed(activeMarket?.stepSize ? (activeMarket?.stepSize.split('.')[1] || '').length : 2)) + (activeMarket?.baseAsset ? ' ' + activeMarket.baseAsset : '')}
             </div>
           </div>
           <div className="perps-available-to-trade" style={{ marginTop: '5px' }}>
             <div className="perps-balance-container">
               <img className="perps-wallet-icon" src={walleticon} />
               <div className="balance-value-container">
-                {Number(balance).toFixed(2)}
+                {formatCommas(availableBalance.toFixed(2))}
               </div>
             </div>
             <button
@@ -1501,7 +1516,10 @@ const Perps: React.FC<PerpsProps> = ({
               />
               <span className="perps-mid-button" onClick={(e) => {
                 if (activeMarket?.bestBidPrice) {
-                  setlimitPriceString(activeTradeType == 'long' ? activeMarket.bestBidPrice : activeMarket.bestAskPrice)
+                  const tick = Number(activeMarket.tickSize)
+                  const precision = Math.floor(Math.log10(1 / tick))
+                  const mid = (Number(activeMarket.bestBidPrice) + Number(activeMarket.bestAskPrice)) / 2
+                  setlimitPriceString((activeTradeType == 'long' ? Math.floor(mid / tick) * tick : Math.ceil(mid / tick) * tick).toFixed(precision))
                 }
               }}>
                 Mid
@@ -1518,12 +1536,12 @@ const Perps: React.FC<PerpsProps> = ({
               onChange={(e) => {
                 setInputString(e.target.value)
                 const percentage =
-                  Number(balance) == 0
+                  Number(availableBalance) == 0
                     ? 0
                     : Math.min(
                       100,
                       Math.floor(
-                        Number(e.target.value) * 100 / (Number(balance) * Number(leverage))
+                        Number(e.target.value) * 100 / (Number(availableBalance) * Number(leverage))
                       ),
                     );
                 setSliderPercent(percentage);
@@ -1762,7 +1780,7 @@ const Perps: React.FC<PerpsProps> = ({
                 />
               </div>
               <div className="value-container">
-                {liqPrice}
+                {(activeMarket?.lastPrice && (Number(balance) + Number(upnl)) && (Number(inputString) + (Number(activeMarket.oraclePrice) * Math.abs(currentPosition)))) ? formatCommas((Number(activeTradeType == 'long' ? activeMarket.bestAskPrice : activeMarket.bestBidPrice) * Number(leverage) / (Number(leverage) + ((Number(balance) + Number(upnl)) / (Number(inputString) + (Number(activeMarket.oraclePrice) * Math.abs(currentPosition)))) - (parseFloat(activeMarket?.riskTierList?.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList?.at(-1).maintenanceMarginRate) * Number(leverage)))).toFixed((activeMarket.lastPrice.toString().split(".")[1] || "").length)) : '0.00'}
               </div>
             </div>
             <div className="price-impact">
@@ -1780,7 +1798,7 @@ const Perps: React.FC<PerpsProps> = ({
                 />
               </div>
               <div className="value-container">
-                ${Number(inputString).toFixed(2)}
+                ${formatCommas((Number(inputString) / (1 + Number(userFees[0]))).toFixed(2))}
               </div>
             </div>
             <div className="price-impact">
@@ -1798,7 +1816,7 @@ const Perps: React.FC<PerpsProps> = ({
                 />
               </div>
               <div className="value-container">
-                ${(Number(inputString) / Number(leverage)).toFixed(2)}
+                ${formatCommas((Number(inputString) / (1 + Number(userFees[0])) / Number(leverage)).toFixed(2))}
               </div>
             </div>
             <div className="price-impact">
@@ -1951,7 +1969,7 @@ const Perps: React.FC<PerpsProps> = ({
               Total Equity
             </span>
             <span className="perps-account-subtitle">
-              ${(Number(balance) + Number(upnl)).toFixed(2)}
+              ${formatCommas((Number(balance) + Number(upnl)).toFixed(2))}
             </span>
           </div>
           <div className="perps-account-row">
@@ -1959,7 +1977,7 @@ const Perps: React.FC<PerpsProps> = ({
               Balance
             </span>
             <span className="perps-account-subtitle">
-              ${Number(balance).toFixed(2)}
+              ${formatCommas(Number(balance).toFixed(2))}
             </span>
           </div>
           <div className="perps-account-row">
@@ -1967,7 +1985,7 @@ const Perps: React.FC<PerpsProps> = ({
               Unrealized PNL
             </span>
             <span className={`perps-account-subtitle ${Number(upnl) > 0 ? 'green' : Number(upnl) < 0 ? 'red' : ''}`}>
-              {Number(upnl) < 0 ? '-' : ''}${Math.abs(Number(upnl)).toFixed(2)}
+              {Number(upnl) < 0 ? '-' : ''}${formatCommas(Math.abs(Number(upnl)).toFixed(2))}
             </span>
           </div>
           <div className="perps-account-row">
@@ -1975,7 +1993,7 @@ const Perps: React.FC<PerpsProps> = ({
               Cross Margin Ratio
             </span>
             <span className="perps-account-subtitle">
-              0.00%
+              {(Number(balance) + Number(upnl)) == 0 ? '0.00' : (positions.reduce((t, p) => t + Number(p.maintenanceMargin || 0), 0) * 100 / (Number(balance) + Number(upnl))).toFixed(2)}%
             </span>
           </div>
           <div className="perps-account-row">
@@ -1983,7 +2001,7 @@ const Perps: React.FC<PerpsProps> = ({
               Maintenance Margin
             </span>
             <span className="perps-account-subtitle">
-              $0.00
+              ${formatCommas(positions.reduce((t, p) => t + Number(p.maintenanceMargin || 0), 0).toFixed(2))}
             </span>
           </div>
           <div className="perps-account-row">
@@ -1991,7 +2009,7 @@ const Perps: React.FC<PerpsProps> = ({
               Cross Account Leverage
             </span>
             <span className="perps-account-subtitle">
-              0.00x
+              {(Number(balance) + Number(upnl)) == 0 ? '0.00' : (positions.reduce((t, p) => t + Number(p.positionValue || 0), 0) / (Number(balance) + Number(upnl))).toFixed(2)}x
             </span>
           </div>
         </div>
@@ -2039,7 +2057,6 @@ const Perps: React.FC<PerpsProps> = ({
             reserveBase={0n}
             isOrderbookLoading={isOrderbookLoading}
             perps={true}
-
           />
         </div>
         <div

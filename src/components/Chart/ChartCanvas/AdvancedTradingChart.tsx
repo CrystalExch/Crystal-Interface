@@ -755,6 +755,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           pane.setHeight?.(100);
         }
       }
+
       widgetRef.current.headerReady().then(() => {
         if (!widgetRef.current.activeChart() || perps) {
           return;
@@ -869,7 +870,9 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         setOverlayVisible(false)
       });
 
-      setOverlayVisible(false);
+      setTimeout(() => {
+        setOverlayVisible(false);
+      }, 100);
     });
 
     return () => {

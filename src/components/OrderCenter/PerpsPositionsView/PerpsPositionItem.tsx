@@ -97,7 +97,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
 
       {/* Liquidation Price */}
       <div className="oc-cell">
-        <span className={`liq-price ${position.liqPrice < position.markPrice ? 'safe' : 'danger'}`}>
+        <span className={`liq-price`}>
           {position.liqPrice ? formatSig(position.liqPrice) : '-'}
         </span>
       </div>
@@ -111,7 +111,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
 
       <div className={`oc-cell ${isBlurred ? 'blurred' : ''}`}>
         <span className={`funding-value ${position.funding >= 0 ? 'positive' : 'negative'}`}>
-          {position.funding >= 0 ? '+' : ''}{position.funding.toFixed(4)}
+          {position.funding >= 0 ? '' : '-'}${Math.abs(position.funding).toFixed(2)}
         </span>
       </div>
       <div className="oc-cell tpsl-actions">

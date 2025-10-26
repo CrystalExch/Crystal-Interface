@@ -684,11 +684,11 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
   //   return className;
   // };
 
+  const [OneCTDepositAddress, setOneCTDepositAddress] = useState('');
   const [oneCTSigner, setOneCTSigner] = useState(() => {
     const saved = localStorage.getItem('crystal_active_wallet_private_key');
     return saved ? saved : '';
   });
-
   const [oneCTSig, setOneCTSig] = useState(() => {
     const saved = localStorage.getItem('crystal_onect_signature');
     return saved ? saved : '';
@@ -981,7 +981,13 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
     [validOneCT]
   );
 
-  const [OneCTDepositAddress, setOneCTDepositAddress] = useState('');
+  const [perpsActiveMarketKey, setperpsActiveMarketKey] = useState(
+    location.pathname.startsWith("/perps")
+      ? location.pathname.split("/").pop()?.toUpperCase() == "PERPS" ? "BTCUSD" : location.pathname.split("/").pop()?.toUpperCase() || "BTCUSD"
+      : "BTCUSD"
+  );
+  const [perpsMarketsData, setPerpsMarketsData] = useState<{ [key: string]: any }>({});
+  const [perpsFilterOptions, setPerpsFilterOptions] = useState({});
   const [perpsKeystore, setPerpsKeystore] = useState<any>(() => {
     const saved = localStorage.getItem('crystal_perps_signer');
     return saved !== null ? JSON.parse(saved) : {};
@@ -992,6 +998,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
     const saved = localStorage.getItem('crystal_perps_leverage');
     return saved !== null ? saved : '10.0';
   });
+  const [userLeverage, setUserLeverage] = useState<any>([]);
   // state vars
   const [_trackedWallets, setTrackedWallets] = useState<any[]>([]);
   const [showSendDropdown, setShowSendDropdown] = useState(false);
@@ -1731,13 +1738,6 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
       ? (stored as string)
       : 'Quote';
   });
-  const [perpsActiveMarketKey, setperpsActiveMarketKey] = useState(
-    location.pathname.startsWith("/perps")
-      ? location.pathname.split("/").pop()?.toUpperCase() == "PERPS" ? "BTCUSD" : location.pathname.split("/").pop()?.toUpperCase() || "BTCUSD"
-      : "BTCUSD"
-  );
-  const [perpsMarketsData, setPerpsMarketsData] = useState<{ [key: string]: any }>({});
-  const [perpsFilterOptions, setPerpsFilterOptions] = useState({});
   const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
   const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
   const [liquidityBuyOrders, setLiquidityBuyOrders] = useState<{ orders: any[], market: string }>({ orders: [], market: '' });
@@ -18881,7 +18881,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                       ref={(el) => {
                         if (el && popup === 35) {
                           const leverageValue = parseFloat(perpsLeverage) || 10;
-                          const percent = ((leverageValue - 1) / Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage)) * 100;
+                          const percent = ((leverageValue - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1)) * 100;
                           const thumbW = 16;
                           const container = el.parentElement;
                           if (container) {
@@ -18901,7 +18901,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                       min="1"
                       max={perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage}
                       step="1"
-                      value={parseFloat(perpsLeverage) || 10}
+                      value={(parseFloat(perpsLeverage) || 10)}
                       onChange={(e) => {
                         const value = e.target.value;
                         setPerpsLeverage(value);
@@ -18910,7 +18910,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                         if (container) {
                           const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
                           if (popup) {
-                            const percent = ((parseInt(value) - 1) / Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage)) * 100;
+                            const percent = ((parseInt(value) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1)) * 100;
                             const thumbW = 16;
                             const containerRect = container.getBoundingClientRect();
                             const inputRect = e.target.getBoundingClientRect();
@@ -18937,42 +18937,12 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                       }}
                       className="leverage-slider-input"
                       style={{
-                        background: `linear-gradient(to right, #aaaecf ${((parseFloat(perpsLeverage) || 10) - 1) / Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) * 100}%, #2a2a2f ${((parseFloat(perpsLeverage) || 10) - 1) / Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) * 100}%)`
+                        background: `linear-gradient(to right, #aaaecf ${((parseFloat(perpsLeverage) || 10) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1) * 100}%, #2a2a2f ${((parseFloat(perpsLeverage) || 10) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1) * 100}%)`
                       }}
                     />
 
                     <div className="leverage-value-popup">
                       {parseFloat(perpsLeverage) || 10}x
-                    </div>
-
-                    <div className="leverage-marks">
-                      {[1, Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) / 4, Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) / 2, Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) / 4 * 3, Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage)].map((mark) => (
-                        <span
-                          key={mark}
-                          className="leverage-mark"
-                          data-active={parseFloat(perpsLeverage) >= mark}
-                          onClick={() => {
-                            setPerpsLeverage(mark.toString());
-                            const sliderContainer = document.querySelector('.leverage-slider-container');
-                            if (sliderContainer) {
-                              const input = sliderContainer.querySelector('.leverage-slider-input') as HTMLInputElement;
-                              const popup = sliderContainer.querySelector('.leverage-value-popup') as HTMLElement;
-                              if (input && popup) {
-                                const percent = ((mark - 1) / Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage)) * 100;
-                                const thumbW = 16;
-                                const containerRect = sliderContainer.getBoundingClientRect();
-                                const inputRect = input.getBoundingClientRect();
-                                const inputLeft = inputRect.left - containerRect.left;
-                                const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
-                                popup.style.left = `${x}px`;
-                                popup.style.transform = 'translateX(-50%)';
-                              }
-                            }
-                          }}
-                        >
-                          {mark}x
-                        </span>
-                      ))}
                     </div>
                   </div>
 
@@ -25883,6 +25853,8 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                 signTypedDataAsync={signMessageAsync}
                 leverage={perpsLeverage}
                 setLeverage={setPerpsLeverage}
+                userLeverage={userLeverage}
+                setUserLeverage={setUserLeverage}
                 signer={perpsKeystore}
                 setSigner={setPerpsKeystore}
                 setOrderCenterHeight={setOrderCenterHeight}
