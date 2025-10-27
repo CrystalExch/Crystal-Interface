@@ -1309,6 +1309,11 @@ const Perps: React.FC<PerpsProps> = ({
               }
             }
             else if (message.content.event == 'ORDER_UPDATE') {
+              for (const fill of msg?.positionTransaction) {
+                setBalance(balance => {
+                  return (Number(balance) - Math.abs(Number(fill.realizePnl))).toFixed(2)
+                })
+              }
               setfetchedpositions(prev => {
                 const updated = msg.position || []
                 const merged = [...prev]
