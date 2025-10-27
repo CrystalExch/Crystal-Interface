@@ -694,16 +694,17 @@
 }
 
 .tooltip-content {
-  background: rgb(6, 6, 6);
-  border: 1px solid #b5bcf81f;
+  background: rgb(14, 14, 15);
+  border: 1px solid #b5bcf80c;
   border-radius: 3px;
   bottom: 2px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
-  color: #e6e7f6;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  color: #e6e7f6e0;
   font-size: 0.75rem;
   padding: 0.15rem 0.35rem;
   position: relative;
   white-space: nowrap;
+  letter-spacing: -0.3px;
 }
 
 .bonding-amount-display {

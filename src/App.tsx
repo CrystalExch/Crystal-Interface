@@ -171,7 +171,7 @@ import LiveTradesSettingsPopup from './components/Tracker/ LiveTradesSettingsPop
 import MemeSearch from './components/MemeSearch/MemeSearch.tsx';
 import { showLoadingPopup, updatePopup } from './components/MemeTransactionPopup/MemeTransactionPopupManager';
 import TrackerWidget from './components/TrackerWidget/TrackerWidget.tsx';
-
+import Footer from './components/Footer/Footer.tsx';
 // import config
 import { ChevronDown, SearchIcon } from 'lucide-react';
 import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortfolioData.ts';
@@ -470,14 +470,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const userchain = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.chainId || client?.chain?.id
   const location = useLocation();
   const navigate = useNavigate();
-  const [isTrackerWidgetOpen, setIsTrackerWidgetOpen] = useState(true); 
-const [trackerWidgetSnap, setTrackerWidgetSnap] = useState<'left' | 'right' | null>(null);
-const [trackerWidgetWidth, setTrackerWidgetWidth] = useState(400);
+  const [isTrackerWidgetOpen, setIsTrackerWidgetOpen] = useState(true);
+  const handleToggleTrackerWidget = () => {
+  setIsTrackerWidgetOpen(prev => !prev);
+};
 
-const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | null, width: number) => {
-  setTrackerWidgetSnap(snapSide);
-  setTrackerWidgetWidth(width);
-}, []);
+  const [trackerWidgetSnap, setTrackerWidgetSnap] = useState<'left' | 'right' | null>(null);
+  const [trackerWidgetWidth, setTrackerWidgetWidth] = useState(400);
+
+  const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | null, width: number) => {
+    setTrackerWidgetSnap(snapSide);
+    setTrackerWidgetWidth(width);
+  }, []);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const TOTAL_SUPPLY = 1e9;
   const HTTP_URL = settings.chainConfig[activechain].httpurl;
@@ -15162,13 +15166,13 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
               <h2>{t("deposit")}</h2>
               <div className="deposit-right-header">
                 {!client && validOneCT && (<button
-                    className={`deposit-right-header-btn`}
-                    onClick={() => {
-                      setOneCTDepositAddress(address);
-                      setpopup(25)
-                    }}
-                  >
-                    Deposit from EOA
+                  className={`deposit-right-header-btn`}
+                  onClick={() => {
+                    setOneCTDepositAddress(address);
+                    setpopup(25)
+                  }}
+                >
+                  Deposit from EOA
                 </button>)}
                 <button className="deposit-close-button" onClick={() => { setpopup(0) }}>
                   <img src={closebutton} className="deposit-close-icon" />
@@ -25470,7 +25474,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
           />
         </div>
       }
-      <div className="app-container"  style={{
+      <div className="app-container" style={{
         marginLeft: trackerWidgetSnap === 'left' ? `${trackerWidgetWidth}px` : undefined,
         marginRight: trackerWidgetSnap === 'right' ? `${trackerWidgetWidth}px` : undefined,
         transition: 'margin 0.3s ease',
@@ -25982,24 +25986,34 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
           previewPosition={previewPosition}
           previewExiting={previewExiting}
         />
-{/* <TrackerWidget 
-  isOpen={isTrackerWidgetOpen}
-  onClose={() => setIsTrackerWidgetOpen(false)}
-  onSnapChange={handleTrackerWidgetSnapChange}
-/> */}
+        <TrackerWidget 
+        isOpen={isTrackerWidgetOpen}
+        onClose={() => setIsTrackerWidgetOpen(false)}
+        onSnapChange={handleTrackerWidgetSnapChange}
+      />
         {/* <WidgetExplorer
-  isOpen={isWidgetExplorerOpen}
-  onClose={handleCloseWidgetExplorer}
-  setpopup={setpopup}
-  appliedFilters={appliedExplorerFilters}
-  activeFilterTab={activeExplorerFilterTab}
-  onOpenFiltersForColumn={handleOpenFiltersForColumn}
-  sendUserOperationAsync={sendUserOperationAsync}
-  onSnapToSide={handleWidgetExplorerSnapToSide}
-  currentSnapSide={widgetExplorerSnapSide}
-  onWidgetResize={handleWidgetExplorerResize} 
-/> */}
-      </div>
+        isOpen={isWidgetExplorerOpen}
+        onClose={handleCloseWidgetExplorer}
+        setpopup={setpopup}
+        appliedFilters={appliedExplorerFilters}
+        activeFilterTab={activeExplorerFilterTab}
+        onOpenFiltersForColumn={handleOpenFiltersForColumn}
+        sendUserOperationAsync={sendUserOperationAsync}
+        onSnapToSide={handleWidgetExplorerSnapToSide}
+        currentSnapSide={widgetExplorerSnapSide}
+        onWidgetResize={handleWidgetExplorerResize} 
+      /> */}
+<Footer
+  subWallets={subWallets}
+  selectedWallets={selectedWallets}
+  setSelectedWallets={setSelectedWallets}
+  walletTokenBalances={walletTokenBalances}
+  activeWalletPrivateKey={oneCTSigner}
+  activeChain={activechain}
+  monUsdPrice={monUsdPrice}
+  isTrackerWidgetOpen={isTrackerWidgetOpen}
+  onToggleTrackerWidget={handleToggleTrackerWidget}
+/>     </div>
     </div>
   );
 }
