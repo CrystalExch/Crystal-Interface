@@ -93,14 +93,23 @@
   display: flex;
   align-items: center;
   font-size: 0.7rem;
-  padding: 0px 3px;
-  border-radius: 4px;
+  padding: 0px 5px;
+  border-radius: 10px;
   background-color: #aaaecf19;
-  border: 1px solid #aaaecf5a;
-  height: 14px;
+  height: 15px;
   color: #d8dcfff0;
   padding-bottom: 1px;
   font-weight: 400;
+}
+
+.perps-position-item .leverage-badge.long {
+  background-color: rgba(101, 237, 146, 0.1);
+  color: #65ed92;
+}
+
+.perps-position-item .leverage-badge.short {
+  background-color: rgba(240, 103, 103, 0.1);
+  color: #f06767;
 }
 
 .perps-position-item .value-cell {

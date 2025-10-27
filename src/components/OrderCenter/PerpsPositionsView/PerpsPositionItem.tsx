@@ -53,7 +53,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
             <span className="order-type-capitalized">
               {position.direction === 'long' ? 'LONG' : 'SHORT'}
             </span>
-            {position.leverage && <span className="leverage-badge">{position.leverage}x</span>}
+            {position.leverage && <span className={`leverage-badge ${position.direction}`}>{position.leverage}x</span>}
           </div>
         </div>
       </div>
