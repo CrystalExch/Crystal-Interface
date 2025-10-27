@@ -736,22 +736,23 @@
 
 
 .lst-multiplier {
+  margin-left: 4px;
   display: flex;
   align-items: center;
-  margin-left: 4px;
+  font-size: 0.7rem;
   padding: 0px 3px;
-  background-color: #aaaecf19;
-  color: #aaaecf;
   border-radius: 4px;
-  font-size: 0.65rem;
+  background-color: #aaaecf19;
   border: 1px solid #aaaecf5a;
-  white-space: nowrap;
-  height: 13px;
+  height: 14px;
+  color: #d8dcff;
+  padding-bottom: 1px;
 }
-.market-item-container {
-    border: 1px solid transparent;
 
+.market-item-container {
+  border: 1px solid transparent;
 }
+
 .market-item-container.selected {
   background-color: rgba(170, 174, 207, 0.05);
   border: 1px solid rgba(170, 174, 207, 0.15);
@@ -1702,11 +1703,12 @@
   display: flex;
   align-items: center;
   font-size: 0.7rem;
-  padding: 0px 4px;
+  padding: 0px 3px;
   border-radius: 4px;
-  background-color: #a095f111;
+  background-color: #aaaecf19;
+  border: 1px solid #aaaecf5a;
   height: 14px;
-  color: #d8dcff;
+  color: #d8dcfff0;
   padding-bottom: 1px;
 }
 

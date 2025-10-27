@@ -1,5 +1,5 @@
 import React from 'react';
-import CopyButton from '../../CopyButton/CopyButton';
+import CancelButton from '../PerpsCancelButton/PerpsCancelButton';
 import { formatBalance } from '../../../utils/numberDisplayFormat';
 import { formatDisplay, formatSig } from '../utils';
 import './PerpsPositionItem.css';
@@ -53,7 +53,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
             <span className="order-type-capitalized">
               {position.direction === 'long' ? 'LONG' : 'SHORT'}
             </span>
-            {position.leverage && <span className="leverage-badge">{position.leverage}x</span>}
+            {position.leverage && <span className={`leverage-badge ${position.direction}`}>{position.leverage}x</span>}
           </div>
         </div>
       </div>
@@ -97,7 +97,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
 
       {/* Liquidation Price */}
       <div className="oc-cell">
-        <span className={`liq-price ${position.liqPrice < position.markPrice ? 'safe' : 'danger'}`}>
+        <span className={`liq-price`}>
           {position.liqPrice ? formatSig(position.liqPrice) : '-'}
         </span>
       </div>
@@ -111,7 +111,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
 
       <div className={`oc-cell ${isBlurred ? 'blurred' : ''}`}>
         <span className={`funding-value ${position.funding >= 0 ? 'positive' : 'negative'}`}>
-          {position.funding >= 0 ? '+' : ''}{position.funding.toFixed(4)}
+          {position.funding >= 0 ? '' : '-'}${Math.abs(position.funding).toFixed(2)}
         </span>
       </div>
       <div className="oc-cell tpsl-actions">
@@ -125,23 +125,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
         </button>
       </div>
       <div className="oc-cell perps-actions">
-        <button 
-          className="position-action-btn close-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-          Limit
-        </button>
-        <button 
-          className="position-action-btn edit-btn"
-          onClick={(e) => {
-            handleClose(position.symbol, position.size, position.direction)
-            e.stopPropagation();
-          }}
-        >
-          Market
-        </button>
+        <CancelButton callback={() => handleClose(position.symbol, position.size, position.direction)} />
       </div>
     </div>
   );

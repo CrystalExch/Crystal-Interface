@@ -11,8 +11,7 @@ import gas from '../../assets/gas.svg';
 import slippage from '../../assets/slippage.svg';
 import { settings } from '../../settings';
 import { loadBuyPresets } from '../../utils/presetManager';
-import PortfolioContent from '../Portfolio/BalancesContent/BalancesContent';
-import PortfolioHeader from '../Portfolio/BalancesHeader/PortfolioHeader';
+import AssetRow from '../Portfolio/AssetRow/AssetRow';
 import { createPublicClient, http } from 'viem';
 import ImportWalletsPopup from './ImportWalletsPopup';
 
@@ -220,7 +219,7 @@ interface TrackerProps {
   onApplyFilters?: (filters: FilterState) => void;
   activeFilters?: FilterState;
   monUsdPrice: number;
-  activechain?: number;
+  activechain?: string | number;
   walletTokenBalances?: { [address: string]: any };
   connected?: boolean;
   address?: string | null;
@@ -228,6 +227,29 @@ interface TrackerProps {
   onDepositClick?: () => void;
   onDisconnect?: () => void;
   t?: (k: string) => string;
+  tokenList?: any[];
+  marketsData?: any[];
+  sendUserOperationAsync?: any;
+  account?: {
+    connected: boolean;
+    address: string | null;
+    chainId: number;
+  };
+  setChain?: (chain: number) => void;
+  terminalQueryData?: any;
+  terminalRefetch?: () => void;
+  holders?: any[];
+  chartData?: any;
+  trades?: any[];
+  selectedInterval?: string;
+  setSelectedInterval?: (interval: string) => void;
+  realtimeCallbackRef?: any;
+  selectedIntervalRef?: any;
+  orders?: any[];
+  tradehistory?: any[];
+  canceledorders?: any[];
+  router?: string;
+  refetch?: () => void;
 }
 
 // Add Position interface from MemeOrderCenter
@@ -538,7 +560,24 @@ const Tracker: React.FC<TrackerProps> = ({
   monUsdPrice,
   walletTokenBalances = {},
   tokenList = [],
-  marketsData = []
+  marketsData = [],
+  sendUserOperationAsync,
+  account,
+  setChain,
+  terminalQueryData,
+  terminalRefetch,
+  holders = [],
+  chartData,
+  trades = [],
+  selectedInterval,
+  setSelectedInterval,
+  realtimeCallbackRef,
+  selectedIntervalRef,
+  orders = [],
+  tradehistory = [],
+  canceledorders = [],
+  router,
+  refetch
 }) => {
   const [selectedSimpleFilter, setSelectedSimpleFilter] = useState<string | null>(null);
   const [emojiPickerPosition, setEmojiPickerPosition] = useState<{top: number, left: number} | null>(null);
@@ -562,6 +601,7 @@ const Tracker: React.FC<TrackerProps> = ({
   const trackedWalletsRef = useRef(trackedWallets);
   const trackedWalletTradesRef = useRef(trackedWalletTrades);
   const [addressPositions, setAddressPositions] = useState<Record<string, GqlPosition[]>>({});
+  const [expandedTokenId, setExpandedTokenId] = useState<string | null>(null);
   useEffect(() => { trackedWalletsRef.current = trackedWallets; }, [trackedWallets]);
   useEffect(() => { trackedWalletTradesRef.current = trackedWalletTrades; }, [trackedWalletTrades]);
 
@@ -670,6 +710,50 @@ const Tracker: React.FC<TrackerProps> = ({
     const presets = loadBuyPresets();
     setBuyPresets(presets);
   }, []);
+
+  // Convert trades prop (memeTrades) to LiveTrade format
+  useEffect(() => {
+    if (!trades || trades.length === 0) return;
+
+    const trackedAddresses = new Set(trackedWallets.map(w => w.address.toLowerCase()));
+
+    const convertedTrades: LiveTrade[] = trades
+      .filter(trade => trackedAddresses.has(trade.caller?.toLowerCase()))
+      .map(trade => {
+        const wallet = trackedWallets.find(w => w.address.toLowerCase() === trade.caller?.toLowerCase());
+
+        // Try to find market/token info from marketsData
+        const market = marketsData?.find(m => m.id?.toLowerCase() === trade.token?.id?.toLowerCase());
+
+        return {
+          id: trade.id || `${trade.transactionHash}-${Date.now()}`,
+          walletName: wallet?.name || 'Unknown',
+          emoji: wallet?.emoji || '👤',
+          token: market?.symbol || trade.token?.symbol || 'UNKNOWN',
+          tokenName: market?.name || trade.token?.name || 'Unknown Token',
+          amount: trade.isBuy ? trade.tokenAmount : trade.tokenAmount,
+          price: trade.price || 0,
+          marketCap: (trade.price || 0) * 1e9,
+          time: new Date(trade.timestamp * 1000).toLocaleTimeString(),
+          txHash: trade.id?.split('-')[0] || '',
+          type: trade.isBuy ? 'buy' : 'sell',
+          createdAt: new Date(trade.timestamp * 1000).toISOString()
+        };
+      });
+
+    if (convertedTrades.length > 0) {
+      setTrackedWalletTrades(prev => {
+        const combined = [...convertedTrades, ...prev];
+        const seen = new Set<string>();
+        const unique = combined.filter(t => {
+          if (seen.has(t.id)) return false;
+          seen.add(t.id);
+          return true;
+        });
+        return unique.slice(0, 500);
+      });
+    }
+  }, [trades, trackedWallets, marketsData]);
 
   const setQuickAmount = (column: string, value: string) => {
     setQuickAmounts(prev => ({ ...prev, [column]: value }));
@@ -2242,203 +2326,6 @@ const Tracker: React.FC<TrackerProps> = ({
       flushMarketsToState();
     } catch (e) {}
   }, []);
-
-  // Subscribe to all markets that tracked wallets have positions in
-  const subscribeToMarkets = useCallback((ws: WebSocket, marketAddresses: string[]) => {
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-
-    marketAddresses.forEach(addr => {
-      const marketAddr = addr.toLowerCase();
-      if (!marketSubsRef.current[marketAddr]) {
-        subscribe(ws, ['logs', { address: marketAddr }], (subId) => {
-          marketSubsRef.current[marketAddr] = subId;
-          console.log('[Tracker] Subscribed to market:', marketAddr, 'subId:', subId);
-        });
-      }
-    });
-  }, [subscribe]);
-
-  // Initialize websocket for memecoin trades
-  const openWebsocket = useCallback(() => {
-    const cfg = chainCfgOf(activechain);
-    const wssUrl = cfg?.wssurl;
-    if (!wssUrl) {
-      console.log('[Tracker] No websocket URL configured for chain:', activechain);
-      return;
-    }
-
-    console.log('[Tracker] Opening websocket connection:', wssUrl);
-    const ws = new WebSocket(wssUrl);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      console.log('[Tracker] Websocket connected');
-
-      // Subscribe to router events (new markets)
-      const routerAddress = cfg.router;
-      if (routerAddress) {
-        subscribe(ws, ['logs', { address: routerAddress, topics: [ROUTER_EVENT] }]);
-        console.log('[Tracker] Subscribed to router events:', routerAddress);
-      }
-    };
-
-    ws.onmessage = ({ data }) => {
-      try {
-        const msg = JSON.parse(data);
-        if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
-
-        const log = msg.params.result;
-        const topic = log.topics?.[0];
-        console.log('[Tracker] Websocket message received, topic:', topic);
-
-        const TRADE_EVENT = '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982';
-
-        // Handle router events (new markets)
-        if (topic === ROUTER_EVENT) {
-          console.log('[Tracker] New market created via websocket');
-          addMarketFromLog(log);
-        }
-        // Handle market update events
-        else if (topic === MARKET_UPDATE_EVENT) {
-          console.log('[Tracker] Market update via websocket');
-          updateMarketFromLog(log);
-        }
-        // Handle trade events
-        else if (topic === TRADE_EVENT) {
-          console.log('[Tracker] Trade event via websocket');
-
-          // Extract wallet address from trade event
-          const marketAddr = `0x${(log.topics[1] || '').slice(26)}`.toLowerCase();
-          const callerAddr = `0x${(log.topics[2] || '').slice(26)}`.toLowerCase();
-
-          console.log('[Tracker] Trade - market:', marketAddr, 'caller:', callerAddr, 'tracked?', trackedSetRef.current.has(callerAddr));
-
-          // Only process if wallet is tracked
-          if (!trackedSetRef.current.has(callerAddr)) {
-            console.log('[Tracker] Wallet not tracked, skipping trade');
-            return;
-          }
-
-          // Parse trade data
-          const hex = (log.data || '').startsWith('0x') ? (log.data || '').slice(2) : (log.data || '');
-          const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
-          const isBuy = word(0) !== 0n;
-          const amountIn = Number(word(1) || 0n) / 1e18;
-          const amountOut = Number(word(2) || 0n) / 1e18;
-          const priceRaw = word(4) || 0n;
-          const price = Number(priceRaw) / 1e18;
-
-          // Get token address from market mapping
-          let tokenAddrFromMarket = tokenToMarketRef.current[marketAddr] || marketsRef.current.get(marketAddr)?.tokenAddress;
-          if (tokenAddrFromMarket) tokenAddrFromMarket = tokenAddrFromMarket.toLowerCase();
-
-          // Update market with new trade
-          try {
-            upsertMarket({
-              tokenAddr: tokenAddrFromMarket || marketAddr,
-              price: price || 0,
-              isBuy,
-              amountNative: isBuy ? amountIn : amountOut,
-              ts: Math.floor(Date.now() / 1000)
-            });
-          } catch (e) {
-            console.error('[Tracker] Failed to upsert market:', e);
-          }
-
-          // Add to tracked wallet trades
-          try {
-            const market = marketsRef.current.get(tokenAddrFromMarket || '');
-            const tradeLike = {
-              id: `${log.transactionHash || ''}-${log.logIndex || ''}`,
-              account: { id: callerAddr },
-              isBuy,
-              amountIn: BigInt(Math.floor((isBuy ? amountIn : amountOut) * 1e18)),
-              amountOut: BigInt(Math.floor((isBuy ? amountOut : amountIn) * 1e18)),
-              priceNativePerTokenWad: BigInt(Math.floor((price || 0) * 1e18)),
-              token: {
-                symbol: (market?.symbol || '').toString(),
-                name: (market?.name || market?.symbol || '').toString()
-              },
-              timestamp: Math.floor(Date.now() / 1000).toString(),
-              transactionHash: log.transactionHash || '',
-            };
-
-            // Use normalizeTrade to format it properly
-            const normalizedTrade = normalizeTrade(tradeLike, trackedWalletsRef.current);
-
-            setTrackedWalletTrades(prev => {
-              const next = [normalizedTrade, ...prev];
-              const seen = new Set<string>();
-              const out: LiveTrade[] = [];
-              for (const t of next) {
-                if (!seen.has(t.id)) {
-                  seen.add(t.id);
-                  out.push(t);
-                }
-              }
-              return out.slice(0, 500);
-            });
-
-            console.log('[Tracker] Added memecoin trade to LiveTrades:', normalizedTrade);
-          } catch (e) {
-            console.error('[Tracker] Failed to add trade:', e);
-          }
-        }
-      } catch (e) {
-        console.error('[Tracker] Websocket message error:', e);
-      }
-    };
-
-    ws.onerror = (e) => {
-      console.error('[Tracker] Websocket error:', e);
-    };
-
-    ws.onclose = () => {
-      console.log('[Tracker] Websocket closed');
-      wsRef.current = null;
-    };
-  }, [activechain, subscribe, addMarketFromLog, updateMarketFromLog, upsertMarket]);
-
-  // Open websocket when component mounts or chain changes
-  useEffect(() => {
-    openWebsocket();
-
-    return () => {
-      if (wsRef.current) {
-        console.log('[Tracker] Closing websocket');
-        wsRef.current.close();
-        wsRef.current = null;
-      }
-    };
-  }, [openWebsocket]);
-
-  // Subscribe to markets when positions change
-  useEffect(() => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-
-    const allMarkets = new Set<string>();
-    Object.values(addressPositions).forEach(positions => {
-      positions.forEach(pos => {
-        const tokenAddr = pos.tokenId.toLowerCase();
-        const marketAddr = tokenToMarketRef.current[tokenAddr] ||
-                         Object.keys(tokenToMarketRef.current).find(k =>
-                           tokenToMarketRef.current[k].toLowerCase() === tokenAddr
-                         );
-        if (marketAddr) {
-          allMarkets.add(marketAddr.toLowerCase());
-        } else {
-          allMarkets.add(tokenAddr);
-        }
-      });
-    });
-
-    const newMarkets = Array.from(allMarkets).filter(m => !marketSubsRef.current[m]);
-    if (newMarkets.length > 0) {
-      console.log('[Tracker] Subscribing to', newMarkets.length, 'new markets');
-      subscribeToMarkets(wsRef.current, newMarkets);
-    }
-  }, [addressPositions, subscribeToMarkets]);
-
   useEffect(() => {
     const TRADE_EVENT = '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982';
     const MARKET_CREATED_EVENT = '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
@@ -2815,37 +2702,76 @@ const Tracker: React.FC<TrackerProps> = ({
   const renderMonitor = () => {
     const allPositions = getFilteredPositions();
 
-    console.log('[Tracker] Monitor - allPositions:', allPositions.length);
-
     // Separate graduated and non-graduated launchpad positions
     const graduatedPositions = allPositions.filter(p => p.isOrderbook);
     const nonGraduatedPositions = allPositions.filter(p => !p.isOrderbook);
 
-    console.log('[Tracker] Monitor - graduated:', graduatedPositions.length, 'non-graduated:', nonGraduatedPositions.length);
-
     // Launchpad column: graduated tokens at top, then non-graduated
     let launchpadPositions = [...graduatedPositions, ...nonGraduatedPositions];
 
-    console.log('[Tracker] Monitor - launchpadPositions:', launchpadPositions.length);
+    // Orderbook column: only major tokens from tokenList
+    const spotTokenPositions: GqlPosition[] = [];
+    const chainCfg = settings.chainConfig?.[activechain];
 
-    // Orderbook column: Aggregate balances across all wallets and pass to PortfolioContent
-    // Aggregate balances across all tracked wallets into a single tokenBalances object
-    const aggregatedTokenBalances: { [address: string]: bigint } = {};
-    trackedWallets.forEach(wallet => {
-      const tokenBalances = walletTokenBalances?.[wallet.address];
-      if (!tokenBalances) return;
+    console.log('Monitor Debug - walletTokenBalances:', walletTokenBalances);
+    console.log('Monitor Debug - chainCfg:', chainCfg);
+    console.log('Monitor Debug - tokenList:', chainCfg?.tokenList);
+    console.log('Monitor Debug - trackedWallets:', trackedWallets);
 
-      Object.entries(tokenBalances).forEach(([tokenAddress, balance]) => {
-        if (!aggregatedTokenBalances[tokenAddress]) {
-          aggregatedTokenBalances[tokenAddress] = 0n;
-        }
-        aggregatedTokenBalances[tokenAddress] += balance as bigint;
+    if (walletTokenBalances && chainCfg?.tokenList) {
+      trackedWallets.forEach(wallet => {
+        console.log('Monitor Debug - checking wallet:', wallet.address);
+        const walletBalances = walletTokenBalances[wallet.address];
+        console.log('Monitor Debug - walletBalances for', wallet.address, ':', walletBalances);
+        if (!walletBalances) return;
+
+        // Only iterate through tokens in tokenList (major tokens)
+        chainCfg.tokenList.forEach((token: any) => {
+          console.log('Monitor Debug - checking token:', token);
+          const tokenAddr = token.address?.toLowerCase();
+          if (!tokenAddr) return;
+
+          console.log('Monitor Debug - looking for balance at key:', tokenAddr);
+          const balanceWei = walletBalances[tokenAddr];
+          console.log('Monitor Debug - balanceWei:', balanceWei);
+          if (!balanceWei || balanceWei === 0n) return;
+
+          const decimals = token.decimals || 18;
+          const balance = Number(balanceWei) / (10 ** Number(decimals));
+
+          if (balance <= 0) return;
+
+          const market = marketsRef.current.get(tokenAddr);
+          const price = market?.price || 0;
+
+          const position: GqlPosition = {
+            tokenId: tokenAddr,
+            symbol: token.ticker,
+            name: token.name,
+            imageUrl: token.image,
+            boughtTokens: balance,
+            soldTokens: 0,
+            spentNative: 0,
+            receivedNative: 0,
+            remainingTokens: balance,
+            remainingPct: 100,
+            pnlNative: 0,
+            lastPrice: price,
+            isOrderbook: false,
+          };
+
+          (position as any).walletName = wallet.name;
+          (position as any).walletEmoji = wallet.emoji;
+          (position as any).walletAddress = wallet.address;
+
+          console.log('Monitor Debug - adding position:', position);
+          spotTokenPositions.push(position);
+        });
       });
-    });
+    }
 
-    console.log('Monitor Debug - tokenList:', tokenList);
-    console.log('Monitor Debug - marketsData:', marketsData);
-    console.log('Monitor Debug - aggregatedTokenBalances:', aggregatedTokenBalances);
+    console.log('Monitor - spotTokenPositions:', spotTokenPositions.length, spotTokenPositions);
+    const orderbookPositions = spotTokenPositions;
 
     const formatValue = (value: number): string => {
       const converted = monitorCurrency === 'USD' ? value * monUsdPrice : value;
@@ -2916,14 +2842,21 @@ const Tracker: React.FC<TrackerProps> = ({
         classes.push('graduated');
       }
 
+      const isExpanded = expandedTokenId === pos.tokenId;
+      const walletAddress = (pos as any).walletAddress;
+
+      // Get trades for this token and wallet
+      const tokenTrades = trackedWalletTrades.filter(trade =>
+        trade.token === pos.symbol && trade.walletName === walletName
+      );
+
       return (
-        <div key={`${pos.tokenId}_${(pos as any).walletAddress}`} className={classes.join(' ')}>
+        <div key={`${pos.tokenId}_${walletAddress}`} className={classes.join(' ')}>
           <div
             className="tracker-monitor-card-header"
             style={{ cursor: 'pointer' }}
             onClick={() => {
-              // Navigate to token detail page
-              window.location.href = `/board/${pos.tokenId}`;
+              setExpandedTokenId(isExpanded ? null : pos.tokenId);
             }}
           >
             <div className="tracker-monitor-card-top">
@@ -3063,13 +2996,58 @@ const Tracker: React.FC<TrackerProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Expanded trades section */}
+          {isExpanded && (
+            <div className="tracker-monitor-card-expanded">
+              <div className="expanded-header">
+                <span className="expanded-title">Trades for {tokenSymbol} by {walletName}</span>
+              </div>
+              <div className="expanded-trades-table">
+                <div className="expanded-trades-header">
+                  <div className="expanded-col">Time</div>
+                  <div className="expanded-col">Type</div>
+                  <div className="expanded-col">Amount</div>
+                  <div className="expanded-col">Price</div>
+                  <div className="expanded-col">Market Cap</div>
+                </div>
+                {tokenTrades.length > 0 ? (
+                  tokenTrades.slice(0, 10).map((trade, idx) => (
+                    <div key={`${trade.id}-${idx}`} className="expanded-trades-row">
+                      <div className="expanded-col">{trade.time}</div>
+                      <div className="expanded-col">
+                        <span className={`detail-trade-type-badge ${trade.type}`}>
+                          {trade.type === 'buy' ? 'Buy' : 'Sell'}
+                        </span>
+                      </div>
+                      <div className="expanded-col">
+                        {trade.amount < 0.0001
+                          ? trade.amount.toExponential(2)
+                          : trade.amount.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                      </div>
+                      <div className="expanded-col">
+                        ${trade.price.toFixed(6)}
+                      </div>
+                      <div className="expanded-col">
+                        ${(trade.marketCap / 1000).toFixed(2)}K
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="expanded-trades-empty">
+                    <p>No trades found for this token</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       );
     };
 
     return (
       <div className="tracker-monitor">
-        {allPositions.length === 0 && Object.keys(aggregatedTokenBalances).length === 0 ? (
+        {allPositions.length === 0 && orderbookPositions.length === 0 ? (
           <div className="tracker-empty-state">
             <div className="tracker-empty-content">
               <h4>No Open Positions</h4>
@@ -3192,10 +3170,7 @@ const Tracker: React.FC<TrackerProps> = ({
               </div>
               <div className="explorer-tokens-list">
                 <div className="tracker-monitor-grid">
-                  {launchpadPositions.map((pos, idx) => {
-                    if (idx === 0) console.log('[Tracker] Rendering first launchpad position:', pos);
-                    return renderPositionCard(pos);
-                  })}
+                  {launchpadPositions.map((pos) => renderPositionCard(pos))}
                 </div>
               </div>
             </div>
@@ -3313,20 +3288,9 @@ const Tracker: React.FC<TrackerProps> = ({
                 </div>
               </div>
               <div className="explorer-tokens-list">
-                <PortfolioHeader
-                  onSort={() => {}}
-                  sortConfig={{ column: 'assets', direction: 'asc' }}
-                />
-                <PortfolioContent
-                  tokenList={tokenList || []}
-                  onMarketSelect={() => {}}
-                  setSendTokenIn={() => {}}
-                  setpopup={setpopup}
-                  sortConfig={{ column: 'assets', direction: 'asc' }}
-                  tokenBalances={aggregatedTokenBalances}
-                  marketsData={marketsData || []}
-                  isBlurred={isBlurred}
-                />
+                <div className="tracker-monitor-grid">
+                  {orderbookPositions.map((pos) => renderPositionCard(pos))}
+                </div>
               </div>
             </div>
           </div>

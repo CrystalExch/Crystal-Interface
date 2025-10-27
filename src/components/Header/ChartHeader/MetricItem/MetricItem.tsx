@@ -9,14 +9,14 @@ interface MetricItemProps {
 
 function valueCheck(value: React.ReactNode): boolean {
   if (typeof value === 'string') {
-    return value === 'n/a' || value === '$n/a';
+    return value === 'N/A' || value === '$N/A';
   }
 
   if (React.isValidElement(value)) {
     const children = value.props.children;
 
     if (typeof children === 'string') {
-      return children === 'n/a' || children === '$n/a';
+      return children === 'N/A' || children === '$N/A';
     }
   }
 

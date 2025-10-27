@@ -51,8 +51,7 @@
 }
 
 .perps-positions-header .oc-cell.close{
-  justify-content: flex-end;
-  margin-right: 10px;
+  justify-content: center;
 }
 
 .position-value-label, 

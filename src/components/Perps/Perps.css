@@ -166,7 +166,7 @@
     background-color: rgb(9, 9, 9);
     border-radius: 5px;
     box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
-    border: 1px solid rgba(179, 184, 249, 0.075);
+    border: 1px solid rgba(179, 184, 249, 0.15);
     overflow: hidden;
     animation: dropdown-fade-in 0.2s ease-out forwards;
 }
@@ -465,8 +465,8 @@
 }
 
 .perps-tpsl-checkbox {
-    width: 14.5px;
-    height: 14.5px;
+    width: 13.5px;
+    height: 13.5px;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
@@ -477,7 +477,7 @@
     position: relative;
     transition: all 0.2s ease;
     flex-shrink: 0;
-    margin-right: 8px;
+    margin-right: 6px;
 }
 
 .perps-tpsl-checkbox:checked {
@@ -508,7 +508,7 @@
 }
 
 .perps-tpsl-label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #ffffffbb;
     font-weight: 400;
     letter-spacing: -0.2px;
@@ -598,8 +598,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin-bottom: 12px;
-    margin-top: 12px;
+    margin-top: 6px;
 }
 
 .perps-tpsl-row {
@@ -613,6 +612,7 @@
     flex-direction: column;
     min-width: 60px;
     width: 100%;
+    gap: 2px;
 }
 
 .perps-tpsl-row-label {
@@ -1209,7 +1209,7 @@
     border: 1px solid rgba(179, 184, 249, 0.15);
     border-radius: 6px;
     width: 90%;
-    max-width: 480px;
+    max-width: 440px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
@@ -1367,7 +1367,7 @@
     gap: 8px;
     font-size: .9rem;
     color: #cecddf9b;
-    margin-top: 8px;
+    margin-top: 4px;
 }
 
 .leverage-update-button {

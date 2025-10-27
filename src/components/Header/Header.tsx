@@ -567,23 +567,23 @@ const Header: React.FC<HeaderProps> = ({
             in_icon={tokendict[activeMarket.baseAddress].image}
             out_icon={tokendict[activeMarket.quoteAddress].image}
             price={isMemeTokenPage && memeTokenData ?
-              (memeTokenData.price || 0.000001)?.toString() || 'n/a' :
-              formatSubscript(marketHeader?.currentPrice) || 'n/a'
+              (memeTokenData.price || 0.000001)?.toString() || 'N/A' :
+              formatSubscript(marketHeader?.currentPrice) || 'N/A'
             }
             priceChangeAmount={isMemeTokenPage && memeTokenData ?
-              memeTokenData.change24h?.toString() || 'n/a' :
-              formatSubscript(marketHeader?.priceChangeAmount) || 'n/a'
+              memeTokenData.change24h?.toString() || 'N/A' :
+              formatSubscript(marketHeader?.priceChangeAmount) || 'N/A'
             }
             priceChangePercent={isMemeTokenPage && memeTokenData ?
               `${memeTokenData.change24h >= 0 ? '+' : ''}${memeTokenData.change24h.toFixed(2)}` :
-              marketHeader?.priceChange || 'n/a'
+              marketHeader?.priceChange || 'N/A'
             }
             activeMarket={activeMarket}
-            high24h={formatSubscript(marketHeader?.high24h) || 'n/a'}
-            low24h={formatSubscript(marketHeader?.low24h) || 'n/a'}
+            high24h={formatSubscript(marketHeader?.high24h) || 'N/A'}
+            low24h={formatSubscript(marketHeader?.low24h) || 'N/A'}
             volume={isMemeTokenPage && memeTokenData ?
-              memeTokenData.volume24h?.toString() || 'n/a' :
-              marketHeader?.volume || 'n/a'
+              memeTokenData.volume24h?.toString() || 'N/A' :
+              marketHeader?.volume || 'N/A'
             }
             orderdata={orderdata || {}}
             tokendict={tokendict}
