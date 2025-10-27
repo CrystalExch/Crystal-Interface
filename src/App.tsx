@@ -214,6 +214,7 @@ interface Token {
   marketCap: number;
   change24h: number;
   volume24h: number;
+  mini: any;
   holders: number;
   proTraders: number;
   sniperHolding: number;
@@ -4516,11 +4517,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               });
 
               if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
-
               setTokenData(p => ({
                 ...p,
                 price: endPrice,
                 marketCap: endPrice * TOTAL_SUPPLY,
+                change24h: ((endPrice * 1e9 - p?.mini?.[0].open) / (endPrice * 1e9) * 100) ?? 0,
                 buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
                 sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
                 volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
@@ -4790,6 +4791,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   ...p,
                   price,
                   marketCap: price * TOTAL_SUPPLY,
+                  change24h: ((price * 1e9 - p?.mini?.[0].open) / (price * 1e9) * 100) ?? 0,
                   buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
                   sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
                   volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
@@ -5446,6 +5448,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       marketCap: 0,
       change24h: 0,
       volume24h: 0,
+      mini: [],
       holders: 0,
       proTraders: 0,
       sniperHolding: 0,
@@ -5531,6 +5534,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   distinctSellers
                   lastPriceNativePerTokenWad
                   lastUpdatedAt
+                  mini: ${'series' + '3600'
+                  } { 
+                        klines(first: 1000, orderBy: time, orderDirection: desc) {
+                          time open high low close baseVolume
+                        } 
+                      }
                   trades(first: 50, orderBy: block, orderDirection: desc) {
                     id account {id} block isBuy priceNativePerTokenWad amountIn amountOut
                   }
@@ -5594,7 +5603,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             socials.splice(socials.indexOf(discord), 1);
           }
           const website = socials[0];
-
+          const change24h = (price * 1e9 - m?.mini?.klines[0].open) / (price * 1e9) * 100
           setTokenData(p => ({
             ...p,
             ...data.launchpadTokens[0],
@@ -5616,6 +5625,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             marketCap: price * TOTAL_SUPPLY,
             buyTransactions: Number(m.buyTxs),
             sellTransactions: Number(m.sellTxs),
+            mini: m?.mini?.klines ?? '',
+            change24h,
             volume24h: Number(m.volumeNative) / 1e18,
             volumeDelta: 0,
             discordHandle: discord ?? '',
@@ -6429,7 +6440,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           jsonrpc: '2.0',
           id: 1,
           method: 'eth_getTransactionCount',
-          params: [w.address, 'latest']
+          params: [w.address, 'pending']
         })) : [])])
       })
 

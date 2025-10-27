@@ -3046,7 +3046,7 @@ const TokenRow = React.memo<{
         {displaySettings.quickBuySize === 'ultra' &&
           displaySettings.secondQuickBuyEnabled && (
             <div
-              className={`explorer-second-ultra-container ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`}
+              className={`explorer-second-ultra-container ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor} ${isLoadingSecondary ? 'disabled' : ''}`}
               style={
                 displaySettings.ultraStyle === 'border'
                   ? {
@@ -3057,17 +3057,8 @@ const TokenRow = React.memo<{
               }
               onClick={(e) => {
                 e.stopPropagation();
-                if (displaySettings.quickBuyClickBehavior === 'openPage') {
-                  onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-                  onTokenClick(token);
-                } else if (
-                  displaySettings.quickBuyClickBehavior === 'openNewTab'
-                ) {
-                  onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-                  window.open(`/meme/${token.tokenAddress}`, '_blank');
-                } else {
-                  onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-                }
+                if (isLoadingSecondary) return;
+                onQuickBuy(token, quickbuyAmountSecond, 'secondary');
               }}
               onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -3112,22 +3103,20 @@ const TokenRow = React.memo<{
           )}
 
         <div
-          className={`explorer-third-row metrics-size-${displaySettings.metricSize} ${displaySettings.quickBuySize === 'large' ? 'large-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'mega' ? 'mega-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'ultra' ? `ultra-quickbuy-mode ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}` : ''} ${displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled ? 'ultra-dual-buttons' : ''}`}
-          onClick={
-            displaySettings.quickBuySize === 'ultra' &&
-              displaySettings.secondQuickBuyEnabled
-              ? (e) => {
-                e.stopPropagation();
-                onQuickBuy(token, quickbuyAmount, 'primary');
-              }
-              : displaySettings.quickBuySize === 'ultra' &&
-                !displaySettings.secondQuickBuyEnabled
-                ? (e) => {
-                  e.stopPropagation();
-                  onQuickBuy(token, quickbuyAmount, 'primary');
-                }
-                : undefined
-          }
+          className={`explorer-third-row metrics-size-${displaySettings.metricSize} ${displaySettings.quickBuySize === 'large' ? 'large-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'mega' ? 'mega-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'ultra' ? `ultra-quickbuy-mode ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}` : ''} ${displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled ? 'ultra-dual-buttons' : ''} ${isLoadingPrimary ? 'disabled' : ''}`}
+          onClick={(e) => {
+            if (displaySettings.quickBuySize != 'ultra') return;
+            e.stopPropagation();
+            if (isLoadingPrimary) return;
+            onQuickBuy(token, quickbuyAmount, 'primary');
+            if (displaySettings.quickBuyClickBehavior === 'openPage') {
+              onTokenClick(token);
+            } else if (
+              displaySettings.quickBuyClickBehavior === 'openNewTab'
+            ) {
+              window.open(`/meme/${token.tokenAddress}`, '_blank');
+            }
+          }}
           onMouseMove={
             displaySettings.quickBuySize === 'ultra'
               ? (e) => {
@@ -3224,6 +3213,44 @@ const TokenRow = React.memo<{
           <div
             className={`explorer-actions-section ${displaySettings.quickBuySize === 'ultra' ? 'ultra-mode' : ''}`}
           >
+            {displaySettings.secondQuickBuyEnabled &&
+              displaySettings.quickBuySize !== 'ultra' && (
+                <button
+                  className={`explorer-quick-buy-btn second-button size-${displaySettings.quickBuySize} style-${displaySettings.quickBuyStyle}`}
+                  style={{
+                    ['--second-quickbuy-color' as any]:
+                      displaySettings.secondQuickBuyColor,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onQuickBuy(token, quickbuyAmountSecond, 'secondary');
+                  }}
+                  disabled={isLoadingSecondary}
+                >
+                  {isLoadingSecondary ? (
+                    <>
+                      <div className="quickbuy-loading-spinner" />
+                      <img
+                        className="explorer-quick-buy-icon"
+                        src={lightning}
+                        style={{ opacity: 0 }}
+                      />
+                      <span style={{ opacity: 0 }}>
+                        {quickbuyAmountSecond} MON
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <img
+                        className="explorer-quick-buy-icon"
+                        src={lightning}
+                      />
+                      {quickbuyAmountSecond} MON
+                    </>
+                  )}
+                </button>
+              )}
+
             {(() => {
               const sizeClass = `size-${displaySettings.quickBuySize}`;
               const modeClass =
@@ -3271,54 +3298,6 @@ const TokenRow = React.memo<{
                 </button>
               );
             })()}
-
-            {displaySettings.secondQuickBuyEnabled &&
-              displaySettings.quickBuySize !== 'ultra' && (
-                <button
-                  className={`explorer-quick-buy-btn second-button size-${displaySettings.quickBuySize} style-${displaySettings.quickBuyStyle}`}
-                  style={{
-                    ['--second-quickbuy-color' as any]:
-                      displaySettings.secondQuickBuyColor,
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (displaySettings.quickBuyClickBehavior === 'openPage') {
-                      onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-                      onTokenClick(token);
-                    } else if (
-                      displaySettings.quickBuyClickBehavior === 'openNewTab'
-                    ) {
-                      onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-                      window.open(`/meme/${token.tokenAddress}`, '_blank');
-                    } else {
-                      onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-                    }
-                  }}
-                  disabled={isLoadingSecondary}
-                >
-                  {isLoadingSecondary ? (
-                    <>
-                      <div className="quickbuy-loading-spinner" />
-                      <img
-                        className="explorer-quick-buy-icon"
-                        src={lightning}
-                        style={{ opacity: 0 }}
-                      />
-                      <span style={{ opacity: 0 }}>
-                        {quickbuyAmountSecond} MON
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <img
-                        className="explorer-quick-buy-icon"
-                        src={lightning}
-                      />
-                      {quickbuyAmountSecond} MON
-                    </>
-                  )}
-                </button>
-              )}
           </div>
         </div>
       </div>

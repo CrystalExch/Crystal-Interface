@@ -1898,6 +1898,9 @@ useEffect(() => {
                 e.stopPropagation();
                 setOneCTDepositAddress(wallet.address);
                 setpopup(25)
+                setTimeout(() => {
+                  refetch();
+                }, 0);
               }}
             >
               <Plus size={14} className="wallet-action-icon" />
