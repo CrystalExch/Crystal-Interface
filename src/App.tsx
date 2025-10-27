@@ -470,6 +470,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const location = useLocation();
   const navigate = useNavigate();
   const [isTrackerWidgetOpen, setIsTrackerWidgetOpen] = useState(true);
+  const handleToggleTrackerWidget = () => {
+  setIsTrackerWidgetOpen(prev => !prev);
+};
+
   const [trackerWidgetSnap, setTrackerWidgetSnap] = useState<'left' | 'right' | null>(null);
   const [trackerWidgetWidth, setTrackerWidgetWidth] = useState(400);
 
@@ -25459,11 +25463,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           />
         </div>
       }
-<<<<<<< HEAD
       <div className="app-container" style={{
-=======
-      <div className="app-container"  style={{
->>>>>>> 313ccc2c03c12def2bbe844cc0b2f8022283c501
         marginLeft: trackerWidgetSnap === 'left' ? `${trackerWidgetWidth}px` : undefined,
         marginRight: trackerWidgetSnap === 'right' ? `${trackerWidgetWidth}px` : undefined,
         transition: 'margin 0.3s ease',
@@ -25975,11 +25975,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           previewPosition={previewPosition}
           previewExiting={previewExiting}
         />
-        {/* <TrackerWidget 
+        <TrackerWidget 
         isOpen={isTrackerWidgetOpen}
         onClose={() => setIsTrackerWidgetOpen(false)}
         onSnapChange={handleTrackerWidgetSnapChange}
-      /> */}
+      />
         {/* <WidgetExplorer
         isOpen={isWidgetExplorerOpen}
         onClose={handleCloseWidgetExplorer}
@@ -25992,15 +25992,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         currentSnapSide={widgetExplorerSnapSide}
         onWidgetResize={handleWidgetExplorerResize} 
       /> */}
-        <Footer
-          subWallets={subWallets}
-          selectedWallets={selectedWallets}
-          setSelectedWallets={setSelectedWallets}
-          walletTokenBalances={walletTokenBalances}
-          activeWalletPrivateKey={oneCTSigner}
-          activeChain={activechain}
-          monUsdPrice={monUsdPrice}
-        />      </div>
+<Footer
+  subWallets={subWallets}
+  selectedWallets={selectedWallets}
+  setSelectedWallets={setSelectedWallets}
+  walletTokenBalances={walletTokenBalances}
+  activeWalletPrivateKey={oneCTSigner}
+  activeChain={activechain}
+  monUsdPrice={monUsdPrice}
+  isTrackerWidgetOpen={isTrackerWidgetOpen}
+  onToggleTrackerWidget={handleToggleTrackerWidget}
+/>     </div>
     </div>
   );
 }

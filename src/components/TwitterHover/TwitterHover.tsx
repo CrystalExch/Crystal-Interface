@@ -124,7 +124,9 @@ const INFLIGHT = new Map<string, Promise<Response>>();
 CLIENT_CACHE.clear();
 INFLIGHT.clear();
 
-const ORIGIN_BASE = 'https://api.crystal.exchange';
+// const ORIGIN_BASE = 'https://api.crystal.exchange';
+const ORIGIN_BASE = 'http://localhost:8000';
+
 const PRIMARY_PATH = '/x';
 const FALLBACK_PATH = '/api/x';
 
