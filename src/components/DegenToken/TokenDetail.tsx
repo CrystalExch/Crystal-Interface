@@ -746,10 +746,10 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                   className="detail-currency-switch-button"
                   onClick={handleCurrencySwitch}
                 >
-                  Switch to {(selectedCurrency === 'MON' ? (token?.symbol || 'TOKEN') : 'MON')}
+                  Switch to {(tradeType === 'buy' ? (token?.symbol || 'TOKEN') : 'MON')}
                 </button>
                 <span>
-                  Balance: {formatNumber(walletTokenBalance)} {token.symbol}{tradeType === 'buy' && selectedCurrency === 'MON' ? '' : ''}
+                  Balance: {tradeType === 'buy' ? formatNumber(walletMonBalance) + ' MON' : formatNumber(walletTokenBalance) + ' ' + token.symbol}
                 </span>
               </div>
               <div className="detail-trade-input-wrapper">
@@ -763,7 +763,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                 <span className="detail-trade-unit">{currentCurrency}</span>
               </div>
 
-              {tradeType === 'buy' && selectedCurrency === 'MON' ? (
+              {tradeType === 'buy'? (
                 <div className="detail-preset-buttons">
                   <div className="detail-preset-buttons-right">
                     <button className="detail-preset-button-left" onClick={() => setIsSettingsOpen(true)}>Slippage (%)</button>
@@ -773,7 +773,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                     <button onClick={handleMaxClick} className="detail-preset-button">Max</button>
                   </div>
                 </div>
-              ) : tradeType === 'sell' && selectedCurrency === 'MON' ? (
+              ) : tradeType === 'sell' ? (
                 <div className="detail-preset-buttons">
                   <div className="detail-preset-buttons-right">
                     <button className="detail-preset-button-left" onClick={() => setIsSettingsOpen(true)}>Slippage (%)</button>

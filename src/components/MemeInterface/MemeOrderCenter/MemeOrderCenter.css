@@ -889,11 +889,11 @@
 .meme-token-icon {
   border-radius: 4px;
   flex-shrink: 0;
-  height: 28px;
+  height: 27px;
   margin-right: 4px;
   -o-object-fit: cover;
   object-fit: cover;
-  width: 28px;
+  width: 27px;
 }
 
 .meme-ordercenter-info {

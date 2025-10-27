@@ -169,9 +169,9 @@ const Perps: React.FC<PerpsProps> = ({
   const [tpPrice, setTpPrice] = useState("");
   const [isReduceOnly, setIsReduceOnly] = useState(false);
   const [slPrice, setSlPrice] = useState("");
-  const [tpPercent, setTpPercent] = useState("0.0");
+  const [tpPercent, setTpPercent] = useState("");
   const [currentPosition, setCurrentPosition] = useState(0);
-  const [slPercent, setSlPercent] = useState("0.0");
+  const [slPercent, setSlPercent] = useState("");
   const [slippage, setSlippage] = useState(() => {
     const saved = localStorage.getItem('crystal_perps_slippage');
     return saved !== null ? BigInt(saved) : BigInt(9900);
@@ -209,6 +209,7 @@ const Perps: React.FC<PerpsProps> = ({
     return stored !== null ? JSON.parse(stored) : 0.1;
   });
   const [isDragging2, setIsDragging2] = useState(false);
+  const [perpsIsLoaded, setPerpsIsLoaded] = useState(false);
 
   const initialMousePosRef = useRef(0);
   const initialWidthRef = useRef(0);
@@ -675,11 +676,28 @@ const Perps: React.FC<PerpsProps> = ({
   }
 
   useEffect(() => {
-    return () => {
-      setPerpsMarketsData({})
-      setPerpsFilterOptions({})
+    const percentage =
+    Number(availableBalance) == 0
+      ? 0
+      : Math.min(
+        100,
+        Math.floor(
+          Number(inputString) * 100 / (Number(availableBalance) * Number(leverage))
+        ),
+      );
+    setSliderPercent(percentage);
+    const slider = document.querySelector(
+      '.perps-balance-amount-slider',
+    );
+    const popup = document.querySelector(
+      '.perps-slider-percentage-popup',
+    );
+    if (slider && popup) {
+      const rect = slider.getBoundingClientRect();
+      (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+        }px`;
     }
-  }, [])
+  }, [availableBalance, leverage])
 
   useEffect(() => {
     if (Object.keys(perpsMarketsData).length == 0) return;
@@ -721,8 +739,9 @@ const Perps: React.FC<PerpsProps> = ({
   }, [fetchedpositions, perpsMarketsData, perpsActiveMarketKey])
 
   useEffect(() => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN || !activeMarket?.contractId || !userLeverage) return
     if (!activeMarket?.contractId) return
+    setPerpsIsLoaded(true)
     setLeverage(userLeverage?.[activeMarket?.contractId]?.maxLeverage ? userLeverage?.[activeMarket?.contractId]?.maxLeverage : activeMarket?.displayMaxLeverage)
     setInputString('')
     setSliderPercent(0);
@@ -1154,6 +1173,8 @@ const Perps: React.FC<PerpsProps> = ({
         clearTimeout(reconnectIntervalRef.current);
         reconnectIntervalRef.current = null;
       }
+      setPerpsMarketsData({})
+      setPerpsFilterOptions({})
     };
   }, []);
 
@@ -1338,6 +1359,7 @@ const Perps: React.FC<PerpsProps> = ({
         clearTimeout(accreconnectIntervalRef.current);
         accreconnectIntervalRef.current = null;
       }
+      setUserLeverage()
     };
   }, [signer?.publicKey]);
 
@@ -1533,6 +1555,7 @@ const Perps: React.FC<PerpsProps> = ({
               inputMode="decimal"
               placeholder="0.00"
               value={inputString}
+              disabled={!perpsIsLoaded}
               onChange={(e) => {
                 setInputString(e.target.value)
                 const percentage =
@@ -1568,6 +1591,7 @@ const Perps: React.FC<PerpsProps> = ({
               <input
                 ref={sliderRef}
                 type="range"
+                disabled={!perpsIsLoaded}
                 className={`perps-balance-amount-slider ${isDragging ? "dragging" : ""}`}
                 min="0"
                 max="100"
@@ -1601,7 +1625,7 @@ const Perps: React.FC<PerpsProps> = ({
                     className={`perps-balance-slider-mark ${activeTradeType}`}
                     data-active={sliderPercent >= markPercent}
                     data-percentage={markPercent}
-                    onClick={() => handleSliderChange(markPercent)}
+                    onClick={() => {if (perpsIsLoaded) handleSliderChange(markPercent)}}
                   >
                     {markPercent}%
                   </span>
@@ -1699,12 +1723,13 @@ const Perps: React.FC<PerpsProps> = ({
                 </div>
                 <div className="perps-tpsl-input-section">
                   <div className="perps-tpsl-percentage">
-                    <span className="perps-tpsl-row-label">TP%</span>
+                    <span className="perps-tpsl-row-label">TP %</span>
                     <input
                       type="text"
                       value={tpPercent}
                       onChange={(e) => setTpPercent(e.target.value)}
                       className="perps-tpsl-percent-input"
+                      placeholder='0.00'
                     />
                   </div>
                 </div>
@@ -1716,19 +1741,20 @@ const Perps: React.FC<PerpsProps> = ({
                   <input
                     type="text"
                     placeholder="Enter SL price"
-                    value={tpPrice}
+                    value={slPrice}
                     onChange={(e) => setSlPrice(e.target.value)}
                     className="perps-tpsl-price-input"
                   />
                 </div>
                 <div className="perps-tpsl-input-section">
                   <div className="perps-tpsl-percentage">
-                    <span className="perps-tpsl-row-label">SL%</span>
+                    <span className="perps-tpsl-row-label">SL %</span>
                     <input
                       type="text"
-                      value={tpPercent}
+                      value={slPercent}
                       onChange={(e) => setSlPercent(e.target.value)}
                       className="perps-tpsl-percent-input"
+                      placeholder='0.00'
                     />
                   </div>
                 </div>

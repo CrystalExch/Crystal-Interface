@@ -90,13 +90,17 @@
 }
 
 .perps-position-item .leverage-badge {
-  background: rgba(170, 174, 207, 0.15);
-  border-radius: 3px;
-  color: #aaaecf;
-  font-size: 0.65rem;
-  font-weight: 500;
-  padding: 2px 4px;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  font-size: 0.7rem;
+  padding: 0px 3px;
+  border-radius: 4px;
+  background-color: #aaaecf19;
+  border: 1px solid #aaaecf5a;
+  height: 14px;
+  color: #d8dcfff0;
+  padding-bottom: 1px;
+  font-weight: 400;
 }
 
 .perps-position-item .value-cell {

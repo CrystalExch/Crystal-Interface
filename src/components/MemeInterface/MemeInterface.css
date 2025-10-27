@@ -413,7 +413,7 @@
   font-size: .95rem;
   pointer-events: none;
   position: absolute;
-  right: 20px;
+  right: 25px;
   top: 50%;
   transform: translateY(-50%);
 }
@@ -1438,7 +1438,6 @@
 
 .meme-currency-monad-icon {
   height: 16px;
-  margin-right: 5px;
   width: 16px;
 }
 

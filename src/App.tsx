@@ -998,7 +998,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
     const saved = localStorage.getItem('crystal_perps_leverage');
     return saved !== null ? saved : '10.0';
   });
-  const [userLeverage, setUserLeverage] = useState<any>([]);
+  const [userLeverage, setUserLeverage] = useState<any>();
   // state vars
   const [_trackedWallets, setTrackedWallets] = useState<any[]>([]);
   const [showSendDropdown, setShowSendDropdown] = useState(false);
@@ -4171,7 +4171,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
           });
         });
         if (movedToken?.status) {
-          buckets[movedToken?.status as Token['status']].push(movedToken);
+          buckets[movedToken?.status as Token['status']].unshift(movedToken);
         }
         return { ...state, tokensByStatus: buckets };
       }
@@ -5092,7 +5092,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
           body: JSON.stringify({
             query: `
           {
-            active: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:false}) {
+            active: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:false, lastPriceNativePerTokenWad_lt:12501}) {
               id
               creator {
                 id
@@ -5135,7 +5135,7 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                 tokens
               }
             }
-            graduating: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{lastPriceNativePerTokenWad_gt:5000}) {
+            graduating: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{lastPriceNativePerTokenWad_gt:12500}) {
               id
               creator {
                 id
@@ -10591,115 +10591,113 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
 
   // limit chase
   useEffect(() => {
-    if (limitChase && !isLimitEditing && mids?.[activeMarketKey]?.[0]) {
-      const price = tokenIn === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
-      if (price) {
-        setlimitPrice(price);
-        setlimitPriceString(
-          (
-            Number(price) / Number(activeMarket.priceFactor)
-          ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1) : Number(activeMarket.priceFactor)))),
+    if (limitChase && !isLimitEditing) {
+      let price = mids?.[activeMarketKey]?.[0] ? (tokenIn === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]) : 0n
+      setlimitPrice(price);
+      setlimitPriceString(
+        price == 0n ? '' : (
+          Number(price) / Number(activeMarket.priceFactor)
+        ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1) : Number(activeMarket.priceFactor)))),
+      );
+      if (switched && location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
+        setamountIn(
+          price !== BigInt(0) && amountOutSwap !== BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? (amountOutSwap *
+                (activeMarket.scaleFactor || BigInt(1))) /
+              price
+              : (amountOutSwap * price) /
+              (activeMarket.scaleFactor || BigInt(1))
+            : BigInt(0),
         );
-        if (switched && location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
-          setamountIn(
-            price !== BigInt(0) && amountOutSwap !== BigInt(0)
-              ? tokenIn === activeMarket?.baseAddress
-                ? (amountOutSwap *
-                  (activeMarket.scaleFactor || BigInt(1))) /
-                price
-                : (amountOutSwap * price) /
-                (activeMarket.scaleFactor || BigInt(1))
-              : BigInt(0),
-          );
-          setInputString(
-            (price !== BigInt(0) && amountOutSwap !== BigInt(0)
-              ? tokenIn === activeMarket?.baseAddress
-                ? customRound(
-                  Number(
-                    (amountOutSwap *
-                      (activeMarket.scaleFactor || BigInt(1))) /
-                    price,
-                  ) /
-                  10 ** Number(tokendict[tokenIn].decimals),
-                  3,
+        setInputString(
+          (price !== BigInt(0) && amountOutSwap !== BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? customRound(
+                Number(
+                  (amountOutSwap *
+                    (activeMarket.scaleFactor || BigInt(1))) /
+                  price,
+                ) /
+                10 ** Number(tokendict[tokenIn].decimals),
+                3,
+              )
+              : customRound(
+                Number(
+                  (amountOutSwap * price) /
+                  (activeMarket.scaleFactor || BigInt(1)),
+                ) /
+                10 ** Number(tokendict[tokenIn].decimals),
+                3,
+              )
+            : ''
+          ).toString(),
+        );
+        const percentage =
+          tokenBalances[tokenIn] === BigInt(0)
+            ? 0
+            : Math.min(
+              100,
+              Math.floor(
+                Number(
+                  (price !== BigInt(0) &&
+                    amountOutSwap !== BigInt(0)
+                    ? tokenIn === activeMarket?.baseAddress
+                      ? (amountOutSwap *
+                        (activeMarket.scaleFactor ||
+                          BigInt(1))) /
+                      price
+                      : (amountOutSwap * price) /
+                      (activeMarket.scaleFactor || BigInt(1))
+                    : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
                 )
-                : customRound(
-                  Number(
-                    (amountOutSwap * price) /
-                    (activeMarket.scaleFactor || BigInt(1)),
-                  ) /
-                  10 ** Number(tokendict[tokenIn].decimals),
-                  3,
-                )
-              : ''
-            ).toString(),
-          );
-          const percentage =
-            tokenBalances[tokenIn] === BigInt(0)
-              ? 0
-              : Math.min(
-                100,
-                Math.floor(
-                  Number(
-                    (price !== BigInt(0) &&
-                      amountOutSwap !== BigInt(0)
-                      ? tokenIn === activeMarket?.baseAddress
-                        ? (amountOutSwap *
-                          (activeMarket.scaleFactor ||
-                            BigInt(1))) /
-                        price
-                        : (amountOutSwap * price) /
-                        (activeMarket.scaleFactor || BigInt(1))
-                      : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
-                  )
-                ),
-              );
-          setSliderPercent(percentage);
-          const slider = document.querySelector(
-            '.balance-amount-slider',
-          );
-          const popup = document.querySelector(
-            '.slider-percentage-popup',
-          );
-          if (slider && popup) {
-            const rect = slider.getBoundingClientRect();
-            (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
-              }px`;
-          }
+              ),
+            );
+        setSliderPercent(percentage);
+        const slider = document.querySelector(
+          '.balance-amount-slider',
+        );
+        const popup = document.querySelector(
+          '.slider-percentage-popup',
+        );
+        if (slider && popup) {
+          const rect = slider.getBoundingClientRect();
+          (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+            }px`;
         }
-        else if (location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
-          setamountOutSwap(
-            price != BigInt(0) && amountIn != BigInt(0)
-              ? tokenIn === activeMarket?.baseAddress
-                ? (amountIn * price) /
-                (activeMarket.scaleFactor || BigInt(1))
-                : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
-                price
-              : BigInt(0),
-          );
-          setoutputString(
-            (price != BigInt(0) && amountIn != BigInt(0)
-              ? tokenIn === activeMarket?.baseAddress
-                ? customRound(
-                  Number(
-                    (amountIn * price) /
-                    (activeMarket.scaleFactor || BigInt(1)),
-                  ) /
-                  10 ** Number(tokendict[tokenOut].decimals),
-                  3,
-                )
-                : customRound(
-                  Number(
-                    (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
-                    price,
-                  ) /
-                  10 ** Number(tokendict[tokenOut].decimals),
-                  3,
-                )
-              : ''
-            ).toString(),
-          );
-        }
+      }
+      else if (location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
+        setamountOutSwap(
+          price != BigInt(0) && amountIn != BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? (amountIn * price) /
+              (activeMarket.scaleFactor || BigInt(1))
+              : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+              price
+            : BigInt(0),
+        );
+        setoutputString(
+          (price != BigInt(0) && amountIn != BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? customRound(
+                Number(
+                  (amountIn * price) /
+                  (activeMarket.scaleFactor || BigInt(1)),
+                ) /
+                10 ** Number(tokendict[tokenOut].decimals),
+                3,
+              )
+              : customRound(
+                Number(
+                  (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                  price,
+                ) /
+                10 ** Number(tokendict[tokenOut].decimals),
+                3,
+              )
+            : ''
+          ).toString(),
+        );
       }
     }
   }, [limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey, tokenIn, location.pathname.slice(1), isLimitEditing]);
@@ -11687,12 +11685,14 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                         `${tokendict[tokenOut].ticker}${tokendict[token.address].ticker}`
                         ]
                       ) {
+                        newTokenOut = tokenOut;
                       } else {
                         let found = false;
                         for (const market in markets) {
                           if (
                             markets[market].baseAddress === token.address
                           ) {
+                            newTokenOut = markets[market].quoteAddress;
                             setTokenOut(markets[market].quoteAddress);
                             found = true;
                             break;
@@ -11701,22 +11701,25 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                         if (!found) {
                           for (const market in markets) {
                             if (markets[market].quoteAddress === token.address) {
+                              newTokenOut = markets[market].baseAddress;
                               setTokenOut(markets[market].baseAddress);
                               break;
                             }
                           }
                         }
                       }
-                      setamountIn(
-                        (amountIn * BigInt(10) ** token.decimals) /
-                        BigInt(10) ** tokendict[tokenIn].decimals
-                      );
-                      setlimitChase(true);
-                      setScaleStart(BigInt(0))
-                      setScaleEnd(BigInt(0))
-                      setScaleStartString('')
-                      setScaleEndString('')
-                      const percentage = !tokenBalances[token.address]
+                      if (switched) {
+                        setamountOutSwap(
+                          (amountOutSwap * BigInt(10) ** tokendict[newTokenOut].decimals) /
+                          BigInt(10) ** tokendict[tokenOut].decimals
+                        )
+                      }
+                      else {
+                        setamountIn(
+                          (amountIn * BigInt(10) ** token.decimals) /
+                          BigInt(10) ** tokendict[tokenIn].decimals
+                        );
+                        const percentage = !tokenBalances[token.address]
                         ? 0
                         : Math.min(
                           100,
@@ -11728,18 +11731,24 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                             ),
                           ),
                         );
-                      setSliderPercent(percentage);
-                      const slider = document.querySelector(
-                        '.balance-amount-slider',
-                      );
-                      const popup = document.querySelector(
-                        '.slider-percentage-popup',
-                      );
-                      if (slider && popup) {
-                        const rect = slider.getBoundingClientRect();
-                        (popup as HTMLElement).style.left =
-                          `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                        setSliderPercent(percentage);
+                        const slider = document.querySelector(
+                          '.balance-amount-slider',
+                        );
+                        const popup = document.querySelector(
+                          '.slider-percentage-popup',
+                        );
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          (popup as HTMLElement).style.left =
+                            `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                        }
                       }
+                      setlimitChase(true);
+                      setScaleStart(BigInt(0))
+                      setScaleEnd(BigInt(0))
+                      setScaleStartString('')
+                      setScaleEndString('')
                     } else {
                       setTokenOut(tokenIn);
                       setswitched((switched) => { return !switched });
@@ -12423,17 +12432,19 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                           }
                         }
                       }
-                      setamountIn(
-                        (amountIn *
-                          BigInt(10) ** tokendict[newTokenIn].decimals) /
-                        BigInt(10) ** tokendict[tokenIn].decimals,
-                      );
-                      setlimitChase(true);
-                      setScaleStart(BigInt(0))
-                      setScaleEnd(BigInt(0))
-                      setScaleStartString('')
-                      setScaleEndString('')
-                      const percentage = !tokenBalances[newTokenIn]
+                      if (switched) {
+                        setamountOutSwap(
+                          (amountOutSwap * BigInt(10) ** token.decimals) /
+                          BigInt(10) ** tokendict[tokenOut].decimals
+                        )
+                      }
+                      else {
+                        setamountIn(
+                          (amountIn *
+                            BigInt(10) ** tokendict[newTokenIn].decimals) /
+                          BigInt(10) ** tokendict[tokenIn].decimals,
+                        );
+                        const percentage = !tokenBalances[newTokenIn]
                         ? 0
                         : Math.min(
                           100,
@@ -12445,18 +12456,24 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
                             ),
                           ),
                         );
-                      setSliderPercent(percentage);
-                      const slider = document.querySelector(
-                        '.balance-amount-slider',
-                      );
-                      const popup = document.querySelector(
-                        '.slider-percentage-popup',
-                      );
-                      if (slider && popup) {
-                        const rect = slider.getBoundingClientRect();
-                        (popup as HTMLElement).style.left =
-                          `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                        setSliderPercent(percentage);
+                        const slider = document.querySelector(
+                          '.balance-amount-slider',
+                        );
+                        const popup = document.querySelector(
+                          '.slider-percentage-popup',
+                        );
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          (popup as HTMLElement).style.left =
+                            `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                        }
                       }
+                      setlimitChase(true);
+                      setScaleStart(BigInt(0))
+                      setScaleEnd(BigInt(0))
+                      setScaleStartString('')
+                      setScaleEndString('')
                     } else {
                       setTokenIn(tokenOut);
                       setswitched((switched) => { return !switched });
@@ -18857,110 +18874,108 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
 
 
         {popup === 35 ? (
-          <div className="leverage-modal-overlay">
-            <div className="leverage-modal-content" ref={popupref}>
-              <div className="leverage-modal-header">
-                <h2 className="leverage-modal-title">Adjust Leverage</h2>
-                <button
-                  className="close-button"
-                  onClick={() => setpopup(0)}
-                >
-                  ✕
-                </button>
-              </div>
+          <div className="leverage-modal-content" ref={popupref}>
+            <div className="leverage-modal-header">
+              <h2 className="leverage-modal-title">Adjust Leverage</h2>
+              <button
+                className="close-button"
+                onClick={() => setpopup(0)}
+              >
+                ✕
+              </button>
+            </div>
 
-              <div className="leverage-modal-body">
-                <p className="leverage-description">
-                  Adjust your leverage to manage your exposure. Higher leverage increases
-                  both potential profits and risks.
-                </p>
+            <div className="leverage-modal-body">
+              <p className="leverage-description">
+                Adjust your leverage to manage your exposure. Higher leverage increases
+                both potential profits and risks.
+              </p>
 
-                <div className="leverage-slider-section">
-                  <div className="leverage-slider-container">
-                    <input
-                      ref={(el) => {
-                        if (el && popup === 35) {
-                          const leverageValue = parseFloat(perpsLeverage) || 10;
-                          const percent = ((leverageValue - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1)) * 100;
-                          const thumbW = 16;
-                          const container = el.parentElement;
-                          if (container) {
-                            const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
-                            if (popup) {
-                              const containerRect = container.getBoundingClientRect();
-                              const inputRect = el.getBoundingClientRect();
-                              const inputLeft = inputRect.left - containerRect.left;
-                              const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
-                              popup.style.left = `${x}px`;
-                              popup.style.transform = 'translateX(-50%)';
-                            }
-                          }
-                        }
-                      }}
-                      type="range"
-                      min="1"
-                      max={perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage}
-                      step="1"
-                      value={(parseFloat(perpsLeverage) || 10)}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setPerpsLeverage(value);
-
-                        const container = e.target.parentElement;
+              <div className="leverage-slider-section">
+                <div className="leverage-slider-container">
+                  <input
+                    ref={(el) => {
+                      if (el && popup === 35) {
+                        const leverageValue = parseFloat(perpsLeverage) || 10;
+                        const percent = ((leverageValue - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1)) * 100;
+                        const thumbW = 16;
+                        const container = el.parentElement;
                         if (container) {
                           const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
                           if (popup) {
-                            const percent = ((parseInt(value) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1)) * 100;
-                            const thumbW = 16;
                             const containerRect = container.getBoundingClientRect();
-                            const inputRect = e.target.getBoundingClientRect();
+                            const inputRect = el.getBoundingClientRect();
                             const inputLeft = inputRect.left - containerRect.left;
                             const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
                             popup.style.left = `${x}px`;
                             popup.style.transform = 'translateX(-50%)';
                           }
                         }
-                      }}
-                      onMouseDown={(e) => {
-                        const container = e.currentTarget.parentElement;
-                        if (container) {
-                          const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
-                          if (popup) popup.classList.add('visible');
-                        }
-                      }}
-                      onMouseUp={(e) => {
-                        const container = e.currentTarget.parentElement;
-                        if (container) {
-                          const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
-                          if (popup) popup.classList.remove('visible');
-                        }
-                      }}
-                      className="leverage-slider-input"
-                      style={{
-                        background: `linear-gradient(to right, #aaaecf ${((parseFloat(perpsLeverage) || 10) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1) * 100}%, #2a2a2f ${((parseFloat(perpsLeverage) || 10) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1) * 100}%)`
-                      }}
-                    />
+                      }
+                    }}
+                    type="range"
+                    min="1"
+                    max={perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage}
+                    step="1"
+                    value={(parseFloat(perpsLeverage) || 10)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setPerpsLeverage(value);
 
-                    <div className="leverage-value-popup">
-                      {parseFloat(perpsLeverage) || 10}x
-                    </div>
-                  </div>
+                      const container = e.target.parentElement;
+                      if (container) {
+                        const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
+                        if (popup) {
+                          const percent = ((parseInt(value) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1)) * 100;
+                          const thumbW = 16;
+                          const containerRect = container.getBoundingClientRect();
+                          const inputRect = e.target.getBoundingClientRect();
+                          const inputLeft = inputRect.left - containerRect.left;
+                          const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
+                          popup.style.left = `${x}px`;
+                          popup.style.transform = 'translateX(-50%)';
+                        }
+                      }
+                    }}
+                    onMouseDown={(e) => {
+                      const container = e.currentTarget.parentElement;
+                      if (container) {
+                        const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
+                        if (popup) popup.classList.add('visible');
+                      }
+                    }}
+                    onMouseUp={(e) => {
+                      const container = e.currentTarget.parentElement;
+                      if (container) {
+                        const popup = container.querySelector('.leverage-value-popup') as HTMLElement;
+                        if (popup) popup.classList.remove('visible');
+                      }
+                    }}
+                    className="leverage-slider-input"
+                    style={{
+                      background: `linear-gradient(to right, #aaaecf ${((parseFloat(perpsLeverage) || 10) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1) * 100}%, #2a2a2f ${((parseFloat(perpsLeverage) || 10) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1) * 100}%)`
+                    }}
+                  />
 
-                  <div className="leverage-display">
-                    Leverage: <span className="leverage-value">{parseFloat(perpsLeverage) || 10}x</span>
+                  <div className="leverage-value-popup">
+                    {parseFloat(perpsLeverage) || 10}x
                   </div>
                 </div>
 
-                <button
-                  className="leverage-update-button"
-                  onClick={() => {
-                    localStorage.setItem('crystal_perps_leverage', perpsLeverage);
-                    setpopup(0);
-                  }}
-                >
-                  Update Leverage
-                </button>
+                <div className="leverage-display">
+                  Leverage: <span className="leverage-value">{parseFloat(perpsLeverage) || 10}x</span>
+                </div>
               </div>
+
+              <button
+                className="leverage-update-button"
+                onClick={() => {
+                  localStorage.setItem('crystal_perps_leverage', perpsLeverage);
+                  setpopup(0);
+                }}
+              >
+                Update Leverage
+              </button>
             </div>
           </div>
         ) : null}
@@ -25445,10 +25460,10 @@ const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | 
         </div>
       }
       <div className="app-container"  style={{
-    marginLeft: trackerWidgetSnap === 'left' ? `${trackerWidgetWidth}px` : undefined,
-    marginRight: trackerWidgetSnap === 'right' ? `${trackerWidgetWidth}px` : undefined,
-    transition: 'margin 0.3s ease',
-  }}>
+        marginLeft: trackerWidgetSnap === 'left' ? `${trackerWidgetWidth}px` : undefined,
+        marginRight: trackerWidgetSnap === 'right' ? `${trackerWidgetWidth}px` : undefined,
+        transition: 'margin 0.3s ease',
+      }}>
         <Routes>
           <Route path="/" element={<Navigate to="/market" replace />} />
           <Route path="*" element={<Navigate to="/market" replace />} />

@@ -122,14 +122,14 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         const buyLiquidity = (roundedBuys[roundedBuys.length - 1]?.totalSize * quotePrice || 0) + ammBuyLiquidity;
         setBuyLiquidity(formatCommas(buyLiquidity.toFixed(2)));
       } else {
-        setBuyLiquidity('n/a');
+        setBuyLiquidity('N/A');
       }
       if ((roundedSells.length !== 0 || orderdata?.reserveQuote != 0) && quotePrice) {
         const ammSellLiquidity = Number(orderdata?.reserveQuote) / Number(10n ** activeMarket.quoteDecimals) * quotePrice || 0
         const sellLiquidity = (roundedSells[roundedSells.length - 1]?.totalSize * quotePrice || 0) + ammSellLiquidity;
         setSellLiquidity(formatCommas(sellLiquidity.toFixed(2)));
       } else {
-        setSellLiquidity('n/a');
+        setSellLiquidity('N/A');
       }
       setIsLoading(orderdata.liquidityBuyOrders?.market != activeMarket.address)
     }
@@ -140,9 +140,9 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       label: t('dayChange'),
       value: (
         <span className={`price-change ${priceChangeAmount.trim().startsWith('-') ? 'negative' : priceChangeAmount.replace(/[^0-9]/g, '').split('').every(c => c == '0') ? 'neutral' : 'positive'}`}>
-          {priceChangeAmount !== 'n/a'
+          {priceChangeAmount !== 'N/A'
             ? `${priceChangeAmount} / ${priceChangePercent}%`
-            : 'n/a'}
+            : 'N/A'}
         </span>
       ),
     },
@@ -151,10 +151,10 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       value: (
         <>
           <span className="long">
-            {'↗\uFE0E'} ${buyLiquidity === 'n/a' ? '0.00' : buyLiquidity}
+            {'↗\uFE0E'} ${buyLiquidity === 'N/A' ? '0.00' : buyLiquidity}
           </span>
           <span className="short">
-            {'↘\uFE0E'} ${sellLiquidity === 'n/a' ? '0.00' : sellLiquidity}
+            {'↘\uFE0E'} ${sellLiquidity === 'N/A' ? '0.00' : sellLiquidity}
           </span>
         </>
       ),
@@ -184,7 +184,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         tokendict={tokendict}
         setpopup={setpopup}
         marketsData={marketsData}
-        isLoading={isLoading || price == 'n/a'}
+        isLoading={isLoading || price == 'N/A'}
         isTradeRoute={isTradeRoute}
         simpleView={simpleView}
         isMemeToken={isMemeToken}
@@ -202,7 +202,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       {shouldShowFullHeader && (
         <AdditionalMetrics
           metrics={metrics}
-          isLoading={isLoading || price == 'n/a'}
+          isLoading={isLoading || price == 'N/A'}
         />
       )}
     </div>
