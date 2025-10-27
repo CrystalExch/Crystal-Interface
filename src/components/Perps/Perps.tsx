@@ -147,7 +147,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [orderdata, setorderdata] = useState<any>([]);
   const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};
   const [activeTradeType, setActiveTradeType] = useState<"long" | "short">("long");
-  const [activeOrderType, setActiveOrderType] = useState<"market" | "Limit" | "Pro">("market");
+  const [activeOrderType, setActiveOrderType] = useState<"Market" | "Limit" | "Pro">("Market");
   const [inputString, setInputString] = useState('');
   const [limitPriceString, setlimitPriceString] = useState('');
   const [limitChase, setlimitChase] = useState(true);
@@ -272,7 +272,7 @@ const Perps: React.FC<PerpsProps> = ({
     let activeButton: HTMLButtonElement | null = null;
 
     switch (activeOrderType) {
-      case 'market':
+      case 'Market':
         activeButton = marketButtonRef.current;
         break;
       case 'Limit':
@@ -561,8 +561,7 @@ const Perps: React.FC<PerpsProps> = ({
     const ts = Date.now().toString()
     const l2ExpireTime = (Date.now() + 30 * 24 * 60 * 60 * 1000)
     const l1ExpireTime = (Number(l2ExpireTime) - 9 * 24 * 60 * 60 * 1000)
-    const l2Price = type == 'MARKET' ? (side == 'BUY' ? (price * (1 + (10000 - Number(slippage)) / 10000)) : (price / (1 + (10000 - Number(slippage)) / 10000))) : price
-    const l2Value = Number((l2Price * size).toFixed(2))
+    const l2Value = Number((type == 'MARKET' ? (side == 'BUY' ? (price * 10 * size) : (Number(activeMarket?.tickSize))) : price * size).toFixed(2))
     const limitFee = Math.ceil(l2Value * Number(userFees[0])).toString()
     const clientOrderId = Math.random().toString().slice(2).replace(/^0+/, '');
     const l2Nonce = BigInt(sha256(toUtf8Bytes(clientOrderId)).slice(0, 10)).toString()
@@ -653,7 +652,7 @@ const Perps: React.FC<PerpsProps> = ({
     if (Object.keys(perpsMarketsData).length == 0) return;
     setIsSigning(true);
     const size = Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize)
-    const payload = await generateSignedOrder(size, (activeTradeType === "long" ? "BUY" : "SELL"), "MARKET", Number(activeMarket?.lastPrice), signer.accountId, activeMarket.contractId, perpsActiveMarketKey, signer.privateKey, activeMarket, userFees, false)
+    const payload = await generateSignedOrder(size, (activeTradeType === "long" ? "BUY" : "SELL"), activeOrderType == "Market" ? "MARKET" : "LIMIT", activeOrderType == "Market" ? Number(activeMarket?.lastPrice) : (activeTradeType == 'long' ? Math.floor(Number(limitPriceString) / Number(activeMarket?.tickSize)) * Number(activeMarket?.tickSize) : Math.ceil(Number(limitPriceString) / Number(activeMarket?.tickSize)) * Number(activeMarket?.tickSize)), signer.accountId, activeMarket.contractId, perpsActiveMarketKey, signer.privateKey, activeMarket, userFees, isReduceOnly)
     const ts = Date.now().toString()
     const path = '/api/v1/private/order/createOrder'
     const qs = buildSignatureBody(payload)
@@ -1412,8 +1411,8 @@ const Perps: React.FC<PerpsProps> = ({
           <div className="perps-order-types" ref={orderTypesContainerRef}>
             <button
               ref={marketButtonRef}
-              className={`perps-order-type-button ${activeOrderType === "market" ? "active" : "inactive"}`}
-              onClick={() => setActiveOrderType("market")}
+              className={`perps-order-type-button ${activeOrderType === "Market" ? "active" : "inactive"}`}
+              onClick={() => setActiveOrderType("Market")}
             >
               Market
             </button>
@@ -1781,11 +1780,12 @@ const Perps: React.FC<PerpsProps> = ({
                 await handleTrade();
               }
             }}
-            disabled={address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0)}
+            disabled={address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0 || (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize)) || Number(inputString) > (Number(availableBalance) * Number(leverage)))}
           >
             {isSigning ? (
               <div className="perps-button-spinner"></div>
-            ) : (address ? (Object.keys(signer).length == 0 ? 'Enable Trading' : activeOrderType === "market"
+            ) : (address ? (Object.keys(signer).length == 0 ? 'Enable Trading' : (inputString && (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize))) ? `Order size must be >${activeMarket?.minOrderSize} ${activeMarket?.baseAsset}` : 
+            Number(inputString) > (Number(availableBalance) * Number(leverage)) ? 'Insufficient Margin' : activeOrderType === "Market"
               ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
               : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`) : 'Connect Wallet'
             )}

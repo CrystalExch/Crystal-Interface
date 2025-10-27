@@ -1,5 +1,6 @@
 export const defaultMetrics = {
   price: 0.000001,
+  mini: [],
   change24h: 0,
   volume24h: 0,
   holders: 0,
