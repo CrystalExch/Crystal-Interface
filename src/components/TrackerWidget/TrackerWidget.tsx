@@ -404,7 +404,7 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
       >
         <div className="tracker-header" onMouseDown={handleDragStart}>
           <h3 className="tracker-title">
-            Live Tweet Tracker {isConnected ? '🟢' : '🔴'}
+            Twitter Alerts
           </h3>
         </div>
 
@@ -426,7 +426,7 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
 
             {trackedUsers.length > 0 && (
               <div className="tracked-users">
-                <div className="tracked-users-title">Tracking:</div>
+                <div className="tracked-users-title">Tracking: (This will be removed ina bit jus for testing)</div>
                 {trackedUsers.map((user) => (
                   <div key={user} className="tracked-user-chip">
                     @{user}
@@ -490,21 +490,6 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
                       ))}
                     </div>
                   )}
-
-                  <div className="tweet-stats">
-                    <span>💬 {tweet.tweet.metrics.reply_count}</span>
-                    <span>🔁 {tweet.tweet.metrics.retweet_count}</span>
-                    <span>❤️ {tweet.tweet.metrics.like_count}</span>
-                  </div>
-
-                  <a
-                    href={tweet.tweet.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="tweet-link"
-                  >
-                    View on X →
-                  </a>
                 </div>
               ))
             )}
