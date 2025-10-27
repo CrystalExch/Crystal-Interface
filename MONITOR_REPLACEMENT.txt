@@ -1,0 +1,338 @@
+// PASTE THIS TO REPLACE THE renderMonitor FUNCTION (starting at line 2921)
+// Delete from line 2921 "const renderMonitor = () => {" all the way to line 3999 (before "const renderWalletItem")
+// Then paste this entire block:
+
+const renderMonitor = () => {
+  const allPositions = getFilteredPositions();
+
+  // Launchpad column: Only memecoin positions (exclude major tokens from tokenList)
+  let launchpadPositions = allPositions;
+
+  // Orderbook column: only major tokens from tokenList
+  const spotTokenPositions: GqlPosition[] = [];
+  const chainCfg = settings.chainConfig?.[activechain];
+
+  if (walletTokenBalances && tokenList && tokenList.length > 0) {
+    trackedWallets.forEach(wallet => {
+      const walletBalances = walletTokenBalances[wallet.address];
+      if (!walletBalances) return;
+
+      tokenList.forEach((token: any) => {
+        const tokenAddr = token.address?.toLowerCase();
+        if (!tokenAddr) return;
+
+        let balanceWei = walletBalances[tokenAddr];
+        if (!balanceWei) {
+          const matchingKey = Object.keys(walletBalances).find(k => k.toLowerCase() === tokenAddr);
+          if (matchingKey) {
+            balanceWei = walletBalances[matchingKey];
+          }
+        }
+
+        if (!balanceWei || balanceWei === '0') return;
+
+        const balanceNum = parseFloat(balanceWei) / Math.pow(10, token.decimals || 18);
+        if (balanceNum <= 0) return;
+
+        const valueUsd = balanceNum * (token.price || 0);
+        if (valueUsd < 0.01) return;
+
+        const existing = spotTokenPositions.find(p =>
+          p.tokenId.toLowerCase() === tokenAddr &&
+          (p as any).walletAddress === wallet.address
+        );
+
+        if (!existing) {
+          spotTokenPositions.push({
+            tokenId: token.address,
+            name: token.name,
+            symbol: token.symbol,
+            imageUrl: token.logoURI || '',
+            spentNative: 0,
+            receivedNative: 0,
+            remainingTokens: balanceNum,
+            lastPrice: token.price || 0,
+            pnlNative: 0,
+            isOrderbook: true,
+            walletAddress: wallet.address,
+            walletName: wallet.name,
+            walletEmoji: wallet.emoji
+          } as any);
+        }
+      });
+    });
+  }
+
+  const orderbookPositions = spotTokenPositions;
+
+  // Helper to convert position to Token
+  const positionToToken = (pos: GqlPosition) => {
+    const market = marketsRef.current.get(pos.tokenId.toLowerCase());
+    if (!market) return null;
+
+    const price = pos.lastPrice ?? 0;
+    const marketCap = price ? price * 1e9 : 0;
+
+    return {
+      id: pos.tokenId,
+      tokenAddress: pos.tokenId,
+      name: pos.name || market.name || 'Unknown',
+      symbol: pos.symbol || market.symbol || 'UNK',
+      image: pos.imageUrl || market.image || '',
+      price: price,
+      marketCap: marketCap,
+      change24h: 0,
+      volume24h: market.volume24h || 0,
+      holders: market.holders || 0,
+      proTraders: 0,
+      buyTransactions: market.buyTransactions || 0,
+      sellTransactions: market.sellTransactions || 0,
+      status: (pos.isOrderbook ? 'graduated' : 'new') as 'new' | 'graduating' | 'graduated',
+      created: market.created || 0,
+    };
+  };
+
+  // Render TokenRow (EXACT copy from TokenExplorer)
+  const renderTokenRow = (token: any, quickAmount: string) => {
+    const bondingPercentage = Math.min((token.marketCap / 25000) * 100, 100);
+    const getBondingColor = (b: number) => {
+      if (b < 25) return '#ee5b5bff';
+      if (b < 50) return '#f59e0b';
+      if (b < 75) return '#eab308';
+      return '#43e17dff';
+    };
+    const getBondingColorClass = (percentage: number) => {
+      if (percentage < 25) return 'bonding-0-25';
+      if (percentage < 50) return 'bonding-25-50';
+      if (percentage < 75) return 'bonding-50-75';
+      return 'bonding-75-100';
+    };
+    const createColorGradient = (base: string) => {
+      const hex = base.replace('#', '');
+      const [r, g, b] = [
+        parseInt(hex.slice(0, 2), 16),
+        parseInt(hex.slice(2, 4), 16),
+        parseInt(hex.slice(4, 6), 16),
+      ];
+      const lighter = (x: number) => Math.min(255, Math.round(x + (255 - x) * 0.3));
+      const darker = (x: number) => Math.round(x * 0.7);
+      return {
+        start: `rgb(${darker(r)}, ${darker(g)}, ${darker(b)})`,
+        mid: base,
+        end: `rgb(${lighter(r)}, ${lighter(g)}, ${lighter(b)})`,
+      };
+    };
+
+    const gradient = createColorGradient(getBondingColor(bondingPercentage));
+    type CSSVars = React.CSSProperties & Record<string, string>;
+    const imageStyle: CSSVars = {
+      position: 'relative',
+      '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
+      '--progress-color-start': gradient.start,
+      '--progress-color-mid': gradient.mid,
+      '--progress-color-end': gradient.end,
+    };
+
+    const totalTransactions = token.buyTransactions + token.sellTransactions;
+    const buyPct = totalTransactions === 0 ? 0 : (token.buyTransactions / totalTransactions) * 100;
+    const sellPct = totalTransactions === 0 ? 0 : (token.sellTransactions / totalTransactions) * 100;
+
+    const formatTimeAgo = (createdTimestamp: number) => {
+      if (!createdTimestamp) return '';
+      const now = Math.floor(Date.now() / 1000);
+      const ageSec = now - createdTimestamp;
+      if (ageSec < 60) return `${ageSec}s`;
+      if (ageSec < 3600) return `${Math.floor(ageSec / 60)}m`;
+      if (ageSec < 86400) return `${Math.floor(ageSec / 3600)}h`;
+      if (ageSec < 604800) return `${Math.floor(ageSec / 86400)}d`;
+      return `${Math.floor(ageSec / 604800)}w`;
+    };
+
+    return (
+      <div key={token.id} className={`explorer-token-row ${token.status === 'graduated' ? 'graduated' : ''} colored-row ${getBondingColorClass(bondingPercentage)}`} onClick={() => window.location.href = `/meme/${token.tokenAddress}`}>
+        <div className="explorer-token-actions" />
+        <div className="explorer-token-left">
+          <div className={`explorer-token-image-container ${token.status === 'graduated' ? 'graduated' : ''}`} style={token.status === 'graduated' ? { position: 'relative' } : imageStyle}>
+            <div className="explorer-progress-spacer">
+              <div className="explorer-image-wrapper">
+                {token.image ? (
+                  <img src={token.image} className="explorer-token-image" alt={token.symbol} />
+                ) : (
+                  <div className="explorer-token-letter" style={{ width: '100%', height: '100%', backgroundColor: 'rgb(6,6,6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: token.symbol.length <= 3 ? '34px' : '28px', fontWeight: '200', color: '#ffffff', borderRadius: '8px' }}>
+                    {token.symbol.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          <span className="explorer-contract-address">{token.tokenAddress.slice(0, 6)}…{token.tokenAddress.slice(-4)}</span>
+        </div>
+        <div className="explorer-token-details">
+          <div className="explorer-detail-section">
+            <div className="explorer-top-row">
+              <div className="explorer-token-info">
+                <h3 className="explorer-token-symbol">{token.symbol}</h3>
+                <p className="explorer-token-name">{token.name}</p>
+              </div>
+            </div>
+            <div className="explorer-second-row">
+              <div className="explorer-price-section">
+                <span className="explorer-time-created">{formatTimeAgo(token.created)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="explorer-third-row metrics-size-small">
+          <div className="explorer-metrics-container">
+            <div className="explorer-volume">
+              <span className="mc-label">V</span>
+              <span className="mc-value">{formatPrice(token.volume24h * monUsdPrice, false)}</span>
+            </div>
+            <div className="explorer-market-cap">
+              <span className="mc-label">MC</span>
+              <span className="mc-value">{formatPrice(token.marketCap * monUsdPrice, false)}</span>
+            </div>
+          </div>
+          <div className="explorer-third-row-section">
+            <div className="explorer-tx-bar">
+              <div className="explorer-tx-header">
+                <span className="explorer-tx-label">TX</span>
+                <span className="explorer-tx-total">{totalTransactions.toLocaleString()}</span>
+              </div>
+              <div className="explorer-tx-visual-bar">
+                {totalTransactions === 0 ? (
+                  <div style={{ width: '100%', height: '100%', backgroundColor: '#252526ff', borderRadius: '1px' }} />
+                ) : (
+                  <>
+                    <div className="explorer-tx-buy-portion" style={{ width: `${buyPct}%` }} />
+                    <div className="explorer-tx-sell-portion" style={{ width: `${sellPct}%` }} />
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="explorer-actions-section">
+            <button className="explorer-quick-buy-btn size-small style-color" onClick={(e) => { e.stopPropagation(); handleQuickBuy(token.tokenAddress, token.symbol, token.image); }}>
+              <img className="explorer-quick-buy-icon" src={lightning} />
+              {quickAmount} MON
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Separate tokens by status
+  const launchpadTokens = launchpadPositions.map(pos => positionToToken(pos)).filter(t => t && t.status === 'new');
+  const graduatedTokens = launchpadPositions.map(pos => positionToToken(pos)).filter(t => t && t.status === 'graduated');
+  const orderbookTokens = orderbookPositions.map(pos => positionToToken(pos)).filter(t => t);
+
+  // EXACT 3-column layout from TokenExplorer
+  return (
+    <div className="tracker-monitor">
+      {allPositions.length === 0 && orderbookPositions.length === 0 ? (
+        <div className="tracker-empty-state">
+          <div className="tracker-empty-content">
+            <h4>No Open Positions</h4>
+            <p>Your tracked wallets don't have any open positions yet.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="explorer-columns">
+          <div className="explorer-column">
+            <div className="explorer-column-header">
+              <div className="explorer-column-title-section">
+                <h2 className="explorer-column-title">Launchpad</h2>
+              </div>
+              <div className="explorer-column-title-right">
+                <div className={`column-pause-icon ${pausedColumn === 'launchpad' ? 'visible' : ''}`} onClick={() => setPausedColumn(prev => prev === 'launchpad' ? null : 'launchpad')}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" /></svg>
+                </div>
+                <div className="explorer-quickbuy-container">
+                  <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
+                  <input type="text" placeholder="0.0" value={quickAmounts.launchpad} onChange={(e) => setQuickAmount('launchpad', e.target.value)} onFocus={handleInputFocus} className="explorer-quickbuy-input" />
+                  <img className="quickbuy-monad-icon" src={monadicon} />
+                  <div className="explorer-preset-controls">
+                    {[1, 2, 3].map((p) => (
+                      <Tooltip key={p} offset={35} content={<div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}><div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><img src={slippage} style={{ width: '14px', height: '14px' }} alt="Slippage" /><span>{buyPresets[p]?.slippage || '0'}%</span></div><div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><img src={gas} style={{ width: '14px', height: '14px' }} alt="Priority" /><span>{buyPresets[p]?.priority || '0'}</span></div></div>}>
+                        <button className={`explorer-preset-pill ${activePresets.launchpad === p ? 'active' : ''}`} onClick={() => setActivePreset('launchpad', p)}>P{p}</button>
+                      </Tooltip>
+                    ))}
+                  </div>
+                </div>
+                <Tooltip content="Filters">
+                  <button className="column-filter-icon" onClick={() => setShowMonitorFiltersPopup(true)}><img className="filter-icon" src={filter} /></button>
+                </Tooltip>
+              </div>
+            </div>
+            <div className="explorer-tokens-list">
+              {launchpadTokens.map((token) => renderTokenRow(token, quickAmounts.launchpad))}
+            </div>
+          </div>
+
+          <div className="explorer-column">
+            <div className="explorer-column-header">
+              <div className="explorer-column-title-section">
+                <h2 className="explorer-column-title">Graduated</h2>
+              </div>
+              <div className="explorer-column-title-right">
+                <div className={`column-pause-icon ${pausedColumn === 'graduated' ? 'visible' : ''}`} onClick={() => setPausedColumn(prev => prev === 'graduated' ? null : 'graduated')}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" /></svg>
+                </div>
+                <div className="explorer-quickbuy-container">
+                  <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
+                  <input type="text" placeholder="0.0" value={quickAmounts.graduated} onChange={(e) => setQuickAmount('graduated', e.target.value)} onFocus={handleInputFocus} className="explorer-quickbuy-input" />
+                  <img className="quickbuy-monad-icon" src={monadicon} />
+                  <div className="explorer-preset-controls">
+                    {[1, 2, 3].map((p) => (
+                      <Tooltip key={p} offset={35} content={<div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}><div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><img src={slippage} style={{ width: '14px', height: '14px' }} alt="Slippage" /><span>{buyPresets[p]?.slippage || '0'}%</span></div><div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><img src={gas} style={{ width: '14px', height: '14px' }} alt="Priority" /><span>{buyPresets[p]?.priority || '0'}</span></div></div>}>
+                        <button className={`explorer-preset-pill ${activePresets.graduated === p ? 'active' : ''}`} onClick={() => setActivePreset('graduated', p)}>P{p}</button>
+                      </Tooltip>
+                    ))}
+                  </div>
+                </div>
+                <Tooltip content="Filters">
+                  <button className="column-filter-icon" onClick={() => setShowMonitorFiltersPopup(true)}><img className="filter-icon" src={filter} /></button>
+                </Tooltip>
+              </div>
+            </div>
+            <div className="explorer-tokens-list">
+              {graduatedTokens.map((token) => renderTokenRow(token, quickAmounts.graduated))}
+            </div>
+          </div>
+
+          <div className="explorer-column">
+            <div className="explorer-column-header">
+              <div className="explorer-column-title-section">
+                <h2 className="explorer-column-title">Orderbook</h2>
+              </div>
+              <div className="explorer-column-title-right">
+                <div className={`column-pause-icon ${pausedColumn === 'orderbook' ? 'visible' : ''}`} onClick={() => setPausedColumn(prev => prev === 'orderbook' ? null : 'orderbook')}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" /></svg>
+                </div>
+                <div className="explorer-quickbuy-container">
+                  <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
+                  <input type="text" placeholder="0.0" value={quickAmounts.orderbook} onChange={(e) => setQuickAmount('orderbook', e.target.value)} onFocus={handleInputFocus} className="explorer-quickbuy-input" />
+                  <img className="quickbuy-monad-icon" src={monadicon} />
+                  <div className="explorer-preset-controls">
+                    {[1, 2, 3].map((p) => (
+                      <Tooltip key={p} offset={35} content={<div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}><div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><img src={slippage} style={{ width: '14px', height: '14px' }} alt="Slippage" /><span>{buyPresets[p]?.slippage || '0'}%</span></div><div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><img src={gas} style={{ width: '14px', height: '14px' }} alt="Priority" /><span>{buyPresets[p]?.priority || '0'}</span></div></div>}>
+                        <button className={`explorer-preset-pill ${activePresets.orderbook === p ? 'active' : ''}`} onClick={() => setActivePreset('orderbook', p)}>P{p}</button>
+                      </Tooltip>
+                    ))}
+                  </div>
+                </div>
+                <Tooltip content="Filters">
+                  <button className="column-filter-icon" onClick={() => setShowMonitorFiltersPopup(true)}><img className="filter-icon" src={filter} /></button>
+                </Tooltip>
+              </div>
+            </div>
+            <div className="explorer-tokens-list">
+              {orderbookTokens.map((token) => renderTokenRow(token, quickAmounts.orderbook))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

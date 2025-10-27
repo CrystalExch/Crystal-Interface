@@ -795,8 +795,8 @@
   font-weight: 600;
   letter-spacing: -0.3px;
 }
-.tracker-monitor-buy-sell-section { 
-  display: flex; align-items: center; justify-content: space-between; 
+.tracker-monitor-buy-sell-section {
+  display: flex; align-items: center; justify-content: space-between;
   width: 100%; gap: 8px; margin-top: 8px;
 }
 .tracker-monitor-buy-amount { display: flex; align-items: center; gap: 4px; color: #00ff88; font-size: .85rem; font-weight: 600; }
@@ -1832,7 +1832,7 @@
 
 .expanded-trades-header {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
   gap: 12px;
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.03);
@@ -1844,7 +1844,7 @@
 
 .expanded-trades-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
   gap: 12px;
   padding: 10px 12px;
   background: rgba(255, 255, 255, 0.02);
@@ -1874,4 +1874,218 @@
   text-align: center;
   color: rgba(255, 255, 255, 0.4);
   font-size: 0.85rem;
+}
+
+/* New Two-Column Monitor Card Layout */
+.tracker-monitor-card-new {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  background: transparent;
+  border-bottom: 1px solid rgba(179,184,249,0.1);
+  padding: 0.75rem;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.tracker-monitor-card-new:hover {
+  background-color: rgb(17, 17, 21);
+}
+
+.tracker-monitor-card-new:last-child {
+  border-bottom: none;
+}
+
+/* First Column: Explorer Token Row Style */
+.tracker-monitor-column-first {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tracker-monitor-column-first .explorer-token-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.tracker-monitor-column-first .explorer-token-image-container {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Progress ring for bonding */
+.tracker-monitor-column-first .explorer-token-image-container:not(.graduated) {
+  background: conic-gradient(
+    from 0deg,
+    var(--progress-color-start, #ee5b5bff) 0deg,
+    var(--progress-color-mid, #f59e0b) calc(var(--progress-angle, 0deg) / 2),
+    var(--progress-color-end, #eab308) var(--progress-angle, 0deg),
+    rgba(157, 169, 240, 0.2) var(--progress-angle, 0deg),
+    rgba(157, 169, 240, 0.2) 360deg
+  );
+  padding: 2px;
+}
+
+.tracker-monitor-column-first .explorer-token-image-container.graduated {
+  background: conic-gradient(
+    from 0deg,
+    #ffd700 0deg,
+    #ffed4e 90deg,
+    #ffc107 180deg,
+    #ff8f00 270deg,
+    #ffd700 360deg
+  );
+  padding: 2px;
+}
+
+.tracker-monitor-column-first .explorer-progress-spacer {
+  width: 100%;
+  height: 100%;
+  background: rgb(6, 6, 6);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tracker-monitor-column-first .explorer-image-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tracker-monitor-column-first .explorer-contract-address {
+  font-size: 0.65rem;
+  color: rgba(242, 242, 245, 0.329);
+  letter-spacing: -0.2px;
+}
+
+.tracker-monitor-column-first .explorer-token-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tracker-monitor-column-first .explorer-token-symbol {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.tracker-monitor-column-first .explorer-token-name {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: -0.2px;
+}
+
+/* Second Column: Original Monitor Stats */
+.tracker-monitor-column-second {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.tracker-monitor-column-second .tracker-monitor-stats-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 8px;
+}
+
+.tracker-monitor-column-second .tracker-monitor-stat-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tracker-monitor-column-second .stat-label {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tracker-monitor-column-second .stat-value {
+  font-size: 0.8rem;
+  color: #fff;
+  font-weight: 500;
+}
+
+.tracker-monitor-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.tracker-monitor-action-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.tracker-monitor-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(179, 184, 249, 0.2);
+  color: #fff;
+}
+
+.tracker-monitor-action-btn.pinned {
+  color: #ffd700;
+  border-color: rgba(255, 215, 0, 0.3);
+}
+
+.tracker-monitor-expand-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+}
+
+.tracker-monitor-expand-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(179, 184, 249, 0.2);
+  color: #fff;
+}
+
+/* Expanded section should span both columns */
+.tracker-monitor-card-new .tracker-monitor-card-expanded {
+  grid-column: 1 / -1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .tracker-monitor-card-new {
+    grid-template-columns: 1fr;
+  }
+
+  .tracker-monitor-column-second .tracker-monitor-stats-section {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Monitor context - make explorer-token-row full width */
+.tracker-monitor .explorer-token-row {
+  width: 100% !important;
+  max-width: none !important;
 }
