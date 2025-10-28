@@ -853,6 +853,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 
       widgetRef.current.activeChart().onIntervalChanged().subscribe(null, (interval: string) => {
         setOverlayVisible(true);
+        localStorage.setItem(
+          'crystal_chart_timeframe',
+          interval,
+        );
         const mapped =
           interval.endsWith('S')
             ? `${interval.slice(0, -1)}s`
@@ -908,16 +912,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       activeMarketRef.current = activeMarket;
       if (chartReady) {
         setOverlayVisible(true);
-        localStorage.setItem(
-          'crystal_chart_timeframe',
-          selectedInterval === '1d'
-            ? '1D'
-            : selectedInterval === '4h'
-              ? '240'
-              : selectedInterval === '1h'
-                ? '60'
-                : selectedInterval.slice(0, -1),
-        );
         widgetRef.current.setSymbol(
           `${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}/${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`,
           selectedInterval === '1d'

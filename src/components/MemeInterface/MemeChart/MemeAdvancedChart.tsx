@@ -751,6 +751,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
                 : interval === '60'
                   ? '1h'
                   : interval + 'm';
+        localStorage.setItem('meme_chart_timeframe', mapped);
         setSelectedInterval(mapped);
       });
 
@@ -772,7 +773,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
     try {
       if (chartReady) {
         setOverlayVisible(true);
-        localStorage.setItem('meme_chart_timeframe', selectedInterval);
         widgetRef.current.setSymbol(
           `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,
           selectedInterval === '1d'
