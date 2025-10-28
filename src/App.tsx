@@ -2018,6 +2018,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const lastConnectionAttemptRef = useRef(0);
   const consecutiveFailuresRef = useRef(0);
   const memeRealtimeCallbackRef = useRef<any>({});
+  const trackedWalletsRef = useRef<any>([]);
+  const trackedWalletTradesRef = useRef<any>([]);
+  const [trackedWalletTrades, setTrackedWalletTrades] = useState<any[]>([]);
 
   const audio = useMemo(() => {
     const a = new Audio(stepaudio);
@@ -4411,6 +4414,73 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     [scheduleReconnect],
   );
 
+  const normalizeTrade = useCallback((trade: any, wallets: any[]): any => {
+    const tradeAccountAddr = (trade.account?.id || trade.caller || '').toLowerCase();
+    const connectedAddr = address?.toLowerCase();
+
+    // Try to find in tracked wallets first, then check if it's the connected wallet
+    const trackedWallet = wallets.find(
+      w => w.address.toLowerCase() === tradeAccountAddr
+    );
+
+    const isConnectedWallet = connectedAddr && tradeAccountAddr === connectedAddr;
+
+    // Use tracked wallet name if found, otherwise use "You" for connected wallet, otherwise use shortened address
+    let walletName: string;
+    let emoji: string;
+
+    if (trackedWallet) {
+      walletName = trackedWallet.name;
+      emoji = trackedWallet.emoji || '👤';
+    } else if (isConnectedWallet) {
+      walletName = 'You';
+      emoji = '👤';
+    } else {
+      walletName = `${tradeAccountAddr.slice(0, 6)}...${tradeAccountAddr.slice(-4)}`;
+      emoji = '👻';
+    }
+
+    const isBuy = !!trade.isBuy;
+    const nativeAmount = Number(isBuy ? trade.amountIn : trade.amountOut);
+    const price = Number(trade.price);
+
+    const TOTAL_SUPPLY = 1e9;
+    const marketCap = price * TOTAL_SUPPLY;
+
+    const timestamp = Number(trade.timestamp || 0);
+    const now = Date.now() / 1000;
+    const secondsAgo = Math.max(0, now - timestamp);
+    let timeAgo = 'now';
+    if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
+    else if (secondsAgo < 3600) timeAgo = `${Math.floor(secondsAgo / 60)}m`;
+    else if (secondsAgo < 86400) timeAgo = `${Math.floor(secondsAgo / 3600)}h`;
+    else timeAgo = `${Math.floor(secondsAgo / 86400)}d`;
+
+    // Get token symbol, name, address, and icon
+    const tokenAddress = trade.token?.address || trade.tokenAddress || undefined;
+    const tokenSymbol = trade.token?.symbol || trade.symbol || 'TKN';
+    const tokenName = trade.token?.name || trade.token?.symbol || trade.name || tokenSymbol;
+    const tokenIcon = trade.tokenIcon || trade.token?.imageUrl || undefined;
+
+    return {
+      id: trade.id,
+      walletName: walletName,
+      emoji: emoji,
+      token: tokenSymbol,
+      tokenName: tokenName,
+      tokenAddress: tokenAddress,
+      tokenIcon: tokenIcon,
+      amount: nativeAmount,
+      price: price,
+      marketCap: marketCap,
+      time: timeAgo,
+      txHash: trade.transaction?.id || trade.id,
+      type: isBuy ? 'buy' : 'sell',
+      createdAt: new Date(timestamp * 1000).toISOString(),
+    };
+  }, [address]);
+
+  // tokenexplorer ws
   const openWebsocket = useCallback((): void => {
     if (
       connectionStateRef.current === 'connecting' ||
@@ -4468,6 +4538,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           if (msg.method !== 'eth_subscription' || !msg.params?.result)
             return;
           const log = msg.params?.result;
+
           if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
           setProcessedLogs(prev => {
             let tempset = new Set(prev);
@@ -4492,8 +4563,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const amountInWei = word(1);
               const amountOutWei = word(2);
 
-              const amountIn = Number(amountInWei) / 1e18;
-              const amountOut = Number(amountOutWei) / 1e18;
+              const amountIn = Number(amountInWei) / (10 ** Number(isBuy ? mcfg.quoteDecimals: mcfg.baseDecimals));
+              const amountOut = Number(amountOutWei) / (10 ** Number(isBuy ? mcfg.baseDecimals: mcfg.quoteDecimals));
 
               const priceFactor = Number(mcfg.priceFactor || 1);
 
@@ -4513,6 +4584,24 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 },
               });
 
+              if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
+                const normalized = normalizeTrade({
+                  caller: callerAddr,
+                  id: log.transactionHash,
+                  isBuy: isBuy,
+                  price: endPrice,
+                  symbol: mcfg.baseAsset,
+                  amountIn,
+                  amountOut,
+                  timestamp: Date.now(),
+                }, trackedWalletsRef.current);
+              
+                setTrackedWalletTrades(prev => {
+                  const updated = [normalized, ...prev];
+                  return updated.length > 500 ? updated.slice(0, 500) : updated;
+                });
+              }                         
+              
               if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
               setTokenData(p => ({
                 ...p,
@@ -4783,6 +4872,24 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const vToken = Number(vTokenWei);
 
               const price = vToken === 0 ? 0 : vNative / vToken;
+
+              if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
+                const normalized = normalizeTrade({
+                  caller: callerAddr,
+                  id: log.transactionHash,
+                  isBuy: isBuy,
+                  price: (price),
+                  amountIn: amountIn,
+                  amountOut: amountOut,
+                  timestamp: Date.now(),
+                }, trackedWalletsRef.current);
+              
+                setTrackedWalletTrades(prev => {
+                  const updated = [normalized, ...prev];
+                  return updated.length > 500 ? updated.slice(0, 500) : updated;
+                });
+              }
+              
               if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
                 setTokenData(p => ({
                   ...p,
@@ -5083,7 +5190,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   );
 
   useEffect(() => {
-    if (!['board', 'spectra', 'meme', 'launchpad'].includes(location.pathname.split('/')[1])) return;
+    if (!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])) return;
 
     let cancelled = false;
 
@@ -5352,7 +5459,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       retryCountRef.current = 0;
       consecutiveFailuresRef.current = 0;
     };
-  }, [openWebsocket, !['board', 'spectra', 'meme', 'launchpad'].includes(location.pathname.split('/')[1])]);
+  }, [openWebsocket, !['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
 
   // memeinterface
   const [memeTrades, setMemeTrades] = useState<LaunchpadTrade[]>([]);
@@ -25823,7 +25930,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 onImportWallets={handleImportWallets}
                 monUsdPrice={monUsdPrice}
                 walletTokenBalances={walletTokenBalances}
-                activechain={activechain}
                 tokenList={memoizedTokenList}
                 marketsData={marketsData}
                 sendUserOperationAsync={sendUserOperationAsync}
@@ -25832,21 +25938,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   address: address,
                   chainId: userchain,
                 }}
-                setChain={handleSetChain}
-                terminalQueryData={terminalQueryData}
-                terminalRefetch={terminalRefetch}
-                holders={memeHolders}
-                chartData={chartData}
                 trades={memeTrades}
-                selectedInterval={memeSelectedInterval}
-                setSelectedInterval={setMemeSelectedInterval}
-                realtimeCallbackRef={memeRealtimeCallbackRef}
-                selectedIntervalRef={memeSelectedIntervalRef}
-                orders={orders}
-                tradehistory={tradehistory}
-                canceledorders={canceledorders}
-                router={router}
-                refetch={refetch}
+                trackedWalletsRef={trackedWalletsRef}
+                trackedWalletTradesRef={trackedWalletTradesRef}
+                trackedWalletTrades={trackedWalletTrades}
+                setTrackedWalletTrades={setTrackedWalletTrades}
               />
             } />
           <Route path="/perps" element={<Navigate to={`/perps/${perpsActiveMarketKey}`} replace />} />

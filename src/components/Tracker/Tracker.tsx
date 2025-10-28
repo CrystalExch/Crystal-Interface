@@ -169,7 +169,6 @@ import {
 
 import './Tracker.css';
 
-import { watchContractEvent } from 'wagmi/actions';
 import { config } from '../../wagmi';
 import { CrystalMarketAbi } from '../../abis/CrystalMarketAbi';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
@@ -200,46 +199,6 @@ interface LiveTrade {
   txHash: string;
   type: 'buy' | 'sell';
   createdAt: string;
-}
-
-interface TrackerProps {
-  isBlurred: boolean;
-  setpopup: (value: number) => void;
-  onImportWallets?: (walletsText: string, addToSingleGroup: boolean) => void;
-  onApplyFilters?: (filters: FilterState) => void;
-  activeFilters?: FilterState;
-  monUsdPrice: number;
-  activechain?: string | number;
-  walletTokenBalances?: { [address: string]: any };
-  connected?: boolean;
-  address?: string | null;
-  getWalletIcon?: () => string;
-  onDepositClick?: () => void;
-  onDisconnect?: () => void;
-  t?: (k: string) => string;
-  tokenList?: any[];
-  marketsData?: any[];
-  sendUserOperationAsync?: any;
-  account?: {
-    connected: boolean;
-    address: string | null;
-    chainId: number;
-  };
-  setChain?: (chain: number) => void;
-  terminalQueryData?: any;
-  terminalRefetch?: () => void;
-  holders?: any[];
-  chartData?: any;
-  trades?: any[];
-  selectedInterval?: string;
-  setSelectedInterval?: (interval: string) => void;
-  realtimeCallbackRef?: any;
-  selectedIntervalRef?: any;
-  orders?: any[];
-  tradehistory?: any[];
-  canceledorders?: any[];
-  router?: string;
-  refetch?: () => void;
 }
 
 // Add Position interface from MemeOrderCenter
@@ -542,6 +501,30 @@ type MarketsMap = Map<string, MonitorToken>;
 type TrackerTab = 'wallets' | 'trades' | 'monitor';
 type SortDirection = 'asc' | 'desc';
 
+interface TrackerProps {
+  isBlurred: boolean;
+  setpopup: (value: number) => void;
+  onImportWallets?: (walletsText: string, addToSingleGroup: boolean) => void;
+  onApplyFilters?: (filters: FilterState) => void;
+  activeFilters?: FilterState;
+  monUsdPrice: number;
+  walletTokenBalances?: { [address: string]: any };
+  tokenList?: any[];
+  marketsData?: any[];
+  sendUserOperationAsync?: any;
+  account?: {
+    connected: boolean;
+    address: string | null;
+    chainId: number;
+  };
+  terminalRefetch?: () => void;
+  trades: any;
+  trackedWalletsRef: any;
+  trackedWalletTradesRef: any;
+  trackedWalletTrades: any;
+  setTrackedWalletTrades: any;
+}
+
 const Tracker: React.FC<TrackerProps> = ({
   isBlurred,
   setpopup,
@@ -553,21 +536,12 @@ const Tracker: React.FC<TrackerProps> = ({
   marketsData = [],
   sendUserOperationAsync,
   account,
-  setChain,
-  terminalQueryData,
   terminalRefetch,
-  holders = [],
-  chartData,
   trades = [],
-  selectedInterval,
-  setSelectedInterval,
-  realtimeCallbackRef,
-  selectedIntervalRef,
-  orders = [],
-  tradehistory = [],
-  canceledorders = [],
-  router,
-  refetch
+  trackedWalletsRef,
+  trackedWalletTradesRef,
+  trackedWalletTrades,
+  setTrackedWalletTrades
 }) => {
   const [selectedSimpleFilter, setSelectedSimpleFilter] = useState<string | null>(null);
   const [emojiPickerPosition, setEmojiPickerPosition] = useState<{top: number, left: number} | null>(null);
@@ -580,7 +554,6 @@ const Tracker: React.FC<TrackerProps> = ({
   const initialUsedDemoWallets = initialStoredWallets.length === 0 && SHOW_DEMO_WALLETS;
   const [demoMode, setDemoMode] = useState({ wallets: initialUsedDemoWallets, trades: SHOW_DEMO_TRADES, monitor: SHOW_DEMO_MONITOR });
   const disableDemo = (k: 'wallets'|'trades'|'monitor') => setDemoMode(m => ({ ...m, [k]: false }));
-  const [trackedWalletTrades, setTrackedWalletTrades] = useState<LiveTrade[]>(demoMode.trades ? DEMO_TRADES : []);
   const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>(() => {
     const stored = loadWalletsFromStorage();
     if (stored?.length) return stored.map(w => ({ ...w, createdAt: w.createdAt || new Date().toISOString(), lastActiveAt: (w as any).lastActiveAt ?? null }));
@@ -588,12 +561,9 @@ const Tracker: React.FC<TrackerProps> = ({
   });
 
 
-  const trackedWalletsRef = useRef(trackedWallets);
-  const trackedWalletTradesRef = useRef(trackedWalletTrades);
   const [addressPositions, setAddressPositions] = useState<Record<string, GqlPosition[]>>({});
   const [expandedTokenId, setExpandedTokenId] = useState<string | null>(null);
   useEffect(() => { trackedWalletsRef.current = trackedWallets; }, [trackedWallets]);
-  useEffect(() => { trackedWalletTradesRef.current = trackedWalletTrades; }, [trackedWalletTrades]);
 
   const lastEventTsRef = useRef<number | null>(null);
   const setStatus = (extra: Record<string, any> = {}) => ((window as any).__TRACKER_STATUS__ = {
@@ -821,71 +791,6 @@ const Tracker: React.FC<TrackerProps> = ({
     setBuyPresets(presets);
   }, []);
 
-  // Convert trades prop (trackedTrades from App.tsx) to LiveTrade format
-  // trades = LaunchpadTrade[] with format: { id, timestamp, isBuy, price, nativeAmount, tokenAmount, caller, token: { id } }
-  useEffect(() => {
-    if (!trades || trades.length === 0) return;
-
-    setTrackedWalletTrades(() => {
-      if (!trades || trades.length === 0) return [];
-
-      return trades.map((trade: any) => {
-        const tokenAddr = trade.token?.id?.toLowerCase() || '';
-        const callerAddr = trade.caller?.toLowerCase() || '';
-        const isBuy = trade.isBuy;
-
-        // Resolve token metadata from marketsData
-        let resolvedIcon = '';
-        let resolvedTicker = '';
-        let resolvedName = '';
-
-        if (marketsData && Array.isArray(marketsData)) {
-          const market = marketsData.find(m => m.baseAddress?.toLowerCase() === tokenAddr);
-          if (market) {
-            resolvedIcon = market.imageUrl || market.metadataCID || '';
-            resolvedTicker = market.symbol || market.ticker || '';
-            resolvedName = market.name || market.symbol || '';
-          }
-        }
-
-        // Fallback to settings.chainConfig.markets
-        if (!resolvedIcon && !resolvedTicker && tokenAddr && settings?.chainConfig) {
-          const marketKey = Object.keys(settings.chainConfig?.markets || {}).find(key => {
-            const m = settings.chainConfig?.markets?.[key];
-            return m?.baseAddress?.toLowerCase() === tokenAddr;
-          });
-          if (marketKey) {
-            const m = settings.chainConfig?.markets?.[marketKey];
-            resolvedIcon = m?.imageUrl || m?.metadataCID || '';
-            resolvedTicker = m?.symbol || m?.ticker || '';
-            resolvedName = m?.name || m?.symbol || '';
-          }
-        }
-
-        // Calculate market cap from price
-        const price = Number(trade.price || 0);
-        const marketCap = price * SUPPLY;
-
-        return {
-          id: trade.id || `${tokenAddr}-${callerAddr}-${Date.now()}`,
-          walletName: callerAddr?.slice(0, 6) + '...' + callerAddr?.slice(-4),
-          emoji: '👤',
-          token: resolvedTicker || 'Token',
-          tokenName: resolvedName || resolvedTicker || 'Token',
-          tokenAddress: tokenAddr,
-          tokenIcon: resolvedIcon,
-          amount: Number(trade.nativeAmount || 0), // nativeAmount is already in MON
-          price: price,
-          marketCap: marketCap,
-          time: '', // Calculate if needed
-          txHash: trade.id?.split('-')?.[0] || '',
-          type: isBuy ? 'buy' : 'sell',
-          createdAt: new Date(Number(trade.timestamp || 0) * 1000).toISOString(),
-        };
-      });
-    });
-  }, [trades, marketsData]);
-
   const setQuickAmount = (column: string, value: string) => {
     setQuickAmounts(prev => ({ ...prev, [column]: value }));
   };
@@ -972,7 +877,6 @@ const Tracker: React.FC<TrackerProps> = ({
 
   const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'launchpad') => {
     if (!logs?.length) return;
-    if (demoMode.trades) { disableDemo('trades'); setTrackedWalletTrades([]); }
     lastEventTsRef.current = Date.now();
     setStatus({ lastPushSource: source });
 
@@ -1064,27 +968,15 @@ const Tracker: React.FC<TrackerProps> = ({
       return;
     }
 
-    setTrackedWalletTrades(prev => {
-      const next: LiveTrade[] = [...toAdd, ...prev];
-      const seen = new Set<string>(), out: LiveTrade[] = [];
-      for (const t of next) if (!seen.has(t.id)) { seen.add(t.id); out.push(t); }
-      flushMarketsToState();
-      return out.slice(0, 500);
-    });
   }, [normalizeTrade, activechain, demoMode.trades]);
 
   // safe RPC wrapper to avoid noisy errors
-
-
   useEffect(() => {
     // Live contract event watchers are disabled to avoid continuous LiveTrades ingestion.
     // We only populate Monitor data from portfolio GraphQL positions for tracked wallets.
     // If you want to re-enable live ingestion later, restore the original watcher code.
     return;
   }, [activechain, push]);
-
-
-
 
   useEffect(() => {
     saveWalletsToStorage(trackedWallets);
@@ -1262,6 +1154,7 @@ const Tracker: React.FC<TrackerProps> = ({
       return wallet;
     }));
   }, [walletTokenBalances, activechain]);
+
   const [showAddWalletModal, setShowAddWalletModal] = useState(false);
   const [newWalletAddress, setNewWalletAddress] = useState('');
   const [newWalletName, setNewWalletName] = useState('');
@@ -1279,7 +1172,6 @@ const Tracker: React.FC<TrackerProps> = ({
   const mainWalletsRef = useRef<HTMLDivElement>(null);
 
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  
 
   function getRpcPublicClient(chainCfg?: any) {
     if (!chainCfg?.rpcUrl) return null;
@@ -1301,8 +1193,6 @@ const Tracker: React.FC<TrackerProps> = ({
   const toDisplay = (v: number, unit: 'USD' | 'MON', p: number) =>
     unit === 'USD' ? v * p : v;
 
-
-
   const handleWalletSort = (field: 'balance' | 'lastActive') => {
     if (walletSortField === field) {
       setWalletSortDirection(prev => prev === 'desc' ? 'asc' : 'desc');
@@ -1320,7 +1210,6 @@ const Tracker: React.FC<TrackerProps> = ({
       setTradeSortDirection('desc');
     }
   };
-
 
   const getSortedWallets = () => {
     if (!walletSortField) return trackedWallets;
@@ -1809,10 +1698,6 @@ const Tracker: React.FC<TrackerProps> = ({
     return emojiMap[upperSymbol] || '🪙';
   };
 
-  
-
-
-
   const handleExportWallets = () => {
     const exportData = trackedWallets.map(wallet => ({
       trackedWalletAddress: wallet.address,
@@ -1928,8 +1813,6 @@ const Tracker: React.FC<TrackerProps> = ({
     setDontShowDeleteAgain(false);
   };
 
-
-
   const handleApplyFilters = (filters: FilterState) => {
     setActiveFilters(filters);
     if (externalOnApplyFilters) {
@@ -2002,6 +1885,7 @@ const Tracker: React.FC<TrackerProps> = ({
     });
     setDropPreviewLine(null);
   };
+
   const lastActiveLabel = (w: TrackedWallet) => {
     const ts = w.lastActiveAt ?? new Date(w.createdAt).getTime();
     const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
@@ -2010,14 +1894,6 @@ const Tracker: React.FC<TrackerProps> = ({
     if (s < 86400) return `${Math.floor(s / 3600)}h`;
     return `${Math.floor(s / 86400)}d`;
   };
-
-  // rerender every 30s
-  const [, setTicker] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTicker(t => t + 1), 30_000);
-    return () => clearInterval(id);
-  }, []);
-
 
   const handleMultiDragStart = (e: React.DragEvent) => {
     e.stopPropagation();
@@ -2100,78 +1976,7 @@ const Tracker: React.FC<TrackerProps> = ({
     return () => { ignore = true; };
   }, [activechain, JSON.stringify(trackedWallets.map(w => w.address))]);
 
-  useEffect(() => {
-    if (!demoMode.trades && trackedWalletTradesRef.current === DEMO_TRADES) setTrackedWalletTrades([]);
-    setStatus();
-  }, [demoMode.trades]);
-
-  // Update trade times every minute
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTrackedWalletTrades(prev =>
-        prev.map(trade => {
-          const timestamp = new Date(trade.createdAt).getTime() / 1000;
-          const now = Date.now() / 1000;
-          const secondsAgo = Math.max(0, now - timestamp);
-          let timeAgo = 'now';
-          if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
-          else if (secondsAgo < 3600) timeAgo = `${Math.floor(secondsAgo / 60)}m`;
-          else if (secondsAgo < 86400) timeAgo = `${Math.floor(secondsAgo / 3600)}h`;
-          else timeAgo = `${Math.floor(secondsAgo / 86400)}d`;
-          return { ...trade, time: timeAgo };
-        })
-      );
-    }, 10000); // Update every 10 seconds
-    return () => clearInterval(interval);
-  }, []);
-
-  // Re-enabled for portfolio/orderbook tokens only (router and market)
-  // Launchpad tokens handled by App.tsx websocket to avoid wash trading bot
-  useEffect(() => {
-    const cfg = chainCfgOf(activechain);
-
-    if (!cfg?.id || !cfg?.rpcUrl) {
-      return;
-    }
-
-    const unsubs: Array<() => void> = [];
-    const common = { poll: true as const, chainId: cfg.id };
-
-    try {
-      // ONLY watch router and market for portfolio/orderbook tokens
-      // Launchpad tokens handled by App.tsx to avoid wash trading bot
-      if (cfg?.router) {
-        unsubs.push(watchContractEvent(config, {
-          address: cfg.router as `0x${string}`,
-          abi: CrystalRouterAbi,
-          eventName: 'Trade' as any,
-          onLogs: (logs) => {
-            push(logs, 'router');
-          },
-          ...common,
-        }));
-      }
-      if (cfg?.market) {
-        unsubs.push(watchContractEvent(config, {
-          address: cfg.market as `0x${string}`,
-          abi: CrystalMarketAbi,
-          eventName: 'Trade' as any,
-          onLogs: (logs) => {
-            push(logs, 'market');
-          },
-          ...common,
-        }));
-      }
-      // NOTE: Launchpad token events NOT watched here - handled by App.tsx websocket instead
-    } catch (err) {
-      console.error('[Tracker] Error setting up contract event watchers:', err);
-    }
-
-    return () => { try { unsubs.forEach(u => u?.()); } catch {} };
-  }, [activechain, push]);
-
   const ingestExternalTrades = (items: any[]) => {
-    if (demoMode.trades) { disableDemo('trades'); setTrackedWalletTrades([]); }
     const wallets = trackedWalletsRef.current;
     try {
       for (const it of items) {
@@ -2183,12 +1988,6 @@ const Tracker: React.FC<TrackerProps> = ({
         } catch (e) { /* per-item ignore */ }
       }
     } catch (e) { console.error('[Tracker] ingestExternalTrades upsertMarket loop error', e); }
-    setTrackedWalletTrades(prev => {
-      const next = [...items.map(x => normalizeTrade(x, wallets)), ...prev];
-      const seen = new Set<string>(), out: LiveTrade[] = [];
-      for (const t of next) if (!seen.has(t.id)) { seen.add(t.id); out.push(t); }
-      return out.slice(0,500);
-    });
     lastEventTsRef.current = Date.now();
     setStatus({ lastPushSource: 'external' });
   };
@@ -2292,7 +2091,6 @@ const Tracker: React.FC<TrackerProps> = ({
   };
 
   // websocket helpers
-
   const subscribe = useCallback((ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
     try {
       const reqId = subIdRef.current++;
@@ -2391,12 +2189,14 @@ const Tracker: React.FC<TrackerProps> = ({
       flushMarketsToState();
     } catch (e) {}
   }, []);
+
   useEffect(() => {
     const TRADE_EVENT = '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982';
     const MARKET_CREATED_EVENT = '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
     const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
 
     const handler = (ev: Event) => {
+      console.log(ev)
       try {
         const detail: any = (ev as CustomEvent).detail;
         const log = detail;
@@ -2468,7 +2268,6 @@ const Tracker: React.FC<TrackerProps> = ({
     };
   }, [activechain]);
 
-
   // Bootstrap: fetch existing launchpadTokens / markets from the GraphQL endpoint
   useEffect(() => {
     let cancelled = false;
@@ -2500,16 +2299,7 @@ const Tracker: React.FC<TrackerProps> = ({
     return () => { cancelled = true; };
   }, [activechain]);
 
-
-
-
   const flushMarketsToState = () => setMonitorTokens(Array.from(marketsRef.current.values()));
-
-
-
-
-
-  
 
   const handleRemoveAll = () => {
     setTrackedWallets([]);
@@ -2576,7 +2366,6 @@ const Tracker: React.FC<TrackerProps> = ({
   useEffect(() => {
     flushMarketsToState();
   }, [marketsTick, selectedSimpleFilter]);
-
 
   const renderWalletManager = () => {
     const filteredWallets = getFilteredWallets();
@@ -2659,7 +2448,6 @@ const Tracker: React.FC<TrackerProps> = ({
       </div>
     );
   };
-
 
   const renderLiveTrades = () => {
     const filteredTrades = getFilteredTrades();
@@ -3768,8 +3556,6 @@ const Tracker: React.FC<TrackerProps> = ({
       </div>
     );
   };
-
-  
 
   const startSelection = (e: React.MouseEvent) => {
       if (e.button !== 0) return;
