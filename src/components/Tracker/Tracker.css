@@ -2146,17 +2146,6 @@
   justify-content: flex-end;
 }
 
-.tracker-monitor-action-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(179, 184, 249, 0.1);
-  color: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-}
-
 .tracker-monitor-action-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(179, 184, 249, 0.2);
