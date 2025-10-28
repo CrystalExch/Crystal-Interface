@@ -1697,16 +1697,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [tokenData, setTokenData] = useState<Partial<Token>>();
   const [isVertDragging, setIsVertDragging] = useState(false);
   const [trades, setTrades] = useState<
-    [
-      boolean, // isBuy
-      string,  // tokenAddrFromMarket
-      string,  // callerAddr
-      string,  // buyAmount
-      string,  // sellAmount
-      number,  // marketCap
-      string,  // tokenIcon
-      string   // tokenName
-    ][]
+    [boolean, string, string, string, string][]
   >([]);
   const [spreadData, setSpreadData] = useState<any>({});
   const [activeSection, setActiveSection] = useState<
@@ -4480,7 +4471,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           if (msg.method !== 'eth_subscription' || !msg.params?.result)
             return;
           const log = msg.params?.result;
-          console.log('[App WebSocket] 📩 Received event. Topic:', log?.topics?.[0], 'Path:', location.pathname);
           if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
           setProcessedLogs(prev => {
             let tempset = new Set(prev);
@@ -4525,65 +4515,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     isBuy == true ? Number(amountIn) / 1e18 : Number(amountOut) / 1e18,
                 },
               });
-
-              // Handler for tracked wallet trades
-              // Read tracked wallets from localStorage (where Tracker stores them)
-              const storedWallets = (() => {
-                try {
-                  const s = localStorage.getItem('tracked_wallets_data');
-                  return s ? JSON.parse(s) : [];
-                } catch {
-                  return [];
-                }
-              })();
-              console.log('[App TRADE_EVENT] callerAddr:', callerAddr, 'trackedWallets from localStorage:', storedWallets.map((w: any) => w.address?.toLowerCase()));
-              const isTrackedWallet = storedWallets.some((w: any) => w.address?.toLowerCase() === callerAddr);
-              console.log('[App TRADE_EVENT] isTrackedWallet:', isTrackedWallet);
-              if (isTrackedWallet) {
-                console.log('[App TRADE_EVENT] ✅ Adding tracked trade for token:', tokenAddrFromMarket);
-                setTrackedTrades(prev => {
-                  const newTrade = {
-                    id: `${log.transactionHash}-${log.logIndex}`,
-                    timestamp: Date.now() / 1000,
-                    isBuy,
-                    price: endPrice,
-                    nativeAmount: isBuy ? amountIn : amountOut,
-                    tokenAmount: isBuy ? amountOut : amountIn,
-                    caller: callerAddr,
-                    token: { id: tokenAddrFromMarket },
-                  };
-                  console.log('[App TRADE_EVENT] New trade object:', newTrade);
-                  return [newTrade, ...prev.slice(0, 499)];
-                });
-                // Also append buy/sell amount to Tracker's trades state
-                setTrades(prev => {
-                  const buyAmount = isBuy ? amountOut : 0;
-                  const sellAmount = isBuy ? 0 : amountIn;
-                  const marketCap = endPrice * TOTAL_SUPPLY;
-                  const tokenIcon = mcfg?.imageUrl || mcfg?.metadataCID || '';
-                  const tokenName = mcfg?.name || '';
-                  const newRow: [
-                    boolean, // isBuy
-                    string,   // tokenAddrFromMarket
-                    string,   // callerAddr
-                    string,   // buyAmount
-                    string,   // sellAmount
-                    number,   // marketCap
-                    string,   // tokenIcon
-                    string    // tokenName
-                  ] = [
-                    isBuy,
-                    tokenAddrFromMarket,
-                    callerAddr,
-                    buyAmount.toString(),
-                    sellAmount.toString(),
-                    marketCap,
-                    tokenIcon,
-                    tokenName
-                  ];
-                  return [newRow, ...prev.slice(0, 499)];
-                });
-              }
 
               if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
               setTokenData(p => ({
@@ -4855,40 +4786,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const vToken = Number(vTokenWei);
 
               const price = vToken === 0 ? 0 : vNative / vToken;
-
-              // Handler for tracked wallet trades
-              // Read tracked wallets from localStorage (where Tracker stores them)
-              const storedWallets = (() => {
-                try {
-                  const s = localStorage.getItem('tracked_wallets_data');
-                  return s ? JSON.parse(s) : [];
-                } catch {
-                  return [];
-                }
-              })();
-              console.log('[App MARKET_UPDATE] callerAddr:', callerAddr, 'trackedWallets from localStorage:', storedWallets.map((w: any) => w.address?.toLowerCase()));
-              const isTrackedWallet = storedWallets.some((w: any) => w.address?.toLowerCase() === callerAddr);
-              console.log('[App MARKET_UPDATE] isTrackedWallet:', isTrackedWallet);
-              if (isTrackedWallet) {
-                console.log('[App MARKET_UPDATE] ✅ Adding tracked trade for token:', tokenAddr);
-                setTrackedTrades(prev => {
-                  const newTrade = {
-                    id: `${log.transactionHash}-${log.logIndex}`,
-                    timestamp: Date.now() / 1000,
-                    isBuy,
-                    price: price,
-                    nativeAmount: isBuy ? amountIn : amountOut,
-                    tokenAmount: isBuy ? amountOut : amountIn,
-                    caller: callerAddr,
-                    token: { id: tokenAddr },
-                  };
-                  console.log('[App MARKET_UPDATE] New trade object:', newTrade);
-                  const newArray = [newTrade, ...prev.slice(0, 499)];
-                  console.log('[App MARKET_UPDATE] trackedTrades array length after update:', newArray.length);
-                  return newArray;
-                });
-              }
-
               if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
                 setTokenData(p => ({
                   ...p,
@@ -5462,13 +5359,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   // memeinterface
   const [memeTrades, setMemeTrades] = useState<LaunchpadTrade[]>([]);
-  const [trackedTrades, setTrackedTrades] = useState<LaunchpadTrade[]>([]);
-
-  // Debug: log whenever trackedTrades changes
-  useEffect(() => {
-    console.log('[App] trackedTrades state updated. Length:', trackedTrades.length, 'Trades:', trackedTrades);
-  }, [trackedTrades]);
-
   const [memeHolders, setMemeHolders] = useState<Holder[]>([]);
   const [memeTopTraders, setMemeTopTraders] = useState<Holder[]>([]);
   const [memePositions, setMemePositions] = useState<any[]>([]);
@@ -8256,37 +8146,23 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   useEffect(() => {
     const temp: Trade[] | undefined = tradesByMarket[activeMarketKey];
 
-    let processed: [
-      boolean, // isBuy
-      string,  // tokenAddrFromMarket
-      string,  // callerAddr
-      string,  // buyAmount
-      string,  // sellAmount
-      number,  // marketCap
-      string,  // tokenIcon
-      string   // tokenName
-    ][] = [];
+    let processed: [boolean, string, string, string, string][] = [];
 
     if (temp) {
       processed = temp.slice(0, 100).map((trade: Trade) => {
         const isBuy = trade[2] === 1;
-        const tokenAddrFromMarket = activeMarket.baseAddress?.toLowerCase() || '';
-        const callerAddr = trade[4] || '';
-        const buyAmount = isBuy ? ((trade[2] === 1 ? trade[1] : trade[0]) / 1e9).toString() : '0';
-        const sellAmount = !isBuy ? ((trade[2] === 1 ? trade[1] : trade[0]) / 1e9).toString() : '0';
+        const tradeValue = (trade[2] === 1 ? trade[1] : trade[0]) / 10 ** Number(activeMarket.baseDecimals);
         const price = trade[3] / Number(activeMarket.priceFactor) || 0;
-        const marketCap = price * 1e9;
-        const tokenIcon = activeMarket.imageUrl || activeMarket.metadataCID || '';
-        const tokenName = activeMarket.name || '';
+        const time = formatTime(trade[6]);
+        const hash = trade[5];
         return [
           isBuy,
-          tokenAddrFromMarket,
-          callerAddr,
-          buyAmount,
-          sellAmount,
-          marketCap,
-          tokenIcon,
-          tokenName
+          formatSubscript(formatSig(
+            price.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket.marketType != 0
+          )),
+          formatSubscript(customRound(tradeValue, 3)),
+          time,
+          hash,
         ];
       });
     }
@@ -25964,7 +25840,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 terminalRefetch={terminalRefetch}
                 holders={memeHolders}
                 chartData={chartData}
-                trades={trackedTrades}
+                trades={memeTrades}
                 selectedInterval={memeSelectedInterval}
                 setSelectedInterval={setMemeSelectedInterval}
                 realtimeCallbackRef={memeRealtimeCallbackRef}
