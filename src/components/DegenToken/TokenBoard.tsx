@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import './TokenBoard.css';
@@ -107,9 +107,11 @@ const SkeletonCard: React.FC = () => (
   </div>
 );
 
-const TokenCard: React.FC<{ 
-  token: Token; 
-  onClick: () => void; 
+
+
+const TokenCard: React.FC<{
+  token: Token;
+  onClick: () => void;
   animationsEnabled: boolean;
   isNew?: boolean;
 }> = ({ token, onClick, animationsEnabled, isNew = false }) => {
@@ -117,25 +119,39 @@ const TokenCard: React.FC<{
   const bondingColor = getBondingColor(bondingPercentage);
   const changeColor = token.change24h >= 0 ? '#43e17dff' : '#ef4444';
   const changeSign = token.change24h >= 0 ? '+' : '';
-  
-  const isHighVolume = token.volume24h > 10000; 
+  const isHighVolume = token.volume24h > 10000;
+
+  // Animation logic for Pump.fun style pop
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [pop, setPop] = React.useState(false);
+
+  useEffect(() => {
+    if (isNew && animationsEnabled) {
+      setPop(true);
+      const timeout = setTimeout(() => setPop(false), 900);
+      return () => clearTimeout(timeout);
+    }
+  }, [isNew, animationsEnabled]);
 
   const getCardClasses = () => {
     let classes = 'board-token-card';
-    
     if (animationsEnabled) {
       classes += ' animations-enabled';
-      if (isNew) classes += ' is-new';
       if (isHighVolume) classes += ' high-volume';
     }
-    
+    if (pop) classes += ' pump-fun-animate';
     return classes;
   };
 
   return (
-    <div className={getCardClasses()} onClick={onClick} style={{
-      '--progress-color': token.status === 'graduated' ? '#ffd700' : bondingColor
-    } as React.CSSProperties}>
+    <div
+      ref={cardRef}
+      className={getCardClasses()}
+      onClick={onClick}
+      style={{
+        '--progress-color': token.status === 'graduated' ? '#ffd700' : bondingColor
+      } as React.CSSProperties}
+    >
       <div className="board-token-image-container">
         <img
           src={token.image}
@@ -154,8 +170,8 @@ const TokenCard: React.FC<{
           <div className="board-token-creator">
             <div className="board-creator-info">
               <span className="board-creator-address">
-                {token.creator ? 
-                  `${token.creator.slice(0, 6)}...${token.creator.slice(-4)}` : 
+                {token.creator ?
+                  `${token.creator.slice(0, 6)}...${token.creator.slice(-4)}` :
                   '0x0000...0000'
                 }
               </span>
@@ -171,21 +187,21 @@ const TokenCard: React.FC<{
           </div>
           <div className="board-market-info">
             <div className="board-bonding-progress">
-                <div className="board-progress-bar">
-                  <div
-                    className="board-progress-fill"
-                    style={{
-                      width: `${token.status === 'graduated' ? 100 : bondingPercentage}%`,
-                      backgroundColor: token.status === 'graduated' ? '#ffd700' : bondingColor
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="board-price-change" style={{ color: changeColor }}>
-                {changeSign}{token.change24h.toFixed(2)}%
+              <div className="board-progress-bar">
+                <div
+                  className="board-progress-fill"
+                  style={{
+                    width: `${token.status === 'graduated' ? 100 : bondingPercentage}%`,
+                    backgroundColor: token.status === 'graduated' ? '#ffd700' : bondingColor
+                  }}
+                />
               </div>
             </div>
+            <div className="board-price-change" style={{ color: changeColor }}>
+              {changeSign}{token.change24h.toFixed(2)}%
+            </div>
           </div>
+        </div>
         {token.description && (
           <div className="board-token-description">
             {token.description.length > 120

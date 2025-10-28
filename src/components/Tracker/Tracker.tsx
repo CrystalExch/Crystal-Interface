@@ -1,8 +1,8 @@
-import { Search, Edit2, Bell } from 'lucide-react';
+import { Search, Edit2 } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import copy from '../../assets/copy.svg'
-import closebutton from '../../assets/close_button.png'
+import copy from '../../assets/copy.svg';
+import closebutton from '../../assets/close_button.png';
 import monadicon from '../../assets/monadlogo.svg';
 import trash from '../../assets/trash.svg';
 import lightning from '../../assets/flash.png';
@@ -11,7 +11,6 @@ import gas from '../../assets/gas.svg';
 import slippage from '../../assets/slippage.svg';
 import { settings } from '../../settings';
 import { loadBuyPresets } from '../../utils/presetManager';
-import AssetRow from '../Portfolio/AssetRow/AssetRow';
 import { createPublicClient, http, encodeFunctionData } from 'viem';
 import ImportWalletsPopup from './ImportWalletsPopup';
 import {
@@ -35,6 +34,49 @@ export type GqlPosition = {
   pnlNative: number;
   lastPrice: number;
   isOrderbook?: boolean;
+};
+
+interface LaunchpadPositionData {
+  token: {
+    id: string;
+    symbol?: string;
+    name?: string;
+    lastPriceNativePerTokenWad: string;
+    metadataCID?: string;
+    migrated: boolean;
+  };
+  tokenBought: string;
+  tokenSold: string;
+  nativeSpent: string;
+  nativeReceived: string;
+  tokens: string;
+}
+
+const createPositionFromData = (p: LaunchpadPositionData, isOrderbook: boolean): GqlPosition => {
+  const boughtTokens = Number(p.tokenBought) / 1e18;
+  const soldTokens = Number(p.tokenSold) / 1e18;
+  const spentNative = Number(p.nativeSpent) / 1e18;
+  const receivedNative = Number(p.nativeReceived) / 1e18;
+  const remainingTokens = Number(p.tokens) / 1e18;
+  const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e9;
+
+  return {
+    tokenId: p.token.id,
+    symbol: p.token.symbol,
+    name: p.token.name,
+    imageUrl: p.token.metadataCID
+      ? `https://pub-8aff0f9ec88b4fff8cdce3f213f21b7f.r2.dev/img/${p.token.metadataCID}.png`
+      : undefined,
+    boughtTokens,
+    soldTokens,
+    spentNative,
+    receivedNative,
+    remainingTokens,
+    remainingPct: boughtTokens > 0 ? (remainingTokens / boughtTokens) * 100 : 0,
+    pnlNative: (remainingTokens * lastPrice) + receivedNative - spentNative,
+    lastPrice,
+    isOrderbook,
+  };
 };
 
 const fetchPortfolio = async (address: string) => {
@@ -75,79 +117,21 @@ const fetchPortfolio = async (address: string) => {
     });
 
     const result = await response.json();
-    console.log('[Tracker] fetchPortfolio response for', address, ':', result);
 
     const { data, errors } = result;
     if (errors) {
       console.error('[Tracker] GraphQL errors:', errors);
     }
 
-    const allPositions: any[] = data?.launchpadPositions ?? [];
+    const allPositions: LaunchpadPositionData[] = data?.launchpadPositions ?? [];
 
     // Separate launchpad (not migrated) and orderbook (migrated) positions
-    const launchpadRows = allPositions.filter((p: any) => !p.token.migrated);
-    const orderbookRows = allPositions.filter((p: any) => p.token.migrated);
-
-    console.log('[Tracker] fetchPortfolio parsed:', {
-      totalPositions: allPositions.length,
-      launchpadCount: launchpadRows.length,
-      orderbookCount: orderbookRows.length,
-      address
-    });
+    const launchpadRows = allPositions.filter(p => !p.token.migrated);
+    const orderbookRows = allPositions.filter(p => p.token.migrated);
 
     const positions: GqlPosition[] = [
-      ...launchpadRows.map((p: any) => {
-        const boughtTokens = Number(p.tokenBought) / 1e18;
-        const soldTokens = Number(p.tokenSold) / 1e18;
-        const spentNative = Number(p.nativeSpent) / 1e18;
-        const receivedNative = Number(p.nativeReceived) / 1e18;
-        const remainingTokens = Number(p.tokens) / 1e18;
-        const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e9;
-
-        return {
-          tokenId: p.token.id,
-          symbol: p.token.symbol,
-          name: p.token.name,
-          imageUrl: p.token.metadataCID
-            ? `https://pub-8aff0f9ec88b4fff8cdce3f213f21b7f.r2.dev/img/${p.token.metadataCID}.png`
-            : undefined,
-          boughtTokens,
-          soldTokens,
-          spentNative,
-          receivedNative,
-          remainingTokens,
-          remainingPct: boughtTokens > 0 ? (remainingTokens / boughtTokens) * 100 : 0,
-          pnlNative: (remainingTokens * lastPrice) + receivedNative - spentNative,
-          lastPrice,
-          isOrderbook: false,
-        };
-      }),
-      ...orderbookRows.map((p: any) => {
-        const boughtTokens = Number(p.tokenBought) / 1e18;
-        const soldTokens = Number(p.tokenSold) / 1e18;
-        const spentNative = Number(p.nativeSpent) / 1e18;
-        const receivedNative = Number(p.nativeReceived) / 1e18;
-        const remainingTokens = Number(p.tokens) / 1e18;
-        const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e9;
-
-        return {
-          tokenId: p.token.id,
-          symbol: p.token.symbol,
-          name: p.token.name,
-          imageUrl: p.token.metadataCID
-            ? `https://pub-8aff0f9ec88b4fff8cdce3f213f21b7f.r2.dev/img/${p.token.metadataCID}.png`
-            : undefined,
-          boughtTokens,
-          soldTokens,
-          spentNative,
-          receivedNative,
-          remainingTokens,
-          remainingPct: boughtTokens > 0 ? (remainingTokens / boughtTokens) * 100 : 0,
-          pnlNative: (remainingTokens * lastPrice) + receivedNative - spentNative,
-          lastPrice,
-          isOrderbook: true,
-        };
-      }),
+      ...launchpadRows.map(p => createPositionFromData(p, false)),
+      ...orderbookRows.map(p => createPositionFromData(p, true)),
     ];
 
     return {
@@ -185,11 +169,10 @@ import {
 
 import './Tracker.css';
 
-import { watchContractEvent, getPublicClient } from 'wagmi/actions';
-import { config } from '../../wagmi' 
+import { watchContractEvent } from 'wagmi/actions';
+import { config } from '../../wagmi';
 import { CrystalMarketAbi } from '../../abis/CrystalMarketAbi';
-import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi'; 
-import { CrystalLaunchpadToken } from '../../abis/CrystalLaunchpadToken';
+import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 
 
 interface TrackedWallet {
@@ -841,7 +824,6 @@ const Tracker: React.FC<TrackerProps> = ({
   // Convert trades prop (trackedTrades from App.tsx) to LiveTrade format
   // Using wrapper list [trackedWallets, trades] so trackedWallets updates live
   useEffect(() => {
-    console.log('[Tracker] Received trades from App:', trades?.length || 0, trades);
     if (!trades || trades.length === 0) return;
 
     // Map 8-tuple trades to LiveTrade objects
@@ -981,15 +963,12 @@ const Tracker: React.FC<TrackerProps> = ({
 
   const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'launchpad') => {
     if (!logs?.length) return;
-    console.log('[Tracker] push called with', logs.length, 'logs from', source);
     if (demoMode.trades) { disableDemo('trades'); setTrackedWalletTrades([]); }
     lastEventTsRef.current = Date.now();
     setStatus({ lastPushSource: source });
 
     const lower = (s?: string) => (s || '').toLowerCase();
     const wallets = trackedWalletsRef.current;
-    console.log('[Tracker] Tracked wallets:', wallets.map(w => w.address.toLowerCase()));
-    console.log('[Tracker] trackedSetRef contents:', Array.from(trackedSetRef.current));
     const touchWallet = (addr: string) => {
       const key = lower(addr);
       if (!trackedSetRef.current.has(key)) return;
@@ -1001,14 +980,12 @@ const Tracker: React.FC<TrackerProps> = ({
     for (const l of logs) {
       const args: any = l?.args ?? {};
       const txHash: string = l?.transactionHash ?? l?.transaction?.id ?? l?.id ?? '';
-      console.log('[Tracker] Processing log:', { eventName: l.eventName, args, txHash });
 
       let accountAddr: string | null = (args.user || args.account || args.trader || args.sender || args.owner || args.from || args.buyer || args.seller) ?? null;
 
       if (accountAddr) {
         touchWallet(accountAddr);
       } else {
-        console.log('[Tracker] Skipping log - no account address found');
         continue;
       }
 
@@ -1017,26 +994,10 @@ const Tracker: React.FC<TrackerProps> = ({
       const isTrackedWallet = trackedSetRef.current.has(lowerAccountAddr);
       const isConnectedWallet = connectedAddr && lowerAccountAddr === connectedAddr;
 
-      console.log('[Tracker] Checking if wallet is tracked:', {
-        original: accountAddr,
-        lowercase: lowerAccountAddr,
-        isTracked: isTrackedWallet,
-        isConnectedWallet: isConnectedWallet,
-        connectedAddr: connectedAddr,
-        trackedSet: Array.from(trackedSetRef.current)
-      });
-
       // Allow trades from either tracked wallets OR the connected wallet
       if (!isTrackedWallet && !isConnectedWallet) {
-        console.log('[Tracker] ❌ Skipping trade - wallet not tracked and not connected:', accountAddr);
-        console.log('[Tracker] Add this exact address to your Wallet Manager:', accountAddr);
         continue;
       }
-
-      console.log('[Tracker] Processing trade for tracked wallet:', accountAddr);
-      console.log('[Tracker] Raw event args:', JSON.stringify(args, (key, value) =>
-        typeof value === 'bigint' ? value.toString() : value
-      , 2));
 
       const isBuy = Boolean(args.isBuy ?? args.buy ?? (args.from && !args.to));
 
@@ -1062,14 +1023,6 @@ const Tracker: React.FC<TrackerProps> = ({
       // Try to find the token in marketsRef using address directly first
       const live = addrLower ? marketsRef.current.get(addrLower) : null;
 
-      console.log('[Tracker] Token resolution:', {
-        tokenAddr: addrLower,
-        symbol,
-        foundInMarkets: !!live,
-        liveSymbol: live?.symbol,
-        liveName: live?.name
-      });
-
       // Use live price if available, convert to BigInt
       const livePriceWad = live?.price != null && live.price > 0
         ? BigInt(Math.floor(live.price * 1e18))
@@ -1091,11 +1044,7 @@ const Tracker: React.FC<TrackerProps> = ({
         timestamp: ts
       };
 
-      console.log('[Tracker] Created tradeLike:', tradeLike);
-
-      // Debug: Log what normalizeTrade will produce
       const normalized = normalizeTrade(tradeLike, wallets);
-      console.log('[Tracker] Normalized trade:', normalized);
 
       toAdd.push(normalized);
 
@@ -1103,19 +1052,14 @@ const Tracker: React.FC<TrackerProps> = ({
     }
 
     if (toAdd.length === 0) {
-      console.log('[Tracker] No trades to add after filtering');
       return;
     }
-
-    console.log('[Tracker] Adding', toAdd.length, 'trades to LiveTrades');
-    console.log('[Tracker] Trades to add:', toAdd);
 
     setTrackedWalletTrades(prev => {
       const next: LiveTrade[] = [...toAdd, ...prev];
       const seen = new Set<string>(), out: LiveTrade[] = [];
       for (const t of next) if (!seen.has(t.id)) { seen.add(t.id); out.push(t); }
       flushMarketsToState();
-      console.log('[Tracker] Updated trackedWalletTrades, total count:', out.length);
       return out.slice(0, 500);
     });
   }, [normalizeTrade, activechain, demoMode.trades]);
@@ -1757,23 +1701,17 @@ const Tracker: React.FC<TrackerProps> = ({
     // Fetch portfolio for each tracked wallet
     for (const wallet of wallets) {
       try {
-        console.log(`[Tracker] Fetching portfolio for wallet: ${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`);
         const portfolio = await fetchPortfolio(wallet.address);
-        
+
         if (portfolio?.positions && portfolio.positions.length > 0) {
-          console.log(`[Tracker] Found ${portfolio.positions.length} positions for wallet ${wallet.name}`);
           allPositions.push(...portfolio.positions);
           successCount++;
-        } else {
-          console.log(`[Tracker] No positions found for wallet ${wallet.name}`);
         }
       } catch (error) {
         errorCount++;
         console.error(`[Tracker] Failed to fetch portfolio for wallet ${wallet.name} (${wallet.address}):`, error);
       }
     }
-
-    console.log(`[Tracker] Portfolio fetch complete: ${successCount} success, ${errorCount} errors, ${allPositions.length} total positions`);
 
     if (allPositions.length === 0) {
       return [];
@@ -1786,8 +1724,6 @@ const Tracker: React.FC<TrackerProps> = ({
         uniqueTokens.set(position.tokenId, position);
       }
     });
-
-    console.log(`[Tracker] Found ${uniqueTokens.size} unique tokens from positions`);
 
     // Convert positions to MonitorToken format
     const markets: MonitorToken[] = Array.from(uniqueTokens.values()).map(position => {
@@ -2183,12 +2119,9 @@ const Tracker: React.FC<TrackerProps> = ({
   // Re-enabled for portfolio/orderbook tokens only (router and market)
   // Launchpad tokens handled by App.tsx websocket to avoid wash trading bot
   useEffect(() => {
-    console.log('[Tracker] Setting up watchContractEvent for activechain:', activechain);
     const cfg = chainCfgOf(activechain);
-    console.log('[Tracker] Chain config:', { id: cfg?.id, rpcUrl: cfg?.rpcUrl, router: cfg?.router, market: cfg?.market });
 
     if (!cfg?.id || !cfg?.rpcUrl) {
-      console.log('[Tracker] Missing chain config, skipping watchContractEvent setup');
       return;
     }
 
@@ -2199,26 +2132,22 @@ const Tracker: React.FC<TrackerProps> = ({
       // ONLY watch router and market for portfolio/orderbook tokens
       // Launchpad tokens handled by App.tsx to avoid wash trading bot
       if (cfg?.router) {
-        console.log('[Tracker] Setting up router Trade event watcher for portfolio tokens:', cfg.router);
         unsubs.push(watchContractEvent(config, {
           address: cfg.router as `0x${string}`,
           abi: CrystalRouterAbi,
           eventName: 'Trade' as any,
           onLogs: (logs) => {
-            console.log('[Tracker] Router Trade event received, logs:', logs);
             push(logs, 'router');
           },
           ...common,
         }));
       }
       if (cfg?.market) {
-        console.log('[Tracker] Setting up market Trade event watcher for portfolio tokens:', cfg.market);
         unsubs.push(watchContractEvent(config, {
           address: cfg.market as `0x${string}`,
           abi: CrystalMarketAbi,
           eventName: 'Trade' as any,
           onLogs: (logs) => {
-            console.log('[Tracker] Market Trade event received, logs:', logs);
             push(logs, 'market');
           },
           ...common,
@@ -2232,29 +2161,9 @@ const Tracker: React.FC<TrackerProps> = ({
     return () => { try { unsubs.forEach(u => u?.()); } catch {} };
   }, [activechain, push]);
 
-  //           ...common,
-  //         }));
-  //       }
-  //     } else if (cfg?.launchpad) {
-  //       unsubs.push(watchContractEvent(config, {
-  //         address: cfg.launchpad as `0x${string}`,
-  //         abi: CrystalLaunchpadToken,
-  //         eventName: 'Transfer',
-  //         onLogs: (l) => push(l, 'launchpad'),
-  //         ...common,
-  //       }));
-  //     }
-  //   } catch (err) {
-  //     console.error('[Tracker] Error setting up contract event watchers:', err);
-  //   }
-
-  //   return () => { try { unsubs.forEach(u => u?.()); } catch {} };
-  // }, [activechain, push]);
-
   const ingestExternalTrades = (items: any[]) => {
     if (demoMode.trades) { disableDemo('trades'); setTrackedWalletTrades([]); }
     const wallets = trackedWalletsRef.current;
-    console.debug('[Tracker] ingestExternalTrades count=', items?.length || 0);
     try {
       for (const it of items) {
         try {
@@ -2383,9 +2292,7 @@ const Tracker: React.FC<TrackerProps> = ({
       const handler = (evt: MessageEvent) => {
         try {
           const msg = JSON.parse(evt.data);
-          console.debug('[Tracker] subscribe helper got message for reqId=', reqId, msg);
           if (msg.id === reqId && msg.result) {
-            console.debug('[Tracker] subscribe helper ack result=', msg.result);
             onAck(msg.result);
             ws.removeEventListener('message', handler);
           }
@@ -2415,17 +2322,14 @@ const Tracker: React.FC<TrackerProps> = ({
       const marketId = market;
       if (tokenAddr) {
         tokenToMarketRef.current[tokenAddr] = marketId;
-        console.debug('[Tracker] token->market mapping set', tokenAddr, '->', marketId);
       }
       if (symbol) {
         symbolToMarketRef.current[symbol] = marketId;
-        console.debug('[Tracker] symbol->market mapping set', symbol, '->', marketId);
       }
       upsertMarket({ tokenAddr: tokenAddr, symbol: symbol.toUpperCase(), name, price: 0 });
       try {
         if (wsRef.current && !marketSubsRef.current[marketId]) {
           const reqId = subIdRef.current++;
-          console.debug('[Tracker] addMarketFromLog subscribing to market', marketId, 'reqId=', reqId);
           wsRef.current.send(JSON.stringify({ id: reqId, jsonrpc: '2.0', method: 'eth_subscribe', params: ['logs', { address: marketId }] }));
         }
       } catch (e) { console.error('[Tracker] addMarketFromLog subscribe error', e); }
@@ -2438,7 +2342,6 @@ const Tracker: React.FC<TrackerProps> = ({
       if ((log.topics || [])[0] !== MARKET_UPDATE_EVENT) return;
   const id = (log.address || '').toLowerCase();
       const hex = (log.data || '').replace(/^0x/, '');
-      console.debug('[Tracker] updateMarketFromLog raw data for', id, hex.slice(0,120));
       const words: string[] = [];
       for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
       const amounts = BigInt('0x' + (words[0] || '0'));
@@ -2456,11 +2359,9 @@ const Tracker: React.FC<TrackerProps> = ({
   // best-effort mapping
         if (m.tokenAddress) {
           tokenToMarketRef.current[m.tokenAddress.toLowerCase()] = id;
-          console.debug('[Tracker] tokenToMarketRef populated from market data', m.tokenAddress.toLowerCase(), '->', id);
         }
         if (m.symbol) {
           symbolToMarketRef.current[m.symbol.toLowerCase()] = id;
-          console.debug('[Tracker] symbolToMarketRef populated from market data', m.symbol.toLowerCase(), '->', id);
         }
       } catch (e) { console.error('[Tracker] mapping populate error', e); }
       marketsRef.current.set(id, {
@@ -2498,8 +2399,6 @@ const Tracker: React.FC<TrackerProps> = ({
         if (!log || !log.topics?.length) return;
         if (log.commitState && log.commitState !== 'Proposed') return;
 
-        console.log('[Tracker] Received chainLog event, topic:', log.topics[0]);
-
         if (log.topics[0] === MARKET_CREATED_EVENT) {
           addMarketFromLog(log);
           return;
@@ -2512,8 +2411,6 @@ const Tracker: React.FC<TrackerProps> = ({
         if (log.topics[0] === TRADE_EVENT) {
           const marketAddr = `0x${(log.topics[1] || '').slice(26)}`.toLowerCase();
           const callerAddr = `0x${(log.topics[2] || '').slice(26)}`.toLowerCase();
-
-          console.log('[Tracker] TRADE_EVENT - caller:', callerAddr, 'tracked?', trackedSetRef.current.has(callerAddr));
 
           if (!trackedSetRef.current.has(callerAddr)) return;
 
