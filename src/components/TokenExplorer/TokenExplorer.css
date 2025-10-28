@@ -694,12 +694,13 @@
 }
 
 .tooltip-content {
-  background: rgb(14, 14, 15);
-  border: 1px solid #b5bcf80c;
+  background: rgb(6, 6, 6);
+  border: 1px solid #b5bcf81f;
   border-radius: 3px;
   bottom: 2px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  color: #e6e7f6e0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  font-weight: 300;
+  color: #ffffffcf;
   font-size: 0.75rem;
   padding: 0.15rem 0.35rem;
   position: relative;

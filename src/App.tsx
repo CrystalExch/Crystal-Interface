@@ -470,10 +470,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const userchain = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.chainId || client?.chain?.id
   const location = useLocation();
   const navigate = useNavigate();
-  const [isTrackerWidgetOpen, setIsTrackerWidgetOpen] = useState(true);
-  const handleToggleTrackerWidget = () => {
-  setIsTrackerWidgetOpen(prev => !prev);
-};
+  const [isTrackerWidgetOpen, setIsTrackerWidgetOpen] = useState(false);
 
   const [trackerWidgetSnap, setTrackerWidgetSnap] = useState<'left' | 'right' | null>(null);
   const [trackerWidgetWidth, setTrackerWidgetWidth] = useState(400);
@@ -26003,17 +26000,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         currentSnapSide={widgetExplorerSnapSide}
         onWidgetResize={handleWidgetExplorerResize} 
       /> */}
-<Footer
-  subWallets={subWallets}
-  selectedWallets={selectedWallets}
-  setSelectedWallets={setSelectedWallets}
-  walletTokenBalances={walletTokenBalances}
-  activeWalletPrivateKey={oneCTSigner}
-  activeChain={activechain}
-  monUsdPrice={monUsdPrice}
-  isTrackerWidgetOpen={isTrackerWidgetOpen}
-  onToggleTrackerWidget={handleToggleTrackerWidget}
-/>     </div>
+        <Footer
+          subWallets={subWallets}
+          selectedWallets={selectedWallets}
+          setSelectedWallets={setSelectedWallets}
+          walletTokenBalances={walletTokenBalances}
+          activeWalletPrivateKey={oneCTSigner}
+          activeChain={activechain}
+          monUsdPrice={monUsdPrice}
+          isTrackerWidgetOpen={isTrackerWidgetOpen}
+          onToggleTrackerWidget={setIsTrackerWidgetOpen}
+        />     
+      </div>
     </div>
   );
 }
