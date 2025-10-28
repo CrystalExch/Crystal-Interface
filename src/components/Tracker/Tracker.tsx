@@ -822,56 +822,65 @@ const Tracker: React.FC<TrackerProps> = ({
   }, []);
 
   // Convert trades prop (trackedTrades from App.tsx) to LiveTrade format
-  // Using wrapper list [trackedWallets, trades] so trackedWallets updates live
+  // trades = LaunchpadTrade[] with format: { id, timestamp, isBuy, price, nativeAmount, tokenAmount, caller, token: { id } }
   useEffect(() => {
     if (!trades || trades.length === 0) return;
 
-    // Map 8-tuple trades to LiveTrade objects
     setTrackedWalletTrades(() => {
       if (!trades || trades.length === 0) return [];
-      // [isBuy, tokenAddr, callerAddr, buyAmount, sellAmount, marketCap, tokenIcon, tokenName]
-      return trades.map((t, idx) => {
-        const [isBuy, tokenAddr, callerAddr, buyAmount, sellAmount, marketCap, tokenIcon, tokenName] = t;
-        // Try to resolve token info from marketsData or settings
-        let resolvedIcon = tokenIcon;
-        let resolvedTicker = tokenName;
-        let resolvedName = tokenName;
+
+      return trades.map((trade: any) => {
+        const tokenAddr = trade.token?.id?.toLowerCase() || '';
+        const callerAddr = trade.caller?.toLowerCase() || '';
+        const isBuy = trade.isBuy;
+
+        // Resolve token metadata from marketsData
+        let resolvedIcon = '';
+        let resolvedTicker = '';
+        let resolvedName = '';
+
         if (marketsData && Array.isArray(marketsData)) {
-          const market = marketsData.find(m => m.baseAddress?.toLowerCase() === tokenAddr?.toLowerCase());
+          const market = marketsData.find(m => m.baseAddress?.toLowerCase() === tokenAddr);
           if (market) {
-            resolvedIcon = market.imageUrl || market.metadataCID || tokenIcon;
-            resolvedTicker = market.symbol || market.ticker || tokenName || market.name;
-            resolvedName = market.name || tokenName || market.symbol;
+            resolvedIcon = market.imageUrl || market.metadataCID || '';
+            resolvedTicker = market.symbol || market.ticker || '';
+            resolvedName = market.name || market.symbol || '';
           }
         }
-        // fallback to settings if needed
-        if ((!resolvedIcon || resolvedIcon === '') && typeof settings?.chainConfig === 'object') {
-          const m = settings.chainConfig?.markets?.[tokenAddr?.toUpperCase() + 'USDC'];
-          if (m) {
-            resolvedIcon = m.imageUrl || m.metadataCID || resolvedIcon;
-            resolvedTicker = m.symbol || m.ticker || resolvedTicker;
-            resolvedName = m.name || resolvedName;
+
+        // Fallback to settings.chainConfig.markets
+        if (!resolvedIcon && !resolvedTicker && tokenAddr && settings?.chainConfig) {
+          const marketKey = Object.keys(settings.chainConfig?.markets || {}).find(key => {
+            const m = settings.chainConfig?.markets?.[key];
+            return m?.baseAddress?.toLowerCase() === tokenAddr;
+          });
+          if (marketKey) {
+            const m = settings.chainConfig?.markets?.[marketKey];
+            resolvedIcon = m?.imageUrl || m?.metadataCID || '';
+            resolvedTicker = m?.symbol || m?.ticker || '';
+            resolvedName = m?.name || m?.symbol || '';
           }
         }
-        // buyAmount and sellAmount are strings in WEI, need to convert to number of tokens (divide by 1e18)
-        const buyAmt = Number(buyAmount) / 1e18;
-        const sellAmt = Number(sellAmount) / 1e18;
-        // marketCap is a number, but may be in WEI or tokens, check App.tsx: it's endPrice * TOTAL_SUPPLY, both in tokens, so it's correct
+
+        // Calculate market cap from price
+        const price = Number(trade.price || 0);
+        const marketCap = price * SUPPLY;
+
         return {
-          id: `${tokenAddr}-${callerAddr}-${idx}`,
+          id: trade.id || `${tokenAddr}-${callerAddr}-${Date.now()}`,
           walletName: callerAddr?.slice(0, 6) + '...' + callerAddr?.slice(-4),
           emoji: '👤',
-          token: resolvedTicker || tokenAddr,
-          tokenName: resolvedName || tokenAddr,
+          token: resolvedTicker || 'Token',
+          tokenName: resolvedName || resolvedTicker || 'Token',
           tokenAddress: tokenAddr,
           tokenIcon: resolvedIcon,
-          amount: isBuy ? buyAmt : sellAmt,
-          price: 0, // Not available in tuple, set to 0 or add if needed
-          marketCap: Number(marketCap),
-          time: '', // Not available in tuple, set to '' or add if needed
-          txHash: '', // Not available in tuple, set to '' or add if needed
+          amount: Number(trade.nativeAmount || 0), // nativeAmount is already in MON
+          price: price,
+          marketCap: marketCap,
+          time: '', // Calculate if needed
+          txHash: trade.id?.split('-')?.[0] || '',
           type: isBuy ? 'buy' : 'sell',
-          createdAt: '', // Not available in tuple, set to '' or add if needed
+          createdAt: new Date(Number(trade.timestamp || 0) * 1000).toISOString(),
         };
       });
     });
@@ -3055,137 +3064,135 @@ const Tracker: React.FC<TrackerProps> = ({
                 </div>
               </div>
 
+              {/* Market metrics (V, MC, F, TX) in top-right - exact copy from TokenExplorer */}
               <div className="tracker-monitor-right-section">
-                <div className="tracker-monitor-buy-sell-row">
-                  <div className="tracker-monitor-buy-amount">
-                    +{formatValue(pos.spentNative)}
-                    <span className="tracker-monitor-tx-mini"> (bought)</span>
-                  </div>
-                  <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
-                  <div className="tracker-monitor-sell-amount">
-                    −{formatValue(pos.receivedNative)}
-                    <span className="tracker-monitor-tx-mini"> (sold)</span>
-                  </div>
-                </div>
-
-                <div className="tracker-monitor-quickbuy-section">
-                  <button
-                    className="tracker-monitor-quickbuy-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleQuickBuy(pos.tokenId, tokenSymbol, pos.imageUrl);
-                    }}
-                  >
-                    <svg
-                      className="tracker-monitor-quickbuy-icon"
-                      viewBox="0 0 72 72"
-                      fill="currentColor"
-                    >
-                      <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86 c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833 c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86 c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18 c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="tracker-monitor-stats-section">
-              <div className="tracker-monitor-stat-compact">
-                <span className="stat-label">Remaining</span>
-                <span className="stat-value">{pos.remainingTokens?.toFixed(2) || 0}</span>
-              </div>
-              <div className="tracker-monitor-stat-compact">
-                <span className="stat-label">Price</span>
-                <span className={`stat-value ${monitorCurrency === 'MON' ? 'tracker-monitor-stat-value-with-icon' : ''}`}>
-                  {monitorCurrency === 'USD' ? (
-                    <>$<span>{(pos.lastPrice * monUsdPrice).toFixed(6)}</span></>
-                  ) : (
-                    <>
-                      <span>{pos.lastPrice?.toFixed(6) || 0}</span>
-                      <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
-                    </>
-                  )}
-                </span>
-              </div>
-              <div className="tracker-monitor-stat-compact">
-                <span className="stat-label">PNL</span>
-                <span
-                  className="stat-value"
-                  style={{ color: (pos.pnlNative ?? 0) >= 0 ? '#4ade80' : '#f87171' }}
-                >
-                  {monitorCurrency === 'USD' ? (
-                    <>$<span>{formatValue(pos.pnlNative)}</span></>
-                  ) : (
-                    <>
-                      <span>{formatValue(pos.pnlNative)}</span>
-                      <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
-                    </>
-                  )}
-                </span>
-              </div>
-            </div>
-
-            {/* Market metrics row (copied from explorer-token-row) */}
-            {market && (
-              <div className="explorer-third-row metrics-size-small" style={{ paddingTop: '8px', borderTop: '1px solid rgba(179,184,249,0.1)' }}>
-                <div className="explorer-metrics-container">
-                  <div className="explorer-market-cap">
-                    <span className="mc-label">MC</span>
-                    <span className="mc-value">
-                      {formatPrice(market.marketCap * monUsdPrice, false)}
-                    </span>
-                  </div>
-                  <div className="explorer-volume">
-                    <span className="mc-label">V</span>
-                    <span className="mc-value">
-                      {formatPrice((market.volume24h || 0) * monUsdPrice, false)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="explorer-third-row-section">
-                  <div className="explorer-stat-item">
-                    <span className="explorer-stat-label" style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>H</span>
-                    <span className="explorer-stat-value" style={{ fontSize: '0.7rem', color: '#fff' }}>
-                      {holders?.[Number(pos.tokenId)]?.length || 0}
-                    </span>
-                  </div>
-
-                  <div className="explorer-tx-bar">
-                    <div className="explorer-tx-header">
-                      <span className="explorer-tx-label" style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>TX</span>
-                      <span className="explorer-tx-total">
-                        {((market.buyTransactions || 0) + (market.sellTransactions || 0)).toLocaleString()}
+                <div className="explorer-third-row">
+                  <div className="explorer-metrics-container">
+                    <div className="explorer-volume">
+                      <span className="mc-label">V</span>
+                      <span className="mc-value">
+                        {formatPrice(((market?.volume24h || 0) * monUsdPrice), false)}
                       </span>
                     </div>
-                    <div className="explorer-tx-visual-bar">
-                      {((market.buyTransactions || 0) + (market.sellTransactions || 0)) === 0 ? (
-                        <div style={{
-                          width: '100%',
-                          height: '100%',
-                          backgroundColor: '#252526ff',
-                          borderRadius: '1px'
-                        }} />
-                      ) : (
-                        <>
-                          <div
-                            className="explorer-tx-buy-portion"
-                            style={{
-                              width: `${((market.buyTransactions || 0) / ((market.buyTransactions || 0) + (market.sellTransactions || 0)) * 100)}%`
-                            }}
-                          />
-                          <div
-                            className="explorer-tx-sell-portion"
-                            style={{
-                              width: `${((market.sellTransactions || 0) / ((market.buyTransactions || 0) + (market.sellTransactions || 0)) * 100)}%`
-                            }}
-                          />
-                        </>
-                      )}
+                    <div className="explorer-market-cap">
+                      <span className="mc-label">MC</span>
+                      <span className="mc-value">
+                        {formatPrice((market?.marketCap || pos.lastPrice * 1e9) * monUsdPrice, false)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="explorer-third-row-section">
+                    <div className="explorer-stat-item">
+                      <span className="explorer-fee-label">F</span>
+                      <span className="explorer-fee-total">
+                        {formatPrice(((market?.volume24h || 0) * monUsdPrice) / 100, false)}
+                      </span>
+                    </div>
+
+                    <div className="explorer-tx-bar">
+                      <div className="explorer-tx-header">
+                        <span className="explorer-tx-label">TX</span>
+                        <span className="explorer-tx-total">
+                          {((market?.buyTransactions || 0) + (market?.sellTransactions || 0)).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="explorer-tx-visual-bar">
+                        {((market?.buyTransactions || 0) + (market?.sellTransactions || 0)) === 0 ? (
+                          <div style={{
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: '#252526ff',
+                            borderRadius: '1px'
+                          }} />
+                        ) : (
+                          <>
+                            <div
+                              className="explorer-tx-buy-portion"
+                              style={{
+                                width: `${((market?.buyTransactions || 0) / ((market?.buyTransactions || 0) + (market?.sellTransactions || 0)) * 100)}%`
+                              }}
+                            />
+                            <div
+                              className="explorer-tx-sell-portion"
+                              style={{
+                                width: `${((market?.sellTransactions || 0) / ((market?.buyTransactions || 0) + (market?.sellTransactions || 0)) * 100)}%`
+                              }}
+                            />
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+
+            {/* Buy/Sell row with Remaining/Price/PNL on the right */}
+            <div className="tracker-monitor-bottom-controls">
+              <div className="tracker-monitor-buy-sell-row">
+                <div className="tracker-monitor-buy-amount">
+                  +{formatValue(pos.spentNative)}
+                  <span className="tracker-monitor-tx-mini"> (bought)</span>
+                </div>
+                <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
+                <div className="tracker-monitor-sell-amount">
+                  −{formatValue(pos.receivedNative)}
+                  <span className="tracker-monitor-tx-mini"> (sold)</span>
+                </div>
+              </div>
+
+              <div className="tracker-monitor-bottom-right">
+                <div className="tracker-monitor-stat-compact">
+                  <span className="stat-label">Remaining</span>
+                  <span className="stat-value">{pos.remainingTokens?.toFixed(2) || 0}</span>
+                </div>
+                <div className="tracker-monitor-stat-compact">
+                  <span className="stat-label">Price</span>
+                  <span className={`stat-value ${monitorCurrency === 'MON' ? 'tracker-monitor-stat-value-with-icon' : ''}`}>
+                    {monitorCurrency === 'USD' ? (
+                      <>$<span>{(pos.lastPrice * monUsdPrice).toFixed(6)}</span></>
+                    ) : (
+                      <>
+                        <span>{pos.lastPrice?.toFixed(6) || 0}</span>
+                        <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
+                      </>
+                    )}
+                  </span>
+                </div>
+                <div className="tracker-monitor-stat-compact">
+                  <span className="stat-label">PNL</span>
+                  <span
+                    className="stat-value"
+                    style={{ color: (pos.pnlNative ?? 0) >= 0 ? '#4ade80' : '#f87171' }}
+                  >
+                    {monitorCurrency === 'USD' ? (
+                      <>$<span>{formatValue(pos.pnlNative)}</span></>
+                    ) : (
+                      <>
+                        <span>{formatValue(pos.pnlNative)}</span>
+                        <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
+                      </>
+                    )}
+                  </span>
+                </div>
+                <button
+                  className="tracker-monitor-quickbuy-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleQuickBuy(pos.tokenId, tokenSymbol, pos.imageUrl);
+                  }}
+                >
+                  <svg
+                    className="tracker-monitor-quickbuy-icon"
+                    viewBox="0 0 72 72"
+                    fill="currentColor"
+                  >
+                    <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86 c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833 c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86 c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18 c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Expanded trades section */}

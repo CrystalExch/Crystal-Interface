@@ -618,10 +618,11 @@
   display: flex;
   flex-direction: column;
   padding: .75rem;
-  padding-bottom: 0.5rem;
+  padding-bottom: .75rem;
   position: relative;
   transition: all 0.2s ease;
   width: 100%;
+  min-height: 180px;
 }
 
 .tracker-monitor {
@@ -1108,8 +1109,109 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
   flex-shrink: 0;
+}
+
+.tracker-monitor-right-section .explorer-third-row {
+  margin: 0;
+  position: static;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.tracker-monitor-right-section .explorer-metrics-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding-left: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.tracker-monitor-right-section .explorer-volume,
+.tracker-monitor-right-section .explorer-market-cap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.tracker-monitor-right-section .mc-label {
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 400;
+  opacity: 0.5;
+}
+
+.tracker-monitor-right-section .mc-value {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.tracker-monitor-right-section .explorer-third-row-section {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background-color: transparent;
+  box-shadow: none;
+  height: auto;
+}
+
+.tracker-monitor-right-section .explorer-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tracker-monitor-right-section .explorer-fee-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.tracker-monitor-right-section .explorer-fee-total {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.tracker-monitor-right-section .explorer-tx-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100px;
+  align-items: flex-start;
+}
+
+.tracker-monitor-right-section .explorer-tx-header {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.tracker-monitor-right-section .explorer-tx-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.tracker-monitor-right-section .explorer-tx-total {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.tracker-monitor-right-section .explorer-tx-visual-bar {
+  width: 100%;
+  height: 3px;
+  border-radius: 1px;
+  display: flex;
+  overflow: hidden;
 }
 
 .tracker-monitor-card-bottom {
@@ -1117,6 +1219,21 @@
   flex-direction: column;
   gap: 8px;
   width: 100%;
+}
+
+.tracker-monitor-bottom-controls {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.tracker-monitor-bottom-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .tracker-monitor-buy-sell-row {
