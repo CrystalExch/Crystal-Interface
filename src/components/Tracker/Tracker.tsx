@@ -2916,21 +2916,9 @@ const Tracker: React.FC<TrackerProps> = ({
               </div>
             </div>
 
-            {/* Buy/Sell row with Remaining/Price/PNL on the right */}
+            {/* Bottom section with stats on left and quickbuy on right */}
             <div className="tracker-monitor-bottom-controls">
-              <div className="tracker-monitor-buy-sell-row">
-                <div className="tracker-monitor-buy-amount">
-                  +{formatValue(pos.spentNative)}
-                  <span className="tracker-monitor-tx-mini"> (bought)</span>
-                </div>
-                <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
-                <div className="tracker-monitor-sell-amount">
-                  −{formatValue(pos.receivedNative)}
-                  <span className="tracker-monitor-tx-mini"> (sold)</span>
-                </div>
-              </div>
-
-              <div className="tracker-monitor-bottom-right">
+              <div className="tracker-monitor-bottom-left">
                 <div className="tracker-monitor-stat-compact">
                   <span className="stat-label">Remaining</span>
                   <span className="stat-value">{pos.remainingTokens?.toFixed(2) || 0}</span>
@@ -2964,22 +2952,23 @@ const Tracker: React.FC<TrackerProps> = ({
                     )}
                   </span>
                 </div>
-                <button
-                  className="tracker-monitor-quickbuy-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleQuickBuy(pos.tokenId, tokenSymbol, pos.imageUrl);
-                  }}
-                >
-                  <svg
-                    className="tracker-monitor-quickbuy-icon"
-                    viewBox="0 0 72 72"
-                    fill="currentColor"
-                  >
-                    <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86 c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833 c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86 c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18 c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
-                  </svg>
-                </button>
               </div>
+
+              <button
+                className="tracker-monitor-quickbuy-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleQuickBuy(pos.tokenId, tokenSymbol, pos.imageUrl);
+                }}
+              >
+                <svg
+                  className="tracker-monitor-quickbuy-icon"
+                  viewBox="0 0 72 72"
+                  fill="currentColor"
+                >
+                  <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86 c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833 c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86 c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18 c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
+                </svg>
+              </button>
             </div>
           </div>
 

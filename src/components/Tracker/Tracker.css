@@ -830,14 +830,19 @@
   gap: 2px;
   justify-content: center;
   letter-spacing: -0.5px;
-  margin-top: 0.5rem;
+  margin-top: 0;
   padding: 0.2rem .35rem;
   transition: all 0.2s ease;
 }
 
+.tracker-monitor-quickbuy-btn:hover {
+  filter: brightness(1.1);
+}
 
-.tracker-monitor-quickbuy-btn:hover { filter: brightness(1.1); }
-.tracker-monitor-quickbuy-icon { width: 14px; height: 14px; }
+.tracker-monitor-quickbuy-icon {
+  width: 14px;
+  height: 14px;
+}
 
 .tracker-monitor-action-btn {
   background: transparent; 
@@ -1242,6 +1247,13 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
+}
+
+.tracker-monitor-bottom-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
 }
 
 .tracker-monitor-bottom-right {
