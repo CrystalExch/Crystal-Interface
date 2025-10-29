@@ -511,6 +511,8 @@ interface TrackerProps {
   walletTokenBalances?: { [address: string]: any };
   tokenList?: any[];
   tokensByStatus?: Record<'new' | 'graduating' | 'graduated', any[]>;
+  marketsData?: any;
+  tradesByMarket?: any;
   sendUserOperationAsync?: any;
   account?: {
     connected: boolean;
@@ -534,6 +536,8 @@ const Tracker: React.FC<TrackerProps> = ({
   walletTokenBalances = {},
   tokenList = [],
   tokensByStatus = { new: [], graduating: [], graduated: [] },
+  marketsData = {},
+  tradesByMarket = {},
   sendUserOperationAsync,
   account,
   terminalRefetch,
@@ -2761,8 +2765,46 @@ const Tracker: React.FC<TrackerProps> = ({
       const walletEmoji = (pos as any).walletEmoji || '👤';
       const isPinned = pinnedTokens.has(pos.tokenId);
 
-      // Get market data for metric coloring
-      const market = marketsRef.current.get(pos.tokenId.toLowerCase());
+      // Get market data - check both marketsRef (for meme tokens) and marketsData (for OrderBook tokens)
+      let market = marketsRef.current.get(pos.tokenId.toLowerCase());
+
+      // If not found in marketsRef, check marketsData (for OrderBook tokens)
+      if (!market && marketsData) {
+        const orderBookMarket = marketsData[pos.tokenId.toLowerCase()];
+        if (orderBookMarket) {
+          // Convert marketsData format to expected market format
+          market = {
+            id: pos.tokenId,
+            tokenAddress: pos.tokenId,
+            symbol: orderBookMarket.symbol || pos.symbol,
+            name: orderBookMarket.name || pos.name,
+            emoji: orderBookMarket.emoji || '📈',
+            price: orderBookMarket.price || pos.lastPrice,
+            marketCap: orderBookMarket.marketCap || (pos.lastPrice * 1e9),
+            change24h: orderBookMarket.change24h || 0,
+            volume24h: orderBookMarket.volume24h || 0,
+            liquidity: orderBookMarket.liquidity || 0,
+            holders: orderBookMarket.holders || 0,
+            buyTransactions: orderBookMarket.buyTransactions || 0,
+            sellTransactions: orderBookMarket.sellTransactions || 0,
+            bondingCurveProgress: 100,
+            txCount: (orderBookMarket.buyTransactions || 0) + (orderBookMarket.sellTransactions || 0),
+            volume5m: orderBookMarket.volume5m || 0,
+            volume1h: orderBookMarket.volume1h || 0,
+            volume6h: orderBookMarket.volume6h || 0,
+            priceChange5m: orderBookMarket.priceChange5m || 0,
+            priceChange1h: orderBookMarket.priceChange1h || 0,
+            priceChange6h: orderBookMarket.priceChange6h || 0,
+            priceChange24h: orderBookMarket.priceChange24h || orderBookMarket.change24h || 0,
+            website: orderBookMarket.website || '',
+            twitter: orderBookMarket.twitter || '',
+            telegram: orderBookMarket.telegram || '',
+            createdAt: orderBookMarket.createdAt || '',
+            lastTransaction: orderBookMarket.lastTransaction || '',
+            trades: [],
+          };
+        }
+      }
 
       const classes: string[] = ['tracker-monitor-card'];
 
@@ -2814,9 +2856,48 @@ const Tracker: React.FC<TrackerProps> = ({
       const walletAddress = (pos as any).walletAddress;
 
       // Get trades for this token and wallet
-      const tokenTrades = trackedWalletTrades.filter(trade =>
+      let tokenTrades = trackedWalletTrades.filter((trade: any) =>
         trade.token === pos.symbol && trade.walletName === walletName
       );
+
+      // For OrderBook tokens, also check tradesByMarket
+      if (pos.isOrderbook && tradesByMarket && tradesByMarket[pos.tokenId.toLowerCase()]) {
+        const orderBookTrades = tradesByMarket[pos.tokenId.toLowerCase()] || [];
+        // Filter trades by wallet address if available
+        const filteredOrderBookTrades = orderBookTrades
+          .filter((trade: any) => {
+            const tradeWalletAddr = (trade.account?.id || trade.caller || '').toLowerCase();
+            return tradeWalletAddr === walletAddress?.toLowerCase();
+          })
+          .map((trade: any) => {
+            const isBuy = !!trade.isBuy;
+            const nativeAmount = Number(isBuy ? trade.amountIn : trade.amountOut) / 1e18;
+            const timestamp = Number(trade.timestamp || 0);
+            const now = Date.now() / 1000;
+            const secondsAgo = Math.max(0, now - timestamp);
+            let timeAgo = 'now';
+            if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
+            else if (secondsAgo < 3600) timeAgo = `${Math.floor(secondsAgo / 60)}m`;
+            else if (secondsAgo < 86400) timeAgo = `${Math.floor(secondsAgo / 3600)}h`;
+            else timeAgo = `${Math.floor(secondsAgo / 86400)}d`;
+
+            return {
+              id: trade.id || `${trade.transaction?.id || ''}-${Date.now()}`,
+              walletName: walletName,
+              emoji: walletEmoji,
+              token: pos.symbol,
+              amount: Number(isBuy ? trade.amountOut : trade.amountIn) / 1e18,
+              monAmount: nativeAmount,
+              price: Number(trade.price || 0),
+              marketCap: Number(trade.price || 0) * 1e9,
+              time: timeAgo,
+              txHash: trade.transaction?.id || trade.id,
+              type: isBuy ? 'buy' : 'sell',
+              createdAt: new Date(timestamp * 1000).toISOString(),
+            };
+          });
+        tokenTrades = [...tokenTrades, ...filteredOrderBookTrades];
+      }
 
       return (
         <div key={`${pos.tokenId}_${walletAddress}`} className={classes.join(' ')}>
@@ -2959,6 +3040,41 @@ const Tracker: React.FC<TrackerProps> = ({
               </div>
             </div>
 
+            {/* Additional data section - Holders and Pro Traders */}
+            <div className="tracker-monitor-additional-data">
+              <div className="explorer-stat-item">
+                <svg
+                  className="traders-icon"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
+                </svg>
+                <span className="explorer-stat-value">
+                  {market?.holders?.toLocaleString() || '0'}
+                </span>
+              </div>
+
+              <div className="explorer-stat-item">
+                <svg
+                  className="pro-traders-icon"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M 12 2 L 12 4 L 11 4 C 10.4 4 10 4.4 10 5 L 10 10 C 10 10.6 10.4 11 11 11 L 12 11 L 12 13 L 14 13 L 14 11 L 15 11 C 15.6 11 16 10.6 16 10 L 16 5 C 16 4.4 15.6 4 15 4 L 14 4 L 14 2 L 12 2 z M 4 9 L 4 11 L 3 11 C 2.4 11 2 11.4 2 12 L 2 17 C 2 17.6 2.4 18 3 18 L 4 18 L 4 20 L 6 20 L 6 18 L 7 18 C 7.6 18 8 17.6 8 17 L 8 12 C 8 11.4 7.6 11 7 11 L 6 11 L 6 9 L 4 9 z M 18 11 L 18 13 L 17 13 C 16.4 13 16 13.4 16 14 L 16 19 C 16 19.6 16.4 20 17 20 L 18 20 L 18 22 L 20 22 L 20 20 L 21 20 C 21.6 20 22 19.6 22 19 L 22 14 C 22 13.4 21.6 13 21 13 L 20 13 L 20 11 L 18 11 z M 4 13 L 6 13 L 6 16 L 4 16 L 4 13 z" />
+                </svg>
+                <span className="explorer-stat-value">
+                  {Math.floor((market?.holders || 0) * 0.15).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
             {/* Bottom section with stats on left and quickbuy on right */}
             <div className="tracker-monitor-bottom-controls">
               <div className="tracker-monitor-bottom-left">
@@ -3011,51 +3127,74 @@ const Tracker: React.FC<TrackerProps> = ({
                 >
                   <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86 c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833 c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86 c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18 c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
                 </svg>
+                1 MON
               </button>
             </div>
           </div>
 
-          {/* Expanded trades section */}
+          {/* Expanded trades section - styled like TokenDetail */}
           {isExpanded && (
             <div className="tracker-monitor-card-expanded">
-              <div className="expanded-header">
-                <span className="expanded-title">Trades for {tokenSymbol} by {walletName}</span>
-              </div>
-              <div className="expanded-trades-table">
-                <div className="expanded-trades-header">
-                  <div className="expanded-col">Time</div>
-                  <div className="expanded-col">Type</div>
-                  <div className="expanded-col">Amount</div>
-                  <div className="expanded-col">Price</div>
-                  <div className="expanded-col">Market Cap</div>
+              <div className="detail-trades-table">
+                <div className="detail-trades-table-header">
+                  <div className="detail-trades-header-cell">Account</div>
+                  <div className="detail-trades-header-cell">Type</div>
+                  <div className="detail-trades-header-cell">MON</div>
+                  <div className="detail-trades-header-cell">Tokens</div>
+                  <div className="detail-trades-header-cell">Time</div>
+                  <div className="detail-trades-header-cell">Txn</div>
                 </div>
-                {tokenTrades.length > 0 ? (
-                  tokenTrades.slice(0, 10).map((trade, idx) => (
-                    <div key={`${trade.id}-${idx}`} className="expanded-trades-row">
-                      <div className="expanded-col">{trade.time}</div>
-                      <div className="expanded-col">
-                        <span className={`detail-trade-type-badge ${trade.type}`}>
+
+                <div className="detail-trades-body">
+                  {tokenTrades.length > 0 ? (
+                    tokenTrades.slice(0, 10).map((trade, idx) => (
+                      <div
+                        key={`${trade.id}-${idx}`}
+                        className={`detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
+                      >
+                        <div className="detail-trades-col detail-trades-account">
+                          <div className="detail-trades-avatar">
+                            {walletEmoji}
+                          </div>
+                          <span className="detail-trades-address">
+                            {walletName}
+                          </span>
+                        </div>
+                        <div className={`detail-trades-col detail-trade-type-badge ${trade.type}`}>
                           {trade.type === 'buy' ? 'Buy' : 'Sell'}
-                        </span>
+                        </div>
+                        <div className="detail-trades-col">
+                          {trade.monAmount?.toFixed(3) || '0.000'}
+                        </div>
+                        <div className={`detail-trades-col detail-trades-amount amount-${trade.type}`}>
+                          {trade.amount < 0.0001
+                            ? trade.amount.toExponential(2)
+                            : trade.amount.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                        </div>
+                        <div className="detail-trades-col detail-trades-time">
+                          {trade.time}
+                        </div>
+                        <div className="detail-trades-col detail-trades-txn">
+                          <button
+                            className="detail-trades-txn-link"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (trade.txHash) {
+                                window.open(`https://explorer.monad.xyz/tx/${trade.txHash}`, '_blank');
+                              }
+                            }}
+                          >
+                            {trade.txHash ? `${trade.txHash.slice(0, 6)}...` : 'View'}
+                          </button>
+                        </div>
                       </div>
-                      <div className="expanded-col">
-                        {trade.amount < 0.0001
-                          ? trade.amount.toExponential(2)
-                          : trade.amount.toLocaleString(undefined, { maximumFractionDigits: 4 })}
-                      </div>
-                      <div className="expanded-col">
-                        ${trade.price.toFixed(6)}
-                      </div>
-                      <div className="expanded-col">
-                        ${(trade.marketCap / 1000).toFixed(2)}K
-                      </div>
+                    ))
+                  ) : (
+                    <div className="detail-trades-empty">
+                      No trades found for this token
                     </div>
-                  ))
-                ) : (
-                  <div className="expanded-trades-empty">
-                    <p>No trades found for this token</p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           )}
