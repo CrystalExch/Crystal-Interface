@@ -510,7 +510,7 @@ interface TrackerProps {
   monUsdPrice: number;
   walletTokenBalances?: { [address: string]: any };
   tokenList?: any[];
-  marketsData?: any[];
+  tokensByStatus?: Record<'new' | 'graduating' | 'graduated', any[]>;
   sendUserOperationAsync?: any;
   account?: {
     connected: boolean;
@@ -533,7 +533,7 @@ const Tracker: React.FC<TrackerProps> = ({
   monUsdPrice,
   walletTokenBalances = {},
   tokenList = [],
-  marketsData = [],
+  tokensByStatus = { new: [], graduating: [], graduated: [] },
   sendUserOperationAsync,
   account,
   terminalRefetch,
@@ -1142,6 +1142,48 @@ const Tracker: React.FC<TrackerProps> = ({
 
     return () => clearInterval(interval);
   }, [activeTab, trackedWallets]);
+
+  // Populate marketsRef with volume and transaction data from tokensByStatus (TokenExplorer's data source)
+  useEffect(() => {
+    // Flatten all tokens from TokenExplorer's state
+    const allTokens = [
+      ...(tokensByStatus.new || []),
+      ...(tokensByStatus.graduating || []),
+      ...(tokensByStatus.graduated || [])
+    ];
+
+    allTokens.forEach((token: any) => {
+      if (!token) return;
+      const tokenAddr = (token.tokenAddress || token.id)?.toLowerCase();
+      if (!tokenAddr) return;
+
+      const existing = marketsRef.current.get(tokenAddr);
+      marketsRef.current.set(tokenAddr, {
+        ...(existing || {}),
+        id: tokenAddr,
+        tokenAddress: tokenAddr,
+        name: token.name || existing?.name || '',
+        symbol: token.symbol || existing?.symbol || '',
+        emoji: token.emoji || existing?.emoji || '🪙',
+        price: token.price ?? existing?.price ?? 0,
+        marketCap: token.marketCap ?? existing?.marketCap ?? 0,
+        change24h: token.change24h ?? existing?.change24h ?? 0,
+        volume24h: token.volume24h ?? existing?.volume24h ?? 0,
+        liquidity: token.liquidity ?? existing?.liquidity ?? 0,
+        holders: token.holders ?? existing?.holders ?? 0,
+        buyTransactions: token.buyTransactions ?? existing?.buyTransactions ?? 0,
+        sellTransactions: token.sellTransactions ?? existing?.sellTransactions ?? 0,
+        bondingCurveProgress: token.bondingCurveProgress ?? existing?.bondingCurveProgress ?? 0,
+        txCount: (token.buyTransactions ?? 0) + (token.sellTransactions ?? 0),
+        globalFeesPaid: token.globalFeesPaid ?? existing?.globalFeesPaid ?? 0,
+        volume5m: token.volume5m ?? existing?.volume5m ?? 0,
+        volume1h: token.volume1h ?? existing?.volume1h ?? 0,
+        volume6h: token.volume6h ?? existing?.volume6h ?? 0
+      } as any);
+    });
+
+    flushMarketsToState();
+  }, [tokensByStatus]);
 
   useEffect(() => {
     if (Object.keys(walletTokenBalances).length === 0) return;
@@ -2721,6 +2763,7 @@ const Tracker: React.FC<TrackerProps> = ({
 
       // Get market data for metric coloring
       const market = marketsRef.current.get(pos.tokenId.toLowerCase());
+
       const classes: string[] = ['tracker-monitor-card'];
 
       // Add metric coloring classes
