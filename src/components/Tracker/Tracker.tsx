@@ -736,16 +736,19 @@ const Tracker: React.FC<TrackerProps> = ({
   };
 
   // Copied from TokenExplorer for consistent formatting
-  const formatPrice = (p: number, noDecimals = false) => {
+  const formatPrice = (p: number, noDecimals = false, isUSD = true) => {
+    const prefix = isUSD ? '$' : '';
+    const suffix = isUSD ? '' : ' MON';
+
     if (p >= 1e12)
-      return `$${noDecimals ? Math.round(p / 1e12) : (p / 1e12).toFixed(1)}T`;
+      return `${prefix}${noDecimals ? Math.round(p / 1e12) : (p / 1e12).toFixed(1)}T${suffix}`;
     if (p >= 1e9)
-      return `$${noDecimals ? Math.round(p / 1e9) : (p / 1e9).toFixed(1)}B`;
+      return `${prefix}${noDecimals ? Math.round(p / 1e9) : (p / 1e9).toFixed(1)}B${suffix}`;
     if (p >= 1e6)
-      return `$${noDecimals ? Math.round(p / 1e6) : (p / 1e6).toFixed(1)}M`;
+      return `${prefix}${noDecimals ? Math.round(p / 1e6) : (p / 1e6).toFixed(1)}M${suffix}`;
     if (p >= 1e3)
-      return `$${noDecimals ? Math.round(p / 1e3) : (p / 1e3).toFixed(1)}K`;
-    return `$${noDecimals ? Math.round(p) : p.toFixed(2)}`;
+      return `${prefix}${noDecimals ? Math.round(p / 1e3) : (p / 1e3).toFixed(1)}K${suffix}`;
+    return `${prefix}${noDecimals ? Math.round(p) : p.toFixed(2)}${suffix}`;
   };
 
   const [monitorFilters, setMonitorFilters] = useState<MonitorFilterState>({
@@ -2770,32 +2773,97 @@ const Tracker: React.FC<TrackerProps> = ({
 
       // If not found in marketsRef, check marketsData (for OrderBook tokens)
       if (!market && marketsData) {
-        const orderBookMarket = marketsData[pos.tokenId.toLowerCase()];
+        let orderBookMarket = null;
+
+        // marketsData is an array - find by address or baseAddress matching the token
+        if (Array.isArray(marketsData)) {
+          // Try to find by baseAddress (token address) or by address (market address)
+          orderBookMarket = marketsData.find((m: any) =>
+            m.baseAddress?.toLowerCase() === pos.tokenId.toLowerCase() ||
+            m.address?.toLowerCase() === pos.tokenId.toLowerCase()
+          );
+
+          // If not found by address, try matching by market symbol
+          if (!orderBookMarket && pos.symbol) {
+            orderBookMarket = marketsData.find((m: any) =>
+              m.marketSymbol === `${pos.symbol}USDC` ||
+              m.marketSymbol === `${pos.symbol}MON` ||
+              m.marketSymbol === `${pos.symbol}ETH` ||
+              m.symbol === pos.symbol
+            );
+          }
+        } else {
+          // marketsData is an object - try different keys
+          orderBookMarket = marketsData[pos.tokenId.toLowerCase()];
+
+          if (!orderBookMarket && pos.symbol) {
+            const possibleKeys = [
+              `${pos.symbol}USDC`,
+              `${pos.symbol}MON`,
+              `${pos.symbol}ETH`,
+              pos.symbol
+            ];
+            for (const key of possibleKeys) {
+              if (marketsData[key]) {
+                orderBookMarket = marketsData[key];
+                break;
+              }
+            }
+          }
+        }
+
         if (orderBookMarket) {
+          // Parse volume from string if needed (marketsData has volume as formatted string)
+          let volume24h = 0;
+          if (typeof orderBookMarket.volume === 'string') {
+            volume24h = parseFloat(orderBookMarket.volume.replace(/,/g, '')) || 0;
+          } else if (typeof orderBookMarket.volume24h === 'number') {
+            volume24h = orderBookMarket.volume24h;
+          }
+
+          // Get transactions from tradesByMarket if available
+          let buyTxs = 0;
+          let sellTxs = 0;
+
+          const marketSymbol = orderBookMarket.marketSymbol || `${pos.symbol}USDC`;
+          if (tradesByMarket && tradesByMarket[marketSymbol]) {
+            const trades = tradesByMarket[marketSymbol] || [];
+            const now = Date.now() / 1000;
+            const oneDayAgo = now - 86400;
+
+            trades.forEach((trade: any) => {
+              const timestamp = Number(trade.timestamp || 0);
+              if (timestamp >= oneDayAgo) {
+                if (trade.isBuy) buyTxs++;
+                else sellTxs++;
+              }
+            });
+          }
+
           // Convert marketsData format to expected market format
           market = {
             id: pos.tokenId,
             tokenAddress: pos.tokenId,
-            symbol: orderBookMarket.symbol || pos.symbol,
+            symbol: orderBookMarket.symbol || orderBookMarket.baseAsset || pos.symbol,
             name: orderBookMarket.name || pos.name,
             emoji: orderBookMarket.emoji || '📈',
-            price: orderBookMarket.price || pos.lastPrice,
-            marketCap: orderBookMarket.marketCap || (pos.lastPrice * 1e9),
-            change24h: orderBookMarket.change24h || 0,
-            volume24h: orderBookMarket.volume24h || 0,
+            price: orderBookMarket.currentPrice || orderBookMarket.price || pos.lastPrice,
+            marketCap: (orderBookMarket.currentPrice || orderBookMarket.price || pos.lastPrice) * 1e9,
+            change24h: parseFloat(orderBookMarket.priceChange || orderBookMarket.change24h || '0'),
+            volume24h: volume24h,
             liquidity: orderBookMarket.liquidity || 0,
             holders: orderBookMarket.holders || 0,
-            buyTransactions: orderBookMarket.buyTransactions || 0,
-            sellTransactions: orderBookMarket.sellTransactions || 0,
+            buyTransactions: buyTxs,
+            sellTransactions: sellTxs,
             bondingCurveProgress: 100,
-            txCount: (orderBookMarket.buyTransactions || 0) + (orderBookMarket.sellTransactions || 0),
+            txCount: buyTxs + sellTxs,
             volume5m: orderBookMarket.volume5m || 0,
             volume1h: orderBookMarket.volume1h || 0,
             volume6h: orderBookMarket.volume6h || 0,
             priceChange5m: orderBookMarket.priceChange5m || 0,
             priceChange1h: orderBookMarket.priceChange1h || 0,
             priceChange6h: orderBookMarket.priceChange6h || 0,
-            priceChange24h: orderBookMarket.priceChange24h || orderBookMarket.change24h || 0,
+            priceChange24h: parseFloat(orderBookMarket.priceChange || orderBookMarket.change24h || '0'),
             website: orderBookMarket.website || '',
             twitter: orderBookMarket.twitter || '',
             telegram: orderBookMarket.telegram || '',
@@ -2861,42 +2929,59 @@ const Tracker: React.FC<TrackerProps> = ({
       );
 
       // For OrderBook tokens, also check tradesByMarket
-      if (pos.isOrderbook && tradesByMarket && tradesByMarket[pos.tokenId.toLowerCase()]) {
-        const orderBookTrades = tradesByMarket[pos.tokenId.toLowerCase()] || [];
-        // Filter trades by wallet address if available
-        const filteredOrderBookTrades = orderBookTrades
-          .filter((trade: any) => {
-            const tradeWalletAddr = (trade.account?.id || trade.caller || '').toLowerCase();
-            return tradeWalletAddr === walletAddress?.toLowerCase();
-          })
-          .map((trade: any) => {
-            const isBuy = !!trade.isBuy;
-            const nativeAmount = Number(isBuy ? trade.amountIn : trade.amountOut) / 1e18;
-            const timestamp = Number(trade.timestamp || 0);
-            const now = Date.now() / 1000;
-            const secondsAgo = Math.max(0, now - timestamp);
-            let timeAgo = 'now';
-            if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
-            else if (secondsAgo < 3600) timeAgo = `${Math.floor(secondsAgo / 60)}m`;
-            else if (secondsAgo < 86400) timeAgo = `${Math.floor(secondsAgo / 3600)}h`;
-            else timeAgo = `${Math.floor(secondsAgo / 86400)}d`;
+      if (pos.isOrderbook && tradesByMarket) {
+        // Try multiple keys to find trades
+        const possibleKeys = [
+          pos.tokenId.toLowerCase(),
+          pos.symbol ? `${pos.symbol}USDC` : null,
+          pos.symbol ? `${pos.symbol}MON` : null,
+          pos.symbol ? `${pos.symbol}ETH` : null,
+        ].filter(Boolean);
 
-            return {
-              id: trade.id || `${trade.transaction?.id || ''}-${Date.now()}`,
-              walletName: walletName,
-              emoji: walletEmoji,
-              token: pos.symbol,
-              amount: Number(isBuy ? trade.amountOut : trade.amountIn) / 1e18,
-              monAmount: nativeAmount,
-              price: Number(trade.price || 0),
-              marketCap: Number(trade.price || 0) * 1e9,
-              time: timeAgo,
-              txHash: trade.transaction?.id || trade.id,
-              type: isBuy ? 'buy' : 'sell',
-              createdAt: new Date(timestamp * 1000).toISOString(),
-            };
-          });
-        tokenTrades = [...tokenTrades, ...filteredOrderBookTrades];
+        let orderBookTrades: any[] = [];
+        for (const key of possibleKeys) {
+          if (key && tradesByMarket[key]) {
+            orderBookTrades = tradesByMarket[key];
+            break;
+          }
+        }
+
+        if (orderBookTrades.length > 0) {
+          // Filter trades by wallet address if available
+          const filteredOrderBookTrades = orderBookTrades
+            .filter((trade: any) => {
+              const tradeWalletAddr = (trade.account?.id || trade.caller || '').toLowerCase();
+              return tradeWalletAddr === walletAddress?.toLowerCase();
+            })
+            .map((trade: any) => {
+              const isBuy = !!trade.isBuy;
+              const nativeAmount = Number(isBuy ? trade.amountIn : trade.amountOut) / 1e18;
+              const timestamp = Number(trade.timestamp || 0);
+              const now = Date.now() / 1000;
+              const secondsAgo = Math.max(0, now - timestamp);
+              let timeAgo = 'now';
+              if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
+              else if (secondsAgo < 3600) timeAgo = `${Math.floor(secondsAgo / 60)}m`;
+              else if (secondsAgo < 86400) timeAgo = `${Math.floor(secondsAgo / 3600)}h`;
+              else timeAgo = `${Math.floor(secondsAgo / 86400)}d`;
+
+              return {
+                id: trade.id || `${trade.transaction?.id || ''}-${Date.now()}`,
+                walletName: walletName,
+                emoji: walletEmoji,
+                token: pos.symbol,
+                amount: Number(isBuy ? trade.amountOut : trade.amountIn) / 1e18,
+                monAmount: nativeAmount,
+                price: Number(trade.price || 0),
+                marketCap: Number(trade.price || 0) * 1e9,
+                time: timeAgo,
+                txHash: trade.transaction?.id || trade.id,
+                type: isBuy ? 'buy' : 'sell',
+                createdAt: new Date(timestamp * 1000).toISOString(),
+              };
+            });
+          tokenTrades = [...tokenTrades, ...filteredOrderBookTrades];
+        }
       }
 
       return (
@@ -2983,13 +3068,17 @@ const Tracker: React.FC<TrackerProps> = ({
                     <div className="explorer-volume">
                       <span className="mc-label">V</span>
                       <span className="mc-value">
-                        {formatPrice(((market?.volume24h || 0) * monUsdPrice), false)}
+                        {monitorCurrency === 'USD'
+                          ? formatPrice(((market?.volume24h || 0) * monUsdPrice), false, true)
+                          : formatPrice((market?.volume24h || 0), false, false)}
                       </span>
                     </div>
                     <div className="explorer-market-cap">
                       <span className="mc-label">MC</span>
                       <span className="mc-value">
-                        {formatPrice((market?.marketCap || pos.lastPrice * 1e9) * monUsdPrice, false)}
+                        {monitorCurrency === 'USD'
+                          ? formatPrice((market?.marketCap || pos.lastPrice * 1e9) * monUsdPrice, false, true)
+                          : formatPrice((market?.marketCap || pos.lastPrice * 1e9), false, false)}
                       </span>
                     </div>
                   </div>
@@ -2998,7 +3087,9 @@ const Tracker: React.FC<TrackerProps> = ({
                     <div className="explorer-stat-item">
                       <span className="explorer-fee-label">F</span>
                       <span className="explorer-fee-total">
-                        {formatPrice(((market?.volume24h || 0) * monUsdPrice) / 100, false)}
+                        {monitorCurrency === 'USD'
+                          ? formatPrice(((market?.volume24h || 0) * monUsdPrice) / 100, false, true)
+                          : formatPrice((market?.volume24h || 0) / 100, false, false)}
                       </span>
                     </div>
 

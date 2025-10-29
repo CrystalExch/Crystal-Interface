@@ -104,13 +104,11 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
   
 
   const [viewMode, setViewMode] = useState<'simple' | 'advanced'>('simple');
-  const [selectedSimpleFilter, setSelectedSimpleFilter] = useState<string | null>(() =>
-    detectSimplePreset(initialFilters || {
-      general: { lastTransaction: '', tokenAgeMin: '', tokenAgeMax: '' },
-      market: { marketCapMin: '', marketCapMax: '', liquidityMin: '', liquidityMax: '', holdersMin: '', holdersMax: '' },
-      transactions: { transactionCountMin: '', transactionCountMax: '', inflowVolumeMin: '', inflowVolumeMax: '', outflowVolumeMin: '', outflowVolumeMax: '' },
-    })
-  );
+  const [selectedSimpleFilter, setSelectedSimpleFilter] = useState<string | null>(() => {
+    if (!initialFilters) return null; // No default selection
+    const detected = detectSimplePreset(initialFilters);
+    return detected;
+  });
   const [activeTab, setActiveTab] = useState<'market' | 'transactions'>('market');
   const [filters, setFilters] = useState<MonitorFilterState>(
     initialFilters || {
