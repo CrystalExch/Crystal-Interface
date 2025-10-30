@@ -716,13 +716,8 @@ const Header: React.FC<HeaderProps> = ({
             {account.connected && (
               <div className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
                 <div className="wallet-dropdown-header">
-                  <span className="wallet-dropdown-title">Wallets</span>
-                  <button
-                    className="wallet-dropdown-close"
-                    onClick={() => setIsWalletDropdownOpen(false)}
-                  >
-                    <img src={closebutton} className="wallet-dropdown-close-icon" />
-                  </button>
+                  <span className="wallet-dropdown-title">Total Value</span>
+                  <span className="wallet-dropdown-value">$0.00</span>
                 </div>
                 {/* <div className="wallet-dropdown-list">
                   {subWallets.length > 0 ? (
