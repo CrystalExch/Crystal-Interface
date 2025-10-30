@@ -1243,7 +1243,6 @@
 }
 
 .meme-mobile-view-toggle {
-  backdrop-filter: blur(10px);
   background: rgb(6, 6, 6);
   border-radius: 8px;
   border-top: 1px solid rgba(179, 184, 249, 0.1);

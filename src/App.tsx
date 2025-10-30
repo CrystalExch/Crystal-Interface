@@ -4513,6 +4513,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           'monadLogs',
           { address: settings.chainConfig[activechain].router, topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT, '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']] }
         ]);
+        subscribe(ws, [
+          'monadLogs',
+          { address: '0x52D34d8536350Cd997bCBD0b9E9d722452f341F5', topics: [['0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9']] }
+        ]);
       };
 
       ws.onmessage = ({ data }) => {
@@ -5125,6 +5129,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 ...p,
                 status: 'graduated'
               }));
+            }
+            else if (log.topics?.[0] == '0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9') {
+              console.log(log)
+              const dev = `0x${log.topics[1].slice(26)}`.toLowerCase();
+              const marketAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
+              const graduatedPool = `0x${log.topics[3].slice(26)}`.toLowerCase();
+              const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+              const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
             }
             return tempset;
           })

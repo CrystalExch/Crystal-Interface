@@ -968,7 +968,7 @@ const Tracker: React.FC<TrackerProps> = ({
 
       toAdd.push(normalized);
 
-  upsertMarket({ tokenAddr, symbol, price: priceEth, isBuy, amountNative: isBuy ? amountInEth : amountOutEth, ts, wallet: wallets.find(w=>lower(w.address)===lower(accountAddr||''))?.name, emoji: wallets.find(w=>lower(w.address)===lower(accountAddr||''))?.emoji });
+  upsertMarket({ tokenAddr, symbol, price: priceEth, isBuy, amountNative: isBuy ? amountInEth : amountOutEth, ts, wallet: wallets.find((w: any)=>lower(w.address)===lower(accountAddr||''))?.name, emoji: wallets.find((w: any)=>lower(w.address)===lower(accountAddr||''))?.emoji });
     }
 
     if (toAdd.length === 0) {
@@ -997,9 +997,9 @@ const Tracker: React.FC<TrackerProps> = ({
   useEffect(() => {
     let stop = false;
     const run = async () => {
-      const addrs = trackedWalletsRef.current.map(w => w.address);
+      const addrs = trackedWalletsRef.current.map((w: any) => w.address);
       if (!addrs.length) return;
-      const results = await Promise.all(addrs.map(a => fetchPortfolio(a).catch(() => null)));
+      const results = await Promise.all(addrs.map((a: any) => fetchPortfolio(a).catch(() => null)));
       if (stop) return;
       const pos: Record<string, GqlPosition[]> = {};
       // Don't update balances from fetchPortfolio since it doesn't fetch native balance
@@ -1020,13 +1020,13 @@ const Tracker: React.FC<TrackerProps> = ({
     const run = async () => {
       try {
         if (activeTab !== 'monitor') return;
-        const addrs = trackedWalletsRef.current.map(w => w.address);
+        const addrs = trackedWalletsRef.current.map((w: any) => w.address);
         if (!addrs.length) return;
 
         // If we already have addressPositions data, the other effect will populate Monitor.
         if (Object.keys(addressPositions).length > 0) return;
 
-        const posResults = await Promise.all(addrs.map(a => fetchPortfolio(a).catch(() => null)));
+        const posResults = await Promise.all(addrs.map((a: any) => fetchPortfolio(a).catch(() => null)));
         if (cancelled) return;
 
         const tokensMap = new Map<string, MonitorToken>();
@@ -1034,7 +1034,7 @@ const Tracker: React.FC<TrackerProps> = ({
         posResults.forEach((w, i) => {
           if (!w || !w.positions) return;
           const walletAddr = addrs[i];
-          const wallet = trackedWalletsRef.current.find(x => x.address.toLowerCase() === walletAddr.toLowerCase());
+          const wallet = trackedWalletsRef.current.find((x: any) => x.address.toLowerCase() === walletAddr.toLowerCase());
           for (const pos of w.positions) {
             if (!pos || !pos.tokenId) continue;
             if (!(pos.remainingTokens && pos.remainingTokens > 0)) continue;
@@ -1182,7 +1182,6 @@ const Tracker: React.FC<TrackerProps> = ({
         sellTransactions: token.sellTransactions ?? existing?.sellTransactions ?? 0,
         bondingCurveProgress: token.bondingCurveProgress ?? existing?.bondingCurveProgress ?? 0,
         txCount: (token.buyTransactions ?? 0) + (token.sellTransactions ?? 0),
-        globalFeesPaid: token.globalFeesPaid ?? existing?.globalFeesPaid ?? 0,
         volume5m: token.volume5m ?? existing?.volume5m ?? 0,
         volume1h: token.volume1h ?? existing?.volume1h ?? 0,
         volume6h: token.volume6h ?? existing?.volume6h ?? 0
@@ -1292,7 +1291,7 @@ const Tracker: React.FC<TrackerProps> = ({
   };
 
   const getFilteredTrades = () => {
-    let trades = trackedWalletTrades.filter(trade => {
+    let trades = trackedWalletTrades.filter((trade: any) => {
 
       const isBuy = trade.type === 'buy';
       const isSell = trade.type === 'sell';
@@ -1339,7 +1338,7 @@ const Tracker: React.FC<TrackerProps> = ({
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      trades = trades.filter(trade =>
+      trades = trades.filter((trade: any) =>
         trade.walletName.toLowerCase().includes(query) ||
         trade.token.toLowerCase().includes(query)
       );
@@ -2539,7 +2538,7 @@ const Tracker: React.FC<TrackerProps> = ({
                 </div>
               </div>
             ) : (
-              filteredTrades.map((trade) => (
+              filteredTrades.map((trade: any) => (
 
                 <div
                   key={trade.id}
@@ -3238,7 +3237,7 @@ const Tracker: React.FC<TrackerProps> = ({
 
                 <div className="detail-trades-body">
                   {tokenTrades.length > 0 ? (
-                    tokenTrades.slice(0, 10).map((trade, idx) => (
+                    tokenTrades.slice(0, 10).map((trade: any, idx: any) => (
                       <div
                         key={`${trade.id}-${idx}`}
                         className={`detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
