@@ -4464,8 +4464,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               <div
                 className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}
               >
-                <div className="wallet-dropdown-header">
-                  <div className="wallet-dropdown-actions">
+                <div className="footer-wallet-dropdown-header">
+                  <div className="footer-wallet-dropdown-actions">
                     <button
                       className="wallet-action-btn"
                       onClick={
