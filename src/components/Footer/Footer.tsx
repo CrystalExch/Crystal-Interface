@@ -27,9 +27,8 @@ interface FooterProps {
   setSelectedWallets?: (wallets: Set<string>) => void;
   walletTokenBalances?: Record<string, any>;
   activeWalletPrivateKey?: string;
-  activeChain?: number;
+  activeChain: number;
   monUsdPrice: number;
-  // Add these new props for widget control
   isTrackerWidgetOpen?: boolean;
   onToggleTrackerWidget: any;
 }
@@ -259,20 +258,21 @@ const Footer: React.FC<FooterProps> = ({
       .map((w) => w.address);
     setSelectedWallets(new Set(walletsWithBalance));
   }, [subWallets, setSelectedWallets]);
+const getWalletBalance = useCallback(
+  (address: string): number => {
+    const balances = walletTokenBalances[address];
+    if (!balances) return 0;
 
-  const getWalletBalance = useCallback(
-    (address: string): number => {
-      const balanceData = walletTokenBalances[address];
-      if (!balanceData || !Array.isArray(balanceData)) return 0;
+    const ethAddress = settings.chainConfig[activeChain]?.eth;
+    if (!ethAddress) return 0;
 
-      const nativeToken = balanceData.find(
-        (token: any) => token.address === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-      );
-      return nativeToken ? parseFloat(nativeToken.balance) : 0;
-    },
-    [walletTokenBalances],
-  );
+    const balance = balances[ethAddress];
+    if (!balance) return 0;
 
+    return Number(balance) / 10 ** 18; // MON has 18 decimals
+  },
+  [walletTokenBalances, activeChain],
+);
   const getWalletTokenCount = useCallback(
     (address: string): number => {
       const balanceData = walletTokenBalances[address];
@@ -330,7 +330,7 @@ const Footer: React.FC<FooterProps> = ({
                       alt="Wallet"
                     />
                     <span style={{ fontSize: '0.85rem', fontWeight: '300' }}>
-                      {selectedWallets.size}/{subWallets.length}
+                      {selectedWallets.size}
                     </span>
                     <span
                       style={{
@@ -347,8 +347,8 @@ const Footer: React.FC<FooterProps> = ({
                             src={monadicon}
                             className="wallet-dropdown-mon-icon"
                             style={{
-                              width: '14px',
-                              height: '14px',
+                              width: '13px',
+                              height: '13px',
                               marginRight: '4px',
                             }}
                             alt="MON"
@@ -363,8 +363,8 @@ const Footer: React.FC<FooterProps> = ({
                             src={monadicon}
                             className="wallet-dropdown-mon-icon"
                             style={{
-                              width: '14px',
-                              height: '14px',
+                              width: '13px',
+                              height: '13px',
                               marginRight: '4px',
                             }}
                             alt="MON"

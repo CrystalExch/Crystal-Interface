@@ -184,9 +184,14 @@
   pointer-events: none;
 }
 
+
+
 .footer-wallet-dropdown-panel.visible {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
   pointer-events: auto;
+  margin-bottom: 35px;
 }
+
+
