@@ -138,6 +138,7 @@
     padding: 0px 10px;
     border-radius: 4px;
     margin-left: 4px;
+    cursor: pointer;
 }
 
 .footer-crystal-logo {
@@ -184,9 +185,14 @@
   pointer-events: none;
 }
 
+
+
 .footer-wallet-dropdown-panel.visible {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
   pointer-events: auto;
+  margin-bottom: 35px;
 }
+
+
