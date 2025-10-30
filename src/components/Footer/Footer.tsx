@@ -387,7 +387,7 @@ const Footer: React.FC<FooterProps> = ({
                 </button>
 
                 {isWalletDropdownOpen && (
-                  <div className="wallet-dropdown-panel visible">
+                  <div className="footer-wallet-dropdown-panel visible">
                     <div className="wallet-dropdown-header">
                       <div className="wallet-dropdown-actions">
                         <button

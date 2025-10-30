@@ -84,7 +84,7 @@ const PerpsTokenSkeleton = () => {
           </div>
           <div className="perps-interface-token-identity">
             <div className="perps-interface-token-name-row">
-              <div className="skeleton-text skeleton-symbol" style={{ width: '80px', height: '24px' }}></div>
+              <div className="skeleton-text skeleton-symbol" style={{ width: '79px', height: '24px' }}></div>
             </div>
             <div className="ctrlktooltip">
               Ctrl+K

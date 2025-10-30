@@ -210,6 +210,7 @@ const Perps: React.FC<PerpsProps> = ({
   });
   const [isDragging2, setIsDragging2] = useState(false);
   const [perpsIsLoaded, setPerpsIsLoaded] = useState(false);
+  const [leverageIsLoaded, setLeverageIsLoaded] = useState(false);
 
   const initialMousePosRef = useRef(0);
   const initialWidthRef = useRef(0);
@@ -738,10 +739,14 @@ const Perps: React.FC<PerpsProps> = ({
   }, [fetchedpositions, perpsMarketsData, perpsActiveMarketKey])
 
   useEffect(() => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN || !activeMarket?.contractId || !userLeverage) return
-    if (!activeMarket?.contractId) return
-    setPerpsIsLoaded(true)
+    if (!activeMarket?.contractId || (Object.keys(signer).length > 0 && !userLeverage)) return;
     setLeverage(userLeverage?.[activeMarket?.contractId]?.maxLeverage ? userLeverage?.[activeMarket?.contractId]?.maxLeverage : activeMarket?.displayMaxLeverage)
+    setLeverageIsLoaded(true)
+  }, [activeMarket?.contractId, userLeverage])
+
+  useEffect(() => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN || !activeMarket?.contractId) return
+    setPerpsIsLoaded(true)
     setInputString('')
     setSliderPercent(0);
     const slider = document.querySelector(
@@ -784,7 +789,7 @@ const Perps: React.FC<PerpsProps> = ({
 
     subRefs.current = subs
 
-  }, [activeMarket?.contractId, selectedInterval, wsRef.current, userLeverage])
+  }, [activeMarket?.contractId, selectedInterval, wsRef.current])
 
   useEffect(() => {
     if (!orderdata || !Array.isArray(orderdata) || orderdata.length < 3 || orderdata[2] != perpsActiveMarketKey) return
@@ -1559,7 +1564,7 @@ const Perps: React.FC<PerpsProps> = ({
               inputMode="decimal"
               placeholder="0.00"
               value={inputString}
-              disabled={!perpsIsLoaded}
+              disabled={!perpsIsLoaded || !leverageIsLoaded}
               onChange={(e) => {
                 setInputString(e.target.value)
                 const percentage =
@@ -1595,7 +1600,7 @@ const Perps: React.FC<PerpsProps> = ({
               <input
                 ref={sliderRef}
                 type="range"
-                disabled={!perpsIsLoaded}
+                disabled={!perpsIsLoaded || !leverageIsLoaded}
                 className={`perps-balance-amount-slider ${isDragging ? "dragging" : ""}`}
                 min="0"
                 max="100"
@@ -1629,7 +1634,7 @@ const Perps: React.FC<PerpsProps> = ({
                     className={`perps-balance-slider-mark ${activeTradeType}`}
                     data-active={sliderPercent >= markPercent}
                     data-percentage={markPercent}
-                    onClick={() => {if (perpsIsLoaded) handleSliderChange(markPercent)}}
+                    onClick={() => {if (perpsIsLoaded && leverageIsLoaded) handleSliderChange(markPercent)}}
                   >
                     {markPercent}%
                   </span>

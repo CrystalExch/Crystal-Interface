@@ -4449,10 +4449,9 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
   justify-content: flex-end;
   padding: 0.75rem;
   position: absolute;
-  right: clamp(85px, 20%, 165px);  
+  right: clamp(80px, 20%, 160px);  
   top: 0;
   transition: all 0.3s ease;
-  width: 165px;
   --mouse-x: 50%;
   --mouse-y: 50%;
   width: clamp(80px, 20%, 160px);  

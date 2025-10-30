@@ -2647,7 +2647,8 @@
 
 .meme-similar-token-meta {
   display: grid;
-  gap: 4px
+  gap: 4px;
+  margin-right: 4px;
 }
 
 .meme-similar-token-title {

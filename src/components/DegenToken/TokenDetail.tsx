@@ -67,7 +67,7 @@ const formatNumber = (n: number) => {
 
 const formatTradeAmount = (amount: number): string => {
   if (amount === 0) return '';
-  return amount.toFixed(6).replace(/\.?0+$/, '');
+  return amount.toFixed(2).replace(/\.?0+$/, '');
 };
 
 const CopyableAddress: React.FC<{
@@ -529,7 +529,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             <div className="detail-stat-item">
               <div className="detail-stat-label">Price</div>
               <div className={`detail-stat-value ${(currentPrice === 0) ? 'detail-stat-neutral' : ''}`}>
-                {formatSubscript((currentPrice * monUsdPrice).toFixed(10).toString())}
+                ${formatSubscript((currentPrice * monUsdPrice).toFixed(9))}
               </div>
             </div>
             <div className="detail-stat-item">
@@ -773,20 +773,10 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                     <button onClick={handleMaxClick} className="detail-preset-button">Max</button>
                   </div>
                 </div>
-              ) : tradeType === 'sell' ? (
-                <div className="detail-preset-buttons">
-                  <div className="detail-preset-buttons-right">
-                    <button className="detail-preset-button-left" onClick={() => setIsSettingsOpen(true)}>Slippage (%)</button>
-                    {['25', '50', '75', '100'].map(p => (
-                      <button key={p} onClick={() => handlePercentageClick(Number(p))} className="detail-preset-button">{p}%</button>
-                    ))}
-                    <button onClick={handleMaxClick} className="detail-preset-button">Max</button>
-                  </div>
-                </div>
               ) : (
                 <div className="detail-preset-buttons">
                   <div className="detail-preset-buttons-right">
-                    <button className="detail-preset-button-left" onClick={() => {}}>Slippage (%)</button>
+                    <button className="detail-preset-button-left" onClick={() => setIsSettingsOpen(true)}>Slippage (%)</button>
                     {['25', '50', '75', '100'].map(p => (
                       <button key={p} onClick={() => handlePercentageClick(Number(p))} className="detail-preset-button">{p}%</button>
                     ))}
