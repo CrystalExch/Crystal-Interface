@@ -31,7 +31,7 @@ interface FooterProps {
   monUsdPrice: number;
   // Add these new props for widget control
   isTrackerWidgetOpen?: boolean;
-  onToggleTrackerWidget?: () => void;
+  onToggleTrackerWidget: any;
 }
 
 const Tooltip: React.FC<{
@@ -388,7 +388,7 @@ const Footer: React.FC<FooterProps> = ({
                 </button>
 
                 {isWalletDropdownOpen && (
-                  <div className="wallet-dropdown-panel visible">
+                  <div className="footer-wallet-dropdown-panel visible">
                     <div className="wallet-dropdown-header">
                       <div className="wallet-dropdown-actions">
                         <button
@@ -521,7 +521,7 @@ const Footer: React.FC<FooterProps> = ({
               <Tooltip content="Twitter Tracker">
                 <div 
                   className={`footer-widget-button ${isTrackerWidgetOpen ? 'active' : ''}`}
-                  onClick={onToggleTrackerWidget}
+                  onClick={() => {onToggleTrackerWidget((prev: any) => !prev)}}
                   style={{ cursor: 'pointer' }}
                 >
                   <img src={twittericon} className="footer-widget-icon" />
@@ -547,7 +547,13 @@ const Footer: React.FC<FooterProps> = ({
                 </div>
               </Tooltip>
             </div>
-            <Tooltip content="Estimated Migration Price">
+            <Tooltip content="Current MON Price">
+              <div className="crystal-migration-mc">
+                <img src={monadicon} className="footer-monad-logo" />
+                <span>${formatNumberWithCommas(monUsdPrice)}</span>
+              </div>
+            </Tooltip>
+            <Tooltip content="crystal.fun Migration Price">
               <div className="crystal-migration-mc">
                 <img src={crystallogo} className="footer-crystal-logo" />
                 <span>${formatNumberWithCommas(monUsdPrice * 25000)}</span>

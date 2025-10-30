@@ -93,7 +93,7 @@ interface DevToken {
   migrated: boolean;
 }
 
-const fmt = (v: number, d = 3) => {
+const fmt = (v: number, d = 2) => {
   if (v === 0) return '0';
   if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B';
   if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M';
@@ -123,9 +123,9 @@ const timeAgo = (tsSec?: number) => {
 
 const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
   if (mode === 'USD' && monPrice > 0) {
-    return `$${(v * monPrice).toFixed(2)}`;
+    return `$${fmt(v * monPrice)}`;
   }
-  return `${v.toFixed(2)}`;
+  return `${fmt(v)}`;
 };
 
 interface SellPopupProps {
@@ -725,34 +725,33 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                             className="meme-token-info"
                             style={{ display: 'flex', alignItems: 'center' }}
                           >
-   {tokenImageUrl && !tokenImageErrors[p.tokenId] ? (
-     <img
-       src={tokenImageUrl}
-       alt={p.symbol}
-       className="meme-token-icon"
-       onError={() => {
-         setTokenImageErrors(prev => ({ ...prev, [p.tokenId]: true }));
-       }}
-     />
-   ) : (
-     <div
-       className="meme-token-icon"
-       style={{
-         backgroundColor: 'rgba(35, 34, 41, .7)',
-         display: 'flex',
-         alignItems: 'center',
-         justifyContent: 'center',
-         fontSize: (p.symbol || '').length <= 3 ? '14px' : '12px',
-         fontWeight: '200',
-         color: '#ffffff',
-         borderRadius: '3px',
-         letterSpacing: (p.symbol || '').length > 3 ? '-0.5px' : '0',
-       }}
-     >
-       {(p.symbol || p.name || '?').slice(0, 2).toUpperCase()}
-     </div>
-   )}
-
+                            {tokenImageUrl && !tokenImageErrors[p.tokenId] ? (
+                              <img
+                                src={tokenImageUrl}
+                                alt={p.symbol}
+                                className="meme-token-icon"
+                                onError={() => {
+                                  setTokenImageErrors(prev => ({ ...prev, [p.tokenId]: true }));
+                                }}
+                              />
+                            ) : (
+                              <div
+                                className="meme-token-icon"
+                                style={{
+                                  backgroundColor: 'rgba(35, 34, 41, .7)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: (p.symbol || '').length <= 3 ? '14px' : '12px',
+                                  fontWeight: '200',
+                                  color: '#ffffff',
+                                  borderRadius: '3px',
+                                  letterSpacing: (p.symbol || '').length > 3 ? '-0.5px' : '0',
+                                }}
+                              >
+                                {(p.symbol || p.name || '?').slice(0, 2).toUpperCase()}
+                              </div>
+                            )}
                             <span
                               className="oc-meme-wallet-address meme-clickable-token"
                               onClick={() => {
@@ -1393,32 +1392,32 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                               style={{ display: 'flex', alignItems: 'center' }}
                             >
                             {t.imageUrl && !tokenImageErrors[t.id] ? (
-  <img
-    src={t.imageUrl}
-    alt={t.symbol || t.name || t.id}
-    className="meme-token-icon"
-    onError={() => {
-      setTokenImageErrors(prev => ({ ...prev, [t.id]: true }));
-    }}
-  />
-) : (
-  <div
-    className="meme-token-icon"
-    style={{
-      backgroundColor: 'rgba(35, 34, 41, .7)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: (t.symbol || '').length <= 3 ? '14px' : '12px',
-      fontWeight: '200',
-      color: '#ffffff',
-      borderRadius: '3px',
-      letterSpacing: (t.symbol || '').length > 3 ? '-0.5px' : '0',
-    }}
-  >
-    {(t.symbol || t.name || '?').slice(0, 2).toUpperCase()}
-  </div>
-)}
+                                  <img
+                                    src={t.imageUrl}
+                                    alt={t.symbol || t.name || t.id}
+                                    className="meme-token-icon"
+                                    onError={() => {
+                                      setTokenImageErrors(prev => ({ ...prev, [t.id]: true }));
+                                    }}
+                                  />
+                                ) : (
+                                  <div
+                                    className="meme-token-icon"
+                                    style={{
+                                      backgroundColor: 'rgba(35, 34, 41, .7)',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontSize: (t.symbol || '').length <= 3 ? '14px' : '12px',
+                                      fontWeight: '200',
+                                      color: '#ffffff',
+                                      borderRadius: '3px',
+                                      letterSpacing: (t.symbol || '').length > 3 ? '-0.5px' : '0',
+                                    }}
+                                  >
+                                    {(t.symbol || t.name || '?').slice(0, 2).toUpperCase()}
+                                  </div>
+                                )}
                               <span
                              className="oc-meme-wallet-address meme-clickable-token"
                                 title={t.name || t.symbol || t.id}

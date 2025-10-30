@@ -167,7 +167,7 @@ const handleLaunch = async () => {
         value: buyAmount,
       },
     }, 15000000n);
-
+    console.log(result)
     let tokenAddress = '';                                          
     if (result?.logs) {                                              
       const createLog = result.logs.find((log: any) => log.topics?.[0]?.toLowerCase().includes('created')); 
@@ -184,7 +184,8 @@ const handleLaunch = async () => {
         isLoading: false,                                           
         isClickable: true,                                             
         onClick: () => {                                         
-          if (tokenAddress) {                                          
+          if (tokenAddress) {    
+            navigate(`/meme/${tokenAddress}`);                                      
           } else {                                                   
             navigate('/board');                                   
           }                                                      

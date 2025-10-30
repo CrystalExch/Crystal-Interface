@@ -618,10 +618,11 @@
   display: flex;
   flex-direction: column;
   padding: .75rem;
-  padding-bottom: 0.5rem;
+  padding-bottom: .75rem;
   position: relative;
   transition: all 0.2s ease;
   width: 100%;
+  min-height: 180px;
 }
 
 .tracker-monitor {
@@ -643,21 +644,13 @@
   border-bottom: none;
 }
 
-/* Graduated token styling */
-.tracker-monitor-card.graduated .tracker-monitor-icon-container {
-  background: conic-gradient(from 0deg,
-      #ffd700 0deg,
-      #ffed4e 90deg,
-      #ffc107 180deg,
-      #ff8f00 270deg,
-      #ffd700 360deg);
-}
+/* Graduated token styling - only for right section */
 
 .tracker-monitor-card-header {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
   position: relative;
   width: 100%;
 }
@@ -666,12 +659,64 @@
   width: 100%; margin-bottom: 8px;
 }
 .tracker-monitor-icon-container {
-  position: relative; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  border-radius: 6px; overflow: hidden;
-  background: conic-gradient(from 0deg, #aaaecf 0deg, #aaaecf calc(var(--progress) * 3.6deg), rgba(157,169,240,0.2) calc(var(--progress) * 3.6deg), rgba(157,169,240,0.2) 360deg);
-  transition: var(--progress) .8s cubic-bezier(0.4,0,0.2,1);
+  align-items: center;
+  background: conic-gradient(from 0deg,
+      #aaaecf 0deg,
+      #aaaecf var(--progress-angle),
+      rgba(157, 169, 240, 0.2) var(--progress-angle),
+      rgba(157, 169, 240, 0.2) 360deg);
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  height: 56px;
+  justify-content: center;
+  position: relative;
+  transition: --progress-angle 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 56px;
+  flex-shrink: 0;
 }
-.tracker-monitor-icon-spacer { background: rgb(6,6,6); border-radius: 4px; display: flex; align-items: center; justify-content: center; width: 53px; height: 53px; }
+
+.tracker-monitor-icon-spacer {
+  align-items: center;
+  background: rgb(6, 6, 6);
+  border-radius: 4px;
+  display: flex;
+  height: 53px;
+  justify-content: center;
+  width: 53px;
+}
+
+.tracker-monitor-image-wrapper {
+  align-items: center;
+  background: rgb(6, 6, 6);
+  border-radius: 4px;
+  display: flex;
+  height: 50px;
+  justify-content: center;
+  width: 50px;
+  overflow: hidden;
+}
+
+.tracker-monitor-token-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.tracker-monitor-token-letter {
+  width: 100%;
+  height: 100%;
+  background-color: rgb(6,6,6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 200;
+  color: #ffffff;
+  letter-spacing: 0;
+  border-radius: 4px;
+}
 .tracker-monitor-icon-emoji { font-size: 1.8rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
 .tracker-monitor-token-details { 
   flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; 
@@ -795,8 +840,8 @@
   font-weight: 600;
   letter-spacing: -0.3px;
 }
-.tracker-monitor-buy-sell-section { 
-  display: flex; align-items: center; justify-content: space-between; 
+.tracker-monitor-buy-sell-section {
+  display: flex; align-items: center; justify-content: space-between;
   width: 100%; gap: 8px; margin-top: 8px;
 }
 .tracker-monitor-buy-amount { display: flex; align-items: center; gap: 4px; color: #00ff88; font-size: .85rem; font-weight: 600; }
@@ -809,18 +854,47 @@
 }
 
 .tracker-monitor-quickbuy-section { 
-  display: flex; 
-  align-items: center; 
-  gap: 8px; 
-  flex-shrink: 0; 
+  display: flex;
+  flex-shrink: 0;
+  gap: 5px;
+  margin-left: .85rem;
+  white-space: nowrap;
 }
 
 .tracker-monitor-quickbuy-btn {
-  background: #aaaecf; border: none; border-radius: 20px; color: #0f0f12; cursor: pointer; display: flex; align-items: center; gap: 4px;
-  font-size: .7rem; font-weight: 700; padding: 6px 12px; transition: all .2s ease; letter-spacing: -0.5px;
+  align-items: center;
+  background: #aaaecf;
+  border: none;
+  border-radius: 8px;
+  color: #0f0f12;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.7rem;
+  font-weight: 700;
+  gap: 2px;
+  justify-content: center;
+  letter-spacing: -0.5px;
+  margin-top: 0.5rem;
+  padding: 0.2rem .35rem;
+  transition: all 0.2s ease;
 }
-.tracker-monitor-quickbuy-btn:hover { filter: brightness(1.1); }
-.tracker-monitor-quickbuy-icon { width: 14px; height: 14px; }
+
+.tracker-monitor-quickbuy-btn:hover {
+  filter: brightness(1.1);
+}
+
+.tracker-monitor-quickbuy-btn:disabled {
+  cursor: not-allowed;
+}
+
+.tracker-monitor-quickbuy-btn:disabled:hover {
+  filter: brightness(1);
+}
+
+.tracker-monitor-quickbuy-icon {
+  width: 14px;
+  height: 14px;
+}
 
 .tracker-monitor-action-btn {
   background: transparent; 
@@ -1108,8 +1182,151 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
   flex-shrink: 0;
+}
+
+.tracker-monitor-additional-data {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.tracker-monitor-additional-data .explorer-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tracker-monitor-additional-data .traders-icon {
+  color: rgba(255, 255, 255, 0.6);
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.tracker-monitor-additional-data .explorer-stat-value {
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.tracker-monitor-additional-data .pro-traders-icon {
+  color: rgba(255, 255, 255, 0.6);
+  width: 16px;
+  height: 16px;
+}
+
+.tracker-monitor-right-section .explorer-third-row {
+  margin: 0;
+  position: static;
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  gap: 6px 12px;
+  align-items: start;
+}
+
+.tracker-monitor-right-section .explorer-metrics-container {
+  display: contents;
+}
+
+.tracker-monitor-right-section .explorer-volume {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tracker-monitor-right-section .explorer-market-cap {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tracker-monitor-right-section .explorer-third-row-section {
+  display: contents;
+}
+
+.tracker-monitor-right-section .explorer-stat-item {
+  grid-column: 1;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tracker-monitor-right-section .explorer-tx-bar {
+  grid-column: 2;
+  grid-row: 2;
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  width: 80px;
+}
+
+.tracker-monitor-right-section .mc-label {
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 400;
+  opacity: 0.5;
+}
+
+.tracker-monitor-right-section .mc-value {
+  font-size: 0.85rem;
+}
+
+.tracker-monitor-mc-value {
+  color: #d8dcff !important;
+}
+
+.tracker-monitor-right-section .mc-value {
+  color: #d8dcff !important;
+  font-size: 0.85rem;
+}
+
+.tracker-monitor-right-section .explorer-fee-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.tracker-monitor-right-section .explorer-fee-total {
+  color: #ffffff;
+  font-size: .85rem;
+  font-weight: 500;
+}
+
+.tracker-monitor-right-section .explorer-tx-header {
+  align-items: center;
+  display: flex;
+  gap: 3px;
+}
+
+.tracker-monitor-right-section .explorer-tx-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.tracker-monitor-right-section .explorer-tx-total {
+  color: #ffffff;
+  font-size: .85rem;
+  font-weight: 500;
+}
+
+.tracker-monitor-right-section .explorer-tx-visual-bar {
+  border-radius: 1px;
+  display: flex;
+  height: 2.5px;
+  overflow: hidden;
+  width: 100%;
 }
 
 .tracker-monitor-card-bottom {
@@ -1117,6 +1334,28 @@
   flex-direction: column;
   gap: 8px;
   width: 100%;
+}
+
+.tracker-monitor-bottom-controls {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.tracker-monitor-bottom-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.tracker-monitor-bottom-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .tracker-monitor-buy-sell-row {
@@ -1789,11 +2028,11 @@
   }
 }
 
-/* Expanded card section */
+/* Expanded card section - TokenDetail style */
 .tracker-monitor-card-expanded {
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.02);
-  border-top: 1px solid rgba(179, 184, 249, 0.1);
+  padding: 0;
+  background: transparent;
+  border-top: 1px solid rgba(179, 184, 249, 0.05);
   animation: expandCard 0.3s ease-out;
 }
 
@@ -1801,77 +2040,423 @@
   from {
     opacity: 0;
     max-height: 0;
-    padding-top: 0;
-    padding-bottom: 0;
   }
   to {
     opacity: 1;
-    max-height: 500px;
-    padding-top: 16px;
-    padding-bottom: 16px;
+    max-height: 800px;
   }
 }
 
-.expanded-header {
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+/* Detail Trades Table Styling (from TokenDetail) */
+.tracker-monitor-card-expanded .detail-trades-table {
+  display: flex;
+  flex-direction: column;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+  background: transparent;
 }
 
-.expanded-title {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+.tracker-monitor-card-expanded .detail-trades-table-header {
+  display: grid;
+  grid-template-columns: 2fr 0.8fr 1.2fr 1.5fr 1fr 0.8fr;
+  border-bottom: 1px solid var(--c-border);
+  background: rgb(6, 6, 6);
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
-.expanded-trades-table {
+.tracker-monitor-card-expanded .detail-trades-header-cell {
+  padding: 12px 16px;
+  color: var(--c-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+  text-transform: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tracker-monitor-card-expanded .detail-trades-body {
+  display: flex;
+  flex-direction: column;
+  max-height: 400px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(170, 174, 207, 0.2) transparent;
+}
+
+.tracker-monitor-card-expanded .detail-trades-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tracker-monitor-card-expanded .detail-trades-body::-webkit-scrollbar-track {
+  background: rgba(179, 184, 249, 0.05);
+}
+
+.tracker-monitor-card-expanded .detail-trades-body::-webkit-scrollbar-thumb {
+  background: rgba(179, 184, 249, 0.2);
+  border-radius: 3px;
+}
+
+.tracker-monitor-card-expanded .detail-trades-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(179, 184, 249, 0.3);
+}
+
+.tracker-monitor-card-expanded .detail-trades-row {
+  display: grid;
+  grid-template-columns: 2fr 0.8fr 1.2fr 1.5fr 1fr 0.8fr;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.05);
+  transition: background var(--tr-fast);
+  position: relative;
+  padding: 0;
+}
+
+.tracker-monitor-card-expanded .detail-trades-row:hover {
+  background: rgba(179, 184, 249, 0.03);
+}
+
+.tracker-monitor-card-expanded .detail-trades-row:last-child {
+  border-bottom: none;
+}
+
+.tracker-monitor-card-expanded .detail-trades-row.buy {
+  background-image: linear-gradient(90deg, rgba(67, 254, 154, 0.08), transparent);
+}
+
+.tracker-monitor-card-expanded .detail-trades-row.sell {
+  background-image: linear-gradient(90deg, rgba(235, 112, 112, 0.08), transparent);
+}
+
+.tracker-monitor-card-expanded .detail-trades-row.buy:hover {
+  background-image: linear-gradient(90deg, rgba(67, 254, 154, 0.08), transparent);
+  background-color: rgba(179, 184, 249, 0.03);
+}
+
+.tracker-monitor-card-expanded .detail-trades-row.sell:hover {
+  background-image: linear-gradient(90deg, rgba(235, 112, 112, 0.08), transparent);
+  background-color: rgba(179, 184, 249, 0.03);
+}
+
+.tracker-monitor-card-expanded .detail-trades-col {
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  color: var(--c-text);
+  display: flex;
+  align-items: center;
+}
+
+.tracker-monitor-card-expanded .detail-trades-account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tracker-monitor-card-expanded .detail-trades-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid var(--c-border);
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.tracker-monitor-card-expanded .detail-trades-address {
+  color: var(--c-text);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.2px;
+}
+
+.tracker-monitor-card-expanded .detail-trade-type-badge {
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.tracker-monitor-card-expanded .detail-trade-type-badge.buy {
+  color: var(--c-buy);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--c-buy) 30%, transparent);
+}
+
+.tracker-monitor-card-expanded .detail-trade-type-badge.sell {
+  color: var(--c-sell);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--c-sell) 30%, transparent);
+}
+
+.tracker-monitor-card-expanded .detail-trades-amount {
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+.tracker-monitor-card-expanded .detail-trades-amount.amount-buy {
+  color: var(--c-buy);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--c-buy) 30%, transparent);
+}
+
+.tracker-monitor-card-expanded .detail-trades-amount.amount-sell {
+  color: var(--c-sell);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--c-sell) 30%, transparent);
+}
+
+.tracker-monitor-card-expanded .detail-trades-time {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+}
+
+.tracker-monitor-card-expanded .detail-trades-txn {
+  justify-content: flex-end;
+}
+
+.tracker-monitor-card-expanded .detail-trades-txn-link {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.8rem;
+  transition: color 0.15s ease;
+}
+
+.tracker-monitor-card-expanded .detail-trades-txn-link:hover {
+  color: #aaaecf;
+}
+
+.tracker-monitor-card-expanded .detail-trades-empty {
+  padding: 24px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.85rem;
+}
+
+/* Responsive adjustments for smaller tracker width */
+@media (max-width: 1400px) {
+  .tracker-monitor-card-expanded .detail-trades-table-header,
+  .tracker-monitor-card-expanded .detail-trades-row {
+    grid-template-columns: 1.5fr 0.8fr 1fr 1fr 0.8fr 0.6fr;
+    gap: 8px;
+  }
+
+  .tracker-monitor-card-expanded .detail-trades-col {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  .tracker-monitor-card-expanded .detail-trades-header-cell {
+    padding: 8px 12px;
+    font-size: 0.7rem;
+  }
+}
+
+/* New Two-Column Monitor Card Layout */
+.tracker-monitor-card-new {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  background: transparent;
+  border-bottom: 1px solid rgba(179,184,249,0.1);
+  padding: 0.75rem;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.tracker-monitor-card-new:hover {
+  background-color: rgb(17, 17, 21);
+}
+
+.tracker-monitor-card-new:last-child {
+  border-bottom: none;
+}
+
+/* First Column: Explorer Token Row Style */
+.tracker-monitor-column-first {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tracker-monitor-column-first .explorer-token-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.tracker-monitor-column-first .explorer-token-image-container {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Progress ring for bonding */
+.tracker-monitor-column-first .explorer-token-image-container:not(.graduated) {
+  background: conic-gradient(
+    from 0deg,
+    var(--progress-color-start, #ee5b5bff) 0deg,
+    var(--progress-color-mid, #f59e0b) calc(var(--progress-angle, 0deg) / 2),
+    var(--progress-color-end, #eab308) var(--progress-angle, 0deg),
+    rgba(157, 169, 240, 0.2) var(--progress-angle, 0deg),
+    rgba(157, 169, 240, 0.2) 360deg
+  );
+  padding: 2px;
+}
+
+.tracker-monitor-column-first .explorer-token-image-container.graduated {
+  background: conic-gradient(
+    from 0deg,
+    #ffd700 0deg,
+    #ffed4e 90deg,
+    #ffc107 180deg,
+    #ff8f00 270deg,
+    #ffd700 360deg
+  );
+  padding: 2px;
+}
+
+.tracker-monitor-column-first .explorer-progress-spacer {
+  width: 100%;
+  height: 100%;
+  background: rgb(6, 6, 6);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tracker-monitor-column-first .explorer-image-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tracker-monitor-column-first .explorer-contract-address {
+  font-size: 0.65rem;
+  color: rgba(242, 242, 245, 0.329);
+  letter-spacing: -0.2px;
+}
+
+.tracker-monitor-column-first .explorer-token-details {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.expanded-trades-header {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-  gap: 12px;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.6);
+.tracker-monitor-column-first .explorer-token-symbol {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.3px;
 }
 
-.expanded-trades-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-  gap: 12px;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 6px;
+.tracker-monitor-column-first .explorer-token-name {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.8);
-  transition: background 0.2s ease;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: -0.2px;
 }
 
-.expanded-trades-row:hover {
-  background: rgba(255, 255, 255, 0.04);
+/* Second Column: Original Monitor Stats */
+.tracker-monitor-column-second {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: space-between;
 }
 
-.expanded-col {
+.tracker-monitor-column-second .tracker-monitor-stats-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 8px;
+}
+
+.tracker-monitor-column-second .tracker-monitor-stat-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tracker-monitor-column-second .stat-label {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tracker-monitor-column-second .stat-value {
+  font-size: 0.8rem;
+  color: #fff;
+  font-weight: 500;
+}
+
+.tracker-monitor-actions-row {
   display: flex;
   align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
-.tx-count {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
-  margin-left: 4px;
+.tracker-monitor-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(179, 184, 249, 0.2);
+  color: #fff;
 }
 
-.expanded-trades-empty {
-  padding: 24px;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.85rem;
+.tracker-monitor-action-btn.pinned {
+  color: #ffd700;
+  border-color: rgba(255, 215, 0, 0.3);
+}
+
+.tracker-monitor-expand-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+}
+
+.tracker-monitor-expand-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(179, 184, 249, 0.2);
+  color: #fff;
+}
+
+/* Expanded section should span both columns */
+.tracker-monitor-card-new .tracker-monitor-card-expanded {
+  grid-column: 1 / -1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .tracker-monitor-card-new {
+    grid-template-columns: 1fr;
+  }
+
+  .tracker-monitor-column-second .tracker-monitor-stats-section {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Monitor context - make explorer-token-row full width */
+.tracker-monitor .explorer-token-row {
+  width: 100% !important;
+  max-width: none !important;
 }

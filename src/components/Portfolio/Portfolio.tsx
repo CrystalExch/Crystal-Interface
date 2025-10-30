@@ -2273,7 +2273,7 @@ useEffect(() => {
                       {portChartLoading ? (
                         <div className="port-loading" style={{ width: 55 }} />
                       ) : (
-                        `${percentage >= 0 ? '+' : ''}${percentage.toFixed(2)}%`
+                        `${percentage >= 0 ? '+' : ''}${formatCommas(percentage.toFixed(2))}%`
                       )}
                     </span>
                     <span className="time-range">

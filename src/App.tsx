@@ -43,14 +43,6 @@ import {
 } from "@account-kit/react";
 import { Wallet, keccak256 } from 'ethers'
 import { useQuery } from '@tanstack/react-query';
-import {
-  DEV_TOKENS_QUERY,
-  HOLDERS_QUERY,
-  POSITIONS_QUERY,
-  SIMILAR_TOKENS_BY_NAME_QUERY,
-  SIMILAR_TOKENS_BY_SYMBOL_QUERY,
-  TOP_TRADERS_QUERY,
-} from './components/MemeInterface/graphql';
 
 // import css
 import './App.css';
@@ -307,15 +299,6 @@ const Loader = () => {
               volume
               latestPrice
               metadataCID
-              trades(first: 100, orderBy: timestamp, orderDirection: desc) {
-                id
-                amountIn
-                amountOut
-                isBuy
-                timestamp
-                tx
-                endPrice
-              }
             }
           }
         `;
@@ -470,10 +453,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const userchain = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.chainId || client?.chain?.id
   const location = useLocation();
   const navigate = useNavigate();
-  const [isTrackerWidgetOpen, setIsTrackerWidgetOpen] = useState(true);
-  const handleToggleTrackerWidget = () => {
-  setIsTrackerWidgetOpen(prev => !prev);
-};
+  const [isTrackerWidgetOpen, setIsTrackerWidgetOpen] = useState(false);
 
   const [trackerWidgetSnap, setTrackerWidgetSnap] = useState<'left' | 'right' | null>(null);
   const [trackerWidgetWidth, setTrackerWidgetWidth] = useState(400);
@@ -1001,7 +981,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [perpsWithdrawAmount, setPerpsWithdrawAmount] = useState('');
   const [perpsLeverage, setPerpsLeverage] = useState<string>(() => {
     const saved = localStorage.getItem('crystal_perps_leverage');
-    return saved !== null ? saved : '10.0';
+    return saved !== null ? saved : '10';
   });
   const [userLeverage, setUserLeverage] = useState<any>();
   // state vars
@@ -2021,6 +2001,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const lastConnectionAttemptRef = useRef(0);
   const consecutiveFailuresRef = useRef(0);
   const memeRealtimeCallbackRef = useRef<any>({});
+  const trackedWalletsRef = useRef<any>([]);
+  const trackedWalletTradesRef = useRef<any>([]);
+  const [trackedWalletTrades, setTrackedWalletTrades] = useState<any[]>([]);
 
   const audio = useMemo(() => {
     const a = new Audio(stepaudio);
@@ -4414,6 +4397,73 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     [scheduleReconnect],
   );
 
+  const normalizeTrade = useCallback((trade: any, wallets: any[]): any => {
+    const tradeAccountAddr = (trade.account?.id || trade.caller || '').toLowerCase();
+    const connectedAddr = address?.toLowerCase();
+
+    // Try to find in tracked wallets first, then check if it's the connected wallet
+    const trackedWallet = wallets.find(
+      w => w.address.toLowerCase() === tradeAccountAddr
+    );
+
+    const isConnectedWallet = connectedAddr && tradeAccountAddr === connectedAddr;
+
+    // Use tracked wallet name if found, otherwise use "You" for connected wallet, otherwise use shortened address
+    let walletName: string;
+    let emoji: string;
+
+    if (trackedWallet) {
+      walletName = trackedWallet.name;
+      emoji = trackedWallet.emoji || '👤';
+    } else if (isConnectedWallet) {
+      walletName = 'You';
+      emoji = '👤';
+    } else {
+      walletName = `${tradeAccountAddr.slice(0, 6)}...${tradeAccountAddr.slice(-4)}`;
+      emoji = '👻';
+    }
+
+    const isBuy = !!trade.isBuy;
+    const nativeAmount = Number(isBuy ? trade.amountIn : trade.amountOut);
+    const price = Number(trade.price);
+
+    const TOTAL_SUPPLY = 1e9;
+    const marketCap = price * TOTAL_SUPPLY;
+
+    const timestamp = Number(trade.timestamp || 0);
+    const now = Date.now() / 1000;
+    const secondsAgo = Math.max(0, now - timestamp);
+    let timeAgo = 'now';
+    if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
+    else if (secondsAgo < 3600) timeAgo = `${Math.floor(secondsAgo / 60)}m`;
+    else if (secondsAgo < 86400) timeAgo = `${Math.floor(secondsAgo / 3600)}h`;
+    else timeAgo = `${Math.floor(secondsAgo / 86400)}d`;
+
+    // Get token symbol, name, address, and icon
+    const tokenAddress = trade.token?.address || trade.tokenAddress || undefined;
+    const tokenSymbol = trade.token?.symbol || trade.symbol || 'TKN';
+    const tokenName = trade.token?.name || trade.token?.symbol || trade.name || tokenSymbol;
+    const tokenIcon = trade.tokenIcon || trade.token?.imageUrl || undefined;
+
+    return {
+      id: trade.id,
+      walletName: walletName,
+      emoji: emoji,
+      token: tokenSymbol,
+      tokenName: tokenName,
+      tokenAddress: tokenAddress,
+      tokenIcon: tokenIcon,
+      amount: nativeAmount,
+      price: price,
+      marketCap: marketCap,
+      time: timeAgo,
+      txHash: trade.transaction?.id || trade.id,
+      type: isBuy ? 'buy' : 'sell',
+      createdAt: new Date(timestamp * 1000).toISOString(),
+    };
+  }, [address]);
+
+  // tokenexplorer ws
   const openWebsocket = useCallback((): void => {
     if (
       connectionStateRef.current === 'connecting' ||
@@ -4471,6 +4521,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           if (msg.method !== 'eth_subscription' || !msg.params?.result)
             return;
           const log = msg.params?.result;
+
           if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
           setProcessedLogs(prev => {
             let tempset = new Set(prev);
@@ -4495,8 +4546,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const amountInWei = word(1);
               const amountOutWei = word(2);
 
-              const amountIn = Number(amountInWei) / 1e18;
-              const amountOut = Number(amountOutWei) / 1e18;
+              const amountIn = Number(amountInWei) / (10 ** Number(isBuy ? mcfg.quoteDecimals: mcfg.baseDecimals));
+              const amountOut = Number(amountOutWei) / (10 ** Number(isBuy ? mcfg.baseDecimals: mcfg.quoteDecimals));
 
               const priceFactor = Number(mcfg.priceFactor || 1);
 
@@ -4516,12 +4567,30 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 },
               });
 
+              if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
+                const normalized = normalizeTrade({
+                  caller: callerAddr,
+                  id: log.transactionHash,
+                  isBuy: isBuy,
+                  price: endPrice,
+                  symbol: mcfg.baseAsset,
+                  amountIn,
+                  amountOut,
+                  timestamp: Date.now(),
+                }, trackedWalletsRef.current);
+              
+                setTrackedWalletTrades(prev => {
+                  const updated = [normalized, ...prev];
+                  return updated.length > 500 ? updated.slice(0, 500) : updated;
+                });
+              }                         
+              
               if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
               setTokenData(p => ({
                 ...p,
                 price: endPrice,
                 marketCap: endPrice * TOTAL_SUPPLY,
-                change24h: ((endPrice * 1e9 - p?.mini?.[0].open) / (endPrice * 1e9) * 100),
+                change24h: p?.mini?.[0]?.open ? ((endPrice * 1e9 - p?.mini?.[0]?.open) / (endPrice * 1e9) * 100) : p?.change24h,
                 buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
                 sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
                 volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
@@ -4786,12 +4855,30 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const vToken = Number(vTokenWei);
 
               const price = vToken === 0 ? 0 : vNative / vToken;
+
+              if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
+                const normalized = normalizeTrade({
+                  caller: callerAddr,
+                  id: log.transactionHash,
+                  isBuy: isBuy,
+                  price: (price),
+                  amountIn: amountIn,
+                  amountOut: amountOut,
+                  timestamp: Date.now(),
+                }, trackedWalletsRef.current);
+              
+                setTrackedWalletTrades(prev => {
+                  const updated = [normalized, ...prev];
+                  return updated.length > 500 ? updated.slice(0, 500) : updated;
+                });
+              }
+              
               if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
                 setTokenData(p => ({
                   ...p,
                   price,
                   marketCap: price * TOTAL_SUPPLY,
-                  change24h: ((price * 1e9 - p?.mini?.[0].open) / (price * 1e9) * 100),
+                  change24h: p?.mini?.[0]?.open ? ((price * 1e9 - p?.mini?.[0]?.open) / (price * 1e9) * 100) : p?.change24h,
                   buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
                   sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
                   volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
@@ -5086,7 +5173,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   );
 
   useEffect(() => {
-    if (!['board', 'spectra', 'meme', 'launchpad'].includes(location.pathname.split('/')[1])) return;
+    if (!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])) return;
 
     let cancelled = false;
 
@@ -5355,7 +5442,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       retryCountRef.current = 0;
       consecutiveFailuresRef.current = 0;
     };
-  }, [openWebsocket, !['board', 'spectra', 'meme', 'launchpad'].includes(location.pathname.split('/')[1])]);
+  }, [openWebsocket, !['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
 
   // memeinterface
   const [memeTrades, setMemeTrades] = useState<LaunchpadTrade[]>([]);
@@ -5374,14 +5461,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const memeSelectedIntervalRef = useRef<string>(memeSelectedInterval);
   const [page, _setPage] = useState(0);
   const [initialMemeFetchDone, setInitialMemeFetchDone] = useState(false);
-  const [currentPNLData, setCurrentPNLData] = useState({
-    balance: 0,
-    amountBought: 0,
-    amountSold: 0,
-    valueBought: 0,
-    valueSold: 0,
-    valueNet: 0,
-  });
   const [currentTokenData, setCurrentTokenData] = useState({
     address: '',
     symbol: '',
@@ -5494,10 +5573,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     let isCancelled = false;
 
     const id = (token.id || '').toLowerCase();
+    let tempTokenData: any = {};
+    let price = 0;
 
     const fetchMemeTokenData = async () => {
       try {
-        const response = await fetch(SUBGRAPH_URL, {
+        let response = await fetch(SUBGRAPH_URL, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
@@ -5570,7 +5651,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }),
         });
 
-        const data = (await response.json())?.data;
+        let data = (await response.json())?.data;
         if (isCancelled || !data) return;
 
         if (data.launchpadTokens?.length) {
@@ -5578,7 +5659,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
           let imageUrl = m.metadataCID || '';
 
-          const price = Number(m.lastPriceNativePerTokenWad || 0) / 1e9;
+          price = Number(m.lastPriceNativePerTokenWad || 0) / 1e9;
           const socials = [m.social1, m.social2, m.social3, m.social4].map((s) =>
             s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
           );
@@ -5604,44 +5685,47 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
           const website = socials[0];
           const change24h = (price * 1e9 - m?.mini?.klines[0].open) / (price * 1e9) * 100
-          setTokenData(p => ({
-            ...p,
-            ...data.launchpadTokens[0],
-            id: m.id.toLowerCase(),
-            tokenAddress: m.id.toLowerCase(),
-            dev: m.creator.id,
-            name: m.name,
-            symbol: m.symbol,
-            image: imageUrl,
-            twitterHandle: twitter ?? '',
-            website: website ?? '',
-            created: m.timestamp,
-            status: m.migrated
-              ? 'graduated'
-              : price * TOTAL_SUPPLY > 12500
-                ? 'graduating'
-                : 'new',
-            price,
-            marketCap: price * TOTAL_SUPPLY,
-            buyTransactions: Number(m.buyTxs),
-            sellTransactions: Number(m.sellTxs),
-            mini: m?.mini?.klines ?? '',
-            change24h,
-            volume24h: Number(m.volumeNative) / 1e18,
-            volumeDelta: 0,
-            discordHandle: discord ?? '',
-            telegramHandle: telegram ?? '',
-            launchedTokens: m.creator.tokensLaunched ?? '',
-            graduatedTokens: m.creator.tokensGraduated ?? '',
-            holders: m.totalHolders - 1,
-            devHolding: m.devHoldingAmount / 1e27,
-            top10Holding: Number(
-              (m.holders ?? [])
-                .filter((h: { account?: { id?: string } }) => (h.account?.id?.toLowerCase() ?? '') !== (settings.chainConfig[activechain].router ?? '').toLowerCase())
-                .slice(0, 10)
-                .reduce((sum: bigint, h: { tokens: string }) => sum + BigInt(h.tokens || '0'), 0n)
-            ) / 1e25,
-          }));
+          setTokenData(p => {
+            tempTokenData = {
+              ...p,
+              ...data.launchpadTokens[0],
+              id: m.id.toLowerCase(),
+              tokenAddress: m.id.toLowerCase(),
+              dev: m.creator.id,
+              name: m.name,
+              symbol: m.symbol,
+              image: imageUrl,
+              twitterHandle: twitter ?? '',
+              website: website ?? '',
+              created: m.timestamp,
+              status: m.migrated
+                ? 'graduated'
+                : price * TOTAL_SUPPLY > 12500
+                  ? 'graduating'
+                  : 'new',
+              price,
+              marketCap: price * TOTAL_SUPPLY,
+              buyTransactions: Number(m.buyTxs),
+              sellTransactions: Number(m.sellTxs),
+              mini: m?.mini?.klines ?? '',
+              change24h,
+              volume24h: Number(m.volumeNative) / 1e18,
+              volumeDelta: 0,
+              discordHandle: discord ?? '',
+              telegramHandle: telegram ?? '',
+              launchedTokens: m.creator.tokensLaunched ?? '',
+              graduatedTokens: m.creator.tokensGraduated ?? '',
+              holders: m.totalHolders - 1,
+              devHolding: m.devHoldingAmount / 1e27,
+              top10Holding: Number(
+                (m.holders ?? [])
+                  .filter((h: { account?: { id?: string } }) => (h.account?.id?.toLowerCase() ?? '') !== (settings.chainConfig[activechain].router ?? '').toLowerCase())
+                  .slice(0, 10)
+                  .reduce((sum: bigint, h: { tokens: string }) => sum + BigInt(h.tokens || '0'), 0n)
+              ) / 1e25,
+            }
+            return tempTokenData
+          });
         }
 
         if (data.launchpadTokens?.[0]?.trades?.length) {
@@ -5687,47 +5771,221 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
 
         setInitialMemeFetchDone(true);
-      } catch (e) {
-        console.error('Error fetching token data:', e);
-        setTokenData(p => ({
-          ...p,
-          price: 0,
-          marketCap: 0,
-          volume24h: 0,
-          buyTransactions: 0,
-          sellTransactions: 0,
-        }));
-        setMemeTrades([]);
-      }
-    };
 
-    fetchMemeTokenData();
-    return () => { isCancelled = true; };
-  }, [token.id, memeSelectedInterval]);
+        const first = 100;
+        const skip = page * 100;
+        const m = (tempTokenData.id || '').toLowerCase();
+  
+        const d = tempTokenData.dev ? tempTokenData.dev.toLowerCase() : '';
+        if (!d) {
+          setMemeDevTokens([]);
+          memeDevTokenIdsRef.current = new Set();
+          return;
+        }
 
-  // by-token oc initial
-  useEffect(() => {
-    if (!token.id || !initialMemeFetchDone) return;
-    let cancelled = false;
+        const baseName = String(tempTokenData.name || '').trim();
+        const baseSymbol = String(tempTokenData.symbol || '').trim();
+    
+        if (!baseName && !baseSymbol) {
+          setMemeSimilarTokens([]);
+          return;
+        }
+            
+        const normalize = (s: string) =>
+          s.toLowerCase().replace(/\s+/g, ' ').trim();
+        const tokenize = (s: string) =>
+          normalize(s)
+            .split(/[^a-z0-9]+/i)
+            .filter((w) => w.length >= 3 && !STOPWORDS.has(w))
+            .slice(0, 8);
+        const acronym = (s: string) =>
+          (s.match(/\b([a-zA-Z0-9])/g) || []).join('').toLowerCase();
+        const trigrams = (s: string) => {
+          const t: string[] = [];
+          const x = ` ${normalize(s)} `;
+          for (let i = 0; i < x.length - 2; i++) t.push(x.slice(i, i + 3));
+          return t;
+        };
+        const jaccard = (a: string[], b: string[]) => {
+          const A = new Set(a);
+          const B = new Set(b);
+          let inter = 0;
+          for (const v of A) if (B.has(v)) inter++;
+          const uni = A.size + B.size - inter || 1;
+          return inter / uni;
+        };
+    
+        const edit = (a: string, b: string) => {
+          const m = a.length,
+            n = b.length;
+          const dp = Array.from({ length: m + 1 }, (_, _i) =>
+            new Array(n + 1).fill(0),
+          );
+          for (let i = 0; i <= m; i++) dp[i][0] = i;
+          for (let j = 0; j <= n; j++) dp[0][j] = j;
+          for (let i = 1; i <= m; i++) {
+            for (let j = 1; j <= n; j++) {
+              const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+              dp[i][j] = Math.min(
+                dp[i - 1][j] + 1,
+                dp[i][j - 1] + 1,
+                dp[i - 1][j - 1] + cost,
+              );
+            }
+          }
+          return dp[m][n];
+        };
+    
+        const scoreSimilarity = (
+          qName: string,
+          qSymbol: string,
+          candName: string,
+          candSymbol: string,
+        ) => {
+          const qs = normalize(qName);
+          const cs = normalize(candName);
+          const qTok = tokenize(qs);
+          const cTok = tokenize(cs);
+    
+          let score = 0;
+    
+          score += 400 * jaccard(qTok, cTok);
+          score += 300 * jaccard(trigrams(qs), trigrams(cs));
+    
+          if (cs.startsWith(qs) && qs.length >= 3) score += 200;
+          if (qs.startsWith(cs) && cs.length >= 3) score += 120;
+          if (cs.includes(qs) && qs.length >= 3) score += 120;
+    
+          const qa = acronym(qName);
+          const ca = acronym(candName);
+          if (qa && ca && qa === ca) score += 180;
+    
+          if (qs && cs) {
+            const dist = edit(qs, cs);
+            const norm = 1 - Math.min(1, dist / Math.max(qs.length, cs.length));
+            score += 200 * norm;
+          }
+    
+          const qSym = qSymbol.toLowerCase();
+          const cSym = (candSymbol || '').toLowerCase();
+          if (qSym && cSym) {
+            if (qSym === cSym) score += 350;
+            if (cSym.startsWith(qSym)) score += 220;
+            else if (qSym.startsWith(cSym)) score += 160;
+            else if (cSym.includes(qSym)) score += 140;
+          }
+    
+          return score;
+        };
+    
+        const STOPWORDS = new Set([
+          'the',
+          'a',
+          'an',
+          'token',
+          'coin',
+          'inu',
+          'doge',
+          'baby',
+          'new',
+          'of',
+          'and',
+          'for',
+          'with',
+          'club',
+          'project',
+        ]);
+        const exclude = tempTokenData.id?.toLowerCase();
+        const nameTerms = tokenize(baseName);
+        const terms = Array.from(new Set(nameTerms)).slice(0, 4);
+        const sym = baseSymbol.trim();
+        const symTerms = sym.length >= 2 ? [sym, sym.slice(0, 3)].filter(Boolean) : [];
 
-    (async () => {
-      const first = 100;
-      const skip = page * 100;
-      const m = (token.id || '').toLowerCase();
+        const parts: string[] = [];
+        let alias = 0;
+        
+        for (const q of terms) {
+          parts.push(`
+            q${alias++}: launchpadTokens(
+              where: { id_not: "${exclude}", name_contains_nocase: "${q}" }
+              orderBy: timestamp
+              orderDirection: desc
+              first: 100
+            ) {
+              id name symbol metadataCID lastPriceNativePerTokenWad volumeNative timestamp lastUpdatedAt
+            }`)
+        }
+        
+        for (const q of symTerms) {
+          parts.push(`
+            q${alias++}: launchpadTokens(
+              where: { id_not: "${exclude}", symbol_contains_nocase: "${q}" }
+              orderBy: timestamp
+              orderDirection: desc
+              first: 50
+            ) {
+              id name symbol metadataCID lastPriceNativePerTokenWad volumeNative timestamp lastUpdatedAt
+            }`)
+        }
+        
+        if (parts.length === 0 && baseName) {
+          parts.push(`
+            q${alias++}: launchpadTokens(
+              where: { id_not: "${exclude}", name_contains_nocase: "${baseName}" }
+              orderBy: timestamp
+              orderDirection: desc
+              first: 100
+            ) {
+              id name symbol metadataCID lastPriceNativePerTokenWad volumeNative timestamp lastUpdatedAt
+            }`)
+        }
 
-      const holdersPromise = (async () => {
-        const response = await fetch(SUBGRAPH_URL, {
+        parts.push(`
+          holders: launchpadPositions(
+            where: { token: "${m}", tokens_gt: 0 }
+            orderBy: tokens
+            orderDirection: desc
+            skip: ${skip}
+            first: ${first}
+          ) {
+            account { id }
+            tokenBought tokenSold nativeSpent nativeReceived tokens lastUpdatedAt
+          }
+        
+          topTraders: launchpadPositions(
+            where: { token: "${m}" }
+            orderBy: realized
+            orderDirection: desc
+            skip: ${skip}
+            first: ${first}
+          ) {
+            account { id }
+            tokenBought tokenSold nativeSpent nativeReceived realized tokens lastUpdatedAt
+          }
+        
+          devTokens: launchpadTokens(
+            where: { creator: "${d}" }
+            orderBy: timestamp
+            orderDirection: desc
+            skip: ${skip}
+            first: ${first}
+          ) {
+            id name symbol metadataCID lastPriceNativePerTokenWad timestamp migrated
+          }
+        `)
+        
+        const query = `query { ${parts.join('\n')} }`
+        
+        response = await fetch(SUBGRAPH_URL, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: HOLDERS_QUERY,
-            variables: { m, skip, first },
-          }),
-        });
-
-        const { data } = await response.json();
-
-        const positions: any[] = data?.launchpadPositions ?? [];
+          body: JSON.stringify({ query }),
+        })
+        
+        data = (await response.json())?.data
+        if (isCancelled || !data) return;
+        // holders
+        const positions: any[] = data?.holders ?? [];
         const mapped: Holder[] = positions
           .filter(
             (p: any) =>
@@ -5740,7 +5998,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             const valueSold = Number(p.nativeReceived) / 1e18;
             const balance = Number(p.tokens) / 1e18;
             const realized = valueSold - valueBought;
-            const unrealized = balance * Number(data.launchpadTokens[0].lastPriceNativePerTokenWad || 0) / 1e9;
+            const unrealized = balance * price;
             const totalPnl = realized + unrealized;
 
             return {
@@ -5761,31 +6019,16 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           .slice(0, 10)
           .reduce((s, n) => s + n, 0) / 1e9) * 100
 
-        if (!cancelled) {
-          setMemeTop10HoldingPct(top10Pct);
-          const devPct = calcDevHoldingPct(mapped, token.dev);
-          setTokenData((p: any) => ({ ...p, devHolding: devPct }));
-          setMemeHolders(mapped);
-          memeHoldersMapRef.current = new Map(
-            mapped.map((h: Holder, i: number) => [h.address.toLowerCase(), i]),
-          );
-        }
-      })();
-
-      const topTradersPromise = (async () => {
+        setMemeTop10HoldingPct(top10Pct);
+        const devPct = calcDevHoldingPct(mapped, tempTokenData.dev);
+        setTokenData((p: any) => ({ ...p, devHolding: devPct }));
+        setMemeHolders(mapped);
+        memeHoldersMapRef.current = new Map(
+          mapped.map((h: Holder, i: number) => [h.address.toLowerCase(), i]),
+        );
+        // toptraders
+        const rows: any[] = data?.topTraders ?? [];
         const out: Holder[] = [];
-
-        const res = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: TOP_TRADERS_QUERY,
-            variables: { m, skip, first },
-          }),
-        });
-
-        const { data } = await res.json();
-        const rows: any[] = data?.launchpadPositions ?? [];
 
         for (const p of rows) {
           if (p.account.id.toLowerCase() != settings.chainConfig[activechain].router.toLowerCase()) {
@@ -5795,7 +6038,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             const valueSold = Number(p.nativeReceived) / 1e18;
             const balance = Number(p.tokens) / 1e18;
             const realized = valueSold - valueBought;
-            const unrealized = balance * Number(data.launchpadTokens[0].lastPriceNativePerTokenWad || 0) / 1e9;
+            const unrealized = balance * price;
             const pnl = realized + unrealized;
 
             out.push({
@@ -5811,57 +6054,20 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
         }
 
-        if (!cancelled) {
-          out.sort((a, b) => b.valueNet - a.valueNet);
-          const trimmed = out.slice(0, 100);
-          setMemeTopTraders(trimmed);
-          memeTopTradersMapRef.current = new Map(
-            trimmed.map((t, i) => [t.address.toLowerCase(), i]),
-          );
-        }
-      })();
+        out.sort((a, b) => b.valueNet - a.valueNet);
+        const trimmed = out.slice(0, 100);
+        setMemeTopTraders(trimmed);
+        memeTopTradersMapRef.current = new Map(
+          trimmed.map((t, i) => [t.address.toLowerCase(), i]),
+        );
+        // devtoken
+        const devtokenrows: any[] = data?.devTokens ?? [];
+        const devtokenout = [];
 
-      await Promise.all([holdersPromise, topTradersPromise]);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [token.id, page, initialMemeFetchDone]);
-
-  // dev
-  useEffect(() => {
-    if (!token.id || !initialMemeFetchDone) return;
-    const d = token.dev ? token.dev.toLowerCase() : '';
-    if (!d) {
-      setMemeDevTokens([]);
-      memeDevTokenIdsRef.current = new Set();
-      return;
-    }
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const first = 100;
-        const skip = page * 100;
-
-        const res = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: DEV_TOKENS_QUERY,
-            variables: { d, skip, first },
-          }),
-        });
-
-        const { data } = await res.json();
-        const rows: any[] = data?.launchpadTokens ?? [];
-
-        const out = [];
-        for (const t of rows) {
+        for (const t of devtokenrows) {
           let imageUrl = t.metadataCID || '';
           const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
-          out.push({
+          devtokenout.push({
             id: t.id,
             symbol: t.symbol,
             name: t.name,
@@ -5873,200 +6079,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           });
         }
 
-        if (!cancelled) {
-          setMemeDevTokens(out);
-          memeDevTokenIdsRef.current = new Set(
-            out.map((t) => String(t.id || '').toLowerCase()),
-          );
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setMemeDevTokens([]);
-          memeDevTokenIdsRef.current = new Set();
-        }
-        console.error('dev tokens fetch failed', e);
-      }
-    })();
+        setMemeDevTokens(devtokenout);
+        memeDevTokenIdsRef.current = new Set(
+          devtokenout.map((t) => String(t.id || '').toLowerCase()),
+        );
 
-    return () => {
-      cancelled = true;
-    };
-  }, [token.id, page, initialMemeFetchDone]);
-
-  // similar tokens
-  useEffect(() => {
-    if (!token.id || !initialMemeFetchDone) return;
-
-    const baseName = String(token.name || '').trim();
-    const baseSymbol = String(token.symbol || '').trim();
-
-    if (!baseName && !baseSymbol) {
-      setMemeSimilarTokens([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    const normalize = (s: string) =>
-      s.toLowerCase().replace(/\s+/g, ' ').trim();
-    const tokenize = (s: string) =>
-      normalize(s)
-        .split(/[^a-z0-9]+/i)
-        .filter((w) => w.length >= 3 && !STOPWORDS.has(w))
-        .slice(0, 8);
-    const acronym = (s: string) =>
-      (s.match(/\b([a-zA-Z0-9])/g) || []).join('').toLowerCase();
-    const trigrams = (s: string) => {
-      const t: string[] = [];
-      const x = ` ${normalize(s)} `;
-      for (let i = 0; i < x.length - 2; i++) t.push(x.slice(i, i + 3));
-      return t;
-    };
-    const jaccard = (a: string[], b: string[]) => {
-      const A = new Set(a);
-      const B = new Set(b);
-      let inter = 0;
-      for (const v of A) if (B.has(v)) inter++;
-      const uni = A.size + B.size - inter || 1;
-      return inter / uni;
-    };
-
-    const edit = (a: string, b: string) => {
-      const m = a.length,
-        n = b.length;
-      const dp = Array.from({ length: m + 1 }, (_, _i) =>
-        new Array(n + 1).fill(0),
-      );
-      for (let i = 0; i <= m; i++) dp[i][0] = i;
-      for (let j = 0; j <= n; j++) dp[0][j] = j;
-      for (let i = 1; i <= m; i++) {
-        for (let j = 1; j <= n; j++) {
-          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-          dp[i][j] = Math.min(
-            dp[i - 1][j] + 1,
-            dp[i][j - 1] + 1,
-            dp[i - 1][j - 1] + cost,
-          );
-        }
-      }
-      return dp[m][n];
-    };
-
-    const scoreSimilarity = (
-      qName: string,
-      qSymbol: string,
-      candName: string,
-      candSymbol: string,
-    ) => {
-      const qs = normalize(qName);
-      const cs = normalize(candName);
-      const qTok = tokenize(qs);
-      const cTok = tokenize(cs);
-
-      let score = 0;
-
-      score += 400 * jaccard(qTok, cTok);
-      score += 300 * jaccard(trigrams(qs), trigrams(cs));
-
-      if (cs.startsWith(qs) && qs.length >= 3) score += 200;
-      if (qs.startsWith(cs) && cs.length >= 3) score += 120;
-      if (cs.includes(qs) && qs.length >= 3) score += 120;
-
-      const qa = acronym(qName);
-      const ca = acronym(candName);
-      if (qa && ca && qa === ca) score += 180;
-
-      if (qs && cs) {
-        const dist = edit(qs, cs);
-        const norm = 1 - Math.min(1, dist / Math.max(qs.length, cs.length));
-        score += 200 * norm;
-      }
-
-      const qSym = qSymbol.toLowerCase();
-      const cSym = (candSymbol || '').toLowerCase();
-      if (qSym && cSym) {
-        if (qSym === cSym) score += 350;
-        if (cSym.startsWith(qSym)) score += 220;
-        else if (qSym.startsWith(cSym)) score += 160;
-        else if (cSym.includes(qSym)) score += 140;
-      }
-
-      return score;
-    };
-
-    const STOPWORDS = new Set([
-      'the',
-      'a',
-      'an',
-      'token',
-      'coin',
-      'inu',
-      'doge',
-      'baby',
-      'new',
-      'of',
-      'and',
-      'for',
-      'with',
-      'club',
-      'project',
-    ]);
-
-    (async () => {
-      try {
-        const exclude = token.id?.toLowerCase();
-        const nameTerms = tokenize(baseName);
-        const terms = Array.from(new Set(nameTerms)).slice(0, 4);
-        const sym = baseSymbol.trim();
-        const symTerms = sym.length >= 2 ? [sym, sym.slice(0, 3)].filter(Boolean) : [];
-        const requests: Promise<Response>[] = [];
-
-        for (const q of terms) {
-          requests.push(
-            fetch(SUBGRAPH_URL, {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({
-                query: SIMILAR_TOKENS_BY_NAME_QUERY,
-                variables: { q, exclude, first: 100 },
-              }),
-            }),
-          );
-        }
-
-        for (const q of symTerms) {
-          requests.push(
-            fetch(SUBGRAPH_URL, {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({
-                query: SIMILAR_TOKENS_BY_SYMBOL_QUERY,
-                variables: { q, exclude, first: 50 },
-              }),
-            }),
-          );
-        }
-
-        if (requests.length === 0 && baseName) {
-          requests.push(
-            fetch(SUBGRAPH_URL, {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({
-                query: SIMILAR_TOKENS_BY_NAME_QUERY,
-                variables: { q: baseName, exclude, first: 100 },
-              }),
-            }),
-          );
-        }
-
-        const responses = await Promise.all(requests);
-        const jsons = await Promise.all(responses.map((r) => r.json()));
-        const candidates: any[] = [];
-        for (const j of jsons) {
-          const rows = j?.data?.launchpadTokens ?? [];
-          for (const r of rows) candidates.push(r);
-        }
+        const candidates: any[] = Object.entries(data || {}).filter(([k]) => k.startsWith('q')).flatMap(([, v]) => v);
 
         const mergedMap = new Map<string, any>();
         for (const r of candidates)
@@ -6086,10 +6104,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           .sort((a: any, b: any) => b._score - a._score)
           .slice(0, 5);
 
-        const finalWithImages = await Promise.all(
+          const finalWithImages = await Promise.all(
           scored.map(async (t: any) => {
             let imageUrl = t.metadataCID || '';
             const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
+
             return {
               id: t.id,
               name: t.name,
@@ -6097,29 +6116,37 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               imageUrl,
               price,
               marketCap: price * TOTAL_SUPPLY,
-              volume24h: Number(t.volumeNative || 0) / 1e18,
+              volume24h: Number((Date.now() / 1000 - t.lastUpdatedAt > 86400) ? 0 : (t.volumeNative || 0)) / 1e18,
               timestamp: Number(t.timestamp ?? 0),
               lastUpdatedAt: Number(t.lastUpdatedAt),
             };
           }),
         );
 
-        if (!cancelled) setMemeSimilarTokens(finalWithImages);
-      } catch (e) {
-        if (!cancelled) setMemeSimilarTokens([]);
-        console.error('similar tokens fuzzy fetch failed', e);
-      }
-    })();
+        setMemeSimilarTokens(finalWithImages);
 
-    return () => {
-      cancelled = true;
+      } catch (e) {
+        console.error('Error fetching token data:', e);
+        setTokenData(p => ({
+          ...p,
+          price: 0,
+          marketCap: 0,
+          volume24h: 0,
+          buyTransactions: 0,
+          sellTransactions: 0,
+        }));
+        setMemeTrades([]);
+      }
     };
-  }, [token.id, initialMemeFetchDone]);
+
+    fetchMemeTokenData();
+    return () => { isCancelled = true; };
+  }, [token.id, memeSelectedInterval]);
 
   // positions aggregated across all wallets
   useEffect(() => {
     const allAddresses = [...new Set(
-      [address, ...subWallets.map(w => w.address)]
+      [scaAddress, ...subWallets.map(w => w.address)]
         .filter(Boolean)
         .map(a => a.toLowerCase())
     )];
@@ -9847,7 +9874,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               latestPrice
               series(where:{intervalSeconds:3600}) {
                 intervalSeconds
-                klines(orderBy:time, orderDirection: desc) {
+                klines(first: 24, orderBy:time, orderDirection: desc) {
                   time
                   open
                   high
@@ -9856,7 +9883,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   usdVolume
                 }
               }
-              trades(first: 100, orderBy: timestamp, orderDirection: desc) {
+              trades(first: 50, orderBy: timestamp, orderDirection: desc) {
                 id
                 amountIn
                 amountOut
@@ -10035,7 +10062,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           const pct = open24 === 0 ? 0 : ((last - open24) / open24) * 100;
           const deltaRaw = last - open24;
 
-          const volQ = Number((m.volume ?? 0) / 10 ** Number(6));
+          const volQ = miniAsc.length == 0 ? 0 : Number((m.volume ?? 0) / 10 ** Number(6));
           const volumeDisplay = formatCommas(volQ.toFixed(2));
 
           const trades = Array.isArray(m.trades) ? m.trades : [];
@@ -10069,10 +10096,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             });
           }
 
-          const ETH_ADDR_LC = ETH_ADDR;
-          const WETH_ADDR_LC = WETH_ADDR;
-          const bIsEthish = cfg.baseAddress === ETH_ADDR_LC || cfg.baseAddress === WETH_ADDR_LC;
-          const qIsEthish = cfg.quoteAddress === ETH_ADDR_LC || cfg.quoteAddress === WETH_ADDR_LC;
+
+          const bIsEthish = cfg.baseAddress === ETH_ADDR || cfg.baseAddress === WETH_ADDR;
+          const qIsEthish = cfg.quoteAddress === ETH_ADDR || cfg.quoteAddress === WETH_ADDR;
 
           if (bIsEthish || qIsEthish) {
             const sibBaseTicker = bIsEthish
@@ -10088,35 +10114,31 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const isSiblingWMON =
                 siblingCfg.baseAsset === wethticker || siblingCfg.quoteAsset === wethticker;
 
-              if (!isSiblingWMON) {
-                const pf2 = Number(siblingCfg.priceFactor);
-                const decs2 = Math.max(0, Math.floor(Math.log10(pf2)));
-                const last2 = pf2 ? lastRaw / pf2 : 0;
-
-                if (trades.length && temptradesByMarket[siblingKey]) {
-                  for (const t of trades) {
-                    temptradesByMarket[siblingKey].push([
-                      Number(t.amountIn ?? 0),
-                      Number(t.amountOut ?? 0),
-                      t.isBuy ? 1 : 0,
-                      t.endPrice,
-                      siblingKey,
-                      t.tx,
-                      Number(t.timestamp ?? 0),
-                    ]);
-                  }
+                if (!isSiblingWMON) {
+                  if (trades.length && temptradesByMarket[siblingKey]) {
+                    for (const t of trades) {
+                      temptradesByMarket[siblingKey].push([
+                        Number(t.amountIn ?? 0),
+                        Number(t.amountOut ?? 0),
+                        t.isBuy ? 1 : 0,
+                        t.endPrice,
+                        siblingKey,
+                        t.tx,
+                        Number(t.timestamp ?? 0),
+                      ]);
+                    }
                 }
 
                 rows.push({
                   ...siblingCfg,
                   pair: `${siblingCfg.baseAsset}/${siblingCfg.quoteAsset}`,
                   mini: miniAsc,
-                  currentPrice: formatSig(last2.toFixed(decs2), m.marketType != 0),
-                  high24h: formatSig(high24.toFixed(decs2), m.marketType != 0),
-                  low24h: formatSig(low24.toFixed(decs2), m.marketType != 0),
+                  currentPrice: formatSig(last.toFixed(decs), m.marketType != 0),
+                  high24h: formatSig(high24.toFixed(decs), m.marketType != 0),
+                  low24h: formatSig(low24.toFixed(decs), m.marketType != 0),
                   volume: volumeDisplay,
                   priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
-                  priceChangeAmount: formatSig(deltaRaw.toFixed(formatSig(last.toFixed(decs2), m.marketType != 0).split('.')[1]?.length || 0)),
+                  priceChangeAmount: formatSig(deltaRaw.toFixed(formatSig(last.toFixed(decs), m.marketType != 0).split('.')[1]?.length || 0)),
                 });
               }
             }
@@ -18050,7 +18072,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               tokenSymbol={currentTokenData.symbol}
               tokenName={currentTokenData.name}
               monUsdPrice={monUsdPrice}
-              externalUserStats={currentPNLData}
+              externalUserStats={memeUserStats}
               currentPrice={currentTokenData.price}
             />
           </div>
@@ -25469,7 +25491,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             setperpsActiveMarketKey={setperpsActiveMarketKey}
             perpsMarketsData={perpsMarketsData}
             perpsFilterOptions={perpsFilterOptions}
-            externalUserStats={currentPNLData}
+            externalUserStats={memeUserStats}
             lastNonceGroupFetch={lastNonceGroupFetch}
           />
         </div>
@@ -25570,7 +25592,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 sellPresets={sellPresets}
                 monPresets={monPresets}
                 setMonPresets={setMonPresets}
-                onPNLDataChange={setCurrentPNLData}
                 onTokenDataChange={setCurrentTokenData}
                 nonces={nonces}
                 tokenAddress={token.id}
@@ -25826,30 +25847,21 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 onImportWallets={handleImportWallets}
                 monUsdPrice={monUsdPrice}
                 walletTokenBalances={walletTokenBalances}
-                activechain={activechain}
                 tokenList={memoizedTokenList}
+                tokensByStatus={tokensByStatus}
                 marketsData={marketsData}
+                tradesByMarket={tradesByMarket}
                 sendUserOperationAsync={sendUserOperationAsync}
                 account={{
                   connected: connected,
                   address: address,
                   chainId: userchain,
                 }}
-                setChain={handleSetChain}
-                terminalQueryData={terminalQueryData}
-                terminalRefetch={terminalRefetch}
-                holders={memeHolders}
-                chartData={chartData}
                 trades={memeTrades}
-                selectedInterval={memeSelectedInterval}
-                setSelectedInterval={setMemeSelectedInterval}
-                realtimeCallbackRef={memeRealtimeCallbackRef}
-                selectedIntervalRef={memeSelectedIntervalRef}
-                orders={orders}
-                tradehistory={tradehistory}
-                canceledorders={canceledorders}
-                router={router}
-                refetch={refetch}
+                trackedWalletsRef={trackedWalletsRef}
+                trackedWalletTradesRef={trackedWalletTradesRef}
+                trackedWalletTrades={trackedWalletTrades}
+                setTrackedWalletTrades={setTrackedWalletTrades}
               />
             } />
           <Route path="/perps" element={<Navigate to={`/perps/${perpsActiveMarketKey}`} replace />} />
@@ -26003,17 +26015,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         currentSnapSide={widgetExplorerSnapSide}
         onWidgetResize={handleWidgetExplorerResize} 
       /> */}
-<Footer
-  subWallets={subWallets}
-  selectedWallets={selectedWallets}
-  setSelectedWallets={setSelectedWallets}
-  walletTokenBalances={walletTokenBalances}
-  activeWalletPrivateKey={oneCTSigner}
-  activeChain={activechain}
-  monUsdPrice={monUsdPrice}
-  isTrackerWidgetOpen={isTrackerWidgetOpen}
-  onToggleTrackerWidget={handleToggleTrackerWidget}
-/>     </div>
+        <Footer
+          subWallets={subWallets}
+          selectedWallets={selectedWallets}
+          setSelectedWallets={setSelectedWallets}
+          walletTokenBalances={walletTokenBalances}
+          activeWalletPrivateKey={oneCTSigner}
+          activeChain={activechain}
+          monUsdPrice={monUsdPrice}
+          isTrackerWidgetOpen={isTrackerWidgetOpen}
+          onToggleTrackerWidget={setIsTrackerWidgetOpen}
+        />     
+      </div>
     </div>
   );
 }

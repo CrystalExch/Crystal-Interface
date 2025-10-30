@@ -96,14 +96,6 @@ interface MemeInterfaceProps {
   sellPresets?: { [key: number]: { slippage: string; priority: string } };
   monPresets?: number[];
   setMonPresets?: (presets: number[]) => void;
-  onPNLDataChange?: (pnlData: {
-    balance: number;
-    amountBought: number;
-    amountSold: number;
-    valueBought: number;
-    valueSold: number;
-    valueNet: number;
-  }) => void;
   onTokenDataChange?: (tokenData: {
     address: string;
     symbol: string;
@@ -342,7 +334,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   sellPresets,
   monPresets = [5, 20, 100, 500],
   setMonPresets,
-  onPNLDataChange,
   onTokenDataChange,
   nonces,
   marketsData,
@@ -386,12 +377,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     const balances = walletTokenBalances[address];
     if (!balances) return 0;
 
-    const ethToken = tokenList.find(
-      (t) => t.address === settings.chainConfig[activechain]?.eth,
-    );
-    if (ethToken && balances[ethToken.address]) {
+    if (balances[settings.chainConfig[activechain]?.eth]) {
       return (
-        Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals)
+        Number(balances[settings.chainConfig[activechain]?.eth]) / 10 ** Number(18)
       );
     }
     return 0;
@@ -872,13 +860,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     if (window.innerHeight > 720) return 239.98;
     return 198.78;
   });
-  const [_isVertDragging, setIsVertDragging] = useState(false);
+  const [isVertDragging, setIsVertDragging] = useState(false);
   const initialHeightRef = useRef(0);
   const initialMousePosRef = useRef(0);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!_isVertDragging) return;
+      if (!isVertDragging) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -896,7 +884,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       localStorage.setItem('orderCenterHeight', newHeight.toString());
     };
     const handleMouseUp = (e: MouseEvent) => {
-      if (!_isVertDragging) return;
+      if (!isVertDragging) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -910,7 +898,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       }
     };
 
-    if (_isVertDragging) {
+    if (isVertDragging) {
       const overlay = document.createElement('div');
       overlay.id = 'global-vert-drag-overlay';
       overlay.style.position = 'fixed';
@@ -935,7 +923,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         document.body.removeChild(overlay);
       }
     };
-  }, [_isVertDragging]);
+  }, [isVertDragging]);
 
   const [isSigning, setIsSigning] = useState(false);
   const [activeTradeType, setActiveTradeType] = useState<'buy' | 'sell'>('buy');
@@ -1023,6 +1011,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [dragStart, setDragStart] = useState<{ y: number; height: number } | null>(null);
   const dragStartRef = useRef<{ y: number; height: number } | null>(null);
 
+  const openInExplorer = (addr: string) =>
+    window.open(`${explorer}/token/${addr}`, '_blank');
+  
+  const currentPrice = token.price || 0;
+  const formatNumberWithCommas = fmt;
+
   useEffect(() => {
     const storedWalletNames = localStorage.getItem('crystal_wallet_names');
     if (storedWalletNames) {
@@ -1108,9 +1102,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       }
     }
   }, [activeTradeType]);
-
-  const openInExplorer = (addr: string) =>
-    window.open(`${explorer}/token/${addr}`, '_blank');
 
   const handleBuyPresetSelect = useCallback(
     (preset: number) => {
@@ -1599,6 +1590,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   };
 
   const getTotalSelectedWalletsBalance = useCallback(() => {
+    if (selectedWallets.size == 0) {
+      return (Number(walletTokenBalances?.[userAddr]?.[settings.chainConfig[activechain]?.eth]) / 10 ** Number(18))
+    }
     let total = 0;
     selectedWallets.forEach((address) => {
       total += getWalletBalance(address);
@@ -1607,36 +1601,16 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   }, [selectedWallets, walletTokenBalances, tokenList, activechain]);
 
   const getTotalSelectedWalletsTokenBalance = useCallback(() => {
+    if (!tokenAddress) return 0;
+    if (selectedWallets.size == 0) {
+      return (Number(walletTokenBalances?.[userAddr]?.[token.id]) / 10 ** Number(token.decimals))
+    }
     let total = 0;
     selectedWallets.forEach((address) => {
       total += getWalletTokenBalance(address);
     });
     return total;
   }, [selectedWallets, walletTokenBalances, tokenList, activechain]);
-
-  const currentPrice = token.price || 0;
-
-  const getCurrentMONBalance = useCallback(() => {
-    if (!account?.address) return 0;
-
-    const balances = walletTokenBalances[account.address];
-    if (!balances) return 0;
-
-    const ethToken = settings.chainConfig[activechain]?.eth;
-    if (ethToken && balances[ethToken]) {
-      return Number(balances[ethToken]) / 1e18;
-    }
-    return 0;
-  }, [account?.address, walletTokenBalances, activechain]);
-
-  const getCurrentTokenBalance = useCallback(() => {
-    if (!account?.address || !token.id) return 0;
-    const balance = walletTokenBalances[account.address]?.[token.id];
-    if (!balance || balance <= 0n) return 0;
-
-    const decimals = tokendict?.[token.id]?.decimals || 18;
-    return Number(balance) / 10 ** Number(decimals);
-  }, [account?.address, walletTokenBalances, token.id, tokendict]);
 
   useEffect(() => {
     const handleBuyPresetsUpdate = (event: CustomEvent) => {
@@ -1793,12 +1767,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       cancelled = true;
     };
   }, [token.id, trackedAddresses]);
-
-  useEffect(() => {
-    if (onPNLDataChange) {
-      onPNLDataChange(userStats);
-    }
-  }, [userStats, onPNLDataChange]);
 
   useEffect(() => {
     if (onTokenDataChange) {
@@ -2001,8 +1969,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       setInputCurrency('MON');
     }
   }, [activeTradeType]);
-
-  const formatNumberWithCommas = fmt;
 
   const handleTrade = async () => {
     if (!tradeAmount || !account.connected) return;
@@ -2636,7 +2602,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         >
           <MemeOrderCenter
             orderCenterHeight={orderCenterHeight}
-            isVertDragging={_isVertDragging}
+            isVertDragging={isVertDragging}
             isOrderCenterVisible={true}
             onHeightChange={(h: any) => setOrderCenterHeight(h)}
             onDragStart={(e) => {

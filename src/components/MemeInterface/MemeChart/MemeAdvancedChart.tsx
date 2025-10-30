@@ -206,10 +206,10 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           const rows = (tradehistory ?? [])
             .map((t: any) => ({
               ...t,
-              __tsSec: toSec(Number(t.timestamp ?? t.blockTimestamp ?? t.time ?? 0)),
-              __caller: String(t.caller ?? t.account?.id ?? '')
+              tsSec: toSec(Number(t.timestamp ?? t.blockTimestamp ?? t.time ?? 0)),
+              caller: String(t.caller ?? t.account?.id ?? '')
             }))
-            .filter(t => includeCaller(t.__caller));
+            .filter(t => includeCaller(t.caller));
 
           const step = RES_SECONDS[selectedIntervalRef.current] ?? 60;
           const bucket = (sec: number) => Math.floor(sec / step) * step;
@@ -222,22 +222,22 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           const byBucket = new Map<number, Agg>();
 
           for (const tr of rows) {
-            const k = bucket(tr.__tsSec);
+            const k = bucket(tr.tsSec);
             const isBuy = !!tr.isBuy;
             const rec = byBucket.get(k) ?? { buys: 0, sells: 0 };
             if (isBuy) rec.buys++; else rec.sells++;
-            if (!rec.last || tr.__tsSec >= rec.last.__tsSec) rec.last = tr;
+            if (!rec.last || tr.tsSec >= rec.last.tsSec) rec.last = tr;
             byBucket.set(k, rec);
           }
 
           const marks = rows.map(tr => {
             const isBuy = !!tr.isBuy
-            const caller = tr.__caller
+            const caller = tr.caller
             const label = labelFor(caller, isBuy)
-            const amt = Number(tr.tokenAmount ?? 0)
+            const amt = Number(tr.nativeAmount ?? 0)
             return {
-              id: `${tr.__tsSec}-${label}-${amt}`,
-              time: tr.__tsSec,
+              id: `${tr.tsSec}-${label}-${amt}`,
+              time: tr.tsSec,
               hoveredBorderWidth: 0,
               borderWidth: 0,
               color: isBuy
@@ -246,7 +246,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               label,
               labelFontColor: 'black',
               minSize: 17,
-              text: `${label} • ${amt} ${token.symbol}`,
+              text: `${label} • ${amt.toFixed(2)} ${'MON'} at ` + formatMemePrice(tr.price),
             }
           }).sort((a, b) => a.time - b.time)          
           marksRef.current(marks);
@@ -284,10 +284,10 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           const rows = (diff ?? [])
             .map((t: any) => ({
               ...t,
-              __tsSec: toSec(Number(t.timestamp ?? t.blockTimestamp ?? t.time ?? 0)),
-              __caller: String(t.caller ?? t.account?.id ?? '')
+              tsSec: toSec(Number(t.timestamp ?? t.blockTimestamp ?? t.time ?? 0)),
+              caller: String(t.caller ?? t.account?.id ?? '')
             }))
-            .filter(t => includeCaller(t.__caller));
+            .filter(t => includeCaller(t.caller));
 
           const step = RES_SECONDS[selectedIntervalRef.current] ?? 60;
           const bucket = (sec: number) => Math.floor(sec / step) * step;
@@ -300,22 +300,22 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           const byBucket = new Map<number, Agg>();
 
           for (const tr of rows) {
-            const k = bucket(tr.__tsSec);
+            const k = bucket(tr.tsSec);
             const isBuy = !!tr.isBuy;
             const rec = byBucket.get(k) ?? { buys: 0, sells: 0 };
             if (isBuy) rec.buys++; else rec.sells++;
-            if (!rec.last || tr.__tsSec >= rec.last.__tsSec) rec.last = tr;
+            if (!rec.last || tr.tsSec >= rec.last.tsSec) rec.last = tr;
             byBucket.set(k, rec);
           }
 
           const marks = rows.map(tr => {
             const isBuy = !!tr.isBuy
-            const caller = tr.__caller
+            const caller = tr.caller
             const label = labelFor(caller, isBuy)
-            const amt = Number(tr.tokenAmount ?? 0)
+            const amt = Number(tr.nativeAmount ?? 0)
             return {
-              id: `${tr.__tsSec}-${label}-${amt}`,
-              time: tr.__tsSec,
+              id: `${tr.tsSec}-${label}-${amt}`,
+              time: tr.tsSec,
               hoveredBorderWidth: 0,
               borderWidth: 0,
               color: isBuy
@@ -324,7 +324,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               label,
               labelFontColor: 'black',
               minSize: 17,
-              text: `${label} • ${amt} ${token.symbol}`,
+              text: `${label} • ${amt.toFixed(2)} ${'MON'} at ` + formatMemePrice(tr.price),
             }
           }).sort((a, b) => a.time - b.time)
           
@@ -577,11 +577,11 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
             const rows = (tradeHistoryRef.current ?? [])
               .map((t: any) => ({
                 ...t,
-                __tsSec: toSec(Number(t.timestamp ?? t.blockTimestamp ?? t.time ?? 0)),
-                __caller: String(t.caller ?? t.account?.id ?? '')
+                tsSec: toSec(Number(t.timestamp ?? t.blockTimestamp ?? t.time ?? 0)),
+                caller: String(t.caller ?? t.account?.id ?? '')
               }))
-              .filter(t => t.__tsSec >= from && t.__tsSec <= to)
-              .filter(t => includeCaller(t.__caller));
+              .filter(t => t.tsSec >= from && t.tsSec <= to)
+              .filter(t => includeCaller(t.caller));
 
             const step = RES_SECONDS[selectedIntervalRef.current] ?? 60;
             const bucket = (sec: number) => Math.floor(sec / step) * step;
@@ -594,22 +594,22 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
             const byBucket = new Map<number, Agg>();
 
             for (const tr of rows) {
-              const k = bucket(tr.__tsSec);
+              const k = bucket(tr.tsSec);
               const isBuy = !!tr.isBuy;
               const rec = byBucket.get(k) ?? { buys: 0, sells: 0 };
               if (isBuy) rec.buys++; else rec.sells++;
-              if (!rec.last || tr.__tsSec >= rec.last.__tsSec) rec.last = tr;
+              if (!rec.last || tr.tsSec >= rec.last.tsSec) rec.last = tr;
               byBucket.set(k, rec);
             }
 
             const marks = rows.map(tr => {
               const isBuy = !!tr.isBuy
-              const caller = tr.__caller
+              const caller = tr.caller
               const label = labelFor(caller, isBuy)
-              const amt = Number(tr.tokenAmount ?? 0)
+              const amt = Number(tr.nativeAmount ?? 0)
               return {
-                id: `${tr.__tsSec}-${label}-${amt}`,
-                time: tr.__tsSec,
+                id: `${tr.tsSec}-${label}-${amt}`,
+                time: tr.tsSec,
                 hoveredBorderWidth: 0,
                 borderWidth: 0,
                 color: isBuy
@@ -618,7 +618,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
                 label,
                 labelFontColor: 'black',
                 minSize: 17,
-                text: `${label} • ${amt} ${token.symbol}`,
+                text: `${label} • ${amt.toFixed(2)} ${'MON'} at ` + formatMemePrice(tr.price),
               }
             }).sort((a, b) => a.time - b.time)            
 

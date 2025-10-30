@@ -694,12 +694,13 @@
 }
 
 .tooltip-content {
-  background: rgb(14, 14, 15);
-  border: 1px solid #b5bcf80c;
+  background: rgb(6, 6, 6);
+  border: 1px solid #b5bcf81f;
   border-radius: 3px;
   bottom: 2px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  color: #e6e7f6e0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  font-weight: 300;
+  color: #ffffffcf;
   font-size: 0.75rem;
   padding: 0.15rem 0.35rem;
   position: relative;
@@ -4448,10 +4449,9 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
   justify-content: flex-end;
   padding: 0.75rem;
   position: absolute;
-  right: clamp(85px, 20%, 165px);  
+  right: clamp(80px, 20%, 160px);  
   top: 0;
   transition: all 0.3s ease;
-  width: 165px;
   --mouse-x: 50%;
   --mouse-y: 50%;
   width: clamp(80px, 20%, 160px);  
