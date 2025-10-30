@@ -25866,7 +25866,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 monUsdPrice={monUsdPrice}
                 walletTokenBalances={walletTokenBalances}
                 tokenList={memoizedTokenList}
+                tokensByStatus={tokensByStatus}
                 marketsData={marketsData}
+                tradesByMarket={tradesByMarket}
                 sendUserOperationAsync={sendUserOperationAsync}
                 account={{
                   connected: connected,
