@@ -1050,7 +1050,7 @@
 
 
 .meme-setting-unit {
-  color: rgba(255, 255, 255, 0.4);
+  color: #e0e8fd73;
   font-size: 0.8rem;
   pointer-events: none;
   position: absolute;
@@ -1243,7 +1243,6 @@
 }
 
 .meme-mobile-view-toggle {
-  backdrop-filter: blur(10px);
   background: rgb(6, 6, 6);
   border-radius: 8px;
   border-top: 1px solid rgba(179, 184, 249, 0.1);

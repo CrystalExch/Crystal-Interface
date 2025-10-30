@@ -244,7 +244,7 @@
 .pause-indicator {
   backdrop-filter: blur(10px);
   border-top: 1px solid rgba(179, 184, 249, 0.1);
-  bottom: 0;
+  bottom: -1px;
   left: 0;
   padding: 12px;
   position: absolute;

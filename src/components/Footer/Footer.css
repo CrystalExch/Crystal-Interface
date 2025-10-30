@@ -138,6 +138,7 @@
     padding: 0px 10px;
     border-radius: 4px;
     margin-left: 4px;
+    cursor: pointer;
 }
 
 .footer-crystal-logo {
@@ -164,6 +165,15 @@
     opacity: 0.35;
 }
 
+.footer-wallet-dropdown-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 4px 12px;
+  padding-top: 10px;
+  padding-right: 8px;
+}
+
 .footer-wallet-dropdown-panel {
   bottom: 0;
   left: 0;
@@ -184,9 +194,20 @@
   pointer-events: none;
 }
 
+
+
 .footer-wallet-dropdown-panel.visible {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
   pointer-events: auto;
+  margin-bottom: 35px;
+}
+
+
+
+
+.footer-wallet-dropdown-actions{
+  display: flex;
+  align-items: center;
 }
