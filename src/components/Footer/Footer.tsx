@@ -32,6 +32,8 @@ interface FooterProps {
   // Add these new props for widget control
   isTrackerWidgetOpen?: boolean;
   onToggleTrackerWidget: any;
+  isSpectraWidgetOpen?: boolean;
+  onToggleSpectraWidget?: any;
 }
 
 const Tooltip: React.FC<{
@@ -196,6 +198,8 @@ const Footer: React.FC<FooterProps> = ({
   monUsdPrice,
   isTrackerWidgetOpen = false,
   onToggleTrackerWidget,
+  isSpectraWidgetOpen = false,
+  onToggleSpectraWidget,
 }) => {
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -535,7 +539,11 @@ const Footer: React.FC<FooterProps> = ({
                 </div>
               </Tooltip>
               <Tooltip content="Spectra Tracker">
-                <div className="footer-widget-button">
+                <div
+                  className={`footer-widget-button ${isSpectraWidgetOpen ? 'active' : ''}`}
+                  onClick={() => {onToggleSpectraWidget?.((prev: any) => !prev)}}
+                  style={{ cursor: 'pointer' }}
+                >
                   <img src={prismicon} className="footer-widget-icon" />
                   Spectra
                 </div>

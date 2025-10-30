@@ -163,6 +163,7 @@ import LiveTradesSettingsPopup from './components/Tracker/ LiveTradesSettingsPop
 import MemeSearch from './components/MemeSearch/MemeSearch.tsx';
 import { showLoadingPopup, updatePopup } from './components/MemeTransactionPopup/MemeTransactionPopupManager';
 import TrackerWidget from './components/TrackerWidget/TrackerWidget.tsx';
+import SpectraWidget from './components/SpectraWidget/SpectraWidget.tsx';
 import Footer from './components/Footer/Footer.tsx';
 // import config
 import { ChevronDown, SearchIcon } from 'lucide-react';
@@ -454,13 +455,22 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const location = useLocation();
   const navigate = useNavigate();
   const [isTrackerWidgetOpen, setIsTrackerWidgetOpen] = useState(false);
+  const [isSpectraWidgetOpen, setIsSpectraWidgetOpen] = useState(false);
 
   const [trackerWidgetSnap, setTrackerWidgetSnap] = useState<'left' | 'right' | null>(null);
   const [trackerWidgetWidth, setTrackerWidgetWidth] = useState(400);
 
+  const [spectraWidgetSnap, setSpectraWidgetSnap] = useState<'left' | 'right' | null>(null);
+  const [spectraWidgetWidth, setSpectraWidgetWidth] = useState(600);
+
   const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | null, width: number) => {
     setTrackerWidgetSnap(snapSide);
     setTrackerWidgetWidth(width);
+  }, []);
+
+  const handleSpectraWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | null, width: number) => {
+    setSpectraWidgetSnap(snapSide);
+    setSpectraWidgetWidth(width);
   }, []);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const TOTAL_SUPPLY = 1e9;
@@ -25998,10 +26008,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           previewPosition={previewPosition}
           previewExiting={previewExiting}
         />
-        <TrackerWidget 
+        <TrackerWidget
         isOpen={isTrackerWidgetOpen}
         onClose={() => setIsTrackerWidgetOpen(false)}
         onSnapChange={handleTrackerWidgetSnapChange}
+      />
+        <SpectraWidget
+        isOpen={isSpectraWidgetOpen}
+        onClose={() => setIsSpectraWidgetOpen(false)}
+        onSnapChange={handleSpectraWidgetSnapChange}
+        tokensByStatus={tokensByStatus}
+        monUsdPrice={monUsdPrice}
       />
         {/* <WidgetExplorer
         isOpen={isWidgetExplorerOpen}
@@ -26025,6 +26042,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           monUsdPrice={monUsdPrice}
           isTrackerWidgetOpen={isTrackerWidgetOpen}
           onToggleTrackerWidget={setIsTrackerWidgetOpen}
+          isSpectraWidgetOpen={isSpectraWidgetOpen}
+          onToggleSpectraWidget={setIsSpectraWidgetOpen}
         />     
       </div>
     </div>

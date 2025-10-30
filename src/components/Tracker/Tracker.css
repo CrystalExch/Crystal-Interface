@@ -612,17 +612,18 @@
 }
 
 .tracker-monitor-card {
+  align-items: flex-start;
   background: transparent;
-  border-bottom: 1px solid rgba(179,184,249,0.1);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   box-sizing: border-box;
+  cursor: pointer;
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   padding: .75rem;
-  padding-bottom: .75rem;
+  padding-bottom: 0.5rem;
   position: relative;
   transition: all 0.2s ease;
   width: 100%;
-  min-height: 180px;
 }
 
 .tracker-monitor {
@@ -634,8 +635,8 @@
   background-color: rgb(17, 17, 21);
 }
 
-.tracker-monitor-card:hover .tracker-monitor-stats-section,
-.tracker-monitor-card:hover .tracker-monitor-right-section {
+.tracker-monitor-card:hover .explorer-metrics-container,
+.tracker-monitor-card:hover .explorer-third-row-section {
   background-color: rgb(17, 17, 21);
   box-shadow: 0 0 10px 4px rgb(17, 17, 21);
 }
@@ -718,29 +719,43 @@
   border-radius: 4px;
 }
 .tracker-monitor-icon-emoji { font-size: 1.8rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
-.tracker-monitor-token-details { 
-  flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; 
+.tracker-monitor-token-details {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin-left: .75rem;
+  min-width: 0;
+  align-self: flex-start;
 }
-.tracker-monitor-token-name-row { 
-  display: flex; 
-  align-items: center; 
-  gap: 6px;
-  width: 100%;
+.tracker-monitor-token-name-row {
+  align-items: center;
+  display: flex;
+  gap: 0.25rem;
+  height: 15px;
   min-width: 0;
 }
 .tracker-monitor-token-name-text {
-  color: #fff; 
-  font-size: .95rem; 
-  font-weight: 500; 
-  letter-spacing: -0.3px; 
-  white-space: nowrap; 
-  overflow: hidden; 
-  text-overflow: ellipsis; 
+  color: rgba(237, 236, 252, 0.4);
+  font-size: 1rem;
+  margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
   max-width: 120px;
   flex-shrink: 1;
 }
+
+.tracker-monitor-token-name-text:hover {
+  color: #d8dbf5;
+}
 .tracker-monitor-token-subtitle { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.5); font-size: .7rem; }
-.tracker-monitor-token-symbol { font-weight: 600; color: rgba(255,255,255,0.7); }
+.tracker-monitor-token-symbol {
+  color: #ffffff;
+  font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .tracker-monitor-graduated-badge {
   font-size: 0.75rem;
   padding: 1px 4px;
@@ -1171,10 +1186,11 @@
 }
 
 .tracker-monitor-left-section {
-  display: flex;
   align-items: center;
-  gap: 12px;
+  display: flex;
   flex: 1;
+  flex-shrink: 0;
+  margin-top: -2px;
   min-width: 0;
 }
 
@@ -1185,41 +1201,54 @@
   flex-shrink: 0;
 }
 
-.tracker-monitor-additional-data {
+.tracker-monitor-token-details .explorer-additional-data {
   display: flex;
   gap: 0.5rem;
   margin-top: 8px;
-  margin-bottom: 8px;
   width: 100%;
 }
 
-.tracker-monitor-additional-data .explorer-stat-item {
-  display: flex;
+.tracker-monitor-token-details .explorer-additional-data .explorer-stat-item {
   align-items: center;
+  display: flex;
   gap: 3px;
 }
 
-.tracker-monitor-additional-data .traders-icon {
-  color: rgba(255, 255, 255, 0.6);
-  width: 16px;
-  height: 16px;
+.tracker-monitor-token-details .explorer-additional-data .traders-icon {
   align-items: center;
+  color: #7f808d;
   cursor: pointer;
+  display: flex;
+  height: 18px;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 18px;
 }
 
-.tracker-monitor-additional-data .explorer-stat-value {
+.tracker-monitor-token-details .explorer-additional-data .explorer-stat-value {
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 400;
 }
 
-.tracker-monitor-additional-data .pro-traders-icon {
+.tracker-monitor-token-details .explorer-additional-data .explorer-stat-label {
   color: rgba(255, 255, 255, 0.6);
-  width: 16px;
-  height: 16px;
+  font-size: 0.7rem;
+  font-weight: 300;
 }
 
-.tracker-monitor-right-section .explorer-third-row {
+.tracker-monitor-token-details .explorer-additional-data .pro-traders-icon {
+  align-items: center;
+  color: #7f808d;
+  cursor: pointer;
+  display: flex;
+  height: 18px;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 18px;
+}
+
+.tracker-monitor-right-section .tracker-monitor-third-row {
   margin: 0;
   position: static;
   display: grid;
@@ -1229,11 +1258,11 @@
   align-items: start;
 }
 
-.tracker-monitor-right-section .explorer-metrics-container {
+.tracker-monitor-right-section .tracker-monitor-metrics-container {
   display: contents;
 }
 
-.tracker-monitor-right-section .explorer-volume {
+.tracker-monitor-right-section .tracker-monitor-volume {
   grid-column: 1;
   grid-row: 1;
   display: flex;
@@ -1241,7 +1270,7 @@
   gap: 4px;
 }
 
-.tracker-monitor-right-section .explorer-market-cap {
+.tracker-monitor-right-section .tracker-monitor-market-cap {
   grid-column: 2;
   grid-row: 1;
   display: flex;
@@ -1249,11 +1278,11 @@
   gap: 4px;
 }
 
-.tracker-monitor-right-section .explorer-third-row-section {
+.tracker-monitor-right-section .tracker-monitor-third-row-section {
   display: contents;
 }
 
-.tracker-monitor-right-section .explorer-stat-item {
+.tracker-monitor-right-section .tracker-monitor-stat-item {
   grid-column: 1;
   grid-row: 2;
   display: flex;
@@ -1261,7 +1290,7 @@
   gap: 4px;
 }
 
-.tracker-monitor-right-section .explorer-tx-bar {
+.tracker-monitor-right-section .tracker-monitor-tx-bar {
   grid-column: 2;
   grid-row: 2;
   align-items: center;
@@ -1271,57 +1300,78 @@
   width: 80px;
 }
 
-.tracker-monitor-right-section .mc-label {
+.tracker-monitor-right-section .tracker-monitor-tx-item {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: 0.25rem;
+}
+
+.tracker-monitor-right-section .tracker-monitor-tx-item.buy .explorer-tx-label {
+  color: #10b981;
+}
+
+.tracker-monitor-right-section .tracker-monitor-tx-item.sell .explorer-tx-label {
+  color: #ef4444;
+}
+
+.tracker-monitor-right-section .tracker-monitor-tx-count {
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.tracker-monitor-right-section .tracker-monitor-mc-label {
   color: white;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 400;
   opacity: 0.5;
 }
 
-.tracker-monitor-right-section .mc-value {
-  font-size: 0.85rem;
+.tracker-monitor-right-section .tracker-monitor-mc-value {
+  font-size: 0.8rem;
 }
 
 .tracker-monitor-mc-value {
   color: #d8dcff !important;
 }
 
-.tracker-monitor-right-section .mc-value {
+.tracker-monitor-right-section .tracker-monitor-mc-value {
   color: #d8dcff !important;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
-.tracker-monitor-right-section .explorer-fee-label {
+.tracker-monitor-right-section .tracker-monitor-fee-label {
   color: rgba(255, 255, 255, 0.5);
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 400;
 }
 
-.tracker-monitor-right-section .explorer-fee-total {
+.tracker-monitor-right-section .tracker-monitor-fee-total {
   color: #ffffff;
-  font-size: .85rem;
+  font-size: 0.8rem;
   font-weight: 500;
 }
 
-.tracker-monitor-right-section .explorer-tx-header {
+.tracker-monitor-right-section .tracker-monitor-tx-header {
   align-items: center;
   display: flex;
   gap: 3px;
 }
 
-.tracker-monitor-right-section .explorer-tx-label {
+.tracker-monitor-right-section .tracker-monitor-tx-label {
   color: rgba(255, 255, 255, 0.5);
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 400;
 }
 
-.tracker-monitor-right-section .explorer-tx-total {
+.tracker-monitor-right-section .tracker-monitor-tx-total {
   color: #ffffff;
-  font-size: .85rem;
+  font-size: 0.8rem;
   font-weight: 500;
 }
 
-.tracker-monitor-right-section .explorer-tx-visual-bar {
+.tracker-monitor-right-section .tracker-monitor-tx-visual-bar {
   border-radius: 1px;
   display: flex;
   height: 2.5px;
@@ -2030,10 +2080,13 @@
 
 /* Expanded card section - TokenDetail style */
 .tracker-monitor-card-expanded {
-  padding: 0;
-  background: transparent;
-  border-top: 1px solid rgba(179, 184, 249, 0.05);
-  animation: expandCard 0.3s ease-out;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
+  animation: slideDown 0.3s ease-out;
+  width: 100%;
+  margin: 0;
+  border-radius: 0 0 6px 6px;
 }
 
 @keyframes expandCard {

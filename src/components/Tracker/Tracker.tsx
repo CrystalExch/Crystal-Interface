@@ -3058,24 +3058,59 @@ const Tracker: React.FC<TrackerProps> = ({
                       {walletEmoji} {walletName}
                     </span>
                   </div>
+
+                  {/* Additional data section - Holders and Pro Traders */}
+                  <div className="explorer-additional-data">
+                    <div className="explorer-stat-item">
+                      <svg
+                        className="traders-icon"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
+                      </svg>
+                      <span className="explorer-stat-value">
+                        {market?.holders?.toLocaleString() || '0'}
+                      </span>
+                    </div>
+
+                    <div className="explorer-stat-item">
+                      <svg
+                        className="pro-traders-icon"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path d="M 12 2 L 12 4 L 11 4 C 10.4 4 10 4.4 10 5 L 10 10 C 10 10.6 10.4 11 11 11 L 12 11 L 12 13 L 14 13 L 14 11 L 15 11 C 15.6 11 16 10.6 16 10 L 16 5 C 16 4.4 15.6 4 15 4 L 14 4 L 14 2 L 12 2 z M 4 9 L 4 11 L 3 11 C 2.4 11 2 11.4 2 12 L 2 17 C 2 17.6 2.4 18 3 18 L 4 18 L 4 20 L 6 20 L 6 18 L 7 18 C 7.6 18 8 17.6 8 17 L 8 12 C 8 11.4 7.6 11 7 11 L 6 11 L 6 9 L 4 9 z M 18 11 L 18 13 L 17 13 C 16.4 13 16 13.4 16 14 L 16 19 C 16 19.6 16.4 20 17 20 L 18 20 L 18 22 L 20 22 L 20 20 L 21 20 C 21.6 20 22 19.6 22 19 L 22 14 C 22 13.4 21.6 13 21 13 L 20 13 L 20 11 L 18 11 z M 4 13 L 6 13 L 6 16 L 4 16 L 4 13 z" />
+                      </svg>
+                      <span className="explorer-stat-value">
+                        {Math.floor((market?.holders || 0) * 0.15).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Market metrics (V, MC, F, TX) in top-right - exact copy from TokenExplorer */}
+              {/* Market metrics (V, MC, F, TX) in top-right */}
               <div className="tracker-monitor-right-section">
-                <div className="explorer-third-row">
-                  <div className="explorer-metrics-container">
-                    <div className="explorer-volume">
-                      <span className="mc-label">V</span>
-                      <span className="mc-value">
+                <div className="tracker-monitor-third-row">
+                  <div className="tracker-monitor-metrics-container">
+                    <div className="tracker-monitor-volume">
+                      <span className="tracker-monitor-mc-label">V</span>
+                      <span className="tracker-monitor-mc-value">
                         {monitorCurrency === 'USD'
                           ? formatPrice(((market?.volume24h || 0) * monUsdPrice), false, true)
                           : formatPrice((market?.volume24h || 0), false, false)}
                       </span>
                     </div>
-                    <div className="explorer-market-cap">
-                      <span className="mc-label">MC</span>
-                      <span className="mc-value">
+                    <div className="tracker-monitor-market-cap">
+                      <span className="tracker-monitor-mc-label">MC</span>
+                      <span className="tracker-monitor-mc-value">
                         {monitorCurrency === 'USD'
                           ? formatPrice((market?.marketCap || pos.lastPrice * 1e9) * monUsdPrice, false, true)
                           : formatPrice((market?.marketCap || pos.lastPrice * 1e9), false, false)}
@@ -3083,24 +3118,24 @@ const Tracker: React.FC<TrackerProps> = ({
                     </div>
                   </div>
 
-                  <div className="explorer-third-row-section">
-                    <div className="explorer-stat-item">
-                      <span className="explorer-fee-label">F</span>
-                      <span className="explorer-fee-total">
+                  <div className="tracker-monitor-third-row-section">
+                    <div className="tracker-monitor-stat-item">
+                      <span className="tracker-monitor-fee-label">F</span>
+                      <span className="tracker-monitor-fee-total">
                         {monitorCurrency === 'USD'
                           ? formatPrice(((market?.volume24h || 0) * monUsdPrice) / 100, false, true)
                           : formatPrice((market?.volume24h || 0) / 100, false, false)}
                       </span>
                     </div>
 
-                    <div className="explorer-tx-bar">
-                      <div className="explorer-tx-header">
-                        <span className="explorer-tx-label">TX</span>
-                        <span className="explorer-tx-total">
+                    <div className="tracker-monitor-tx-bar">
+                      <div className="tracker-monitor-tx-header">
+                        <span className="tracker-monitor-tx-label">TX</span>
+                        <span className="tracker-monitor-tx-total">
                           {((market?.buyTransactions || 0) + (market?.sellTransactions || 0)).toLocaleString()}
                         </span>
                       </div>
-                      <div className="explorer-tx-visual-bar">
+                      <div className="tracker-monitor-tx-visual-bar">
                         {((market?.buyTransactions || 0) + (market?.sellTransactions || 0)) === 0 ? (
                           <div style={{
                             width: '100%',
@@ -3111,13 +3146,13 @@ const Tracker: React.FC<TrackerProps> = ({
                         ) : (
                           <>
                             <div
-                              className="explorer-tx-buy-portion"
+                              className="tracker-monitor-tx-buy-portion"
                               style={{
                                 width: `${((market?.buyTransactions || 0) / ((market?.buyTransactions || 0) + (market?.sellTransactions || 0)) * 100)}%`
                               }}
                             />
                             <div
-                              className="explorer-tx-sell-portion"
+                              className="tracker-monitor-tx-sell-portion"
                               style={{
                                 width: `${((market?.sellTransactions || 0) / ((market?.buyTransactions || 0) + (market?.sellTransactions || 0)) * 100)}%`
                               }}
@@ -3128,41 +3163,6 @@ const Tracker: React.FC<TrackerProps> = ({
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Additional data section - Holders and Pro Traders */}
-            <div className="tracker-monitor-additional-data">
-              <div className="explorer-stat-item">
-                <svg
-                  className="traders-icon"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
-                </svg>
-                <span className="explorer-stat-value">
-                  {market?.holders?.toLocaleString() || '0'}
-                </span>
-              </div>
-
-              <div className="explorer-stat-item">
-                <svg
-                  className="pro-traders-icon"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M 12 2 L 12 4 L 11 4 C 10.4 4 10 4.4 10 5 L 10 10 C 10 10.6 10.4 11 11 11 L 12 11 L 12 13 L 14 13 L 14 11 L 15 11 C 15.6 11 16 10.6 16 10 L 16 5 C 16 4.4 15.6 4 15 4 L 14 4 L 14 2 L 12 2 z M 4 9 L 4 11 L 3 11 C 2.4 11 2 11.4 2 12 L 2 17 C 2 17.6 2.4 18 3 18 L 4 18 L 4 20 L 6 20 L 6 18 L 7 18 C 7.6 18 8 17.6 8 17 L 8 12 C 8 11.4 7.6 11 7 11 L 6 11 L 6 9 L 4 9 z M 18 11 L 18 13 L 17 13 C 16.4 13 16 13.4 16 14 L 16 19 C 16 19.6 16.4 20 17 20 L 18 20 L 18 22 L 20 22 L 20 20 L 21 20 C 21.6 20 22 19.6 22 19 L 22 14 C 22 13.4 21.6 13 21 13 L 20 13 L 20 11 L 18 11 z M 4 13 L 6 13 L 6 16 L 4 16 L 4 13 z" />
-                </svg>
-                <span className="explorer-stat-value">
-                  {Math.floor((market?.holders || 0) * 0.15).toLocaleString()}
-                </span>
               </div>
             </div>
 
