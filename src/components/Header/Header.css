@@ -891,6 +891,8 @@
   padding: 8px 20px;
   cursor: pointer;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
+
 }
 
 .perps-bridge-button:hover{
@@ -908,4 +910,50 @@
 .wallet-dropdown-value{
   font-size: 1.3rem;
   letter-spacing: -0.5px;
+}
+
+
+.header-actions-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding-top: 5px;
+  padding-bottom: 15px;
+}
+
+.header-action-row{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.header-action-icon{
+  background-color: #4b518e2e;
+  color: #aaaecf;
+  border-radius: 50%;
+  padding: 8px;
+  width: 37px;
+  height: 37px;
+}
+
+.header-action-item{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  letter-spacing: -0.3px;
+  width: 33%;
+}
+
+.header-action-item:hover{
+  color:#d8dcff;
+}
+
+.header-action-item:hover .header-action-icon{
+    background-color: #4b518e42;
+
 }
