@@ -66,11 +66,13 @@ import wrapeth from './scripts/wrapeth';
 import stake from './scripts/stake.ts';
 import { fetchLatestPrice } from './utils/getPrice.ts';
 import replaceOrder from './scripts/replaceOrder';
+
 // import utils
 import customRound from './utils/customRound';
 import { formatTime } from './utils/formatTime.ts';
 import { formatCommas, formatSubscript } from './utils/numberDisplayFormat';
 import { formatDisplay, formatSig } from './components/OrderCenter/utils/formatDisplay.ts';
+import { loadBuyPresets, loadSellPresets, updateBuyPreset, updateSellPreset } from './utils/presetManager';
 
 // import abis
 import { CrystalDataHelperAbi } from './abis/CrystalDataHelperAbi';
@@ -85,6 +87,8 @@ import { DataPoint } from './components/Chart/utils/chartDataGenerator.ts';
 
 // import svg graphics
 import tradearrow from './assets/arrow.svg';
+import gas from './assets/gas.svg';
+import slippageicon from './assets/slippage.svg';
 import closebutton from './assets/close_button.png';
 import sendSwitch from './assets/send_arrow.svg';
 import walleticon from './assets/wallet_icon.svg';
@@ -429,6 +433,93 @@ const Loader = () => {
 }
 
 function App({ stateloading, setstateloading, addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
+const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');
+const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
+const [selectedSellPreset, setSelectedSellPreset] = useState(1);
+const [buySlippageValue, setBuySlippageValue] = useState(() => {
+  const presets = loadBuyPresets();
+  return presets[1]?.slippage || '20';
+});
+const [buyPriorityFee, setBuyPriorityFee] = useState(() => {
+  const presets = loadBuyPresets();
+  return presets[1]?.priority || '0.01';
+});
+const [sellSlippageValue, setSellSlippageValue] = useState(() => {
+  const presets = loadSellPresets();
+  return presets[1]?.slippage || '20';
+});
+const [sellPriorityFee, setSellPriorityFee] = useState(() => {
+  const presets = loadSellPresets();
+  return presets[1]?.priority || '0.01';
+});
+
+const handleBuyPresetSelect = useCallback(
+  (preset: number) => {
+    setSelectedBuyPreset(preset);
+    const presets = loadBuyPresets();
+    if (presets[preset]) {
+      setBuySlippageValue(presets[preset].slippage);
+      setBuyPriorityFee(presets[preset].priority);
+    }
+  },
+  [],
+);
+
+const handleSellPresetSelect = useCallback(
+  (preset: number) => {
+    setSelectedSellPreset(preset);
+    const presets = loadSellPresets();
+    if (presets[preset]) {
+      setSellSlippageValue(presets[preset].slippage);
+      setSellPriorityFee(presets[preset].priority);
+    }
+  },
+  [],
+);
+
+useEffect(() => {
+  const handleBuyPresetsUpdate = (event: CustomEvent) => {
+    const newPresets = event.detail;
+    if (newPresets[selectedBuyPreset]) {
+      setBuySlippageValue(newPresets[selectedBuyPreset].slippage);
+      setBuyPriorityFee(newPresets[selectedBuyPreset].priority);
+    }
+  };
+
+  const handleSellPresetsUpdate = (event: CustomEvent) => {
+    const newPresets = event.detail;
+    if (newPresets[selectedSellPreset]) {
+      setSellSlippageValue(newPresets[selectedSellPreset].slippage);
+      setSellPriorityFee(newPresets[selectedSellPreset].priority);
+    }
+  };
+
+  window.addEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+  window.addEventListener('sellPresetsUpdated', handleSellPresetsUpdate as EventListener);
+
+  return () => {
+    window.removeEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+    window.removeEventListener('sellPresetsUpdated', handleSellPresetsUpdate as EventListener);
+  };
+}, [selectedBuyPreset, selectedSellPreset]);
+
+useEffect(() => {
+  if (selectedBuyPreset) {
+    updateBuyPreset(selectedBuyPreset, {
+      slippage: buySlippageValue,
+      priority: buyPriorityFee,
+    });
+  }
+}, [buySlippageValue, buyPriorityFee, selectedBuyPreset]);
+
+useEffect(() => {
+  if (selectedSellPreset) {
+    updateSellPreset(selectedSellPreset, {
+      slippage: sellSlippageValue,
+      priority: sellPriorityFee,
+    });
+  }
+}, [sellSlippageValue, sellPriorityFee, selectedSellPreset]);
   // constants
   useEffect(() => {
     if (!localStorage.getItem("noSSR")) {
@@ -19036,6 +19127,151 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             />
           </div>
         ) : null}
+        {popup === 37 ? ( // presets settings popup
+  <div ref={popupref} className="presets-settings-popup-bg">
+    <div className="presets-settings-popup-header">
+      <h3 className="presets-settings-popup-title">Trade Settings</h3>
+      <button
+        className="presets-settings-popup-close"
+        onClick={() => {
+          setpopup(0);
+        }}
+      >
+        <img src={closebutton} className="presets-settings-close-icon" alt="Close" />
+      </button>
+    </div>
+
+    <div className="presets-settings-popup-content">
+            <div className="meme-settings-presets">
+        <button
+          className={`meme-settings-preset ${
+            (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1 
+              ? `active ${settingsMode}` 
+              : ''
+          }`}
+          onClick={() => {
+            if (settingsMode === 'buy') {
+              handleBuyPresetSelect(1);
+            } else {
+              handleSellPresetSelect(1);
+            }
+          }}
+        >
+          PRESET 1
+        </button>
+        <button
+          className={`meme-settings-preset ${
+            (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2 
+              ? `active ${settingsMode}` 
+              : ''
+          }`}
+          onClick={() => {
+            if (settingsMode === 'buy') {
+              handleBuyPresetSelect(2);
+            } else {
+              handleSellPresetSelect(2);
+            }
+          }}
+        >
+          PRESET 2
+        </button>
+        <button
+          className={`meme-settings-preset ${
+            (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3 
+              ? `active ${settingsMode}` 
+              : ''
+          }`}
+          onClick={() => {
+            if (settingsMode === 'buy') {
+              handleBuyPresetSelect(3);
+            } else {
+              handleSellPresetSelect(3);
+            }
+          }}
+        >
+          PRESET 3
+        </button>
+      </div>
+      <div className="meme-settings-mode-toggle">
+        <button
+          className={`meme-settings-mode-btn ${settingsMode === 'buy' ? 'active' : ''}`}
+          onClick={() => setSettingsMode('buy')}
+        >
+          Buy settings
+        </button>
+        <button
+          className={`meme-settings-mode-btn ${settingsMode === 'sell' ? 'active' : ''}`}
+          onClick={() => setSettingsMode('sell')}
+        >
+          Sell settings
+        </button>
+      </div>
+
+
+      <div className="meme-settings-grid">
+        <div className="meme-setting-item">
+          <div className="meme-setting-input-wrapper">
+            <input
+              type="number"
+              className="meme-setting-input"
+              value={
+                settingsMode === 'buy'
+                  ? buySlippageValue
+                  : sellSlippageValue
+              }
+              onChange={(e) =>
+                settingsMode === 'buy'
+                  ? setBuySlippageValue(e.target.value)
+                  : setSellSlippageValue(e.target.value)
+              }
+              step="0.1"
+              min="0"
+              max="100"
+            />
+            <span className="meme-setting-unit">%</span>
+          </div>
+          <label className="meme-setting-label">
+            <img
+              src={slippageicon}
+              className="meme-setting-label-icon-slippage"
+            />
+            SLIPPAGE
+          </label>
+        </div>
+
+        <div className="meme-setting-item">
+          <div className="meme-setting-input-wrapper">
+            <input
+              type="number"
+              className="meme-setting-input"
+              value={
+                settingsMode === 'buy'
+                  ? buyPriorityFee
+                  : sellPriorityFee
+              }
+              onChange={(e) =>
+                settingsMode === 'buy'
+                  ? setBuyPriorityFee(e.target.value)
+                  : setSellPriorityFee(e.target.value)
+              }
+              step="0.001"
+              min="0"
+            />
+            <span className="meme-setting-unit">MON</span>
+          </div>
+          <label className="meme-setting-label">
+            <img
+              src={gas}
+              alt="Priority Fee"
+              className="meme-setting-label-icon"
+            />
+            PRIORITY
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+) : null}
       </div>
     </>
   );
@@ -26025,6 +26261,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           monUsdPrice={monUsdPrice}
           isTrackerWidgetOpen={isTrackerWidgetOpen}
           onToggleTrackerWidget={setIsTrackerWidgetOpen}
+          setpopup={setpopup}
         />     
       </div>
     </div>

@@ -31,6 +31,8 @@ interface FooterProps {
   monUsdPrice: number;
   isTrackerWidgetOpen?: boolean;
   onToggleTrackerWidget: any;
+    setpopup: (value: number) => void;
+
 }
 
 const Tooltip: React.FC<{
@@ -195,6 +197,7 @@ const Footer: React.FC<FooterProps> = ({
   monUsdPrice,
   isTrackerWidgetOpen = false,
   onToggleTrackerWidget,
+  setpopup,
 }) => {
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -305,8 +308,13 @@ const getWalletBalance = useCallback(
       <div className="footer-content-left">
         <div className="footer-left">
           <div className="footer-left-side">
-          <div className="footer-preset-button">PRESET 1</div>
-            <Tooltip content="Manage Wallets">
+<div 
+  className="footer-preset-button"
+  onClick={() => setpopup(37)}
+  style={{ cursor: 'pointer' }}
+>
+  PRESET 1
+</div>            <Tooltip content="Manage Wallets">
               <div ref={dropdownRef} style={{ position: 'relative' }}>
                 <button
                   className="footer-transparent-button"
