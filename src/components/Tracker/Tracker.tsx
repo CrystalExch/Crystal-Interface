@@ -580,71 +580,97 @@ const Tracker: React.FC<TrackerProps> = ({
   });
   
 
-  const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveTrade => {
-    const tradeAccountAddr = (trade.account?.id || trade.caller || '').toLowerCase();
-    const connectedAddr = account?.address?.toLowerCase();
+const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveTrade => {
+  const tradeAccountAddr = (trade.account?.id || trade.caller || '').toLowerCase();
+  const connectedAddr = account?.address?.toLowerCase();
 
-    // Try to find in tracked wallets first, then check if it's the connected wallet
-    const trackedWallet = wallets.find(
-      w => w.address.toLowerCase() === tradeAccountAddr
-    );
+  // Try to find in tracked wallets first, then check if it's the connected wallet
+  const trackedWallet = wallets.find(
+    w => w.address.toLowerCase() === tradeAccountAddr
+  );
 
-    const isConnectedWallet = connectedAddr && tradeAccountAddr === connectedAddr;
+  const isConnectedWallet = connectedAddr && tradeAccountAddr === connectedAddr;
 
-    // Use tracked wallet name if found, otherwise use "You" for connected wallet, otherwise use shortened address
-    let walletName: string;
-    let emoji: string;
+  // Use tracked wallet name if found, otherwise use "You" for connected wallet, otherwise use shortened address
+  let walletName: string;
+  let emoji: string;
 
-    if (trackedWallet) {
-      walletName = trackedWallet.name;
-      emoji = trackedWallet.emoji || '👤';
-    } else if (isConnectedWallet) {
-      walletName = 'You';
-      emoji = '👤';
-    } else {
-      walletName = `${tradeAccountAddr.slice(0, 6)}...${tradeAccountAddr.slice(-4)}`;
-      emoji = '👻';
+  if (trackedWallet) {
+    walletName = trackedWallet.name;
+    emoji = trackedWallet.emoji || '👤';
+  } else if (isConnectedWallet) {
+    walletName = 'You';
+    emoji = '👤';
+  } else {
+    walletName = `${tradeAccountAddr.slice(0, 6)}...${tradeAccountAddr.slice(-4)}`;
+    emoji = '👻';
+  }
+
+  const isBuy = !!trade.isBuy;
+  const nativeAmount = Number(isBuy ? trade.amountIn : trade.amountOut) / 1e18;
+  const price = Number(trade.priceNativePerTokenWad) / 1e18;
+
+  const TOTAL_SUPPLY = 1e9;
+  const marketCap = price * TOTAL_SUPPLY;
+
+  // FIX: Better timestamp handling - handles both seconds and milliseconds
+  let timestamp = Number(trade.timestamp || trade.block || Date.now() / 1000);
+  // If timestamp is in milliseconds (> year 2100 in seconds), convert to seconds
+  if (timestamp > 5000000000) {
+    timestamp = timestamp / 1000;
+  }
+  // If timestamp is 0 or very small, use current time
+  if (timestamp < 1000000000) {
+    timestamp = Date.now() / 1000;
+  }
+  
+  const now = Date.now() / 1000;
+  const secondsAgo = Math.max(0, now - timestamp);
+  let timeAgo = 'now';
+  if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
+  else if (secondsAgo < 3600) timeAgo = `${Math.floor(secondsAgo / 60)}m`;
+  else if (secondsAgo < 86400) timeAgo = `${Math.floor(secondsAgo / 3600)}h`;
+  else timeAgo = `${Math.floor(secondsAgo / 86400)}d`;
+
+  // Get token symbol, name, address, and icon
+  const tokenAddress = trade.token?.address || trade.tokenAddress || trade.token?.id || undefined;
+  const tokenSymbol = trade.token?.symbol || trade.symbol || 'TKN';
+  const tokenName = trade.token?.name || trade.token?.symbol || trade.name || tokenSymbol;
+  
+  // FIX: Enhanced token icon resolution - check multiple sources
+  let tokenIcon = trade.tokenIcon || trade.token?.imageUrl || undefined;
+  
+  // If no icon but we have a token address, try to get it from marketsRef
+  if (!tokenIcon && tokenAddress) {
+    const market = marketsRef.current.get(tokenAddress.toLowerCase());
+    if (market) {
+      // Check multiple possible icon fields
+      tokenIcon = market.imageUrl || (market as any).image;
     }
+  }
+  
+  // If still no icon and we have metadataCID, construct the URL
+  if (!tokenIcon && trade.token?.metadataCID) {
+    tokenIcon = `https://pub-8aff0f9ec88b4fff8cdce3f213f21b7f.r2.dev/img/${trade.token.metadataCID}.png`;
+  }
 
-    const isBuy = !!trade.isBuy;
-    const nativeAmount = Number(isBuy ? trade.amountIn : trade.amountOut) / 1e18;
-    const price = Number(trade.priceNativePerTokenWad) / 1e18;
-
-    const TOTAL_SUPPLY = 1e9;
-    const marketCap = price * TOTAL_SUPPLY;
-
-    const timestamp = Number(trade.timestamp || 0);
-    const now = Date.now() / 1000;
-    const secondsAgo = Math.max(0, now - timestamp);
-    let timeAgo = 'now';
-    if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
-    else if (secondsAgo < 3600) timeAgo = `${Math.floor(secondsAgo / 60)}m`;
-    else if (secondsAgo < 86400) timeAgo = `${Math.floor(secondsAgo / 3600)}h`;
-    else timeAgo = `${Math.floor(secondsAgo / 86400)}d`;
-
-    // Get token symbol, name, address, and icon
-    const tokenAddress = trade.token?.address || trade.tokenAddress || undefined;
-    const tokenSymbol = trade.token?.symbol || trade.symbol || 'TKN';
-    const tokenName = trade.token?.name || trade.token?.symbol || trade.name || tokenSymbol;
-    const tokenIcon = trade.tokenIcon || trade.token?.imageUrl || undefined;
-
-    return {
-      id: trade.id,
-      walletName: walletName,
-      emoji: emoji,
-      token: tokenSymbol,
-      tokenName: tokenName,
-      tokenAddress: tokenAddress,
-      tokenIcon: tokenIcon,
-      amount: nativeAmount,
-      price: price,
-      marketCap: marketCap / DISPLAY_SCALE,
-      time: timeAgo,
-      txHash: trade.transaction?.id || trade.id,
-      type: isBuy ? 'buy' : 'sell',
-      createdAt: new Date(timestamp * 1000).toISOString(),
-    };
-  }, [account?.address]);
+  return {
+    id: trade.id,
+    walletName: walletName,
+    emoji: emoji,
+    token: tokenSymbol,
+    tokenName: tokenName,
+    tokenAddress: tokenAddress,
+    tokenIcon: tokenIcon,
+    amount: nativeAmount,
+    price: price,
+    marketCap: marketCap / DISPLAY_SCALE,
+    time: timeAgo,
+    txHash: trade.transaction?.id || trade.id,
+    type: isBuy ? 'buy' : 'sell',
+    createdAt: new Date(timestamp * 1000).toISOString(),
+  };
+}, [account?.address]);
 
   // Quick buy function - buys 1 MON worth of token instantly
   const handleQuickBuy = useCallback(async (tokenAddress: string, tokenSymbol: string, tokenImage?: string) => {
@@ -882,101 +908,127 @@ const Tracker: React.FC<TrackerProps> = ({
     trackedSetRef.current = new Set(trackedWallets.map(w => w.address.toLowerCase()));
   }, [trackedWallets]);
 
-  const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'launchpad') => {
-    if (!logs?.length) return;
-    lastEventTsRef.current = Date.now();
-    setStatus({ lastPushSource: source });
 
-    const lower = (s?: string) => (s || '').toLowerCase();
-    const wallets = trackedWalletsRef.current;
-    const touchWallet = (addr: string) => {
-      const key = lower(addr);
-      if (!trackedSetRef.current.has(key)) return;
-      setTrackedWallets(prev => prev.map(x => lower(x.address) === key ? { ...x, lastActiveAt: Date.now() } : x));
+const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'launchpad') => {
+  if (!logs?.length) return;
+  lastEventTsRef.current = Date.now();
+  setStatus({ lastPushSource: source });
+
+  const lower = (s?: string) => (s || '').toLowerCase();
+  const wallets = trackedWalletsRef.current;
+  const touchWallet = (addr: string) => {
+    const key = lower(addr);
+    if (!trackedSetRef.current.has(key)) return;
+    setTrackedWallets(prev => prev.map(x => lower(x.address) === key ? { ...x, lastActiveAt: Date.now() } : x));
+  };
+
+  const toAdd: LiveTrade[] = [];
+
+  for (const l of logs) {
+    const args: any = l?.args ?? {};
+    const txHash: string = l?.transactionHash ?? l?.transaction?.id ?? l?.id ?? '';
+
+    let accountAddr: string | null = (args.user || args.account || args.trader || args.sender || args.owner || args.from || args.buyer || args.seller) ?? null;
+
+    if (accountAddr) {
+      touchWallet(accountAddr);
+    } else {
+      continue;
+    }
+
+    const lowerAccountAddr = lower(accountAddr);
+    const connectedAddr = account?.address?.toLowerCase();
+    const isTrackedWallet = trackedSetRef.current.has(lowerAccountAddr);
+    const isConnectedWallet = connectedAddr && lowerAccountAddr === connectedAddr;
+
+    // Allow trades from either tracked wallets OR the connected wallet
+    if (!isTrackedWallet && !isConnectedWallet) {
+      continue;
+    }
+
+    const isBuy = Boolean(args.isBuy ?? args.buy ?? (args.from && !args.to));
+
+    // Keep amounts as BigInt - they're already in wei from the contract
+    const amountInWei = BigInt(args.amountIn ?? 0);
+    const amountOutWei = BigInt(args.amountOut ?? 0);
+    const priceWad = BigInt(args.priceNativePerTokenWad ?? args.price ?? args.endPrice ?? args.startPrice ?? 0);
+
+    // For display/debug only
+    const amountInEth = Number(amountInWei) / 1e18;
+    const amountOutEth = Number(amountOutWei) / 1e18;
+    const priceEth = Number(priceWad) / 1e18;
+
+    const tokenAddr = String(args.market || args.token || args.tokenAddress || args.base || args.asset || args.tokenIn || args.tokenOut || (l as any)?.address || '').toLowerCase() || undefined;
+    const symbol = (args.symbol || args.ticker || '').toString() || undefined;
+    
+    // FIX: Extract timestamp properly - handle both seconds and milliseconds
+    let ts = Number(l.timestamp || l.block || args.timestamp || Date.now() / 1000);
+    if (ts > 5000000000) {
+      ts = ts / 1000;
+    }
+
+    // prefer live price when available
+    // resolve market id - try token address first since that's most reliable
+    const addrLower = tokenAddr ? tokenAddr.toLowerCase() : undefined;
+    const symbolLower = (symbol || '').toLowerCase();
+
+    // Try to find the token in marketsRef using address directly first
+    const live = addrLower ? marketsRef.current.get(addrLower) : null;
+
+    // Use live price if available, convert to BigInt
+    const livePriceWad = live?.price != null && live.price > 0
+      ? BigInt(Math.floor(live.price * 1e18))
+      : priceWad;
+
+    // FIX: Extract imageUrl from multiple sources
+    let imageUrl = args.imageUrl || args.tokenIcon || l.token?.imageUrl || live?.imageUrl;
+    
+    // If we have metadataCID, construct the URL
+    if (!imageUrl && (args.metadataCID || l.token?.metadataCID)) {
+      const cid = args.metadataCID || l.token?.metadataCID;
+      imageUrl = `https://pub-8aff0f9ec88b4fff8cdce3f213f21b7f.r2.dev/img/${cid}.png`;
+    }
+
+    const tradeLike = {
+      id: txHash || `${Date.now()}_${Math.random()}`,
+      account: { id: String(accountAddr || '') },
+      caller: String(accountAddr || ''),
+      isBuy,
+      amountIn: amountInWei,
+      amountOut: amountOutWei,
+      priceNativePerTokenWad: livePriceWad,
+      token: {
+        address: tokenAddr,
+        symbol: (live?.symbol ?? symbol ?? 'TKN'),
+        name: (live?.name ?? live?.symbol ?? symbol ?? 'Unknown'),
+        imageUrl: imageUrl // Add imageUrl to token object
+      },
+      tokenIcon: imageUrl, // Also add at top level
+      timestamp: ts
     };
 
-    const toAdd: LiveTrade[] = [];
+    const normalized = normalizeTrade(tradeLike, wallets);
 
-    for (const l of logs) {
-      const args: any = l?.args ?? {};
-      const txHash: string = l?.transactionHash ?? l?.transaction?.id ?? l?.id ?? '';
+    toAdd.push(normalized);
 
-      let accountAddr: string | null = (args.user || args.account || args.trader || args.sender || args.owner || args.from || args.buyer || args.seller) ?? null;
+    upsertMarket({ 
+      tokenAddr, 
+      symbol, 
+      price: priceEth, 
+      isBuy, 
+      amountNative: isBuy ? amountInEth : amountOutEth, 
+      ts, 
+      wallet: wallets.find((w: any)=>lower(w.address)===lower(accountAddr||''))?.name, 
+      emoji: wallets.find((w: any)=>lower(w.address)===lower(accountAddr||''))?.emoji,
+      imageUrl: imageUrl // Pass imageUrl to upsertMarket
+    });
+  }
 
-      if (accountAddr) {
-        touchWallet(accountAddr);
-      } else {
-        continue;
-      }
+  if (toAdd.length === 0) {
+    return;
+  }
 
-      const lowerAccountAddr = lower(accountAddr);
-      const connectedAddr = account?.address?.toLowerCase();
-      const isTrackedWallet = trackedSetRef.current.has(lowerAccountAddr);
-      const isConnectedWallet = connectedAddr && lowerAccountAddr === connectedAddr;
-
-      // Allow trades from either tracked wallets OR the connected wallet
-      if (!isTrackedWallet && !isConnectedWallet) {
-        continue;
-      }
-
-      const isBuy = Boolean(args.isBuy ?? args.buy ?? (args.from && !args.to));
-
-      // Keep amounts as BigInt - they're already in wei from the contract
-      const amountInWei = BigInt(args.amountIn ?? 0);
-      const amountOutWei = BigInt(args.amountOut ?? 0);
-      const priceWad = BigInt(args.priceNativePerTokenWad ?? args.price ?? args.endPrice ?? args.startPrice ?? 0);
-
-      // For display/debug only
-      const amountInEth = Number(amountInWei) / 1e18;
-      const amountOutEth = Number(amountOutWei) / 1e18;
-      const priceEth = Number(priceWad) / 1e18;
-
-      const tokenAddr = String(args.market || args.token || args.tokenAddress || args.base || args.asset || args.tokenIn || args.tokenOut || (l as any)?.address || '').toLowerCase() || undefined;
-      const symbol = (args.symbol || args.ticker || '').toString() || undefined;
-      const ts = Math.floor(Date.now()/1000);
-
-  // prefer live price when available
-    // resolve market id - try token address first since that's most reliable
-      const addrLower = tokenAddr ? tokenAddr.toLowerCase() : undefined;
-      const symbolLower = (symbol || '').toLowerCase();
-
-      // Try to find the token in marketsRef using address directly first
-      const live = addrLower ? marketsRef.current.get(addrLower) : null;
-
-      // Use live price if available, convert to BigInt
-      const livePriceWad = live?.price != null && live.price > 0
-        ? BigInt(Math.floor(live.price * 1e18))
-        : priceWad;
-
-      const tradeLike = {
-        id: txHash || `${Date.now()}_${Math.random()}`,
-        account: { id: String(accountAddr || '') },
-        caller: String(accountAddr || ''),
-        isBuy,
-        amountIn: amountInWei,
-        amountOut: amountOutWei,
-        priceNativePerTokenWad: livePriceWad,
-        token: {
-          address: tokenAddr,
-          symbol: (live?.symbol ?? symbol ?? 'TKN'),
-          name: (live?.name ?? live?.symbol ?? symbol ?? 'Unknown')
-        },
-        timestamp: ts
-      };
-
-      const normalized = normalizeTrade(tradeLike, wallets);
-
-      toAdd.push(normalized);
-
-  upsertMarket({ tokenAddr, symbol, price: priceEth, isBuy, amountNative: isBuy ? amountInEth : amountOutEth, ts, wallet: wallets.find((w: any)=>lower(w.address)===lower(accountAddr||''))?.name, emoji: wallets.find((w: any)=>lower(w.address)===lower(accountAddr||''))?.emoji });
-    }
-
-    if (toAdd.length === 0) {
-      return;
-    }
-
-  }, [normalizeTrade, activechain, demoMode.trades]);
-
+}, [normalizeTrade, activechain, demoMode.trades]);
   // safe RPC wrapper to avoid noisy errors
   useEffect(() => {
     // Live contract event watchers are disabled to avoid continuous LiveTrades ingestion.
@@ -2502,17 +2554,9 @@ const Tracker: React.FC<TrackerProps> = ({
 
     return (
       <div className="tracker-live-trades">
-        <div className="detail-trades-table">
+        <div className="tracker=detail-trades-table">
           <div className="detail-trades-table-header">
-            <div
-              className={`detail-trades-header-cell detail-trades-time sortable ${tradeSortField === 'dateCreated' ? 'active' : ''}`}
-              onClick={() => handleTradeSort('dateCreated')}
-            >
-              Time
-              {/* ... */}
-            </div>
             <div className="detail-trades-header-cell detail-trades-account">Account</div>
-            <div className="detail-trades-header-cell" style={{minWidth: '70px', width: '70px'}}>Type</div>
             <div className="detail-trades-header-cell" style={{minWidth: '100px', width: '100px'}}>Token</div>
             <div
               className={`detail-trades-header-cell sortable ${tradeSortField === 'amount' ? 'active' : ''}`}
@@ -2542,13 +2586,13 @@ const Tracker: React.FC<TrackerProps> = ({
 
                 <div
                   key={trade.id}
-                  className={`detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
+                  className={`tracker-detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
                 >
                   <div className="detail-trades-col detail-trades-time">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <span>{trade.time}</span>
                     </div>
-                  </div>
+                  </div>  
 
                   <div className="detail-trades-col detail-trades-account">
                     <div className="detail-trades-avatar">
@@ -2561,11 +2605,6 @@ const Tracker: React.FC<TrackerProps> = ({
                     </span>
                   </div>
 
-                  <div className="detail-trades-col" style={{minWidth: '70px', width: '70px'}}>
-                    <span className={`detail-trade-type-badge ${trade.type}`}>
-                      {trade.type === 'buy' ? 'Buy' : 'Sell'}
-                    </span>
-                  </div>
 
                   {/* Token column styled like AssetRow */}
                   <div className="detail-trades-col">
@@ -3228,7 +3267,6 @@ const Tracker: React.FC<TrackerProps> = ({
               <div className="detail-trades-table">
                 <div className="detail-trades-table-header">
                   <div className="detail-trades-header-cell">Account</div>
-                  <div className="detail-trades-header-cell">Type</div>
                   <div className="detail-trades-header-cell">MON</div>
                   <div className="detail-trades-header-cell">Tokens</div>
                   <div className="detail-trades-header-cell">Time</div>
@@ -3240,7 +3278,7 @@ const Tracker: React.FC<TrackerProps> = ({
                     tokenTrades.slice(0, 10).map((trade: any, idx: any) => (
                       <div
                         key={`${trade.id}-${idx}`}
-                        className={`detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
+                        className={`tracker-tracker-detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
                       >
                         <div className="detail-trades-col detail-trades-account">
                           <div className="detail-trades-avatar">
@@ -3910,16 +3948,6 @@ const Tracker: React.FC<TrackerProps> = ({
 
         {activeTab === 'trades' && (
           <div className="tracker-header-actions">
-            <div className="tracker-search">
-              <Search size={14} className="tracker-search-icon" />
-              <input
-                type="text"
-                placeholder="Search by name or ticker"
-                className="tracker-search-input"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
             <button className="tracker-header-button" onClick={() => setpopup(33)}>
               <img
                 className="tracker-settings-image"
@@ -3927,11 +3955,11 @@ const Tracker: React.FC<TrackerProps> = ({
               />
             </button>
             <button className="tracker-header-button" onClick={() => setShowFiltersPopup(true)}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 6h18M7 12h10M10 18h4" />
               </svg>
             </button>
-            <button className="tracker-header-button" onClick={() => setpopup(34)}>P1</button>
+            <button className="tracker-header-button" onClick={() => setpopup(37)}>P1</button>
             <div className="tracker-combined-flash-input">
               <button className="tracker-combined-flash-btn" onClick={() => setpopup(33)}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">

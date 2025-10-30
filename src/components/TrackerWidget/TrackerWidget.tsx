@@ -571,7 +571,7 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
           height: `${size.height}px`,
         }}
       >
-        <div className="tracker-header" onMouseDown={handleDragStart}>
+        <div className="widget-tracker-header" onMouseDown={handleDragStart}>
           <h3 className="tracker-title">
             Twitter Alerts
           </h3>
