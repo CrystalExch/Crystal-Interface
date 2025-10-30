@@ -639,16 +639,15 @@ const loadImages = useCallback(async () => {
     applyShadow(ctx);
     ctx.fillText('Position', 52, statsY + 70);
     clearShadow(ctx);
-
     if (!isUSD && images.monadicon) {
       applyShadow(ctx);
       ctx.drawImage(images.monadicon, 200, statsY + 70, 20, 20);
       clearShadow(ctx);
       applyShadow(ctx);
-      ctx.fillText(formatNumber(displayData.exitPrice), 225, statsY + 69);
+      ctx.fillText(formatNumber(displayData.entryPrice + displayData.monPnl), 225, statsY + 69);
       clearShadow(ctx);
     } else {
-      const positionText = isUSD ? `$${formatNumber(displayData.exitPrice)}` : formatNumber(displayData.exitPrice);
+      const positionText = isUSD ? `$${formatNumber(displayData.entryPrice + displayData.monPnl)}` : formatNumber(displayData.entryPrice + displayData.monPnl);
       applyShadow(ctx);
       ctx.fillText(positionText, 200, statsY + 70);
       clearShadow(ctx);

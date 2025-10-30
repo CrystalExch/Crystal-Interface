@@ -299,15 +299,6 @@ const Loader = () => {
               volume
               latestPrice
               metadataCID
-              trades(first: 100, orderBy: timestamp, orderDirection: desc) {
-                id
-                amountIn
-                amountOut
-                isBuy
-                timestamp
-                tx
-                endPrice
-              }
             }
           }
         `;
@@ -4599,7 +4590,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 ...p,
                 price: endPrice,
                 marketCap: endPrice * TOTAL_SUPPLY,
-                change24h: ((endPrice * 1e9 - p?.mini?.[0].open) / (endPrice * 1e9) * 100),
+                change24h: p?.mini?.[0]?.open ? ((endPrice * 1e9 - p?.mini?.[0]?.open) / (endPrice * 1e9) * 100) : p?.change24h,
                 buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
                 sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
                 volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
@@ -4887,7 +4878,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   ...p,
                   price,
                   marketCap: price * TOTAL_SUPPLY,
-                  change24h: ((price * 1e9 - p?.mini?.[0].open) / (price * 1e9) * 100),
+                  change24h: p?.mini?.[0]?.open ? ((price * 1e9 - p?.mini?.[0]?.open) / (price * 1e9) * 100) : p?.change24h,
                   buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
                   sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
                   volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
@@ -5470,14 +5461,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const memeSelectedIntervalRef = useRef<string>(memeSelectedInterval);
   const [page, _setPage] = useState(0);
   const [initialMemeFetchDone, setInitialMemeFetchDone] = useState(false);
-  const [currentPNLData, setCurrentPNLData] = useState({
-    balance: 0,
-    amountBought: 0,
-    amountSold: 0,
-    valueBought: 0,
-    valueSold: 0,
-    valueNet: 0,
-  });
   const [currentTokenData, setCurrentTokenData] = useState({
     address: '',
     symbol: '',
@@ -6163,7 +6146,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   // positions aggregated across all wallets
   useEffect(() => {
     const allAddresses = [...new Set(
-      [address, ...subWallets.map(w => w.address)]
+      [scaAddress, ...subWallets.map(w => w.address)]
         .filter(Boolean)
         .map(a => a.toLowerCase())
     )];
@@ -9891,7 +9874,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               latestPrice
               series(where:{intervalSeconds:3600}) {
                 intervalSeconds
-                klines(orderBy:time, orderDirection: desc) {
+                klines(first: 24, orderBy:time, orderDirection: desc) {
                   time
                   open
                   high
@@ -9900,7 +9883,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   usdVolume
                 }
               }
-              trades(first: 100, orderBy: timestamp, orderDirection: desc) {
+              trades(first: 50, orderBy: timestamp, orderDirection: desc) {
                 id
                 amountIn
                 amountOut
@@ -18089,7 +18072,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               tokenSymbol={currentTokenData.symbol}
               tokenName={currentTokenData.name}
               monUsdPrice={monUsdPrice}
-              externalUserStats={currentPNLData}
+              externalUserStats={memeUserStats}
               currentPrice={currentTokenData.price}
             />
           </div>
@@ -25508,7 +25491,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             setperpsActiveMarketKey={setperpsActiveMarketKey}
             perpsMarketsData={perpsMarketsData}
             perpsFilterOptions={perpsFilterOptions}
-            externalUserStats={currentPNLData}
+            externalUserStats={memeUserStats}
             lastNonceGroupFetch={lastNonceGroupFetch}
           />
         </div>
@@ -25609,7 +25592,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 sellPresets={sellPresets}
                 monPresets={monPresets}
                 setMonPresets={setMonPresets}
-                onPNLDataChange={setCurrentPNLData}
                 onTokenDataChange={setCurrentTokenData}
                 nonces={nonces}
                 tokenAddress={token.id}

@@ -748,6 +748,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 
     widgetRef.current.onChartReady(async () => {
       setChartReady(true);
+
       await widgetRef.current.activeChart().createStudy('Volume', false, false)
       const panes = widgetRef.current.activeChart().getPanes?.();
       if (panes) {
@@ -755,6 +756,9 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           pane.setHeight?.(100);
         }
       }
+
+      await widgetRef.current.activeChart().dataReady();
+      setOverlayVisible(false);
 
       widgetRef.current.headerReady().then(() => {
         if (!widgetRef.current.activeChart() || perps) {
@@ -805,22 +809,30 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           }
         });
       });
+
       const marketId = `${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}_${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`;
       const chartId = `layout_${marketId}`;
-      localAdapterRef.current
-        ?.getChartContent(chartId)
-        .then((content) => async () => {
-          if (content) {
-            let layout =
-              typeof content === 'string' ? JSON.parse(content) : content;
-            if (layout) {
-              await widgetRef.current.load(layout);
-            }
+
+      localAdapterRef.current?.getChartContent(chartId).then(async (content) => {
+        if (content) {
+          let layout =
+            typeof content === 'string' ? JSON.parse(content) : content;
+
+          if (layout) {
+            layout?.charts?.forEach((chart: any) => {
+              chart?.panes?.forEach((pane: any) => {
+                pane?.sources?.forEach((src: any) => {
+                  if (src?.state?.interval) delete src.state.interval;
+                });
+              });
+            });
+            await widgetRef.current.load(layout);
           }
-        })
-        .catch((err: string) => {
-          console.error(err);
-        });
+        }
+      })
+      .catch((err: string) => {
+        console.error(err);
+      });
 
       widgetRef.current.subscribe('onAutoSaveNeeded', () => {
         widgetRef.current.save((layout: any) => {
@@ -843,6 +855,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
             name: `chart for ${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}/${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`,
             content: JSON.stringify(layout),
             id: undefined,
+            interval: undefined,
             resolution: selectedInterval,
             timestamp: Math.round(Date.now() / 1000),
           };
@@ -873,10 +886,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       widgetRef.current.activeChart().onDataLoaded().subscribe(null, () => {
         setOverlayVisible(false)
       });
-
-      setTimeout(() => {
-        setOverlayVisible(false);
-      }, 100);
     });
 
     return () => {
