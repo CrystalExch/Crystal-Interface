@@ -717,8 +717,13 @@ const Header: React.FC<HeaderProps> = ({
               <div className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
                 <div className="wallet-dropdown-header">
                   <span className="wallet-dropdown-title">Total Value</span>
-                  <span className="wallet-dropdown-value">$0.00</span>
-                </div>
+<span className="wallet-dropdown-value">
+  ${formatNumberWithCommas(
+    subWallets.reduce((total, wallet) => 
+      total + (getWalletBalance(wallet.address) * monUsdPrice), 
+    0
+  ), 2)}
+</span>                </div>
                 {/* <div className="wallet-dropdown-list">
                   {subWallets.length > 0 ? (
                     subWallets.map((wallet, index) => {
