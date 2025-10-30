@@ -153,3 +153,8 @@
   font-weight: 300;
   cursor: pointer;
 }
+
+.footer-wallet-dropdown-arrow{
+    transition: transform 0.2s ease;
+    opacity: 0.35;
+}

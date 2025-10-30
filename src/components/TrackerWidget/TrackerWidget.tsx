@@ -40,6 +40,170 @@ const SIDEBAR_WIDTH = 50;
 const SNAP_THRESHOLD = 10;
 const SNAP_HOVER_TIME = 300;
 
+// Verification badge component matching TwitterHover
+const VerifiedBadge: React.FC<{ type?: string | null }> = ({ type }) => {
+  if (type === 'business' || type === 'Business') {
+    return (
+      <svg
+        viewBox="0 0 22 22"
+        aria-label="Verified account"
+        role="img"
+        className="twitter-hover-verified"
+        style={{ fill: '#d4af37' }}
+      >
+        <g>
+          <path d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.633.132 1.29.084 1.897-.136.274.586.705 1.084 1.246 1.439.54.354 1.17.551 1.816.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.239 1.266.296 1.903.164.636-.132 1.22-.447 1.68-.907.46-.46.776-1.044.908-1.681s.075-1.299-.165-1.903c.586-.274 1.084-.705 1.439-1.246.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z" />
+        </g>
+      </svg>
+    );
+  }
+
+  if (type === 'government' || type === 'Government') {
+    return (
+      <svg
+        viewBox="0 0 22 22"
+        aria-label="Verified account"
+        role="img"
+        className="twitter-hover-verified"
+        style={{ fill: '#829aab' }}
+      >
+        <g>
+          <path d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.633.132 1.29.084 1.897-.136.274.586.705 1.084 1.246 1.439.54.354 1.17.551 1.816.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.239 1.266.296 1.903.164.636-.132 1.22-.447 1.68-.907.46-.46.776-1.044.908-1.681s.075-1.299-.165-1.903c.586-.274 1.084-.705 1.439-1.246.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z" />
+        </g>
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      viewBox="0 0 22 22"
+      aria-label="Verified account"
+      role="img"
+      className="twitter-hover-verified"
+    >
+      <g>
+        <path d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.633.132 1.29.084 1.897-.136.274.586.705 1.084 1.246 1.439.54.354 1.17.551 1.816.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.239 1.266.296 1.903.164.636-.132 1.22-.447 1.68-.907.46-.46.776-1.044.908-1.681s.075-1.299-.165-1.903c.586-.274 1.084-.705 1.439-1.246.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z" />
+      </g>
+    </svg>
+  );
+};
+
+// Parse text with mentions, links, and ETH addresses
+const parseTextWithMentions = (text: string, hasMedia = false) => {
+  if (!text) return [];
+
+  let processedText = text;
+  if (hasMedia) {
+    processedText = processedText.replace(/https?:\/\/t\.co\/[A-Za-z0-9]+/gi, '').trim();
+  }
+
+  const lines = processedText.split('\n');
+  const mentionRegex = /@([A-Za-z0-9_]{1,15})\b/g;
+  const urlRegex = /(https?:\/\/[^\s]+)/gi;
+  const ethRegex = /(0x[a-fA-F0-9]{40})/g;
+
+  const processedLines = lines.map((line, lineIndex) => {
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    const combinedRegex = new RegExp(
+      `${mentionRegex.source}|${urlRegex.source}|${ethRegex.source}`,
+      'gi'
+    );
+
+    let match: RegExpExecArray | null;
+    while ((match = combinedRegex.exec(line)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(line.slice(lastIndex, match.index));
+      }
+
+      const token = match[0];
+
+      if (token.startsWith('@')) {
+        const username = token.slice(1);
+        parts.push(
+          <a
+            key={`mention-${lineIndex}-${match.index}`}
+            href={`https://x.com/${username}`}
+            target="_blank"
+            rel="noreferrer"
+            className="twitter-mention"
+            onClick={(e) => e.stopPropagation()}
+          >
+            @{username}
+          </a>
+        );
+      } else if (/^https?:\/\//i.test(token)) {
+        parts.push(
+          <a
+            key={`url-${lineIndex}-${match.index}`}
+            href={token}
+            target="_blank"
+            rel="noreferrer"
+            className="twitter-link-inline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {token}
+          </a>
+        );
+      } else if (/^0x[a-fA-F0-9]{40}$/.test(token)) {
+        const truncated = `${token.slice(0, 6)}...${token.slice(-4)}`;
+        parts.push(
+          <a
+            key={`eth-${lineIndex}-${match.index}`}
+            href={`https://etherscan.io/address/${token}`}
+            target="_blank"
+            rel="noreferrer"
+            className="twitter-eth-address"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {truncated}
+          </a>
+        );
+      }
+
+      lastIndex = match.index + token.length;
+    }
+
+    if (lastIndex < line.length) parts.push(line.slice(lastIndex));
+    return parts.length > 0 ? parts : line;
+  });
+
+  return processedLines.reduce<React.ReactNode[]>((acc, line, index) => {
+    acc.push(line);
+    if (index < processedLines.length - 1) acc.push(<br key={`br-${index}`} />);
+    return acc;
+  }, []);
+};
+
+const formatTimeAgo = (timestamp: string): string => {
+  const now = new Date();
+  const date = new Date(timestamp);
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo`;
+  return `${Math.floor(months / 12)}y`;
+};
+
+const getTimeAgoColor = (timestamp: string): string => {
+  const now = new Date();
+  const date = new Date(timestamp);
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (seconds < 60) return '#3cdd47';
+  if (seconds < 300) return '#4cd964';
+  if (seconds < 3600) return '#ffcc00';
+  return '#ff9500';
+};
+
 const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapChange }) => {
   const widgetRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 100, y: 100 });
@@ -57,12 +221,19 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
   const presnapState = useRef<{ position: { x: number; y: number }; size: { width: number; height: number } } | null>(null);
 
   // Tweet tracking state
-  const [tweets, setTweets] = useState<TweetData[]>([]);
+  const [tweets, setTweets] = useState<TweetData[]>(() => {
+    console.log('🔄 Initializing tweets state');
+    return [];
+  });
   const [trackedUsers, setTrackedUsers] = useState<string[]>([]);
   const [newUsername, setNewUsername] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const tweetsEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    console.log('📊 Tweets state changed:', tweets.length, tweets);
+  }, [tweets]);
 
   const scrollToBottom = () => {
     tweetsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -76,17 +247,29 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
   useEffect(() => {
     if (!isOpen) return;
 
+    console.log('🔌 Connecting WebSocket...');
     const ws = new WebSocket('ws://localhost:8000/ws');
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log('WebSocket connected');
+      console.log('✅ WebSocket connected');
       setIsConnected(true);
     };
 
     ws.onmessage = (event) => {
-      const tweetData: TweetData = JSON.parse(event.data);
-      setTweets((prev) => [...prev, tweetData]);
+      console.log('📨 Raw message received:', event.data);
+      try {
+        const tweetData: TweetData = JSON.parse(event.data);
+        console.log('✅ Parsed tweet data:', tweetData);
+        setTweets((prev) => {
+          console.log('📝 Current tweets:', prev.length, 'Adding new tweet');
+          const newTweets = [...prev, tweetData];
+          console.log('📝 New tweet count:', newTweets.length);
+          return newTweets;
+        });
+      } catch (error) {
+        console.error('❌ Error:', error);
+      }
     };
 
     ws.onerror = (error) => {
@@ -142,13 +325,13 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
   const getTweetTypeLabel = (type: string) => {
     switch (type) {
       case 'tweet':
-        return '💬 Tweet';
+        return 'Tweet';
       case 'retweet':
-        return '🔁 Retweet';
+        return 'Retweet';
       case 'reply':
-        return '↩️ Reply';
+        return 'Reply';
       case 'quote':
-        return '💭 Quote';
+        return 'Quote';
       default:
         return type;
     }
@@ -167,20 +350,6 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
       default:
         return '#71767b';
     }
-  };
-
-  const formatTimeAgo = (timestamp: string) => {
-    const now = new Date();
-    const time = new Date(timestamp);
-    const seconds = Math.floor((now.getTime() - time.getTime()) / 1000);
-
-    if (seconds < 60) return `${seconds}s ago`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
   };
 
   const handleDragStart = useCallback((e: React.MouseEvent) => {
@@ -409,7 +578,7 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
         </div>
 
         <div className="tracker-content">
-          <div className="tracker-controls">
+          {/* <div className="tracker-controls">
             <div className="add-user-section">
               <input
                 type="text"
@@ -426,7 +595,7 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
 
             {trackedUsers.length > 0 && (
               <div className="tracked-users">
-                <div className="tracked-users-title">Tracking: (This will be removed ina bit jus for testing)</div>
+                <div className="tracked-users-title">Tracking:</div>
                 {trackedUsers.map((user) => (
                   <div key={user} className="tracked-user-chip">
                     @{user}
@@ -437,61 +606,107 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
                 ))}
               </div>
             )}
-          </div>
+          </div> */}
 
           <div className="tweets-container">
             {tweets.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-icon">📭</div>
                 <p>No tweets yet</p>
                 <p className="empty-subtext">Add users above to start tracking</p>
               </div>
             ) : (
-              tweets.map((tweet, idx) => (
-                <div key={`${tweet.tweet.id}-${idx}`} className="tweet-card">
-                  <div className="tweet-header">
-                    <div className="tweet-author">
-                      {tweet.author && (
-                        <>
-                          <img src={tweet.author.avatar} alt="" className="tweet-avatar" />
-                          <div className="tweet-author-info">
-                            <div className="tweet-author-name">
-                              {tweet.author.name}
-                              {tweet.author.verified && <span className="verified-badge">✓</span>}
+              tweets.map((tweet, idx) => {
+                const hasMedia = (tweet.tweet.media?.length || 0) > 0;
+                const photos = tweet.tweet.media?.filter(m => m.type === 'photo') || [];
+                const videos = tweet.tweet.media?.filter(m => m.type === 'video' || m.type === 'animated_gif') || [];
+                const isBusiness = tweet.author?.verified_type === 'business';
+
+                return (
+                  <div key={`${tweet.tweet.id}-${idx}`} className="tweet-card">
+                    <div className="twitter-hover-top-row">
+                      <div className="twitter-alerts-header">
+                        {tweet.author && (
+                          <>
+                            <img
+                              src={tweet.author.avatar}
+                              alt=""
+                              className="twitter-alerts-avatar"
+                              style={{ borderRadius: isBusiness ? '6px' : '50%' }}
+                            />
+                            <div className="twitter-alerts-header-text">
+                              <div className="verify-name">
+                                <span className="twitter-alerts-name">{tweet.author.name}</span>
+                              </div>
+                              <a
+                                href={`https://x.com/${tweet.author.username}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="twitter-alerts-username-link"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                @{tweet.author.username}
+                              </a>
+                              <div
+                                className="twitter-alerts-time-ago"
+                              >
+                                <span>• {formatTimeAgo(tweet.tweet.created_at)}</span>
+                              </div>
                             </div>
-                            <div className="tweet-author-username">@{tweet.author.username}</div>
-                          </div>
-                        </>
+                          </>
+                        )}
+                      </div>
+                      <div className="twitter-top-right-section">
+
+                      </div>
+                    </div>
+
+                    <div className="twitter-alerts-text-container-new">
+                      <p className="twitter-alerts-text">
+                        {parseTextWithMentions(tweet.tweet.text, hasMedia)}
+                      </p>
+
+                      {photos.length > 0 && (
+                        <div className={`twitter-hover-photos twitter-hover-photos-${Math.min(photos.length, 4)}`}>
+                          {photos.map((m, i) => (
+                            <img
+                              key={i}
+                              src={m.url}
+                              alt=""
+                              className="twitter-hover-photo"
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {videos.length > 0 && (
+                        <div className="twitter-hover-videos">
+                          {videos.map((m, i) => (
+                            <div key={i} className="twitter-hover-video-container">
+                              {m.type === 'animated_gif' ? (
+                                <video
+                                  src={m.url}
+                                  autoPlay
+                                  loop
+                                  muted
+                                  playsInline
+                                  className="twitter-hover-video"
+                                />
+                              ) : (
+                                <video
+                                  src={m.url}
+                                  controls
+                                  className="twitter-hover-video"
+                                  preload="metadata"
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
-                    <div className="tweet-meta">
-                      <span
-                        className="tweet-type-badge"
-                        style={{ backgroundColor: getTweetTypeColor(tweet.type) }}
-                      >
-                        {getTweetTypeLabel(tweet.type)}
-                      </span>
-                      <span className="tweet-time">{formatTimeAgo(tweet.timestamp)}</span>
-                    </div>
                   </div>
-
-                  <div className="tweet-text">{tweet.tweet.text}</div>
-
-                  {tweet.tweet.media && tweet.tweet.media.length > 0 && (
-                    <div className="tweet-media">
-                      {tweet.tweet.media.map((media, i) => (
-                        <div key={i} className="media-item">
-                          {media.type === 'photo' ? (
-                            <img src={media.url} alt="" className="tweet-image" />
-                          ) : (
-                            <video src={media.url} controls className="tweet-video" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))
+                );
+              })
             )}
             <div ref={tweetsEndRef} />
           </div>

@@ -151,10 +151,11 @@
 .remove-user-btn:hover {
   color: #ff6b6b;
 }
-
 .tweets-container {
   flex: 1;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column-reverse; 
 }
 
 .tweets-container::-webkit-scrollbar {
@@ -203,6 +204,7 @@
   transition: all 0.2s;
   animation: slideIn 0.3s ease;
   padding: 10px;
+  cursor: pointer;
 }
 
 @keyframes slideIn {
@@ -479,3 +481,62 @@
   bottom: 0;
   cursor: ew-resize;
 } 
+
+
+.twitter-alerts-name{
+  font-size: .9rem;
+  color: #f2f4ff;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: -0.5px;
+  font-weight: 400;
+}
+
+
+.twitter-alerts-header-text{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: -0.3px;
+}
+
+
+.twitter-alerts-username-link{
+  font-size: .9rem;
+  color: #e0e8fd73;
+  font-weight: 300;
+  letter-spacing: -0.3px;
+}
+
+.twitter-alerts-username-link:hover{
+  text-decoration: underline;
+}
+
+.twitter-alerts-time-ago{
+  font-size: 0.9rem;
+  color: #e0e8fd73;
+  font-weight: 300;
+  letter-spacing: -0.3px;
+}
+
+
+.twitter-alerts-avatar{
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.twitter-alerts-header{
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+
+.twitter-alerts-text{
+  letter-spacing: -0.3px;
+  padding-left: 44px;
+  margin-top: -13px;
+}

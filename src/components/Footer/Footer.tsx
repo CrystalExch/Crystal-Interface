@@ -305,6 +305,7 @@ const Footer: React.FC<FooterProps> = ({
       <div className="footer-content-left">
         <div className="footer-left">
           <div className="footer-left-side">
+          <div className="footer-preset-button">PRESET 1</div>
             <Tooltip content="Manage Wallets">
               <div ref={dropdownRef} style={{ position: 'relative' }}>
                 <button
@@ -315,7 +316,7 @@ const Footer: React.FC<FooterProps> = ({
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
+                      gap: '2px',
                       width: '100%',
                     }}
                   >
@@ -324,7 +325,7 @@ const Footer: React.FC<FooterProps> = ({
                       style={{
                         width: '14px',
                         height: '14px',
-                        filter: 'invert(1)',
+                        opacity: 0.5
                       }}
                       alt="Wallet"
                     />
@@ -346,8 +347,8 @@ const Footer: React.FC<FooterProps> = ({
                             src={monadicon}
                             className="wallet-dropdown-mon-icon"
                             style={{
-                              width: '15px',
-                              height: '15px',
+                              width: '14px',
+                              height: '14px',
                               marginRight: '4px',
                             }}
                             alt="MON"
@@ -362,8 +363,8 @@ const Footer: React.FC<FooterProps> = ({
                             src={monadicon}
                             className="wallet-dropdown-mon-icon"
                             style={{
-                              width: '15px',
-                              height: '15px',
+                              width: '14px',
+                              height: '14px',
                               marginRight: '4px',
                             }}
                             alt="MON"
@@ -373,7 +374,7 @@ const Footer: React.FC<FooterProps> = ({
                       )}
                     </span>
                     <svg
-                      className={`wallet-dropdown-arrow ${isWalletDropdownOpen ? 'open' : ''}`}
+                      className={`footer-wallet-dropdown-arrow ${isWalletDropdownOpen ? 'open' : ''}`}
                       width="16"
                       height="16"
                       viewBox="0 0 24 24"
