@@ -604,6 +604,7 @@
   box-sizing: border-box;
   cursor: pointer;
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
   padding: .75rem;
   padding-bottom: 0.5rem;
