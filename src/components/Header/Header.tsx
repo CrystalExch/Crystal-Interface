@@ -18,7 +18,9 @@ import walleticon from '../../assets/wallet_icon.svg';
 import historyIcon from '../../assets/notification.svg';
 import monadicon from '../../assets/monadlogo.svg';
 import closebutton from '../../assets/close_button.png';
-
+import iconusdc from '../../assets/iconusdc.png';
+import edgeX from '../../assets/edgeX.svg';
+import swapicon from '../../assets/swap_icon.png';
 import './Header.css';
 import { createPortal } from 'react-dom';
 
@@ -722,7 +724,7 @@ const Header: React.FC<HeaderProps> = ({
                     <img src={closebutton} className="wallet-dropdown-close-icon" />
                   </button>
                 </div>
-                <div className="wallet-dropdown-list">
+                {/* <div className="wallet-dropdown-list">
                   {subWallets.length > 0 ? (
                     subWallets.map((wallet, index) => {
                       const balance = getWalletBalance(wallet.address);
@@ -792,6 +794,17 @@ const Header: React.FC<HeaderProps> = ({
                       </button>
                     </div>
                   )}
+                </div> */}
+                <div className="perps-bridge-button">
+                  <div className="perps-bridge-balance-mon">
+                    <img src={monadicon} className="perps-bridge-mon-icon" />
+                    0
+                  </div>
+                  <img src={swapicon} className="perps-bridge-swap-icon" />
+                  <div className="perps-bridge-balance-edge">
+                    <div><img src={iconusdc} className="perps-bridge-usdc-icon"/><img src={edgeX} className="perps-bridge-edge-icon" /> </div>
+                    0
+                  </div>
                 </div>
                 <div className="wallet-dropdown-actions">
                   <button
