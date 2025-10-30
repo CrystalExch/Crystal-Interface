@@ -165,6 +165,15 @@
     opacity: 0.35;
 }
 
+.footer-wallet-dropdown-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 4px 12px;
+  padding-top: 10px;
+  padding-right: 8px;
+}
+
 .footer-wallet-dropdown-panel {
   bottom: 0;
   left: 0;
@@ -196,3 +205,9 @@
 }
 
 
+
+
+.footer-wallet-dropdown-actions{
+  display: flex;
+  align-items: center;
+}

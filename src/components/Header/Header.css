@@ -421,12 +421,13 @@
 
 .wallet-dropdown-header {
   display: flex;
-  flex-direction: column;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 4px 12px;
-  padding-top: 10px;
+  padding: 10px 12px;
+  padding-top: 15px;
   padding-right: 8px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  margin-bottom: 12px;
 }
 
 .wallet-dropdown-title {
@@ -956,4 +957,17 @@
 .header-action-item:hover .header-action-icon{
     background-color: #4b518e42;
 
+}
+
+.wallet-dropdown-header-left-side{
+  display: flex;
+  flex-direction: column;
+}
+
+.header-copy-address{
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+  gap: 3px;
+  opacity: 0.6;
 }

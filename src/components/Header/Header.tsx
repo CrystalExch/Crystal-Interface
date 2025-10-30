@@ -12,6 +12,7 @@ import { encodeFunctionData } from 'viem';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { settings } from '../../settings';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
+import CopyButton from '../CopyButton/CopyButton';
 
 import settingsicon from '../../assets/settings.svg';
 import walleticon from '../../assets/wallet_icon.svg';
@@ -716,14 +717,18 @@ const Header: React.FC<HeaderProps> = ({
             {account.connected && (
               <div className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
                 <div className="wallet-dropdown-header">
-                  <span className="wallet-dropdown-title">Total Value</span>
-                  <span className="wallet-dropdown-value">
-                    ${formatNumberWithCommas(
-                      subWallets.reduce((total, wallet) =>
-                        total + (getWalletBalance(wallet.address) * monUsdPrice),
-                        0
-                      ), 2)}
-                  </span>                </div>
+                  <div className="wallet-dropdown-header-left-side">
+                    <span className="wallet-dropdown-title">Total Value</span>
+                    <span className="wallet-dropdown-value">
+                      ${formatNumberWithCommas(
+                        subWallets.reduce((total, wallet) =>
+                          total + (getWalletBalance(wallet.address) * monUsdPrice),
+                          0
+                        ), 2)}
+                    </span>
+                  </div>
+                <div className="header-copy-address">   <CopyButton textToCopy={displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'} /> {displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'} </div>
+                </div>
                 {/* <div className="wallet-dropdown-list">
                   {subWallets.length > 0 ? (
                     subWallets.map((wallet, index) => {
@@ -797,28 +802,43 @@ const Header: React.FC<HeaderProps> = ({
                 </div> */}
                 <div className="header-actions-container">
                   <div className="header-action-row">
-                    <button className="header-action-item">
+                    <button className="header-action-item"                      
+                       onClick={() => {
+                          setpopup(30);
+                        }}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="header-action-icon"><path d="M12 17V3" /><path d="m6 11 6 6 6-6" /><path d="M19 21H5" /></svg>
                       Deposit
                     </button>
-                    <button className="header-action-item">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="header-action-icon"><path d="m18 9-6-6-6 6"/><path d="M12 3v14"/><path d="M5 21h14"/></svg>                      Withdraw
+                    <button className="header-action-item"
+                       onClick={() => {
+                          setpopup(31);
+                        }}>
+                        
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="header-action-icon"><path d="m18 9-6-6-6 6" /><path d="M12 3v14" /><path d="M5 21h14" /></svg>               
+                             Withdraw
                     </button>
                     <button className="header-action-item">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="header-action-icon"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>                      Swap
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="header-action-icon"><path d="M8 3 4 7l4 4" /><path d="M4 7h16" /><path d="m16 21 4-4-4-4" /><path d="M20 17H4" /></svg>                 
+                           Swap
                     </button>
                   </div>
                   <div className="header-action-row">
                     <button className="header-action-item">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="header-action-icon"><path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/></svg>                      Consilidate
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="header-action-icon"><path d="m8 6 4-4 4 4" /><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22" /><path d="m20 22-5-5" /></svg>             
+                       Consilidate
                     </button>
                     <button className="header-action-item">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="header-action-icon"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/></svg>                      Distribute
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="header-action-icon"><path d="M16 3h5v5" /><path d="M8 3H3v5" /><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3" /><path d="m15 9 6-6" /></svg>           
+                      Distribute
                     </button>
-                    <button className="header-action-item">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="header-action-icon"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>                      Transfer
+                    <button className="header-action-item"
+                     onClick={() => {
+                          setpopup(3);
+                        }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="header-action-icon"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" /><path d="m21.854 2.147-10.94 10.939" /></svg>                      Transfer
                     </button>
-                  </div>                </div>
+                  </div>            
+                  </div>
                 <div className="perps-bridge-button">
                   <div className="perps-bridge-balance-mon">
                     <img src={monadicon} className="perps-bridge-mon-icon" />
