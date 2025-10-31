@@ -4464,37 +4464,41 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               <div
                 className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}
               >
-                <div className="footer-wallet-dropdown-header">
-                  <div className="footer-wallet-dropdown-actions">
-                    <button
-                      className="wallet-action-btn"
-                      onClick={
-                        selectedWallets.size === subWallets.length
-                          ? unselectAllWallets
-                          : selectAllWallets
-                      }
-                    >
-                      {selectedWallets.size === subWallets.length
-                        ? 'Unselect All'
-                        : 'Select All'}
-                    </button>
-                    <button
-                      className="wallet-action-btn"
-                      onClick={selectAllWithBalance}
-                    >
-                      Select All with Balance
-                    </button>
-                  </div>
-                  <button
-                    className="wallet-dropdown-close"
-                    onClick={() => setIsWalletDropdownOpen(false)}
-                  >
-                    <img
-                      src={closebutton}
-                      className="wallet-dropdown-close-icon"
-                    />
-                  </button>
-                </div>
+                {subWallets.length > 0 &&
+                  (<>
+                    <div className="footer-wallet-dropdown-header">
+                      <div className="footer-wallet-dropdown-actions">
+                          <button
+                            className="wallet-action-btn"
+                            onClick={
+                              selectedWallets.size === subWallets.length
+                                ? unselectAllWallets
+                                : selectAllWallets
+                            }
+                          >
+                            {selectedWallets.size === subWallets.length
+                              ? 'Unselect All'
+                              : 'Select All'}
+                          </button>
+                          <button
+                            className="wallet-action-btn"
+                            onClick={selectAllWithBalance}
+                          >
+                            Select All with Balance
+                          </button>
+                      </div>
+                      <button
+                        className="wallet-dropdown-close"
+                        onClick={() => setIsWalletDropdownOpen(false)}
+                      >
+                        <img
+                          src={closebutton}
+                          className="wallet-dropdown-close-icon"
+                        />
+                      </button>
+                    </div>
+                  </>)
+                }
                 <div className="wallet-dropdown-list">
                   {subWallets.length > 0 ? (
                   <> {

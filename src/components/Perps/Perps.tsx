@@ -745,53 +745,6 @@ const Perps: React.FC<PerpsProps> = ({
   }, [activeMarket?.contractId, userLeverage])
 
   useEffect(() => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN || !activeMarket?.contractId) return
-    setPerpsIsLoaded(true)
-    setInputString('')
-    setSliderPercent(0);
-    const slider = document.querySelector(
-      '.perps-balance-amount-slider',
-    );
-    const popup = document.querySelector(
-      '.perps-slider-percentage-popup',
-    );
-    if (slider && popup) {
-      const rect = slider.getBoundingClientRect();
-      (popup as HTMLElement).style.left = `${(rect.width - 15) * (0 / 100) + 15 / 2
-        }px`;
-    }
-    const subs = [
-      `depth.${activeMarket.contractId}.200`,
-      `trades.${activeMarket.contractId}`,
-      `kline.LAST_PRICE.${activeMarket.contractId}.${selectedInterval === '1d'
-        ? 'DAY_1'
-        : selectedInterval === '4h'
-          ? 'HOUR_4'
-          : selectedInterval === '1h'
-            ? 'HOUR_1'
-            : 'MINUTE_' + selectedInterval.slice(0, -1)}`
-    ]
-
-    const newSubs = new Set(subs)
-    const oldSubs = new Set(subRefs.current)
-
-    oldSubs.forEach((channel: any) => {
-      if (!newSubs.has(channel)) {
-        wsRef.current?.send(JSON.stringify({ type: 'unsubscribe', channel }))
-      }
-    })
-
-    newSubs.forEach((channel: any) => {
-      if (!oldSubs.has(channel)) {
-        wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }))
-      }
-    })
-
-    subRefs.current = subs
-
-  }, [activeMarket?.contractId, selectedInterval, wsRef.current])
-
-  useEffect(() => {
     if (!orderdata || !Array.isArray(orderdata) || orderdata.length < 3 || orderdata[2] != perpsActiveMarketKey) return
 
     try {
@@ -878,6 +831,53 @@ const Perps: React.FC<PerpsProps> = ({
   }, [orderdata, amountsQuote])
 
   useEffect(() => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN || !activeMarket?.contractId) return
+    setPerpsIsLoaded(true)
+    setInputString('')
+    setSliderPercent(0);
+    const slider = document.querySelector(
+      '.perps-balance-amount-slider',
+    );
+    const popup = document.querySelector(
+      '.perps-slider-percentage-popup',
+    );
+    if (slider && popup) {
+      const rect = slider.getBoundingClientRect();
+      (popup as HTMLElement).style.left = `${(rect.width - 15) * (0 / 100) + 15 / 2
+        }px`;
+    }
+    const subs = [
+      `depth.${activeMarket.contractId}.200`,
+      `trades.${activeMarket.contractId}`,
+      `kline.LAST_PRICE.${activeMarket.contractId}.${selectedInterval === '1d'
+        ? 'DAY_1'
+        : selectedInterval === '4h'
+          ? 'HOUR_4'
+          : selectedInterval === '1h'
+            ? 'HOUR_1'
+            : 'MINUTE_' + selectedInterval.slice(0, -1)}`
+    ]
+
+    const newSubs = new Set(subs)
+    const oldSubs = new Set(subRefs.current)
+
+    oldSubs.forEach((channel: any) => {
+      if (!newSubs.has(channel)) {
+        wsRef.current?.send(JSON.stringify({ type: 'unsubscribe', channel }))
+      }
+    })
+
+    newSubs.forEach((channel: any) => {
+      if (!oldSubs.has(channel)) {
+        wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }))
+      }
+    })
+
+    subRefs.current = subs
+
+  }, [activeMarket?.contractId, selectedInterval, wsRef.current])
+
+  useEffect(() => {
     let liveStreamCancelled = false;
     let isAddressInfoFetching = false;
 
@@ -898,12 +898,14 @@ const Perps: React.FC<PerpsProps> = ({
           }
           if (metaRes?.data) {
             const coinMap = Object.fromEntries(metaRes.data.coinList.map((c: any) => [c.coinName, c.iconUrl]))
-            setPerpsMarketsData(Object.fromEntries(metaRes.data.contractList.filter((c: any) => categoriesMap.All.includes(c.contractName)).map((c: any) => {
-              const name = c.contractName.toUpperCase()
-              const quote = name.endsWith('USD') ? 'USD' : ''
-              const base = quote ? name.replace(quote, '') : name
-              return [c.contractName, { ...c, baseAsset: base, quoteAsset: quote, iconURL: coinMap[base] }]
-            })))
+            if (Object.keys(perpsMarketsData).length == 0) {
+              setPerpsMarketsData(Object.fromEntries(metaRes.data.contractList.filter((c: any) => categoriesMap.All.includes(c.contractName)).map((c: any) => {
+                const name = c.contractName.toUpperCase()
+                const quote = name.endsWith('USD') ? 'USD' : ''
+                const base = quote ? name.replace(quote, '') : name
+                return [c.contractName, { ...c, baseAsset: base, quoteAsset: quote, iconURL: coinMap[base] }]
+              })))
+            }
           }
           setPerpsFilterOptions(categoriesMap)
         }
@@ -1169,16 +1171,14 @@ const Perps: React.FC<PerpsProps> = ({
         clearInterval(pingIntervalRef.current);
         pingIntervalRef.current = null;
       }
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
       if (reconnectIntervalRef.current) {
         clearTimeout(reconnectIntervalRef.current);
         reconnectIntervalRef.current = null;
       }
-      setPerpsMarketsData({})
-      setPerpsFilterOptions({})
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
     };
   }, []);
 

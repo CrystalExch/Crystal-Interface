@@ -24,7 +24,7 @@ export const settings: any = {
       rpcUrls: {
         default: {
           http: [
-            'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
+            'https://testnet-rpc.monad.xyz',
           ],
         },
         alchemy: {

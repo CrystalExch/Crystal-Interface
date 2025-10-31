@@ -1967,7 +1967,6 @@ useEffect(() => {
   const nonces = useRef<any>(new Map())
   const blockNumber = useRef(0n);
   const wsRef = useRef<WebSocket | null>(null);
-  const explorerWsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<any>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const prevAmountsQuote = useRef(amountsQuote)
@@ -2080,8 +2079,9 @@ useEffect(() => {
   const TRADE_EVENT = '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982';
   const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
-  const teRef = useRef<WebSocket | null>(null);
-  const subIdRef = useRef(1);
+  const explorerWsRef = useRef<WebSocket | null>(null);
+  const explorerPingIntervalRef = useRef<any>(null);
+  const explorerReconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pausedColumnRef = useRef<any>(null);
   const pausedTokenQueueRef = useRef<{
     new: Token[];
@@ -2093,14 +2093,6 @@ useEffect(() => {
     graduated: []
   });
   const alertSettingsRef = useRef<any>(alertSettings);
-  const connectionStateRef = useRef<
-    'disconnected' | 'connecting' | 'connected' | 'reconnecting'
-  >('disconnected');
-  const retryCountRef = useRef(0);
-  const reconnectTimerRef = useRef<number | null>(null);
-  const connectionAttemptsRef = useRef(0);
-  const lastConnectionAttemptRef = useRef(0);
-  const consecutiveFailuresRef = useRef(0);
   const memeRealtimeCallbackRef = useRef<any>({});
   const trackedWalletsRef = useRef<any>([]);
   const trackedWalletTradesRef = useRef<any>([]);
@@ -4323,30 +4315,6 @@ useEffect(() => {
     }
   }
 
-  const subscribe = useCallback(
-    (ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
-      const reqId = subIdRef.current++;
-      ws.send(
-        JSON.stringify({
-          id: reqId,
-          jsonrpc: '2.0',
-          method: 'eth_subscribe',
-          params,
-        }),
-      );
-      if (!onAck) return;
-      const handler = (evt: MessageEvent) => {
-        const msg = JSON.parse(evt.data);
-        if (msg.id === reqId && msg.result) {
-          onAck(msg.result);
-          ws.removeEventListener('message', handler);
-        }
-      };
-      ws.addEventListener('message', handler);
-    },
-    [],
-  );
-
   const addMarket = useCallback(
     async (log: any) => {
       const { args } = decodeEventLog({
@@ -4455,49 +4423,6 @@ useEffect(() => {
     [],
   );
 
-  const scheduleReconnect = useCallback(() => {
-    if (
-      connectionStateRef.current === 'connecting' ||
-      connectionStateRef.current === 'connected'
-    )
-      return;
-
-    const baseDelay = consecutiveFailuresRef.current > 5 ? 10000 : 1000;
-    const attempt = Math.min(retryCountRef.current, 8);
-    const exponentialDelay = baseDelay * Math.pow(1.5, attempt);
-    const jitter = Math.random() * 1000;
-    const delay = Math.round(exponentialDelay + jitter);
-
-    const now = Date.now();
-    const timeSinceLastAttempt = now - lastConnectionAttemptRef.current;
-    const minInterval = 2000;
-
-    if (timeSinceLastAttempt < minInterval) {
-      const additionalDelay = minInterval - timeSinceLastAttempt;
-      setTimeout(() => scheduleReconnect(), additionalDelay);
-      return;
-    }
-
-    if (reconnectTimerRef.current)
-      window.clearTimeout(reconnectTimerRef.current);
-
-    connectionStateRef.current = 'reconnecting';
-    reconnectTimerRef.current = window.setTimeout(() => {
-      openWebsocket();
-    }, delay);
-  }, []);
-
-  const handleConnectionError = useCallback(
-    (_errorType: string) => {
-      connectionStateRef.current = 'disconnected';
-      consecutiveFailuresRef.current += 1;
-      retryCountRef.current += 1;
-
-      scheduleReconnect();
-    },
-    [scheduleReconnect],
-  );
-
   const normalizeTrade = useCallback((trade: any, wallets: any[]): any => {
     const tradeAccountAddr = (trade.account?.id || trade.caller || '').toLowerCase();
     const connectedAddr = address?.toLowerCase();
@@ -4564,63 +4489,289 @@ useEffect(() => {
     };
   }, [address]);
 
-  // tokenexplorer ws
-  const openWebsocket = useCallback((): void => {
-    if (
-      connectionStateRef.current === 'connecting' ||
-      connectionStateRef.current === 'connected'
-    ) {
-      return;
-    }
-    lastConnectionAttemptRef.current = Date.now();
-    connectionAttemptsRef.current += 1;
+  useEffect(() => {
+    if (!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])) return;
 
-    if (teRef.current) {
-      const oldWs = teRef.current;
-      teRef.current = null;
+    let cancelled = false;
 
-      oldWs.onopen = null;
-      oldWs.onmessage = null;
-      oldWs.onerror = null;
-      oldWs.onclose = null;
+    async function bootstrap() {
+      try {
+        const res = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+          {
+            active: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:false, lastPriceNativePerTokenWad_lt:12501}) {
+              id
+              creator {
+                id
+                tokensLaunched
+                tokensGraduated
+              }
+              name
+              symbol
+              metadataCID
+              description
+              social1
+              social2
+              social3	
+              social4
+              decimals
+              initialSupply
+              timestamp
+              migrated
+              migratedAt
+              migratedMarket {
+                id
+              }
+              volumeNative
+              volumeToken
+              buyTxs
+              sellTxs
+              distinctBuyers
+              distinctSellers
+              lastPriceNativePerTokenWad
+              lastUpdatedAt
+              trades {
+                id
+                amountIn
+                amountOut
+              }
+              totalHolders
+              devHoldingAmount
+              holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
+                account { id }
+                tokens
+              }
+            }
+            graduating: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{lastPriceNativePerTokenWad_gt:12500}) {
+              id
+              creator {
+                id
+                tokensLaunched
+                tokensGraduated
+              }
+              name
+              symbol
+              metadataCID
+              description
+              social1
+              social2
+              social3	
+              social4
+              decimals
+              initialSupply
+              timestamp
+              migrated
+              migratedAt
+              migratedMarket {
+                id
+              }
+              volumeNative
+              volumeToken
+              buyTxs
+              sellTxs
+              distinctBuyers
+              distinctSellers
+              lastPriceNativePerTokenWad
+              lastUpdatedAt
+              trades {
+                id
+                amountIn
+                amountOut
+              }
+              totalHolders
+              devHoldingAmount
+              holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
+                account { id }
+                tokens
+              }
+            }
+            migrated: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:true}) {
+              id
+              creator {
+                id
+                tokensLaunched
+                tokensGraduated
+              }
+              name
+              symbol
+              metadataCID
+              description
+              social1
+              social2
+              social3	
+              social4
+              decimals
+              initialSupply
+              timestamp
+              migrated
+              migratedAt
+              migratedMarket {
+                id
+              }
+              volumeNative
+              volumeToken
+              buyTxs
+              sellTxs
+              distinctBuyers
+              distinctSellers
+              lastPriceNativePerTokenWad
+              lastUpdatedAt
+              trades {
+                id
+                amountIn
+                amountOut
+              }
+              totalHolders
+              devHoldingAmount
+              holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
+                account { id }
+                tokens
+              }
+            }
+          }`,
+          }),
+        });
+        const json = await res.json();
+        const rawMarkets = [
+          ...(json.data?.active ?? []),
+          ...(json.data?.graduating ?? []),
+          ...(json.data?.migrated ?? []),
+        ];
 
-      if (
-        oldWs.readyState === WebSocket.OPEN ||
-        oldWs.readyState === WebSocket.CONNECTING
-      ) {
-        oldWs.close(1000, 'reconnecting');
+        const tokens: Token[] = await Promise.all(
+          rawMarkets.map(async (m: any) => {
+            const price =
+              Number(m.lastPriceNativePerTokenWad) / 1e9 ||
+              defaultMetrics.price;
+
+            let createdTimestamp = Number(m.timestamp);
+            if (createdTimestamp > 1e10) {
+              createdTimestamp = Math.floor(createdTimestamp / 1000);
+            }
+            const socials = [m.social1, m.social2, m.social3, m.social4].map((s) =>
+              s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
+            );
+            const twitter = socials.find(
+              (s) =>
+                s?.startsWith('https://x.com') ||
+                s?.startsWith('https://twitter.com'),
+            );
+            if (twitter) {
+              socials.splice(socials.indexOf(twitter), 1);
+            }
+            const telegram = socials.find((s) => s?.startsWith('https://t.me'));
+            if (telegram) {
+              socials.splice(socials.indexOf(telegram), 1);
+            }
+            const discord = socials.find(
+              (s) =>
+                s?.startsWith('https://discord.gg') ||
+                s?.startsWith('https://discord.com'),
+            );
+            if (discord) {
+              socials.splice(socials.indexOf(discord), 1);
+            }
+            const website = socials[0];
+
+            return {
+              ...defaultMetrics,
+              id: m.id.toLowerCase(),
+              tokenAddress: m.id.toLowerCase(),
+              dev: m.creator.id,
+              name: m.name,
+              symbol: m.symbol,
+              image: m.metadataCID || '',
+              description: m.description ?? '',
+              twitterHandle: twitter ?? '',
+              website: website ?? '',
+              status: m.migrated
+                ? 'graduated'
+                : price * TOTAL_SUPPLY > 12500
+                  ? 'graduating'
+                  : 'new',
+              created: createdTimestamp,
+              price,
+              marketCap: price * TOTAL_SUPPLY,
+              buyTransactions: Number(m.buyTxs),
+              sellTransactions: Number(m.sellTxs),
+              volume24h: Number(m.volumeNative) / 1e18,
+              volumeDelta: 0,
+              discordHandle: discord ?? '',
+              telegramHandle: telegram ?? '',
+              launchedTokens: m.creator.tokensLaunched ?? '',
+              graduatedTokens: m.creator.tokensGraduated ?? '',
+              holders: m.totalHolders - 1,
+              devHolding: m.devHoldingAmount / 1e27,
+              top10Holding: Number(
+                (m.holders ?? [])
+                  .filter((h: { account?: { id?: string } }) => (h.account?.id?.toLowerCase() ?? '') !== (settings.chainConfig[activechain].router ?? '').toLowerCase())
+                  .slice(0, 10)
+                  .reduce((sum: bigint, h: { tokens: string }) => sum + BigInt(h.tokens || '0'), 0n)
+              ) / 1e25,
+            } as Token;
+          }),
+        );
+
+        dispatch({ type: 'INIT', tokens });
+      } catch (err) {
+        console.error('initial subgraph fetch failed', err);
+      } finally {
+        if (!cancelled) setIsTokenExplorerLoading(false);
       }
     }
 
-    connectionStateRef.current = 'connecting';
+    bootstrap();
 
-    try {
-      const ws = new WebSocket(settings.chainConfig[activechain].wssurl);
-      teRef.current = ws;
-      const connectionTimeout = setTimeout(() => {
-        if (ws.readyState === WebSocket.CONNECTING) {
-          ws.close(1000, 'connection timeout');
-          handleConnectionError('timeout');
-        }
-      }, 10000);
+    const connectWebSocket = () => {
+      if (cancelled) return;
+      explorerWsRef.current = new WebSocket(WS_URL);
 
-      ws.onopen = () => {
-        clearTimeout(connectionTimeout);
-        connectionStateRef.current = 'connected';
-        retryCountRef.current = 0;
-        consecutiveFailuresRef.current = 0;
+      explorerWsRef.current.onopen = () => {
+        const subscriptionMessages = [
+          JSON.stringify({
+            jsonrpc: '2.0',
+            id: 'sub1',
+            method: 'eth_subscribe',
+            params: [
+              'monadLogs',
+              {
+                address: settings.chainConfig[activechain].router,
+                topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT, '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']],
+              },
+            ],
+          }), ...(address?.slice(2) ? [JSON.stringify({
+            jsonrpc: '2.0',
+            id: 'sub2',
+            method: 'eth_subscribe',
+            params: [
+              'monadLogs',
+              {
+                address: '0x52D34d8536350Cd997bCBD0b9E9d722452f341F5',
+                topics: [['0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9']],
+              },
+            ],
+          })] : [])
+        ];
 
-        subscribe(ws, [
-          'monadLogs',
-          { address: settings.chainConfig[activechain].router, topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT, '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']] }
-        ]);
-        subscribe(ws, [
-          'monadLogs',
-          { address: '0x52D34d8536350Cd997bCBD0b9E9d722452f341F5', topics: [['0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9']] }
-        ]);
+        explorerPingIntervalRef.current = setInterval(() => {
+          if (explorerWsRef.current?.readyState === WebSocket.OPEN) {
+            explorerWsRef.current.send(JSON.stringify({
+              jsonrpc: '2.0',
+              id: 'ping',
+              method: 'eth_syncing'
+            }));
+          }
+        }, 15000);
+
+        subscriptionMessages.forEach((message) => {
+          explorerWsRef.current?.send(message);
+        });
       };
 
-      ws.onmessage = ({ data }) => {
+      explorerWsRef.current.onmessage = ({ data }) => {
         try {
           const msg = JSON.parse(data);
           if (msg.method !== 'eth_subscription' || !msg.params?.result)
@@ -5246,316 +5397,39 @@ useEffect(() => {
         }
       };
 
-      ws.onerror = (event) => {
-        clearTimeout(connectionTimeout);
-        console.warn('WebSocket error:', event);
-        handleConnectionError('error');
-      };
-
-      ws.onclose = (event) => {
-        clearTimeout(connectionTimeout);
-        connectionStateRef.current = 'disconnected';
-
-        const isNormalClose = event.code === 1000;
-        const isServerError = event.code >= 1011 && event.code <= 1014;
-        const isNetworkError = event.code === 1006;
-
-        if (!isNormalClose) {
-          consecutiveFailuresRef.current += 1;
-          retryCountRef.current += 1;
-
-          console.warn(
-            `WebSocket closed (${event.code}): ${event.reason || 'No reason'}`,
-          );
-
-          if (isServerError && consecutiveFailuresRef.current > 3) {
-            retryCountRef.current += 2;
-          } else if (isNetworkError && consecutiveFailuresRef.current > 2) {
-            retryCountRef.current += 1;
-          }
-
-          scheduleReconnect();
+      explorerWsRef.current.onclose = () => {
+        if (explorerPingIntervalRef.current) {
+          clearInterval(explorerPingIntervalRef.current);
+          explorerPingIntervalRef.current = null;
         }
+        explorerReconnectIntervalRef.current = setTimeout(() => {
+          connectWebSocket();
+        }, 500);
       };
-    } catch (error) {
-      console.error('Failed to create WebSocket:', error);
-      handleConnectionError('creation');
-    }
-  },
-    [subscribe, scheduleReconnect],
-  );
+  
+      explorerWsRef.current.onerror = (error) => {
+        console.error(error)
+      };
+    };
 
-  useEffect(() => {
-    if (!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])) return;
+    connectWebSocket();
 
-    let cancelled = false;
-
-    async function bootstrap() {
-      try {
-        const res = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-          {
-            active: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:false, lastPriceNativePerTokenWad_lt:12501}) {
-              id
-              creator {
-                id
-                tokensLaunched
-                tokensGraduated
-              }
-              name
-              symbol
-              metadataCID
-              description
-              social1
-              social2
-              social3	
-              social4
-              decimals
-              initialSupply
-              timestamp
-              migrated
-              migratedAt
-              migratedMarket {
-                id
-              }
-              volumeNative
-              volumeToken
-              buyTxs
-              sellTxs
-              distinctBuyers
-              distinctSellers
-              lastPriceNativePerTokenWad
-              lastUpdatedAt
-              trades {
-                id
-                amountIn
-                amountOut
-              }
-              totalHolders
-              devHoldingAmount
-              holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
-                account { id }
-                tokens
-              }
-            }
-            graduating: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{lastPriceNativePerTokenWad_gt:12500}) {
-              id
-              creator {
-                id
-                tokensLaunched
-                tokensGraduated
-              }
-              name
-              symbol
-              metadataCID
-              description
-              social1
-              social2
-              social3	
-              social4
-              decimals
-              initialSupply
-              timestamp
-              migrated
-              migratedAt
-              migratedMarket {
-                id
-              }
-              volumeNative
-              volumeToken
-              buyTxs
-              sellTxs
-              distinctBuyers
-              distinctSellers
-              lastPriceNativePerTokenWad
-              lastUpdatedAt
-              trades {
-                id
-                amountIn
-                amountOut
-              }
-              totalHolders
-              devHoldingAmount
-              holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
-                account { id }
-                tokens
-              }
-            }
-            migrated: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:true}) {
-              id
-              creator {
-                id
-                tokensLaunched
-                tokensGraduated
-              }
-              name
-              symbol
-              metadataCID
-              description
-              social1
-              social2
-              social3	
-              social4
-              decimals
-              initialSupply
-              timestamp
-              migrated
-              migratedAt
-              migratedMarket {
-                id
-              }
-              volumeNative
-              volumeToken
-              buyTxs
-              sellTxs
-              distinctBuyers
-              distinctSellers
-              lastPriceNativePerTokenWad
-              lastUpdatedAt
-              trades {
-                id
-                amountIn
-                amountOut
-              }
-              totalHolders
-              devHoldingAmount
-              holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
-                account { id }
-                tokens
-              }
-            }
-          }`,
-          }),
-        });
-        const json = await res.json();
-        const rawMarkets = [
-          ...(json.data?.active ?? []),
-          ...(json.data?.graduating ?? []),
-          ...(json.data?.migrated ?? []),
-        ];
-
-        const tokens: Token[] = await Promise.all(
-          rawMarkets.map(async (m: any) => {
-            const price =
-              Number(m.lastPriceNativePerTokenWad) / 1e9 ||
-              defaultMetrics.price;
-
-            let createdTimestamp = Number(m.timestamp);
-            if (createdTimestamp > 1e10) {
-              createdTimestamp = Math.floor(createdTimestamp / 1000);
-            }
-            const socials = [m.social1, m.social2, m.social3, m.social4].map((s) =>
-              s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
-            );
-            const twitter = socials.find(
-              (s) =>
-                s?.startsWith('https://x.com') ||
-                s?.startsWith('https://twitter.com'),
-            );
-            if (twitter) {
-              socials.splice(socials.indexOf(twitter), 1);
-            }
-            const telegram = socials.find((s) => s?.startsWith('https://t.me'));
-            if (telegram) {
-              socials.splice(socials.indexOf(telegram), 1);
-            }
-            const discord = socials.find(
-              (s) =>
-                s?.startsWith('https://discord.gg') ||
-                s?.startsWith('https://discord.com'),
-            );
-            if (discord) {
-              socials.splice(socials.indexOf(discord), 1);
-            }
-            const website = socials[0];
-
-            return {
-              ...defaultMetrics,
-              id: m.id.toLowerCase(),
-              tokenAddress: m.id.toLowerCase(),
-              dev: m.creator.id,
-              name: m.name,
-              symbol: m.symbol,
-              image: m.metadataCID || '',
-              description: m.description ?? '',
-              twitterHandle: twitter ?? '',
-              website: website ?? '',
-              status: m.migrated
-                ? 'graduated'
-                : price * TOTAL_SUPPLY > 12500
-                  ? 'graduating'
-                  : 'new',
-              created: createdTimestamp,
-              price,
-              marketCap: price * TOTAL_SUPPLY,
-              buyTransactions: Number(m.buyTxs),
-              sellTransactions: Number(m.sellTxs),
-              volume24h: Number(m.volumeNative) / 1e18,
-              volumeDelta: 0,
-              discordHandle: discord ?? '',
-              telegramHandle: telegram ?? '',
-              launchedTokens: m.creator.tokensLaunched ?? '',
-              graduatedTokens: m.creator.tokensGraduated ?? '',
-              holders: m.totalHolders - 1,
-              devHolding: m.devHoldingAmount / 1e27,
-              top10Holding: Number(
-                (m.holders ?? [])
-                  .filter((h: { account?: { id?: string } }) => (h.account?.id?.toLowerCase() ?? '') !== (settings.chainConfig[activechain].router ?? '').toLowerCase())
-                  .slice(0, 10)
-                  .reduce((sum: bigint, h: { tokens: string }) => sum + BigInt(h.tokens || '0'), 0n)
-              ) / 1e25,
-            } as Token;
-          }),
-        );
-
-        dispatch({ type: 'INIT', tokens });
-        openWebsocket();
-      } catch (err) {
-        console.error('initial subgraph fetch failed', err);
-      } finally {
-        if (!cancelled) setIsTokenExplorerLoading(false);
-      }
-    }
-
-    bootstrap();
     return () => {
       cancelled = true;
-      connectionStateRef.current = 'disconnected';
-
-      if (reconnectTimerRef.current) {
-        window.clearTimeout(reconnectTimerRef.current);
-        reconnectTimerRef.current = null;
+      if (explorerPingIntervalRef.current) {
+        clearInterval(explorerPingIntervalRef.current);
+        explorerPingIntervalRef.current = null;
       }
-
+      if (explorerReconnectIntervalRef.current) {
+        clearTimeout(explorerReconnectIntervalRef.current);
+        explorerReconnectIntervalRef.current = null;
+      }
       if (explorerWsRef.current) {
-        const ws = explorerWsRef.current;
+        explorerWsRef.current.close();
         explorerWsRef.current = null;
-
-        ws.onopen = null;
-        ws.onmessage = null;
-        ws.onerror = null;
-        ws.onclose = null;
-
-        if (
-          ws.readyState === WebSocket.OPEN ||
-          ws.readyState === WebSocket.CONNECTING
-        ) {
-          try {
-            ws.close(1000, 'component unmount');
-          } catch (error) {
-            console.warn('Error closing WebSocket on unmount:', error);
-          }
-        }
       }
-
-      connectionAttemptsRef.current = 0;
-      retryCountRef.current = 0;
-      consecutiveFailuresRef.current = 0;
     };
-  }, [openWebsocket, !['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
+  }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
 
   // memeinterface
   const [memeTrades, setMemeTrades] = useState<LaunchpadTrade[]>([]);
@@ -9947,13 +9821,13 @@ useEffect(() => {
         clearInterval(pingIntervalRef.current);
         pingIntervalRef.current = null;
       }
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
       if (reconnectIntervalRef.current) {
         clearTimeout(reconnectIntervalRef.current);
         reconnectIntervalRef.current = null;
+      }
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
       }
     };
   }, [activechain, address]);
@@ -10736,6 +10610,10 @@ useEffect(() => {
           }
         }
       }
+    }
+    if (!path.startsWith('perps')) {
+      setPerpsMarketsData({})
+      setPerpsFilterOptions({})
     }
   }, [location.pathname.slice(1)]);
 

@@ -360,7 +360,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               : selectedInterval.endsWith('s')
                 ? selectedInterval.slice(0, -1).toUpperCase() + 'S'
                 : selectedInterval.slice(0, -1),
-      timezone: 'Etc/UTC',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       locale: 'en',
       debug: false,
       theme: 'dark',

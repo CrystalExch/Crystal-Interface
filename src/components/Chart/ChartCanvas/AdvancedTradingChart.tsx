@@ -480,7 +480,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       autosize: true,
       symbol: `${normalizeTicker(activeMarket.baseAsset, activechain)}/${normalizeTicker(activeMarket.quoteAsset, activechain)}`,
       interval: localStorage.getItem('crystal_chart_timeframe') || '5',
-      timezone: 'Etc/UTC',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       locale: 'en',
       debug: false,
       theme: 'dark',
