@@ -1,0 +1,202 @@
+/* PNL History Popup - Copied from explorer-filters-popup (popup 24) */
+
+/* Backdrop */
+.pnl-history-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(21, 21, 25, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: pnlHistoryFadeIn 0.2s ease-out;
+}
+
+@keyframes pnlHistoryFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Popup Container */
+.pnl-history-popup {
+  background-color: rgb(8, 8, 8);
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  width: 500px;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: fixed;
+  transform: translate(-50%, -50%);
+  left: 50%;
+  top: 50%;
+  transition: opacity 0.2s ease-out;
+}
+
+/* Header - Matches explorer-filters-header */
+.pnl-history-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 15px;
+  padding-bottom: 0;
+}
+
+.pnl-history-title {
+  color: #ffffff;
+  font-size: 1rem;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.pnl-history-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  filter: brightness(0.7);
+  transition: all 0.2s ease;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+}
+
+.pnl-history-close:hover {
+  filter: brightness(0.9);
+}
+
+/* Content Section - Matches filters-content */
+.pnl-history-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 16px;
+  scrollbar-color: rgba(203, 206, 238, 0.2) transparent;
+  scrollbar-width: thin;
+}
+
+.pnl-history-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.pnl-history-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pnl-history-content::-webkit-scrollbar-thumb {
+  background: rgba(203, 206, 238, 0.2);
+  border-radius: 3px;
+}
+
+/* List Container */
+.pnl-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Entry Row - Similar to filter-row */
+.pnl-history-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(172, 183, 239, 0.08);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.pnl-history-entry:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(172, 183, 239, 0.12);
+}
+
+/* Entry Left Section */
+.pnl-history-entry-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pnl-history-entry-label {
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+}
+
+.pnl-history-entry-date {
+  color: rgba(206, 210, 235, 0.6);
+  font-size: 0.75rem;
+  letter-spacing: -0.2px;
+}
+
+/* Entry Right Section */
+.pnl-history-entry-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pnl-history-entry-amount {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  min-width: 100px;
+  text-align: right;
+}
+
+.pnl-history-entry-amount.positive {
+  color: #34d399;
+}
+
+.pnl-history-entry-amount.negative {
+  color: #ef4444;
+}
+
+/* Delete Button */
+.pnl-history-delete-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+}
+
+.pnl-history-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+/* Footer - Similar to keyword-label styling */
+.pnl-history-footer {
+  padding: 12px 0;
+  padding-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 8px;
+}
+
+.pnl-history-footer-text {
+  color: rgba(206, 210, 235, 0.6);
+  font-size: 0.75rem;
+  letter-spacing: -0.2px;
+}

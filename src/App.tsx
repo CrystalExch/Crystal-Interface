@@ -168,6 +168,8 @@ import MemeSearch from './components/MemeSearch/MemeSearch.tsx';
 import { showLoadingPopup, updatePopup } from './components/MemeTransactionPopup/MemeTransactionPopupManager';
 import TrackerWidget from './components/TrackerWidget/TrackerWidget.tsx';
 import SpectraWidget from './components/SpectraWidget/SpectraWidget.tsx';
+import PNLWidget from './components/PNLWidget/PNLWidget.tsx';
+import WalletTrackerWidget from './components/WalletTrackerWidget/WalletTrackerWidget.tsx';
 import Footer from './components/Footer/Footer.tsx';
 // import config
 import { ChevronDown, SearchIcon } from 'lucide-react';
@@ -547,12 +549,17 @@ useEffect(() => {
   const navigate = useNavigate();
   const [isTrackerWidgetOpen, setIsTrackerWidgetOpen] = useState(false);
   const [isSpectraWidgetOpen, setIsSpectraWidgetOpen] = useState(false);
+  const [isPNLWidgetOpen, setIsPNLWidgetOpen] = useState(false);
+  const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(false);
 
   const [trackerWidgetSnap, setTrackerWidgetSnap] = useState<'left' | 'right' | null>(null);
   const [trackerWidgetWidth, setTrackerWidgetWidth] = useState(400);
 
   const [spectraWidgetSnap, setSpectraWidgetSnap] = useState<'left' | 'right' | null>(null);
   const [spectraWidgetWidth, setSpectraWidgetWidth] = useState(600);
+
+  const [pnlWidgetSnap, setPNLWidgetSnap] = useState<'left' | 'right' | null>(null);
+  const [pnlWidgetWidth, setPNLWidgetWidth] = useState(480);
 
   const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | null, width: number) => {
     setTrackerWidgetSnap(snapSide);
@@ -562,6 +569,11 @@ useEffect(() => {
   const handleSpectraWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | null, width: number) => {
     setSpectraWidgetSnap(snapSide);
     setSpectraWidgetWidth(width);
+  }, []);
+
+  const handlePNLWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | null, width: number) => {
+    setPNLWidgetSnap(snapSide);
+    setPNLWidgetWidth(width);
   }, []);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const TOTAL_SUPPLY = 1e9;
@@ -18885,7 +18897,7 @@ useEffect(() => {
         ) : null}
 
         {popup === 33 ? (
-          <div ref={popupref}>
+          <div ref={popupref} style={{ zIndex: 10001 }}>
             <LiveTradesSettingsPopup
               onClose={() => setpopup(0)}
             />
@@ -18893,7 +18905,7 @@ useEffect(() => {
         ) : null}
 
         {popup === 34 ? (
-          <div ref={popupref}>
+          <div ref={popupref} style={{ zIndex: 10001 }}>
             <TradingPresetsPopup
               onClose={() => setpopup(0)}
             />
@@ -19028,7 +19040,7 @@ useEffect(() => {
           </div>
         ) : null}
         {popup === 37 ? ( // presets settings popup
-  <div ref={popupref} className="presets-settings-popup-bg">
+  <div ref={popupref} className="presets-settings-popup-bg" style={{ zIndex: 10001 }}>
     <div className="presets-settings-popup-header">
       <h3 className="presets-settings-popup-title">Trade Settings</h3>
       <button
@@ -26145,6 +26157,29 @@ useEffect(() => {
         onSnapChange={handleSpectraWidgetSnapChange}
         tokensByStatus={tokensByStatus}
         monUsdPrice={monUsdPrice}
+        routerAddress={settings.chainConfig[activechain]?.launchpadRouter?.toLowerCase()}
+        sendUserOperationAsync={sendUserOperationAsync}
+        showLoadingPopup={showLoadingPopup}
+        updatePopup={updatePopup}
+      />
+        <PNLWidget
+        isOpen={isPNLWidgetOpen}
+        onClose={() => setIsPNLWidgetOpen(false)}
+        onSnapChange={handlePNLWidgetSnapChange}
+      />
+        <WalletTrackerWidget
+        isOpen={isWalletTrackerWidgetOpen}
+        onClose={() => setIsWalletTrackerWidgetOpen(false)}
+        monUsdPrice={monUsdPrice}
+        walletTokenBalances={walletTokenBalances}
+        activechain={activechain}
+        settings={settings}
+        allTrades={trades}
+        tokenList={memoizedTokenList}
+        marketsData={marketsData}
+        tradesByMarket={tradesByMarket}
+        setpopup={setpopup}
+        currentPopup={popup}
       />
         {/* <WidgetExplorer
         isOpen={isWidgetExplorerOpen}
@@ -26170,6 +26205,10 @@ useEffect(() => {
           onToggleTrackerWidget={setIsTrackerWidgetOpen}
           isSpectraWidgetOpen={isSpectraWidgetOpen}
           onToggleSpectraWidget={setIsSpectraWidgetOpen}
+          isPNLWidgetOpen={isPNLWidgetOpen}
+          onTogglePNLWidget={setIsPNLWidgetOpen}
+          isWalletTrackerWidgetOpen={isWalletTrackerWidgetOpen}
+          onToggleWalletTrackerWidget={setIsWalletTrackerWidgetOpen}
           setpopup={setpopup}
         />
       </div>

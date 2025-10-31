@@ -790,3 +790,123 @@
 .spectra-tooltip.spectra-leaving {
   opacity: 0;
 }
+
+/* Token Action Buttons (Hide and Blacklist) */
+.spectra-token-actions {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 11;
+}
+
+.spectra-hide-button,
+.spectra-blacklist-button {
+  align-items: center;
+  background: rgba(15, 15, 15);
+  border: 1px solid rgba(226, 228, 248, 0.1);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  height: 26px;
+  justify-content: center;
+  opacity: 0;
+  padding: 4px;
+  transition: all 0.2s ease;
+  width: 26px;
+  color: #8e8f9e;
+}
+
+.spectra-market-row:hover .spectra-hide-button,
+.spectra-market-row:hover .spectra-blacklist-button {
+  opacity: 1;
+}
+
+.spectra-hide-button:hover,
+.spectra-blacklist-button:hover {
+  color: #d8dcff;
+  background: rgba(0, 0, 0, 0.95);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.spectra-blacklist-dev-icon {
+  color: inherit;
+  height: 16px;
+  width: 16px;
+}
+
+.spectra-hide-button.strikethrough::after,
+.spectra-blacklist-button.strikethrough::after {
+  content: '';
+  position: absolute;
+  width: 70%;
+  height: 1.5px;
+  background: #b1b2c8;
+  transform: rotate(45deg);
+  pointer-events: none;
+  box-shadow: 0 0 4px black;
+}
+
+.spectra-hide-button.strikethrough:hover::after,
+.spectra-blacklist-button.strikethrough:hover::after {
+  background: #d8dcff;
+}
+
+/* Quick Buy Button */
+.spectra-quick-buy-btn {
+  align-items: center;
+  background: #aaaecf;
+  border: none;
+  border-radius: 8px;
+  color: #0f0f12;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.7rem;
+  font-weight: 700;
+  gap: 2px;
+  justify-content: center;
+  letter-spacing: -0.5px;
+  margin-top: 0.5rem;
+  padding: 0.2rem .35rem;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.spectra-quick-buy-btn:hover {
+  filter: brightness(1.1);
+}
+
+.spectra-quick-buy-btn:disabled {
+  cursor: not-allowed;
+}
+
+.spectra-quick-buy-btn:disabled:hover {
+  filter: brightness(1);
+}
+
+.spectra-quick-buy-icon {
+  height: 15px;
+  width: 15px;
+}
+
+.spectra-quickbuy-loading-spinner {
+  animation: spectraQuickbuySpin 1s linear infinite;
+  border: 1.5px solid rgb(6, 6, 6);
+  border-radius: 50%;
+  border-top: 1.5px solid transparent;
+  height: 14px;
+  margin: 1.5px;
+  position: absolute;
+  width: 14px;
+}
+
+@keyframes spectraQuickbuySpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

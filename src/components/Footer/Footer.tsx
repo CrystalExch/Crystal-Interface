@@ -33,6 +33,10 @@ interface FooterProps {
   onToggleTrackerWidget: any;
   isSpectraWidgetOpen?: boolean;
   onToggleSpectraWidget?: any;
+  isPNLWidgetOpen?: boolean;
+  onTogglePNLWidget?: any;
+  isWalletTrackerWidgetOpen?: boolean;
+  onToggleWalletTrackerWidget?: any;
   setpopup: (value: number) => void;
 }
 
@@ -200,6 +204,10 @@ const Footer: React.FC<FooterProps> = ({
   onToggleTrackerWidget,
   isSpectraWidgetOpen = false,
   onToggleSpectraWidget,
+  isPNLWidgetOpen = false,
+  onTogglePNLWidget,
+  isWalletTrackerWidgetOpen = false,
+  onToggleWalletTrackerWidget,
   setpopup,
 }) => {
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
@@ -524,15 +532,19 @@ const getWalletBalance = useCallback(
             </Tooltip>
             <div className="widget-toggle-buttons">
               <Tooltip content="Wallet Tracker">
-                <div className="footer-widget-button">
+                <div
+                  className={`footer-widget-button ${isWalletTrackerWidgetOpen ? 'active' : ''}`}
+                  onClick={() => onToggleWalletTrackerWidget?.(!isWalletTrackerWidgetOpen)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <img src={walleticon} className="footer-widget-icon" />
                   Wallet
                 </div>
               </Tooltip>
               <Tooltip content="Twitter Tracker">
-                <div 
+                <div
                   className={`footer-widget-button ${isTrackerWidgetOpen ? 'active' : ''}`}
-                  onClick={() => {onToggleTrackerWidget((prev: any) => !prev)}}
+                  onClick={() => onToggleTrackerWidget(!isTrackerWidgetOpen)}
                   style={{ cursor: 'pointer' }}
                 >
                   <img src={twittericon} className="footer-widget-icon" />
@@ -548,7 +560,7 @@ const getWalletBalance = useCallback(
               <Tooltip content="Spectra Tracker">
                 <div
                   className={`footer-widget-button ${isSpectraWidgetOpen ? 'active' : ''}`}
-                  onClick={() => {onToggleSpectraWidget?.((prev: any) => !prev)}}
+                  onClick={() => onToggleSpectraWidget?.(!isSpectraWidgetOpen)}
                   style={{ cursor: 'pointer' }}
                 >
                   <img src={prismicon} className="footer-widget-icon" />
@@ -556,7 +568,11 @@ const getWalletBalance = useCallback(
                 </div>
               </Tooltip>
               <Tooltip content="PnL Tracker">
-                <div className="footer-widget-button">
+                <div
+                  className={`footer-widget-button ${isPNLWidgetOpen ? 'active' : ''}`}
+                  onClick={() => onTogglePNLWidget?.(!isPNLWidgetOpen)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <img src={charticon} className="footer-widget-icon" />
                   PnL
                 </div>
