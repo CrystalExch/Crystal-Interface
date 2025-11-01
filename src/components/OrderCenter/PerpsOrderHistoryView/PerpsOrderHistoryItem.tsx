@@ -108,17 +108,6 @@ const PerpsOrderHistoryItem: React.FC<PerpsOrderHistoryItemProps> = ({
         </span>
       </div>
 
-      <div className="oc-cell trigger-cell">
-        {order.triggerCondition ? (
-          <div className="trigger-info">
-            <span className="trigger-type">{order.triggerType || 'STOP'}</span>
-            <span className="trigger-price">{formatSig(order.triggerPrice)}</span>
-          </div>
-        ) : (
-          <span className="no-trigger">-</span>
-        )}
-      </div>
-
       <div className="oc-cell tpsl-cell">
         {(order.takeProfit || order.stopLoss) ? (
           <div className="tpsl-info">

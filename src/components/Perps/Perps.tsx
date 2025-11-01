@@ -46,7 +46,6 @@ interface PerpsProps {
   sendUserOperationAsync: any;
   setChain: any;
   isBlurred?: boolean;
-  isVertDragging?: boolean;
   isOrderCenterVisible?: boolean;
   openEditOrderPopup: (order: any) => void;
   openEditOrderSizePopup: (order: any) => void;
@@ -111,7 +110,6 @@ const Perps: React.FC<PerpsProps> = ({
   sendUserOperationAsync,
   setChain,
   isBlurred,
-  isVertDragging,
   isOrderCenterVisible,
   openEditOrderPopup,
   openEditOrderSizePopup,
@@ -406,9 +404,11 @@ const Perps: React.FC<PerpsProps> = ({
   });
 
   const isOrderbookLoading = !orderdata || !Array.isArray(orderdata) || orderdata.length < 3;
-  const [_isVertDragging, setIsVertDragging] = useState(false);
+  const [isVertDragging, setIsVertDragging] = useState(false);
   const initialHeightRef = useRef(0);
   const [fetchedpositions, setfetchedpositions] = useState<any[]>([]);
+  const [fetchedorders, setfetchedorders] = useState<any[]>([]);
+  const [fetchedtradehistory, setfetchedtradehistory] = useState<any[]>([]);
   const [positions, setpositions] = useState<any[]>([]);
   const [orders, setorders] = useState<any[]>([]);
   const [canceledorders, setcanceledorders] = useState<any[]>([]);
@@ -427,7 +427,7 @@ const Perps: React.FC<PerpsProps> = ({
     // Add this useEffect for vertical dragging
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!_isVertDragging) return;
+      if (!isVertDragging) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -447,7 +447,7 @@ const Perps: React.FC<PerpsProps> = ({
     };
 
     const handleMouseUp = (e: MouseEvent) => {
-      if (!_isVertDragging) return;
+      if (!isVertDragging) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -461,7 +461,7 @@ const Perps: React.FC<PerpsProps> = ({
       }
     };
 
-    if (_isVertDragging) {
+    if (isVertDragging) {
       const overlay = document.createElement('div');
       overlay.id = 'global-vert-drag-overlay';
       overlay.style.position = 'fixed';
@@ -486,12 +486,12 @@ const Perps: React.FC<PerpsProps> = ({
         document.body.removeChild(overlay);
       }
     };
-  }, [_isVertDragging, setOrderCenterHeight]); // Add setOrderCenterHeight to dependencies
+  }, [isVertDragging, setOrderCenterHeight]); // Add setOrderCenterHeight to dependencies
 
   const prevAmountsQuote = useRef(amountsQuote)
   const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
   const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
-  const availableBalance = (activeMarket?.oraclePrice ? Math.max((Number(balance) - positions.reduce((t, p) => t + Number(p.margin || 0), 0) + ((activeTradeType == "long" == currentPosition < 0) ? Math.abs(currentPosition) * 2 * activeMarket?.oraclePrice / Number(leverage) : 0)), 0) : 0);
+  const availableBalance = (activeMarket?.oraclePrice ? Math.max((Number(balance) - positions.reduce((t, p) => t + Number(p.margin || 0), 0) - orders.reduce((t, p) => t + Number(p.margin || 0), 0) + ((activeTradeType == "long" == currentPosition < 0) ? Math.abs(currentPosition) * 2 * activeMarket?.oraclePrice / Number(leverage) : 0)), 0) : 0);
 
   const handleVertMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -562,7 +562,7 @@ const Perps: React.FC<PerpsProps> = ({
     const ts = Date.now().toString()
     const l2ExpireTime = (Date.now() + 30 * 24 * 60 * 60 * 1000)
     const l1ExpireTime = (Number(l2ExpireTime) - 9 * 24 * 60 * 60 * 1000)
-    const l2Value = Number((type == 'MARKET' ? (side == 'BUY' ? (price * 10 * size) : (Number(activeMarket?.tickSize))) : price * size).toFixed(2))
+    const l2Value = Math.ceil((type == 'MARKET' ? (side == 'BUY' ? (price * 10 * size) : Number(activeMarket?.tickSize)) : price * size) * 100) / 100
     const limitFee = Math.ceil(l2Value * Number(userFees[0])).toString()
     const clientOrderId = Math.random().toString().slice(2).replace(/^0+/, '');
     const l2Nonce = BigInt(sha256(toUtf8Bytes(clientOrderId)).slice(0, 10)).toString()
@@ -593,7 +593,7 @@ const Perps: React.FC<PerpsProps> = ({
     const l2Signature = await signable.sign(l2PrivateKey.replace(/^0x/, ''))
 
     return {
-      price: type === 'MARKET' ? '0' : price.toString(),
+      price: type === 'MARKET' ? '0' : price.toFixed(Math.floor(Math.log10(Number(1 / activeMarket.tickSize)))),
       size: size.toFixed(Math.floor(Math.log10(Math.max(1, 1/Number(activeMarket?.stepSize))))),
       type,
       timeInForce: type == 'MARKET' ? 'IMMEDIATE_OR_CANCEL' : 'GOOD_TIL_CANCEL',
@@ -619,6 +619,34 @@ const Perps: React.FC<PerpsProps> = ({
       symbol,
       timestamp: ts
     }
+  }
+
+  const handleCancel = async (
+    orderId: any,
+  ) => {
+    if (Object.keys(perpsMarketsData).length == 0) return;
+    const payload = {
+      accountId: signer.accountId,
+      orderIdList: [orderId],
+    }
+    const ts = Date.now().toString()
+    const path = '/api/v1/private/order/cancelOrderById'
+    const qs = buildSignatureBody(payload)
+    const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "POST" + path + qs)).slice(2)
+    const [metaRes] = await Promise.all([
+      fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/order/cancelOrderById", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-edgeX-Timestamp": ts,
+          "X-edgeX-Signature": signature,
+          "X-edgeX-Passphrase": signer.apiPassphrase,
+          "X-edgeX-Api-Key": signer.apiKey
+        },
+        body: JSON.stringify(payload)
+      }).then(r => r.json())
+    ])
+    console.log(metaRes)
   }
 
   const handleClose = async (
@@ -703,7 +731,9 @@ const Perps: React.FC<PerpsProps> = ({
     if (Object.keys(perpsMarketsData).length == 0) return;
     let tempupnl = 0
     let temppositions: any = []
+    let temporders: any = []
     let tempcurrentposition: any = 0
+
     for (const position of fetchedpositions) {
       const marketData = (Object.values(perpsMarketsData).find((v: any) => v.contractId == position.contractId) as any)
       tempupnl += Number(marketData?.oraclePrice) * Number(position.openSize) - Number(position.openValue)
@@ -712,7 +742,7 @@ const Perps: React.FC<PerpsProps> = ({
       }
       const positionValue = Math.abs(Number(marketData?.oraclePrice) * Number(position.openSize));
       temppositions.push({
-        leverage: userLeverage?.[marketData?.contractId]?.maxLeverage ? userLeverage?.[marketData?.contractId]?.maxLeverage : marketData?.displayMaxLeverage,
+        leverage: position.maxLeverage,
         image: marketData?.iconURL,
         direction: position.openSize > 0 ? 'long' : 'short',
         symbol: marketData.contractName,
@@ -728,6 +758,27 @@ const Perps: React.FC<PerpsProps> = ({
         mmr: parseFloat(marketData?.riskTierList.find((t: any) => positionValue <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? marketData?.riskTierList.at(-1).maintenanceMarginRate)
       })
     }
+
+    for (const order of fetchedorders) {
+      const marketData = (Object.values(perpsMarketsData).find((v: any) => v.contractId == order.contractId) as any)
+      const orderValue = Number(order.price) * Number(order.size);
+      temporders.push({
+        leverage: order.maxLeverage,
+        image: marketData?.iconURL,
+        direction: order.side == "BUY" ? 'long' : 'short',
+        symbol: marketData.contractName,
+        filledSize: order.cumMatchSize,
+        size: order.size,
+        orderValue: orderValue,
+        price: Number(order.price).toFixed((order.price?.toString().split(".")[1] || "").length),
+        markPrice: Number(marketData?.oraclePrice).toFixed((order.price?.toString().split(".")[1] || "").length),
+        time: Number(order.createdTime) / 1000,
+        type: order.type,
+        reduceOnly: order.reduceOnly,
+        margin: orderValue / (userLeverage?.[marketData?.contractId]?.maxLeverage ? userLeverage?.[marketData?.contractId]?.maxLeverage : marketData?.displayMaxLeverage),
+        id: order.id,
+      })
+    }
     const tempmaintenancemargin = positions.reduce((t, p) => t + Number(p.maintenanceMargin || 0), 0)
     for (const position of temppositions) {
       position.liqPrice = (position.direction == 'long' ? (Number(position.entryPrice) - ((Number(balance) + Number(tempupnl)) - tempmaintenancemargin) / Number(position.size)) : (Number(position.entryPrice) + ((Number(balance) + Number(tempupnl)) - tempmaintenancemargin) / Number(position.size))).toFixed((position.markPrice.toString().split(".")[1] || "").length)
@@ -735,8 +786,9 @@ const Perps: React.FC<PerpsProps> = ({
 
     setUpnl(isNaN(tempupnl) ? '0.00' : tempupnl.toFixed(2))
     setpositions(temppositions)
+    setorders(temporders)
     setCurrentPosition(tempcurrentposition)
-  }, [fetchedpositions, perpsMarketsData, perpsActiveMarketKey])
+  }, [fetchedpositions, fetchedorders, perpsMarketsData, perpsActiveMarketKey])
 
   useEffect(() => {
     if (!activeMarket?.contractId || (Object.keys(signer).length > 0 && !userLeverage)) return;
@@ -875,30 +927,29 @@ const Perps: React.FC<PerpsProps> = ({
 
     subRefs.current = subs
 
-  }, [activeMarket?.contractId, selectedInterval, wsRef.current])
+  }, [activeMarket?.contractId, selectedInterval, wsRef.current, wsRef.current?.readyState])
 
   useEffect(() => {
     let liveStreamCancelled = false;
-    let isAddressInfoFetching = false;
 
     const fetchData = async () => {
       try {
-        const [metaRes, labelsRes] = await Promise.all([
-          fetch('https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/public/meta/getMetaData', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json()),
-          fetch('https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/public/contract-labels', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
-        ])
-        if (liveStreamCancelled) return;
-        if (metaRes?.data) setExchangeConfig(metaRes.data)
-        if (labelsRes?.data) {
-          const categoriesMap: Record<string, string[]> = {
-            All: metaRes.data.contractList.filter((c: any) => c.enableDisplay == true).flatMap((c: any) => c.contractName),
-            ...Object.fromEntries(
-              labelsRes.data.map((s: any) => [s.name, s.contracts.map((c: any) => c.contractName)])
-            )
-          }
-          if (metaRes?.data) {
-            const coinMap = Object.fromEntries(metaRes.data.coinList.map((c: any) => [c.coinName, c.iconUrl]))
-            if (Object.keys(perpsMarketsData).length == 0) {
+        if (Object.keys(perpsMarketsData).length == 0) {
+          const [metaRes, labelsRes] = await Promise.all([
+            fetch('https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/public/meta/getMetaData', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json()),
+            fetch('https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/public/contract-labels', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
+          ])
+          if (liveStreamCancelled) return;
+          if (metaRes?.data) setExchangeConfig(metaRes.data)
+          if (labelsRes?.data) {
+            const categoriesMap: Record<string, string[]> = {
+              All: metaRes.data.contractList.filter((c: any) => c.enableDisplay == true).flatMap((c: any) => c.contractName),
+              ...Object.fromEntries(
+                labelsRes.data.map((s: any) => [s.name, s.contracts.map((c: any) => c.contractName)])
+              )
+            }
+            if (metaRes?.data) {
+              const coinMap = Object.fromEntries(metaRes.data.coinList.map((c: any) => [c.coinName, c.iconUrl]))
               setPerpsMarketsData(Object.fromEntries(metaRes.data.contractList.filter((c: any) => categoriesMap.All.includes(c.contractName)).map((c: any) => {
                 const name = c.contractName.toUpperCase()
                 const quote = name.endsWith('USD') ? 'USD' : ''
@@ -906,8 +957,8 @@ const Perps: React.FC<PerpsProps> = ({
                 return [c.contractName, { ...c, baseAsset: base, quoteAsset: quote, iconURL: coinMap[base] }]
               })))
             }
+            setPerpsFilterOptions(categoriesMap)
           }
-          setPerpsFilterOptions(categoriesMap)
         }
 
         /* const tradelogs = result[1].result;
@@ -958,27 +1009,11 @@ const Perps: React.FC<PerpsProps> = ({
 
         const subs = [
           'ticker.all.1s',
-          ...(activeMarket?.contractId
-            ? [
-              `depth.${activeMarket.contractId}.200`,
-              `trades.${activeMarket.contractId}`,
-              `kline.LAST_PRICE.${activeMarket.contractId}.${selectedInterval === '1d'
-                ? 'DAY_1'
-                : selectedInterval === '4h'
-                  ? 'HOUR_4'
-                  : selectedInterval === '1h'
-                    ? 'HOUR_1'
-                    : 'MINUTE_' + selectedInterval.slice(0, -1)
-              }`,
-            ]
-            : []),
         ]
 
         subs.forEach((channel: any) => {
           wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }));
         });
-
-        if (activeMarket?.contractId) subRefs.current = subs.slice(1);
 
         fetchData();
       };
@@ -1148,6 +1183,7 @@ const Perps: React.FC<PerpsProps> = ({
       }
 
       wsRef.current.onclose = () => {
+        subRefs.current = []
         if (pingIntervalRef.current) {
           clearInterval(pingIntervalRef.current);
           pingIntervalRef.current = null;
@@ -1166,7 +1202,6 @@ const Perps: React.FC<PerpsProps> = ({
 
     return () => {
       liveStreamCancelled = true;
-      isAddressInfoFetching = false;
       if (pingIntervalRef.current) {
         clearInterval(pingIntervalRef.current);
         pingIntervalRef.current = null;
@@ -1185,7 +1220,6 @@ const Perps: React.FC<PerpsProps> = ({
   useEffect(() => {
     if (Object.keys(signer).length == 0) return;
     let liveStreamCancelled = false;
-    let isAddressInfoFetching = false;
 
     const fetchData = async () => {
       try {
@@ -1305,6 +1339,7 @@ const Perps: React.FC<PerpsProps> = ({
                 balance += Number(position.openValue)
               }
               setfetchedpositions(msg.position)
+              setfetchedorders(msg.order)
               setBalance(balance.toFixed(2))
               setUserLeverage(msg.account[0].contractIdToTradeSetting)
             }
@@ -1331,6 +1366,18 @@ const Perps: React.FC<PerpsProps> = ({
                 
                 return merged.filter(p => parseFloat(p.openValue) !== 0)
               })
+              setfetchedorders(prev => {
+                const updated = msg.order || []
+                const merged = [...prev]
+            
+                for (const pos of updated) {
+                  const i = merged.findIndex(p => p.contractId === pos.contractId)
+                  if (i !== -1) merged[i] = pos
+                  else merged.push(pos)
+                }
+                
+                return merged.filter(p => p.status !== "CANCELED" && p.status !== "FILLED")
+              })
             }
           }
         }
@@ -1355,7 +1402,6 @@ const Perps: React.FC<PerpsProps> = ({
 
     return () => {
       liveStreamCancelled = true;
-      isAddressInfoFetching = false;
       if (accpingIntervalRef.current) {
         clearInterval(accpingIntervalRef.current);
         accpingIntervalRef.current = null;
@@ -2104,9 +2150,9 @@ const Perps: React.FC<PerpsProps> = ({
           />
         </div>
         <OrderCenter
-          orders={orders}
-          tradehistory={tradehistory}
-          canceledorders={canceledorders}
+          orders={[]}
+          tradehistory={[]}
+          canceledorders={[]}
           router={router}
           address={address}
           trades={tradesByMarket}
@@ -2137,7 +2183,7 @@ const Perps: React.FC<PerpsProps> = ({
           refetch={refetch}
           sendUserOperationAsync={sendUserOperationAsync}
           setChain={handleSetChain}
-          isVertDragging={_isVertDragging} 
+          isVertDragging={isVertDragging} 
           isOrderCenterVisible={isOrderCenterVisible}
           onLimitPriceUpdate={setCurrentLimitPrice}
           openEditOrderPopup={openEditOrderPopup}
@@ -2145,7 +2191,9 @@ const Perps: React.FC<PerpsProps> = ({
           marketsData={{}}
           isPerps={true}
           perpsPositions={positions}
+          perpsOpenOrders={orders}
           handleClose={handleClose}
+          handleCancel={handleCancel}
         />
       </div>
       {layoutSettings === 'default' && (

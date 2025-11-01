@@ -10,9 +10,8 @@ interface PerpsOpenOrdersContentProps {
   pageSize: number;
   currentPage: number;
   onMarketSelect: any;
-  onCancelOrder?: (order: any) => void;
-  onEditOrder?: (order: any) => void;
   isBlurred?: boolean;
+  handleCancel: any;
 }
 
 const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
@@ -20,9 +19,8 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
   pageSize,
   currentPage,
   onMarketSelect,
-  onCancelOrder,
-  onEditOrder,
-  isBlurred
+  isBlurred,
+  handleCancel
 }) => {
   const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
     {},
@@ -145,14 +143,6 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
           />
         </SortableHeaderCell>
         <SortableHeaderCell
-          columnKey="trigger"
-          sortColumn={sortColumn}
-          sortOrder={sortOrder}
-          onSort={handleSort}
-        >
-          {t('Trigger Conditions')}
-        </SortableHeaderCell>
-        <SortableHeaderCell
           columnKey="tpsl"
           sortColumn={sortColumn}
           sortOrder={sortOrder}
@@ -170,6 +160,19 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
             className="tpsl-label"
           />
         </SortableHeaderCell>
+        <div
+          className={`cancel-all-oc-cell ${orders.length === 0 ? 'disabled' : ''}  ${false ? 'signing' : ''}`}
+        >
+          {!false ? (
+          <span
+            className="cancel-all-label"
+            onClick={async () => {
+            }}
+          >
+            {t('cancelAll')}
+          </span>
+          ) : (<div className="cancel-all-loading-spinner"></div>)}
+        </div>
       </div>
 
       {currentItems.length > 0 ? (
@@ -178,9 +181,8 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
             key={`order-${item.id || index}`}
             order={item}
             onMarketSelect={onMarketSelect}
-            onCancelOrder={onCancelOrder}
-            onEditOrder={onEditOrder}
             isBlurred={isBlurred}
+            handleCancel={handleCancel}
           />
         ))
       ) : null}

@@ -150,7 +150,7 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
             className="funding-label"
           />
         </SortableHeaderCell>
-                <SortableHeaderCell
+        <SortableHeaderCell
           columnKey="tpsl"
           sortColumn={sortColumn}
           sortOrder={sortOrder}
@@ -158,14 +158,19 @@ const PerpsPositionsContent: React.FC<PerpsPositionsContentProps> = ({
         >
           {t('TP / SL')}
         </SortableHeaderCell>
-        <SortableHeaderCell
-          columnKey="close"
-          sortColumn={sortColumn}
-          sortOrder={sortOrder}
-          onSort={handleSort}
+        <div
+          className={`cancel-all-oc-cell ${positions.length === 0 ? 'disabled' : ''}  ${false ? 'signing' : ''}`}
         >
-          {t('Close')}
-        </SortableHeaderCell>
+          {!false ? (
+          <span
+            className="cancel-all-label"
+            onClick={async () => {
+            }}
+          >
+            {t('Close All')}
+          </span>
+          ) : (<div className="cancel-all-loading-spinner"></div>)}
+        </div>
       </div>
 
       {currentItems.length > 0 ? (

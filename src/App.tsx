@@ -26045,7 +26045,6 @@ useEffect(() => {
                 refetch={refetch}
                 sendUserOperationAsync={sendUserOperationAsync}
                 setChain={handleSetChain}
-                isVertDragging={isVertDragging}
                 isOrderCenterVisible={isOrderCenterVisible}
                 openEditOrderPopup={openEditOrderPopup}
                 openEditOrderSizePopup={openEditOrderSizePopup}

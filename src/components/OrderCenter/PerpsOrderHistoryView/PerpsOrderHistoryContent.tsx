@@ -142,14 +142,6 @@ const PerpsOrderHistoryContent: React.FC<PerpsOrderHistoryContentProps> = ({
           />
         </SortableHeaderCell>
         <SortableHeaderCell
-          columnKey="trigger"
-          sortColumn={sortColumn}
-          sortOrder={sortOrder}
-          onSort={handleSort}
-        >
-          {t('Trigger Conditions')}
-        </SortableHeaderCell>
-        <SortableHeaderCell
           columnKey="tpsl"
           sortColumn={sortColumn}
           sortOrder={sortOrder}

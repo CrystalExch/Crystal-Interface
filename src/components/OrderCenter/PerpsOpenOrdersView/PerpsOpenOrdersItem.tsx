@@ -7,17 +7,15 @@ import './PerpsOpenOrdersItem.css';
 interface PerpsOpenOrdersItemProps {
   order: any;
   onMarketSelect: any;
-  onCancelOrder?: (order: any) => void;
-  onEditOrder?: (order: any) => void;
   isBlurred?: boolean;
+  handleCancel: any;
 }
 
 const PerpsOpenOrdersItem: React.FC<PerpsOpenOrdersItemProps> = ({
   order,
   onMarketSelect,
-  onCancelOrder,
-  onEditOrder,
-  isBlurred
+  isBlurred,
+  handleCancel
 }) => {
   const isLong = order.direction === 'long' || order.side === 1;
   const fillPercentage = order.originalSize ? ((order.originalSize - order.size) / order.originalSize * 100) : 0;
@@ -87,17 +85,6 @@ const PerpsOpenOrdersItem: React.FC<PerpsOpenOrdersItemProps> = ({
         </span>
       </div>
 
-      <div className="oc-cell trigger-cell">
-        {order.triggerCondition ? (
-          <div className="trigger-info">
-            <span className="trigger-type">{order.triggerType || 'STOP'}</span>
-            <span className="trigger-price">{formatSig(order.triggerPrice)}</span>
-          </div>
-        ) : (
-          <span className="no-trigger">-</span>
-        )}
-      </div>
-
       <div className="oc-cell tpsl-cell">
         {(order.takeProfit || order.stopLoss) ? (
           <div className="tpsl-info">
@@ -118,7 +105,7 @@ const PerpsOpenOrdersItem: React.FC<PerpsOpenOrdersItemProps> = ({
           className="order-action-btn cancel-btn"
           onClick={(e) => {
             e.stopPropagation();
-            onCancelOrder?.(order);
+            handleCancel?.(order.id);
           }}
         >
           Cancel
@@ -127,7 +114,7 @@ const PerpsOpenOrdersItem: React.FC<PerpsOpenOrdersItemProps> = ({
           className="order-action-btn edit-btn"
           onClick={(e) => {
             e.stopPropagation();
-            onEditOrder?.(order);
+            handleCancel?.(order.id);
           }}
         >
           Edit
