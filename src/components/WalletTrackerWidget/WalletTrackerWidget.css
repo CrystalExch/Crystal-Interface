@@ -38,6 +38,7 @@
 }
 
 .wtw-container {
+  position: absolute;
   background: rgb(8, 8, 8);
   border: 1px solid rgba(179, 184, 249, 0.15);
   border-radius: 6px;
@@ -47,6 +48,12 @@
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: box-shadow 0.2s ease;
+}
+
+.wtw-container.dragging {
+  cursor: move;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
 }
 
 /* Filters Header */
@@ -57,6 +64,7 @@
   padding: 8px 15px;
   padding-bottom: 0;
   user-select: none;
+  cursor: move;
 }
 
 .wtw-filters-title {
@@ -537,15 +545,6 @@
 .wtw-wallet-action-btn .wtw-action-icon-svg {
   width: 16px;
   height: 16px;
-}
-
-/* Delete button specific styling */
-.wtw-wallet-action-btn.wtw-delete-button .wtw-action-icon {
-  filter: brightness(0) saturate(100%) invert(47%) sepia(88%) saturate(3455%) hue-rotate(335deg) brightness(96%) contrast(92%);
-}
-
-.wtw-wallet-action-btn.wtw-delete-button:hover .wtw-action-icon {
-  filter: brightness(0) saturate(100%) invert(29%) sepia(95%) saturate(3098%) hue-rotate(346deg) brightness(98%) contrast(90%);
 }
 
 /* Empty State */
