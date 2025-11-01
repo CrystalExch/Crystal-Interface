@@ -213,6 +213,11 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   setpopup,
   currentPopup = 0,
 }) => {
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ x: 100, y: 100 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+
   const [activeTab, setActiveTab] = useState<TrackerTab>('wallets');
   const [searchQuery, setSearchQuery] = useState('');
   const [localWallets, setLocalWallets] = useState<TrackedWallet[]>([]);
@@ -255,6 +260,51 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   };
 
   const chainCfg = chainCfgOf(activechain, settings);
+
+  // Drag functionality
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    // Don't drag if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('.wtw-wallet-item') ||
+      target.closest('.wtw-search') ||
+      target.closest('.wtw-tabs')
+    ) {
+      return;
+    }
+
+    dragStartPos.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    };
+    setIsDragging(true);
+  }, [position]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        const newX = e.clientX - dragStartPos.current.x;
+        const newY = e.clientY - dragStartPos.current.y;
+
+        setPosition({ x: newX, y: newY });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging]);
 
   const lastActiveLabel = (w: TrackedWallet) => {
     const ts = w.lastActiveAt ?? new Date(w.createdAt).getTime();
@@ -758,9 +808,17 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
   return (
     <div className="wtw-overlay" onClick={onClose}>
-      <div className="wtw-container" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={widgetRef}
+        className={`wtw-container ${isDragging ? 'dragging' : ''}`}
+        style={{
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Filters Header */}
-        <div className="wtw-filters-header">
+        <div className="wtw-filters-header" onMouseDown={handleDragStart}>
           <h2 className="wtw-filters-title">Wallet Tracker</h2>
           <button className="wtw-filters-close-button" onClick={onClose}>
             <X size={16} />
