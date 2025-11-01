@@ -30,7 +30,7 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.6);
-  z-index: 1000;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -506,10 +506,12 @@
   cursor: pointer;
   padding: 4px;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
 }
 
 .wtw-wallet-item:hover .wtw-wallet-action-btn {
@@ -518,15 +520,31 @@
 
 .wtw-wallet-action-btn:hover {
   opacity: 1 !important;
+  color: rgba(255, 255, 255, 0.9);
 }
 
-.wtw-wallet-action-btn img {
+.wtw-wallet-action-btn .wtw-action-icon {
   width: 14px;
   height: 14px;
+  filter: brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
+  opacity: 0.6;
+}
+
+.wtw-wallet-action-btn:hover .wtw-action-icon {
+  opacity: 0.9;
+}
+
+.wtw-wallet-action-btn .wtw-action-icon-svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Delete button specific styling */
+.wtw-wallet-action-btn.wtw-delete-button .wtw-action-icon {
   filter: brightness(0) saturate(100%) invert(47%) sepia(88%) saturate(3455%) hue-rotate(335deg) brightness(96%) contrast(92%);
 }
 
-.wtw-wallet-action-btn:hover img {
+.wtw-wallet-action-btn.wtw-delete-button:hover .wtw-action-icon {
   filter: brightness(0) saturate(100%) invert(29%) sepia(95%) saturate(3098%) hue-rotate(346deg) brightness(98%) contrast(90%);
 }
 
@@ -1282,5 +1300,78 @@
 
 .wtw-modal-btn.wtw-primary:disabled:hover {
   filter: brightness(0.9);
+}
+
+/* Tooltip Styles */
+.wtw-tooltip-container {
+  display: inline-block;
+  position: relative;
+}
+
+.wtw-tooltip {
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+  letter-spacing: -0.2px;
+  border: 1px solid rgba(179, 184, 249, 0.2);
+}
+
+.wtw-tooltip-content {
+  position: relative;
+  z-index: 1;
+}
+
+.wtw-tooltip.wtw-fade-popup {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.wtw-tooltip.wtw-fade-popup.wtw-visible {
+  opacity: 1;
+}
+
+.wtw-tooltip::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+.wtw-tooltip.wtw-tooltip-top::before {
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px 5px 0 5px;
+  border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+}
+
+.wtw-tooltip.wtw-tooltip-bottom::before {
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 5px 5px 5px;
+  border-color: transparent transparent rgba(0, 0, 0, 0.9) transparent;
+}
+
+.wtw-tooltip.wtw-tooltip-left::before {
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 5px 0 5px 5px;
+  border-color: transparent transparent transparent rgba(0, 0, 0, 0.9);
+}
+
+.wtw-tooltip.wtw-tooltip-right::before {
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 5px 5px 5px 0;
+  border-color: transparent rgba(0, 0, 0, 0.9) transparent transparent;
 }
 

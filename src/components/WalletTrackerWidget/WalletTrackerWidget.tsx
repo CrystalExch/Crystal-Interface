@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, X } from 'lucide-react';
 import './WalletTrackerWidget.css';
 import monadicon from '../../assets/monadlogo.svg';
@@ -104,6 +105,94 @@ const formatCreatedDate = (isoString: string) => {
   if (days < 7) return `${days}d ago`;
   if (days < 30) return `${Math.floor(days / 7)}w ago`;
   return `${Math.floor(days / 30)}mo ago`;
+};
+
+const WtwTooltip: React.FC<{
+  content: string | React.ReactNode;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
+  offset?: number;
+}> = ({ content, children, position = 'top', offset }) => {
+  const [vis, setVis] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+    let top = 0;
+    let left = 0;
+
+    switch (position) {
+      case 'top':
+        top = rect.top + scrollY - 25;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'bottom':
+        top = rect.bottom + scrollY + 25;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'left':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.left + scrollX - 25;
+        break;
+      case 'right':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.right + scrollX + 25;
+        break;
+    }
+
+    setTooltipPosition({ top, left });
+  }, [position]);
+
+  useEffect(() => {
+    if (vis) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [vis, updatePosition]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="wtw-tooltip-container"
+      onMouseEnter={() => setVis(true)}
+      onMouseLeave={() => setVis(false)}
+    >
+      {children}
+      {vis && createPortal(
+        <div
+          className={`wtw-tooltip wtw-tooltip-${position} wtw-fade-popup wtw-visible`}
+          style={{
+            position: 'absolute',
+            top: `${tooltipPosition.top}px`,
+            left: `${tooltipPosition.left}px`,
+            transform: position === 'top' || position === 'bottom'
+              ? 'translateX(-50%)'
+              : position === 'left' || position === 'right'
+                ? 'translateY(-50%)'
+                : 'none',
+            zIndex: 9999,
+            pointerEvents: 'none'
+          }}
+        >
+          <div className="wtw-tooltip-content">
+            {content}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
 };
 
 const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
@@ -853,7 +942,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                 >
                   Last Active
                 </div>
-                <div className="wtw-wallet-header-cell wtw-wallet-actions">Actions</div>
               </div>
 
               {/* Wallet Items Container */}
@@ -972,13 +1060,41 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
                       {/* Actions */}
                       <div className="wtw-wallet-actions">
-                        <button
-                          className="wtw-wallet-action-btn"
-                          onClick={() => setShowDeleteConfirm(wallet.id)}
-                          title="Delete wallet"
-                        >
-                          <img src={trash} alt="delete" />
-                        </button>
+                        <WtwTooltip content="View on Explorer">
+                          <a
+                            href={`${chainCfg?.explorer}/address/${wallet.address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="wtw-wallet-action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                          >
+                            <svg
+                              className="wtw-action-icon-svg"
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                            >
+                              <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                              <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                            </svg>
+                          </a>
+                        </WtwTooltip>
+
+                        <WtwTooltip content="Delete Wallet">
+                          <button
+                            className="wtw-wallet-action-btn wtw-delete-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowDeleteConfirm(wallet.id);
+                            }}
+                          >
+                            <img src={trash} className="wtw-action-icon" alt="Delete" />
+                          </button>
+                        </WtwTooltip>
                       </div>
                     </div>
                   ))

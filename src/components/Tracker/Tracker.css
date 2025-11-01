@@ -427,11 +427,11 @@
 .tracker-live-trades .detail-trades-table-header {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid rgba(179,184,249,0.1); 
-  padding: 6px 20px; 
-  position: sticky; 
-  top: 0; 
-  background: rgb(6,6,6); 
+  border-bottom: 1px solid rgba(179,184,249,0.1);
+  padding: 8px 20px;
+  position: sticky;
+  top: 0;
+  background: rgb(6,6,6);
   z-index: 1;
   min-width: 800px;
   width: 100%;
@@ -515,8 +515,8 @@
 
 .tracker-live-trades .detail-trades-col:nth-child(3),
 .tracker-live-trades .detail-trades-header-cell:nth-child(3) {
-  min-width: 70px;
-  flex: 0 0 70px;
+  min-width: 120px;
+  flex: 1.5;
 }
 
 .tracker-live-trades .detail-trades-col:nth-child(4),

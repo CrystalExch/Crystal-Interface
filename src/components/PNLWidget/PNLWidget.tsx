@@ -3,6 +3,7 @@ import { Settings, RotateCcw } from 'lucide-react';
 import './PNLWidget.css';
 import PNLBG from '../../assets/lbstand.png';
 import PNLHistoryPopup from './PNLHistoryPopup';
+import monadIcon from '../../assets/monad.svg';
 
 interface PNLWidgetProps {
   isOpen: boolean;
@@ -299,35 +300,70 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
                 </div>
 
                 <div className="pnl-bg-preview">
-                  <div
-                    className="pnl-bg-preview-box"
-                    style={{
-                      backgroundImage: `url(${PNLBG})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      filter: `blur(${blurAmount}px)`,
-                      opacity: opacityAmount / 100
-                    }}
-                  >
-                    <div className="pnl-bg-balance">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2">
-                        <rect x="3" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="14" width="7" height="7"></rect>
-                        <rect x="3" y="14" width="7" height="7"></rect>
-                      </svg>
-                      <span className="pnl-bg-value">12.34</span>
-                      <span className="pnl-bg-label">Balance</span>
-                    </div>
-                    <div className="pnl-bg-pnl">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
-                        <rect x="3" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="14" width="7" height="7"></rect>
-                        <rect x="3" y="14" width="7" height="7"></rect>
-                      </svg>
-                      <span className="pnl-bg-value negative">-1.234</span>
-                      <span className="pnl-bg-label">PNL</span>
+                  <div className="pnl-bg-preview-wrapper">
+                    <div
+                      className="pnl-bg-preview-background"
+                      style={{
+                        backgroundImage: `url(${PNLBG})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        filter: `blur(${blurAmount}px)`,
+                        opacity: opacityAmount / 100
+                      }}
+                    />
+                    <div className="pnl-bg-preview-content">
+                      <div className="pnl-bg-balance">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2">
+                          <rect x="3" y="3" width="7" height="7"></rect>
+                          <rect x="14" y="3" width="7" height="7"></rect>
+                          <rect x="14" y="14" width="7" height="7"></rect>
+                          <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <div className="pnl-bg-value-container">
+                          <div className="pnl-bg-value-row">
+                            {!swapCurrency ? (
+                              <>
+                                <img src={monadIcon} alt="MON" className="pnl-bg-mon-icon" />
+                                <span className="pnl-bg-value">12.34</span>
+                              </>
+                            ) : (
+                              <span className="pnl-bg-value">$1,234.56</span>
+                            )}
+                          </div>
+                          {showAltCurrency && (
+                            <span className="pnl-bg-alt-currency">
+                              {!swapCurrency ? '$1,234.56' : '12.34 MON'}
+                            </span>
+                          )}
+                        </div>
+                        <span className="pnl-bg-label">Balance</span>
+                      </div>
+                      <div className="pnl-bg-pnl">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+                          <rect x="3" y="3" width="7" height="7"></rect>
+                          <rect x="14" y="3" width="7" height="7"></rect>
+                          <rect x="14" y="14" width="7" height="7"></rect>
+                          <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <div className="pnl-bg-value-container">
+                          <div className="pnl-bg-value-row">
+                            {!swapCurrency ? (
+                              <>
+                                <img src={monadIcon} alt="MON" className="pnl-bg-mon-icon" />
+                                <span className="pnl-bg-value negative">-1.234</span>
+                              </>
+                            ) : (
+                              <span className="pnl-bg-value negative">-$123.45</span>
+                            )}
+                          </div>
+                          {showAltCurrency && (
+                            <span className="pnl-bg-alt-currency">
+                              {!swapCurrency ? '-$123.45' : '-1.234 MON'}
+                            </span>
+                          )}
+                        </div>
+                        <span className="pnl-bg-label">PNL</span>
+                      </div>
                     </div>
                   </div>
                   <div className="pnl-bg-recommendation">Recommended aspect ratio 4:1 and 0.2MB file size</div>
@@ -623,7 +659,23 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
               </div>
               <div className="pnl-stat-content">
                 <div className="pnl-stat-label">Balance</div>
-                <div className="pnl-stat-value">0</div>
+                <div className="pnl-stat-value-wrapper">
+                  <div className="pnl-stat-value-main">
+                    {!swapCurrency ? (
+                      <>
+                        <img src={monadIcon} alt="MON" className="pnl-stat-mon-icon" />
+                        <span className="pnl-stat-value">12.34</span>
+                      </>
+                    ) : (
+                      <span className="pnl-stat-value">$1,234.56</span>
+                    )}
+                  </div>
+                  {showAltCurrency && (
+                    <div className="pnl-stat-alt-value">
+                      {!swapCurrency ? '$1,234.56' : '12.34 MON'}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -635,7 +687,23 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
               </div>
               <div className="pnl-stat-content">
                 <div className="pnl-stat-label">PNL</div>
-                <div className="pnl-stat-value pnl-positive">+0.737</div>
+                <div className="pnl-stat-value-wrapper">
+                  <div className="pnl-stat-value-main">
+                    {!swapCurrency ? (
+                      <>
+                        <img src={monadIcon} alt="MON" className="pnl-stat-mon-icon" />
+                        <span className="pnl-stat-value pnl-positive">+0.737</span>
+                      </>
+                    ) : (
+                      <span className="pnl-stat-value pnl-positive">+$73.70</span>
+                    )}
+                  </div>
+                  {showAltCurrency && (
+                    <div className="pnl-stat-alt-value">
+                      {!swapCurrency ? '+$73.70' : '+0.737 MON'}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

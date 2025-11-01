@@ -2556,11 +2556,11 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       <div className="tracker-live-trades">
         <div className="tracker=detail-trades-table">
           <div className="detail-trades-table-header">
+            <div className="detail-trades-header-cell detail-trades-time">Time</div>
             <div className="detail-trades-header-cell detail-trades-account">Account</div>
-            <div className="detail-trades-header-cell" style={{minWidth: '100px', width: '100px'}}>Token</div>
+            <div className="detail-trades-header-cell">Token</div>
             <div
               className={`detail-trades-header-cell sortable ${tradeSortField === 'amount' ? 'active' : ''}`}
-              style={{minWidth: '100px', width: '100px'}}
               onClick={() => handleTradeSort('amount')}
             >
               Amount
