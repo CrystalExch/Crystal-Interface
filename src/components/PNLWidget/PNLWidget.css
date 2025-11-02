@@ -16,28 +16,25 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Snap Indicators */
+/* Snap Indicators - Matching TrackerWidget style */
 .pnl-snap-indicator {
-  background: rgba(179, 184, 249, 0.1);
-  border: 2px dashed rgba(179, 184, 249, 0.3);
-  pointer-events: none;
   position: fixed;
-  transition: opacity 0.2s;
-  z-index: 9998;
+  top: 53px;
+  height: calc(100vh - 53px);
+  width: 400px;
+  background: rgba(179, 184, 249, 0.1);
+  pointer-events: none;
+  z-index: 9;
+  opacity: 1;
+  transition: opacity 0.3s ease;
 }
 
 .pnl-snap-indicator-left {
-  height: calc(100vh - 53px);
   left: 50px;
-  top: 53px;
-  width: 400px;
 }
 
 .pnl-snap-indicator-right {
-  height: calc(100vh - 53px);
   right: 0;
-  top: 53px;
-  width: 400px;
 }
 
 /* Header Container */

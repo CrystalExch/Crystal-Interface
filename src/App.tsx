@@ -561,6 +561,9 @@ useEffect(() => {
   const [pnlWidgetSnap, setPNLWidgetSnap] = useState<'left' | 'right' | null>(null);
   const [pnlWidgetWidth, setPNLWidgetWidth] = useState(480);
 
+  const [walletTrackerWidgetSnap, setWalletTrackerWidgetSnap] = useState<'left' | 'right' | null>(null);
+  const [walletTrackerWidgetWidth, setWalletTrackerWidgetWidth] = useState(600);
+
   const handleTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | null, width: number) => {
     setTrackerWidgetSnap(snapSide);
     setTrackerWidgetWidth(width);
@@ -574,6 +577,11 @@ useEffect(() => {
   const handlePNLWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | null, width: number) => {
     setPNLWidgetSnap(snapSide);
     setPNLWidgetWidth(width);
+  }, []);
+
+  const handleWalletTrackerWidgetSnapChange = useCallback((snapSide: 'left' | 'right' | null, width: number) => {
+    setWalletTrackerWidgetSnap(snapSide);
+    setWalletTrackerWidgetWidth(width);
   }, []);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const TOTAL_SUPPLY = 1e9;
@@ -25653,8 +25661,22 @@ useEffect(() => {
         </div>
       }
       <div className="app-container" style={{
-        marginLeft: trackerWidgetSnap === 'left' ? `${trackerWidgetWidth}px` : undefined,
-        marginRight: trackerWidgetSnap === 'right' ? `${trackerWidgetWidth}px` : undefined,
+        marginLeft: (() => {
+          let total = 0;
+          if (trackerWidgetSnap === 'left') total += trackerWidgetWidth;
+          if (spectraWidgetSnap === 'left') total += spectraWidgetWidth;
+          if (pnlWidgetSnap === 'left') total += pnlWidgetWidth;
+          if (walletTrackerWidgetSnap === 'left') total += walletTrackerWidgetWidth;
+          return total > 0 ? `${total}px` : undefined;
+        })(),
+        marginRight: (() => {
+          let total = 0;
+          if (trackerWidgetSnap === 'right') total += trackerWidgetWidth;
+          if (spectraWidgetSnap === 'right') total += spectraWidgetWidth;
+          if (pnlWidgetSnap === 'right') total += pnlWidgetWidth;
+          if (walletTrackerWidgetSnap === 'right') total += walletTrackerWidgetWidth;
+          return total > 0 ? `${total}px` : undefined;
+        })(),
         transition: 'margin 0.3s ease',
       }}>
         <Routes>
@@ -26179,6 +26201,7 @@ useEffect(() => {
         <WalletTrackerWidget
         isOpen={isWalletTrackerWidgetOpen}
         onClose={() => setIsWalletTrackerWidgetOpen(false)}
+        onSnapChange={handleWalletTrackerWidgetSnapChange}
         monUsdPrice={monUsdPrice}
         walletTokenBalances={walletTokenBalances}
         activechain={activechain}
