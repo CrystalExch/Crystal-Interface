@@ -28,7 +28,7 @@ const PerpsTradeHistoryItem: React.FC<PerpsTradeHistoryItemProps> = ({
         {formatDateAndTime(trade.time)}
       </div>
 
-      <div className="oc-cell market-cell" onClick={() => onMarketSelect(trade)}>
+      <div className="oc-cell market-cell" onClick={() => onMarketSelect(trade.symbol)}>
         <img className="ordercenter-token-icon" src={trade.image} />
         <div className="market-details">
           <div className="market-name">

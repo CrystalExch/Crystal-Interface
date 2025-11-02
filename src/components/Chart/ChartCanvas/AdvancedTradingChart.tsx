@@ -116,12 +116,12 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         ).toString();
       }
 
-      const formattedPrice = priceInDisplayUnits.toFixed(3);
+      const formattedPrice = formatSubscript(formatSig(priceInDisplayUnits.toFixed(Math.floor(Math.log10(Number(perps ? 1 / Number(activeMarketRef.current?.tickSize) : activeMarketRef.current?.priceFactor)))), !perps && activeMarketRef.current?.marketType != 0));
 
       const orderTypeText = isBuyOrder ? 'Place limit buy' : 'Place limit sell';
 
       const divider = ' \u2502 ';
-
+      
       const previewLine = widgetRef.current
         .activeChart()
         .createOrderLine()
@@ -150,7 +150,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1)
               : Number(activeMarket.priceFactor),
           );
-          const formatted = newPrice.toFixed(3);
+          const formatted = formatSubscript(formatSig(newPrice.toFixed(Math.floor(Math.log10(Number(perps ? 1 / Number(activeMarketRef.current?.tickSize) : activeMarketRef.current?.priceFactor)))), !perps && activeMarketRef.current?.marketType != 0));
           const side =
             tokenIn === activeMarket.quoteAddress
               ? 'Place limit buy'
@@ -159,7 +159,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         });
       previewOrderLineRef.current = previewLine;
     } catch (error) {
-      console.error('Error creating preview order line:', error);
+      console.error(error);
     }
   };
 
@@ -747,8 +747,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     });
 
     widgetRef.current.onChartReady(async () => {
-      setChartReady(true);
-
       await widgetRef.current.activeChart().createStudy('Volume', false, false)
       const panes = widgetRef.current.activeChart().getPanes?.();
       if (panes) {
@@ -884,6 +882,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       });
 
       widgetRef.current.activeChart().onDataLoaded().subscribe(null, () => {
+        setChartReady(true);
         setOverlayVisible(false)
       });
     });

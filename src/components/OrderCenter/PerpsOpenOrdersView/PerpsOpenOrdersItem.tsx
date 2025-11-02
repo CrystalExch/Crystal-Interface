@@ -32,7 +32,7 @@ const PerpsOpenOrdersItem: React.FC<PerpsOpenOrdersItemProps> = ({
         </span>
       </div>
 
-      <div className="oc-cell market-cell" onClick={() => onMarketSelect(order)}>
+      <div className="oc-cell market-cell" onClick={() => onMarketSelect(order.symbol)}>
         <img className="ordercenter-token-icon" src={order.image} />
         <div className="market-details">
           <div className="market-name">

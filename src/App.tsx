@@ -1085,6 +1085,7 @@ useEffect(() => {
       : "BTCUSD"
   );
   const [perpsMarketsData, setPerpsMarketsData] = useState<{ [key: string]: any }>({});
+  const [perpsLimitChase, setPerpsLimitChase] = useState(true);
   const [perpsFilterOptions, setPerpsFilterOptions] = useState({});
   const [perpsKeystore, setPerpsKeystore] = useState<any>(() => {
     const saved = localStorage.getItem('crystal_perps_signer');
@@ -1097,6 +1098,13 @@ useEffect(() => {
     return saved !== null ? saved : '10';
   });
   const [userLeverage, setUserLeverage] = useState<any>();
+
+  const handlePerpsMarketSelect = useCallback((marketKey: any) => {
+    setPerpsLimitChase(true);
+    setperpsActiveMarketKey(marketKey);
+    navigate(`/perps/${marketKey}`);
+  }, [navigate]);
+  
   // state vars
   const [_trackedWallets, setTrackedWallets] = useState<any[]>([]);
   const [showSendDropdown, setShowSendDropdown] = useState(false);
@@ -1599,7 +1607,7 @@ useEffect(() => {
   const [recipient, setrecipient] = useState('');
   const [limitPrice, setlimitPrice] = useState(BigInt(0));
   const [limitChase, setlimitChase] = useState(true);
-  const [isLimitEditing, setLimitIsEditing] = useState(false)
+  const [isLimitEditing, setIsLimitEditing] = useState(false)
   const [orders, setorders] = useState<any[]>([]);
   const [canceledorders, setcanceledorders] = useState<any[]>([]);
   const [tradehistory, settradehistory] = useState<any[]>([]);
@@ -3194,7 +3202,7 @@ useEffect(() => {
   const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
     let newPrice = BigInt(Math.round(Number(price.toFixed(Math.floor(Math.log10(displayPriceFactor ? displayPriceFactor : priceFactor)))) * priceFactor));
     setlimitPrice(newPrice);
-    setlimitPriceString(price.toFixed(Math.floor(Math.log10(displayPriceFactor ? displayPriceFactor : priceFactor))));
+    setlimitPriceString(price.toFixed(Math.floor(Math.log10(displayPriceFactor ? Math.min(displayPriceFactor, priceFactor) : priceFactor))));
     setlimitChase(false);
     if (location.pathname.slice(1) == 'limit') {
       if (switched) {
@@ -10637,7 +10645,7 @@ useEffect(() => {
       setlimitPriceString(
         price == 0n ? '' : (
           Number(price) / Number(activeMarket.priceFactor)
-        ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1) : Number(activeMarket.priceFactor)))),
+        ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? Math.min(10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1), Number(activeMarket.priceFactor)) : Number(activeMarket.priceFactor)))),
       );
       if (switched && location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
         setamountIn(
@@ -11799,7 +11807,7 @@ useEffect(() => {
                           setlimitPriceString(
                             (
                               Number(price) / Number(activeMarket.priceFactor)
-                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1) : Number(activeMarket.priceFactor)))),
+                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? Math.min(10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1), Number(activeMarket.priceFactor)) : Number(activeMarket.priceFactor)))),
                           );
                           setamountOutSwap(
                             price != BigInt(0) && amountIn != BigInt(0)
@@ -12524,7 +12532,7 @@ useEffect(() => {
                           setlimitPriceString(
                             (
                               Number(price) / Number(activeMarket.priceFactor)
-                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1) : Number(activeMarket.priceFactor)))),
+                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? Math.min(10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1), Number(activeMarket.priceFactor)) : Number(activeMarket.priceFactor)))),
                           );
                           setamountOutSwap(
                             price != BigInt(0) && amountIn != BigInt(0)
@@ -21425,7 +21433,7 @@ useEffect(() => {
                 setlimitPriceString(
                   (
                     Number(price) / Number(activeMarket.priceFactor)
-                  ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1) : Number(activeMarket.priceFactor)))),
+                  ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? Math.min(10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1), Number(activeMarket.priceFactor)) : Number(activeMarket.priceFactor)))),
                 );
                 setamountOutSwap(
                   price != BigInt(0) && amountIn != BigInt(0)
@@ -21824,8 +21832,8 @@ useEffect(() => {
                 ? 'exceed-balance'
                 : ''
                 }`}
-              onFocus={() => setLimitIsEditing(true)}
-              onBlur={() => setLimitIsEditing(false)}
+              onFocus={() => setIsLimitEditing(true)}
+              onBlur={() => setIsLimitEditing(false)}
               onCompositionStart={() => {
                 setIsComposing(true);
               }}
@@ -25636,7 +25644,7 @@ useEffect(() => {
             buyPresets={buyPresets}
             sellPresets={sellPresets}
             perpsActiveMarketKey={perpsActiveMarketKey}
-            setperpsActiveMarketKey={setperpsActiveMarketKey}
+            setperpsActiveMarketKey={handlePerpsMarketSelect}
             perpsMarketsData={perpsMarketsData}
             perpsFilterOptions={perpsFilterOptions}
             externalUserStats={memeUserStats}
@@ -26072,7 +26080,9 @@ useEffect(() => {
                 setOrderCenterHeight={setOrderCenterHeight}
                 isMarksVisible={isMarksVisible}
                 setIsMarksVisible={setIsMarksVisible}
-                navigate={navigate}
+                setPerpsLimitChase={setPerpsLimitChase}
+                perpsLimitChase={perpsLimitChase}
+                handlePerpsMarketSelect={handlePerpsMarketSelect}
               />
             } />
           <Route path="/leaderboard"

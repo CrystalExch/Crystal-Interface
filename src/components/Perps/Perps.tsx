@@ -74,7 +74,9 @@ interface PerpsProps {
   setOrderCenterHeight: (height: number) => void;
   isMarksVisible: any;
   setIsMarksVisible: any;
-  navigate: any;
+  setPerpsLimitChase: any;
+  perpsLimitChase: any;
+  handlePerpsMarketSelect: any;
 }
 
 const Perps: React.FC<PerpsProps> = ({
@@ -138,7 +140,9 @@ const Perps: React.FC<PerpsProps> = ({
   setOrderCenterHeight,
   isMarksVisible,
   setIsMarksVisible,
-  navigate
+  setPerpsLimitChase,
+  perpsLimitChase,
+  handlePerpsMarketSelect
 }) => {
   const [exchangeConfig, setExchangeConfig] = useState<any>();
   const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
@@ -148,7 +152,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [activeOrderType, setActiveOrderType] = useState<"Market" | "Limit" | "Pro">("Market");
   const [inputString, setInputString] = useState('');
   const [limitPriceString, setlimitPriceString] = useState('');
-  const [limitChase, setlimitChase] = useState(true);
+  const [isLimitEditing, setIsLimitEditing] = useState(false)
   const [maintenanceMargin, setMaintenanceMargin] = useState('0.00');
   const [usedMargin, setUsedMargin] = useState('0.00');
   const [balance, setBalance] = useState('0.00');
@@ -156,7 +160,6 @@ const Perps: React.FC<PerpsProps> = ({
   const [upnl, setUpnl] = useState('0.00')
   const [userFees, setUserFees] = useState(["0.00038", "0.00012"]);
   const [amountIn, setAmountIn] = useState(BigInt(0));
-  const [limitPrice, setlimitPrice] = useState(BigInt(0));
   const [sliderPercent, setSliderPercent] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedPerpsPreset, setSelectedPerpsPreset] = useState<number | null>(null);
@@ -524,11 +527,6 @@ const Perps: React.FC<PerpsProps> = ({
     popup.style.transform = 'translateX(-50%)';
   }, []);
 
-  const handlePerpsMarketSelect = useCallback((market: any) => {
-    setperpsActiveMarketKey(market.symbol);
-    navigate(`/perps/${market.symbol}`);
-  }, [navigate, setperpsActiveMarketKey]);
-
   const handlePresetEditToggle = useCallback(() => {
     setIsPresetEditMode(!isPresetEditMode);
     setEditingPresetIndex(null);
@@ -538,7 +536,7 @@ const Perps: React.FC<PerpsProps> = ({
   const handleSliderChange = useCallback((percent: number) => {
     setSliderPercent(percent);
     positionPopup(percent);
-    let inputString = Number((Number(availableBalance) * Number(leverage) * percent / 100)) == 0 ? '' : (Number(availableBalance) * Number(leverage) * percent / 100).toFixed(2)
+    let inputString = Number((Number(availableBalance) * Number(leverage) * percent / 100)) == 0 ? '' : (Math.floor(Number(availableBalance) * Number(leverage) * percent) / 100).toFixed(2)
     setInputString(inputString)
     //setLiqPrice()
   }, [availableBalance, leverage]);
@@ -728,6 +726,117 @@ const Perps: React.FC<PerpsProps> = ({
   }, [availableBalance, leverage])
 
   useEffect(() => {
+    if (perpsLimitChase && !isLimitEditing) {
+      if (activeMarket?.bestBidPrice) {
+        const tick = Number(activeMarket.tickSize)
+        const precision = Math.floor(Math.log10(1 / tick))
+        const mid = (Number(activeMarket.bestBidPrice) + Number(activeMarket.bestAskPrice)) / 2
+        setlimitPriceString((activeTradeType == 'long' ? Math.floor(mid / tick) * tick : Math.ceil(mid / tick) * tick).toFixed(precision))
+      }
+      /* if (false && activeOrderType == 'Limit') {
+        setamountIn(
+          price !== BigInt(0) && amountOutSwap !== BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? (amountOutSwap *
+                (activeMarket.scaleFactor || BigInt(1))) /
+              price
+              : (amountOutSwap * price) /
+              (activeMarket.scaleFactor || BigInt(1))
+            : BigInt(0),
+        );
+        setInputString(
+          (price !== BigInt(0) && amountOutSwap !== BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? customRound(
+                Number(
+                  (amountOutSwap *
+                    (activeMarket.scaleFactor || BigInt(1))) /
+                  price,
+                ) /
+                10 ** Number(tokendict[tokenIn].decimals),
+                3,
+              )
+              : customRound(
+                Number(
+                  (amountOutSwap * price) /
+                  (activeMarket.scaleFactor || BigInt(1)),
+                ) /
+                10 ** Number(tokendict[tokenIn].decimals),
+                3,
+              )
+            : ''
+          ).toString(),
+        );
+        const percentage =
+          tokenBalances[tokenIn] === BigInt(0)
+            ? 0
+            : Math.min(
+              100,
+              Math.floor(
+                Number(
+                  (price !== BigInt(0) &&
+                    amountOutSwap !== BigInt(0)
+                    ? tokenIn === activeMarket?.baseAddress
+                      ? (amountOutSwap *
+                        (activeMarket.scaleFactor ||
+                          BigInt(1))) /
+                      price
+                      : (amountOutSwap * price) /
+                      (activeMarket.scaleFactor || BigInt(1))
+                    : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
+                )
+              ),
+            );
+        setSliderPercent(percentage);
+        const slider = document.querySelector(
+          '.balance-amount-slider',
+        );
+        const popup = document.querySelector(
+          '.slider-percentage-popup',
+        );
+        if (slider && popup) {
+          const rect = slider.getBoundingClientRect();
+          (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+            }px`;
+        }
+      }
+      else if (activeOrderType == 'Limit') {
+        setamountOutSwap(
+          price != BigInt(0) && amountIn != BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? (amountIn * price) /
+              (activeMarket.scaleFactor || BigInt(1))
+              : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+              price
+            : BigInt(0),
+        );
+        setoutputString(
+          (price != BigInt(0) && amountIn != BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? customRound(
+                Number(
+                  (amountIn * price) /
+                  (activeMarket.scaleFactor || BigInt(1)),
+                ) /
+                10 ** Number(tokendict[tokenOut].decimals),
+                3,
+              )
+              : customRound(
+                Number(
+                  (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                  price,
+                ) /
+                10 ** Number(tokendict[tokenOut].decimals),
+                3,
+              )
+            : ''
+          ).toString(),
+        );
+      } */
+    }
+  }, [perpsLimitChase, activeOrderType, activeTradeType, perpsMarketsData?.[perpsActiveMarketKey]?.bestBidPrice, perpsMarketsData?.[perpsActiveMarketKey]?.bestAskPrice, perpsActiveMarketKey, isLimitEditing]);
+  
+  useEffect(() => {
     if (Object.keys(perpsMarketsData).length == 0) return;
     let tempupnl = 0
     let temppositions: any = []
@@ -781,7 +890,7 @@ const Perps: React.FC<PerpsProps> = ({
     }
     const tempmaintenancemargin = positions.reduce((t, p) => t + Number(p.maintenanceMargin || 0), 0)
     for (const position of temppositions) {
-      position.liqPrice = (position.direction == 'long' ? (Number(position.entryPrice) - ((Number(balance) + Number(tempupnl)) - tempmaintenancemargin) / Number(position.size)) : (Number(position.entryPrice) + ((Number(balance) + Number(tempupnl)) - tempmaintenancemargin) / Number(position.size))).toFixed((position.markPrice.toString().split(".")[1] || "").length)
+      position.liqPrice = (Number(position.entryPrice) - ((Number(balance) + Number(tempupnl) - tempmaintenancemargin) / (position.direction == 'long' ? Number(position.size) : -Number(position.size)) / (1 - (position.direction == 'long' ? 1 : -1) * position.mmr))).toFixed((position.markPrice.toString().split(".")[1] || "").length)
     }
 
     setUpnl(isNaN(tempupnl) ? '0.00' : tempupnl.toFixed(2))
@@ -1436,7 +1545,7 @@ const Perps: React.FC<PerpsProps> = ({
       data={chartData}
       setData={setChartData}
       realtimeCallbackRef={realtimeCallbackRef}
-      limitPrice={limitPrice}
+      limitPrice={0n}
       updateLimitAmount={updateLimitAmount}
       tokenIn={'0x0000000000000000000000000000000000000000'}
       amountIn={BigInt(0)}
@@ -1454,7 +1563,6 @@ const Perps: React.FC<PerpsProps> = ({
     handleSetChain,
     chartData,
     realtimeCallbackRef,
-    limitPrice,
     updateLimitAmount,
     location.pathname,
     selectedInterval
@@ -1582,6 +1690,8 @@ const Perps: React.FC<PerpsProps> = ({
                 inputMode="decimal"
                 placeholder="0.00"
                 value={limitPriceString}
+                onFocus={() => setIsLimitEditing(true)}
+                onBlur={() => setIsLimitEditing(false)}
                 onChange={(e) => {
                   if (new RegExp(
                     `^\\d*\\.?\\d{0,${Math.floor(Math.log10(Number(1 / activeMarket.tickSize)))}}$`
@@ -1862,7 +1972,10 @@ const Perps: React.FC<PerpsProps> = ({
                 />
               </div>
               <div className="value-container">
-                {(activeMarket?.lastPrice && (Number(balance) + Number(upnl)) && (Number(inputString) + (Number(activeMarket.oraclePrice) * Math.abs(currentPosition)))) ? formatCommas((activeTradeType == 'long' ? (Number(activeTradeType == 'long' ? activeMarket.bestAskPrice : activeMarket.bestBidPrice) - ((Number(balance) + Number(upnl)) - (Number(inputString) * (parseFloat(activeMarket?.riskTierList?.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList?.at(-1).maintenanceMarginRate)))) / (Number(inputString) / Number(activeMarket.oraclePrice) - Math.abs(currentPosition))) : (Number(activeMarket.bestBidPrice) + ((Number(balance) + Number(upnl)) - (Number(inputString) * (parseFloat(activeMarket?.riskTierList?.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList?.at(-1).maintenanceMarginRate)))) / (Number(inputString) / Number(activeMarket.oraclePrice) + Math.abs(currentPosition)))).toFixed((activeMarket.lastPrice.toString().split(".")[1] || "").length)) : '0.00'}
+                {(activeMarket?.lastPrice && (Number(balance) + Number(upnl)) && (Number(inputString) / Number(activeMarket.oraclePrice) + currentPosition)) ? formatCommas(
+                  Math.max(Number(activeTradeType == 'long' ? activeMarket.bestAskPrice : activeMarket.bestBidPrice) - ((Number(balance) + Number(upnl) - positions.reduce((t, p) => t + Number(p.maintenanceMargin || 0), 0)) / ((activeTradeType == 'long' ? Number(inputString) / Number(activeMarket.bestAskPrice) : -Number(inputString) / Number(activeMarket.bestBidPrice)) + currentPosition) / 
+                  ((1 - (((activeTradeType == 'long' ? Number(inputString) / Number(activeMarket.bestAskPrice) : -Number(inputString) / Number(activeMarket.bestBidPrice)) + currentPosition) > 0 ? 1 : -1) * (parseFloat(activeMarket?.riskTierList?.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList?.at(-1).maintenanceMarginRate)))))
+                  , 0).toFixed((activeMarket.lastPrice.toString().split(".")[1] || "").length)) : '0.00'}
               </div>
             </div>
             <div className="price-impact">

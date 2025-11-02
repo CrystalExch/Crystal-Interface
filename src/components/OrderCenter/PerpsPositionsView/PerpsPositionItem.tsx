@@ -23,7 +23,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
 
   return (
     <div className="perps-position-item">
-      <div className="oc-cell market-cell" onClick={() => onMarketSelect(position)}>
+      <div className="oc-cell market-cell" onClick={() => onMarketSelect(position.symbol)}>
       <div className="order-favorite-cell">
         <div
           className="order-favorite-icon"

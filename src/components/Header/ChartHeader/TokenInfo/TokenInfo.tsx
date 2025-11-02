@@ -1,6 +1,5 @@
 import { Search, SearchIcon } from 'lucide-react';
 import React, { useEffect, useRef, useState, useMemo, useCallback, memo } from 'react';
-import { useNavigate } from 'react-router-dom'
 import camera from '../../../../assets/camera.svg'
 import CopyButton from '../../../CopyButton/CopyButton';
 import TokenInfoPopup from './TokenInfoPopup/TokenInfoPopup';
@@ -546,7 +545,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   showLoadingPopup,
   updatePopup,
   setperpsActiveMarketKey,
-
 }) => {
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const [hoveredMemeImage, setHoveredMemeImage] = useState(false);
@@ -629,7 +627,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     }
   }, [hoveredMemeImage, memeTokenData?.image, updatePreviewPosition]);
   
-  const navigate = useNavigate()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -711,6 +708,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
     return filtered;
   }, [perpsMarketsData, perpsFilterOptions, perpsActiveFilter, perpsSearchQuery, perpsSortField, perpsSortDirection, favorites]);
+
   const togglePerpsDropdown = () => {
     if (!isPerpsDropdownOpen) {
       setPerpsSearchQuery('');
@@ -735,11 +733,10 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     setPerpsSearchQuery('');
     setIsPerpsDropdownVisible(false);
     setperpsActiveMarketKey(market.contractName);
-    navigate(`/perps/${market.contractName}`);
     setTimeout(() => {
       setIsPerpsDropdownOpen(false);
     }, 200);
-  }, [navigate, setperpsActiveMarketKey]);
+  }, [setperpsActiveMarketKey]);
 
   const handlePerpsMouseEnter = useCallback((index: number) => {
     setPerpsSelectedIndex(index);
@@ -753,21 +750,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     toggleFavorite: toggleFavorite,
     favorites: favorites,
   }), [filteredPerpsMarkets, perpsSelectedIndex, handlePerpsMouseEnter, handlePerpsMarketSelect, toggleFavorite]);
-  <div className="perps-markets-list-virtualized" style={{ height: '400px', width: '100%' }}>
-    <List
-      ref={virtualizationListRef}
-      height={400}
-      width="100%"
-      itemCount={filteredPerpsMarkets.length}
-      itemSize={40}
-      itemData={virtualizationData}
-      overscanCount={15}
-      itemKey={(index, data) => data.markets[index]?.contractName || index}
-      useIsScrolling={true}
-    >
-      {PerpsMarketRow}
-    </List>
-  </div>
 
   const isAdvancedView = isTradeRoute && !simpleView;
 
@@ -857,6 +839,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       console.error('Failed to copy link:', err);
     }
   };
+
   useEffect(() => {
     if (isPerpsDropdownVisible && perpsShouldFocus) {
       const focusInput = () => {
@@ -911,6 +894,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       }
     };
   }, [isMemeToken]);
+  
   useEffect(() => {
     const handlePerpsScroll = () => {
       const container = perpsMetricsRef.current;
