@@ -166,11 +166,11 @@ const handleLaunch = async () => {
         }),
         value: buyAmount,
       },
-    }, 15000000n);
-    console.log(result)
+    }, 15000000n, 0n, false, '', 0, false, true);
+
     let tokenAddress = '';                                          
-    if (result?.logs) {                                              
-      const createLog = result.logs.find((log: any) => log.topics?.[0]?.toLowerCase().includes('created')); 
+    if (result?.receipt?.logs) {                                              
+      const createLog = result.receipt?.logs.find((log: any) => log.topics?.[0]?.toLowerCase().includes('0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b')); 
       if (createLog?.topics?.[1]) {                                    
         tokenAddress = '0x' + createLog.topics[1].slice(-40);         
       }                                                               
@@ -179,13 +179,13 @@ const handleLaunch = async () => {
     if (updatePopup) {                                              
       updatePopup(txId, {                                             
         title: 'Token Created!',                                   
-        subtitle: `${formData.name} is now live! Click to view`,     
+        subtitle: `${formData.name} is now live!`,     
         variant: 'success',                                    
         isLoading: false,                                           
         isClickable: true,                                             
         onClick: () => {                                         
           if (tokenAddress) {    
-            navigate(`/meme/${tokenAddress}`);                                      
+            navigate(`/board/${tokenAddress}`);                                      
           } else {                                                   
             navigate('/board');                                   
           }                                                      
@@ -197,11 +197,11 @@ const handleLaunch = async () => {
     
     setTimeout(() => {                                              
       if (tokenAddress) {                                             
-        navigate(`/meme/${tokenAddress}`);                           
+        navigate(`/board/${tokenAddress}`);                           
       } else {                                                         
         navigate('/board');                                          
       }                                                             
-    }, 2000);                                                      
+    }, 0);                                                      
   } catch (err: any) {
     setIsLaunching(false);
     return;

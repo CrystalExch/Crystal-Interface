@@ -863,8 +863,8 @@ const Perps: React.FC<PerpsProps> = ({
         liqPrice: 0,
         margin: positionValue / (userLeverage?.[marketData?.contractId]?.maxLeverage ? userLeverage?.[marketData?.contractId]?.maxLeverage : marketData?.displayMaxLeverage),
         funding: -Number(position.fundingFee),
-        maintenanceMargin: positionValue * parseFloat(marketData?.riskTierList.find((t: any) => positionValue <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? marketData?.riskTierList.at(-1).maintenanceMarginRate),
-        mmr: parseFloat(marketData?.riskTierList.find((t: any) => positionValue <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? marketData?.riskTierList.at(-1).maintenanceMarginRate)
+        maintenanceMargin: position.openValue * parseFloat(marketData?.riskTierList.find((t: any) => position.openValue <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? marketData?.riskTierList.at(-1).maintenanceMarginRate),
+        mmr: parseFloat(marketData?.riskTierList.find((t: any) => position.openValue <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? marketData?.riskTierList.at(-1).maintenanceMarginRate)
       })
     }
 
@@ -890,7 +890,7 @@ const Perps: React.FC<PerpsProps> = ({
     }
     const tempmaintenancemargin = positions.reduce((t, p) => t + Number(p.maintenanceMargin || 0), 0)
     for (const position of temppositions) {
-      position.liqPrice = (Number(position.entryPrice) - ((Number(balance) + Number(tempupnl) - tempmaintenancemargin) / (position.direction == 'long' ? Number(position.size) : -Number(position.size)) / (1 - (position.direction == 'long' ? 1 : -1) * position.mmr))).toFixed((position.markPrice.toString().split(".")[1] || "").length)
+      position.liqPrice = (Number(position.entryPrice) - ((Number(balance) + Number(tempupnl) - tempmaintenancemargin - position.pnl) / (position.direction == 'long' ? Number(position.size) : -Number(position.size)) / (1 - (position.direction == 'long' ? 1 : -1) * position.mmr))).toFixed((position.markPrice.toString().split(".")[1] || "").length)
     }
 
     setUpnl(isNaN(tempupnl) ? '0.00' : tempupnl.toFixed(2))
@@ -1696,6 +1696,7 @@ const Perps: React.FC<PerpsProps> = ({
                   if (new RegExp(
                     `^\\d*\\.?\\d{0,${Math.floor(Math.log10(Number(1 / activeMarket.tickSize)))}}$`
                   ).test(e.target.value)) {
+                    setPerpsLimitChase(false)
                     setlimitPriceString(e.target.value)
                   }
                 }}
@@ -1703,6 +1704,7 @@ const Perps: React.FC<PerpsProps> = ({
               />
               <span className="perps-mid-button" onClick={(e) => {
                 if (activeMarket?.bestBidPrice) {
+                  setPerpsLimitChase(true)
                   const tick = Number(activeMarket.tickSize)
                   const precision = Math.floor(Math.log10(1 / tick))
                   const mid = (Number(activeMarket.bestBidPrice) + Number(activeMarket.bestAskPrice)) / 2
@@ -1973,8 +1975,8 @@ const Perps: React.FC<PerpsProps> = ({
               </div>
               <div className="value-container">
                 {(activeMarket?.lastPrice && (Number(balance) + Number(upnl)) && (Number(inputString) / Number(activeMarket.oraclePrice) + currentPosition)) ? formatCommas(
-                  Math.max(Number(activeTradeType == 'long' ? activeMarket.bestAskPrice : activeMarket.bestBidPrice) - ((Number(balance) + Number(upnl) - positions.reduce((t, p) => t + Number(p.maintenanceMargin || 0), 0)) / ((activeTradeType == 'long' ? Number(inputString) / Number(activeMarket.bestAskPrice) : -Number(inputString) / Number(activeMarket.bestBidPrice)) + currentPosition) / 
-                  ((1 - (((activeTradeType == 'long' ? Number(inputString) / Number(activeMarket.bestAskPrice) : -Number(inputString) / Number(activeMarket.bestBidPrice)) + currentPosition) > 0 ? 1 : -1) * (parseFloat(activeMarket?.riskTierList?.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList?.at(-1).maintenanceMarginRate)))))
+                  Math.max(Number(activeOrderType == 'Limit' ? limitPriceString : activeTradeType == 'long' ? activeMarket.bestAskPrice : activeMarket.bestBidPrice) - ((Number(balance) + Number(upnl) - positions.reduce((t, p) => t + Number(p.maintenanceMargin || 0), 0) - Number(inputString) * parseFloat(activeMarket?.riskTierList.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList.at(-1).maintenanceMarginRate)) / ((activeTradeType == 'long' ? Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestAskPrice) : -Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestBidPrice)) + currentPosition) / 
+                  ((1 - (((activeTradeType == 'long' ? Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestAskPrice) : -Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestBidPrice)) + currentPosition) > 0 ? 1 : -1) * (parseFloat(activeMarket?.riskTierList?.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList?.at(-1).maintenanceMarginRate)))))
                   , 0).toFixed((activeMarket.lastPrice.toString().split(".")[1] || "").length)) : '0.00'}
               </div>
             </div>

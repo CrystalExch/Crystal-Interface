@@ -790,8 +790,6 @@ const [activeSection, setActiveSection] = useState<
 
     try {
       setIsVaultDepositSigning(true);
-      await handleSetChain();
-
       const sourceWalletCapacities = sourceWallets.map(sourceWallet => {
         const balances = walletTokenBalances[sourceWallet.address];
         let availableBalance = 0;
@@ -799,8 +797,8 @@ const [activeSection, setActiveSection] = useState<
         if (balances) {
           const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
           if (ethToken && balances[ethToken.address]) {
-            const amount = balances[ethToken.address] - settings.chainConfig[activechain].gasamount > BigInt(0)
-              ? balances[ethToken.address] - settings.chainConfig[activechain].gasamount
+            const amount = balances[ethToken.address] - (settings.chainConfig[activechain].gasamount + BigInt(10000000000000000000)) > BigInt(0)
+              ? balances[ethToken.address] - (settings.chainConfig[activechain].gasamount + BigInt(10000000000000000000))
               : BigInt(0);
 
             availableBalance = Number(amount) / 10 ** Number(ethToken.decimals);
@@ -821,9 +819,7 @@ const [activeSection, setActiveSection] = useState<
 
       const totalAvailable = sourceWalletCapacities.reduce((sum, item) => sum + item.availableBalance, 0);
 
-
       const actualDistributionAmount = Math.min(targetAmount, totalAvailable);
-
 
       const allTransfers = [];
 
@@ -958,8 +954,8 @@ const [activeSection, setActiveSection] = useState<
 
       const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
       if (ethToken && balances[ethToken.address]) {
-        const amount = balances[ethToken.address] - settings.chainConfig[activechain].gasamount > BigInt(0)
-          ? balances[ethToken.address] - settings.chainConfig[activechain].gasamount
+        const amount = balances[ethToken.address] - (settings.chainConfig[activechain].gasamount + BigInt(10000000000000000000)) > BigInt(0)
+          ? balances[ethToken.address] - (settings.chainConfig[activechain].gasamount + BigInt(10000000000000000000))
           : BigInt(0);
 
         const availableBalance = Number(amount) / 10 ** Number(ethToken.decimals);
@@ -1098,7 +1094,6 @@ const [activeSection, setActiveSection] = useState<
     setImportError('');
   };
 
-
   const startEditingWallet = (address: string) => {
     setEditingWallet(address);
     setEditingName(walletNames[address] || `Wallet ${subWallets.findIndex(w => w.address === address) + 1}`);
@@ -1133,7 +1128,6 @@ const [activeSection, setActiveSection] = useState<
     setDistributionAmount(maxAmount.toFixed(6));
     setSliderPercent(100);
   };
-
 
   const getWalletBalance = (address: string) => {
     const balances = walletTokenBalances[address];

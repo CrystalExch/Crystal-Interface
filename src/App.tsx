@@ -969,8 +969,9 @@ useEffect(() => {
   };
 
   const sendUserOperationAsync = useCallback(
-    async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n, mainWallet: boolean = false, pk: string = '', nonce: number = 0, noReceipt: boolean = false) => {
+    async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n, mainWallet: boolean = false, pk: string = '', nonce: number = 0, noReceipt: boolean = false, returnReceipt: boolean = false) => {
       let hash: `0x${string}`;
+      let receipt: any;
       let err: any;
       if (!!pk) {
         const tx = {
@@ -1051,12 +1052,13 @@ useEffect(() => {
       }
       try {
         await Promise.race([
-          new Promise<void>((resolve) => {
+          ...(returnReceipt ? [] : [new Promise<void>((resolve) => {
             txReceiptResolvers.current.set(hash, resolve);
-          }),
+          })]),
           waitForTransactionReceipt(config, { hash, pollingInterval: noReceipt ? 2000 : 500 }).then((r) => {
             txReceiptResolvers.current.delete(hash);
             hash = r.transactionHash;
+            receipt = r
           }),
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('transaction timeout')), 5000)
@@ -1074,7 +1076,7 @@ useEffect(() => {
         }
       }
       if (err) throw err
-      return hash
+      return {hash, receipt}
     },
     [validOneCT]
   );
