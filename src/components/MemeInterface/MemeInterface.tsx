@@ -372,7 +372,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         return 0;
     }
   };
-  const [memeImageError, setMemeImageError] = useState(false);
+
   const getWalletBalance = (address: string) => {
     const balances = walletTokenBalances[address];
     if (!balances) return 0;

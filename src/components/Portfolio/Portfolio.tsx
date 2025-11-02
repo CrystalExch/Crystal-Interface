@@ -368,18 +368,31 @@ const [activeSection, setActiveSection] = useState<
     direction: 'desc',
   });
 
-  const [enabledWallets, setEnabledWallets] = useState<Set<string>>(new Set());
-const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(() => {
-  const stored = localStorage.getItem('crystal_wallet_names');
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch (error) {
-      return {};
+  const [enabledWallets, setEnabledWallets] = useState<Set<string>>(() => {
+    const storedEnabledWallets = localStorage.getItem('crystal_enabled_wallets');
+    if (storedEnabledWallets) {
+      try {
+        return (new Set(JSON.parse(storedEnabledWallets)));
+      } catch (error) {
+        return (new Set());
+      }
     }
-  }
-  return {};
-});  const [editingWallet, setEditingWallet] = useState<string | null>(null);
+    else {
+      return (new Set());
+    }
+  });
+  const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(() => {
+    const stored = localStorage.getItem('crystal_wallet_names');
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (error) {
+        return {};
+      }
+    }
+    return {};
+  });  
+  const [editingWallet, setEditingWallet] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
 
   const [draggedWallet, setDraggedWallet] = useState<WalletDragItem | null>(null);
@@ -552,6 +565,8 @@ const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(()
   const [internalIsSpectating, setInternalIsSpectating] = useState(false);
   const [internalSpectatedAddress, setInternalSpectatedAddress] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [showDistributionModal, setShowDistributionModal] = useState(false);
+  const [privateKeyRevealed, setPrivateKeyRevealed] = useState(false);
 
   const isSpectating = propIsSpectating !== undefined ? propIsSpectating : internalIsSpectating;
   const spectatedAddress = propSpectatedAddress !== undefined ? propSpectatedAddress : internalSpectatedAddress;
@@ -559,6 +574,7 @@ const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(()
   const getActiveAddress = () => {
     return isSpectating ? spectatedAddress : address;
   };
+  
   const getMainWalletBalance = () => {
     const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
 
@@ -575,15 +591,6 @@ const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(()
   const isValidPrivateKey = (key: string) => {
     return /^0x[a-fA-F0-9]{64}$/.test(key) || /^[a-fA-F0-9]{64}$/.test(key);
   };
-useEffect(() => {
-  const storedEnabledWallets = localStorage.getItem('crystal_enabled_wallets');
-  if (storedEnabledWallets) {
-    try {
-      setEnabledWallets(new Set(JSON.parse(storedEnabledWallets)));
-    } catch (error) {
-    }
-  }
-}, []);
 
   const handleSingleMainDrop = (dragData: any, targetZone: 'source' | 'destination') => {
 
@@ -598,7 +605,6 @@ useEffect(() => {
       setDestinationWallets(prev => [...prev, { ...dragData, sourceZone: undefined }]);
     }
   };
-  const [showDistributionModal, setShowDistributionModal] = useState(false);
 
   const handleSingleZoneDrop = (dragData: any, targetZone: 'source' | 'destination' | 'main') => {
 
@@ -632,6 +638,7 @@ useEffect(() => {
       }
     }
   };
+  
   const handleUniversalDrop = (e: React.DragEvent, targetZone: 'source' | 'destination' | 'main') => {
     e.preventDefault();
     e.stopPropagation();
@@ -701,12 +708,12 @@ useEffect(() => {
     setIsMultiDrag(false);
   };
 
-
   const handleDragOver = (e: React.DragEvent, zone: 'source' | 'destination' | 'main') => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverZone(zone);
   };
+
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOverZone(null);
@@ -731,7 +738,6 @@ useEffect(() => {
 
     setDraggedWallet(null);
   };
-
 
   const handleDropBetweenZones = (e: React.DragEvent, targetZone: 'source' | 'destination') => {
     e.preventDefault();
@@ -767,11 +773,11 @@ useEffect(() => {
     setDraggedWallet(null);
   };
 
-
   const clearAllZones = () => {
     setSourceWallets([]);
     setDestinationWallets([]);
   };
+
   const executeDistribution = async () => {
     if (sourceWallets.length === 0 || destinationWallets.length === 0 || !distributionAmount) {
       return;
@@ -965,7 +971,6 @@ useEffect(() => {
     return totalSourceBalance;
   };
 
-
   const positionSliderPopup = useCallback((percent: number) => {
     const input = sliderRef.current;
     const popup = sliderPopupRef.current;
@@ -993,8 +998,6 @@ useEffect(() => {
     positionSliderPopup(percent);
   }, [positionSliderPopup, calculateMaxAmount]);
 
-  const [privateKeyRevealed, setPrivateKeyRevealed] = useState(false);
-
   const openExportModal = (wallet: { address: string, privateKey: string }) => {
     setExportingWallet(wallet);
     setPrivateKeyRevealed(false);
@@ -1010,7 +1013,6 @@ useEffect(() => {
   const revealPrivateKey = () => {
     setPrivateKeyRevealed(true);
   };
-
 
   const handleImportWallet = async () => {
     setImportError('');

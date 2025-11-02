@@ -804,25 +804,25 @@ const Header: React.FC<HeaderProps> = ({
                   <div className="header-action-row">
                     <button className="header-action-item"                      
                        onClick={() => {
-                          setpopup(30);
+                          setpopup(11);
                         }}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-action-icon"><path d="M12 17V3" /><path d="m6 11 6 6 6-6" /><path d="M19 21H5" /></svg>
                       Deposit
                     </button>
                     <button className="header-action-item"
                        onClick={() => {
-                          setpopup(31);
+                          setpopup(3);
                         }}>
                         
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-action-icon"><path d="m18 9-6-6-6 6" /><path d="M12 3v14" /><path d="M5 21h14" /></svg>               
-                             Withdraw
+                      Withdraw
                     </button>
                     <button className="header-action-item" onClick={() => {
                       navigate('/swap');
                       setIsWalletDropdownOpen(false);
                     }}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-action-icon"><path d="M8 3 4 7l4 4" /><path d="M4 7h16" /><path d="m16 21 4-4-4-4" /><path d="M20 17H4" /></svg>                 
-                           Swap
+                      Swap
                     </button>
                   </div>
                   <div className="header-action-row">
@@ -831,7 +831,7 @@ const Header: React.FC<HeaderProps> = ({
                       setIsWalletDropdownOpen(false);
                     }}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-action-icon"><path d="m8 6 4-4 4 4" /><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22" /><path d="m20 22-5-5" /></svg>             
-                       Consolidate
+                      Consolidate
                     </button>
                     <button className="header-action-item" onClick={() => {
                       navigate('/portfolio?tab=wallets');
@@ -848,18 +848,107 @@ const Header: React.FC<HeaderProps> = ({
                     </button>
                   </div>            
                   </div>
-                <div className="perps-bridge-button">
+                {/*<div className="perps-bridge-button">
                   <div className="perps-bridge-balance-mon">
                     <img src={monadicon} className="perps-bridge-mon-icon" />
-                    0
+                    {formatNumberWithCommas(
+                        subWallets.reduce((total, wallet) =>
+                          total + (getWalletBalance(wallet.address)),
+                          0
+                        ), 2)}
                   </div>
                   <img src={swapicon} className="perps-bridge-swap-icon" />
                   <div className="perps-bridge-balance-edge">
                     <div><img src={iconusdc} className="perps-bridge-usdc-icon" /><img src={edgeX} className="perps-bridge-edge-icon" /> </div>
                     0
                   </div>
-                </div>
+                      </div> */}
                 <div className="wallet-dropdown-actions">
+                <div className="wallet-dropdown-list">
+                  {activeWalletPrivateKey ? (
+                    <>
+                      <button
+                        className="wallet-dropdown-action-btn portfolio-btn"
+                        onClick={() => {
+                          handleSetActiveWallet(activeWalletPrivateKey || "")
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="wallet-dropdown-action-icon"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
+                        Disable 1CT
+                      </button>
+                      {subWallets.map((wallet, index) => {
+                        const balance = getWalletBalance(wallet.address);
+                        const isActive = isWalletActive(wallet.privateKey);
+                        return (
+                          <div
+                            key={wallet.address}
+                            className={`wallet-dropdown-item ${isActive ? 'active' : ''}`}
+                            onClick={(e) => {
+                              handleSetActiveWallet(wallet.privateKey)
+                              e.stopPropagation()
+                            }}
+                          >
+                            <div className="wallet-dropdown-checkbox-container">
+                              <input
+                                type="checkbox"
+                                className="quickbuy-wallet-checkbox"
+                                checked={isActive}
+                                readOnly
+                              />
+                            </div>
+
+                            <div
+                              className="wallet-dropdown-info"
+                            >
+                              <div className="wallet-dropdown-name">
+                                {getWalletName(wallet.address, index)}
+                              </div>
+                              <div className="wallet-dropdown-address">
+                                {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                              </div>
+                            </div>
+                            <Tooltip content="MON Balance">
+                              <div className="wallet-dropdown-balance">
+                                <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+                                  <img src={monadicon} className="wallet-dropdown-mon-icon" />
+                                  {formatNumberWithCommas(balance, 2)}
+                                </div>
+                              </div>
+                            </Tooltip>
+                            <Tooltip content="Tokens">
+                              <div className="wallet-drag-tokens">
+                                <div className="wallet-token-count">
+                                  <div className="wallet-token-structure-icons">
+                                    <div className="token1"></div>
+                                    <div className="token2"></div>
+                                    <div className="token3"></div>
+                                  </div>
+                                  <span className="wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
+                                </div>
+                              </div>
+                            </Tooltip>
+                          </div>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <button
+                      className="wallet-dropdown-action-btn portfolio-btn"
+                      onClick={() => {
+                        if (subWallets.length > 0) {
+                          handleSetActiveWallet(subWallets[0].privateKey)
+                        }
+                        else {
+                          setpopup(28);
+                          setIsWalletDropdownOpen(false);
+                        }
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="wallet-dropdown-action-icon"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
+                      Enable 1CT
+                    </button>
+                  )}
+                </div>
                   <button
                     className="wallet-dropdown-action-btn portfolio-btn"
                     onClick={handleOpenPortfolio}

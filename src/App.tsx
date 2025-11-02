@@ -18682,7 +18682,6 @@ useEffect(() => {
               <div className="modal-body">
                 <div className="perps-deposit-form">
                   <div className="form-group">
-                    <label>Exchange Native USDC for USDC on EdgeX</label>
                     <div className="perps-deposit-input-wrapper">
                       <div className="perps-deposit-balance">
                         Converting
@@ -18833,7 +18832,6 @@ useEffect(() => {
               <div className="modal-body">
                 <div className="perps-deposit-form">
                   <div className="form-group">
-                    <label>Exchange  USDC on EdgeX for native USDC on Monad</label>
                     <div className="perps-deposit-input-wrapper">
                       <div className="perps-deposit-balance">
                         Withdrawing

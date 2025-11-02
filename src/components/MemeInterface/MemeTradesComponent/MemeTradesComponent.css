@@ -12,7 +12,7 @@
   color: rgba(255, 255, 255, 0.6);
   display: flex;
   font-size: 0.75rem;
-  padding: 0px 8px 8px 8px;
+  padding: 0px 8px 4px 8px;
   position: sticky;
   top: 0;
 }
@@ -242,7 +242,7 @@
 }
 
 .pause-indicator {
-  backdrop-filter: blur(10px);
+  background-color: rgba(6, 6, 6);
   border-top: 1px solid rgba(179, 184, 249, 0.1);
   bottom: -1px;
   left: 0;
