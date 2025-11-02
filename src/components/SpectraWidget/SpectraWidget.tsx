@@ -1257,17 +1257,7 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
             >
               Graduated
             </button>
-          </div>
 
-          {/* Column Header - Quickbuy Controls */}
-          <div className="spectra-column-header">
-            <div className="spectra-column-title-section">
-              <div className={`spectra-pause-icon ${pausedColumn === activeTab ? 'visible' : ''}`}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
-                </svg>
-              </div>
-            </div>
             <div className="spectra-column-title-right">
               <div className="spectra-quickbuy-container">
                 <img className="spectra-quick-buy-icon" src={lightning} alt="" />

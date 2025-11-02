@@ -88,6 +88,7 @@
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
+  justify-content: space-between;
   gap: 8px;
   letter-spacing: -0.3px;
   padding: 8px 16px;
@@ -1009,7 +1010,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding-right: 0.75rem;
+  margin-left: auto;
 }
 
 .spectra-quickbuy-container {
