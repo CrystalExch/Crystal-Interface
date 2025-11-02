@@ -65,6 +65,7 @@
   padding-bottom: 0;
   user-select: none;
   cursor: move;
+  min-height: 40px;
 }
 
 .wtw-filters-title {
@@ -248,7 +249,7 @@
 /* Table Header */
 .wtw-wallets-header {
   display: grid;
-  grid-template-columns: 60px 20px 140px 95px 85px 60px;
+  grid-template-columns: 60px 20px 160px 95px 85px 60px;
   align-items: center;
   padding: 6px 15px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
@@ -258,7 +259,7 @@
   z-index: 1;
   min-width: 520px;
   width: 100%;
-  gap: 8px;
+  gap: 16px;
 }
 
 .wtw-wallets-header::after {
@@ -333,6 +334,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
+  margin-left: auto;
 }
 
 /* Wallet Items Container */
@@ -365,7 +367,7 @@
 /* Wallet Item */
 .wtw-wallet-item {
   display: grid;
-  grid-template-columns: 60px 20px 140px 95px 85px 60px;
+  grid-template-columns: 60px 20px 160px 95px 85px 60px;
   align-items: center;
   padding: 8px 15px;
   transition: all 0.2s ease;
@@ -374,7 +376,7 @@
   border-bottom: 1px solid rgba(179, 184, 249, 0.05);
   min-width: 520px;
   width: 100%;
-  gap: 8px;
+  gap: 16px;
 }
 
 .wtw-wallet-item:hover {

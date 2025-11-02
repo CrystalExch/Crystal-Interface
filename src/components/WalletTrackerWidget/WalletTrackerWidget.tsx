@@ -250,15 +250,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   const [newWalletName, setNewWalletName] = useState('');
   const [newWalletEmoji, setNewWalletEmoji] = useState('😀');
 
-  // Toggle popup functions
-  const handleTogglePopup = (popupId: number) => {
-    if (currentPopup === popupId) {
-      setpopup?.(0);
-    } else {
-      setpopup?.(popupId);
-    }
-  };
-
   const chainCfg = chainCfgOf(activechain, settings);
 
   // Drag functionality
@@ -880,7 +871,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
           {activeTab === 'trades' && (
             <div className="wtw-header-actions">
-              <button className="wtw-header-button" onClick={() => handleTogglePopup(33)}>
+              <button className="wtw-header-button" onClick={() => setpopup?.(33)}>
                 <img className="wtw-settings-image" src={settingsicon} alt="Settings" />
               </button>
               <button className="wtw-header-button" onClick={() => setShowFiltersPopup(true)}>
@@ -888,9 +879,9 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                   <path d="M3 6h18M7 12h10M10 18h4" />
                 </svg>
               </button>
-              <button className="wtw-header-button" onClick={() => handleTogglePopup(37)}>P1</button>
+              <button className="wtw-header-button" onClick={() => setpopup?.(37)}>P1</button>
               <div className="wtw-combined-flash-input">
-                <button className="wtw-combined-flash-btn" onClick={() => handleTogglePopup(33)}>
+                <button className="wtw-combined-flash-btn" onClick={() => setpopup?.(33)}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                   </svg>
@@ -924,9 +915,9 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
               >
                 {monitorCurrency === 'USD' ? 'USD' : 'MON'}
               </button>
-              <button className="wtw-header-button" onClick={() => handleTogglePopup(34)}>P1</button>
+              <button className="wtw-header-button" onClick={() => setpopup?.(34)}>P1</button>
               <div className="wtw-combined-flash-input">
-                <button className="wtw-combined-flash-btn" onClick={() => handleTogglePopup(33)}>
+                <button className="wtw-combined-flash-btn" onClick={() => setpopup?.(33)}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                   </svg>

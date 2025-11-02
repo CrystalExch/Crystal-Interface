@@ -88,6 +88,7 @@
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
+  justify-content: space-between;
   gap: 8px;
   letter-spacing: -0.3px;
   padding: 8px 16px;
@@ -909,4 +910,191 @@
   100% {
     transform: rotate(360deg);
   }
+}
+
+.spectra-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.spectra-market-image-container:hover .spectra-image-overlay {
+  opacity: 1;
+}
+
+.spectra-camera-icon {
+  width: 20px;
+  height: 20px;
+  filter: brightness(1.5);
+}
+
+.spectra-image-preview {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.95);
+  transition: opacity 0.2s ease;
+  will-change: opacity;
+  z-index: 9999 !important;
+}
+
+.spectra-image-preview.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.spectra-preview-image {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  display: block;
+  height: 220px;
+  object-fit: cover;
+  width: 220px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.spectra-preview-placeholder {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  width: 220px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-size: 48px;
+  font-weight: bold;
+  color: white;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Column Header - from TokenExplorer */
+.spectra-column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.spectra-column-title-section {
+  display: flex;
+  align-items: center;
+}
+
+.spectra-pause-icon {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.spectra-pause-icon.visible {
+  opacity: 1;
+}
+
+.spectra-column-title-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.spectra-quickbuy-container {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 28px;
+  max-width: 170px;
+  padding: 0 0.5rem;
+  padding-right: 0.15rem;
+  border: 1px solid rgba(179, 184, 249, 0.12);
+  border-radius: 20px;
+  position: relative;
+}
+
+.spectra-quick-buy-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.spectra-quickbuy-input {
+  background: transparent;
+  border: none;
+  color: #ffffffcf;
+  flex: 1;
+  font-size: 0.85rem;
+  letter-spacing: -0.3px;
+  min-width: 0;
+  outline: none;
+  transform: scaleX(1.1);
+}
+
+.spectra-quickbuy-input::-moz-placeholder {
+  color: #ffffff4d;
+}
+
+.spectra-quickbuy-input::placeholder {
+  color: #ffffff4d;
+}
+
+.spectra-monad-icon {
+  height: 15px;
+  width: 15px;
+}
+
+.spectra-preset-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 100%;
+  padding-left: 2px;
+  border-left: 1px solid rgba(179, 184, 249, 0.12);
+}
+
+.spectra-preset-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 1.5px 3px;
+  font-size: 0.8rem;
+  color: #7f808d;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.spectra-preset-pill:last-child {
+  border-radius: 0 20px 20px 0px;
+  margin-right: 0;
+  padding-right: 5px;
+}
+
+.spectra-preset-pill:hover {
+  background-color: #7f808d17;
+}
+
+.spectra-preset-pill.active {
+  color: #d8dcff;
+}
+
+.spectra-preset-pill.active:hover {
+  background-color: #9fa5f525;
 }
