@@ -13,6 +13,7 @@ import { settings } from '../../settings';
 import { loadBuyPresets } from '../../utils/presetManager';
 import { createPublicClient, http, encodeFunctionData } from 'viem';
 import ImportWalletsPopup from './ImportWalletsPopup';
+import AddWalletModal from './AddWalletModal';
 import {
   showLoadingPopup,
   updatePopup,
@@ -150,7 +151,6 @@ const fetchPortfolio = async (address: string) => {
 };
 
 import LiveTradesFiltersPopup from './LiveTradesFiltersPopup/LiveTradesFiltersPopup';
-import EmojiPicker from 'emoji-picker-react';
 import { useSharedContext } from '../../contexts/SharedContext';
 import MonitorFiltersPopup, { MonitorFilterState } from './MonitorFiltersPopup/MonitorFiltersPopup';
 import '../TokenExplorer/TokenExplorer.css';
@@ -548,7 +548,6 @@ const Tracker: React.FC<TrackerProps> = ({
   setTrackedWalletTrades
 }) => {
   const [selectedSimpleFilter, setSelectedSimpleFilter] = useState<string | null>(null);
-  const [emojiPickerPosition, setEmojiPickerPosition] = useState<{top: number, left: number} | null>(null);
   const context = useSharedContext();
   const activechain = context?.activechain || 'monad';
   const [walletSortField, setWalletSortField] = useState<'balance' | 'lastActive' | null>(null);
@@ -1256,10 +1255,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
   }, [walletTokenBalances, activechain]);
 
   const [showAddWalletModal, setShowAddWalletModal] = useState(false);
-  const [newWalletAddress, setNewWalletAddress] = useState('');
-  const [newWalletName, setNewWalletName] = useState('');
-  const [newWalletEmoji, setNewWalletEmoji] = useState('😀');
-  const [addWalletError, setAddWalletError] = useState('');
 
   const [editingWallet, setEditingWallet] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
@@ -1271,7 +1266,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
 
   const mainWalletsRef = useRef<HTMLDivElement>(null);
 
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   function getRpcPublicClient(chainCfg?: any) {
     if (!chainCfg?.rpcUrl) return null;
@@ -1653,32 +1647,26 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     return [...pinned, ...unpinned];
   };
 
-  const handleAddWallet = async () => {
-    setAddWalletError('');
-    if (!newWalletAddress.trim()) { setAddWalletError('Please enter a wallet address'); return; }
-    if (!isValidAddress(newWalletAddress.trim())) { setAddWalletError('Invalid wallet address'); return; }
-    if (trackedWallets.some(w => w.address.toLowerCase() === newWalletAddress.trim().toLowerCase())) { setAddWalletError('This wallet is already being tracked'); return; }
-    const name = (newWalletName.trim() || `${newWalletAddress.slice(0, 6)}...${newWalletAddress.slice(-4)}`).slice(0, 20);
-    const nw: TrackedWallet = { id: Date.now().toString(), address: newWalletAddress.trim(), name, emoji: newWalletEmoji, balance: 0, lastActiveAt: null, createdAt: new Date().toISOString() };
-    setTrackedWallets(prev => demoMode.wallets ? [nw] : [...prev, nw]);
+  const handleAddWallet = async (wallet: TrackedWallet) => {
+    setTrackedWallets(prev => demoMode.wallets ? [wallet] : [...prev, wallet]);
     if (demoMode.wallets) disableDemo('wallets');
     try {
-      fetchRecentTradesForWallet(nw.address, 50).then(items => {
+      fetchRecentTradesForWallet(wallet.address, 50).then(items => {
         if (items && items.length) ingestExternalTrades(items);
       }).catch(() => {});
     } catch (e) {}
-  // also fetch portfolio positions immediately so Monitor reflects the new wallet
+    // also fetch portfolio positions immediately so Monitor reflects the new wallet
     try {
       (async () => {
         try {
-          const p = await fetchPortfolio(nw.address).catch(() => null);
+          const p = await fetchPortfolio(wallet.address).catch(() => null);
           if (p && p.positions && p.positions.length) {
-            setAddressPositions(prev => ({ ...prev, [nw.address]: p.positions }));
+            setAddressPositions(prev => ({ ...prev, [wallet.address]: p.positions }));
           }
         } catch (e) {}
       })();
     } catch (e) {}
-    closeAddWalletModal();
+    setShowAddWalletModal(false);
   };
 
   // Function to fetch portfolio positions for all tracked wallets with error handling
@@ -1848,13 +1836,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     } catch {}
   };
 
-  const closeAddWalletModal = () => {
-    setShowAddWalletModal(false);
-    setNewWalletAddress('');
-    setNewWalletName('');
-    setNewWalletEmoji('😀');
-    setAddWalletError('');
-  };
 
   const startEditingWallet = (id: string) => {
     const wallet = trackedWallets.find(w => w.id === id);
@@ -4036,116 +4017,11 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       </div>
 
       {showAddWalletModal && (
-        <div className="tracker-modal-backdrop" onClick={closeAddWalletModal}>
-          <div className="tracker-modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="tracker-modal-header">
-              <h3 className="tracker-modal-title">Add Wallet</h3>
-              <button className="tracker-modal-close" onClick={closeAddWalletModal}>
-                <img src={closebutton} className="close-button-icon" />
-              </button>
-            </div>
-            <div className="tracker-modal-content">
-              <div className="tracker-input-section">
-                <label className="tracker-label">Wallet Address:</label>
-                <input
-                  type="text"
-                  className="tracker-input"
-                  value={newWalletAddress}
-                  onChange={(e) => {
-                    setNewWalletAddress(e.target.value);
-                    setAddWalletError('');
-                  }}
-                  placeholder="0x..."
-                />
-              </div>
-
-              <div className="tracker-input-section">
-                <label className="tracker-label">Wallet Name:</label>
-                <div className="tracker-input-with-emoji">
-                  <button 
-                    className="tracker-emoji-picker-trigger"
-                    onClick={(e) => {
-                      if (!showEmojiPicker) {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        setEmojiPickerPosition({
-                          top: rect.bottom + window.scrollY + 8,
-                          left: rect.left + window.scrollX + (rect.width / 2)
-                        });
-                      }
-                      setShowEmojiPicker(!showEmojiPicker);
-                    }}
-                    type="button"
-                  >
-                    {newWalletEmoji}
-                  </button>
-                  <input
-                    type="text"
-                    className="tracker-input tracker-input-with-emoji-field"
-                    value={newWalletName}
-                    onChange={(e) => {
-                      setNewWalletName(e.target.value);
-                      setAddWalletError('');
-                    }}
-                    placeholder="Enter a name for this wallet"
-                    maxLength={20}
-                  />
-                </div>
-              </div>
-
-              {addWalletError && (
-                <div className="tracker-error-message">
-                  {addWalletError}
-                </div>
-              )}
-
-              <div className="tracker-modal-actions">
-                <button
-                  className="tracker-confirm-button"
-                  onClick={handleAddWallet}
-                  disabled={!newWalletAddress.trim()}
-                >
-                  Add Wallet
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showEmojiPicker && emojiPickerPosition && (
-        <div className="tracker-emoji-picker-backdrop" onClick={() => {
-          setShowEmojiPicker(false);
-          setEmojiPickerPosition(null);
-        }}>
-          <div 
-            className="tracker-emoji-picker-positioned" 
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              top: `${emojiPickerPosition.top}px`,
-              left: `${emojiPickerPosition.left}px`,
-              transform: 'translateX(-50%)'
-            }}
-          >
-            <EmojiPicker
-              onEmojiClick={(emojiData) => {
-                setNewWalletEmoji(emojiData.emoji);
-                setShowEmojiPicker(false);
-                setEmojiPickerPosition(null);
-              }}
-              width={350}
-              height={400}
-              searchDisabled={false}
-              skinTonesDisabled={true}
-              previewConfig={{
-                showPreview: false
-              }}
-              style={{
-                backgroundColor: '#000000',
-                border: '1px solid rgba(179, 184, 249, 0.2)'
-              }}
-            />
-          </div>
-        </div>
+        <AddWalletModal
+          onClose={() => setShowAddWalletModal(false)}
+          onAdd={handleAddWallet}
+          existingWallets={trackedWallets}
+        />
       )}
 
 

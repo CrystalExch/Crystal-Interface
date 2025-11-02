@@ -9,16 +9,7 @@ import defaultPfp from '../../assets/avatar.png';
 import settingsicon from '../../assets/settings.svg';
 import filter from '../../assets/filter.svg';
 import ImportWalletsPopup from '../Tracker/ImportWalletsPopup';
-
-interface TrackedWallet {
-  address: string;
-  name: string;
-  emoji: string;
-  balance: number;
-  lastActiveAt: number | null;
-  id: string;
-  createdAt: string;
-}
+import AddWalletModal, { TrackedWallet } from '../Tracker/AddWalletModal';
 
 interface GqlPosition {
   tokenId: string;
@@ -246,9 +237,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   // Import and Add Wallet modals
   const [showImportPopup, setShowImportPopup] = useState(false);
   const [showAddWalletModal, setShowAddWalletModal] = useState(false);
-  const [newWalletAddress, setNewWalletAddress] = useState('');
-  const [newWalletName, setNewWalletName] = useState('');
-  const [newWalletEmoji, setNewWalletEmoji] = useState('😀');
 
   const chainCfg = chainCfgOf(activechain, settings);
 
@@ -429,24 +417,9 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     }
   };
 
-  const handleAddWallet = () => {
-    if (!newWalletAddress.trim()) return;
-
-    const newWallet: TrackedWallet = {
-      address: newWalletAddress.trim(),
-      name: newWalletName.trim() || 'New Wallet',
-      emoji: newWalletEmoji,
-      balance: 0,
-      lastActiveAt: null,
-      id: `wallet-${Date.now()}-${Math.random()}`,
-      createdAt: new Date().toISOString(),
-    };
-
-    setLocalWallets((prev) => [...prev, newWallet]);
+  const handleAddWallet = (wallet: TrackedWallet) => {
+    setLocalWallets((prev) => [...prev, wallet]);
     setShowAddWalletModal(false);
-    setNewWalletAddress('');
-    setNewWalletName('');
-    setNewWalletEmoji('😀');
   };
 
   // Trade filtering and sorting
@@ -1191,64 +1164,11 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
         {/* Add Wallet Modal */}
         {showAddWalletModal && (
-          <div className="wtw-modal-overlay" onClick={() => setShowAddWalletModal(false)}>
-            <div className="wtw-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="wtw-modal-header">
-                <h3>Add Wallet</h3>
-                <button className="wtw-modal-close" onClick={() => setShowAddWalletModal(false)}>
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="wtw-modal-body">
-                <div className="wtw-form-group">
-                  <label>Wallet Address</label>
-                  <input
-                    type="text"
-                    className="wtw-input"
-                    placeholder="0x..."
-                    value={newWalletAddress}
-                    onChange={(e) => setNewWalletAddress(e.target.value)}
-                  />
-                </div>
-                <div className="wtw-form-group">
-                  <label>Name (Optional)</label>
-                  <input
-                    type="text"
-                    className="wtw-input"
-                    placeholder="Wallet name"
-                    value={newWalletName}
-                    onChange={(e) => setNewWalletName(e.target.value)}
-                  />
-                </div>
-                <div className="wtw-form-group">
-                  <label>Emoji</label>
-                  <input
-                    type="text"
-                    className="wtw-input"
-                    placeholder="😀"
-                    value={newWalletEmoji}
-                    onChange={(e) => setNewWalletEmoji(e.target.value)}
-                    maxLength={2}
-                  />
-                </div>
-              </div>
-              <div className="wtw-modal-footer">
-                <button
-                  className="wtw-modal-btn wtw-cancel"
-                  onClick={() => setShowAddWalletModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="wtw-modal-btn wtw-primary"
-                  onClick={handleAddWallet}
-                  disabled={!newWalletAddress.trim()}
-                >
-                  Add Wallet
-                </button>
-              </div>
-            </div>
-          </div>
+          <AddWalletModal
+            onClose={() => setShowAddWalletModal(false)}
+            onAdd={handleAddWallet}
+            existingWallets={localWallets}
+          />
         )}
       </div>
     </div>
