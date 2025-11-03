@@ -494,7 +494,7 @@ const Perps: React.FC<PerpsProps> = ({
   const prevAmountsQuote = useRef(amountsQuote)
   const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
   const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
-  const availableBalance = (activeMarket?.oraclePrice ? Math.max((Number(balance) - positions.reduce((t, p) => t + Number(p.margin || 0), 0) - orders.reduce((t, p) => t + Number(p.margin || 0), 0) + ((activeTradeType == "long" == currentPosition < 0) ? Math.abs(currentPosition) * 2 * activeMarket?.oraclePrice / Number(leverage) : 0)), 0) : 0);
+  const availableBalance = (activeMarket?.oraclePrice ? Math.max((Number(balance) - positions.reduce((t, p) => t + Number(p.margin || 0), 0) + positions.reduce((t, p) => t + Number(p.pnl || 0), 0) - orders.reduce((t, p) => t + Number(p.margin || 0), 0) + ((activeTradeType == "long" == currentPosition < 0) ? Math.abs(currentPosition) * 2 * activeMarket?.oraclePrice / Number(leverage) : 0)), 0) : 0);
 
   const handleVertMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -558,10 +558,10 @@ const Perps: React.FC<PerpsProps> = ({
     reduceOnly: any,
   ): Promise<any> {
     const ts = Date.now().toString()
-    const l2ExpireTime = (Date.now() + 30 * 24 * 60 * 60 * 1000)
+    const l2ExpireTime = (Date.now() + 365 * 24 * 60 * 60 * 1000)
     const l1ExpireTime = (Number(l2ExpireTime) - 9 * 24 * 60 * 60 * 1000)
-    const l2Value = Math.ceil((type == 'MARKET' ? (side == 'BUY' ? (price * 10 * size) : Number(activeMarket?.tickSize)) : price * size) * 100) / 100
-    const limitFee = Math.ceil(l2Value * Number(userFees[0])).toString()
+    const l2Value = type == 'MARKET' ? Math.ceil(((side == 'BUY' ? (price * 10 * size) : Number(activeMarket?.tickSize))) * 100) / 100 : Math.floor(price * size * 100) / 100
+    const limitFee = Math.ceil(l2Value * Number(type == 'MARKET' ? userFees[0] : userFees[1])).toString()
     const clientOrderId = Math.random().toString().slice(2).replace(/^0+/, '');
     const l2Nonce = BigInt(sha256(toUtf8Bytes(clientOrderId)).slice(0, 10)).toString()
     const baseRes = Number(activeMarket.starkExResolution)
@@ -850,8 +850,9 @@ const Perps: React.FC<PerpsProps> = ({
         tempcurrentposition = Number(position.openSize)
       }
       const positionValue = Math.abs(Number(marketData?.oraclePrice) * Number(position.openSize));
+
       temppositions.push({
-        leverage: position.maxLeverage,
+        leverage: userLeverage?.[marketData?.contractId]?.maxLeverage ? userLeverage?.[marketData?.contractId]?.maxLeverage : marketData?.displayMaxLeverage,
         image: marketData?.iconURL,
         direction: position.openSize > 0 ? 'long' : 'short',
         symbol: marketData.contractName,
@@ -859,12 +860,12 @@ const Perps: React.FC<PerpsProps> = ({
         positionValue: positionValue,
         entryPrice: (Number(position.openValue) / Number(position.openSize)).toFixed((marketData?.lastPrice?.toString().split(".")[1] || "").length),
         markPrice: Number(marketData?.oraclePrice).toFixed((marketData?.lastPrice?.toString().split(".")[1] || "").length),
-        pnl: Number(marketData?.oraclePrice) * Number(position.openSize) - Number(position.openValue),
+        pnl: Number(marketData?.oraclePrice) * Number(position.openSize) - position.openValue,
         liqPrice: 0,
         margin: positionValue / (userLeverage?.[marketData?.contractId]?.maxLeverage ? userLeverage?.[marketData?.contractId]?.maxLeverage : marketData?.displayMaxLeverage),
         funding: -Number(position.fundingFee),
-        maintenanceMargin: position.openValue * parseFloat(marketData?.riskTierList.find((t: any) => position.openValue <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? marketData?.riskTierList.at(-1).maintenanceMarginRate),
-        mmr: parseFloat(marketData?.riskTierList.find((t: any) => position.openValue <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? marketData?.riskTierList.at(-1).maintenanceMarginRate)
+        maintenanceMargin: Math.abs(position.openValue) * parseFloat(marketData?.riskTierList.find((t: any) => Math.abs(position.openValue) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? marketData?.riskTierList.at(-1).maintenanceMarginRate),
+        mmr: parseFloat(marketData?.riskTierList.find((t: any) => Math.abs(position.openValue) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? marketData?.riskTierList.at(-1).maintenanceMarginRate)
       })
     }
 
@@ -1480,7 +1481,7 @@ const Perps: React.FC<PerpsProps> = ({
                 const merged = [...prev]
             
                 for (const pos of updated) {
-                  const i = merged.findIndex(p => p.contractId === pos.contractId)
+                  const i = merged.findIndex(p => p.clientOrderId === pos.clientOrderId)
                   if (i !== -1) merged[i] = pos
                   else merged.push(pos)
                 }
@@ -1948,11 +1949,11 @@ const Perps: React.FC<PerpsProps> = ({
                 await handleTrade();
               }
             }}
-            disabled={address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0 || (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize)) || Number(inputString) > (Number(availableBalance) * Number(leverage)))}
+            disabled={address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0 || (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize)) || Number(inputString) > (Number(availableBalance) * Number(leverage)))}
           >
             {isSigning ? (
               <div className="perps-button-spinner"></div>
-            ) : (address ? (Object.keys(signer).length == 0 ? 'Enable Trading' : (inputString && (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize))) ? `Order size must be >${activeMarket?.minOrderSize} ${activeMarket?.baseAsset}` : 
+            ) : (address ? (Object.keys(signer).length == 0 ? 'Enable Trading' : (inputString && (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize))) ? `Order size must be >${activeMarket?.minOrderSize} ${activeMarket?.baseAsset}` : 
             Number(inputString) > (Number(availableBalance) * Number(leverage)) ? 'Insufficient Margin' : activeOrderType === "Market"
               ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
               : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`) : 'Connect Wallet'

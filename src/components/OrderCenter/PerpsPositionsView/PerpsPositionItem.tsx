@@ -18,7 +18,7 @@ const PerpsPositionItem: React.FC<PerpsPositionItemProps> = ({
   handleClose
 }) => {
   const pnlValue = position.pnl || 0;
-  const pnlPercentage = position.direction === 'long' ? (position.entryPrice ? ((position.markPrice - position.entryPrice) / position.entryPrice * 100) : 0) : position.entryPrice ? ((position.entryPrice - position.markPrice) / position.entryPrice * 100) : 0;
+  const pnlPercentage = position.direction === 'long' ? (position.entryPrice ? ((position.markPrice - position.entryPrice) * position.leverage / position.entryPrice * 100) : 0) : position.entryPrice ? ((position.entryPrice - position.markPrice) * position.leverage / position.entryPrice * 100) : 0;
   const isProfit = pnlValue >= 0;
 
   return (

@@ -57,7 +57,6 @@ interface QuickBuyWidgetProps {
   subWallets?: Array<{ address: string; privateKey: string }>;
   walletTokenBalances?: { [address: string]: any };
   activeWalletPrivateKey?: string;
-  setOneCTSigner: (privateKey: string) => void;
   tokenList?: any[];
   isBlurred?: boolean;
   terminalRefetch: any;
@@ -245,7 +244,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   subWallets = [],
   walletTokenBalances = {},
   activeWalletPrivateKey,
-  setOneCTSigner,
   tokenList = [],
   isBlurred = false,
   terminalRefetch,
@@ -594,22 +592,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
   const isWalletActive = (privateKey: string) => {
     return activeWalletPrivateKey === privateKey;
-  };
-
-  const handleSetActiveWallet = (privateKey: string) => {
-    if (!isWalletActive(privateKey)) {
-      localStorage.setItem('crystal_active_wallet_private_key', privateKey);
-      setOneCTSigner(privateKey);
-      if (terminalRefetch) {
-        setTimeout(() => terminalRefetch(), 0);
-      }
-    } else {
-      localStorage.removeItem('crystal_active_wallet_private_key');
-      setOneCTSigner('');
-      if (terminalRefetch) {
-        setTimeout(() => terminalRefetch(), 0);
-      }
-    }
   };
 
   const toggleWalletSelection = useCallback((address: string) => {
@@ -1042,7 +1024,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     return safe > pending ? safe - pending : 0n;
   };
 
-const handleBuyTrade = async (amount: string) => {
+  const handleBuyTrade = async (amount: string) => {
     if (!sendUserOperationAsync || !tokenAddress || !routerAddress) {
       setpopup?.(4);
       return;
@@ -1411,7 +1393,7 @@ const handleBuyTrade = async (amount: string) => {
             data: encodeFunctionData({
               abi: CrystalRouterAbi,
               functionName: 'sell',
-              args: [true, tokenAddress as `0x${string}`, amountWei, 0n],
+              args: [false, tokenAddress as `0x${string}`, amountWei * 2n, partMonWei],
             }),
             value: 0n,
           };

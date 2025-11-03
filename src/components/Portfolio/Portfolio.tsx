@@ -531,6 +531,7 @@ const [activeSection, setActiveSection] = useState<
   const isWalletActive = (walletPrivateKey: string) => {
     return activeWalletPrivateKey === walletPrivateKey;
   };
+
   const deleteWallet = (address: string) => {
     const walletToDelete = subWallets.find(w => w.address === address);
 
@@ -1410,6 +1411,7 @@ const [activeSection, setActiveSection] = useState<
       }
     }
   }, [subWallets.length]);
+
   useEffect(() => {
     const handleGlobalMouseUp = () => {
       endSelection();
@@ -1433,6 +1435,7 @@ const [activeSection, setActiveSection] = useState<
       document.removeEventListener('keydown', handleGlobalKeyDown);
     };
   }, []);
+
   const handleReorderDragOver = (e: React.DragEvent, targetIndex: number, containerKey: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1464,6 +1467,7 @@ const [activeSection, setActiveSection] = useState<
       setDropPreviewLine({ top: lineTop, containerKey });
     }
   };
+
   const handleReorderDropWithData = (reorderData: any, containerType: 'main' | 'source' | 'destination') => {
     try {
       if (reorderData.type === 'reorder' && reorderData.container === containerType) {
@@ -1537,6 +1541,7 @@ const [activeSection, setActiveSection] = useState<
     });
     setDropPreviewLine(null); setDropPreviewLine(null);
   };
+
   const handleReorderDrop = (e: React.DragEvent, containerType: 'main' | 'source' | 'destination') => {
     e.preventDefault();
     e.stopPropagation();
@@ -1642,6 +1647,7 @@ const [activeSection, setActiveSection] = useState<
         return [];
     }
   };
+
   const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 'source' | 'destination', containerKey: string) => {
     const isSelected = selectedWalletsPerContainer[containerType].has(wallet.address);
     const isPreviewSelected = previewSelection.has(wallet.address);
@@ -1780,7 +1786,6 @@ const [activeSection, setActiveSection] = useState<
             }}
           />
         )}
-
 
         <div className="wallet-active-checkbox-container">
           <Tooltip content={isWalletActive(wallet.privateKey) ? "Active Wallet" : "Set as Active Wallet"}>
@@ -2114,12 +2119,6 @@ const [activeSection, setActiveSection] = useState<
     document.addEventListener('keydown', handleGlobalKeyDown);
     return () => document.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
-
-  useEffect(() => {
-    if (activeWalletPrivateKey) {
-      localStorage.setItem('crystal_active_wallet_private_key', activeWalletPrivateKey);
-    }
-  }, [activeWalletPrivateKey]);
 
   useEffect(() => {
     const now = Date.now() / 1000;

@@ -28,7 +28,7 @@ export const formatBalance = (
   const prefix = mode === 'usd' ? '$' : '';
 
   if (num > 0 && num < threshold) {
-    return mode === 'usd' ? '<$0.01' : '<0.0001';
+    return isNegative ? mode === 'usd' ? '-<$0.01' : '-<0.0001' : mode === 'usd' ? '<$0.01' : '<0.0001';
   }
 
   if (valueStr.toLowerCase().includes('e')) {

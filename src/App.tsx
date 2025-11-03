@@ -436,93 +436,93 @@ const Loader = () => {
 }
 
 function App({ stateloading, setstateloading, addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
-const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');
-const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
-const [selectedSellPreset, setSelectedSellPreset] = useState(1);
-const [buySlippageValue, setBuySlippageValue] = useState(() => {
-  const presets = loadBuyPresets();
-  return presets[1]?.slippage || '20';
-});
-const [buyPriorityFee, setBuyPriorityFee] = useState(() => {
-  const presets = loadBuyPresets();
-  return presets[1]?.priority || '0.01';
-});
-const [sellSlippageValue, setSellSlippageValue] = useState(() => {
-  const presets = loadSellPresets();
-  return presets[1]?.slippage || '20';
-});
-const [sellPriorityFee, setSellPriorityFee] = useState(() => {
-  const presets = loadSellPresets();
-  return presets[1]?.priority || '0.01';
-});
-
-const handleBuyPresetSelect = useCallback(
-  (preset: number) => {
-    setSelectedBuyPreset(preset);
+  const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');
+  const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
+  const [selectedSellPreset, setSelectedSellPreset] = useState(1);
+  const [buySlippageValue, setBuySlippageValue] = useState(() => {
     const presets = loadBuyPresets();
-    if (presets[preset]) {
-      setBuySlippageValue(presets[preset].slippage);
-      setBuyPriorityFee(presets[preset].priority);
-    }
-  },
-  [],
-);
-
-const handleSellPresetSelect = useCallback(
-  (preset: number) => {
-    setSelectedSellPreset(preset);
+    return presets[1]?.slippage || '20';
+  });
+  const [buyPriorityFee, setBuyPriorityFee] = useState(() => {
+    const presets = loadBuyPresets();
+    return presets[1]?.priority || '0.01';
+  });
+  const [sellSlippageValue, setSellSlippageValue] = useState(() => {
     const presets = loadSellPresets();
-    if (presets[preset]) {
-      setSellSlippageValue(presets[preset].slippage);
-      setSellPriorityFee(presets[preset].priority);
+    return presets[1]?.slippage || '20';
+  });
+  const [sellPriorityFee, setSellPriorityFee] = useState(() => {
+    const presets = loadSellPresets();
+    return presets[1]?.priority || '0.01';
+  });
+
+  const handleBuyPresetSelect = useCallback(
+    (preset: number) => {
+      setSelectedBuyPreset(preset);
+      const presets = loadBuyPresets();
+      if (presets[preset]) {
+        setBuySlippageValue(presets[preset].slippage);
+        setBuyPriorityFee(presets[preset].priority);
+      }
+    },
+    [],
+  );
+
+  const handleSellPresetSelect = useCallback(
+    (preset: number) => {
+      setSelectedSellPreset(preset);
+      const presets = loadSellPresets();
+      if (presets[preset]) {
+        setSellSlippageValue(presets[preset].slippage);
+        setSellPriorityFee(presets[preset].priority);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const handleBuyPresetsUpdate = (event: CustomEvent) => {
+      const newPresets = event.detail;
+      if (newPresets[selectedBuyPreset]) {
+        setBuySlippageValue(newPresets[selectedBuyPreset].slippage);
+        setBuyPriorityFee(newPresets[selectedBuyPreset].priority);
+      }
+    };
+
+    const handleSellPresetsUpdate = (event: CustomEvent) => {
+      const newPresets = event.detail;
+      if (newPresets[selectedSellPreset]) {
+        setSellSlippageValue(newPresets[selectedSellPreset].slippage);
+        setSellPriorityFee(newPresets[selectedSellPreset].priority);
+      }
+    };
+
+    window.addEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+    window.addEventListener('sellPresetsUpdated', handleSellPresetsUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+      window.removeEventListener('sellPresetsUpdated', handleSellPresetsUpdate as EventListener);
+    };
+  }, [selectedBuyPreset, selectedSellPreset]);
+
+  useEffect(() => {
+    if (selectedBuyPreset) {
+      updateBuyPreset(selectedBuyPreset, {
+        slippage: buySlippageValue,
+        priority: buyPriorityFee,
+      });
     }
-  },
-  [],
-);
+  }, [buySlippageValue, buyPriorityFee, selectedBuyPreset]);
 
-useEffect(() => {
-  const handleBuyPresetsUpdate = (event: CustomEvent) => {
-    const newPresets = event.detail;
-    if (newPresets[selectedBuyPreset]) {
-      setBuySlippageValue(newPresets[selectedBuyPreset].slippage);
-      setBuyPriorityFee(newPresets[selectedBuyPreset].priority);
+  useEffect(() => {
+    if (selectedSellPreset) {
+      updateSellPreset(selectedSellPreset, {
+        slippage: sellSlippageValue,
+        priority: sellPriorityFee,
+      });
     }
-  };
-
-  const handleSellPresetsUpdate = (event: CustomEvent) => {
-    const newPresets = event.detail;
-    if (newPresets[selectedSellPreset]) {
-      setSellSlippageValue(newPresets[selectedSellPreset].slippage);
-      setSellPriorityFee(newPresets[selectedSellPreset].priority);
-    }
-  };
-
-  window.addEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
-  window.addEventListener('sellPresetsUpdated', handleSellPresetsUpdate as EventListener);
-
-  return () => {
-    window.removeEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
-    window.removeEventListener('sellPresetsUpdated', handleSellPresetsUpdate as EventListener);
-  };
-}, [selectedBuyPreset, selectedSellPreset]);
-
-useEffect(() => {
-  if (selectedBuyPreset) {
-    updateBuyPreset(selectedBuyPreset, {
-      slippage: buySlippageValue,
-      priority: buyPriorityFee,
-    });
-  }
-}, [buySlippageValue, buyPriorityFee, selectedBuyPreset]);
-
-useEffect(() => {
-  if (selectedSellPreset) {
-    updateSellPreset(selectedSellPreset, {
-      slippage: sellSlippageValue,
-      priority: sellPriorityFee,
-    });
-  }
-}, [sellSlippageValue, sellPriorityFee, selectedSellPreset]);
+  }, [sellSlippageValue, sellPriorityFee, selectedSellPreset]);
   // constants
   useEffect(() => {
     if (!localStorage.getItem("noSSR")) {
@@ -782,7 +782,7 @@ useEffect(() => {
   //   return className;
   // };
 
-  const [OneCTDepositAddress, setOneCTDepositAddress] = useState('');
+  const [oneCTDepositAddress, setOneCTDepositAddress] = useState('');
   const [oneCTSigner, setOneCTSigner] = useState(() => {
     const saved = localStorage.getItem('crystal_active_wallet_private_key');
     return saved ? saved : '';
@@ -835,34 +835,6 @@ useEffect(() => {
     }
   }, [selectedWallets]);
 
-  const getWalletIcon = () => {
-    const connectorName = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.name || 'Unknown';
-
-    switch (connectorName) {
-      case 'MetaMask':
-        return walletmetamask;
-      case 'Coinbase Wallet':
-        return walletcoinbase;
-      case 'WalletConnect':
-        return walletconnect;
-      case 'Safe':
-        return walletsafe;
-      case 'Rabby Wallet':
-      case 'Rabby':
-        return walletrabby;
-      case 'Backpack':
-        return walletbackpack;
-      case 'Phantom':
-        return walletphantom;
-      case 'Tomo':
-        return wallettomo;
-      case 'HaHa Wallet':
-        return wallethaha;
-      default:
-        return walleticon;
-    }
-  };
-
   const [withdrawPercentage, setWithdrawPercentage] = useState('');
   const [currentWalletIcon, setCurrentWalletIcon] = useState(walleticon);
   // autosend mon
@@ -870,7 +842,7 @@ useEffect(() => {
     if (connected) {
       if (!localStorage.getItem("firstConnect")) {
         localStorage.setItem("firstConnect", "true");
-        if (window.location.hostname == 'test.crystal.exchange') {
+        if (window.location.hostname == 'test.crystal.exchange' && address != '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d') {
           (async () => {
             const amountInWei = BigInt(Math.round(10 * 10 ** 18));
             await sendUserOperationAsync({
@@ -891,11 +863,38 @@ useEffect(() => {
 
   useEffect(() => {
     if (connected) {
-      setCurrentWalletIcon(getWalletIcon());
+      setCurrentWalletIcon(() => {
+        const connectorName = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.name || 'Unknown';
+    
+        switch (connectorName) {
+          case 'MetaMask':
+            return walletmetamask;
+          case 'Coinbase Wallet':
+            return walletcoinbase;
+          case 'WalletConnect':
+            return walletconnect;
+          case 'Safe':
+            return walletsafe;
+          case 'Rabby Wallet':
+          case 'Rabby':
+            return walletrabby;
+          case 'Backpack':
+            return walletbackpack;
+          case 'Phantom':
+            return walletphantom;
+          case 'Tomo':
+            return wallettomo;
+          case 'HaHa Wallet':
+            return wallethaha;
+          default:
+            return walleticon;
+        }
+      });
     } else {
       setCurrentWalletIcon(walleticon);
     }
   }, [connected, alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.name]);
+
   const [createVaultStep, setCreateVaultStep] = useState<'idle' | 'validating' | 'approve-quote' | 'approve-base' | 'creating' | 'success'>('idle');
   const [depositVaultStep, setDepositVaultStep] = useState<'idle' | 'validating' | 'approve-quote' | 'approve-base' | 'depositing' | 'success'>('idle');
   const [depositVaultError, setDepositVaultError] = useState<string>('');
@@ -960,6 +959,7 @@ useEffect(() => {
       localStorage.setItem('crystal_sub_wallets', JSON.stringify(updatedWallets));
       if (setMain || (!validOneCT && updatedWallets.length === 1)) {
         setOneCTSigner(privateKey);
+        localStorage.setItem('crystal_active_wallet_private_key', privateKey);
         refetch();
       }
       return walletAddress
@@ -13554,7 +13554,7 @@ useEffect(() => {
                             className={`wallet-popup-address`}
                           >
                             <img
-                              src={getWalletIcon()}
+                              src={currentWalletIcon}
                               className="port-popup-wallet-icon"
                             />
                             {`${address.slice(0, 6)}...${address.slice(-4)}`}
@@ -13614,6 +13614,7 @@ useEffect(() => {
                 <button
                   className="popup-disconnect-button"
                   onClick={() => {
+                    localStorage.removeItem('crystal_active_wallet_private_key');
                     setOneCTSigner('')
                     logout()
                   }}
@@ -17762,7 +17763,7 @@ useEffect(() => {
                         setrecipient(e.target.value);
                       }
                     }}
-                    value={OneCTDepositAddress}
+                    value={oneCTDepositAddress}
                     placeholder={t('enterWalletAddress')}
                     disabled
                   />
@@ -17810,7 +17811,7 @@ useEffect(() => {
                       if (sendTokenIn == eth) {
                         hash = await sendUserOperationAsync({
                           uo: sendeth(
-                            OneCTDepositAddress as `0x${string}`,
+                            oneCTDepositAddress as `0x${string}`,
                             sendAmountIn,
                           )
                         }, 0n, 0n, true, '', 0);
@@ -17828,13 +17829,13 @@ useEffect(() => {
                           ),
                           0,
                           '',
-                          OneCTDepositAddress,
+                          oneCTDepositAddress,
                         );
                       } else {
                         hash = await sendUserOperationAsync({
                           uo: sendtokens(
                             sendTokenIn as `0x${string}`,
-                            OneCTDepositAddress as `0x${string}`,
+                            oneCTDepositAddress as `0x${string}`,
                             sendAmountIn,
                           )
                         }, 0n, 0n, true, '', 0);
@@ -17853,7 +17854,7 @@ useEffect(() => {
                           ),
                           0,
                           '',
-                          OneCTDepositAddress,
+                          oneCTDepositAddress,
                         );
                       }
                       setpopup(4)
@@ -17878,7 +17879,7 @@ useEffect(() => {
                           ),
                           0,
                           "",
-                          OneCTDepositAddress,
+                          oneCTDepositAddress,
                         );
                       }
                     } finally {
@@ -17893,7 +17894,7 @@ useEffect(() => {
                 }}
                 disabled={(sendAmountIn === BigInt(0) ||
                   sendAmountIn > mainWalletBalances[sendTokenIn] ||
-                  !/^(0x[0-9a-fA-F]{40})$/.test(OneCTDepositAddress)) &&
+                  !/^(0x[0-9a-fA-F]{40})$/.test(oneCTDepositAddress)) &&
                   connected &&
                   userchain == activechain || isSigning}
               >
@@ -25674,14 +25675,12 @@ useEffect(() => {
                 subWallets={subWallets}
                 walletTokenBalances={walletTokenBalances}
                 activeWalletPrivateKey={oneCTSigner}
-                setOneCTSigner={setOneCTSigner}
                 refetch={refetch}
                 tokenList={memoizedTokenList}
                 activechain={activechain}
                 logout={logout}
                 lastRefGroupFetch={lastRefGroupFetch}
                 lastNonceGroupFetch={lastNonceGroupFetch}
-                currentWalletIcon={currentWalletIcon}
                 isBlurred={isBlurred}
                 account={{
                   connected: connected,

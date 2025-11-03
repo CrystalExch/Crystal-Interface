@@ -3335,14 +3335,12 @@ interface TokenExplorerProps {
   subWallets?: Array<{ address: string; privateKey: string }>;
   walletTokenBalances?: { [address: string]: any };
   activeWalletPrivateKey?: string;
-  setOneCTSigner: (privateKey: string) => void;
   refetch: () => void;
   tokenList?: any[];
   activechain: number;
   logout: () => void;
   lastRefGroupFetch: any;
   lastNonceGroupFetch: any;
-  currentWalletIcon?: string;
   isBlurred?: boolean;
   account: {
     connected: boolean;
@@ -3384,14 +3382,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   subWallets = [],
   walletTokenBalances = {},
   activeWalletPrivateKey,
-  setOneCTSigner,
   // refetch,
   tokenList = [],
   activechain,
   // logout,
   // lastRefGroupFetch,
   // lastNonceGroupFetch,
-  // currentWalletIcon,
   isBlurred = false,
   account,
   quickAmounts,
