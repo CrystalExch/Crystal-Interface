@@ -22,23 +22,9 @@
   --tr-fast: 0.2s ease;
 }
 
-/* Overlay */
-.wtw-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: wtw-fadeIn 0.2s ease-out;
-}
-
+/* Container - Fixed positioning like TrackerWidget */
 .wtw-container {
-  position: absolute;
+  position: fixed;
   background: rgb(8, 8, 8);
   border: 1px solid rgba(179, 184, 249, 0.15);
   border-radius: 6px;
@@ -48,12 +34,35 @@
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  transition: box-shadow 0.2s ease;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+  z-index: 10;
+  min-width: 520px;
 }
 
 .wtw-container.dragging {
   cursor: move;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+  filter: blur(0.5px);
+  opacity: 0.8;
+  transform: scale(1.02);
+  transition: none;
+}
+
+.wtw-container.resizing {
+  transition: none;
+}
+
+.wtw-container.snapped {
+  transition: all 0.3s ease;
+}
+
+.wtw-container.snapped-left {
+  border-radius: 0 4px 0 0;
+}
+
+.wtw-container.snapped-right {
+  border-radius: 4px 0 0 0;
 }
 
 /* Filters Header */
@@ -1376,3 +1385,122 @@
   border-color: transparent rgba(0, 0, 0, 0.9) transparent transparent;
 }
 
+/* Resize Handles */
+.wtw-resize-handle {
+  position: absolute;
+  background: transparent;
+  z-index: 100;
+}
+
+.wtw-resize-handle.top-left {
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  cursor: nw-resize;
+}
+
+.wtw-resize-handle.top-right {
+  top: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  cursor: ne-resize;
+}
+
+.wtw-resize-handle.bottom-left {
+  bottom: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  cursor: sw-resize;
+}
+
+.wtw-resize-handle.bottom-right {
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  cursor: se-resize;
+}
+
+.wtw-resize-handle.top {
+  top: 0;
+  left: 10px;
+  right: 10px;
+  height: 5px;
+  cursor: n-resize;
+}
+
+.wtw-resize-handle.bottom {
+  bottom: 0;
+  left: 10px;
+  right: 10px;
+  height: 5px;
+  cursor: s-resize;
+}
+
+.wtw-resize-handle.left {
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 5px;
+  cursor: w-resize;
+}
+
+.wtw-resize-handle.right {
+  right: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 5px;
+  cursor: e-resize;
+}
+
+.wtw-resize-handle.snapped-resize {
+  width: 3px;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.wtw-resize-handle.snapped-resize:hover {
+  background: #d8dcff;
+}
+
+.wtw-resize-handle.left.snapped-resize {
+  left: 0;
+  top: 0;
+  bottom: 0;
+  cursor: ew-resize;
+}
+
+.wtw-resize-handle.right.snapped-resize {
+  right: 0;
+  top: 0;
+  bottom: 0;
+  cursor: ew-resize;
+}
+
+/* Snap Zone Overlays */
+.wtw-snap-zone-overlay {
+  position: fixed;
+  top: 53px;
+  height: calc(100vh - 53px);
+  width: 400px;
+  background: rgba(179, 184, 249, 0.1);
+  pointer-events: none;
+  z-index: 9;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.wtw-snap-zone-overlay.left {
+  left: 50px;
+}
+
+.wtw-snap-zone-overlay.right {
+  right: 0;
+}
+
+.wtw-snap-zone-overlay.active {
+  opacity: 1;
+}
