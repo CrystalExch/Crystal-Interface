@@ -375,10 +375,8 @@ html {
 
 .send-popup-container {
   box-shadow: 0 4px 30px rgb(0 0 0/10%);
-  left: 50%;
   overflow: hidden;
   position: fixed;
-  top: 50%;
 }
 
 .tokenlistname {
@@ -949,11 +947,9 @@ body {
 .tokenselectbg,
 .sendselectbg {
   border-radius: 6px;
-  left: 50%;
   margin: 0 auto;
   overflow: hidden;
   position: fixed;
-  top: 50%;
   user-select: none;
   width: min(380px, 90vw);
 }
@@ -977,10 +973,8 @@ body {
   border-radius: 8px;
   box-shadow: 0 4px 30px rgb(0 0 0/10%);
   height: min(405px, 90vh);
-  left: 50%;
   overflow: hidden;
   padding: 14px 10px 4px 10px;
-  top: 50%;
   width: min(480px, 90vw);
 }
 
@@ -1628,10 +1622,8 @@ body {
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  left: 50%;
   max-width: 90vw;
   padding: 0;
-  top: 50%;
   width: 300px;
 }
 
@@ -2047,9 +2039,7 @@ body {
   display: flex;
   flex-direction: column;
   height: min(585px, 90vh);
-  left: 50%;
   position: fixed;
-  top: 50%;
   width: min(500px, 90vw);
   overflow: hidden;
 }
@@ -2905,7 +2895,6 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 .explorer-filters-popup 
  {
   animation: fadeIn .2s ease-out;
-  transform: translate(-50%, -50%);
   z-index: 12;
   transition: opacity .2s ease-out;
   box-sizing: content-box;
@@ -2966,12 +2955,10 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   box-shadow: 0 4px 24px rgb(0 0 0/10%);
   display: flex;
   flex-direction: column;
-  left: 50%;
   max-height: 90vh;
   max-width: 90vw;
   padding: 0;
   position: fixed;
-  top: 50%;
   width: 300px;
 }
 
@@ -3347,9 +3334,7 @@ body:has(.right-column.show) .blur-background-popups {
 .search-markets-dropdown-popup {
   border-radius: 6px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  left: 50%;
   overflow: hidden;
-  top: 50%;
   width: 400px;
   scale: 1.1
 }
@@ -3765,7 +3750,7 @@ body:has(.popup-blur) {
   border: 1px solid #a0a9f632 !important;
   background: transparent !important;
   height: 34px !important;
-  border-radius: 20px !important;
+  border-radius: 6px !important;
 }
 
 .akui-input svg>* {
@@ -3795,7 +3780,7 @@ body:has(.popup-blur) {
 input[inputmode="numeric"][pattern="[0-9]*"] {
   border-width: 1px !important;
   border-color: #a0a9f632 !important;
-  border-radius: 14px !important;
+  border-radius: 8px !important;
 }
 
 input[name="email"],
@@ -3884,7 +3869,7 @@ input[type="email"] {
       #7f82ac 75%,
       #7f82a1 100%) !important;
   border: none !important;
-  border-radius: 20px !important;
+  border-radius: 6px !important;
   box-shadow:
     inset 0 1px 1px rgb(255 255 255/35%),
     inset 0 -1px 1px rgb(0 0 0/55%),
@@ -3918,7 +3903,7 @@ input[type="email"] {
   border: none !important;
   background: none !important;
   border: 1px solid #a0a9f632 !important;
-  border-radius:20px !important;
+  border-radius: 6px !important;
 }
 
 .akui-btn-content {
@@ -3930,7 +3915,7 @@ input[type="email"] {
   height: 30px !important;
   border: none !important;
   border: 1px solid #a0a9f632 !important;
-  border-radius: 20px !important;
+  border-radius: 6px !important;
 }
 
 .text-xs {
@@ -3974,11 +3959,9 @@ input[type="email"] {
   text-align: center;
   width: 90%;
   max-width: 320px;
-  left: 50%;
   margin: 0 auto;
   overflow: hidden;
   position: fixed;
-  top: 50%;
 }
 
 
@@ -4072,11 +4055,9 @@ input[type="email"] {
   display: flex;
   flex-direction: column;
   text-align: center;
-  left: 50%;
   margin: 0 auto;
   overflow: hidden;
   position: fixed;
-  top: 50%;
 }
 
 .deposit-page-header {
@@ -4312,6 +4293,8 @@ input[type="email"] {
   background-color: rgb(6, 6, 6);
   border: 1px solid #1a1a1d;
   border-radius: 6px;
+  max-height: 220px;
+  overflow-y: scroll;
   z-index: 10;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   scrollbar-width: thin;
@@ -5060,11 +5043,9 @@ input[type="email"] {
 .high-impact-confirmation-popup {
   height: min(305px, 90vh);
   border-radius: 8px;
-  left: 50%;
   margin: 0 auto;
   overflow: hidden;
   position: fixed;
-  top: 50%;
   user-select: none;
   width: min(320px, 90vw);
 }
@@ -6070,6 +6051,7 @@ input[type="email"] {
   animation: floatAnimation 4.5s ease-in-out infinite;
   z-index: 0;
 }
+
 .very-right-crystal {
   position: absolute;
   right: -80px;
@@ -6081,6 +6063,7 @@ input[type="email"] {
   animation: floatAnimation 4.2s ease-in-out infinite;
   z-index: 2;
 }
+
 .top-middle-crystal {
   position: absolute;
   top: -20px;
@@ -6649,9 +6632,7 @@ input[type="email"] {
   display: flex;
   flex-direction: column;
   min-height: min(160px, 90vh);
-  left: 50%;
   position: fixed;
-  top: 50%;
   width: min(340px, 90vw);
   padding: 12px;
 }
@@ -7136,9 +7117,6 @@ input::-webkit-inner-spin-button {
   font-size: 0.8rem;
 }
 
-
-
-
 .preset-input {
   background: none;
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -7328,8 +7306,6 @@ input::-webkit-inner-spin-button {
 
 .edit-order-size-popup-bg {
   position: fixed;
-  top: 50%;
-  left: 50%;
   width: min(380px, 90vw);
   border: 1px solid rgba(179, 184, 249, 0.15);
   border-radius: 6px;
