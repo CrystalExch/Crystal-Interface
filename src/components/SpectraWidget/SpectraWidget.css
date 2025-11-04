@@ -11,7 +11,7 @@
   user-select: none;
   width: 480px;
   height: 700px;
-  z-index: 10;
+  z-index: 101;
   min-width: 380px;
   min-height: 300px;
   display: flex;
@@ -1018,7 +1018,7 @@
   align-items: center;
   gap: 0.3rem;
   height: 28px;
-  max-width: 170px;
+  max-width: 145px;
   padding: 0 0.5rem;
   padding-right: 0.15rem;
   border: 1px solid rgba(179, 184, 249, 0.12);
@@ -1097,4 +1097,452 @@
 
 .spectra-preset-pill.active:hover {
   background-color: #9fa5f525;
+}
+
+/* Filters Button */
+.spectra-filters-button-wrapper {
+  position: relative;
+}
+
+.spectra-filters-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(179, 184, 249, 0.12);
+  border-radius: 4px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 28px;
+}
+
+.spectra-filters-button:hover {
+  background-color: rgba(179, 184, 249, 0.05);
+  border-color: rgba(179, 184, 249, 0.2);
+}
+
+.spectra-filters-button img {
+  width: 14px;
+  height: 14px;
+  filter: brightness(0) saturate(100%) invert(99%) sepia(77%) saturate(520%) hue-rotate(177deg) brightness(90%) contrast(94%);
+}
+
+/* Filters Popup */
+.spectra-filters-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: rgb(8, 8, 8);
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 6px;
+  width: 380px;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+}
+
+.spectra-filters-dropdown-content {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(179, 184, 249, 0.2) transparent;
+}
+
+.spectra-filters-dropdown-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.spectra-filters-dropdown-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.spectra-filters-dropdown-content::-webkit-scrollbar-thumb {
+  background: rgba(179, 184, 249, 0.2);
+  border-radius: 3px;
+}
+
+.spectra-filters-section-block {
+  margin-bottom: 20px;
+}
+
+.spectra-filters-section-block:last-child {
+  margin-bottom: 0;
+}
+
+.spectra-filters-section-title {
+  display: block;
+  color: #ffffff7b;
+  font-size: 0.75rem;
+  font-weight: 300;
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+}
+
+.spectra-filters-button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.spectra-filters-button-row-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.spectra-filter-size-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
+  padding: 12px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 65px;
+}
+
+.spectra-filter-size-button:hover {
+  background-color: rgba(179, 184, 249, 0.05);
+  border-color: rgba(179, 184, 249, 0.2);
+}
+
+.spectra-filter-size-button.active {
+  background: rgb(170 174 207 / 8%);
+  border-color: #aaaecf66;
+  box-shadow: 0 0 0 1px rgba(170, 174, 207, 0.6);
+}
+
+.spectra-filter-button-label {
+  color: #ffffffd5;
+  font-size: 0.8rem;
+  font-weight: 300;
+  margin-bottom: 4px;
+  letter-spacing: -0.3px;
+}
+
+.spectra-filter-button-sublabel {
+  color: #ffffff7b;
+  font-size: 0.7rem;
+  font-weight: 300;
+  letter-spacing: -0.2px;
+}
+
+.spectra-filter-button-icon {
+  color: #ffffffd5;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.spectra-filters-tabs-row {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
+  padding: 4px;
+  overflow: hidden;
+}
+
+.spectra-filter-tab-pill {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #e0e8fd90;
+  font-size: 0.75rem;
+  font-weight: 300;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  padding: 6px 12px;
+  text-align: center;
+  border-radius: 4px;
+}
+
+.spectra-filter-tab-pill:hover {
+  color: #fff;
+}
+
+.spectra-filter-tab-pill.active {
+  color: #fff;
+}
+
+.spectra-filters-toggle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spectra-filters-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
+  padding: 10px 12px;
+  color: #ffffffd5;
+  font-size: 0.8rem;
+  font-weight: 300;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: -0.3px;
+}
+
+.spectra-filters-toggle-row:hover {
+  background-color: rgba(179, 184, 249, 0.05);
+  border-color: rgba(179, 184, 249, 0.2);
+}
+
+.spectra-filters-toggle-row svg {
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.spectra-filter-custom-button {
+  background: transparent;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
+  color: #ffffffd5;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 300;
+  padding: 10px 8px;
+  transition: all 0.2s ease;
+  text-align: center;
+  letter-spacing: -0.3px;
+}
+
+.spectra-filter-custom-button:hover {
+  background-color: rgba(179, 184, 249, 0.05);
+  border-color: rgba(179, 184, 249, 0.2);
+}
+
+.spectra-filter-custom-button.active {
+  background: rgb(170 174 207 / 8%);
+  border-color: #aaaecf66;
+  box-shadow: 0 0 0 1px rgba(170, 174, 207, 0.6);
+  color: #d8dcff;
+}
+
+/* Metrics Tab Styles */
+.spectra-filters-range-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.spectra-filter-range-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(40, 44, 62, 0.5);
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 8px;
+  padding: 12px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 85px;
+  position: relative;
+}
+
+.spectra-filter-range-box:hover {
+  background-color: rgba(179, 184, 249, 0.05);
+  border-color: rgba(179, 184, 249, 0.2);
+}
+
+.spectra-filter-range-box.active {
+  background: rgba(50, 54, 74, 0.7);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+}
+
+.spectra-filter-color-square {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.spectra-filter-range-label {
+  color: #ffffffd5;
+  font-size: 0.9rem;
+  font-weight: 300;
+  margin-bottom: 4px;
+  letter-spacing: -0.3px;
+}
+
+.spectra-filter-range-label-with-select {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.spectra-filter-range-label-with-select span {
+  color: #ffffffd5;
+  font-size: 0.9rem;
+  font-weight: 300;
+  letter-spacing: -0.3px;
+}
+
+.spectra-filter-time-select {
+  background: rgba(30, 34, 48, 0.8);
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 3px;
+  color: #ffffff7b;
+  font-size: 0.7rem;
+  font-weight: 300;
+  padding: 2px 4px;
+  cursor: pointer;
+  outline: none;
+}
+
+.spectra-filter-reset-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: rgba(255, 255, 255, 0.3);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.spectra-filter-reset-icon:hover {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.spectra-filter-range-sublabel {
+  color: #ffffff4d;
+  font-size: 0.7rem;
+  font-weight: 300;
+  letter-spacing: -0.2px;
+}
+
+/* Extras Tab Styles */
+.spectra-filters-button-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.spectra-filter-layout-button {
+  background: transparent;
+  border: 2px solid rgba(99, 102, 241, 0.4);
+  border-radius: 6px;
+  color: rgba(99, 102, 241, 0.9);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 400;
+  padding: 12px 8px;
+  transition: all 0.2s ease;
+  text-align: center;
+  letter-spacing: -0.3px;
+  min-height: 50px;
+}
+
+.spectra-filter-layout-button:hover {
+  background-color: rgba(99, 102, 241, 0.05);
+  border-color: rgba(99, 102, 241, 0.6);
+}
+
+.spectra-filter-layout-button.active {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.7);
+  color: rgba(99, 102, 241, 1);
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.3);
+}
+
+.spectra-filters-behavior-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spectra-filter-behavior-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(40, 44, 62, 0.5);
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 6px;
+  color: #ffffffd5;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 300;
+  padding: 14px 16px;
+  transition: all 0.2s ease;
+  letter-spacing: -0.3px;
+}
+
+.spectra-filter-behavior-button:hover {
+  background-color: rgba(179, 184, 249, 0.05);
+  border-color: rgba(179, 184, 249, 0.2);
+}
+
+.spectra-filter-behavior-button.active {
+  background: rgba(50, 54, 74, 0.7);
+  border-color: rgba(170, 174, 207, 0.4);
+  box-shadow: 0 0 0 1px rgba(170, 174, 207, 0.3);
+}
+
+.spectra-filter-behavior-button svg {
+  color: rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
+}
+
+.spectra-filter-toggle-switch {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.spectra-toggle-input {
+  display: none;
+}
+
+.spectra-toggle-label {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  background-color: rgba(60, 64, 88, 0.5);
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.spectra-toggle-label::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.spectra-toggle-input:checked + .spectra-toggle-label {
+  background-color: rgba(170, 174, 207, 0.4);
+  border-color: rgba(170, 174, 207, 0.6);
+}
+
+.spectra-toggle-input:checked + .spectra-toggle-label::after {
+  transform: translateX(22px);
 }

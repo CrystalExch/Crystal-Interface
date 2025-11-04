@@ -250,9 +250,11 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   background: rgb(6, 6, 6);
   width: 100%;
+  min-width: 520px;
 }
 
 /* Table Header */
@@ -325,6 +327,9 @@
 .wtw-wallet-profile {
   min-width: 0;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 0;
 }
 
 .wtw-wallet-balance {
@@ -426,6 +431,12 @@
   justify-content: center;
   font-size: 12px;
   margin-right: 8px;
+}
+
+.wtw-wallet-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .wtw-wallet-name-container {
@@ -746,7 +757,8 @@
   overflow: hidden;
 }
 
-.wtw-detail-trades-table-header {
+.wtw-detail-trades-table-header,
+.wtw-detail-trades-header {
   display: flex;
   align-items: center;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
@@ -829,11 +841,11 @@
 }
 
 .wtw-detail-trades-row.buy {
-  background-color: rgba(67, 254, 154, 0.03);
+  background-image: linear-gradient(90deg, rgba(67, 254, 154, 0.08), transparent);
 }
 
 .wtw-detail-trades-row.sell {
-  background-color: rgba(235, 112, 112, 0.04);
+  background-image: linear-gradient(90deg, rgba(235, 112, 112, 0.08), transparent);
 }
 
 .wtw-detail-trades-col {
@@ -853,14 +865,14 @@
 
 .wtw-detail-trades-account,
 .wtw-detail-trades-header-cell.wtw-detail-trades-account {
-  min-width: 140px;
-  flex: 2;
+  min-width: 110px;
+  flex: 1.4;
 }
 
 .wtw-detail-trades-col:nth-child(3),
 .wtw-detail-trades-header-cell:nth-child(3) {
-  min-width: 100px;
-  flex: 1.5;
+  min-width: 80px;
+  flex: 0.8;
 }
 
 .wtw-detail-trades-col:nth-child(4),

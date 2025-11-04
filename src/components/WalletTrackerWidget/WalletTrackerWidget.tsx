@@ -5,7 +5,7 @@ import './WalletTrackerWidget.css';
 import monadicon from '../../assets/monadlogo.svg';
 import copy from '../../assets/copy.svg';
 import trash from '../../assets/trash.svg';
-import defaultPfp from '../../assets/avatar.png';
+import defaultPfp from '../../assets/leaderboard_default.png';
 import settingsicon from '../../assets/settings.svg';
 import filter from '../../assets/filter.svg';
 import ImportWalletsPopup from '../Tracker/ImportWalletsPopup';
@@ -486,11 +486,47 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   useEffect(() => {
     if (!externalWallets && localWallets.length >= 0) {
       saveWalletsToStorage(localWallets);
+      // Dispatch custom event for same-window sync
+      window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: localWallets, source: 'widget' } }));
     }
     if (onWalletsChange) {
       onWalletsChange(localWallets);
     }
   }, [localWallets, externalWallets, onWalletsChange]);
+
+  // Listen for wallet changes from Tracker.tsx or other components
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          const updatedWallets = JSON.parse(e.newValue);
+          setLocalWallets(updatedWallets);
+        } catch (error) {
+          console.error('Failed to parse updated wallets:', error);
+        }
+      }
+    };
+
+    const handleCustomWalletUpdate = (e: CustomEvent) => {
+      if (e.detail && e.detail.source !== 'widget' && !externalWallets) {
+        const updatedWallets = e.detail.wallets;
+        // Only update if the wallets are actually different to avoid infinite loops
+        if (JSON.stringify(updatedWallets) !== JSON.stringify(localWallets)) {
+          setLocalWallets(updatedWallets);
+        }
+      }
+    };
+
+    // Listen for localStorage changes from other tabs/windows
+    window.addEventListener('storage', handleStorageChange as EventListener);
+    // Listen for custom events from same window (Tracker component)
+    window.addEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange as EventListener);
+      window.removeEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
+    };
+  }, [externalWallets, localWallets]);
 
   const handleSort = (field: 'balance' | 'lastActive') => {
     if (sortBy === field) {
@@ -601,40 +637,33 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     setShowAddWalletModal(false);
   };
 
-  // Trade filtering and sorting
+  // Trade filtering and sorting - copied from Tracker.tsx
   const getFilteredTrades = () => {
-    const walletAddressSet = new Set(localWallets.map(w => w.address.toLowerCase()));
-
-    let filtered = allTrades.filter((trade: any) => {
-      const tradeWalletAddr = trade.walletAddress?.toLowerCase();
-      if (!walletAddressSet.has(tradeWalletAddr)) return false;
-
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        return (
-          trade.walletName?.toLowerCase().includes(query) ||
-          trade.tokenName?.toLowerCase().includes(query) ||
-          trade.token?.toLowerCase().includes(query)
-        );
-      }
-      return true;
-    });
+    let trades = allTrades;
 
     if (tradeSortField) {
-      filtered = [...filtered].sort((a, b) => {
-        let aVal = 0, bVal = 0;
+      trades = [...trades].sort((a, b) => {
+        let comparison = 0;
+
         if (tradeSortField === 'amount') {
-          aVal = a.amount || 0;
-          bVal = b.amount || 0;
+          comparison = a.amount - b.amount;
         } else if (tradeSortField === 'marketCap') {
-          aVal = a.marketCap || 0;
-          bVal = b.marketCap || 0;
+          comparison = a.marketCap - b.marketCap;
         }
-        return tradeSortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+
+        return tradeSortDirection === 'desc' ? -comparison : comparison;
       });
     }
 
-    return filtered;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      trades = trades.filter((trade: any) =>
+        trade.walletName?.toLowerCase().includes(query) ||
+        trade.token?.toLowerCase().includes(query)
+      );
+    }
+
+    return trades;
   };
 
   const handleTradeSort = (field: 'amount' | 'marketCap') => {
@@ -701,12 +730,12 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     return (
       <div className="wtw-live-trades">
         <div className="wtw-detail-trades-table">
-          <div className="wtw-detail-trades-table-header">
+          <div className="wtw-detail-trades-header">
+            <div className="wtw-detail-trades-header-cell wtw-detail-trades-time">Time</div>
             <div className="wtw-detail-trades-header-cell wtw-detail-trades-account">Account</div>
-            <div className="wtw-detail-trades-header-cell" style={{minWidth: '100px', width: '100px'}}>Token</div>
+            <div className="wtw-detail-trades-header-cell">Token</div>
             <div
               className={`wtw-detail-trades-header-cell wtw-sortable ${tradeSortField === 'amount' ? 'active' : ''}`}
-              style={{minWidth: '100px', width: '100px'}}
               onClick={() => handleTradeSort('amount')}
             >
               Amount
@@ -1189,10 +1218,10 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
                       {/* Profile */}
                       <div className="wtw-wallet-profile">
+                        <div className="wtw-wallet-avatar">
+                          <img src={defaultPfp} alt={wallet.name} />
+                        </div>
                         <div className="wtw-wallet-name-display">
-                          <div className="wtw-wallet-avatar">
-                            <span>{wallet.emoji || '😀'}</span>
-                          </div>
                           <div className="wtw-wallet-name-container">
                             {editingWallet === wallet.id ? (
                               <input

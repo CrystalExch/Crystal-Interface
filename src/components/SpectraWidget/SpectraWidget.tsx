@@ -830,6 +830,8 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
   });
 
   const [pausedColumn, setPausedColumn] = useState<'new' | 'graduating' | 'graduated' | null>(null);
+  const [showFiltersPopup, setShowFiltersPopup] = useState(false);
+  const [activeFiltersTab, setActiveFiltersTab] = useState<'layout' | 'metrics' | 'row' | 'extras'>('layout');
 
   const dragStartPos = useRef({ x: 0, y: 0 });
   const resizeStartPos = useRef({ x: 0, y: 0 });
@@ -1259,6 +1261,363 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
             </button>
 
             <div className="spectra-column-title-right">
+              <div className="spectra-filters-button-wrapper">
+                <button
+                  className="spectra-filters-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowFiltersPopup(!showFiltersPopup);
+                  }}
+                >
+                  <img src={filter} alt="Filters" />
+                </button>
+
+                {showFiltersPopup && (
+                  <div className="spectra-filters-dropdown">
+                    <div className="spectra-filters-dropdown-content">
+                      <div className="spectra-filters-section-block">
+                        <h4 className="spectra-filters-section-title">Metrics</h4>
+                        <div className="spectra-filters-button-row">
+                          <button className="spectra-filter-size-button active">
+                            <div className="spectra-filter-button-label">MC 77K</div>
+                            <div className="spectra-filter-button-sublabel">Small</div>
+                          </button>
+                          <button className="spectra-filter-size-button">
+                            <div className="spectra-filter-button-label">MC 77K</div>
+                            <div className="spectra-filter-button-sublabel">Large</div>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="spectra-filters-section-block">
+                        <h4 className="spectra-filters-section-title">Quick Buy</h4>
+                        <div className="spectra-filters-button-row-4">
+                          <button className="spectra-filter-size-button active">
+                            <div className="spectra-filter-button-icon">⚡7</div>
+                            <div className="spectra-filter-button-sublabel">Small</div>
+                          </button>
+                          <button className="spectra-filter-size-button">
+                            <div className="spectra-filter-button-icon">⚡7</div>
+                            <div className="spectra-filter-button-sublabel">Large</div>
+                          </button>
+                          <button className="spectra-filter-size-button">
+                            <div className="spectra-filter-button-icon">⚡7</div>
+                            <div className="spectra-filter-button-sublabel">Mega</div>
+                          </button>
+                          <button className="spectra-filter-size-button">
+                            <div className="spectra-filter-button-icon">⚡7</div>
+                            <div className="spectra-filter-button-sublabel">Ultra</div>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="spectra-filters-section-block">
+                        <h4 className="spectra-filters-section-title">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{marginRight: '6px'}}>
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                          </svg>
+                          Color
+                        </h4>
+                      </div>
+
+                      <div className="spectra-filters-tabs-row">
+                        <button
+                          className={`spectra-filter-tab-pill ${activeFiltersTab === 'layout' ? 'active' : ''}`}
+                          onClick={() => setActiveFiltersTab('layout')}
+                        >
+                          Layout
+                        </button>
+                        <button
+                          className={`spectra-filter-tab-pill ${activeFiltersTab === 'metrics' ? 'active' : ''}`}
+                          onClick={() => setActiveFiltersTab('metrics')}
+                        >
+                          Metrics
+                        </button>
+                        <button
+                          className={`spectra-filter-tab-pill ${activeFiltersTab === 'row' ? 'active' : ''}`}
+                          onClick={() => setActiveFiltersTab('row')}
+                        >
+                          Row
+                        </button>
+                        <button
+                          className={`spectra-filter-tab-pill ${activeFiltersTab === 'extras' ? 'active' : ''}`}
+                          onClick={() => setActiveFiltersTab('extras')}
+                        >
+                          Extras
+                        </button>
+                      </div>
+
+                      {activeFiltersTab === 'layout' && (
+                        <>
+                          <div className="spectra-filters-section-block">
+                            <div className="spectra-filters-toggle-list">
+                              <div className="spectra-filters-toggle-row">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14z"/>
+                                </svg>
+                                <span>Show Search Bar</span>
+                              </div>
+                              <div className="spectra-filters-toggle-row">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M14.59 2.59c-.38-.38-.89-.59-1.42-.59H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8.83c0-.53-.21-1.04-.59-1.41l-4.82-4.83z"/>
+                                </svg>
+                                <span>No Decimals</span>
+                              </div>
+                              <div className="spectra-filters-toggle-row">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/>
+                                </svg>
+                                <span>Show Hidden Tokens</span>
+                              </div>
+                              <div className="spectra-filters-toggle-row">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/>
+                                </svg>
+                                <span>Unhide on Migrated</span>
+                              </div>
+                              <div className="spectra-filters-toggle-row">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                                </svg>
+                                <span>Circle Images</span>
+                              </div>
+                              <div className="spectra-filters-toggle-row">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                                </svg>
+                                <span>Progress Bar</span>
+                              </div>
+                              <div className="spectra-filters-toggle-row">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/>
+                                </svg>
+                                <span>Spaced Tables</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="spectra-filters-section-block">
+                            <h4 className="spectra-filters-section-title">Customize rows</h4>
+                            <div className="spectra-filters-button-row-4">
+                              <button className="spectra-filter-custom-button">Image Reuse</button>
+                              <button className="spectra-filter-custom-button active">Market Cap</button>
+                              <button className="spectra-filter-custom-button">Volume</button>
+                              <button className="spectra-filter-custom-button">Fees</button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {activeFiltersTab === 'metrics' && (
+                        <>
+                          <div className="spectra-filters-section-block">
+                            <h4 className="spectra-filters-section-title">Market Cap</h4>
+                            <div className="spectra-filters-range-grid">
+                              <div className="spectra-filter-range-box active">
+                                <div className="spectra-filter-color-square" style={{backgroundColor: '#3b82f6'}}></div>
+                                <div className="spectra-filter-range-label">30000</div>
+                                <div className="spectra-filter-reset-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                  </svg>
+                                </div>
+                                <div className="spectra-filter-range-sublabel">0 - 30K</div>
+                              </div>
+                              <div className="spectra-filter-range-box">
+                                <div className="spectra-filter-color-square" style={{backgroundColor: '#eab308'}}></div>
+                                <div className="spectra-filter-range-label">150000</div>
+                                <div className="spectra-filter-reset-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                  </svg>
+                                </div>
+                                <div className="spectra-filter-range-sublabel">30K - 150K</div>
+                              </div>
+                              <div className="spectra-filter-range-box">
+                                <div className="spectra-filter-color-square" style={{backgroundColor: '#10b981'}}></div>
+                                <div className="spectra-filter-range-label">Above</div>
+                                <div className="spectra-filter-reset-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                  </svg>
+                                </div>
+                                <div className="spectra-filter-range-sublabel">150K+</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="spectra-filters-section-block">
+                            <h4 className="spectra-filters-section-title">Volume</h4>
+                            <div className="spectra-filters-range-grid">
+                              <div className="spectra-filter-range-box">
+                                <div className="spectra-filter-color-square" style={{backgroundColor: '#ffffff'}}></div>
+                                <div className="spectra-filter-range-label">1000</div>
+                                <div className="spectra-filter-reset-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                  </svg>
+                                </div>
+                                <div className="spectra-filter-range-sublabel">0 - 1K</div>
+                              </div>
+                              <div className="spectra-filter-range-box">
+                                <div className="spectra-filter-color-square" style={{backgroundColor: '#ffffff'}}></div>
+                                <div className="spectra-filter-range-label">2000</div>
+                                <div className="spectra-filter-reset-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                  </svg>
+                                </div>
+                                <div className="spectra-filter-range-sublabel">1K - 2K</div>
+                              </div>
+                              <div className="spectra-filter-range-box">
+                                <div className="spectra-filter-color-square" style={{backgroundColor: '#ffffff'}}></div>
+                                <div className="spectra-filter-range-label">Above</div>
+                                <div className="spectra-filter-reset-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                  </svg>
+                                </div>
+                                <div className="spectra-filter-range-sublabel">2K+</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="spectra-filters-section-block">
+                            <h4 className="spectra-filters-section-title">Holders</h4>
+                            <div className="spectra-filters-range-grid">
+                              <div className="spectra-filter-range-box">
+                                <div className="spectra-filter-color-square" style={{backgroundColor: '#ffffff'}}></div>
+                                <div className="spectra-filter-range-label">10</div>
+                                <div className="spectra-filter-reset-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                  </svg>
+                                </div>
+                                <div className="spectra-filter-range-sublabel">0 - 10</div>
+                              </div>
+                              <div className="spectra-filter-range-box">
+                                <div className="spectra-filter-color-square" style={{backgroundColor: '#ffffff'}}></div>
+                                <div className="spectra-filter-range-label">50</div>
+                                <div className="spectra-filter-reset-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                  </svg>
+                                </div>
+                                <div className="spectra-filter-range-sublabel">10 - 50</div>
+                              </div>
+                              <div className="spectra-filter-range-box">
+                                <div className="spectra-filter-color-square" style={{backgroundColor: '#ffffff'}}></div>
+                                <div className="spectra-filter-range-label">Above</div>
+                                <div className="spectra-filter-reset-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                  </svg>
+                                </div>
+                                <div className="spectra-filter-range-sublabel">50+</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="spectra-filters-section-block">
+                            <h4 className="spectra-filters-section-title">Tweet Age</h4>
+                            <div className="spectra-filters-range-grid">
+                              <div className="spectra-filter-range-box">
+                                <div className="spectra-filter-color-square" style={{backgroundColor: '#10b981'}}></div>
+                                <div className="spectra-filter-range-label-with-select">
+                                  <span>10</span>
+                                  <select className="spectra-filter-time-select">
+                                    <option>m</option>
+                                    <option>h</option>
+                                    <option>d</option>
+                                  </select>
+                                </div>
+                                <div className="spectra-filter-reset-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                  </svg>
+                                </div>
+                                <div className="spectra-filter-range-sublabel">0 - 10 min</div>
+                              </div>
+                              <div className="spectra-filter-range-box">
+                                <div className="spectra-filter-color-square" style={{backgroundColor: '#f97316'}}></div>
+                                <div className="spectra-filter-range-label-with-select">
+                                  <span>60</span>
+                                  <select className="spectra-filter-time-select">
+                                    <option>m</option>
+                                    <option>h</option>
+                                    <option>d</option>
+                                  </select>
+                                </div>
+                                <div className="spectra-filter-reset-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                  </svg>
+                                </div>
+                                <div className="spectra-filter-range-sublabel">10 - 60 min</div>
+                              </div>
+                              <div className="spectra-filter-range-box">
+                                <div className="spectra-filter-color-square" style={{backgroundColor: '#ef4444'}}></div>
+                                <div className="spectra-filter-range-label">Above</div>
+                                <div className="spectra-filter-reset-icon">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                  </svg>
+                                </div>
+                                <div className="spectra-filter-range-sublabel">60+ min</div>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {activeFiltersTab === 'extras' && (
+                        <>
+                          <div className="spectra-filters-section-block">
+                            <h4 className="spectra-filters-section-title">Table Layout</h4>
+                            <div className="spectra-filters-button-row-3">
+                              <button className="spectra-filter-layout-button active">New Pairs</button>
+                              <button className="spectra-filter-layout-button">Final Stretch</button>
+                              <button className="spectra-filter-layout-button">Migrated</button>
+                            </div>
+                          </div>
+
+                          <div className="spectra-filters-section-block">
+                            <h4 className="spectra-filters-section-title">Click Quick Buy Behavior</h4>
+                            <div className="spectra-filters-behavior-grid">
+                              <button className="spectra-filter-behavior-button active">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                </svg>
+                                <span>Nothing</span>
+                              </button>
+                              <button className="spectra-filter-behavior-button">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                                </svg>
+                                <span>Open Page</span>
+                              </button>
+                              <button className="spectra-filter-behavior-button">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
+                                </svg>
+                                <span>Open in New Tab</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="spectra-filters-section-block">
+                            <h4 className="spectra-filters-section-title">Second Quick Buy Button</h4>
+                            <div className="spectra-filter-toggle-switch">
+                              <input type="checkbox" id="second-quick-buy" className="spectra-toggle-input" />
+                              <label htmlFor="second-quick-buy" className="spectra-toggle-label"></label>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               <div className="spectra-quickbuy-container">
                 <img className="spectra-quick-buy-icon" src={lightning} alt="" />
                 <input
@@ -1335,6 +1694,7 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
             )}
           </div>
         </div>
+
 
         {!isSnapped && (
           <>

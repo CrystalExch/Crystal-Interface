@@ -26236,7 +26236,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         walletTokenBalances={walletTokenBalances}
         activechain={activechain}
         settings={settings}
-        allTrades={trades}
+        allTrades={trackedWalletTrades}
         tokenList={memoizedTokenList}
         marketsData={marketsData}
         tradesByMarket={tradesByMarket}

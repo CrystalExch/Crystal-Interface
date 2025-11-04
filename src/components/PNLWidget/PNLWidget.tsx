@@ -596,17 +596,11 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="pnl-header-container">
+        <div className="pnl-header-container" style={{ display: 'none' }}>
           <div className="pnl-widget-header" onMouseDown={handleDragStart}>
             <div className="pnl-header-left">
               <h2 className="pnl-widget-title">PNL</h2>
             </div>
-            <button className="pnl-close-btn" onClick={(e) => { e.stopPropagation(); onClose(); }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
           </div>
 
           <div className="pnl-tabs-row">
@@ -628,28 +622,36 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
             >
               30d
             </button>
-            <button className={`pnl-header-action-button ${isHovered ? 'visible' : ''}`} onClick={() => setShowSettings(!showSettings)}>
-              <Settings size={16} />
-            </button>
-            <button className={`pnl-header-action-button ${isHovered ? 'visible' : ''}`} onClick={() => setShowHistory(!showHistory)}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 3h18v18H3V3z"/>
-                <path d="M3 9h18M9 21V9"/>
-              </svg>
-            </button>
-            <button className={`pnl-header-action-button ${isHovered ? 'visible' : ''} ${!showGraph ? 'active' : ''}`} onClick={() => setShowGraph(!showGraph)}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-              </svg>
-            </button>
-            <button className={`pnl-header-action-button ${isHovered ? 'visible' : ''}`} onClick={(e) => { e.stopPropagation(); }}>
-              <RotateCcw size={16} />
-            </button>
           </div>
         </div>
 
         <div className="pnl-widget-body">
-          <div className="pnl-stats-section">
+          <div className="pnl-stats-section" onMouseDown={handleDragStart}>
+            <div className="pnl-stats-section-controls-left">
+              <button className={`pnl-header-action-button ${isHovered ? 'visible' : ''}`} onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}>
+                <Settings size={16} />
+              </button>
+              <button className={`pnl-header-action-button ${isHovered ? 'visible' : ''}`} onClick={(e) => { e.stopPropagation(); setShowHistory(!showHistory); }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 3h18v18H3V3z"/>
+                  <path d="M3 9h18M9 21V9"/>
+                </svg>
+              </button>
+              <button className={`pnl-header-action-button ${isHovered ? 'visible' : ''} ${!showGraph ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setShowGraph(!showGraph); }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+              </button>
+              <button className={`pnl-header-action-button ${isHovered ? 'visible' : ''}`} onClick={(e) => { e.stopPropagation(); }}>
+                <RotateCcw size={16} />
+              </button>
+            </div>
+            <button className="pnl-close-btn pnl-close-btn-stats" onClick={(e) => { e.stopPropagation(); onClose(); }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
             <div className="pnl-stat-item">
               <div className="pnl-stat-icon balance-icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

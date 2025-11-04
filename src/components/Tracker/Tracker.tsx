@@ -1038,7 +1038,28 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
 
   useEffect(() => {
     saveWalletsToStorage(trackedWallets);
+    // Dispatch custom event for same-window sync with WalletTrackerWidget
+    window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: trackedWallets, source: 'tracker' } }));
     setStatus();
+  }, [trackedWallets]);
+
+  // Listen for wallet changes from WalletTrackerWidget
+  useEffect(() => {
+    const handleCustomWalletUpdate = (e: CustomEvent) => {
+      if (e.detail && e.detail.source !== 'tracker') {
+        const updatedWallets = e.detail.wallets;
+        // Only update if the wallets are actually different to avoid infinite loops
+        if (JSON.stringify(updatedWallets) !== JSON.stringify(trackedWallets)) {
+          setTrackedWallets(updatedWallets);
+        }
+      }
+    };
+
+    window.addEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
+    };
   }, [trackedWallets]);
 
   useEffect(() => {
@@ -1422,13 +1443,16 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     const allPositions: GqlPosition[] = [];
 
     Object.entries(addressPositions).forEach(([walletAddr, positions]) => {
+      // Skip positions from wallets that are no longer tracked
+      const wallet = trackedWallets.find(w => w.address.toLowerCase() === walletAddr.toLowerCase());
+      if (!wallet) return;
+
       positions.forEach(pos => {
         // Only include positions with remaining tokens
         if (pos.remainingTokens && pos.remainingTokens > 0) {
           // Add wallet info to position for display
-          const wallet = trackedWallets.find(w => w.address.toLowerCase() === walletAddr.toLowerCase());
-          (pos as any).walletName = wallet?.name || `${walletAddr.slice(0,6)}...${walletAddr.slice(-4)}`;
-          (pos as any).walletEmoji = wallet?.emoji || '👤';
+          (pos as any).walletName = wallet.name;
+          (pos as any).walletEmoji = wallet.emoji || '👤';
           (pos as any).walletAddress = walletAddr;
           allPositions.push(pos);
         }
@@ -1855,9 +1879,27 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
 
   const confirmDeleteWallet = (id: string) => {
     const shouldSkip = getDeletePreference();
-    
+
     if (shouldSkip) {
+      const walletToRemove = trackedWallets.find(w => w.id === id);
       setTrackedWallets(prev => prev.filter(w => w.id !== id));
+
+      // Clean up data for deleted wallet
+      if (walletToRemove) {
+        const addressToRemove = walletToRemove.address.toLowerCase();
+
+        // Remove positions for this wallet
+        setAddressPositions(prev => {
+          const newPositions = { ...prev };
+          delete newPositions[addressToRemove];
+          return newPositions;
+        });
+
+        // Remove trades for this wallet
+        setTrackedWalletTrades((prev: any[]) =>
+          prev.filter((trade: any) => trade.walletAddress?.toLowerCase() !== addressToRemove)
+        );
+      }
     } else {
       setWalletToDelete(id);
       setShowDeleteConfirmation(true);
@@ -1887,8 +1929,27 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     if (dontShowDeleteAgain) {
       saveDeletePreference(true);
     }
-    
+
+    const walletToRemove = trackedWallets.find(w => w.id === walletToDelete);
     setTrackedWallets(prev => prev.filter(w => w.id !== walletToDelete));
+
+    // Clean up data for deleted wallet
+    if (walletToRemove) {
+      const addressToRemove = walletToRemove.address.toLowerCase();
+
+      // Remove positions for this wallet
+      setAddressPositions(prev => {
+        const newPositions = { ...prev };
+        delete newPositions[addressToRemove];
+        return newPositions;
+      });
+
+      // Remove trades for this wallet
+      setTrackedWalletTrades((prev: any[]) =>
+        prev.filter((trade: any) => trade.walletAddress?.toLowerCase() !== addressToRemove)
+      );
+    }
+
     setShowDeleteConfirmation(false);
     setWalletToDelete('');
     setDontShowDeleteAgain(false);
@@ -2651,9 +2712,13 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
   const renderMonitor = () => {
     const allPositions = getFilteredPositions();
 
-    // Launchpad column: Only memecoin positions (exclude major tokens from tokenList)
+    // Launchpad column: Only memecoin positions (exclude major tokens from tokenList and graduated tokens)
     // These come from GraphQL launchpadPositions query
-    let launchpadPositions = allPositions;
+    // Filter out graduated tokens (bondingCurveProgress === 100)
+    let launchpadPositions = allPositions.filter(pos => {
+      const market = marketsRef.current.get(pos.tokenId.toLowerCase());
+      return !market || market.bondingCurveProgress < 100;
+    });
 
     // Orderbook column: only major tokens from tokenList
     const spotTokenPositions: GqlPosition[] = [];

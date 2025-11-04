@@ -105,9 +105,9 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
 
   const [viewMode, setViewMode] = useState<'simple' | 'advanced'>('simple');
   const [selectedSimpleFilter, setSelectedSimpleFilter] = useState<string | null>(() => {
-    if (!initialFilters) return null; // No default selection
+    if (!initialFilters) return 'latest'; // Default to 'latest' when no initial filters
     const detected = detectSimplePreset(initialFilters);
-    return detected;
+    return detected || 'latest'; // Fallback to 'latest' if detection fails
   });
   const [activeTab, setActiveTab] = useState<'market' | 'transactions'>('market');
   const [filters, setFilters] = useState<MonitorFilterState>(
