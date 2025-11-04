@@ -27,6 +27,7 @@ import {
   matchPath
 } from 'react-router-dom';
 import { TransactionExecutionError, encodeFunctionData, maxUint256, decodeFunctionResult, decodeEventLog } from 'viem';
+import { toUtf8Bytes, computeHmac } from 'ethers';
 import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
 import { loadWalletsFromStorage, deduplicateWallets } from './utils/walletUtils';
@@ -13058,7 +13059,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     }
   }, [sendUserOperationAsync, activechain, terminalRefetch]);
 
-  //popup modals
+  // popup modals
   const Modals = (
     <>
       <div className={`blur-background-popups ${popup != 0 ? 'active' : ''}`}>
@@ -19032,7 +19033,31 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               <button
                 className="leverage-update-button"
-                onClick={() => {
+                onClick={async () => {
+                  if (Object.keys(perpsMarketsData).length == 0) return;
+                  const payload = {
+                    accountId: perpsKeystore.accountId,
+                    contractId: perpsMarketsData[perpsActiveMarketKey]?.contractId,
+                    leverage: perpsLeverage
+                  }
+                  const ts = Date.now().toString()
+                  const path = '/api/v1/private/account/updateLeverageSetting'
+                  const qs = Object.keys(payload).sort().map(k => `${k}=${(payload as any)[k]}`).join('&')
+                  const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(perpsKeystore.apiSecret))), toUtf8Bytes(ts + "POST" + path + qs)).slice(2)
+                  const [metaRes] = await Promise.all([
+                    fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/account/updateLeverageSetting", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        "X-edgeX-Timestamp": ts,
+                        "X-edgeX-Signature": signature,
+                        "X-edgeX-Passphrase": perpsKeystore.apiPassphrase,
+                        "X-edgeX-Api-Key": perpsKeystore.apiKey
+                      },
+                      body: JSON.stringify(payload)
+                    }).then(r => r.json())
+                  ])
+                  console.log(metaRes)
                   localStorage.setItem('crystal_perps_leverage', perpsLeverage);
                   setpopup(0);
                 }}

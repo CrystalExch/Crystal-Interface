@@ -19,6 +19,7 @@
   z-index: 1;
 }
 
-body:has(.markets-dropdown-content.visible) .advanced-chart-container {
+body:has(.markets-dropdown-content.visible) .advanced-chart-container,
+body:has(.perps-markets-dropdown-content.visible) .advanced-chart-container {
   pointer-events: none;
 }

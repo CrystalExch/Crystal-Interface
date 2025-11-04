@@ -547,6 +547,8 @@ const Perps: React.FC<PerpsProps> = ({
   }, [availableBalance, leverage]);
 
   const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
+    setPerpsLimitChase(false)
+    setlimitPriceString(price.toString())
   }, []);
 
   async function generateSignedOrder(
@@ -709,7 +711,7 @@ const Perps: React.FC<PerpsProps> = ({
   useEffect(() => {
     const percentage =
       Number(availableBalance) == 0
-        ? 0
+        ? Number(inputString) > 0 ? 100 : 0
         : Math.min(
           100,
           Math.floor(
@@ -1769,7 +1771,7 @@ const Perps: React.FC<PerpsProps> = ({
                 setInputString(e.target.value)
                 const percentage =
                   Number(availableBalance) == 0
-                    ? 0
+                    ? Number(e.target.value) > 0 ? 100 : 0
                     : Math.min(
                       100,
                       Math.floor(

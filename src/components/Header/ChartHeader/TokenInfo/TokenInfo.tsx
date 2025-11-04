@@ -548,9 +548,36 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 }) => {
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const [hoveredMemeImage, setHoveredMemeImage] = useState(false);
-
   const [previewPosition, setPreviewPosition] = useState({ top: 0, left: 0 });
   const [showPreview, setShowPreview] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [shouldFocus, setShouldFocus] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [hoveredToken, setHoveredToken] = useState(false);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  const [isPerpsDropdownOpen, setIsPerpsDropdownOpen] = useState(false);
+  const [isPerpsDropdownVisible, setIsPerpsDropdownVisible] = useState(false);
+  const [perpsSearchQuery, setPerpsSearchQuery] = useState('');
+  const [perpsActiveFilter, setPerpsActiveFilter] = useState('All');
+  const [perpsSelectedIndex, setPerpsSelectedIndex] = useState(0);
+  const [perpsShouldFocus, setPerpsShouldFocus] = useState(false);
+  const [perpsSortField, setPerpsSortField] = useState<'volume' | 'price' | 'change' | 'funding' | 'openInterest' | null>('volume');
+  const [perpsSortDirection, setPerpsSortDirection] = useState<'asc' | 'desc' | undefined>('desc');
+  const filterTabsRef = useRef<HTMLDivElement>(null);
+  const marketsListRef = useRef<HTMLDivElement>(null);
+  const memeHeaderRightRef = useRef<HTMLDivElement>(null);
+  const perpsMetricsRef = useRef<HTMLDivElement>(null);
+  const perpsFilterTabsRef = useRef<HTMLDivElement>(null);
+  const perpsMarketsListRef = useRef<HTMLDivElement>(null);
+  const perpsDropdownRef = useRef<HTMLDivElement>(null);
+  const perpsSearchInputRef = useRef<HTMLInputElement>(null);
+  const virtualizationListRef = useRef<List>(null);
+  const { favorites, toggleFavorite, activechain } = useSharedContext();
+  const isAdvancedView = isTradeRoute && !simpleView;
+
   const updatePreviewPosition = useCallback(() => {
     if (!imageContainerRef.current) return;
 
@@ -627,33 +654,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     }
   }, [hoveredMemeImage, memeTokenData?.image, updatePreviewPosition]);
   
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [shouldFocus, setShouldFocus] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [hoveredToken, setHoveredToken] = useState(false);
-  const [currentTime, setCurrentTime] = useState(Date.now());
-  const [isPerpsDropdownOpen, setIsPerpsDropdownOpen] = useState(false);
-  const [isPerpsDropdownVisible, setIsPerpsDropdownVisible] = useState(false);
-  const [perpsSearchQuery, setPerpsSearchQuery] = useState('');
-  const [perpsActiveFilter, setPerpsActiveFilter] = useState('All');
-  const [perpsSelectedIndex, setPerpsSelectedIndex] = useState(0);
-  const [perpsShouldFocus, setPerpsShouldFocus] = useState(false);
-  const [perpsSortField, setPerpsSortField] = useState<'volume' | 'price' | 'change' | 'funding' | 'openInterest' | null>('volume');
-  const [perpsSortDirection, setPerpsSortDirection] = useState<'asc' | 'desc' | undefined>('desc');
-  const filterTabsRef = useRef<HTMLDivElement>(null);
-  const marketsListRef = useRef<HTMLDivElement>(null);
-  const memeHeaderRightRef = useRef<HTMLDivElement>(null);
-  const perpsMetricsRef = useRef<HTMLDivElement>(null);
-  const perpsFilterTabsRef = useRef<HTMLDivElement>(null);
-  const perpsMarketsListRef = useRef<HTMLDivElement>(null);
-  const perpsDropdownRef = useRef<HTMLDivElement>(null);
-  const perpsSearchInputRef = useRef<HTMLInputElement>(null);
-  const virtualizationListRef = useRef<List>(null);
-  const { favorites, toggleFavorite, activechain } = useSharedContext();
-
   const filteredPerpsMarkets = useMemo(() => {
     const filtered = Object.values(perpsMarketsData)
       .filter(market =>
@@ -750,8 +750,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     toggleFavorite: toggleFavorite,
     favorites: favorites,
   }), [filteredPerpsMarkets, perpsSelectedIndex, handlePerpsMouseEnter, handlePerpsMarketSelect, toggleFavorite]);
-
-  const isAdvancedView = isTradeRoute && !simpleView;
 
   const perpsFilterTabs = Object.keys(perpsFilterOptions).map((filter) => (
     <button

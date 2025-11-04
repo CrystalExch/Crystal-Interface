@@ -147,10 +147,8 @@ const OrderList: React.FC<OrderListProps> = ({
       className="orderlist"
       ref={containerRef}
       onMouseLeave={() => {
-        requestAnimationFrame(() => {
-          setSelectedIndex(null)
-          setHighlightData(null)
-        })
+        setSelectedIndex(null)
+        setHighlightData(null)
       }}
       onMouseMove={handleMouseMove}
     >
