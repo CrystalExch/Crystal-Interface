@@ -242,7 +242,7 @@
 }
 
 .pause-indicator {
-  backdrop-filter: blur(10px);
+  background-color: rgb(6, 6, 6);
   border-top: 1px solid rgba(179, 184, 249, 0.1);
   bottom: -1px;
   left: 0;
@@ -313,16 +313,16 @@
 
 .meme-trade-volume-bar.positive {
   background: linear-gradient(270deg,
-      rgba(67, 254, 154, 0.1) 0%,
-      rgba(67, 254, 154, 0.05) 70%,
-      rgba(67, 254, 154, 0.03) 100%);
+      rgba(67, 254, 154, 0.12) 0%,
+      rgba(67, 254, 154, 0.06) 60%,
+      rgba(67, 254, 154, 0.04) 100%);
 }
 
 .meme-trade-volume-bar.negative {
   background: linear-gradient(270deg,
-      rgba(235, 112, 112, 0.1) 0%,
-      rgba(235, 112, 112, 0.05) 70%,
-      rgba(235, 112, 112, 0.03) 100%);
+      rgba(235, 112, 112, 0.12) 0%,
+      rgba(235, 112, 112, 0.06) 60%,
+      rgba(235, 112, 112, 0.04) 100%);
 }
 
 .meme-trade-amount,

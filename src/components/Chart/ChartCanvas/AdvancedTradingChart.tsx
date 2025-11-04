@@ -599,17 +599,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               resolution;
 
             if (perps) {
-              await new Promise<void>((resolve) => {
-                const check = () => {
-                  if (activeMarketRef.current?.contractId) {
-                    clearInterval(intervalCheck);
-                    resolve();
-                  }
-                };
-  
-                const intervalCheck = setInterval(check, 50);
-                check();
-              });
               await (async () => {
                 const params = new URLSearchParams({
                     contractId: activeMarketRef.current?.contractId,
@@ -621,7 +610,15 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                         ? 'HOUR_1'
                         : 'MINUTE_' + resolution,
                     priceType: 'LAST_PRICE',
-                    filterBeginKlineTimeInclusive: (from * 1000).toString(),
+                    filterBeginKlineTimeInclusive: (from * 1000 - 100 * (
+                      resolution === '1D'
+                        ? 86400000
+                        : resolution === '240'
+                          ? 14400000
+                          : resolution === '60'
+                            ? 3600000
+                            : parseInt(resolution) * 60000
+                    )).toString(),
                     filterEndKlineTimeExclusive: (to * 1000).toString(),
                   })
 

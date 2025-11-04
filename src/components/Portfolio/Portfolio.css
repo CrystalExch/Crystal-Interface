@@ -15,7 +15,7 @@
   height: 100%;
   overflow: hidden;
   width: 100%;
-  border-top: 1px solid rgba(179, 184, 249, .09)
+  border-top: 1px solid rgba(179, 184, 249, 0.1)
 }
 
 .portfolio-tab-selector {
@@ -441,7 +441,7 @@
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  border-right: 1px solid rgba(179, 184, 249, .09)
+  border-right: 1px solid rgba(179, 184, 249, 0.1)
 }
 
 .portfolio-graph-container {
@@ -526,7 +526,7 @@
   display: flex;
   flex-direction: column;
   background: rgb(6, 6, 6);
-  border-right: 1px solid rgba(179, 184, 249, .09)
+  border-right: 1px solid rgba(179, 184, 249, 0.1)
 }
 
 .drag-wallets-container {
@@ -992,7 +992,7 @@
   .graph-container {
     height: 300px;
     margin: 0;
-    border-bottom: 1px solid rgba(179, 184, 249, .09);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
     padding-right: 0
   }
   
@@ -1017,7 +1017,7 @@
   .wallets-left-panel {
     width: 100%;
     border-right: none;
-    border-bottom: 1px solid rgba(179, 184, 249, .09);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
     margin-bottom: 4px;
   }
 
@@ -1042,7 +1042,7 @@
     height: auto;
     overflow: visible;
     border-right: none;
-    border-bottom: 1px solid rgba(179, 184, 249, .09);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
     margin-bottom: 4px;
   }
 
@@ -1121,7 +1121,7 @@
   .wallets-left-panel {
     width: 100% !important;
     border-right: none !important;
-    border-bottom: 1px solid rgba(179, 184, 249, .09);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
     margin-bottom: 4px;
     position: relative;
     z-index: 1;
@@ -1141,7 +1141,7 @@
     width: 100% !important;
     margin-bottom: 4px;
     border-right: none !important;
-    border-bottom: 1px solid rgba(179, 184, 249, .09);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
     flex: none !important;
     height: auto !important;
     overflow: visible !important;
@@ -1468,7 +1468,7 @@
   height: 100%;
   overflow: hidden;
   width: 100%;
-  border-top: 1px solid rgba(179, 184, 249, .09)
+  border-top: 1px solid rgba(179, 184, 249, 0.1)
 }
 
 .wallets-summary {
@@ -1785,7 +1785,7 @@
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  border-right: 1px solid rgba(179, 184, 249, .09)
+  border-right: 1px solid rgba(179, 184, 249, 0.1)
 }
 
 .portfolio-graph-container {
@@ -1861,7 +1861,7 @@
   display: flex;
   flex-direction: column;
   background: rgb(6, 6, 6);
-  border-right: 1px solid rgba(179, 184, 249, .09)
+  border-right: 1px solid rgba(179, 184, 249, 0.1)
 }
 
 .wallets-right-panel {
@@ -3671,7 +3671,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  border-right: 1px solid rgba(179, 184, 249, 0.09);
+  border-right: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .trenches-balance-title {
@@ -3706,7 +3706,7 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(179, 184, 249, 0.09);
+  border-right: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .trenches-pnl-title {
@@ -3814,8 +3814,8 @@
 
 .trenches-activity-header {
   padding-left: 20px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
-  border-top: 1px solid rgba(179, 184, 249, 0.09);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -4575,8 +4575,8 @@
 
 
 .portfolio-balance-wrapper{
-  border-left: 1px solid rgba(179, 184, 249, 0.09);
-  border-top: 1px solid rgba(179, 184, 249, 0.09);
+  border-left: 1px solid rgba(179, 184, 249, 0.1);
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
   width: 100%;
 }
 

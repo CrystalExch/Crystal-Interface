@@ -149,7 +149,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [orderdata, setorderdata] = useState<any>([]);
   const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};
   const [activeTradeType, setActiveTradeType] = useState<"long" | "short">("long");
-  const [activeOrderType, setActiveOrderType] = useState<"Market" | "Limit" | "Scale" | "Stop Mkt" | "TP/SL" | "Pro">("Market");
+  const [activeOrderType, setActiveOrderType] = useState<"Market" | "Limit" | "Scale" | "Stop" | "TP/SL" | "Pro">("Market");
   const [inputString, setInputString] = useState('');
   const [limitPriceString, setlimitPriceString] = useState('');
   const [isLimitEditing, setIsLimitEditing] = useState(false)
@@ -188,7 +188,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [timeInForce, setTimeInForce] = useState("GTC");
   const [isTifDropdownOpen, setIsTifDropdownOpen] = useState(false);
   const [isProDropdownOpen, setIsProDropdownOpen] = useState(false);
-  const [selectedProOption, setSelectedProOption] = useState<"TP/SL" | "Scale" | "Stop Mkt">("Scale");
+  const [selectedProOption, setSelectedProOption] = useState<"TP/SL" | "Scale" | "Stop">("Scale");
   const [indicatorStyle, setIndicatorStyle] = useState<{
     width: number;
     left: number;
@@ -285,7 +285,7 @@ const Perps: React.FC<PerpsProps> = ({
         activeButton = limitButtonRef.current;
         break;
       case 'Scale':
-      case 'Stop Mkt':
+      case 'Stop':
       case 'Pro':
         activeButton = proButtonRef.current;
         break;
@@ -1604,10 +1604,10 @@ const Perps: React.FC<PerpsProps> = ({
             >
               <button
                 ref={proButtonRef}
-                className={`perps-order-type-button ${(activeOrderType === "Scale" || activeOrderType === "Stop Mkt" || activeOrderType === "TP/SL" || activeOrderType === "Pro") ? "active" : "inactive"}`}
+                className={`perps-order-type-button ${(activeOrderType === "Scale" || activeOrderType === "Stop" || activeOrderType === "TP/SL" || activeOrderType === "Pro") ? "active" : "inactive"}`}
                 onClick={() => setIsProDropdownOpen(!isProDropdownOpen)}
               >
-                {(activeOrderType === "Scale" || activeOrderType === "Stop Mkt" || activeOrderType === "TP/SL") ? activeOrderType : "Pro"}
+                {(activeOrderType === "Scale" || activeOrderType === "Stop" || activeOrderType === "TP/SL") ? activeOrderType : "Pro"}
                 <svg
                   className={`perps-pro-dropdown-arrow ${isProDropdownOpen ? 'open' : ''}`}
                   xmlns="http://www.w3.org/2000/svg"
@@ -1625,12 +1625,12 @@ const Perps: React.FC<PerpsProps> = ({
               </button>
               {isProDropdownOpen && (
                 <div className="perps-pro-dropdown-menu">
-                  {['Scale', 'Stop Mkt'].map((option) => (
+                  {['Scale', 'Stop'].map((option) => (
                     <div
                       key={option}
                       className="perps-pro-option"
                       onClick={() => {
-                        const typedOption = option as "TP/SL" | "Scale" | "Stop Mkt";
+                        const typedOption = option as "TP/SL" | "Scale" | "Stop";
                         setSelectedProOption(typedOption);
                         setActiveOrderType(typedOption);
                         setIsProDropdownOpen(false);
@@ -1722,7 +1722,7 @@ const Perps: React.FC<PerpsProps> = ({
               </span>
             </div>
           )}
-          {activeOrderType === "Stop Mkt" && (
+          {activeOrderType === "Stop" && (
             <>
               <div className="perps-trade-input-wrapper">
                 <span style={{ whiteSpace: 'nowrap' }}>Stop Price</span>

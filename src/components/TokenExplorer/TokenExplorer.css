@@ -7,12 +7,10 @@
 
 .explorer-filters-popup {
   border-radius: 6px;
-  height: 541px;
-  left: 50%;
+  height: 540px;
   margin: 0 auto;
   overflow: hidden;
   position: fixed;
-  top: 50%;
   -webkit-user-select: none;
   -moz-user-select: none;
   user-select: none;
