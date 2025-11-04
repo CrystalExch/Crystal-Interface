@@ -242,7 +242,7 @@
 }
 
 .pause-indicator {
-  background-color: rgba(6, 6, 6);
+  backdrop-filter: blur(10px);
   border-top: 1px solid rgba(179, 184, 249, 0.1);
   bottom: -1px;
   left: 0;

@@ -149,7 +149,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [orderdata, setorderdata] = useState<any>([]);
   const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};
   const [activeTradeType, setActiveTradeType] = useState<"long" | "short">("long");
-  const [activeOrderType, setActiveOrderType] = useState<"Market" | "Limit" | "Pro">("Market");
+  const [activeOrderType, setActiveOrderType] = useState<"Market" | "Limit" | "Scale" | "Pro">("Market");
   const [inputString, setInputString] = useState('');
   const [limitPriceString, setlimitPriceString] = useState('');
   const [isLimitEditing, setIsLimitEditing] = useState(false)
@@ -170,13 +170,17 @@ const Perps: React.FC<PerpsProps> = ({
   const [tpPrice, setTpPrice] = useState("");
   const [isReduceOnly, setIsReduceOnly] = useState(false);
   const [slPrice, setSlPrice] = useState("");
-  const [tpPercent, setTpPercent] = useState("");
   const [currentPosition, setCurrentPosition] = useState(0);
-  const [slPercent, setSlPercent] = useState("");
   const [slippage, setSlippage] = useState(() => {
     const saved = localStorage.getItem('crystal_perps_slippage');
     return saved !== null ? BigInt(saved) : BigInt(9900);
   });
+  const [tpPercent, setTpPercent] = useState("");
+const [slPercent, setSlPercent] = useState("");
+const [tpUnit, setTpUnit] = useState<"%" | "$">("%");
+const [slUnit, setSlUnit] = useState<"%" | "$">("%");
+const [isTpUnitDropdownOpen, setIsTpUnitDropdownOpen] = useState(false);
+const [isSlUnitDropdownOpen, setIsSlUnitDropdownOpen] = useState(false);
   const [slippageString, setSlippageString] = useState(() => {
     const saved = localStorage.getItem('crystal_perps_slippage_string');
     return saved !== null ? saved : '1';
@@ -427,7 +431,7 @@ const Perps: React.FC<PerpsProps> = ({
       : 'Quote';
   });
 
-    // Add this useEffect for vertical dragging
+  // Add this useEffect for vertical dragging
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isVertDragging) return;
@@ -567,12 +571,12 @@ const Perps: React.FC<PerpsProps> = ({
     const baseRes = Number(activeMarket.starkExResolution)
     const quoteRes = Number(exchangeConfig.global.starkExCollateralCoin.starkExResolution)
     const quantumsAmountSynthetic = (side === 'BUY'
-    ? Math.ceil(size * baseRes)
-    : Math.floor(size * baseRes)).toString()
+      ? Math.ceil(size * baseRes)
+      : Math.floor(size * baseRes)).toString()
     const quantumsAmountCollateral = (side === 'BUY'
-    ? Math.ceil(l2Value * quoteRes)
-    : Math.floor(l2Value * quoteRes)).toString()
-    const quantumsAmountFee = Math.ceil(Number(limitFee) * quoteRes).toString()    
+      ? Math.ceil(l2Value * quoteRes)
+      : Math.floor(l2Value * quoteRes)).toString()
+    const quantumsAmountFee = Math.ceil(Number(limitFee) * quoteRes).toString()
     const orderToSign: any = {
       clientId: clientOrderId,
       nonce: l2Nonce,
@@ -592,7 +596,7 @@ const Perps: React.FC<PerpsProps> = ({
 
     return {
       price: type === 'MARKET' ? '0' : price.toFixed(Math.floor(Math.log10(Number(1 / activeMarket.tickSize)))),
-      size: size.toFixed(Math.floor(Math.log10(Math.max(1, 1/Number(activeMarket?.stepSize))))),
+      size: size.toFixed(Math.floor(Math.log10(Math.max(1, 1 / Number(activeMarket?.stepSize))))),
       type,
       timeInForce: type == 'MARKET' ? 'IMMEDIATE_OR_CANCEL' : 'GOOD_TIL_CANCEL',
       reduceOnly,
@@ -608,7 +612,7 @@ const Perps: React.FC<PerpsProps> = ({
       expireTime: l1ExpireTime.toString(),
       l2Nonce,
       l2Value: l2Value,
-      l2Size: size.toFixed(Math.floor(Math.log10(Math.max(1, 1/Number(activeMarket?.stepSize))))),
+      l2Size: size.toFixed(Math.floor(Math.log10(Math.max(1, 1 / Number(activeMarket?.stepSize))))),
       l2LimitFee: limitFee,
       l2ExpireTime: l2ExpireTime.toString(),
       l2Signature,
@@ -703,14 +707,14 @@ const Perps: React.FC<PerpsProps> = ({
 
   useEffect(() => {
     const percentage =
-    Number(availableBalance) == 0
-      ? 0
-      : Math.min(
-        100,
-        Math.floor(
-          Number(inputString) * 100 / (Number(availableBalance) * Number(leverage))
-        ),
-      );
+      Number(availableBalance) == 0
+        ? 0
+        : Math.min(
+          100,
+          Math.floor(
+            Number(inputString) * 100 / (Number(availableBalance) * Number(leverage))
+          ),
+        );
     setSliderPercent(percentage);
     const slider = document.querySelector(
       '.perps-balance-amount-slider',
@@ -835,7 +839,7 @@ const Perps: React.FC<PerpsProps> = ({
       } */
     }
   }, [perpsLimitChase, activeOrderType, activeTradeType, perpsMarketsData?.[perpsActiveMarketKey]?.bestBidPrice, perpsMarketsData?.[perpsActiveMarketKey]?.bestAskPrice, perpsActiveMarketKey, isLimitEditing]);
-  
+
   useEffect(() => {
     if (Object.keys(perpsMarketsData).length == 0) return;
     let tempupnl = 0
@@ -1467,25 +1471,25 @@ const Perps: React.FC<PerpsProps> = ({
               setfetchedpositions(prev => {
                 const updated = msg.position || []
                 const merged = [...prev]
-            
+
                 for (const pos of updated) {
                   const i = merged.findIndex(p => p.contractId === pos.contractId)
                   if (i !== -1) merged[i] = pos
                   else merged.push(pos)
                 }
-                
+
                 return merged.filter(p => parseFloat(p.openValue) !== 0)
               })
               setfetchedorders(prev => {
                 const updated = msg.order || []
                 const merged = [...prev]
-            
+
                 for (const pos of updated) {
                   const i = merged.findIndex(p => p.clientOrderId === pos.clientOrderId)
                   if (i !== -1) merged[i] = pos
                   else merged.push(pos)
                 }
-                
+
                 return merged.filter(p => p.status !== "CANCELED" && p.status !== "FILLED")
               })
             }
@@ -1620,13 +1624,14 @@ const Perps: React.FC<PerpsProps> = ({
               </button>
               {isProDropdownOpen && (
                 <div className="perps-pro-dropdown-menu">
-                  {['TP/SL', 'Scale'].map((option) => (
+                  {['Scale'].map((option) => (
                     <div
                       key={option}
                       className="perps-pro-option"
                       onClick={() => {
-                        setSelectedProOption(option as "TP/SL" | "Scale");
-                        setActiveOrderType("Pro");
+                        const typedOption = option as "TP/SL" | "Scale";
+                        setSelectedProOption(typedOption);
+                        setActiveOrderType(typedOption === "Scale" ? "Scale" : "Pro");
                         setIsProDropdownOpen(false);
                       }}
                     >
@@ -1793,7 +1798,7 @@ const Perps: React.FC<PerpsProps> = ({
                     className={`perps-balance-slider-mark ${activeTradeType}`}
                     data-active={sliderPercent >= markPercent}
                     data-percentage={markPercent}
-                    onClick={() => {if (perpsIsLoaded && leverageIsLoaded) handleSliderChange(markPercent)}}
+                    onClick={() => { if (perpsIsLoaded && leverageIsLoaded) handleSliderChange(markPercent) }}
                   >
                     {markPercent}%
                   </span>
@@ -1801,6 +1806,66 @@ const Perps: React.FC<PerpsProps> = ({
               </div>
             </div>
           </div>
+          {activeOrderType === "Scale" && (
+            <div>
+              <div className="perps-scale-start-end-container">
+                <div
+                  className="scalebgtop"
+                >
+                  <div className="scalepricecontainer">
+                    <span className="scale-order-start-label">{t('start')}</span>
+                    <input
+                      inputMode="decimal"
+                      className="scale-input"
+                      placeholder="0.00"
+                      value={0.00}
+                    />
+                  </div>
+                </div>
+                <div
+                  className="scalebgtop"
+                >
+                  <div className="scalepricecontainer">
+                    <span className="scale-order-end-label">{t('end')}</span>
+                    <input
+                      inputMode="decimal"
+                      className="scale-input"
+                      placeholder="0.00"
+                      value={0.00}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="perps-scale-size-skew">
+                <div
+                  className="scalebottombg"
+                >
+                  <div className="scalebottomcontainer">
+                    <span className="scale-order-total-label">{t('orders')}</span>
+                    <input
+                      inputMode="numeric" pattern="[0-9]*"
+                      className="scale-bottom-input"
+                      placeholder="0"
+                      value={0.00}
+                    />
+                  </div>
+                </div>
+                <div
+                  className={`scalebottombg`}
+                >
+                  <div className="scalebottomcontainer">
+                    <span className="scale-order-size-label">{t('skew')}</span>
+                    <input
+                      inputMode="decimal"
+                      className={`scale-bottom-input`}
+                      placeholder="0.00"
+                      value={0.00}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="perps-tpsl-section">
@@ -1878,55 +1943,147 @@ const Perps: React.FC<PerpsProps> = ({
 
           {isTpSlEnabled && (
             <div className="perps-tpsl-content">
-              <div className="perps-tpsl-row">
-                <div className="perps-tpsl-label-section">
-                  <span className="perps-tpsl-row-label">TP Price</span>
-                  <input
-                    type="text"
-                    placeholder="Enter TP price"
-                    value={tpPrice}
-                    onChange={(e) => setTpPrice(e.target.value)}
-                    className="perps-tpsl-price-input"
-                  />
-                </div>
-                <div className="perps-tpsl-input-section">
-                  <div className="perps-tpsl-percentage">
-                    <span className="perps-tpsl-row-label">TP %</span>
-                    <input
-                      type="text"
-                      value={tpPercent}
-                      onChange={(e) => setTpPercent(e.target.value)}
-                      className="perps-tpsl-percent-input"
-                      placeholder='0.00'
-                    />
-                  </div>
-                </div>
-              </div>
+<div className="perps-tpsl-row">
+  <div className="perps-tpsl-label-section">
+    <span className="perps-tpsl-row-label">TP Price</span>
+    <input
+      type="text"
+      placeholder="0"
+      value={tpPrice}
+      onChange={(e) => setTpPrice(e.target.value)}
+      className="perps-tpsl-price-input"
+    />
+  </div>
+  <div className="perps-tpsl-input-section">
+    <div className="perps-tpsl-percentage">
+      <span className="perps-tpsl-row-label">Gain</span>
+      <input
+        type="text"
+        value={tpPercent}
+        onChange={(e) => setTpPercent(e.target.value)}
+        className="perps-tpsl-percent-input"
+        placeholder='0'
+      />
+    </div>
+    <div
+      className="perps-tpsl-unit-dropdown"
+      tabIndex={-1}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setIsTpUnitDropdownOpen(false);
+        }
+      }}
+    >
+      <div
+        className="perps-tpsl-unit-button"
+        onClick={() => setIsTpUnitDropdownOpen(!isTpUnitDropdownOpen)}
+      >
+        <span className="perps-tpsl-unit-value">{tpUnit}</span>
+        <svg
+          className={`perps-tpsl-unit-arrow ${isTpUnitDropdownOpen ? 'open' : ''}`}
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+      {isTpUnitDropdownOpen && (
+        <div className="perps-tpsl-unit-dropdown-menu">
+          {['%', '$'].map((option) => (
+            <div
+              key={option}
+              className="perps-tpsl-unit-option"
+              onClick={() => {
+                setTpUnit(option as "%" | "$");
+                setIsTpUnitDropdownOpen(false);
+              }}
+            >
+              {option}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+</div>
 
-              <div className="perps-tpsl-row">
-                <div className="perps-tpsl-label-section">
-                  <span className="perps-tpsl-row-label">SL Price</span>
-                  <input
-                    type="text"
-                    placeholder="Enter SL price"
-                    value={slPrice}
-                    onChange={(e) => setSlPrice(e.target.value)}
-                    className="perps-tpsl-price-input"
-                  />
-                </div>
-                <div className="perps-tpsl-input-section">
-                  <div className="perps-tpsl-percentage">
-                    <span className="perps-tpsl-row-label">SL %</span>
-                    <input
-                      type="text"
-                      value={slPercent}
-                      onChange={(e) => setSlPercent(e.target.value)}
-                      className="perps-tpsl-percent-input"
-                      placeholder='0.00'
-                    />
-                  </div>
-                </div>
-              </div>
+<div className="perps-tpsl-row">
+  <div className="perps-tpsl-label-section">
+    <span className="perps-tpsl-row-label">SL Price</span>
+    <input
+      type="text"
+      placeholder="0"
+      value={slPrice}
+      onChange={(e) => setSlPrice(e.target.value)}
+      className="perps-tpsl-price-input"
+    />
+  </div>
+  <div className="perps-tpsl-input-section">
+    <div className="perps-tpsl-percentage">
+      <span className="perps-tpsl-row-label">Loss</span>
+      <input
+        type="text"
+        value={slPercent}
+        onChange={(e) => setSlPercent(e.target.value)}
+        className="perps-tpsl-percent-input"
+        placeholder='0'
+      />
+    </div>
+    <div
+      className="perps-tpsl-unit-dropdown"
+      tabIndex={-1}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setIsSlUnitDropdownOpen(false);
+        }
+      }}
+    >
+      <div
+        className="perps-tpsl-unit-button"
+        onClick={() => setIsSlUnitDropdownOpen(!isSlUnitDropdownOpen)}
+      >
+        <span className="perps-tpsl-unit-value">{slUnit}</span>
+        <svg
+          className={`perps-tpsl-unit-arrow ${isSlUnitDropdownOpen ? 'open' : ''}`}
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+      {isSlUnitDropdownOpen && (
+        <div className="perps-tpsl-unit-dropdown-menu">
+          {['%', '$'].map((option) => (
+            <div
+              key={option}
+              className="perps-tpsl-unit-option"
+              onClick={() => {
+                setSlUnit(option as "%" | "$");
+                setIsSlUnitDropdownOpen(false);
+              }}
+            >
+              {option}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+</div>
             </div>
           )}
         </div>
@@ -1953,10 +2110,10 @@ const Perps: React.FC<PerpsProps> = ({
           >
             {isSigning ? (
               <div className="perps-button-spinner"></div>
-            ) : (address ? (Object.keys(signer).length == 0 ? 'Enable Trading' : (inputString && (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize))) ? `Order size must be >${activeMarket?.minOrderSize} ${activeMarket?.baseAsset}` : 
-            Number(inputString) > (Number(availableBalance) * Number(leverage)) ? 'Insufficient Margin' : activeOrderType === "Market"
-              ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
-              : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`) : 'Connect Wallet'
+            ) : (address ? (Object.keys(signer).length == 0 ? 'Enable Trading' : (inputString && (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize))) ? `Order size must be >${activeMarket?.minOrderSize} ${activeMarket?.baseAsset}` :
+              Number(inputString) > (Number(availableBalance) * Number(leverage)) ? 'Insufficient Margin' : activeOrderType === "Market"
+                ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
+                : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`) : 'Connect Wallet'
             )}
           </button>
           <div className="perps-info-rectangle">
@@ -1976,9 +2133,9 @@ const Perps: React.FC<PerpsProps> = ({
               </div>
               <div className="value-container">
                 {(activeMarket?.lastPrice && (Number(balance) + Number(upnl)) && (Number(inputString) / Number(activeMarket.oraclePrice) + currentPosition)) ? formatCommas(
-                  Math.max(Number(activeOrderType == 'Limit' ? limitPriceString : activeTradeType == 'long' ? activeMarket.bestAskPrice : activeMarket.bestBidPrice) - ((Number(balance) + Number(upnl) - positions.reduce((t, p) => t + Number(p.maintenanceMargin || 0), 0) - Number(inputString) * parseFloat(activeMarket?.riskTierList.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList.at(-1).maintenanceMarginRate)) / ((activeTradeType == 'long' ? Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestAskPrice) : -Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestBidPrice)) + currentPosition) / 
-                  ((1 - (((activeTradeType == 'long' ? Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestAskPrice) : -Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestBidPrice)) + currentPosition) > 0 ? 1 : -1) * (parseFloat(activeMarket?.riskTierList?.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList?.at(-1).maintenanceMarginRate)))))
-                  , 0).toFixed((activeMarket.lastPrice.toString().split(".")[1] || "").length)) : '0.00'}
+                  Math.max(Number(activeOrderType == 'Limit' ? limitPriceString : activeTradeType == 'long' ? activeMarket.bestAskPrice : activeMarket.bestBidPrice) - ((Number(balance) + Number(upnl) - positions.reduce((t, p) => t + Number(p.maintenanceMargin || 0), 0) - Number(inputString) * parseFloat(activeMarket?.riskTierList.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList.at(-1).maintenanceMarginRate)) / ((activeTradeType == 'long' ? Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestAskPrice) : -Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestBidPrice)) + currentPosition) /
+                    ((1 - (((activeTradeType == 'long' ? Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestAskPrice) : -Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestBidPrice)) + currentPosition) > 0 ? 1 : -1) * (parseFloat(activeMarket?.riskTierList?.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList?.at(-1).maintenanceMarginRate)))))
+                    , 0).toFixed((activeMarket.lastPrice.toString().split(".")[1] || "").length)) : '0.00'}
               </div>
             </div>
             <div className="price-impact">
@@ -2104,7 +2261,7 @@ const Perps: React.FC<PerpsProps> = ({
                 />
               </div>
               <div className="value-container">
-                {Number(userFees[0])*100}% / {Number(userFees[1])*100}%
+                {Number(userFees[0]) * 100}% / {Number(userFees[1]) * 100}%
               </div>
             </div>
           </div>
@@ -2299,7 +2456,7 @@ const Perps: React.FC<PerpsProps> = ({
           refetch={refetch}
           sendUserOperationAsync={sendUserOperationAsync}
           setChain={handleSetChain}
-          isVertDragging={isVertDragging} 
+          isVertDragging={isVertDragging}
           isOrderCenterVisible={isOrderCenterVisible}
           onLimitPriceUpdate={setCurrentLimitPrice}
           openEditOrderPopup={openEditOrderPopup}

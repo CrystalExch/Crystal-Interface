@@ -609,7 +609,7 @@
   padding: 8px 12px;
   background: none;
   border-radius: 3px;
-  color: rgba(255, 255, 255, 0.8);
+  color: #d8dcff;
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -619,22 +619,24 @@
 
 .wallet-dropdown-action-btn:hover {
   background: rgba(179, 184, 249, 0.08);
-  color: rgba(255, 255, 255, 0.95);
 }
+
+.wallet-dropdown-action-btn.logout-btn {
+  color: rgb(235, 112, 112);
+}
+
 
 .wallet-dropdown-action-btn.logout-btn:hover {
-  background: rgba(224, 78, 78, 0.1);
-  color: #e04e4e;
+  background: rgba(235, 112, 112, 0.07);
+  color: rgb(235, 112, 112);
 }
 
-.wallet-dropdown-action-btn.logout-btn:hover .wallet-dropdown-action-icon {
+
+
+.wallet-dropdown-action-btn.logout-btn .wallet-dropdown-action-icon {
   filter: brightness(1);
 }
 
-
-.wallet-dropdown-action-btn:hover .wallet-dropdown-action-icon {
-  filter: brightness(0.7);
-}
 
 
 
@@ -642,7 +644,7 @@
   flex-shrink: 0;
   width: 16px;
   height: 16px;
-  filter: brightness(0.4);
+  filter: brightness(0) saturate(100%) invert(65%) sepia(15%) saturate(273%) hue-rotate(204deg) brightness(90%) contrast(88%);
 }
 
 
