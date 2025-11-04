@@ -35,7 +35,7 @@
   display: flex;
   font-size: 0.75rem;
   font-weight: 300;
-  justify-content: center;
+  justify-content: flex-end;
   overflow: hidden;
   align-items: center;
   width: 100%;
@@ -43,6 +43,7 @@
   position: relative;
   text-overflow: ellipsis;
   white-space: nowrap;
+  padding-right: 15px;
 }
 
 .cancel-all-oc-cell.signing {

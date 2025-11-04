@@ -149,7 +149,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [orderdata, setorderdata] = useState<any>([]);
   const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};
   const [activeTradeType, setActiveTradeType] = useState<"long" | "short">("long");
-  const [activeOrderType, setActiveOrderType] = useState<"Market" | "Limit" | "Scale" | "Pro">("Market");
+  const [activeOrderType, setActiveOrderType] = useState<"Market" | "Limit" | "Scale" | "Stop Mkt" | "TP/SL" | "Pro">("Market");
   const [inputString, setInputString] = useState('');
   const [limitPriceString, setlimitPriceString] = useState('');
   const [isLimitEditing, setIsLimitEditing] = useState(false)
@@ -176,11 +176,11 @@ const Perps: React.FC<PerpsProps> = ({
     return saved !== null ? BigInt(saved) : BigInt(9900);
   });
   const [tpPercent, setTpPercent] = useState("");
-const [slPercent, setSlPercent] = useState("");
-const [tpUnit, setTpUnit] = useState<"%" | "$">("%");
-const [slUnit, setSlUnit] = useState<"%" | "$">("%");
-const [isTpUnitDropdownOpen, setIsTpUnitDropdownOpen] = useState(false);
-const [isSlUnitDropdownOpen, setIsSlUnitDropdownOpen] = useState(false);
+  const [slPercent, setSlPercent] = useState("");
+  const [tpUnit, setTpUnit] = useState<"%" | "$">("%");
+  const [slUnit, setSlUnit] = useState<"%" | "$">("%");
+  const [isTpUnitDropdownOpen, setIsTpUnitDropdownOpen] = useState(false);
+  const [isSlUnitDropdownOpen, setIsSlUnitDropdownOpen] = useState(false);
   const [slippageString, setSlippageString] = useState(() => {
     const saved = localStorage.getItem('crystal_perps_slippage_string');
     return saved !== null ? saved : '1';
@@ -188,7 +188,7 @@ const [isSlUnitDropdownOpen, setIsSlUnitDropdownOpen] = useState(false);
   const [timeInForce, setTimeInForce] = useState("GTC");
   const [isTifDropdownOpen, setIsTifDropdownOpen] = useState(false);
   const [isProDropdownOpen, setIsProDropdownOpen] = useState(false);
-  const [selectedProOption, setSelectedProOption] = useState<"TP/SL" | "Scale">("Scale");
+  const [selectedProOption, setSelectedProOption] = useState<"TP/SL" | "Scale" | "Stop Mkt">("Scale");
   const [indicatorStyle, setIndicatorStyle] = useState<{
     width: number;
     left: number;
@@ -284,6 +284,8 @@ const [isSlUnitDropdownOpen, setIsSlUnitDropdownOpen] = useState(false);
       case 'Limit':
         activeButton = limitButtonRef.current;
         break;
+      case 'Scale':
+      case 'Stop Mkt':
       case 'Pro':
         activeButton = proButtonRef.current;
         break;
@@ -305,7 +307,6 @@ const [isSlUnitDropdownOpen, setIsSlUnitDropdownOpen] = useState(false);
       });
     }
   }, [activeOrderType]);
-
   useEffect(() => {
     updateIndicatorPosition();
 
@@ -1603,10 +1604,10 @@ const [isSlUnitDropdownOpen, setIsSlUnitDropdownOpen] = useState(false);
             >
               <button
                 ref={proButtonRef}
-                className={`perps-order-type-button ${activeOrderType === "Pro" ? "active" : "inactive"}`}
+                className={`perps-order-type-button ${(activeOrderType === "Scale" || activeOrderType === "Stop Mkt" || activeOrderType === "TP/SL" || activeOrderType === "Pro") ? "active" : "inactive"}`}
                 onClick={() => setIsProDropdownOpen(!isProDropdownOpen)}
               >
-                {activeOrderType === "Pro" ? selectedProOption : "Pro"}
+                {(activeOrderType === "Scale" || activeOrderType === "Stop Mkt" || activeOrderType === "TP/SL") ? activeOrderType : "Pro"}
                 <svg
                   className={`perps-pro-dropdown-arrow ${isProDropdownOpen ? 'open' : ''}`}
                   xmlns="http://www.w3.org/2000/svg"
@@ -1624,14 +1625,14 @@ const [isSlUnitDropdownOpen, setIsSlUnitDropdownOpen] = useState(false);
               </button>
               {isProDropdownOpen && (
                 <div className="perps-pro-dropdown-menu">
-                  {['Scale'].map((option) => (
+                  {['Scale', 'Stop Mkt'].map((option) => (
                     <div
                       key={option}
                       className="perps-pro-option"
                       onClick={() => {
-                        const typedOption = option as "TP/SL" | "Scale";
+                        const typedOption = option as "TP/SL" | "Scale" | "Stop Mkt";
                         setSelectedProOption(typedOption);
-                        setActiveOrderType(typedOption === "Scale" ? "Scale" : "Pro");
+                        setActiveOrderType(typedOption);
                         setIsProDropdownOpen(false);
                       }}
                     >
@@ -1720,6 +1721,41 @@ const [isSlUnitDropdownOpen, setIsSlUnitDropdownOpen] = useState(false);
                 Mid
               </span>
             </div>
+          )}
+          {activeOrderType === "Stop Mkt" && (
+            <>
+              <div className="perps-trade-input-wrapper">
+                <span style={{ whiteSpace: 'nowrap' }}>Stop Price</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={limitPriceString}
+                  onFocus={() => setIsLimitEditing(true)}
+                  onBlur={() => setIsLimitEditing(false)}
+                  onChange={(e) => {
+                    if (new RegExp(
+                      `^\\d*\\.?\\d{0,${Math.floor(Math.log10(Number(1 / activeMarket.tickSize)))}}$`
+                    ).test(e.target.value)) {
+                      setPerpsLimitChase(false)
+                      setlimitPriceString(e.target.value)
+                    }
+                  }}
+                  className="perps-trade-input"
+                />
+                <span className="perps-mid-button" onClick={(e) => {
+                  if (activeMarket?.bestBidPrice) {
+                    setPerpsLimitChase(true)
+                    const tick = Number(activeMarket.tickSize)
+                    const precision = Math.floor(Math.log10(1 / tick))
+                    const mid = (Number(activeMarket.bestBidPrice) + Number(activeMarket.bestAskPrice)) / 2
+                    setlimitPriceString((activeTradeType == 'long' ? Math.floor(mid / tick) * tick : Math.ceil(mid / tick) * tick).toFixed(precision))
+                  }
+                }}>
+                  Mid
+                </span>
+              </div>
+            </>
           )}
           <div className="perps-trade-input-wrapper">
             Size
@@ -1943,147 +1979,147 @@ const [isSlUnitDropdownOpen, setIsSlUnitDropdownOpen] = useState(false);
 
           {isTpSlEnabled && (
             <div className="perps-tpsl-content">
-<div className="perps-tpsl-row">
-  <div className="perps-tpsl-label-section">
-    <span className="perps-tpsl-row-label">TP Price</span>
-    <input
-      type="text"
-      placeholder="0"
-      value={tpPrice}
-      onChange={(e) => setTpPrice(e.target.value)}
-      className="perps-tpsl-price-input"
-    />
-  </div>
-  <div className="perps-tpsl-input-section">
-    <div className="perps-tpsl-percentage">
-      <span className="perps-tpsl-row-label">Gain</span>
-      <input
-        type="text"
-        value={tpPercent}
-        onChange={(e) => setTpPercent(e.target.value)}
-        className="perps-tpsl-percent-input"
-        placeholder='0'
-      />
-    </div>
-    <div
-      className="perps-tpsl-unit-dropdown"
-      tabIndex={-1}
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-          setIsTpUnitDropdownOpen(false);
-        }
-      }}
-    >
-      <div
-        className="perps-tpsl-unit-button"
-        onClick={() => setIsTpUnitDropdownOpen(!isTpUnitDropdownOpen)}
-      >
-        <span className="perps-tpsl-unit-value">{tpUnit}</span>
-        <svg
-          className={`perps-tpsl-unit-arrow ${isTpUnitDropdownOpen ? 'open' : ''}`}
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          width="16"
-          height="16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </div>
-      {isTpUnitDropdownOpen && (
-        <div className="perps-tpsl-unit-dropdown-menu">
-          {['%', '$'].map((option) => (
-            <div
-              key={option}
-              className="perps-tpsl-unit-option"
-              onClick={() => {
-                setTpUnit(option as "%" | "$");
-                setIsTpUnitDropdownOpen(false);
-              }}
-            >
-              {option}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  </div>
-</div>
+              <div className="perps-tpsl-row">
+                <div className="perps-tpsl-label-section">
+                  <span className="perps-tpsl-row-label">TP Price</span>
+                  <input
+                    type="text"
+                    placeholder="0"
+                    value={tpPrice}
+                    onChange={(e) => setTpPrice(e.target.value)}
+                    className="perps-tpsl-price-input"
+                  />
+                </div>
+                <div className="perps-tpsl-input-section">
+                  <div className="perps-tpsl-percentage">
+                    <span className="perps-tpsl-row-label">Gain</span>
+                    <input
+                      type="text"
+                      value={tpPercent}
+                      onChange={(e) => setTpPercent(e.target.value)}
+                      className="perps-tpsl-percent-input"
+                      placeholder='0'
+                    />
+                  </div>
+                  <div
+                    className="perps-tpsl-unit-dropdown"
+                    tabIndex={-1}
+                    onBlur={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                        setIsTpUnitDropdownOpen(false);
+                      }
+                    }}
+                  >
+                    <div
+                      className="perps-tpsl-unit-button"
+                      onClick={() => setIsTpUnitDropdownOpen(!isTpUnitDropdownOpen)}
+                    >
+                      <span className="perps-tpsl-unit-value">{tpUnit}</span>
+                      <svg
+                        className={`perps-tpsl-unit-arrow ${isTpUnitDropdownOpen ? 'open' : ''}`}
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </div>
+                    {isTpUnitDropdownOpen && (
+                      <div className="perps-tpsl-unit-dropdown-menu">
+                        {['%', '$'].map((option) => (
+                          <div
+                            key={option}
+                            className="perps-tpsl-unit-option"
+                            onClick={() => {
+                              setTpUnit(option as "%" | "$");
+                              setIsTpUnitDropdownOpen(false);
+                            }}
+                          >
+                            {option}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-<div className="perps-tpsl-row">
-  <div className="perps-tpsl-label-section">
-    <span className="perps-tpsl-row-label">SL Price</span>
-    <input
-      type="text"
-      placeholder="0"
-      value={slPrice}
-      onChange={(e) => setSlPrice(e.target.value)}
-      className="perps-tpsl-price-input"
-    />
-  </div>
-  <div className="perps-tpsl-input-section">
-    <div className="perps-tpsl-percentage">
-      <span className="perps-tpsl-row-label">Loss</span>
-      <input
-        type="text"
-        value={slPercent}
-        onChange={(e) => setSlPercent(e.target.value)}
-        className="perps-tpsl-percent-input"
-        placeholder='0'
-      />
-    </div>
-    <div
-      className="perps-tpsl-unit-dropdown"
-      tabIndex={-1}
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-          setIsSlUnitDropdownOpen(false);
-        }
-      }}
-    >
-      <div
-        className="perps-tpsl-unit-button"
-        onClick={() => setIsSlUnitDropdownOpen(!isSlUnitDropdownOpen)}
-      >
-        <span className="perps-tpsl-unit-value">{slUnit}</span>
-        <svg
-          className={`perps-tpsl-unit-arrow ${isSlUnitDropdownOpen ? 'open' : ''}`}
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          width="16"
-          height="16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </div>
-      {isSlUnitDropdownOpen && (
-        <div className="perps-tpsl-unit-dropdown-menu">
-          {['%', '$'].map((option) => (
-            <div
-              key={option}
-              className="perps-tpsl-unit-option"
-              onClick={() => {
-                setSlUnit(option as "%" | "$");
-                setIsSlUnitDropdownOpen(false);
-              }}
-            >
-              {option}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  </div>
-</div>
+              <div className="perps-tpsl-row">
+                <div className="perps-tpsl-label-section">
+                  <span className="perps-tpsl-row-label">SL Price</span>
+                  <input
+                    type="text"
+                    placeholder="0"
+                    value={slPrice}
+                    onChange={(e) => setSlPrice(e.target.value)}
+                    className="perps-tpsl-price-input"
+                  />
+                </div>
+                <div className="perps-tpsl-input-section">
+                  <div className="perps-tpsl-percentage">
+                    <span className="perps-tpsl-row-label">Loss</span>
+                    <input
+                      type="text"
+                      value={slPercent}
+                      onChange={(e) => setSlPercent(e.target.value)}
+                      className="perps-tpsl-percent-input"
+                      placeholder='0'
+                    />
+                  </div>
+                  <div
+                    className="perps-tpsl-unit-dropdown"
+                    tabIndex={-1}
+                    onBlur={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                        setIsSlUnitDropdownOpen(false);
+                      }
+                    }}
+                  >
+                    <div
+                      className="perps-tpsl-unit-button"
+                      onClick={() => setIsSlUnitDropdownOpen(!isSlUnitDropdownOpen)}
+                    >
+                      <span className="perps-tpsl-unit-value">{slUnit}</span>
+                      <svg
+                        className={`perps-tpsl-unit-arrow ${isSlUnitDropdownOpen ? 'open' : ''}`}
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </div>
+                    {isSlUnitDropdownOpen && (
+                      <div className="perps-tpsl-unit-dropdown-menu">
+                        {['%', '$'].map((option) => (
+                          <div
+                            key={option}
+                            className="perps-tpsl-unit-option"
+                            onClick={() => {
+                              setSlUnit(option as "%" | "$");
+                              setIsSlUnitDropdownOpen(false);
+                            }}
+                          >
+                            {option}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
