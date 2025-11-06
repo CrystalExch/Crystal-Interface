@@ -2726,7 +2726,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
 
     if (walletTokenBalances && tokenList && tokenList.length > 0) {
       trackedWallets.forEach(wallet => {
-        const walletBalances = walletTokenBalances[wallet.address];
+        const walletBalances = walletTokenBalances[wallet.address] || walletTokenBalances[wallet.address.toLowerCase()];
         if (!walletBalances) return;
 
         // Only iterate through tokens in tokenList (major tokens)

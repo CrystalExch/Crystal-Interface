@@ -101,6 +101,36 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+/* Widget Header Right Section */
+.wtw-widget-header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.wtw-open-new-tab-button {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  padding: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wtw-open-new-tab-button:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.wtw-link-icon {
+  width: 17px;
+  height: 17px;
+  filter: brightness(0) saturate(100%) invert(68%) sepia(11%) saturate(27%) hue-rotate(190deg) brightness(106%) contrast(94%);
+  cursor: pointer;
+}
+
 /* Header */
 .wtw-header {
   display: flex;
@@ -193,7 +223,7 @@
 
 .wtw-header-button {
   background: transparent;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.95);
   padding: 4px 8px;
   font-size: 0.75rem;
   cursor: pointer;
@@ -208,7 +238,7 @@
 
 .wtw-header-button:hover {
   background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.9);
+  color: #ffffff;
 }
 
 .wtw-header-button:disabled {

@@ -186,6 +186,17 @@
   display: flex;
   gap: 4px;
   z-index: 2;
+  cursor: default;
+}
+
+.pnl-stats-section-controls-right {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  z-index: 2;
+  cursor: default;
 }
 
 .pnl-close-btn-stats {
