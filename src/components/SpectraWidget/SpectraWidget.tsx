@@ -32,6 +32,7 @@ import { encodeFunctionData } from 'viem';
 import './SpectraWidget.css';
 import { HexColorPicker } from 'react-colorful';
 import { useNavigate } from 'react-router-dom';
+import { settings } from '../../settings';
 
 const crystal = '/CrystalLogo.png';
 
@@ -173,8 +174,21 @@ interface SpectraWidgetProps {
   showLoadingPopup?: any;
   updatePopup?: any;
   setTokenData: any;
-
+  selectedWallets?: Set<string>;
+  subWallets?: Array<{ address: string; privateKey: string }>;
+  walletTokenBalances?: { [address: string]: any };
+  activeWalletPrivateKey?: string;
+  tokenList?: any[];
+  activechain?: number;
+  nonces?: any;
+  account?: {
+    connected: boolean;
+    address?: string;
+    chainId?: number;
+  };
+  terminalRefetch?: any;
 }
+
 
 const HEADER_HEIGHT = 53;
 const SIDEBAR_WIDTH = 50;
@@ -2411,6 +2425,15 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
   showLoadingPopup,
   updatePopup,
   setTokenData,
+  selectedWallets = new Set(),
+  subWallets = [],
+  walletTokenBalances = {},
+  activeWalletPrivateKey,
+  tokenList = [],
+  activechain = 0,
+  nonces,
+  account,
+  terminalRefetch,
 }) => {
   const navigate = useNavigate();
   const handleTokenClick = useCallback(
@@ -2934,21 +2957,35 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
     localStorage.setItem(`spectra-preset-${status}`, preset.toString());
   }, []);
 
+  const getMaxSpendableWei = useCallback(
+    (addr: string): bigint => {
+      const balances = walletTokenBalances[addr];
+      if (!balances) return 0n;
+
+      const ethToken = tokenList.find(
+        (t) => t.address === settings.chainConfig[activechain]?.eth,
+      );
+      if (!ethToken || !balances[ethToken.address]) return 0n;
+
+      let raw = balances[ethToken.address];
+      if (raw <= 0n) return 0n;
+
+      const gasReserve = BigInt(settings.chainConfig[activechain]?.gasamount ?? 0);
+      const safe = raw > gasReserve ? raw - gasReserve : 0n;
+
+      return safe;
+    },
+    [walletTokenBalances, tokenList, activechain],
+  );
+
+  // Replace the entire handleQuickBuy function with this:
   const handleQuickBuy = useCallback(
     async (token: any, amount: string, buttonType: 'primary' | 'secondary') => {
-      if (!routerAddress || !sendUserOperationAsync) {
-        console.log('Quick buy triggered (wallet not connected):', {
-          token: token.symbol,
-          tokenAddress: token.tokenAddress,
-          amount: amount,
-        });
-        return;
-      }
-
       const val = BigInt(amount || '0') * 10n ** 18n;
       if (val === 0n) return;
 
-      const txId = `spectra-quickbuy-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const targets: string[] = Array.from(selectedWallets);
+      const txId = `spectra-quickbuy-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const tokenId = token.id || token.tokenAddress;
 
       setLoadingTokens((prev) => new Set(prev).add(`${tokenId}-${buttonType}`));
@@ -2956,56 +2993,150 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
       try {
         if (showLoadingPopup) {
           showLoadingPopup(txId, {
-            title: 'Sending transaction...',
-            subtitle: `Quick buying ${amount} MON worth of ${token.symbol}`,
+            title: 'Sending batch buy...',
+            subtitle: `Buying ${amount} MON of ${token.symbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
             amount: amount,
             amountUnit: 'MON',
             tokenImage: token.image,
           });
         }
 
-        const uo = {
-          target: routerAddress,
-          data: encodeFunctionData({
-            abi: CrystalRouterAbi,
-            functionName: 'buy',
-            args: [true, token.tokenAddress as `0x${string}`, val, 0n],
-          }),
-          value: val,
-        };
+        // Build distribution plan with redistribution
+        let remaining = val;
+        const plan: { addr: string; amount: bigint }[] = [];
+        const transferPromises = [];
 
-        if (updatePopup) {
-          updatePopup(txId, {
-            title: 'Confirming transaction...',
-            subtitle: `Quick buying ${amount} MON worth of ${token.symbol}`,
-            variant: 'info',
-          });
+        if (targets.length > 0) {
+          // First pass: allocate fair share capped by wallet balance
+          for (const addr of targets) {
+            const maxWei = getMaxSpendableWei(addr);
+            const fairShare = val / BigInt(targets.length);
+            const allocation = fairShare > maxWei ? maxWei : fairShare;
+            if (allocation > 0n) {
+              plan.push({ addr, amount: allocation });
+              remaining -= allocation;
+            } else {
+              plan.push({ addr, amount: 0n });
+            }
+          }
+
+          // Second pass: redistribute remaining among wallets with spare balance
+          for (const entry of plan) {
+            if (remaining <= 0n) break;
+            const maxWei = getMaxSpendableWei(entry.addr);
+            const room = maxWei - entry.amount;
+            if (room > 0n) {
+              const add = remaining > room ? room : remaining;
+              entry.amount += add;
+              remaining -= add;
+            }
+          }
+
+          if (remaining > 0n) {
+            if (updatePopup) {
+              updatePopup(txId, {
+                title: 'Batch buy failed',
+                subtitle: 'Not enough MON balance across selected wallets',
+                variant: 'error',
+                isLoading: false,
+              });
+            }
+            setLoadingTokens((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(`${tokenId}-${buttonType}`);
+              return newSet;
+            });
+            return;
+          }
+
+          // Execute transfers
+          for (const { addr, amount: partWei } of plan) {
+            if (partWei <= 0n) continue;
+
+            const wally = subWallets.find((w) => w.address === addr);
+            const pk = wally?.privateKey ?? activeWalletPrivateKey;
+            if (!pk) continue;
+
+            const uo = {
+              target: routerAddress as `0x${string}`,
+              data: encodeFunctionData({
+                abi: CrystalRouterAbi,
+                functionName: 'buy',
+                args: [true, token.tokenAddress as `0x${string}`, partWei, 0n],
+              }),
+              value: partWei,
+            };
+
+            const wallet = nonces.current.get(addr);
+            const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
+            if (wallet) wallet.nonce += 1;
+            wallet?.pendingtxs.push(params);
+
+            const transferPromise = sendUserOperationAsync(...params)
+              .then(() => {
+                if (wallet)
+                  wallet.pendingtxs = wallet.pendingtxs.filter(
+                    (p: any) => p[5] != params[5],
+                  );
+                return true;
+              })
+              .catch(() => {
+                if (wallet)
+                  wallet.pendingtxs = wallet.pendingtxs.filter(
+                    (p: any) => p[5] != params[5],
+                  );
+                return false;
+              });
+            transferPromises.push(transferPromise);
+          }
+        } else {
+          if (account?.address) {
+            const uo = {
+              target: routerAddress as `0x${string}`,
+              data: encodeFunctionData({
+                abi: CrystalRouterAbi,
+                functionName: 'buy',
+                args: [true, token.tokenAddress as `0x${string}`, val, 0n],
+              }),
+              value: val,
+            };
+            const transferPromise = sendUserOperationAsync({ uo });
+            transferPromises.push(transferPromise);
+          }
         }
 
-        await sendUserOperationAsync({ uo });
+        const results = await Promise.allSettled(transferPromises);
+        const successfulTransfers = results.filter(
+          (result) => result.status === 'fulfilled' && result.value === true,
+        ).length;
+
+        if (terminalRefetch) {
+          terminalRefetch();
+        }
 
         if (updatePopup) {
           updatePopup(txId, {
-            title: 'Quick Buy Complete',
-            subtitle: `Successfully bought ${token.symbol} with ${amount} MON`,
+            title: `Bought ${amount} MON Worth`,
+            subtitle: `Distributed across ${successfulTransfers} wallet${successfulTransfers !== 1 ? 's' : ''}`,
             variant: 'success',
             confirmed: true,
             isLoading: false,
+            tokenImage: token.image,
           });
         }
       } catch (e: any) {
         console.error('Quick buy failed', e);
         const msg = String(e?.message ?? '');
-
         if (updatePopup) {
           updatePopup(txId, {
             title: msg.toLowerCase().includes('insufficient')
               ? 'Insufficient Balance'
-              : 'Quick Buy Failed',
-            subtitle: msg || 'Please try again.',
+              : 'Buy Failed',
+            subtitle: msg || 'Transaction failed',
             variant: 'error',
             confirmed: true,
             isLoading: false,
+            tokenImage: token.image,
           });
         }
       } finally {
@@ -3016,7 +3147,19 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
         });
       }
     },
-    [routerAddress, sendUserOperationAsync, showLoadingPopup, updatePopup]
+    [
+      routerAddress,
+      sendUserOperationAsync,
+      selectedWallets,
+      subWallets,
+      activeWalletPrivateKey,
+      getMaxSpendableWei,
+      account,
+      nonces,
+      terminalRefetch,
+      showLoadingPopup,
+      updatePopup,
+    ],
   );
 
   if (!isOpen) return null;
@@ -3103,11 +3246,11 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
                 </svg>
               </button>
             </div>
-          <div className="quickbuy-drag-handle">
-            <div className="circle-row">
-              <img src={circle} className="circle" />
+            <div className="quickbuy-drag-handle">
+              <div className="circle-row">
+                <img src={circle} className="circle" />
+              </div>
             </div>
-          </div>
           </div>
           <div className="spectra-header-second-row">
             <div className="spectra-quickbuy-container">

@@ -11,7 +11,7 @@
   overflow: hidden;
   background-color: rgb(6,6,6);
   border-right: 1px solid rgba(179, 184, 249, 0.1);
-  z-index: 14;
+  z-index: 15;
 }
 
 .sidebar-nav:not(.no-transition) {
@@ -44,7 +44,7 @@ body::before {
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
-  z-index: 11;
+  z-index: 15;
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;

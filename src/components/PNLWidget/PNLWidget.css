@@ -9,7 +9,7 @@
   flex-direction: column;
   overflow: hidden;
   position: fixed;
-  z-index: 9999;
+  z-index: 13;
 }
 
 .pnl-widget.dragging {

@@ -104,20 +104,25 @@ const formatCreatedDate = (isoString: string) => {
   return `${Math.floor(days / 30)}mo ago`;
 };
 
-const WtwTooltip: React.FC<{
+const Tooltip: React.FC<{
   content: string | React.ReactNode;
   children: React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
   offset?: number;
-}> = ({ content, children, position = 'top', offset }) => {
-  const [vis, setVis] = useState(false);
+}> = ({ content, children, position = 'top', offset = 10 }) => {
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const updatePosition = useCallback(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !tooltipRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
     const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
     const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
@@ -126,28 +131,77 @@ const WtwTooltip: React.FC<{
 
     switch (position) {
       case 'top':
-        top = rect.top + scrollY - 25;
+        top = rect.top + scrollY - tooltipRect.height - offset - 15;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'bottom':
-        top = rect.bottom + scrollY + 25;
+        top = rect.bottom + scrollY + offset;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'left':
         top = rect.top + scrollY + rect.height / 2;
-        left = rect.left + scrollX - 25;
+        left = rect.left + scrollX - tooltipRect.width - offset;
         break;
       case 'right':
         top = rect.top + scrollY + rect.height / 2;
-        left = rect.right + scrollX + 25;
+        left = rect.right + scrollX + offset;
         break;
     }
 
+    const margin = 10;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    if (position === 'top' || position === 'bottom') {
+      left = Math.min(
+        Math.max(left, margin + tooltipRect.width / 2),
+        viewportWidth - margin - tooltipRect.width / 2,
+      );
+    } else {
+      top = Math.min(
+        Math.max(top, margin),
+        viewportHeight - margin - tooltipRect.height,
+      );
+    }
+
     setTooltipPosition({ top, left });
-  }, [position]);
+  }, [position, offset]);
+
+  const handleMouseEnter = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    setIsLeaving(false);
+    setShouldRender(true);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+      fadeTimeoutRef.current = null;
+    }, 10);
+  }, []);
+
+
+
+  const handleMouseLeave = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    setIsLeaving(true);
+    setIsVisible(false);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      setShouldRender(false);
+      setIsLeaving(false);
+      fadeTimeoutRef.current = null;
+    }, 150);
+  }, []);
 
   useEffect(() => {
-    if (vis) {
+    if (shouldRender && !isLeaving) {
       updatePosition();
       window.addEventListener('scroll', updatePosition);
       window.addEventListener('resize', updatePosition);
@@ -156,38 +210,51 @@ const WtwTooltip: React.FC<{
         window.removeEventListener('resize', updatePosition);
       };
     }
-  }, [vis, updatePosition]);
+  }, [shouldRender, updatePosition, isLeaving]);
+
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div
       ref={containerRef}
-      className="wtw-tooltip-container"
-      onMouseEnter={() => setVis(true)}
-      onMouseLeave={() => setVis(false)}
+      className="tooltip-container"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {children}
-      {vis && createPortal(
-        <div
-          className={`wtw-tooltip wtw-tooltip-${position} wtw-fade-popup wtw-visible`}
-          style={{
-            position: 'absolute',
-            top: `${tooltipPosition.top}px`,
-            left: `${tooltipPosition.left}px`,
-            transform: position === 'top' || position === 'bottom'
-              ? 'translateX(-50%)'
-              : position === 'left' || position === 'right'
-                ? 'translateY(-50%)'
-                : 'none',
-            zIndex: 9999,
-            pointerEvents: 'none'
-          }}
-        >
-          <div className="wtw-tooltip-content">
-            {content}
-          </div>
-        </div>,
-        document.body
-      )}
+      {shouldRender &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+            style={{
+              position: 'absolute',
+              top: `${tooltipPosition.top}px`,
+              left: `${tooltipPosition.left}px`,
+              transform: `${position === 'top' || position === 'bottom'
+                ? 'translateX(-50%)'
+                : position === 'left' || position === 'right'
+                  ? 'translateY(-50%)'
+                  : 'none'
+                } scale(${isVisible ? 1 : 0})`,
+              opacity: isVisible ? 1 : 0,
+              zIndex: 9999,
+              pointerEvents: 'none',
+              transition:
+                'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+              willChange: 'transform, opacity',
+            }}
+          >
+            <div className="tooltip-content">{content}</div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
@@ -1118,38 +1185,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       >
       {/* Filters Header */}
       <div className="wtw-filters-header" onMouseDown={handleDragStart}>
-        <h2 className="wtw-filters-title">Wallet Tracker</h2>
-        <div className="wtw-widget-header-right">
-          <WtwTooltip content="Open Wallet Tracker in a new tab">
-            <button
-              className="wtw-open-new-tab-button"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(`${window.location.origin}/tracker`, '_blank');
-              }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="wtw-link-icon">
-                <path d="M15 3h6v6" />
-                <path d="M10 14 21 3" />
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              </svg>
-            </button>
-          </WtwTooltip>
-          <WtwTooltip content="Close">
-            <button className="wtw-filters-close-button" onClick={onClose}>
-              <X size={16} />
-            </button>
-          </WtwTooltip>
-        </div>
-                  <div className="quickbuy-drag-handle">
-            <div className="circle-row">
-              <img src={circle} className="circle" />
-            </div>
-          </div>
-      </div>
-
-      {/* Header */}
-      <div className="wtw-header">
           <div className="wtw-tabs">
             <button
               className={`wtw-tab ${activeTab === 'wallets' ? 'active' : ''}`}
@@ -1170,7 +1205,36 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
               Monitor
             </button>
           </div>
+        <div className="wtw-widget-header-right">
+          <Tooltip content="Open Wallet Tracker in a new tab">
+            <button
+              className="wtw-open-new-tab-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(`${window.location.origin}/tracker`, '_blank');
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="wtw-link-icon">
+                <path d="M15 3h6v6" />
+                <path d="M10 14 21 3" />
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              </svg>
+            </button>
+          </Tooltip>
+          <Tooltip content="Close">
+            <button className="wtw-filters-close-button" onClick={onClose}>
+              <X size={16} />
+            </button>
+          </Tooltip>
+        </div>
+                  <div className="quickbuy-drag-handle">
+            <div className="circle-row">
+              <img src={circle} className="circle" />
+            </div>
+          </div>
+      </div>
 
+      <div className="wtw-header">
           {activeTab === 'wallets' && (
             <div className="wtw-header-actions">
               <button
@@ -1270,7 +1334,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
           )}
       </div>
 
-      {/* Search Bar - Full width */}
       {activeTab === 'wallets' && (
           <div className="wtw-search-bar">
             <div className="wtw-search">
@@ -1440,7 +1503,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
                       {/* Actions */}
                       <div className="wtw-wallet-actions">
-                        <WtwTooltip content="View on Explorer">
+                        <Tooltip content="View on Explorer">
                           <a
                             href={`${chainCfg?.explorer}/address/${wallet.address}`}
                             target="_blank"
@@ -1462,9 +1525,9 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                               <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
                             </svg>
                           </a>
-                        </WtwTooltip>
+                        </Tooltip>
 
-                        <WtwTooltip content="Delete Wallet">
+                        <Tooltip content="Delete Wallet">
                           <button
                             className="wtw-wallet-action-btn wtw-delete-button"
                             onClick={(e) => {
@@ -1474,7 +1537,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                           >
                             <img src={trash} className="wtw-action-icon" alt="Delete" />
                           </button>
-                        </WtwTooltip>
+                        </Tooltip>
                       </div>
                     </div>
                   ))

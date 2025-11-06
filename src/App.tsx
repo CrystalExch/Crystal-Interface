@@ -856,7 +856,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     if (connected) {
       setCurrentWalletIcon(() => {
         const connectorName = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.name || 'Unknown';
-    
+
         switch (connectorName) {
           case 'MetaMask':
             return walletmetamask;
@@ -1067,7 +1067,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
       }
       if (err) throw err
-      return {hash, receipt}
+      return { hash, receipt }
     },
     [validOneCT]
   );
@@ -1097,7 +1097,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     setperpsActiveMarketKey(marketKey);
     navigate(`/perps/${marketKey}`);
   }, [navigate]);
-  
+
   // state vars
   const [_trackedWallets, setTrackedWallets] = useState<any[]>([]);
   const [showSendDropdown, setShowSendDropdown] = useState(false);
@@ -4815,8 +4815,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const amountInWei = word(1);
               const amountOutWei = word(2);
 
-              const amountIn = Number(amountInWei) / (10 ** Number(isBuy ? mcfg.quoteDecimals: mcfg.baseDecimals));
-              const amountOut = Number(amountOutWei) / (10 ** Number(isBuy ? mcfg.baseDecimals: mcfg.quoteDecimals));
+              const amountIn = Number(amountInWei) / (10 ** Number(isBuy ? mcfg.quoteDecimals : mcfg.baseDecimals));
+              const amountOut = Number(amountOutWei) / (10 ** Number(isBuy ? mcfg.baseDecimals : mcfg.quoteDecimals));
 
               const priceFactor = Number(mcfg.priceFactor || 1);
 
@@ -4847,13 +4847,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   amountOut,
                   timestamp: Date.now(),
                 }, trackedWalletsRef.current);
-              
+
                 setTrackedWalletTrades(prev => {
                   const updated = [normalized, ...prev];
                   return updated.length > 500 ? updated.slice(0, 500) : updated;
                 });
-              }                         
-              
+              }
+
               if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
               setTokenData(p => ({
                 ...p,
@@ -5135,13 +5135,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   amountOut: amountOut,
                   timestamp: Date.now(),
                 }, trackedWalletsRef.current);
-              
+
                 setTrackedWalletTrades(prev => {
                   const updated = [normalized, ...prev];
                   return updated.length > 500 ? updated.slice(0, 500) : updated;
                 });
               }
-              
+
               if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
                 setTokenData(p => ({
                   ...p,
@@ -5419,7 +5419,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           connectWebSocket();
         }, 500);
       };
-  
+
       explorerWsRef.current.onerror = (error) => {
         console.error(error)
       };
@@ -5616,7 +5616,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   lastPriceNativePerTokenWad
                   lastUpdatedAt
                   mini: ${'series' + '3600'
-                  } { 
+              } { 
                         klines(first: 1000, orderBy: time, orderDirection: desc) {
                           time open high low close baseVolume
                         } 
@@ -5775,7 +5775,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         const first = 100;
         const skip = page * 100;
         const m = (tempTokenData.id || '').toLowerCase();
-  
+
         const d = tempTokenData.dev ? tempTokenData.dev.toLowerCase() : '';
         if (!d) {
           setMemeDevTokens([]);
@@ -5785,12 +5785,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         const baseName = String(tempTokenData.name || '').trim();
         const baseSymbol = String(tempTokenData.symbol || '').trim();
-    
+
         if (!baseName && !baseSymbol) {
           setMemeSimilarTokens([]);
           return;
         }
-            
+
         const normalize = (s: string) =>
           s.toLowerCase().replace(/\s+/g, ' ').trim();
         const tokenize = (s: string) =>
@@ -5814,7 +5814,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           const uni = A.size + B.size - inter || 1;
           return inter / uni;
         };
-    
+
         const edit = (a: string, b: string) => {
           const m = a.length,
             n = b.length;
@@ -5835,7 +5835,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
           return dp[m][n];
         };
-    
+
         const scoreSimilarity = (
           qName: string,
           qSymbol: string,
@@ -5846,26 +5846,26 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           const cs = normalize(candName);
           const qTok = tokenize(qs);
           const cTok = tokenize(cs);
-    
+
           let score = 0;
-    
+
           score += 400 * jaccard(qTok, cTok);
           score += 300 * jaccard(trigrams(qs), trigrams(cs));
-    
+
           if (cs.startsWith(qs) && qs.length >= 3) score += 200;
           if (qs.startsWith(cs) && cs.length >= 3) score += 120;
           if (cs.includes(qs) && qs.length >= 3) score += 120;
-    
+
           const qa = acronym(qName);
           const ca = acronym(candName);
           if (qa && ca && qa === ca) score += 180;
-    
+
           if (qs && cs) {
             const dist = edit(qs, cs);
             const norm = 1 - Math.min(1, dist / Math.max(qs.length, cs.length));
             score += 200 * norm;
           }
-    
+
           const qSym = qSymbol.toLowerCase();
           const cSym = (candSymbol || '').toLowerCase();
           if (qSym && cSym) {
@@ -5874,10 +5874,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             else if (qSym.startsWith(cSym)) score += 160;
             else if (cSym.includes(qSym)) score += 140;
           }
-    
+
           return score;
         };
-    
+
         const STOPWORDS = new Set([
           'the',
           'a',
@@ -5903,7 +5903,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         const parts: string[] = [];
         let alias = 0;
-        
+
         for (const q of terms) {
           parts.push(`
             q${alias++}: launchpadTokens(
@@ -5915,7 +5915,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               id name symbol metadataCID lastPriceNativePerTokenWad volumeNative timestamp lastUpdatedAt
             }`)
         }
-        
+
         for (const q of symTerms) {
           parts.push(`
             q${alias++}: launchpadTokens(
@@ -5927,7 +5927,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               id name symbol metadataCID lastPriceNativePerTokenWad volumeNative timestamp lastUpdatedAt
             }`)
         }
-        
+
         if (parts.length === 0 && baseName) {
           parts.push(`
             q${alias++}: launchpadTokens(
@@ -5973,15 +5973,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             id name symbol metadataCID lastPriceNativePerTokenWad timestamp migrated
           }
         `)
-        
+
         const query = `query { ${parts.join('\n')} }`
-        
+
         response = await fetch(SUBGRAPH_URL, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ query }),
         })
-        
+
         data = (await response.json())?.data
         if (isCancelled || !data) return;
         // holders
@@ -6104,7 +6104,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           .sort((a: any, b: any) => b._score - a._score)
           .slice(0, 5);
 
-          const finalWithImages = await Promise.all(
+        const finalWithImages = await Promise.all(
           scored.map(async (t: any) => {
             let imageUrl = t.metadataCID || '';
             const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
@@ -10119,19 +10119,19 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const isSiblingWMON =
                 siblingCfg.baseAsset === wethticker || siblingCfg.quoteAsset === wethticker;
 
-                if (!isSiblingWMON) {
-                  if (trades.length && temptradesByMarket[siblingKey]) {
-                    for (const t of trades) {
-                      temptradesByMarket[siblingKey].push([
-                        Number(t.amountIn ?? 0),
-                        Number(t.amountOut ?? 0),
-                        t.isBuy ? 1 : 0,
-                        t.endPrice,
-                        siblingKey,
-                        t.tx,
-                        Number(t.timestamp ?? 0),
-                      ]);
-                    }
+              if (!isSiblingWMON) {
+                if (trades.length && temptradesByMarket[siblingKey]) {
+                  for (const t of trades) {
+                    temptradesByMarket[siblingKey].push([
+                      Number(t.amountIn ?? 0),
+                      Number(t.amountOut ?? 0),
+                      t.isBuy ? 1 : 0,
+                      t.endPrice,
+                      siblingKey,
+                      t.tx,
+                      Number(t.timestamp ?? 0),
+                    ]);
+                  }
                 }
 
                 rows.push({
@@ -11794,17 +11794,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           BigInt(10) ** tokendict[tokenIn].decimals
                         );
                         const percentage = !tokenBalances[token.address]
-                        ? 0
-                        : Math.min(
-                          100,
-                          Math.floor(
-                            Number(
-                              ((amountIn * BigInt(10) ** token.decimals) /
-                                BigInt(10) ** tokendict[tokenIn].decimals * BigInt(100)) /
-                              tokenBalances[token.address],
+                          ? 0
+                          : Math.min(
+                            100,
+                            Math.floor(
+                              Number(
+                                ((amountIn * BigInt(10) ** token.decimals) /
+                                  BigInt(10) ** tokendict[tokenIn].decimals * BigInt(100)) /
+                                tokenBalances[token.address],
+                              ),
                             ),
-                          ),
-                        );
+                          );
                         setSliderPercent(percentage);
                         const slider = document.querySelector(
                           '.balance-amount-slider',
@@ -12520,17 +12520,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           BigInt(10) ** tokendict[tokenIn].decimals,
                         );
                         const percentage = !tokenBalances[newTokenIn]
-                        ? 0
-                        : Math.min(
-                          100,
-                          Math.floor(
-                            Number(
-                              ((amountIn * BigInt(10) ** tokendict[newTokenIn].decimals) /
-                                BigInt(10) ** tokendict[tokenIn].decimals * BigInt(100)) /
-                              tokenBalances[newTokenIn],
+                          ? 0
+                          : Math.min(
+                            100,
+                            Math.floor(
+                              Number(
+                                ((amountIn * BigInt(10) ** tokendict[newTokenIn].decimals) /
+                                  BigInt(10) ** tokendict[tokenIn].decimals * BigInt(100)) /
+                                tokenBalances[newTokenIn],
+                              ),
                             ),
-                          ),
-                        );
+                          );
                         setSliderPercent(percentage);
                         const slider = document.querySelector(
                           '.balance-amount-slider',
@@ -19097,150 +19097,147 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           </div>
         ) : null}
         {popup === 37 ? ( // presets settings popup
-  <div ref={popupref} className="presets-settings-popup-bg" style={{ zIndex: 10001 }}>
-    <div className="presets-settings-popup-header">
-      <h3 className="presets-settings-popup-title">Trade Settings</h3>
-      <button
-        className="presets-settings-popup-close"
-        onClick={() => {
-          setpopup(0);
-        }}
-      >
-        <img src={closebutton} className="presets-settings-close-icon" alt="Close" />
-      </button>
-    </div>
+          <div ref={popupref} className="presets-settings-popup-bg" style={{ zIndex: 10001 }}>
+            <div className="presets-settings-popup-header">
+              <h3 className="presets-settings-popup-title">Trade Settings</h3>
+              <button
+                className="presets-settings-popup-close"
+                onClick={() => {
+                  setpopup(0);
+                }}
+              >
+                <img src={closebutton} className="presets-settings-close-icon" alt="Close" />
+              </button>
+            </div>
 
-    <div className="presets-settings-popup-content">
-            <div className="meme-settings-presets">
-        <button
-          className={`meme-settings-preset ${
-            (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1 
-              ? `active ${settingsMode}` 
-              : ''
-          }`}
-          onClick={() => {
-            if (settingsMode === 'buy') {
-              handleBuyPresetSelect(1);
-            } else {
-              handleSellPresetSelect(1);
-            }
-          }}
-        >
-          PRESET 1
-        </button>
-        <button
-          className={`meme-settings-preset ${
-            (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2 
-              ? `active ${settingsMode}` 
-              : ''
-          }`}
-          onClick={() => {
-            if (settingsMode === 'buy') {
-              handleBuyPresetSelect(2);
-            } else {
-              handleSellPresetSelect(2);
-            }
-          }}
-        >
-          PRESET 2
-        </button>
-        <button
-          className={`meme-settings-preset ${
-            (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3 
-              ? `active ${settingsMode}` 
-              : ''
-          }`}
-          onClick={() => {
-            if (settingsMode === 'buy') {
-              handleBuyPresetSelect(3);
-            } else {
-              handleSellPresetSelect(3);
-            }
-          }}
-        >
-          PRESET 3
-        </button>
-      </div>
-      <div className="meme-settings-mode-toggle">
-        <button
-          className={`meme-settings-mode-btn ${settingsMode === 'buy' ? 'active' : ''}`}
-          onClick={() => setSettingsMode('buy')}
-        >
-          Buy settings
-        </button>
-        <button
-          className={`meme-settings-mode-btn ${settingsMode === 'sell' ? 'active' : ''}`}
-          onClick={() => setSettingsMode('sell')}
-        >
-          Sell settings
-        </button>
-      </div>
+            <div className="presets-settings-popup-content">
+              <div className="meme-settings-presets">
+                <button
+                  className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1
+                      ? `active ${settingsMode}`
+                      : ''
+                    }`}
+                  onClick={() => {
+                    if (settingsMode === 'buy') {
+                      handleBuyPresetSelect(1);
+                    } else {
+                      handleSellPresetSelect(1);
+                    }
+                  }}
+                >
+                  PRESET 1
+                </button>
+                <button
+                  className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2
+                      ? `active ${settingsMode}`
+                      : ''
+                    }`}
+                  onClick={() => {
+                    if (settingsMode === 'buy') {
+                      handleBuyPresetSelect(2);
+                    } else {
+                      handleSellPresetSelect(2);
+                    }
+                  }}
+                >
+                  PRESET 2
+                </button>
+                <button
+                  className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3
+                      ? `active ${settingsMode}`
+                      : ''
+                    }`}
+                  onClick={() => {
+                    if (settingsMode === 'buy') {
+                      handleBuyPresetSelect(3);
+                    } else {
+                      handleSellPresetSelect(3);
+                    }
+                  }}
+                >
+                  PRESET 3
+                </button>
+              </div>
+              <div className="meme-settings-mode-toggle">
+                <button
+                  className={`meme-settings-mode-btn ${settingsMode === 'buy' ? 'active' : ''}`}
+                  onClick={() => setSettingsMode('buy')}
+                >
+                  Buy settings
+                </button>
+                <button
+                  className={`meme-settings-mode-btn ${settingsMode === 'sell' ? 'active' : ''}`}
+                  onClick={() => setSettingsMode('sell')}
+                >
+                  Sell settings
+                </button>
+              </div>
 
 
-      <div className="meme-settings-grid">
-        <div className="meme-setting-item">
-          <div className="meme-setting-input-wrapper">
-            <input
-              type="number"
-              className="meme-setting-input"
-              value={
-                settingsMode === 'buy'
-                  ? buySlippageValue
-                  : sellSlippageValue
-              }
-              onChange={(e) =>
-                settingsMode === 'buy'
-                  ? setBuySlippageValue(e.target.value)
-                  : setSellSlippageValue(e.target.value)
-              }
-              step="0.1"
-              min="0"
-              max="100"
-            />
-            <span className="meme-setting-unit">%</span>
+              <div className="meme-settings-grid">
+                <div className="meme-setting-item">
+                  <div className="meme-setting-input-wrapper">
+                    <input
+                      type="number"
+                      className="meme-setting-input"
+                      value={
+                        settingsMode === 'buy'
+                          ? buySlippageValue
+                          : sellSlippageValue
+                      }
+                      onChange={(e) =>
+                        settingsMode === 'buy'
+                          ? setBuySlippageValue(e.target.value)
+                          : setSellSlippageValue(e.target.value)
+                      }
+                      step="0.1"
+                      min="0"
+                      max="100"
+                    />
+                    <span className="meme-setting-unit">%</span>
+                  </div>
+                  <label className="meme-setting-label">
+                    <img
+                      src={slippageicon}
+                      className="meme-setting-label-icon-slippage"
+                    />
+                    SLIPPAGE
+                  </label>
+                </div>
+
+                <div className="meme-setting-item">
+                  <div className="meme-setting-input-wrapper">
+                    <input
+                      type="number"
+                      className="meme-setting-input"
+                      value={
+                        settingsMode === 'buy'
+                          ? buyPriorityFee
+                          : sellPriorityFee
+                      }
+                      onChange={(e) =>
+                        settingsMode === 'buy'
+                          ? setBuyPriorityFee(e.target.value)
+                          : setSellPriorityFee(e.target.value)
+                      }
+                      step="0.001"
+                      min="0"
+                    />
+                    <span className="meme-setting-unit">MON</span>
+                  </div>
+                  <label className="meme-setting-label">
+                    <img
+                      src={gas}
+                      alt="Priority Fee"
+                      className="meme-setting-label-icon"
+                    />
+                    PRIORITY
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
-          <label className="meme-setting-label">
-            <img
-              src={slippageicon}
-              className="meme-setting-label-icon-slippage"
-            />
-            SLIPPAGE
-          </label>
-        </div>
-
-        <div className="meme-setting-item">
-          <div className="meme-setting-input-wrapper">
-            <input
-              type="number"
-              className="meme-setting-input"
-              value={
-                settingsMode === 'buy'
-                  ? buyPriorityFee
-                  : sellPriorityFee
-              }
-              onChange={(e) =>
-                settingsMode === 'buy'
-                  ? setBuyPriorityFee(e.target.value)
-                  : setSellPriorityFee(e.target.value)
-              }
-              step="0.001"
-              min="0"
-            />
-            <span className="meme-setting-unit">MON</span>
-          </div>
-          <label className="meme-setting-label">
-            <img
-              src={gas}
-              alt="Priority Fee"
-              className="meme-setting-label-icon"
-            />
-            PRIORITY
-          </label>
-        </div>
-      </div>
-    </div>
-  </div>
-) : null}
+        ) : null}
       </div>
     </>
   );
@@ -26217,43 +26214,55 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           previewExiting={previewExiting}
         />
         <TrackerWidget
-        isOpen={isTrackerWidgetOpen}
-        onClose={() => setIsTrackerWidgetOpen(false)}
-        onSnapChange={handleTrackerWidgetSnapChange}
-      />
+          isOpen={isTrackerWidgetOpen}
+          onClose={() => setIsTrackerWidgetOpen(false)}
+          onSnapChange={handleTrackerWidgetSnapChange}
+        />
         <SpectraWidget
-        isOpen={isSpectraWidgetOpen}
-        onClose={() => setIsSpectraWidgetOpen(false)}
-        onSnapChange={handleSpectraWidgetSnapChange}
-        tokensByStatus={tokensByStatus}
-        monUsdPrice={monUsdPrice}
-        routerAddress={settings.chainConfig[activechain]?.launchpadRouter?.toLowerCase()}
-        sendUserOperationAsync={sendUserOperationAsync}
-        showLoadingPopup={showLoadingPopup}
-        updatePopup={updatePopup}
-        onOpenFiltersForColumn={handleOpenFiltersForColumn}
-        setTokenData={setTokenData}
-      />
+          isOpen={isSpectraWidgetOpen}
+          onClose={() => setIsSpectraWidgetOpen(false)}
+          onSnapChange={handleSpectraWidgetSnapChange}
+          tokensByStatus={tokensByStatus}
+          monUsdPrice={monUsdPrice}
+          routerAddress={settings.chainConfig[activechain]?.launchpadRouter?.toLowerCase()}
+          sendUserOperationAsync={sendUserOperationAsync}
+          showLoadingPopup={showLoadingPopup}
+          updatePopup={updatePopup}
+          onOpenFiltersForColumn={handleOpenFiltersForColumn}
+          setTokenData={setTokenData}
+          selectedWallets={selectedWallets}
+          subWallets={subWallets}
+          walletTokenBalances={walletTokenBalances}
+          activeWalletPrivateKey={oneCTSigner}
+          tokenList={memoizedTokenList}
+          activechain={activechain}
+          nonces={nonces}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: userchain,
+                }}          terminalRefetch={terminalRefetch}
+        />
         <PNLWidget
-        isOpen={isPNLWidgetOpen}
-        onClose={() => setIsPNLWidgetOpen(false)}
-        onSnapChange={handlePNLWidgetSnapChange}
-      />
+          isOpen={isPNLWidgetOpen}
+          onClose={() => setIsPNLWidgetOpen(false)}
+          onSnapChange={handlePNLWidgetSnapChange}
+        />
         <WalletTrackerWidget
-        isOpen={isWalletTrackerWidgetOpen}
-        onClose={() => setIsWalletTrackerWidgetOpen(false)}
-        onSnapChange={handleWalletTrackerWidgetSnapChange}
-        monUsdPrice={monUsdPrice}
-        walletTokenBalances={walletTokenBalances}
-        activechain={activechain}
-        settings={settings}
-        allTrades={trackedWalletTrades}
-        tokenList={memoizedTokenList}
-        marketsData={marketsData}
-        tradesByMarket={tradesByMarket}
-        setpopup={setpopup}
-        currentPopup={popup}
-      />
+          isOpen={isWalletTrackerWidgetOpen}
+          onClose={() => setIsWalletTrackerWidgetOpen(false)}
+          onSnapChange={handleWalletTrackerWidgetSnapChange}
+          monUsdPrice={monUsdPrice}
+          walletTokenBalances={walletTokenBalances}
+          activechain={activechain}
+          settings={settings}
+          allTrades={trackedWalletTrades}
+          tokenList={memoizedTokenList}
+          marketsData={marketsData}
+          tradesByMarket={tradesByMarket}
+          setpopup={setpopup}
+          currentPopup={popup}
+        />
         {/* <WidgetExplorer
         isOpen={isWidgetExplorerOpen}
         onClose={handleCloseWidgetExplorer}

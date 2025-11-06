@@ -65,12 +65,12 @@
   border-radius: 4px 0 0 0;
 }
 
-/* Filters Header */
 .wtw-filters-header {
   align-items: center;
   display: flex;
   justify-content: space-between;
-  padding: 8px 15px;
+  padding: 2px 5px;
+  padding-right: 15px;
   padding-bottom: 0;
   user-select: none;
   cursor: move;
