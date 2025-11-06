@@ -505,7 +505,7 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
           left: `${position.x}px`,
           top: `${position.y}px`,
           width: `${size.width}px`,
-          height: isSnapped || showGraph ? `${size.height}px` : 'auto',
+          height: isSnapped ? `${size.height}px` : 'auto',
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}

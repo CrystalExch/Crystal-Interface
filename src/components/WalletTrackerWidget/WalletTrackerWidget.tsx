@@ -6,10 +6,14 @@ import monadicon from '../../assets/monadlogo.svg';
 import copy from '../../assets/copy.svg';
 import trash from '../../assets/trash.svg';
 import defaultPfp from '../../assets/leaderboard_default.png';
+import closebutton from '../../assets/close_button.png';
 import settingsicon from '../../assets/settings.svg';
 import filter from '../../assets/filter.svg';
 import ImportWalletsPopup from '../Tracker/ImportWalletsPopup';
 import AddWalletModal, { TrackedWallet } from '../Tracker/AddWalletModal';
+import LiveTradesFiltersPopup from '../Tracker/LiveTradesFiltersPopup/LiveTradesFiltersPopup';
+import { FilterState } from '../Tracker/Tracker';
+import MonitorFiltersPopup, { MonitorFilterState } from '../Tracker/MonitorFiltersPopup/MonitorFiltersPopup';
 import circle from '../../assets/circle_handle.png';
 
 interface GqlPosition {
@@ -233,6 +237,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   const [editingWallet, setEditingWallet] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [dontShowDeleteAgain, setDontShowDeleteAgain] = useState(false);
   const [sortBy, setSortBy] = useState<'balance' | 'lastActive' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [walletCurrency, setWalletCurrency] = useState<'USD' | 'MON'>('USD');
@@ -251,6 +256,51 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   // Filter popups state
   const [showFiltersPopup, setShowFiltersPopup] = useState(false);
   const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<FilterState>({
+    transactionTypes: {
+      buyMore: true,
+      firstBuy: true,
+      sellPartial: true,
+      sellAll: true,
+      addLiquidity: true,
+      removeLiquidity: true,
+    },
+    marketCap: {
+      min: '',
+      max: '',
+    },
+    transactionAmount: {
+      min: '',
+      max: '',
+    },
+    tokenAge: {
+      min: '',
+      max: '',
+    },
+  });
+  const [monitorFilters, setMonitorFilters] = useState<MonitorFilterState>({
+    general: {
+      lastTransaction: '',
+      tokenAgeMin: '',
+      tokenAgeMax: '',
+    },
+    market: {
+      marketCapMin: '',
+      marketCapMax: '',
+      liquidityMin: '',
+      liquidityMax: '',
+      holdersMin: '',
+      holdersMax: '',
+    },
+    transactions: {
+      transactionCountMin: '',
+      transactionCountMax: '',
+      inflowVolumeMin: '',
+      inflowVolumeMax: '',
+      outflowVolumeMin: '',
+      outflowVolumeMax: '',
+    },
+  });
 
   // Import and Add Wallet modals
   const [showImportPopup, setShowImportPopup] = useState(false);
@@ -568,9 +618,43 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     navigator.clipboard.writeText(address);
   };
 
+  const getDeletePreference = (): boolean => {
+    try {
+      return localStorage.getItem('tracker_skip_delete_confirmation') === 'true';
+    } catch {
+      return false;
+    }
+  };
+
+  const saveDeletePreference = (skip: boolean) => {
+    try {
+      if (skip) {
+        localStorage.setItem('tracker_skip_delete_confirmation', 'true');
+      } else {
+        localStorage.removeItem('tracker_skip_delete_confirmation');
+      }
+    } catch {
+    }
+  };
+
+  const confirmDeleteWallet = (id: string) => {
+    const shouldSkip = getDeletePreference();
+
+    if (shouldSkip) {
+      setLocalWallets((prev) => prev.filter((w) => w.id !== id));
+    } else {
+      setShowDeleteConfirm(id);
+    }
+  };
+
   const handleDeleteWallet = (id: string) => {
+    if (dontShowDeleteAgain) {
+      saveDeletePreference(true);
+    }
+
     setLocalWallets((prev) => prev.filter((w) => w.id !== id));
     setShowDeleteConfirm(null);
+    setDontShowDeleteAgain(false);
   };
 
   const handleRemoveAll = () => {
@@ -638,9 +722,43 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     setShowAddWalletModal(false);
   };
 
+  const handleApplyFilters = (filters: FilterState) => {
+    setActiveFilters(filters);
+  };
+
+  const handleApplyMonitorFilters = (filters: MonitorFilterState) => {
+    setMonitorFilters(filters);
+  };
+
   // Trade filtering and sorting - copied from Tracker.tsx
   const getFilteredTrades = () => {
-    let trades = allTrades;
+    let trades = allTrades.filter((trade: any) => {
+      const isBuy = trade.type === 'buy';
+      const isSell = trade.type === 'sell';
+
+      if (isBuy && !activeFilters.transactionTypes.buyMore && !activeFilters.transactionTypes.firstBuy) {
+        return false;
+      }
+      if (isSell && !activeFilters.transactionTypes.sellPartial && !activeFilters.transactionTypes.sellAll) {
+        return false;
+      }
+
+      if (activeFilters.marketCap.min && trade.marketCap < parseFloat(activeFilters.marketCap.min)) {
+        return false;
+      }
+      if (activeFilters.marketCap.max && trade.marketCap > parseFloat(activeFilters.marketCap.max)) {
+        return false;
+      }
+
+      if (activeFilters.transactionAmount.min && trade.amount < parseFloat(activeFilters.transactionAmount.min)) {
+        return false;
+      }
+      if (activeFilters.transactionAmount.max && trade.amount > parseFloat(activeFilters.transactionAmount.max)) {
+        return false;
+      }
+
+      return true;
+    });
 
     if (tradeSortField) {
       trades = [...trades].sort((a, b) => {
@@ -1333,7 +1451,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                             className="wtw-wallet-action-btn wtw-delete-button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setShowDeleteConfirm(wallet.id);
+                              confirmDeleteWallet(wallet.id);
                             }}
                           >
                             <img src={trash} className="wtw-action-icon" alt="Delete" />
@@ -1354,26 +1472,68 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && (
-          <div className="wtw-confirm-overlay" onClick={() => setShowDeleteConfirm(null)}>
-            <div className="wtw-confirm-dialog" onClick={(e) => e.stopPropagation()}>
-              <h3>Delete Wallet?</h3>
-              <p>This action cannot be undone.</p>
-              <div className="wtw-confirm-actions">
+        <div className="tracker-modal-backdrop" onClick={() => {
+          setShowDeleteConfirm(null);
+          setDontShowDeleteAgain(false);
+        }}>
+          <div className="tracker-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="tracker-modal-header">
+              <h3 className="tracker-modal-title">Delete Wallet</h3>
+              <button className="tracker-modal-close" onClick={() => {
+                setShowDeleteConfirm(null);
+                setDontShowDeleteAgain(false);
+              }}>
+                <img src={closebutton} className="close-button-icon" />
+              </button>
+            </div>
+            <div className="tracker-modal-content">
+              <div className="tracker-delete-warning">
+                <p>Are you sure you want to remove this wallet from tracking?</p>
+                <p>This action cannot be undone.</p>
+              </div>
+
+              <div className="checkbox-row">
+                <input
+                  type="checkbox"
+                  className="tracker-delete-checkbox"
+                  id="dontShowDeleteAgain"
+                  checked={dontShowDeleteAgain}
+                  onChange={(e) => setDontShowDeleteAgain(e.target.checked)}
+                />
+                <label className="checkbox-label" htmlFor="dontShowDeleteAgain">
+                  Don't show this confirmation again
+                </label>
+              </div>
+
+              <div className="tracker-modal-actions">
                 <button
-                  className="wtw-confirm-btn wtw-cancel"
-                  onClick={() => setShowDeleteConfirm(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="wtw-confirm-btn wtw-delete"
+                  className="tracker-delete-confirm-button"
                   onClick={() => handleDeleteWallet(showDeleteConfirm)}
                 >
-                  Delete
+                  Delete Wallet
                 </button>
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Live Trades Filters Popup */}
+      {showFiltersPopup && (
+        <LiveTradesFiltersPopup
+          onClose={() => setShowFiltersPopup(false)}
+          onApply={handleApplyFilters}
+          initialFilters={activeFilters}
+        />
+      )}
+
+      {/* Monitor Filters Popup */}
+      {showMonitorFiltersPopup && (
+        <MonitorFiltersPopup
+          onClose={() => setShowMonitorFiltersPopup(false)}
+          onApply={handleApplyMonitorFilters}
+          initialFilters={monitorFilters}
+        />
       )}
 
       {/* Import Wallets Popup */}
