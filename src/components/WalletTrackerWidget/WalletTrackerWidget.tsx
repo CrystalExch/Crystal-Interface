@@ -1119,9 +1119,28 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       {/* Filters Header */}
       <div className="wtw-filters-header" onMouseDown={handleDragStart}>
         <h2 className="wtw-filters-title">Wallet Tracker</h2>
-        <button className="wtw-filters-close-button" onClick={onClose}>
-          <X size={16} />
-        </button>
+        <div className="wtw-widget-header-right">
+          <WtwTooltip content="Open Wallet Tracker in a new tab">
+            <button
+              className="wtw-open-new-tab-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(`${window.location.origin}/tracker`, '_blank');
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="wtw-link-icon">
+                <path d="M15 3h6v6" />
+                <path d="M10 14 21 3" />
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              </svg>
+            </button>
+          </WtwTooltip>
+          <WtwTooltip content="Close">
+            <button className="wtw-filters-close-button" onClick={onClose}>
+              <X size={16} />
+            </button>
+          </WtwTooltip>
+        </div>
                   <div className="quickbuy-drag-handle">
             <div className="circle-row">
               <img src={circle} className="circle" />
@@ -1163,7 +1182,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
               <button
                 className="wtw-header-button"
                 onClick={handleExport}
-                disabled={localWallets.length === 0}
               >
                 Export
               </button>

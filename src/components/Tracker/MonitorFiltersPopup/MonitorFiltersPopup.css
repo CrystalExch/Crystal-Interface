@@ -437,9 +437,9 @@
 }
 
 .monitor-simple-sort-option.active {
-  background: rgb(170 174 207 / 8%);
-  border-color: #aaaecf66;
-  box-shadow: 0 0 0 1px rgba(170, 174, 207, 0.6);
+  background: rgb(170 174 207 / 15%);
+  border-color: #aaaecf;
+  box-shadow: 0 0 8px rgba(170, 174, 207, 0.4), 0 0 0 1px rgba(170, 174, 207, 0.6);
   color: #d8dcff;
 }
 

@@ -211,15 +211,6 @@ const MonitorFiltersPopup: React.FC<MonitorFiltersPopupProps> = ({
     }
   }, [viewMode]);
 
-  useEffect(() => {
-    if (viewMode === 'simple') {
-      const detected = detectSimplePreset(filters);
-      if (detected !== selectedSimpleFilter) {
-        setSelectedSimpleFilter(detected);
-      }
-    }
-  }, [viewMode, filters]);
-
 
 
   return (
