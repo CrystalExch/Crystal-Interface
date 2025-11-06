@@ -1216,9 +1216,10 @@
 }
 
 .spectra-filter-size-button.active {
-  background: rgb(170 174 207 / 8%);
-  border-color: #aaaecf66;
-  box-shadow: 0 0 0 1px rgba(170, 174, 207, 0.6);
+  border: 1px solid #aaaecf;
+  color: #d8dcff;
+  background-color: #7c88e820;
+  box-shadow: 0 0 8px rgba(170, 174, 207, 0.4);
 }
 
 .spectra-filter-button-label {
