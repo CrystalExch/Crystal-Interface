@@ -281,8 +281,13 @@ const Loader = () => {
   const [ready, setReady] = useState(false);
   const [stateloading, setstateloading] = useState(true);
   const [addressinfoloading, setaddressinfoloading] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
+    if (location.pathname.startsWith("/perps")) {
+      setReady(true)
+      return;
+    };
     (async () => {
       try {
         const query = `
@@ -19022,10 +19027,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     }}
                     className="leverage-slider-input"
                     style={{
-                      background: `linear-gradient(to right, #aaaecf ${((parseFloat(perpsLeverage) || 10) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1) * 100}%, #2a2a2f ${((parseFloat(perpsLeverage) || 10) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1) * 100}%)`
+                      background: `linear-gradient(to right, #aaaecf ${(((parseFloat(perpsLeverage) || 10) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1) * 100) || 0}%, #2a2a2f ${(((parseFloat(perpsLeverage) || 10) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1) * 100) || 0}%)`
                     }}
                   />
-
                   <div className="leverage-value-popup">
                     {parseFloat(perpsLeverage) || 10}x
                   </div>
@@ -19050,7 +19054,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   const qs = Object.keys(payload).sort().map(k => `${k}=${(payload as any)[k]}`).join('&')
                   const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(perpsKeystore.apiSecret))), toUtf8Bytes(ts + "POST" + path + qs)).slice(2)
                   const [metaRes] = await Promise.all([
-                    fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/account/updateLeverageSetting", {
+                    fetch("https://perps.crystal.exchange/api/v1/private/account/updateLeverageSetting", {
                       method: "POST",
                       headers: {
                         "Content-Type": "application/json",
@@ -26093,7 +26097,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 activeTab={obTab}
                 setActiveTab={setOBTab}
                 router={router}
-                address={address}
+                address={scaAddress}
                 orderCenterHeight={orderCenterHeight}
                 tokenList={memoizedTokenList}
                 setSendTokenIn={setSendTokenIn}

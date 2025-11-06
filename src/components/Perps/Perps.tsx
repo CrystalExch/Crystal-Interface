@@ -156,8 +156,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [maintenanceMargin, setMaintenanceMargin] = useState('0.00');
   const [usedMargin, setUsedMargin] = useState('0.00');
   const [balance, setBalance] = useState('0.00');
-  const [liqPrice, setLiqPrice] = useState('0.00')
-  const [upnl, setUpnl] = useState('0.00')
+  const [upnl, setUpnl] = useState(0)
   const [userFees, setUserFees] = useState(["0.00038", "0.00012"]);
   const [amountIn, setAmountIn] = useState(BigInt(0));
   const [sliderPercent, setSliderPercent] = useState(0);
@@ -170,7 +169,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [tpPrice, setTpPrice] = useState("");
   const [isReduceOnly, setIsReduceOnly] = useState(false);
   const [slPrice, setSlPrice] = useState("");
-  const [currentPosition, setCurrentPosition] = useState(0);
+  const [currentPosition, setCurrentPosition] = useState<any>({});
   const [slippage, setSlippage] = useState(() => {
     const saved = localStorage.getItem('crystal_perps_slippage');
     return saved !== null ? BigInt(saved) : BigInt(9900);
@@ -499,7 +498,7 @@ const Perps: React.FC<PerpsProps> = ({
   const prevAmountsQuote = useRef(amountsQuote)
   const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
   const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
-  const availableBalance = (activeMarket?.oraclePrice ? Math.max((Number(balance) - positions.reduce((t, p) => t + Number(p.margin || 0), 0) + positions.reduce((t, p) => t + Number(p.pnl || 0), 0) - orders.reduce((t, p) => t + Number(p.margin || 0), 0) + ((activeTradeType == "long" == currentPosition < 0) ? Math.abs(currentPosition) * 2 * activeMarket?.oraclePrice / Number(leverage) : 0)), 0) : 0);
+  const availableBalance = (activeMarket?.oraclePrice ? Math.max((Number(balance) - positions.reduce((t, p) => t + Number(p.margin || 0), 0) + positions.reduce((t, p) => t + Number(p.pnl || 0), 0) - orders.reduce((t, p) => t + Number(p.margin || 0), 0) + ((activeTradeType == "long" == Number(currentPosition?.size) < 0) ? Math.abs(Number(currentPosition?.size)) * 2 * activeMarket?.oraclePrice / Number(leverage) : 0)), 0) : 0);
 
   const handleVertMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -543,7 +542,6 @@ const Perps: React.FC<PerpsProps> = ({
     positionPopup(percent);
     let inputString = Number((Number(availableBalance) * Number(leverage) * percent / 100)) == 0 ? '' : (Math.floor(Number(availableBalance) * Number(leverage) * percent) / 100).toFixed(2)
     setInputString(inputString)
-    //setLiqPrice()
   }, [availableBalance, leverage]);
 
   const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
@@ -639,7 +637,7 @@ const Perps: React.FC<PerpsProps> = ({
     const qs = buildSignatureBody(payload)
     const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "POST" + path + qs)).slice(2)
     const [metaRes] = await Promise.all([
-      fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/order/cancelOrderById", {
+      fetch("https://perps.crystal.exchange/api/v1/private/order/cancelOrderById", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -667,7 +665,7 @@ const Perps: React.FC<PerpsProps> = ({
     const qs = buildSignatureBody(payload)
     const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "POST" + path + qs)).slice(2)
     const [metaRes] = await Promise.all([
-      fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/order/createOrder", {
+      fetch("https://perps.crystal.exchange/api/v1/private/order/createOrder", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -692,7 +690,7 @@ const Perps: React.FC<PerpsProps> = ({
     const qs = buildSignatureBody(payload)
     const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "POST" + path + qs)).slice(2)
     const [metaRes] = await Promise.all([
-      fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/order/createOrder", {
+      fetch("https://perps.crystal.exchange/api/v1/private/order/createOrder", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -706,6 +704,18 @@ const Perps: React.FC<PerpsProps> = ({
     ])
     console.log(metaRes)
     setIsSigning(false);
+  }
+
+  const calculateLiquidation = () => {
+    if (activeMarket?.lastPrice && (Number(balance) + Number(upnl)) && (Number(inputString) / Number(activeMarket.oraclePrice) + currentPosition?.size)) {
+      const liqPrice = (Number(currentPosition.entryPrice) - ((Number(balance) + Number(upnl) - positions.reduce((t, p) => t + Number(p.maintenanceMargin || 0), 0) - currentPosition.pnl) / (currentPosition.direction == 'long' ? Number(currentPosition.size) : -Number(currentPosition.size)) / (1 - (currentPosition.direction == 'long' ? 1 : -1) * currentPosition.mmr))).toFixed((currentPosition.markPrice.toString().split(".")[1] || "").length)
+      return liqPrice;
+    }
+    return '0.00';
+    (activeMarket?.lastPrice && (Number(balance) + Number(upnl)) && (Number(inputString) / Number(activeMarket.oraclePrice) + currentPosition)) ? formatCommas(
+      Math.max(Number(activeOrderType == 'Limit' ? limitPriceString : activeTradeType == 'long' ? activeMarket.bestAskPrice : activeMarket.bestBidPrice) - ((Number(balance) + Number(upnl) - positions.reduce((t, p) => t + Number(p.maintenanceMargin || 0), 0) - Number(inputString) * parseFloat(activeMarket?.riskTierList.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList.at(-1).maintenanceMarginRate)) / ((activeTradeType == 'long' ? Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestAskPrice) : -Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestBidPrice)) + currentPosition) /
+        ((1 - (((activeTradeType == 'long' ? Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestAskPrice) : -Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestBidPrice)) + currentPosition) > 0 ? 1 : -1) * (parseFloat(activeMarket?.riskTierList?.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList?.at(-1).maintenanceMarginRate)))))
+        , 0).toFixed((activeMarket.lastPrice.toString().split(".")[1] || "").length)) : '0.00'
   }
 
   useEffect(() => {
@@ -848,15 +858,30 @@ const Perps: React.FC<PerpsProps> = ({
     let tempupnl = 0
     let temppositions: any = []
     let temporders: any = []
-    let tempcurrentposition: any = 0
+    let tempcurrentposition: any = {}
 
     for (const position of fetchedpositions) {
       const marketData = (Object.values(perpsMarketsData).find((v: any) => v.contractId == position.contractId) as any)
       tempupnl += Number(marketData?.oraclePrice) * Number(position.openSize) - Number(position.openValue)
-      if (marketData.contractName == perpsActiveMarketKey) {
-        tempcurrentposition = Number(position.openSize)
-      }
       const positionValue = Math.abs(Number(marketData?.oraclePrice) * Number(position.openSize));
+      if (marketData.contractName == perpsActiveMarketKey) {
+        tempcurrentposition = {
+          leverage: userLeverage?.[marketData?.contractId]?.maxLeverage ? userLeverage?.[marketData?.contractId]?.maxLeverage : marketData?.displayMaxLeverage,
+          image: marketData?.iconURL,
+          direction: position.openSize > 0 ? 'long' : 'short',
+          symbol: marketData.contractName,
+          size: Math.abs(position.openSize).toString(),
+          positionValue: positionValue,
+          entryPrice: (Number(position.openValue) / Number(position.openSize)).toFixed((marketData?.lastPrice?.toString().split(".")[1] || "").length),
+          markPrice: Number(marketData?.oraclePrice).toFixed((marketData?.lastPrice?.toString().split(".")[1] || "").length),
+          pnl: Number(marketData?.oraclePrice) * Number(position.openSize) - position.openValue,
+          liqPrice: 0,
+          margin: positionValue / (userLeverage?.[marketData?.contractId]?.maxLeverage ? userLeverage?.[marketData?.contractId]?.maxLeverage : marketData?.displayMaxLeverage),
+          funding: -Number(position.fundingFee),
+          maintenanceMargin: Math.abs(position.openValue) * parseFloat(marketData?.riskTierList.find((t: any) => Math.abs(position.openValue) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? marketData?.riskTierList.at(-1).maintenanceMarginRate),
+          mmr: parseFloat(marketData?.riskTierList.find((t: any) => Math.abs(position.openValue) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? marketData?.riskTierList.at(-1).maintenanceMarginRate)
+        }
+      }
 
       temppositions.push({
         leverage: userLeverage?.[marketData?.contractId]?.maxLeverage ? userLeverage?.[marketData?.contractId]?.maxLeverage : marketData?.displayMaxLeverage,
@@ -901,7 +926,7 @@ const Perps: React.FC<PerpsProps> = ({
       position.liqPrice = (Number(position.entryPrice) - ((Number(balance) + Number(tempupnl) - tempmaintenancemargin - position.pnl) / (position.direction == 'long' ? Number(position.size) : -Number(position.size)) / (1 - (position.direction == 'long' ? 1 : -1) * position.mmr))).toFixed((position.markPrice.toString().split(".")[1] || "").length)
     }
 
-    setUpnl(isNaN(tempupnl) ? '0.00' : tempupnl.toFixed(2))
+    setUpnl(isNaN(tempupnl) ? 0 : tempupnl)
     setpositions(temppositions)
     setorders(temporders)
     setCurrentPosition(tempcurrentposition)
@@ -1053,8 +1078,8 @@ const Perps: React.FC<PerpsProps> = ({
       try {
         if (Object.keys(perpsMarketsData).length == 0) {
           const [metaRes, labelsRes] = await Promise.all([
-            fetch('https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/public/meta/getMetaData', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json()),
-            fetch('https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/public/contract-labels', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
+            fetch('https://perps.crystal.exchange/api/v1/public/meta/getMetaData', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json()),
+            fetch('https://perps.crystal.exchange/api/v1/public/contract-labels', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
           ])
           if (liveStreamCancelled) return;
           if (metaRes?.data) setExchangeConfig(metaRes.data)
@@ -1111,6 +1136,7 @@ const Perps: React.FC<PerpsProps> = ({
 
     const connectWebSocket = () => {
       if (liveStreamCancelled) return;
+      fetchData();
       const endpoint = `wss://quote.edgex.exchange/api/v1/public/ws?timestamp=${Date.now()}`;
       wsRef.current = new WebSocket(endpoint);
 
@@ -1131,8 +1157,6 @@ const Perps: React.FC<PerpsProps> = ({
         subs.forEach((channel: any) => {
           wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }));
         });
-
-        fetchData();
       };
 
       wsRef.current.onmessage = (event) => {
@@ -1348,15 +1372,6 @@ const Perps: React.FC<PerpsProps> = ({
           onlySignOn: "https://pro.edgex.exchange",
           signature: signer.signature
         }
-        const [onboardRes] = await Promise.all([
-          fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/public/user/onboardSite", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(onboardpayload)
-          }).then(r => r.json())
-        ])
         const regts = Date.now().toString()
         const regpath = '/api/v1/private/account/registerAccount'
         const payload = {
@@ -1366,8 +1381,19 @@ const Perps: React.FC<PerpsProps> = ({
         }
         const regqs = buildSignatureBody(payload)
         const regsig = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(regts + "POST" + regpath + regqs)).slice(2)
-        const [registerRes] = await Promise.all([
-          fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/account/registerAccount", {
+        const ts = Date.now().toString()
+        const path = '/api/v1/private/account/getAccountPage'
+        const qs = 'size=100'
+        const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "GET" + path + qs)).slice(2)
+        const [onboardRes, registerRes, metaRes] = await Promise.all([
+          fetch("https://perps.crystal.exchange/api/v1/public/user/onboardSite", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(onboardpayload)
+          }).then(r => r.json()),
+          fetch("https://perps.crystal.exchange/api/v1/private/account/registerAccount", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1377,14 +1403,8 @@ const Perps: React.FC<PerpsProps> = ({
               "X-edgeX-Api-Key": signer.apiKey
             },
             body: JSON.stringify(payload)
-          }).then(r => r.json())
-        ])
-        const ts = Date.now().toString()
-        const path = '/api/v1/private/account/getAccountPage'
-        const qs = 'size=100'
-        const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "GET" + path + qs)).slice(2)
-        const [metaRes] = await Promise.all([
-          fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/account/getAccountPage?size=100", {
+          }).then(r => r.json()),
+          fetch("https://perps.crystal.exchange/api/v1/private/account/getAccountPage?size=100", {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -1672,8 +1692,8 @@ const Perps: React.FC<PerpsProps> = ({
             <div className="label-container">
               <div className="perps-current-position-container">{t('Current Position')}</div>
             </div>
-            <div className={`value-container ${currentPosition > 0 ? 'positive' : currentPosition < 0 ? 'negative' : 0}`}>
-              {formatCommas(currentPosition.toFixed(activeMarket?.stepSize ? (activeMarket?.stepSize.split('.')[1] || '').length : 2)) + (activeMarket?.baseAsset ? ' ' + activeMarket.baseAsset : '')}
+            <div className={`value-container ${Number(currentPosition?.size) > 0 ? 'positive' : Number(currentPosition?.size) < 0 ? 'negative' : 0}`}>
+              {formatCommas(Number(currentPosition?.size ?? 0).toFixed(activeMarket?.stepSize ? (activeMarket?.stepSize.split('.')[1] || '').length : 2)) + (activeMarket?.baseAsset ? ' ' + activeMarket.baseAsset : '')}
             </div>
           </div>
           <div className="perps-available-to-trade" style={{ marginTop: '5px' }}>
@@ -2170,10 +2190,7 @@ const Perps: React.FC<PerpsProps> = ({
                 />
               </div>
               <div className="value-container">
-                {(activeMarket?.lastPrice && (Number(balance) + Number(upnl)) && (Number(inputString) / Number(activeMarket.oraclePrice) + currentPosition)) ? formatCommas(
-                  Math.max(Number(activeOrderType == 'Limit' ? limitPriceString : activeTradeType == 'long' ? activeMarket.bestAskPrice : activeMarket.bestBidPrice) - ((Number(balance) + Number(upnl) - positions.reduce((t, p) => t + Number(p.maintenanceMargin || 0), 0) - Number(inputString) * parseFloat(activeMarket?.riskTierList.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList.at(-1).maintenanceMarginRate)) / ((activeTradeType == 'long' ? Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestAskPrice) : -Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestBidPrice)) + currentPosition) /
-                    ((1 - (((activeTradeType == 'long' ? Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestAskPrice) : -Number(inputString) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket.bestBidPrice)) + currentPosition) > 0 ? 1 : -1) * (parseFloat(activeMarket?.riskTierList?.find((t: any) => Number(inputString) <= parseFloat(t.positionValueUpperBound))?.maintenanceMarginRate ?? activeMarket?.riskTierList?.at(-1).maintenanceMarginRate)))))
-                    , 0).toFixed((activeMarket.lastPrice.toString().split(".")[1] || "").length)) : '0.00'}
+                {calculateLiquidation()}
               </div>
             </div>
             <div className="price-impact">
