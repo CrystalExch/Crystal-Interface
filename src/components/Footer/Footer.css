@@ -211,3 +211,26 @@
   display: flex;
   align-items: center;
 }
+
+.footer-right{
+  display: flex;
+  gap: 15px;
+  padding-right: 15px;
+}
+
+.footer-icon{
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  filter: brightness(0) saturate(100%) invert(79%) sepia(1%) saturate(1829%) hue-rotate(192deg) brightness(96%) contrast(86%);
+  cursor: pointer;
+}
+
+
+.footer-docs-icon{
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  filter: brightness(0) saturate(100%) invert(79%) sepia(1%) saturate(1829%) hue-rotate(192deg) brightness(96%) contrast(86%);
+  cursor: pointer;
+}

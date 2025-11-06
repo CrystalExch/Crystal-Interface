@@ -13,6 +13,9 @@ import prismicon from '../../assets/prism.png';
 import discovericon from '../../assets/compass.png';
 import charticon from '../../assets/chart-column.png';
 import crystallogo from '../../assets/crystalwhite.png';
+import twitter from '../../assets/twitter.png';
+import discord from '../../assets/Discord.svg'
+import docs from '../../assets/docs.png';
 import { createPortal } from 'react-dom';
 import { formatSubscript } from '../../utils/numberDisplayFormat';
 
@@ -272,21 +275,21 @@ const Footer: React.FC<FooterProps> = ({
       .map((w) => w.address);
     setSelectedWallets(new Set(walletsWithBalance));
   }, [subWallets, setSelectedWallets]);
-const getWalletBalance = useCallback(
-  (address: string): number => {
-    const balances = walletTokenBalances[address];
-    if (!balances) return 0;
+  const getWalletBalance = useCallback(
+    (address: string): number => {
+      const balances = walletTokenBalances[address];
+      if (!balances) return 0;
 
-    const ethAddress = settings.chainConfig[activeChain]?.eth;
-    if (!ethAddress) return 0;
+      const ethAddress = settings.chainConfig[activeChain]?.eth;
+      if (!ethAddress) return 0;
 
-    const balance = balances[ethAddress];
-    if (!balance) return 0;
+      const balance = balances[ethAddress];
+      if (!balance) return 0;
 
-    return Number(balance) / 10 ** 18; // MON has 18 decimals
-  },
-  [walletTokenBalances, activeChain],
-);
+      return Number(balance) / 10 ** 18; // MON has 18 decimals
+    },
+    [walletTokenBalances, activeChain],
+  );
   const getWalletTokenCount = useCallback(
     (address: string): number => {
       const balanceData = walletTokenBalances[address];
@@ -319,13 +322,13 @@ const getWalletBalance = useCallback(
       <div className="footer-content-left">
         <div className="footer-left">
           <div className="footer-left-side">
-<div 
-  className="footer-preset-button"
-  onClick={() => setpopup(37)}
-  style={{ cursor: 'pointer' }}
->
-  PRESET 1
-</div>            <Tooltip content="Manage Wallets">
+            <div
+              className="footer-preset-button"
+              onClick={() => setpopup(37)}
+              style={{ cursor: 'pointer' }}
+            >
+              PRESET 1
+            </div>            <Tooltip content="Manage Wallets">
               <div ref={dropdownRef} style={{ position: 'relative' }}>
                 <button
                   className="footer-transparent-button"
@@ -594,7 +597,21 @@ const getWalletBalance = useCallback(
         </div>
       </div>
       <div className="footer-content-right">
-        <div className="footer-right"></div>
+        <div className="footer-right">
+          <Tooltip content="Discord">
+          <img className="footer-icon" src={discord} />
+          </Tooltip>
+          <Tooltip content="Twitter">
+          <img className="footer-icon" src={twitter} />
+          </Tooltip>
+          <Tooltip content="Documentation">
+          <div className="footer-docs-icon">
+            <img className="footer-icon" src={docs} />
+            Docs
+          </div>
+          </Tooltip>
+
+        </div>
       </div>
     </footer>
   );
