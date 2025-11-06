@@ -513,7 +513,7 @@
   margin-top: 5px;
   position: fixed;
   width: 320px;
-  z-index: 12;
+  z-index: 10;
 }
 
 @keyframes slideInFromRight {

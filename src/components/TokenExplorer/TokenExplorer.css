@@ -588,6 +588,7 @@
   justify-content: center;
   transition: all 0.2s ease;
   width: 20px;
+  opacity: 0.7;
 }
 
 .explorer-discord-btn{
@@ -599,7 +600,8 @@
 .explorer-telegram-btn:hover,
 .explorer-website-link:hover,
 .explorer-discord-btn:hover {
-  filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%) opacity(1)
+  filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%) opacity(1);
+  opacity: 1;
 }
 
 .explorer-telegram-btn {
@@ -611,6 +613,7 @@
   justify-content: center;
   transition: all 0.2s ease;
   width: 18px;
+  opacity: 0.7;
 }
 
 .traders-icon {
@@ -4691,4 +4694,6 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
 .wallet-dropdown-balance-amount.insufficient-gas .meme-wallet-mon-icon {
   opacity: 0.8;
 }
+
+
 

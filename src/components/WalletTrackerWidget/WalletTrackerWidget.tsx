@@ -10,6 +10,7 @@ import settingsicon from '../../assets/settings.svg';
 import filter from '../../assets/filter.svg';
 import ImportWalletsPopup from '../Tracker/ImportWalletsPopup';
 import AddWalletModal, { TrackedWallet } from '../Tracker/AddWalletModal';
+import circle from '../../assets/circle_handle.png';
 
 interface GqlPosition {
   tokenId: string;
@@ -1003,6 +1004,11 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
         <button className="wtw-filters-close-button" onClick={onClose}>
           <X size={16} />
         </button>
+                  <div className="quickbuy-drag-handle">
+            <div className="circle-row">
+              <img src={circle} className="circle" />
+            </div>
+          </div>
       </div>
 
       {/* Header */}

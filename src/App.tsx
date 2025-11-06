@@ -7354,6 +7354,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           title = 'Perpetuals | Crystal';
         }
         break;
+      case location.pathname.startsWith('/meme'):
+        if (tokenData && tokenData.symbol && tokenData.price !== undefined) {
+          title = `${tokenData.symbol} ${formatUSDDisplay(tokenData.price * 1e9 * monUsdPrice)} | Crystal`;
+        }
+        break;
       case location.pathname.startsWith('/earn/vaults'):
         if (location.pathname === '/earn/vaults') {
           title = 'Vaults | Crystal';
@@ -26222,6 +26227,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         sendUserOperationAsync={sendUserOperationAsync}
         showLoadingPopup={showLoadingPopup}
         updatePopup={updatePopup}
+        onOpenFiltersForColumn={handleOpenFiltersForColumn}
+        setTokenData={setTokenData}
       />
         <PNLWidget
         isOpen={isPNLWidgetOpen}

@@ -124,6 +124,7 @@ const TokenCard: React.FC<{
   // Animation logic for Pump.fun style pop
   const cardRef = useRef<HTMLDivElement>(null);
   const [pop, setPop] = React.useState(false);
+  const [imageError, setImageError] = React.useState(false);
 
   useEffect(() => {
     if (isNew && animationsEnabled) {
@@ -153,10 +154,33 @@ const TokenCard: React.FC<{
       } as React.CSSProperties}
     >
       <div className="board-token-image-container">
-        <img
-          src={token.image}
-          className="board-token-image"
-        />
+        {token.image && !imageError ? (
+          <img
+            src={token.image}
+            className="board-token-image"
+            onError={() => setImageError(true)}
+            alt={token.symbol}
+          />
+        ) : (
+          <div
+            className="board-token-image"
+            style={{
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'rgb(6,6,6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: token.symbol.length <= 3 ? '2.5rem' : '2rem',
+              fontWeight: '200',
+              color: '#ffffff',
+              letterSpacing: token.symbol.length > 3 ? '-1px' : '0',
+              borderRadius: '8px',
+            }}
+          >
+            {token.symbol.slice(0, 2).toUpperCase()}
+          </div>
+        )}
       </div>
       <div className="board-token-card-body">
         <div className="board-token-card-content">

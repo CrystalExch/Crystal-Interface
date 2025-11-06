@@ -173,10 +173,12 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const [selectedCurrency, setSelectedCurrency] = useState<'MON' | 'TOKEN'>('MON');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [slippagePct, setSlippagePct] = useState('2');
-  const [txSpeed, setTxSpeed] = useState<'Fast'|'Turbo'|'Ultra'>('Turbo');
+  const [txSpeed, setTxSpeed] = useState<'Fast' | 'Turbo' | 'Ultra'>('Turbo');
   const [frontRunProt, setFrontRunProt] = useState(false);
   const [tipAmount, setTipAmount] = useState('0.003');
   const ethToken = settings.chainConfig[activechain]?.eth;
+  const [imageError, setImageError] = useState(false);
+
   const [priceStats, setPriceStats] = useState({
     ath: 0,
     change5m: 0,
@@ -477,7 +479,33 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
         <div className="detail-header">
           <div className="detail-token-header">
-            <img src={token.image} className="detail-token-image" />
+            {token.image && !imageError ? (
+              <img
+                src={token.image}
+                className="detail-token-image"
+                onError={() => setImageError(true)}
+                alt={token.symbol}
+              />
+            ) : (
+              <div
+                className="detail-token-image"
+                style={{
+                  width: '90px',
+                  height: '90px',
+                  backgroundColor: 'rgb(6,6,6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: token.symbol.length <= 3 ? '3rem' : '2.5rem',
+                  fontWeight: '200',
+                  color: '#ffffff',
+                  letterSpacing: token.symbol.length > 3 ? '-1px' : '0',
+                  borderRadius: '8px',
+                }}
+              >
+                {token.symbol.slice(0, 2).toUpperCase()}
+              </div>
+            )}
             <div className="detail-token-info">
               <h1 className="detail-token-name">{token.name}</h1>
               <div className="detail-token-symbol">{token.symbol}</div>
@@ -763,7 +791,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                 <span className="detail-trade-unit">{currentCurrency}</span>
               </div>
 
-              {tradeType === 'buy'? (
+              {tradeType === 'buy' ? (
                 <div className="detail-preset-buttons">
                   <div className="detail-preset-buttons-right">
                     <button className="detail-preset-button-left" onClick={() => setIsSettingsOpen(true)}>Slippage (%)</button>

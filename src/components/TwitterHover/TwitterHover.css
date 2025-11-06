@@ -9,7 +9,7 @@
   padding-top: 0rem;
   position: relative;
   width: 300px;
-  z-index: 100;
+  z-index: 99999;
   pointer-events: auto !important;
   -webkit-user-select: text !important;
   -moz-user-select: text !important;

@@ -15,8 +15,6 @@ type PNLTab = '24h' | '7d' | '30d';
 
 const HEADER_HEIGHT = 53;
 const SIDEBAR_WIDTH = 50;
-const SNAP_THRESHOLD = 10;
-const SNAP_HOVER_TIME = 300;
 
 const PNLWidget: React.FC<PNLWidgetProps> = ({
   isOpen,
@@ -30,7 +28,6 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState('');
   const [isSnapped, setIsSnapped] = useState<'left' | 'right' | null>(null);
-  const [snapZoneHover, setSnapZoneHover] = useState<'left' | 'right' | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [activeTab, setActiveTab] = useState<PNLTab>('24h');
   const [showSettings, setShowSettings] = useState(false);
@@ -51,32 +48,19 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
   const resizeStartPos = useRef({ x: 0, y: 0 });
   const resizeStartSize = useRef({ width: 0, height: 0 });
   const resizeStartPosition = useRef({ x: 0, y: 0 });
-  const snapHoverTimeout = useRef<NodeJS.Timeout | null>(null);
-  const presnapState = useRef<{ position: { x: number; y: number }; size: { width: number; height: number } } | null>(null);
 
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).classList.contains('resize-handle')) {
       return;
     }
 
-    if (isSnapped && presnapState.current) {
-      setIsSnapped(null);
-      setPosition(presnapState.current.position);
-      setSize(presnapState.current.size);
-      dragStartPos.current = {
-        x: e.clientX - presnapState.current.position.x,
-        y: e.clientY - presnapState.current.position.y,
-      };
-      presnapState.current = null;
-    } else {
-      dragStartPos.current = {
-        x: e.clientX - position.x,
-        y: e.clientY - position.y,
-      };
-    }
+    dragStartPos.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    };
 
     setIsDragging(true);
-  }, [position, isSnapped]);
+  }, [position]);
 
   const handleResizeStart = useCallback(
     (e: React.MouseEvent, direction: string) => {
@@ -98,40 +82,19 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
 
   useEffect(() => {
     const handleWindowResize = () => {
-      if (isSnapped) {
-        if (isSnapped === 'left') {
-          setPosition({ x: SIDEBAR_WIDTH, y: HEADER_HEIGHT });
-          setSize(prev => ({
-            width: Math.min(prev.width, window.innerWidth - SIDEBAR_WIDTH - 200),
-            height: window.innerHeight - HEADER_HEIGHT
-          }));
-        } else if (isSnapped === 'right') {
-          const maxWidth = window.innerWidth - SIDEBAR_WIDTH - 200;
-          const newWidth = Math.min(size.width, maxWidth);
-          setSize({
-            width: newWidth,
-            height: window.innerHeight - HEADER_HEIGHT
-          });
-          setPosition({
-            x: window.innerWidth - newWidth,
-            y: HEADER_HEIGHT
-          });
-        }
-      } else {
-        setPosition(prev => ({
-          x: Math.max(SIDEBAR_WIDTH, Math.min(prev.x, window.innerWidth - size.width)),
-          y: Math.max(HEADER_HEIGHT, Math.min(prev.y, window.innerHeight - size.height))
-        }));
-        setSize(prev => ({
-          width: Math.min(prev.width, window.innerWidth - SIDEBAR_WIDTH),
-          height: Math.min(prev.height, window.innerHeight - HEADER_HEIGHT)
-        }));
-      }
+      setPosition(prev => ({
+        x: Math.max(SIDEBAR_WIDTH, Math.min(prev.x, window.innerWidth - size.width)),
+        y: Math.max(HEADER_HEIGHT, Math.min(prev.y, window.innerHeight - size.height))
+      }));
+      setSize(prev => ({
+        width: Math.min(prev.width, window.innerWidth - SIDEBAR_WIDTH),
+        height: Math.min(prev.height, window.innerHeight - HEADER_HEIGHT)
+      }));
     };
 
     window.addEventListener('resize', handleWindowResize);
     return () => window.removeEventListener('resize', handleWindowResize);
-  }, [isSnapped, size.width]);
+  }, [size.width]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -146,46 +109,6 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
         newY = Math.max(HEADER_HEIGHT, Math.min(newY, maxY));
 
         setPosition({ x: newX, y: newY });
-
-        const distanceFromLeft = newX - SIDEBAR_WIDTH;
-        const distanceFromRight = window.innerWidth - (newX + size.width);
-
-        if (distanceFromLeft <= SNAP_THRESHOLD) {
-          if (!snapHoverTimeout.current) {
-            setSnapZoneHover('left');
-            snapHoverTimeout.current = setTimeout(() => {
-              presnapState.current = { position: { x: newX, y: newY }, size };
-
-              setIsSnapped('left');
-              const snappedWidth = Math.min(size.width, window.innerWidth - SIDEBAR_WIDTH - 200);
-              setPosition({ x: SIDEBAR_WIDTH, y: HEADER_HEIGHT });
-              setSize({ width: snappedWidth, height: window.innerHeight - HEADER_HEIGHT });
-              setSnapZoneHover(null);
-              snapHoverTimeout.current = null;
-            }, SNAP_HOVER_TIME);
-          }
-        } else if (distanceFromRight <= SNAP_THRESHOLD) {
-          if (!snapHoverTimeout.current) {
-            setSnapZoneHover('right');
-            snapHoverTimeout.current = setTimeout(() => {
-              presnapState.current = { position: { x: newX, y: newY }, size };
-
-              setIsSnapped('right');
-              const maxWidth = window.innerWidth - SIDEBAR_WIDTH - 200;
-              const snappedWidth = Math.min(size.width, maxWidth);
-              setSize({ width: snappedWidth, height: window.innerHeight - HEADER_HEIGHT });
-              setPosition({ x: window.innerWidth - snappedWidth, y: HEADER_HEIGHT });
-              setSnapZoneHover(null);
-              snapHoverTimeout.current = null;
-            }, SNAP_HOVER_TIME);
-          }
-        } else {
-          if (snapHoverTimeout.current) {
-            clearTimeout(snapHoverTimeout.current);
-            snapHoverTimeout.current = null;
-          }
-          setSnapZoneHover(null);
-        }
       } else if (isResizing) {
         const deltaX = e.clientX - resizeStartPos.current.x;
         const deltaY = e.clientY - resizeStartPos.current.y;
@@ -218,11 +141,6 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
     const handleMouseUp = () => {
       setIsDragging(false);
       setIsResizing(false);
-      if (snapHoverTimeout.current) {
-        clearTimeout(snapHoverTimeout.current);
-        snapHoverTimeout.current = null;
-      }
-      setSnapZoneHover(null);
     };
 
     if (isDragging || isResizing) {
@@ -234,16 +152,12 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
         window.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, isResizing, size, position, resizeDirection, isSnapped]);
+  }, [isDragging, isResizing, size, position, resizeDirection]);
 
   if (!isOpen) return null;
 
   return (
     <>
-      {snapZoneHover && (
-        <div className={`pnl-snap-indicator pnl-snap-indicator-${snapZoneHover}`} />
-      )}
-
       {showSettings && (
         <div className="pnl-settings-overlay" onClick={() => setShowSettings(false)}>
           <div className="pnl-settings-popup" onClick={(e) => e.stopPropagation()}>
@@ -586,7 +500,7 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
 
       <div
         ref={widgetRef}
-        className={`pnl-widget ${isSnapped ? `pnl-snapped pnl-snapped-${isSnapped}` : ''}`}
+        className={`pnl-widget ${isDragging ? 'dragging' : ''} ${isSnapped ? `pnl-snapped pnl-snapped-${isSnapped}` : ''}`}
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
@@ -645,13 +559,13 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
               <button className={`pnl-header-action-button ${isHovered ? 'visible' : ''}`} onClick={(e) => { e.stopPropagation(); }}>
                 <RotateCcw size={16} />
               </button>
-            </div>
-            <button className="pnl-close-btn pnl-close-btn-stats" onClick={(e) => { e.stopPropagation(); onClose(); }}>
+            <button className={`pnl-header-action-button ${isHovered ? 'visible' : ''}`} onClick={(e) => { e.stopPropagation(); onClose(); }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
+            </div>
             <div className="pnl-stat-item">
               <div className="pnl-stat-icon balance-icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -660,7 +574,6 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
                 </svg>
               </div>
               <div className="pnl-stat-content">
-                <div className="pnl-stat-label">Balance</div>
                 <div className="pnl-stat-value-wrapper">
                   <div className="pnl-stat-value-main">
                     {!swapCurrency ? (
@@ -678,6 +591,7 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
                     </div>
                   )}
                 </div>
+                                <div className="pnl-stat-label">Balance</div>
               </div>
             </div>
 
@@ -688,7 +602,6 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
                 </svg>
               </div>
               <div className="pnl-stat-content">
-                <div className="pnl-stat-label">PNL</div>
                 <div className="pnl-stat-value-wrapper">
                   <div className="pnl-stat-value-main">
                     {!swapCurrency ? (
@@ -706,6 +619,7 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
                     </div>
                   )}
                 </div>
+                <div className="pnl-stat-label">PNL</div>
               </div>
             </div>
           </div>

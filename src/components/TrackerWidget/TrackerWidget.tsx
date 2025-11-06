@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './TrackerWidget.css';
+import circle from '../../assets/circle_handle.png';
 
 interface TrackerWidgetProps {
   isOpen: boolean;
@@ -575,6 +576,11 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
           <h3 className="tracker-title">
             Twitter Alerts
           </h3>
+                    <div className="quickbuy-drag-handle">
+            <div className="circle-row">
+              <img src={circle} className="circle" />
+            </div>
+          </div>
         </div>
 
         <div className="tracker-content">
