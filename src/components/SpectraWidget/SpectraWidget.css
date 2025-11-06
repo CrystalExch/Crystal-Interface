@@ -2072,3 +2072,16 @@
 .spectra-actions-section.ultra-mode{
  margin-top: 25px;
 }
+
+.spectra-widget {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.spectra-widget.dragging {
+  pointer-events: none; 
+}
+
+.spectra-widget.dragging * {
+  pointer-events: none;
+}

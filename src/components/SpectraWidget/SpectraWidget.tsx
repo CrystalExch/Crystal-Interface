@@ -2531,12 +2531,23 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
   }, [displaySettings]);
 
   const widgetRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: 100, y: 100 });
-  const [size, setSize] = useState({ width: 480, height: 700 });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState('');
-  const [isSnapped, setIsSnapped] = useState<'left' | 'right' | null>(null);
+  const [position, setPosition] = useState(() => {
+    const saved = localStorage.getItem('spectra-widget-position');
+    return saved ? JSON.parse(saved) : { x: 100, y: 100 };
+  });
+
+  const [size, setSize] = useState(() => {
+    const saved = localStorage.getItem('spectra-widget-size');
+    return saved ? JSON.parse(saved) : { width: 480, height: 700 };
+  });
+
+  const [isSnapped, setIsSnapped] = useState<'left' | 'right' | null>(() => {
+    const saved = localStorage.getItem('spectra-widget-snapped');
+    return saved ? (saved as 'left' | 'right' | null) : null;
+  });
   const [snapZoneHover, setSnapZoneHover] = useState<'left' | 'right' | null>(null);
   const [activeTab, setActiveTab] = useState<'new' | 'graduating' | 'graduated'>('new');
   const [hiddenTokens, setHiddenTokens] = useState<Set<string>>(() => {
@@ -2570,7 +2581,20 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
     graduating: parseInt(localStorage.getItem('spectra-preset-graduating') ?? '1'),
     graduated: parseInt(localStorage.getItem('spectra-preset-graduated') ?? '1'),
   }));
+useEffect(() => {
+  localStorage.setItem('spectra-widget-position', JSON.stringify(position));
+  localStorage.setItem('spectra-widget-size', JSON.stringify(size));
+  
+  if (isSnapped) {
+    localStorage.setItem('spectra-widget-snapped', isSnapped);
+  } else {
+    localStorage.removeItem('spectra-widget-snapped');
+  }
 
+  if (isOpen && onSnapChange) {
+    onSnapChange(isSnapped, isSnapped ? size.width : 0);
+  }
+}, [position, size, isSnapped, isOpen, onSnapChange]);
   const dragStartPos = useRef({ x: 0, y: 0 });
   const resizeStartPos = useRef({ x: 0, y: 0 });
   const resizeStartSize = useRef({ width: 0, height: 0 });
@@ -3240,7 +3264,16 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="link-icon"><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>
                 </button>
               </Tooltip>
-              <button className="spectra-filters-close-button" onClick={onClose}>
+              <button
+                className="spectra-filters-close-button"
+                onClick={() => {
+                  if (onSnapChange) {
+                    onSnapChange(null, 0);
+                  }
+                  setIsSnapped(null);
+                  onClose();
+                }}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                 </svg>

@@ -554,8 +554,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const location = useLocation();
   const navigate = useNavigate();
   const [isTrackerWidgetOpen, setIsTrackerWidgetOpen] = useState(false);
-  const [isSpectraWidgetOpen, setIsSpectraWidgetOpen] = useState(false);
-  const [isPNLWidgetOpen, setIsPNLWidgetOpen] = useState(false);
+const [isSpectraWidgetOpen, setIsSpectraWidgetOpen] = useState(() => {
+  const saved = localStorage.getItem('spectra-widget-open');
+  return saved === 'true';
+});
+
+useEffect(() => {
+  localStorage.setItem('spectra-widget-open', String(isSpectraWidgetOpen));
+}, [isSpectraWidgetOpen]);  const [isPNLWidgetOpen, setIsPNLWidgetOpen] = useState(false);
   const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(false);
 
   const [trackerWidgetSnap, setTrackerWidgetSnap] = useState<'left' | 'right' | null>(null);
@@ -19114,8 +19120,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               <div className="meme-settings-presets">
                 <button
                   className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1
-                      ? `active ${settingsMode}`
-                      : ''
+                    ? `active ${settingsMode}`
+                    : ''
                     }`}
                   onClick={() => {
                     if (settingsMode === 'buy') {
@@ -19129,8 +19135,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 </button>
                 <button
                   className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2
-                      ? `active ${settingsMode}`
-                      : ''
+                    ? `active ${settingsMode}`
+                    : ''
                     }`}
                   onClick={() => {
                     if (settingsMode === 'buy') {
@@ -19144,8 +19150,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 </button>
                 <button
                   className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3
-                      ? `active ${settingsMode}`
-                      : ''
+                    ? `active ${settingsMode}`
+                    : ''
                     }`}
                   onClick={() => {
                     if (settingsMode === 'buy') {
@@ -25715,7 +25721,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           if (walletTrackerWidgetSnap === 'right') total += walletTrackerWidgetWidth;
           return total > 0 ? `${total}px` : undefined;
         })(),
-        transition: 'margin 0.3s ease',
       }}>
         <Routes>
           <Route path="/" element={<Navigate to="/market" replace />} />
@@ -26237,11 +26242,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           tokenList={memoizedTokenList}
           activechain={activechain}
           nonces={nonces}
-                account={{
-                  connected: connected,
-                  address: address,
-                  chainId: userchain,
-                }}          terminalRefetch={terminalRefetch}
+          account={{
+            connected: connected,
+            address: address,
+            chainId: userchain,
+          }} terminalRefetch={terminalRefetch}
         />
         <PNLWidget
           isOpen={isPNLWidgetOpen}
@@ -26286,7 +26291,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           isTrackerWidgetOpen={isTrackerWidgetOpen}
           onToggleTrackerWidget={setIsTrackerWidgetOpen}
           isSpectraWidgetOpen={isSpectraWidgetOpen}
-          onToggleSpectraWidget={setIsSpectraWidgetOpen}
+onToggleSpectraWidget={(open) => {
+  if (!open && spectraWidgetSnap) {
+    setSpectraWidgetSnap(null);
+    setSpectraWidgetWidth(0);
+  }
+  setIsSpectraWidgetOpen(open);
+}}
           isPNLWidgetOpen={isPNLWidgetOpen}
           onTogglePNLWidget={setIsPNLWidgetOpen}
           isWalletTrackerWidgetOpen={isWalletTrackerWidgetOpen}
