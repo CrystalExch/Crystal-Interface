@@ -2111,29 +2111,6 @@ const DisplayDropdown: React.FC<{
 
               {activeTab === 'extras' && (
                 <div>
-                  <div className="extras-display-section">
-                    <h4 className="display-section-title">Table Layout</h4>
-                    <div className="column-drag-container">
-                      {safeOrder.map((column, index) => (
-                        <div
-                          key={column}
-                          className={`column-drag-item ${hiddenColumns.has(column) ? 'column-hidden' : ''} ${dragOverIndex === index && draggedIndex !== index ? 'drag-over' : ''}`}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, index)}
-                          onDragOver={(e) => handleDragOver(e, index)}
-                          onDrop={(e) => handleDrop(e, index)}
-                          onDragEnd={handleDragEnd}
-                          onClick={(e) => handleHide(e, column)}
-                        >
-                          {column === 'new'
-                            ? 'New Pairs'
-                            : column === 'graduating'
-                              ? 'Final Stretch'
-                              : 'Migrated'}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
 
                   <div className="extras-display-section">
                     <h4 className="display-section-title">
@@ -2293,121 +2270,126 @@ const DisplayDropdown: React.FC<{
             </div>
           </div>
         )}
-        {showSecondButtonColorPicker && (
-          <div
-            className="color-picker-dropdown"
-            style={{
-              top: `${pickerPosition.top}px`,
-              left: `${pickerPosition.left}px`,
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <HexColorPicker
-              color={settings.secondQuickBuyColor}
-              onChange={(color) => updateSetting('secondQuickBuyColor', color)}
-            />
-            <div className="rgb-inputs">
-              {['R', 'G', 'B'].map((channel, i) => {
-                const currentColor = settings.secondQuickBuyColor;
-                const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
-                const value = parseInt(slice, 16) || 0;
+        {showSecondButtonColorPicker &&
+          createPortal(
+            <div
+              className="color-picker-dropdown"
+              style={{
+                top: `${pickerPosition.top}px`,
+                left: `${pickerPosition.left}px`,
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <HexColorPicker
+                color={settings.secondQuickBuyColor}
+                onChange={(color) => updateSetting('secondQuickBuyColor', color)}
+              />
+              <div className="rgb-inputs">
+                {['R', 'G', 'B'].map((channel, i) => {
+                  const currentColor = settings.secondQuickBuyColor;
+                  const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
+                  const value = parseInt(slice, 16) || 0;
 
-                return (
-                  <div className="rgb-input-group" key={channel}>
-                    <label>{channel}</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="255"
-                      value={value}
-                      onChange={(e) => {
-                        const rgb = [0, 0, 0].map((_, idx) =>
-                          idx === i
-                            ? Math.max(0, Math.min(255, Number(e.target.value)))
-                            : parseInt(
-                              currentColor.slice(1 + idx * 2, 3 + idx * 2),
-                              16,
-                            ),
-                        );
-                        const newColor = `#${rgb
-                          .map((c) => c.toString(16).padStart(2, '0'))
-                          .join('')}`;
-                        updateSetting('secondQuickBuyColor', newColor);
-                      }}
-                    />
-                  </div>
-                );
-              })}
+                  return (
+                    <div className="rgb-input-group" key={channel}>
+                      <label>{channel}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="255"
+                        value={value}
+                        onChange={(e) => {
+                          const rgb = [0, 0, 0].map((_, idx) =>
+                            idx === i
+                              ? Math.max(0, Math.min(255, Number(e.target.value)))
+                              : parseInt(
+                                currentColor.slice(1 + idx * 2, 3 + idx * 2),
+                                16,
+                              ),
+                          );
+                          const newColor = `#${rgb
+                            .map((c) => c.toString(16).padStart(2, '0'))
+                            .join('')}`;
+                          updateSetting('secondQuickBuyColor', newColor);
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
-        {showMetricColorPicker && activeMetricPicker && (
-          <div
-            className="color-picker-dropdown"
-            style={{
-              top: `${metricPickerPosition.top}px`,
-              left: `${metricPickerPosition.left}px`,
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <HexColorPicker
-              color={
-                (settings.metricColors as any)?.[activeMetricPicker.metric]?.[
-                activeMetricPicker.range
-                ] || '#ffffff'
-              }
-              onChange={(color) =>
-                updateMetricColor(
-                  activeMetricPicker.metric,
-                  activeMetricPicker.range,
-                  color,
-                )
-              }
-            />
-            <div className="rgb-inputs">
-              {['R', 'G', 'B'].map((channel, i) => {
-                const currentColor =
+
+            , document.body
+          )}
+        {showMetricColorPicker && activeMetricPicker &&
+          createPortal(
+            <div
+              className="color-picker-dropdown"
+              style={{
+                top: `${metricPickerPosition.top}px`,
+                left: `${metricPickerPosition.left}px`,
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <HexColorPicker
+                color={
                   (settings.metricColors as any)?.[activeMetricPicker.metric]?.[
                   activeMetricPicker.range
-                  ] || '#ffffff';
-                const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
-                const value = parseInt(slice, 16) || 0;
+                  ] || '#ffffff'
+                }
+                onChange={(color) =>
+                  updateMetricColor(
+                    activeMetricPicker.metric,
+                    activeMetricPicker.range,
+                    color,
+                  )
+                }
+              />
+              <div className="rgb-inputs">
+                {['R', 'G', 'B'].map((channel, i) => {
+                  const currentColor =
+                    (settings.metricColors as any)?.[activeMetricPicker.metric]?.[
+                    activeMetricPicker.range
+                    ] || '#ffffff';
+                  const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
+                  const value = parseInt(slice, 16) || 0;
 
-                return (
-                  <div className="rgb-input-group" key={channel}>
-                    <label>{channel}</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="255"
-                      value={value}
-                      onChange={(e) => {
-                        const rgb = [0, 0, 0].map((_, idx) =>
-                          idx === i
-                            ? Math.max(0, Math.min(255, Number(e.target.value)))
-                            : parseInt(
-                              currentColor.slice(1 + idx * 2, 3 + idx * 2),
-                              16,
-                            ),
-                        );
-                        const newColor = `#${rgb
-                          .map((c) => c.toString(16).padStart(2, '0'))
-                          .join('')}`;
-                        updateMetricColor(
-                          activeMetricPicker.metric,
-                          activeMetricPicker.range,
-                          newColor,
-                        );
-                      }}
-                    />
-                  </div>
-                );
-              })}
+                  return (
+                    <div className="rgb-input-group" key={channel}>
+                      <label>{channel}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="255"
+                        value={value}
+                        onChange={(e) => {
+                          const rgb = [0, 0, 0].map((_, idx) =>
+                            idx === i
+                              ? Math.max(0, Math.min(255, Number(e.target.value)))
+                              : parseInt(
+                                currentColor.slice(1 + idx * 2, 3 + idx * 2),
+                                16,
+                              ),
+                          );
+                          const newColor = `#${rgb
+                            .map((c) => c.toString(16).padStart(2, '0'))
+                            .join('')}`;
+                          updateMetricColor(
+                            activeMetricPicker.metric,
+                            activeMetricPicker.range,
+                            newColor,
+                          );
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+            , document.body
+          )}
       </div>
     );
   };
@@ -2653,14 +2635,13 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
 
-    // Check if we clicked on an interactive element
     const isInteractive = target.closest('button, input, select, a, svg, [role="button"]');
+    const isInDropdown = target.closest('.display-dropdown-content, .color-picker-dropdown, .metric-color-picker-dropdown');
 
-    if (isInteractive) {
+    if (isInteractive || isInDropdown) {
       return;
     }
 
-    // Prevent default to avoid text selection
     e.preventDefault();
     e.stopPropagation();
 

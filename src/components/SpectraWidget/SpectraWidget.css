@@ -174,7 +174,6 @@
   border-bottom: none;
 }
 
-/* Market Left Section */
 .spectra-market-left {
   align-items: center;
   display: flex;
@@ -201,6 +200,32 @@
   flex-shrink: 0;
 }
 
+.spectra-market-image-container.no-progress-ring {
+  background: none;
+}
+
+.spectra-market-image-container.graduated {
+  background: none;
+}
+
+.spectra-progress-line {
+  width: 73px;
+  height: 2px;
+  background: rgba(157, 169, 240, 0.2);
+  border-radius: 1px;
+  margin-top: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.spectra-progress-line-fill {
+  height: 100%;
+  width: var(--progress-percentage, 0%);
+  background: var(--progress-color, #aaaecf);
+  border-radius: 1px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .spectra-progress-spacer {
   align-items: center;
   background: rgb(6, 6, 6);
@@ -223,11 +248,22 @@
   position: relative;
 }
 
+
+.spectra-market-image-container.circle-mode,
+.spectra-market-image-wrapper.circle-mode,
+.spectra-image-wrapper.circle-mode {
+  border-radius: 50%;
+}
+
 .spectra-market-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 4px;
+}
+
+.spectra-market-image.circle-mode {
+  border-radius: 50%;
 }
 
 .spectra-market-letter {
@@ -242,6 +278,18 @@
   color: #ffffff;
   letter-spacing: 0;
   border-radius: 4px;
+}
+
+.spectra-market-letter.circle-mode {
+  border-radius: 50%;
+}
+
+.spectra-progress-spacer.circle-mode {
+  border-radius: 50%;
+}
+
+.spectra-image-overlay.circle-mode {
+  border-radius: 50%;
 }
 
 .spectra-launchpad-logo {
@@ -2041,7 +2089,6 @@
   text-shadow: 0 0 25px rgba(209, 213, 219, 0.6) !important;
 }
 
-/* Responsive Adjustments */
 @media(max-width: 1450px) {
   .spectra-quick-buy-btn.size-small,
   .spectra-quick-buy-btn.size-large,
@@ -2060,14 +2107,17 @@
   }
 }
 
-/* Hover States for Market Row */
 .spectra-market-row:hover .spectra-metrics-container,
 .spectra-market-row:hover .spectra-third-row-section {
   background-color: rgb(17, 17, 21);
   box-shadow: 0 0 10px 4px rgb(17, 17, 21);
 }
 
-
+.spectra-actions-section{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .spectra-actions-section.ultra-mode{
  margin-top: 25px;
 }
@@ -2083,4 +2133,191 @@
 
 .spectra-widget.dragging * {
   pointer-events: none;
+}
+
+.spectra-market-row.colored-row {
+  transition: background-color 0.3s ease;
+}
+
+.spectra-market-row.colored-row.bonding-0-25 {
+  background-color: rgba(238, 91, 91, 0.08);
+}
+
+.spectra-market-row.colored-row.bonding-25-50 {
+  background-color: rgba(245, 158, 11, 0.08);
+}
+
+.spectra-market-row.colored-row.bonding-50-75 {
+  background-color: rgba(234, 179, 8, 0.08);
+}
+
+.spectra-market-row.colored-row.bonding-75-100 {
+  background-color: rgba(67, 225, 125, 0.08);
+}
+
+.spectra-market-row.colored-row.bonding-0-25:hover {
+  background-color: rgba(238, 91, 91, 0.12);
+}
+
+.spectra-market-row.colored-row.bonding-25-50:hover {
+  background-color: rgba(245, 158, 11, 0.12);
+}
+
+.spectra-market-row.colored-row.bonding-50-75:hover {
+  background-color: rgba(234, 179, 8, 0.12);
+}
+
+.spectra-market-row.colored-row.bonding-75-100:hover {
+  background-color: rgba(67, 225, 125, 0.12);
+}
+
+.spectra-market-row.graduated {
+  background-color: transparent;
+}
+.spectra-market-row.metric-colored .spectra-mc-value {
+  transition: color 0.2s ease;
+}
+
+.spectra-market-row.market-cap-range1 .spectra-market-cap .spectra-mc-value {
+  color: var(--metric-market-cap-range1, #d8dcff) !important;
+}
+
+.spectra-market-row.market-cap-range2 .spectra-market-cap .spectra-mc-value {
+  color: var(--metric-market-cap-range2, #eab308) !important;
+}
+
+.spectra-market-row.market-cap-range3 .spectra-market-cap .spectra-mc-value {
+  color: var(--metric-market-cap-range3, #14b8a6) !important;
+}
+
+.spectra-market-row.volume-range1 .spectra-volume .spectra-mc-value {
+  color: var(--metric-volume-range1, #ffffff) !important;
+}
+
+.spectra-market-row.volume-range2 .spectra-volume .spectra-mc-value {
+  color: var(--metric-volume-range2, #ffffff) !important;
+}
+
+.spectra-market-row.volume-range3 .spectra-volume .spectra-mc-value {
+  color: var(--metric-volume-range3, #ffffff) !important;
+}
+
+.spectra-market-row.holders-range1 .spectra-stat-value {
+  color: var(--metric-holders-range1, #ffffff) !important;
+}
+
+.spectra-market-row.holders-range2 .spectra-stat-value {
+  color: var(--metric-holders-range2, #ffffff) !important;
+}
+
+.spectra-market-row.holders-range3 .spectra-stat-value {
+  color: var(--metric-holders-range3, #ffffff) !important;
+}
+
+.spectra-second-ultra-container {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: clamp(100px, 27%, 170px);
+  display: flex;
+  align-items: flex-end;
+  padding: 0.75rem;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  transition: all 0.3s ease;
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+}
+
+.spectra-second-ultra-container.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.spectra-second-ultra-container:hover {
+  background: radial-gradient(150px circle at var(--mouse-x) var(--mouse-y),
+      rgba(170, 174, 207, 0.08) 0%,
+      rgba(170, 174, 207, 0.04) 40%,
+      rgba(170, 174, 207, 0.01) 70%,
+      transparent 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.139);
+}
+
+.spectra-second-ultra-container.ultra-glowing:hover {
+  background: radial-gradient(200px circle at var(--mouse-x) var(--mouse-y),
+      rgba(170, 174, 207, 0.15) 0%,
+      rgba(170, 174, 207, 0.08) 40%,
+      rgba(170, 174, 207, 0.03) 70%,
+      transparent 100%);
+  box-shadow: inset 0 0 20px rgba(170, 174, 207, 0.1),
+    0 0 30px rgba(170, 174, 207, 0.05);
+}
+
+.spectra-second-ultra-container.ultra-border {
+  background: radial-gradient(150px circle at var(--mouse-x) var(--mouse-y),
+      rgba(170, 174, 207, 0.05) 0%,
+      transparent 70%);
+  border: 1px solid #c7cbee;
+  box-shadow: inset 0 0 0 1px rgba(216, 219, 245, .7);
+  border-radius: 4px;
+  margin: 2px 0;
+}
+
+.spectra-second-ultra-container.ultra-border:hover {
+  border-color: #d8dbf5;
+}
+
+.spectra-second-ultra-container .spectra-quick-buy-btn.size-ultra {
+  pointer-events: none;
+}
+
+.spectra-second-ultra-container:hover .spectra-quick-buy-btn.size-ultra {
+  color: #d8dbf5;
+}
+
+.spectra-second-ultra-container:hover .spectra-quick-buy-btn.size-ultra .spectra-quick-buy-icon {
+  filter: brightness(0) saturate(100%) invert(93%) sepia(8%) saturate(1486%) hue-rotate(194deg) brightness(99%) contrast(96%);
+}
+
+.spectra-ultra-quickbuy-icon {
+  width: 64px;
+  height: 64px;
+}
+
+.spectra-ultra-quickbuy-loading-spinner {
+  animation: spectraQuickbuySpin 1s linear infinite;
+  border-radius: 50%;
+  height: 14px;
+  width: 14px;
+}
+
+.spectra-third-row.ultra-dual-buttons {
+  width: clamp(100px, 27%, 170px);
+  right: clamp(100px, 27%, 170px);
+}
+
+.spectra-quick-buy-btn.second-button {
+  background: var(--second-quickbuy-color, #606BCC);
+  position: relative;
+}
+
+.spectra-quick-buy-btn.second-button:hover {
+  filter: brightness(1.1);
+}
+
+.spectra-quick-buy-btn.second-button.style-grey {
+  background: rgb(34, 34, 38);
+}
+
+.spectra-quick-buy-btn.second-button .spectra-quickbuy-loading-spinner {
+  border-color: var(--second-quickbuy-color, #606BCC);
+  border-top-color: transparent;
+}
+
+.spectra-quick-buy-btn.second-button.style-grey .spectra-quickbuy-loading-spinner {
+  border-color: #dedfeb;
+  border-top-color: transparent;
 }
