@@ -131,8 +131,8 @@ const Tooltip: React.FC<{
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'left':
-        top = rect.top + scrollY + rect.height / 2;
-        left = rect.left + scrollX - tooltipRect.width - 10;
+        top = rect.top + scrollY + rect.height / 2 - 32;
+        left = rect.left + scrollX - tooltipRect.width - 90;
         break;
       case 'right':
         top = rect.top + scrollY + rect.height / 2;
@@ -173,7 +173,6 @@ const Tooltip: React.FC<{
       fadeTimeoutRef.current = null;
     }, 10);
   }, []);
-
   const handleMouseLeave = useCallback(() => {
     if (fadeTimeoutRef.current) {
       clearTimeout(fadeTimeoutRef.current);
@@ -302,6 +301,7 @@ const Header: React.FC<HeaderProps> = ({
   const location = useLocation();
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
   const navigate = useNavigate();
+  const [isHeaderSubwalletsOpen, setIsHeaderSubwalletsOpen] = useState(false);
 
   const handleTokenClick = (token: any) => {
     if (setTokenData) {
@@ -727,101 +727,30 @@ const Header: React.FC<HeaderProps> = ({
                         ), 2)}
                     </span>
                   </div>
-                <div className="header-copy-address">   <CopyButton textToCopy={displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'} /> {displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'} </div>
+                  <div className="header-copy-address">   <CopyButton textToCopy={displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'} /> {displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'} </div>
                 </div>
-                {/* <div className="wallet-dropdown-list">
-                  {subWallets.length > 0 ? (
-                    subWallets.map((wallet, index) => {
-                      const balance = getWalletBalance(wallet.address);
-                      const isActive = isWalletActive(wallet.privateKey);
-                      return (
-                        <div
-                          key={wallet.address}
-                          className={`wallet-dropdown-item ${isActive ? 'active' : ''}`}
-                          onClick={(e) => {
-                            handleSetActiveWallet(wallet.privateKey)
-                            e.stopPropagation()
-                          }}
-                        >
-                          <div className="wallet-dropdown-checkbox-container">
-                            <input
-                              type="checkbox"
-                              className="quickbuy-wallet-checkbox"
-                              checked={isActive}
-                              readOnly
-                            />
-                          </div>
-
-                          <div
-                            className="wallet-dropdown-info"
-                          >
-                            <div className="wallet-dropdown-name">
-                              {getWalletName(wallet.address, index)}
-                            </div>
-                            <div className="wallet-dropdown-address">
-                              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                            </div>
-                          </div>
-                          <Tooltip content="MON Balance">
-                            <div className="wallet-dropdown-balance">
-                              <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
-                                <img src={monadicon} className="wallet-dropdown-mon-icon" />
-                                {formatNumberWithCommas(balance, 2)}
-                              </div>
-                            </div>
-                          </Tooltip>
-                          <Tooltip content="Tokens">
-                            <div className="wallet-drag-tokens">
-                              <div className="wallet-token-count">
-                                <div className="wallet-token-structure-icons">
-                                  <div className="token1"></div>
-                                  <div className="token2"></div>
-                                  <div className="token3"></div>
-                                </div>
-                                <span className="wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
-                              </div>
-                            </div>
-                          </Tooltip>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="wallet-dropdown-no-subwallets">
-                      <button
-                        className="wallet-dropdown-action-btn 1ct-trading-btn"
-                        onClick={() => {
-                          setpopup(28);
-                          setIsWalletDropdownOpen(false);
-                        }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="wallet-dropdown-action-icon"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
-                        Enable 1CT
-                      </button>
-                    </div>
-                  )}
-                </div> */}
                 <div className="header-actions-container">
                   <div className="header-action-row">
-                    <button className="header-action-item"                      
-                       onClick={() => {
-                          setpopup(12);
-                        }}>
+                    <button className="header-action-item"
+                      onClick={() => {
+                        setpopup(12);
+                      }}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-action-icon"><path d="M12 17V3" /><path d="m6 11 6 6 6-6" /><path d="M19 21H5" /></svg>
                       Deposit
                     </button>
                     <button className="header-action-item"
-                       onClick={() => {
-                          setpopup(3);
-                        }}>
-                        
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-action-icon"><path d="m18 9-6-6-6 6" /><path d="M12 3v14" /><path d="M5 21h14" /></svg>               
+                      onClick={() => {
+                        setpopup(3);
+                      }}>
+
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-action-icon"><path d="m18 9-6-6-6 6" /><path d="M12 3v14" /><path d="M5 21h14" /></svg>
                       Withdraw
                     </button>
                     <button className="header-action-item" onClick={() => {
                       navigate('/swap');
                       setIsWalletDropdownOpen(false);
                     }}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-action-icon"><path d="M8 3 4 7l4 4" /><path d="M4 7h16" /><path d="m16 21 4-4-4-4" /><path d="M20 17H4" /></svg>                 
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-action-icon"><path d="M8 3 4 7l4 4" /><path d="M4 7h16" /><path d="m16 21 4-4-4-4" /><path d="M20 17H4" /></svg>
                       Swap
                     </button>
                   </div>
@@ -830,24 +759,24 @@ const Header: React.FC<HeaderProps> = ({
                       navigate('/portfolio?tab=wallets');
                       setIsWalletDropdownOpen(false);
                     }}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-action-icon"><path d="m8 6 4-4 4 4" /><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22" /><path d="m20 22-5-5" /></svg>             
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-action-icon"><path d="m8 6 4-4 4 4" /><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22" /><path d="m20 22-5-5" /></svg>
                       Consolidate
                     </button>
                     <button className="header-action-item" onClick={() => {
                       navigate('/portfolio?tab=wallets');
                       setIsWalletDropdownOpen(false);
                     }}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-action-icon"><path d="M16 3h5v5" /><path d="M8 3H3v5" /><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3" /><path d="m15 9 6-6" /></svg>           
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-action-icon"><path d="M16 3h5v5" /><path d="M8 3H3v5" /><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3" /><path d="m15 9 6-6" /></svg>
                       Distribute
                     </button>
                     <button className="header-action-item"
-                     onClick={() => {
-                          setpopup(3);
-                        }}>
+                      onClick={() => {
+                        setpopup(3);
+                      }}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-action-icon"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" /><path d="m21.854 2.147-10.94 10.939" /></svg>                      Transfer
                     </button>
-                  </div>            
                   </div>
+                </div>
                 {/*<div className="perps-bridge-button">
                   <div className="perps-bridge-balance-mon">
                     <img src={monadicon} className="perps-bridge-mon-icon" />
@@ -864,91 +793,106 @@ const Header: React.FC<HeaderProps> = ({
                   </div>
                       </div> */}
                 <div className="wallet-dropdown-actions">
-                <div className="wallet-dropdown-list">
-                  {activeWalletPrivateKey ? (
-                    <>
+                  <div className="wallet-dropdown-list">
+                    {activeWalletPrivateKey ? (
+                      <>
+                        <div className="header-wallet-dropdown-subwallets-header">
+                          <button
+                            className="wallet-dropdown-action-btn-disable portfolio-btn"
+                            onClick={() => {
+                              handleSetActiveWallet(activeWalletPrivateKey || "")
+                            }}
+                          >
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="wallet-dropdown-action-icon"><path d="M10.513 4.856 13.12 2.17a.5.5 0 0 1 .86.46l-1.377 4.317"/><path d="M15.656 10H20a1 1 0 0 1 .78 1.63l-1.72 1.773"/><path d="M16.273 16.273 10.88 21.83a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14H4a1 1 0 0 1-.78-1.63l4.507-4.643"/><path d="m2 2 20 20"/></svg>                            Disable 1CT
+                          </button>
+                          <Tooltip content="Show/Hide Subwallets" position="left">
+                          <button
+                            className={`open-wallets-dropdown-arrow ${isHeaderSubwalletsOpen ? 'rotated' : ''}`}
+                            onClick={() => setIsHeaderSubwalletsOpen(prev => !prev)}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="open-subwallets-dropdown-arrow-icon">
+                              <path d="m6 9 6 6 6-6" />
+                            </svg>
+                          </button>
+                          </Tooltip>
+                        </div>
+                        {isHeaderSubwalletsOpen && (
+
+                          subWallets.map((wallet, index) => {
+                            const balance = getWalletBalance(wallet.address);
+                            const isActive = isWalletActive(wallet.privateKey);
+                            return (
+                              <div
+                                key={wallet.address}
+                                className={`wallet-dropdown-item ${isActive ? 'active' : ''}`}
+                                onClick={(e) => {
+                                  handleSetActiveWallet(wallet.privateKey)
+                                  e.stopPropagation()
+                                }}
+                              >
+                                <div className="wallet-dropdown-checkbox-container">
+                                  <input
+                                    type="checkbox"
+                                    className="quickbuy-wallet-checkbox"
+                                    checked={isActive}
+                                    readOnly
+                                  />
+                                </div>
+
+                                <div
+                                  className="wallet-dropdown-info"
+                                >
+                                  <div className="wallet-dropdown-name">
+                                    {getWalletName(wallet.address, index)}
+                                  </div>
+                                  <div className="wallet-dropdown-address">
+                                    {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                                  </div>
+                                </div>
+                                <Tooltip content="MON Balance">
+                                  <div className="wallet-dropdown-balance">
+                                    <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+                                      <img src={monadicon} className="wallet-dropdown-mon-icon" />
+                                      {formatNumberWithCommas(balance, 2)}
+                                    </div>
+                                  </div>
+                                </Tooltip>
+                                <Tooltip content="Tokens">
+                                  <div className="wallet-drag-tokens">
+                                    <div className="wallet-token-count">
+                                      <div className="wallet-token-structure-icons">
+                                        <div className="token1"></div>
+                                        <div className="token2"></div>
+                                        <div className="token3"></div>
+                                      </div>
+                                      <span className="wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
+                                    </div>
+                                  </div>
+                                </Tooltip>
+                              </div>
+                            );
+                          })
+
+                        )}
+                      </>
+                    ) : (
                       <button
                         className="wallet-dropdown-action-btn portfolio-btn"
                         onClick={() => {
-                          handleSetActiveWallet(activeWalletPrivateKey || "")
+                          if (subWallets.length > 0) {
+                            handleSetActiveWallet(subWallets[0].privateKey)
+                          }
+                          else {
+                            setpopup(28);
+                            setIsWalletDropdownOpen(false);
+                          }
                         }}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="wallet-dropdown-action-icon"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
-                        Disable 1CT
+                        Enable 1CT
                       </button>
-                      {subWallets.map((wallet, index) => {
-                        const balance = getWalletBalance(wallet.address);
-                        const isActive = isWalletActive(wallet.privateKey);
-                        return (
-                          <div
-                            key={wallet.address}
-                            className={`wallet-dropdown-item ${isActive ? 'active' : ''}`}
-                            onClick={(e) => {
-                              handleSetActiveWallet(wallet.privateKey)
-                              e.stopPropagation()
-                            }}
-                          >
-                            <div className="wallet-dropdown-checkbox-container">
-                              <input
-                                type="checkbox"
-                                className="quickbuy-wallet-checkbox"
-                                checked={isActive}
-                                readOnly
-                              />
-                            </div>
-
-                            <div
-                              className="wallet-dropdown-info"
-                            >
-                              <div className="wallet-dropdown-name">
-                                {getWalletName(wallet.address, index)}
-                              </div>
-                              <div className="wallet-dropdown-address">
-                                {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                              </div>
-                            </div>
-                            <Tooltip content="MON Balance">
-                              <div className="wallet-dropdown-balance">
-                                <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
-                                  <img src={monadicon} className="wallet-dropdown-mon-icon" />
-                                  {formatNumberWithCommas(balance, 2)}
-                                </div>
-                              </div>
-                            </Tooltip>
-                            <Tooltip content="Tokens">
-                              <div className="wallet-drag-tokens">
-                                <div className="wallet-token-count">
-                                  <div className="wallet-token-structure-icons">
-                                    <div className="token1"></div>
-                                    <div className="token2"></div>
-                                    <div className="token3"></div>
-                                  </div>
-                                  <span className="wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
-                                </div>
-                              </div>
-                            </Tooltip>
-                          </div>
-                        );
-                      })}
-                    </>
-                  ) : (
-                    <button
-                      className="wallet-dropdown-action-btn portfolio-btn"
-                      onClick={() => {
-                        if (subWallets.length > 0) {
-                          handleSetActiveWallet(subWallets[0].privateKey)
-                        }
-                        else {
-                          setpopup(28);
-                          setIsWalletDropdownOpen(false);
-                        }
-                      }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="wallet-dropdown-action-icon"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
-                      Enable 1CT
-                    </button>
-                  )}
-                </div>
+                    )}
+                  </div>
                   <button
                     className="wallet-dropdown-action-btn portfolio-btn"
                     onClick={handleOpenPortfolio}

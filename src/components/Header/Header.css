@@ -637,7 +637,27 @@
   filter: brightness(1);
 }
 
+.wallet-dropdown-action-btn-disable {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: none;
+  border-radius: 3px;
+  color: #d8dcff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: -0.3px;
+  width: 100%;
+    background: rgba(179, 184, 249, 0.08);
 
+}
+
+.wallet-dropdown-action-btn-disable:hover {
+  background: rgba(179, 184, 249, 0.08);
+}
 
 
 .wallet-dropdown-action-icon {
@@ -970,4 +990,37 @@
   font-size: 0.8rem;
   gap: 3px;
   opacity: 0.6;
+}
+
+
+.open-wallets-dropdown-arrow{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  color: rgb(211, 209, 222);
+  border-radius: 4px;
+  margin-left: 3px;
+}
+
+.open-wallets-dropdown-arrow:hover{
+  background: rgba(179, 184, 249, 0.08);
+}
+
+
+.header-wallet-dropdown-subwallets-header{
+  display: flex;
+}
+
+.open-subwallets-dropdown-arrow-icon{
+  transform: rotate(-90deg);
+}
+
+.open-wallets-dropdown-arrow svg {
+  transition: transform 0.2s ease;
+}
+
+.open-wallets-dropdown-arrow.rotated svg {
+  transform: rotate(0deg);
 }
