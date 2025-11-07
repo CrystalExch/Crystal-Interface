@@ -2176,7 +2176,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     setStatus({ lastPushSource: 'external' });
   };
 
-  const upsertMarket = (t: { tokenAddr?: string; symbol?: string; name?: string; price?: number; isBuy?: boolean; amountNative?: number; ts?: number; wallet?: string; emoji?: string; }) => {
+  const upsertMarket = (t: { tokenAddr?: string; symbol?: string; name?: string; price?: number; isBuy?: boolean; amountNative?: number; ts?: number; wallet?: string; emoji?: string; imageUrl?: string;}) => {
     const id = (t.tokenAddr || t.symbol)?.toLowerCase();
     if (!id) return;
 

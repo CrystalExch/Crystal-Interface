@@ -2685,7 +2685,7 @@ useEffect(() => {
       if (isSnapped) {
         if (isSnapped === 'left') {
           setPosition({ x: SIDEBAR_WIDTH, y: HEADER_HEIGHT });
-          setSize(prev => ({
+          setSize((prev: any) => ({
             width: Math.min(prev.width, window.innerWidth - SIDEBAR_WIDTH - 200),
             height: window.innerHeight - HEADER_HEIGHT
           }));
@@ -2702,11 +2702,11 @@ useEffect(() => {
           });
         }
       } else {
-        setPosition(prev => ({
+        setPosition((prev: any) => ({
           x: Math.max(SIDEBAR_WIDTH, Math.min(prev.x, window.innerWidth - size.width)),
           y: Math.max(HEADER_HEIGHT, Math.min(prev.y, window.innerHeight - size.height))
         }));
-        setSize(prev => ({
+        setSize((prev: any) => ({
           width: Math.min(prev.width, window.innerWidth - SIDEBAR_WIDTH),
           height: Math.min(prev.height, window.innerHeight - HEADER_HEIGHT)
         }));
