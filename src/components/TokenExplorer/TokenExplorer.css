@@ -1949,7 +1949,6 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
 }
 
 .alerts-popup {
-  animation: modalSlideIn 0.2s ease-out;
   background: rgb(6, 6, 6);
   border: 1px solid rgba(179, 184, 249, 0.15);
   border-radius: 6px;
@@ -1958,17 +1957,6 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
   width: 400px;
 }
 
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
 
 .alerts-popup-trigger {
   align-items: center;
