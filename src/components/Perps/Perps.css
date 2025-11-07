@@ -1491,3 +1491,83 @@ display: flex;
     background: rgba(179, 184, 249, 0.1);
     color: rgba(255, 255, 255, 1);
 }
+
+
+.perps-size-unit-dropdown {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.perps-size-unit-button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.85rem;
+    background: transparent;
+    min-width: 50px;
+    justify-content: center;
+}
+
+.perps-size-unit-button:hover {
+    color: rgba(255, 255, 255, 1);
+}
+
+.perps-size-unit-value {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 400;
+}
+
+.perps-size-unit-arrow {
+    color: rgba(255, 255, 255, 0.6);
+    transition: transform 0.2s ease;
+    width: 16px;
+    height: 16px;
+    opacity: 0.8;
+}
+
+.perps-size-unit-arrow.open {
+    transform: rotate(180deg);
+}
+
+.perps-size-unit-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 2px);
+    right: 0;
+    background: rgb(9, 9, 9);
+    border: 1px solid rgba(179, 184, 249, 0.15);
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
+    z-index: 100;
+    min-width: 50px;
+    overflow: hidden;
+    animation: dropdown-fade-in 0.2s ease-out forwards;
+}
+
+.perps-size-unit-option {
+    padding: 2px 12px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.8);
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.perps-size-unit-option:hover {
+    background: rgba(179, 184, 249, 0.1);
+    color: rgba(255, 255, 255, 1);
+}
+
+@keyframes dropdown-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

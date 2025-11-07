@@ -170,6 +170,8 @@ const Perps: React.FC<PerpsProps> = ({
   const [isReduceOnly, setIsReduceOnly] = useState(false);
   const [slPrice, setSlPrice] = useState("");
   const [currentPosition, setCurrentPosition] = useState<any>({});
+  const [sizeUnit, setSizeUnit] = useState<"USD" | string>("USD");
+  const [isSizeUnitDropdownOpen, setIsSizeUnitDropdownOpen] = useState(false);
   const [slippage, setSlippage] = useState(() => {
     const saved = localStorage.getItem('crystal_perps_slippage');
     return saved !== null ? BigInt(saved) : BigInt(9900);
@@ -1779,43 +1781,88 @@ const Perps: React.FC<PerpsProps> = ({
               </div>
             </>
           )}
-          <div className="perps-trade-input-wrapper">
-            Size
-            <input
-              type="text"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={inputString}
-              disabled={!perpsIsLoaded || !leverageIsLoaded}
-              onChange={(e) => {
-                setInputString(e.target.value)
-                const percentage =
-                  Number(availableBalance) == 0
-                    ? Number(e.target.value) > 0 ? 100 : 0
-                    : Math.min(
-                      100,
-                      Math.floor(
-                        Number(e.target.value) * 100 / (Number(availableBalance) * Number(leverage))
-                      ),
-                    );
-                setSliderPercent(percentage);
-                const slider = document.querySelector(
-                  '.perps-balance-amount-slider',
-                );
-                const popup = document.querySelector(
-                  '.perps-slider-percentage-popup',
-                );
-                if (slider && popup) {
-                  const rect = slider.getBoundingClientRect();
-                  (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
-                    }px`;
-                }
-              }}
-              className="perps-trade-input"
-              autoFocus
-            />
-            USD
+<div className="perps-trade-input-wrapper">
+  <span style={{ whiteSpace: 'nowrap' }}>Size</span>
+  <input
+    type="text"
+    inputMode="decimal"
+    placeholder="0.00"
+    value={inputString}
+    disabled={!perpsIsLoaded || !leverageIsLoaded}
+    onChange={(e) => {
+      setInputString(e.target.value)
+      const percentage =
+        Number(availableBalance) == 0
+          ? Number(e.target.value) > 0 ? 100 : 0
+          : Math.min(
+            100,
+            Math.floor(
+              Number(e.target.value) * 100 / (Number(availableBalance) * Number(leverage))
+            ),
+          );
+      setSliderPercent(percentage);
+      const slider = document.querySelector(
+        '.perps-balance-amount-slider',
+      );
+      const popup = document.querySelector(
+        '.perps-slider-percentage-popup',
+      );
+      if (slider && popup) {
+        const rect = slider.getBoundingClientRect();
+        (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+          }px`;
+      }
+    }}
+    className="perps-trade-input"
+    autoFocus
+  />
+  <div
+    className="perps-size-unit-dropdown"
+    tabIndex={-1}
+    onBlur={(e) => {
+      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+        setIsSizeUnitDropdownOpen(false);
+      }
+    }}
+  >
+    <div
+      className="perps-size-unit-button"
+      onClick={() => setIsSizeUnitDropdownOpen(!isSizeUnitDropdownOpen)}
+    >
+      <span className="perps-size-unit-value">{sizeUnit}</span>
+      <svg
+        className={`perps-size-unit-arrow ${isSizeUnitDropdownOpen ? 'open' : ''}`}
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        width="16"
+        height="16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </div>
+    {isSizeUnitDropdownOpen && (
+      <div className="perps-size-unit-dropdown-menu">
+        {['USD', activeMarket?.baseAsset || 'BTC'].map((option) => (
+          <div
+            key={option}
+            className="perps-size-unit-option"
+            onClick={() => {
+              setSizeUnit(option);
+              setIsSizeUnitDropdownOpen(false);
+            }}
+          >
+            {option}
           </div>
+        ))}
+      </div>
+    )}
+  </div>
+</div>
 
           <div className="perps-balance-slider-wrapper">
             <div className="perps-slider-container perps-slider-mode">

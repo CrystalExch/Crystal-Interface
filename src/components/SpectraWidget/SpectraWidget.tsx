@@ -2581,20 +2581,20 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
     graduating: parseInt(localStorage.getItem('spectra-preset-graduating') ?? '1'),
     graduated: parseInt(localStorage.getItem('spectra-preset-graduated') ?? '1'),
   }));
-useEffect(() => {
-  localStorage.setItem('spectra-widget-position', JSON.stringify(position));
-  localStorage.setItem('spectra-widget-size', JSON.stringify(size));
-  
-  if (isSnapped) {
-    localStorage.setItem('spectra-widget-snapped', isSnapped);
-  } else {
-    localStorage.removeItem('spectra-widget-snapped');
-  }
+  useEffect(() => {
+    localStorage.setItem('spectra-widget-position', JSON.stringify(position));
+    localStorage.setItem('spectra-widget-size', JSON.stringify(size));
 
-  if (isOpen && onSnapChange) {
-    onSnapChange(isSnapped, isSnapped ? size.width : 0);
-  }
-}, [position, size, isSnapped, isOpen, onSnapChange]);
+    if (isSnapped) {
+      localStorage.setItem('spectra-widget-snapped', isSnapped);
+    } else {
+      localStorage.removeItem('spectra-widget-snapped');
+    }
+
+    if (isOpen && onSnapChange) {
+      onSnapChange(isSnapped, isSnapped ? size.width : 0);
+    }
+  }, [position, size, isSnapped, isOpen, onSnapChange]);
   const dragStartPos = useRef({ x: 0, y: 0 });
   const resizeStartPos = useRef({ x: 0, y: 0 });
   const resizeStartSize = useRef({ width: 0, height: 0 });
@@ -2629,62 +2629,81 @@ useEffect(() => {
     [showLoadingPopup, updatePopup],
   );
 
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const filteredTokens = useMemo(() => {
+    const tokens = tokensByStatus[activeTab] || [];
 
-const handleDragStart = useCallback((e: React.MouseEvent) => {
-  const target = e.target as HTMLElement;
-  
-  // Check if we clicked on an interactive element
-  const isInteractive = target.closest('button, input, select, a, svg, [role="button"]');
-  
-  if (isInteractive) {
-    return;
-  }
+    if (!searchQuery) return tokens;
 
-  // Prevent default to avoid text selection
-  e.preventDefault();
-  e.stopPropagation();
+    const query = searchQuery.toLowerCase().trim();
 
-  if (isSnapped && presnapState.current) {
-    setIsSnapped(null);
-    setPosition(presnapState.current.position);
-    setSize(presnapState.current.size);
-    dragStartPos.current = {
-      x: e.clientX - presnapState.current.position.x,
-      y: e.clientY - presnapState.current.position.y,
-    };
-    presnapState.current = null;
-  } else {
-    dragStartPos.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
-    };
-  }
+    return tokens.filter((token: any) => {
+      if (token.symbol && token.symbol.toLowerCase().includes(query)) {
+        return true;
+      }
+      if (token.name && token.name.toLowerCase().includes(query)) {
+        return true;
+      }
+      if (token.tokenAddress && token.tokenAddress.toLowerCase().includes(query)) {
+        return true;
+      }
+      return false;
+    });
+  }, [tokensByStatus, activeTab, searchQuery]);
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
 
-  setIsDragging(true);
-  
-  // Add global mouse capture to handle mouse leaving window
-  if (e.target && 'setPointerCapture' in e.target) {
-    (e.target as HTMLElement).setPointerCapture((e.nativeEvent as PointerEvent).pointerId);
-  }
-}, [position, isSnapped]);
-const handleResizeStart = useCallback(
-  (e: React.MouseEvent, direction: string) => {
+    // Check if we clicked on an interactive element
+    const isInteractive = target.closest('button, input, select, a, svg, [role="button"]');
+
+    if (isInteractive) {
+      return;
+    }
+
+    // Prevent default to avoid text selection
     e.preventDefault();
     e.stopPropagation();
-    
-    setIsResizing(true);
-    setResizeDirection(direction);
-    resizeStartPos.current = { x: e.clientX, y: e.clientY };
-    resizeStartSize.current = { ...size };
-    resizeStartPosition.current = { ...position };
-    
-    // Add pointer capture for resize handles too
+
+    if (isSnapped && presnapState.current) {
+      setIsSnapped(null);
+      setPosition(presnapState.current.position);
+      setSize(presnapState.current.size);
+      dragStartPos.current = {
+        x: e.clientX - presnapState.current.position.x,
+        y: e.clientY - presnapState.current.position.y,
+      };
+      presnapState.current = null;
+    } else {
+      dragStartPos.current = {
+        x: e.clientX - position.x,
+        y: e.clientY - position.y,
+      };
+    }
+
+    setIsDragging(true);
+
+    // Add global mouse capture to handle mouse leaving window
     if (e.target && 'setPointerCapture' in e.target) {
       (e.target as HTMLElement).setPointerCapture((e.nativeEvent as PointerEvent).pointerId);
     }
-  },
-  [size, position]
-);
+  }, [position, isSnapped]);
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent, direction: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      setIsResizing(true);
+      setResizeDirection(direction);
+      resizeStartPos.current = { x: e.clientX, y: e.clientY };
+      resizeStartSize.current = { ...size };
+      resizeStartPosition.current = { ...position };
+
+      if (e.target && 'setPointerCapture' in e.target) {
+        (e.target as HTMLElement).setPointerCapture((e.nativeEvent as PointerEvent).pointerId);
+      }
+    },
+    [size, position]
+  );
   useEffect(() => {
     if (onSnapChange) {
       onSnapChange(isSnapped, size.width);
@@ -2728,235 +2747,235 @@ const handleResizeStart = useCallback(
     return () => window.removeEventListener('resize', handleWindowResize);
   }, [isSnapped, size.width]);
 
-useEffect(() => {
-  if (!isDragging && !isResizing) return;
+  useEffect(() => {
+    if (!isDragging && !isResizing) return;
 
-  let animationFrameId: number | null = null;
-  let lastMouseEvent: MouseEvent | null = null;
+    let animationFrameId: number | null = null;
+    let lastMouseEvent: MouseEvent | null = null;
 
-  const processMouseMove = () => {
-    if (!lastMouseEvent) return;
-    
-    const e = lastMouseEvent;
-    
-    if (isDragging) {
-      let newX = e.clientX - dragStartPos.current.x;
-      let newY = e.clientY - dragStartPos.current.y;
+    const processMouseMove = () => {
+      if (!lastMouseEvent) return;
 
-      const maxX = window.innerWidth - currentSize.current.width;
-      const maxY = window.innerHeight - currentSize.current.height;
+      const e = lastMouseEvent;
 
-      newX = Math.max(SIDEBAR_WIDTH, Math.min(newX, maxX));
-      newY = Math.max(HEADER_HEIGHT, Math.min(newY, maxY));
+      if (isDragging) {
+        let newX = e.clientX - dragStartPos.current.x;
+        let newY = e.clientY - dragStartPos.current.y;
 
-      currentPosition.current = { x: newX, y: newY };
-      setPosition({ x: newX, y: newY });
+        const maxX = window.innerWidth - currentSize.current.width;
+        const maxY = window.innerHeight - currentSize.current.height;
 
-      const distanceFromLeft = newX - SIDEBAR_WIDTH;
-      const distanceFromRight = window.innerWidth - (newX + currentSize.current.width);
+        newX = Math.max(SIDEBAR_WIDTH, Math.min(newX, maxX));
+        newY = Math.max(HEADER_HEIGHT, Math.min(newY, maxY));
 
-      if (distanceFromLeft <= SNAP_THRESHOLD) {
-        if (!snapHoverTimeout.current) {
-          setSnapZoneHover('left');
-          snapHoverTimeout.current = setTimeout(() => {
-            presnapState.current = {
-              position: { x: newX, y: newY },
-              size: currentSize.current
-            };
+        currentPosition.current = { x: newX, y: newY };
+        setPosition({ x: newX, y: newY });
 
-            setIsSnapped('left');
-            const snappedWidth = Math.min(
-              currentSize.current.width,
-              window.innerWidth - SIDEBAR_WIDTH - 200
-            );
-            setPosition({ x: SIDEBAR_WIDTH, y: HEADER_HEIGHT });
-            setSize({ width: snappedWidth, height: window.innerHeight - HEADER_HEIGHT });
-            currentPosition.current = { x: SIDEBAR_WIDTH, y: HEADER_HEIGHT };
-            currentSize.current = { width: snappedWidth, height: window.innerHeight - HEADER_HEIGHT };
-            setSnapZoneHover(null);
+        const distanceFromLeft = newX - SIDEBAR_WIDTH;
+        const distanceFromRight = window.innerWidth - (newX + currentSize.current.width);
+
+        if (distanceFromLeft <= SNAP_THRESHOLD) {
+          if (!snapHoverTimeout.current) {
+            setSnapZoneHover('left');
+            snapHoverTimeout.current = setTimeout(() => {
+              presnapState.current = {
+                position: { x: newX, y: newY },
+                size: currentSize.current
+              };
+
+              setIsSnapped('left');
+              const snappedWidth = Math.min(
+                currentSize.current.width,
+                window.innerWidth - SIDEBAR_WIDTH - 200
+              );
+              setPosition({ x: SIDEBAR_WIDTH, y: HEADER_HEIGHT });
+              setSize({ width: snappedWidth, height: window.innerHeight - HEADER_HEIGHT });
+              currentPosition.current = { x: SIDEBAR_WIDTH, y: HEADER_HEIGHT };
+              currentSize.current = { width: snappedWidth, height: window.innerHeight - HEADER_HEIGHT };
+              setSnapZoneHover(null);
+              snapHoverTimeout.current = null;
+            }, SNAP_HOVER_TIME);
+          }
+        } else if (distanceFromRight <= SNAP_THRESHOLD) {
+          if (!snapHoverTimeout.current) {
+            setSnapZoneHover('right');
+            snapHoverTimeout.current = setTimeout(() => {
+              presnapState.current = {
+                position: { x: newX, y: newY },
+                size: currentSize.current
+              };
+
+              setIsSnapped('right');
+              const snappedWidth = Math.min(
+                currentSize.current.width,
+                window.innerWidth - SIDEBAR_WIDTH - 200
+              );
+              const newPos = {
+                x: window.innerWidth - snappedWidth,
+                y: HEADER_HEIGHT
+              };
+              const newSz = {
+                width: snappedWidth,
+                height: window.innerHeight - HEADER_HEIGHT
+              };
+              setPosition(newPos);
+              setSize(newSz);
+              currentPosition.current = newPos;
+              currentSize.current = newSz;
+              setSnapZoneHover(null);
+              snapHoverTimeout.current = null;
+            }, SNAP_HOVER_TIME);
+          }
+        } else {
+          if (snapHoverTimeout.current) {
+            clearTimeout(snapHoverTimeout.current);
             snapHoverTimeout.current = null;
-          }, SNAP_HOVER_TIME);
+          }
+          setSnapZoneHover(null);
         }
-      } else if (distanceFromRight <= SNAP_THRESHOLD) {
-        if (!snapHoverTimeout.current) {
-          setSnapZoneHover('right');
-          snapHoverTimeout.current = setTimeout(() => {
-            presnapState.current = {
-              position: { x: newX, y: newY },
-              size: currentSize.current
-            };
+      } else if (isResizing) {
+        const deltaX = e.clientX - resizeStartPos.current.x;
+        const deltaY = e.clientY - resizeStartPos.current.y;
 
-            setIsSnapped('right');
-            const snappedWidth = Math.min(
-              currentSize.current.width,
-              window.innerWidth - SIDEBAR_WIDTH - 200
-            );
-            const newPos = {
-              x: window.innerWidth - snappedWidth,
-              y: HEADER_HEIGHT
-            };
-            const newSz = {
-              width: snappedWidth,
-              height: window.innerHeight - HEADER_HEIGHT
-            };
-            setPosition(newPos);
-            setSize(newSz);
-            currentPosition.current = newPos;
-            currentSize.current = newSz;
-            setSnapZoneHover(null);
-            snapHoverTimeout.current = null;
-          }, SNAP_HOVER_TIME);
-        }
-      } else {
-        if (snapHoverTimeout.current) {
-          clearTimeout(snapHoverTimeout.current);
-          snapHoverTimeout.current = null;
-        }
-        setSnapZoneHover(null);
-      }
-    } else if (isResizing) {
-      const deltaX = e.clientX - resizeStartPos.current.x;
-      const deltaY = e.clientY - resizeStartPos.current.y;
+        let newWidth = resizeStartSize.current.width;
+        let newHeight = resizeStartSize.current.height;
+        let newX = resizeStartPosition.current.x;
+        let newY = resizeStartPosition.current.y;
 
-      let newWidth = resizeStartSize.current.width;
-      let newHeight = resizeStartSize.current.height;
-      let newX = resizeStartPosition.current.x;
-      let newY = resizeStartPosition.current.y;
-
-      if (isSnapped === 'left' && resizeDirection === 'right') {
-        newWidth = Math.max(
-          200,
-          Math.min(
-            resizeStartSize.current.width + deltaX,
-            window.innerWidth - SIDEBAR_WIDTH
-          )
-        );
-      } else if (isSnapped === 'right' && resizeDirection === 'left') {
-        newWidth = Math.max(
-          200,
-          Math.min(
-            resizeStartSize.current.width - deltaX,
-            window.innerWidth
-          )
-        );
-        newX = window.innerWidth - newWidth;
-      } else if (!isSnapped) {
-        if (resizeDirection.includes('right')) {
+        if (isSnapped === 'left' && resizeDirection === 'right') {
           newWidth = Math.max(
             200,
             Math.min(
               resizeStartSize.current.width + deltaX,
-              window.innerWidth - newX
+              window.innerWidth - SIDEBAR_WIDTH
             )
           );
-        }
-        if (resizeDirection.includes('left')) {
-          const maxWidthIncrease = newX - SIDEBAR_WIDTH;
+        } else if (isSnapped === 'right' && resizeDirection === 'left') {
           newWidth = Math.max(
             200,
             Math.min(
               resizeStartSize.current.width - deltaX,
-              resizeStartSize.current.width + maxWidthIncrease
+              window.innerWidth
             )
           );
-          if (newWidth > 200) {
-            newX = Math.max(SIDEBAR_WIDTH, resizeStartPosition.current.x + deltaX);
+          newX = window.innerWidth - newWidth;
+        } else if (!isSnapped) {
+          if (resizeDirection.includes('right')) {
+            newWidth = Math.max(
+              200,
+              Math.min(
+                resizeStartSize.current.width + deltaX,
+                window.innerWidth - newX
+              )
+            );
+          }
+          if (resizeDirection.includes('left')) {
+            const maxWidthIncrease = newX - SIDEBAR_WIDTH;
+            newWidth = Math.max(
+              200,
+              Math.min(
+                resizeStartSize.current.width - deltaX,
+                resizeStartSize.current.width + maxWidthIncrease
+              )
+            );
+            if (newWidth > 200) {
+              newX = Math.max(SIDEBAR_WIDTH, resizeStartPosition.current.x + deltaX);
+            }
+          }
+          if (resizeDirection.includes('bottom')) {
+            newHeight = Math.max(
+              150,
+              Math.min(
+                resizeStartSize.current.height + deltaY,
+                window.innerHeight - newY
+              )
+            );
+          }
+          if (resizeDirection.includes('top')) {
+            const maxHeightIncrease = newY - HEADER_HEIGHT;
+            newHeight = Math.max(
+              150,
+              Math.min(
+                resizeStartSize.current.height - deltaY,
+                resizeStartSize.current.height + maxHeightIncrease
+              )
+            );
+            if (newHeight > 150) {
+              newY = Math.max(HEADER_HEIGHT, resizeStartPosition.current.y + deltaY);
+            }
           }
         }
-        if (resizeDirection.includes('bottom')) {
-          newHeight = Math.max(
-            150,
-            Math.min(
-              resizeStartSize.current.height + deltaY,
-              window.innerHeight - newY
-            )
-          );
-        }
-        if (resizeDirection.includes('top')) {
-          const maxHeightIncrease = newY - HEADER_HEIGHT;
-          newHeight = Math.max(
-            150,
-            Math.min(
-              resizeStartSize.current.height - deltaY,
-              resizeStartSize.current.height + maxHeightIncrease
-            )
-          );
-          if (newHeight > 150) {
-            newY = Math.max(HEADER_HEIGHT, resizeStartPosition.current.y + deltaY);
-          }
-        }
+
+        currentSize.current = { width: newWidth, height: newHeight };
+        currentPosition.current = { x: newX, y: newY };
+        setSize({ width: newWidth, height: newHeight });
+        setPosition({ x: newX, y: newY });
       }
 
-      currentSize.current = { width: newWidth, height: newHeight };
-      currentPosition.current = { x: newX, y: newY };
-      setSize({ width: newWidth, height: newHeight });
-      setPosition({ x: newX, y: newY });
-    }
-    
-    animationFrameId = null;
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    lastMouseEvent = e;
-    
-    if (!animationFrameId) {
-      animationFrameId = requestAnimationFrame(processMouseMove);
-    }
-  };
-
-  const handleMouseUp = (e: MouseEvent) => {
-    // Release pointer capture if it was set
-    if (e.target && 'releasePointerCapture' in e.target) {
-      const target = e.target as HTMLElement;
-      target.releasePointerCapture((e as any).pointerId);
-    }
-
-    setIsDragging(false);
-    setIsResizing(false);
-    setResizeDirection('');
-    
-    if (animationFrameId) {
-      cancelAnimationFrame(animationFrameId);
       animationFrameId = null;
-    }
-    
-    if (snapHoverTimeout.current) {
-      clearTimeout(snapHoverTimeout.current);
-      snapHoverTimeout.current = null;
-    }
-    
-    setSnapZoneHover(null);
-    lastMouseEvent = null;
-  };
+    };
 
-  // Use capture phase to ensure we get events
-  document.addEventListener('mousemove', handleMouseMove, true);
-  document.addEventListener('mouseup', handleMouseUp, true);
-  document.addEventListener('mouseleave', handleMouseUp, true);
-  
-  // Also listen for pointer events for better compatibility
-  document.addEventListener('pointermove', handleMouseMove as any, true);
-  document.addEventListener('pointerup', handleMouseUp as any, true);
-  document.addEventListener('pointercancel', handleMouseUp as any, true);
+    const handleMouseMove = (e: MouseEvent) => {
+      lastMouseEvent = e;
 
-  return () => {
-    document.removeEventListener('mousemove', handleMouseMove, true);
-    document.removeEventListener('mouseup', handleMouseUp, true);
-    document.removeEventListener('mouseleave', handleMouseUp, true);
-    document.removeEventListener('pointermove', handleMouseMove as any, true);
-    document.removeEventListener('pointerup', handleMouseUp as any, true);
-    document.removeEventListener('pointercancel', handleMouseUp as any, true);
-    
-    if (animationFrameId) {
-      cancelAnimationFrame(animationFrameId);
-    }
-    
-    if (snapHoverTimeout.current) {
-      clearTimeout(snapHoverTimeout.current);
-      snapHoverTimeout.current = null;
-    }
-  };
-}, [isDragging, isResizing, resizeDirection, isSnapped]);
+      if (!animationFrameId) {
+        animationFrameId = requestAnimationFrame(processMouseMove);
+      }
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      // Release pointer capture if it was set
+      if (e.target && 'releasePointerCapture' in e.target) {
+        const target = e.target as HTMLElement;
+        target.releasePointerCapture((e as any).pointerId);
+      }
+
+      setIsDragging(false);
+      setIsResizing(false);
+      setResizeDirection('');
+
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+
+      if (snapHoverTimeout.current) {
+        clearTimeout(snapHoverTimeout.current);
+        snapHoverTimeout.current = null;
+      }
+
+      setSnapZoneHover(null);
+      lastMouseEvent = null;
+    };
+
+    // Use capture phase to ensure we get events
+    document.addEventListener('mousemove', handleMouseMove, true);
+    document.addEventListener('mouseup', handleMouseUp, true);
+    document.addEventListener('mouseleave', handleMouseUp, true);
+
+    // Also listen for pointer events for better compatibility
+    document.addEventListener('pointermove', handleMouseMove as any, true);
+    document.addEventListener('pointerup', handleMouseUp as any, true);
+    document.addEventListener('pointercancel', handleMouseUp as any, true);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove, true);
+      document.removeEventListener('mouseup', handleMouseUp, true);
+      document.removeEventListener('mouseleave', handleMouseUp, true);
+      document.removeEventListener('pointermove', handleMouseMove as any, true);
+      document.removeEventListener('pointerup', handleMouseUp as any, true);
+      document.removeEventListener('pointercancel', handleMouseUp as any, true);
+
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+
+      if (snapHoverTimeout.current) {
+        clearTimeout(snapHoverTimeout.current);
+        snapHoverTimeout.current = null;
+      }
+    };
+  }, [isDragging, isResizing, resizeDirection, isSnapped]);
   useEffect(() => {
     localStorage.setItem('spectra-hidden-tokens', JSON.stringify(Array.from(hiddenTokens)));
   }, [hiddenTokens]);
@@ -3233,15 +3252,15 @@ useEffect(() => {
 
   return (
     <>
-    {(isDragging || isResizing) && (
-  <div style={{
-    position: 'fixed',
-    top: 0, left: 0, right: 0, bottom: 0,
-    zIndex: 9998,
-    cursor: isDragging ? 'move' : 'resize',
-    userSelect: 'none'
-  }} />
-)}
+      {(isDragging || isResizing) && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 9998,
+          cursor: isDragging ? 'move' : 'resize',
+          userSelect: 'none'
+        }} />
+      )}
       {snapZoneHover && (
         <>
           <div className={`spectra-snap-zone-overlay left ${snapZoneHover === 'left' ? 'active' : ''}`} />
@@ -3249,7 +3268,7 @@ useEffect(() => {
         </>
       )}
 
-      <div  
+      <div
         ref={widgetRef}
         className={`spectra-widget ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${isSnapped ? `snapped snapped-${isSnapped}` : ''}`}
         style={{
@@ -3267,6 +3286,7 @@ useEffect(() => {
                 onClick={(e) => {
                   e.stopPropagation();
                   setActiveTab('new');
+                  setSearchQuery('');
                 }}
               >
                 New
@@ -3276,6 +3296,7 @@ useEffect(() => {
                 onClick={(e) => {
                   e.stopPropagation();
                   setActiveTab('graduating');
+                  setSearchQuery('');
                 }}
               >
                 Final Stretch
@@ -3285,6 +3306,7 @@ useEffect(() => {
                 onClick={(e) => {
                   e.stopPropagation();
                   setActiveTab('graduated');
+                  setSearchQuery('');
                 }}
               >
                 Graduated
@@ -3365,6 +3387,8 @@ useEffect(() => {
                 type="text"
                 className="spectra-token-search"
                 placeholder="Search by ticker or name"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Tooltip content="Filters">
                 <button
@@ -3384,8 +3408,8 @@ useEffect(() => {
 
         <div className="spectra-widget-content">
           <div className="spectra-markets-container">
-            {tokensByStatus[activeTab] && tokensByStatus[activeTab].length > 0 ? (
-              tokensByStatus[activeTab]
+            {filteredTokens && filteredTokens.length > 0 ? (
+              filteredTokens
                 .filter((token: any) => {
                   const tokenId = token.id || token.tokenAddress;
                   const devAddress = token.dev?.toLowerCase();
@@ -3425,7 +3449,7 @@ useEffect(() => {
                 ))
             ) : (
               <div className="spectra-empty-state">
-                <p>No tokens found</p>
+                <p>{searchQuery ? `No tokens found matching "${searchQuery}"` : 'No tokens found'}</p>
               </div>
             )}
           </div>
