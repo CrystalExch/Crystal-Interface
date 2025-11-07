@@ -1166,7 +1166,6 @@
 }
 
 .alerts-popup .oc-meme-balance-slider-mark {
-  background-color: black;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.72rem;
@@ -1179,7 +1178,7 @@
 }
 
 .alerts-popup .oc-meme-balance-slider-mark::before {
-  background-color: black;
+  background-color: rgb(6,6,6);
   content: '';
   height: 4px;
   left: 50%;
