@@ -554,14 +554,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const location = useLocation();
   const navigate = useNavigate();
   const [isTrackerWidgetOpen, setIsTrackerWidgetOpen] = useState(false);
-const [isSpectraWidgetOpen, setIsSpectraWidgetOpen] = useState(() => {
-  const saved = localStorage.getItem('spectra-widget-open');
-  return saved === 'true';
-});
+  const [isSpectraWidgetOpen, setIsSpectraWidgetOpen] = useState(() => {
+    const saved = localStorage.getItem('spectra-widget-open');
+    return saved === 'true';
+  });
 
-useEffect(() => {
-  localStorage.setItem('spectra-widget-open', String(isSpectraWidgetOpen));
-}, [isSpectraWidgetOpen]);  const [isPNLWidgetOpen, setIsPNLWidgetOpen] = useState(false);
+  useEffect(() => {
+    localStorage.setItem('spectra-widget-open', String(isSpectraWidgetOpen));
+  }, [isSpectraWidgetOpen]); const [isPNLWidgetOpen, setIsPNLWidgetOpen] = useState(false);
   const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(false);
 
   const [trackerWidgetSnap, setTrackerWidgetSnap] = useState<'left' | 'right' | null>(null);
@@ -26246,7 +26246,10 @@ useEffect(() => {
             connected: connected,
             address: address,
             chainId: userchain,
-          }} terminalRefetch={terminalRefetch}
+          }}
+          terminalRefetch={terminalRefetch}
+          hidden={hidden}
+          dispatch={dispatch}
         />
         <PNLWidget
           isOpen={isPNLWidgetOpen}

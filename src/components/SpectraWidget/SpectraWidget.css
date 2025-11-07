@@ -2321,3 +2321,15 @@
   border-color: #dedfeb;
   border-top-color: transparent;
 }
+
+
+.spectra-market-row.hidden-token {
+  opacity: 0.5;
+  pointer-events: all;
+  position: relative;
+}
+
+.spectra-market-row.hidden-token:hover {
+  opacity: 0.7;
+}
+
