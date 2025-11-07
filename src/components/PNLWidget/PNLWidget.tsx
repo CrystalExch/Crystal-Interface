@@ -158,6 +158,7 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
 
   return (
     <>
+    
       {showSettings && (
         <div className="pnl-settings-overlay" onClick={() => setShowSettings(false)}>
           <div className="pnl-settings-popup" onClick={(e) => e.stopPropagation()}>
@@ -663,6 +664,15 @@ const PNLWidget: React.FC<PNLWidgetProps> = ({
       </div>
 
       {showHistory && <PNLHistoryPopup onClose={() => setShowHistory(false)} />}
+              {(isDragging || isResizing) && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 10000,
+          cursor: isDragging ? 'move' : 'resize',
+          userSelect: 'none'
+        }} />
+      )}
     </>
   );
 };

@@ -1,8 +1,5 @@
-/* PNL Widget Container */
 .pnl-widget {
-  background-color: rgb(8, 8, 8);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(179, 184, 249, 0.15);
   border-radius: 6px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   display: flex;
@@ -162,6 +159,9 @@
   min-height: 0px;
   cursor: move;
   user-select: none;
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 /* Background preview effect */
@@ -303,8 +303,8 @@
 
 .pnl-chart-section {
   padding: 20px 20px 0 20px;
-  background-color: rgb(8, 8, 8);
   height: 140px;
+  background: linear-gradient(0deg, rgba(6, 6, 6, 0.9) 0%, rgb(13, 14, 17, 0.9) 100%)
 }
 
 .pnl-chart {

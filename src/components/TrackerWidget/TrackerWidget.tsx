@@ -555,6 +555,15 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
 
   return (
     <>
+      {(isDragging || isResizing) && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 10000,
+          cursor: isDragging ? 'move' : 'resize',
+          userSelect: 'none'
+        }} />
+      )}
       {snapZoneHover && (
         <>
           <div className={`snap-zone-overlay left ${snapZoneHover === 'left' ? 'active' : ''}`} />
@@ -576,7 +585,7 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
           <h3 className="tracker-title">
             Twitter Alerts
           </h3>
-                    <div className="quickbuy-drag-handle">
+          <div className="quickbuy-drag-handle">
             <div className="circle-row">
               <img src={circle} className="circle" />
             </div>
