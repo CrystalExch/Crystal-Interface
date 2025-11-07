@@ -639,7 +639,7 @@ const Perps: React.FC<PerpsProps> = ({
     const qs = buildSignatureBody(payload)
     const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "POST" + path + qs)).slice(2)
     const [metaRes] = await Promise.all([
-      fetch("https://perps.crystal.exchange/api/v1/private/order/cancelOrderById", {
+      fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/order/cancelOrderById", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -667,7 +667,7 @@ const Perps: React.FC<PerpsProps> = ({
     const qs = buildSignatureBody(payload)
     const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "POST" + path + qs)).slice(2)
     const [metaRes] = await Promise.all([
-      fetch("https://perps.crystal.exchange/api/v1/private/order/createOrder", {
+      fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/order/createOrder", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -692,7 +692,7 @@ const Perps: React.FC<PerpsProps> = ({
     const qs = buildSignatureBody(payload)
     const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "POST" + path + qs)).slice(2)
     const [metaRes] = await Promise.all([
-      fetch("https://perps.crystal.exchange/api/v1/private/order/createOrder", {
+      fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/order/createOrder", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1080,8 +1080,8 @@ const Perps: React.FC<PerpsProps> = ({
       try {
         if (Object.keys(perpsMarketsData).length == 0) {
           const [metaRes, labelsRes] = await Promise.all([
-            fetch('https://perps.crystal.exchange/api/v1/public/meta/getMetaData', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json()),
-            fetch('https://perps.crystal.exchange/api/v1/public/contract-labels', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
+            fetch('https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/public/meta/getMetaData', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json()),
+            fetch('https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/public/contract-labels', { method: 'GET', headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
           ])
           if (liveStreamCancelled) return;
           if (metaRes?.data) setExchangeConfig(metaRes.data)
@@ -1388,14 +1388,14 @@ const Perps: React.FC<PerpsProps> = ({
         const qs = 'size=100'
         const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(signer.apiSecret))), toUtf8Bytes(ts + "GET" + path + qs)).slice(2)
         const [onboardRes, registerRes, metaRes] = await Promise.all([
-          fetch("https://perps.crystal.exchange/api/v1/public/user/onboardSite", {
+          fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/public/user/onboardSite", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(onboardpayload)
           }).then(r => r.json()),
-          fetch("https://perps.crystal.exchange/api/v1/private/account/registerAccount", {
+          fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/account/registerAccount", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1406,7 +1406,7 @@ const Perps: React.FC<PerpsProps> = ({
             },
             body: JSON.stringify(payload)
           }).then(r => r.json()),
-          fetch("https://perps.crystal.exchange/api/v1/private/account/getAccountPage?size=100", {
+          fetch("https://nextjs-boilerplate-git-main-crystalexch.vercel.app/api/proxy/api/v1/private/account/getAccountPage?size=100", {
             method: "GET",
             headers: {
               "Content-Type": "application/json",

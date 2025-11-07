@@ -4902,7 +4902,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         subWallets={subWallets}
         walletTokenBalances={walletTokenBalances}
         activeWalletPrivateKey={activeWalletPrivateKey}
-        setOneCTSigner={setOneCTSigner}
         tokenList={tokenList}
         isBlurred={isBlurred}
         terminalRefetch={terminalRefetch}

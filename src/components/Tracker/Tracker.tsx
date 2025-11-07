@@ -225,6 +225,7 @@ interface MonitorToken {
   name: string;
   symbol: string;
   emoji: string;
+  imageUrl?: string;
   price: number;
   marketCap: number;
   change24h: number;
@@ -566,6 +567,7 @@ const Tracker: React.FC<TrackerProps> = ({
 
   const [addressPositions, setAddressPositions] = useState<Record<string, GqlPosition[]>>({});
   const [expandedTokenId, setExpandedTokenId] = useState<string | null>(null);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   useEffect(() => { trackedWalletsRef.current = trackedWallets; }, [trackedWallets]);
 
   const lastEventTsRef = useRef<number | null>(null);
@@ -884,6 +886,10 @@ const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveT
   const [dropPreviewLine, setDropPreviewLine] = useState<{ top: number; containerKey: string } | null>(null);
   const [expandedTokens, setExpandedTokens] = useState<Set<string>>(new Set());
   const [pinnedTokens, setPinnedTokens] = useState<Set<string>>(new Set());
+  const [hiddenTokens, setHiddenTokens] = useState<Set<string>>(new Set());
+  const [blacklistedDevs, setBlacklistedDevs] = useState<Set<string>>(new Set());
+  const [hoveredMonitorToken, setHoveredMonitorToken] = useState<string | null>(null);
+  const [bondingPopupPosition, setBondingPopupPosition] = useState({ top: 0, left: 0 });
   const marketsRef = useRef<MarketsMap>(new Map());
   const [marketsTick, setMarketsTick] = useState(0);
   const [debugVisible, setDebugVisible] = useState(false);
@@ -1966,6 +1972,42 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     setMonitorFilters(filters);
   };
 
+  const handleHideToken = (tokenId: string) => {
+    setHiddenTokens(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(tokenId)) {
+        newSet.delete(tokenId);
+      } else {
+        newSet.add(tokenId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleBlacklistDev = (tokenId: string, devAddress?: string) => {
+    if (!devAddress) return;
+
+    setBlacklistedDevs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(devAddress)) {
+        newSet.delete(devAddress);
+      } else {
+        newSet.add(devAddress);
+      }
+      return newSet;
+    });
+
+    // Also hide the token when blacklisting
+    handleHideToken(tokenId);
+  };
+
+  const getBondingColor = (b: number) => {
+    if (b < 25) return '#ee5b5bff';
+    if (b < 50) return '#f59e0b';
+    if (b < 75) return '#eab308';
+    return '#43e17dff';
+  };
+
   const handleReorderDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -2134,7 +2176,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     setStatus({ lastPushSource: 'external' });
   };
 
-  const upsertMarket = (t: { tokenAddr?: string; symbol?: string; name?: string; price?: number; isBuy?: boolean; amountNative?: number; ts?: number; wallet?: string; emoji?: string; }) => {
+  const upsertMarket = (t: { tokenAddr?: string; symbol?: string; name?: string; price?: number; isBuy?: boolean; amountNative?: number; ts?: number; wallet?: string; emoji?: string; imageUrl?: string;}) => {
     const id = (t.tokenAddr || t.symbol)?.toLowerCase();
     if (!id) return;
 
@@ -2712,13 +2754,26 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
   const renderMonitor = () => {
     const allPositions = getFilteredPositions();
 
-    // Launchpad column: Only memecoin positions (exclude major tokens from tokenList and graduated tokens)
+    // Launchpad column: Only memecoin positions (exclude major tokens from tokenList, graduated tokens, and migrated/orderbook tokens)
     // These come from GraphQL launchpadPositions query
-    // Filter out graduated tokens (bondingCurveProgress === 100)
+    // Filter out graduated tokens (bondingCurveProgress === 100) and orderbook tokens (isOrderbook === true)
     let launchpadPositions = allPositions.filter(pos => {
+      // Exclude orderbook tokens (migrated tokens from GraphQL)
+      if (pos.isOrderbook) return false;
+
       const market = marketsRef.current.get(pos.tokenId.toLowerCase());
       return !market || market.bondingCurveProgress < 100;
     });
+
+    // Get graduated tokens for orderbook column (bondingCurveProgress === 100 but not already marked as orderbook from migration)
+    const graduatedPositions = allPositions.filter(pos => {
+      if (pos.isOrderbook) return false; // These are already in orderbook via migration
+      const market = marketsRef.current.get(pos.tokenId.toLowerCase());
+      return market && market.bondingCurveProgress === 100;
+    });
+
+    // Get migrated orderbook positions from GraphQL (these have isOrderbook: true)
+    const migratedOrderbookPositions = allPositions.filter(pos => pos.isOrderbook === true);
 
     // Orderbook column: only major tokens from tokenList
     const spotTokenPositions: GqlPosition[] = [];
@@ -2829,7 +2884,8 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       aggregatedOrderbookPositions.push(entry.position);
     });
 
-    const orderbookPositions = aggregatedOrderbookPositions;
+    // Combine spot tokens, graduated tokens, and migrated orderbook tokens for orderbook column
+    const orderbookPositions = [...aggregatedOrderbookPositions, ...graduatedPositions, ...migratedOrderbookPositions];
 
     const formatValue = (value: number): string => {
       const converted = monitorCurrency === 'USD' ? value * monUsdPrice : value;
@@ -3068,6 +3124,18 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         }
       }
 
+      const isHidden = hiddenTokens.has(pos.tokenId);
+      // Use token creator address if available, otherwise use token ID as proxy
+      const devAddress = (market as any)?.creator || (market as any)?.devAddress || pos.tokenId;
+      const isBlacklisted = blacklistedDevs.has(devAddress);
+
+      // Get bonding curve progress for overlay
+      const bondingPercentage = market?.bondingCurveProgress || 0;
+      const showBonding = bondingPercentage < 100 && hoveredMonitorToken === pos.tokenId;
+
+      // Get image URL - prefer market data, fallback to position data
+      const imageUrl = market?.imageUrl || (market as any)?.image || pos.imageUrl;
+
       return (
         <div key={`${pos.tokenId}_${walletAddress}`} className={classes.join(' ')}>
           <div
@@ -3078,25 +3146,100 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
             }}
           >
             <div className="tracker-monitor-card-top">
+              <div className="tracker-monitor-token-actions">
+                <button
+                  className={`tracker-monitor-hide-button ${isHidden ? 'strikethrough' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleHideToken(pos.tokenId);
+                  }}
+                >
+                  <Tooltip content={isHidden ? 'Show Token' : 'Hide Token'}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  </Tooltip>
+                </button>
+                <button
+                  className={`tracker-monitor-blacklist-button ${isBlacklisted ? 'strikethrough' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleBlacklistDev(pos.tokenId, devAddress);
+                  }}
+                >
+                  <Tooltip content={isBlacklisted ? 'Unblacklist Dev' : 'Blacklist Dev'}>
+                    <svg
+                      className="tracker-monitor-blacklist-dev-icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 30 30"
+                      fill="currentColor"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
+                    </svg>
+                  </Tooltip>
+                </button>
+              </div>
               <div className="tracker-monitor-left-section">
                 <div
-                  className="tracker-monitor-icon-container"
-                  style={{ '--progress': 0 } as React.CSSProperties}
+                  className={`tracker-monitor-image-container ${bondingPercentage >= 100 ? 'graduated' : ''}`}
+                  style={{
+                    position: 'relative',
+                    '--progress-angle': `${(bondingPercentage / 100) * 360}deg`
+                  } as React.CSSProperties}
+                  onMouseEnter={(e) => {
+                    if (bondingPercentage < 100) {
+                      setHoveredMonitorToken(pos.tokenId);
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setBondingPopupPosition({
+                        top: rect.top - 30,
+                        left: rect.left + rect.width / 2
+                      });
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredMonitorToken(null);
+                  }}
                 >
-                  <div className="tracker-monitor-icon-spacer">
-                    {pos.imageUrl ? (
-                      <img
-                        src={pos.imageUrl}
-                        alt={tokenSymbol}
-                        className="tracker-monitor-token-image"
-                        style={{ width: '40px', height: '40px', borderRadius: '50%' }}
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <span className="tracker-monitor-icon-emoji">🪙</span>
-                    )}
+                  <div className="tracker-monitor-progress-spacer">
+                    <div className="tracker-monitor-image-wrapper">
+                      {imageUrl && !failedImages.has(pos.tokenId) ? (
+                        <img
+                          src={imageUrl}
+                          className="tracker-monitor-market-image"
+                          alt={tokenSymbol}
+                          onError={() => {
+                            setFailedImages(prev => new Set(prev).add(pos.tokenId));
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className="tracker-monitor-market-letter"
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: 'rgb(6,6,6)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: tokenSymbol?.length <= 3 ? '34px' : '28px',
+                            fontWeight: '200',
+                            color: '#ffffff',
+                            letterSpacing: tokenSymbol?.length > 3 ? '-1px' : '0',
+                            borderRadius: '50%',
+                          }}
+                        >
+                          {tokenSymbol?.slice(0, 2).toUpperCase() || '?'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="tracker-monitor-launchpad-logo-container">
+                    <Tooltip content="crystal.fun">
+                      <img src="/CrystalLogo.png" className="tracker-monitor-launchpad-logo" alt="crystal.fun" />
+                    </Tooltip>
                   </div>
                 </div>
 
@@ -3176,6 +3319,38 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                         {Math.floor((market?.holders || 0) * 0.15).toLocaleString()}
                       </span>
                     </div>
+
+                    <Tooltip content="Dev Migrations">
+                      <div className="explorer-stat-item">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="tracker-monitor-graduated-icon"
+                          style={
+                            (market as any)?.graduatedTokens > 0
+                              ? { color: 'rgba(255, 251, 0, 1)' }
+                              : undefined
+                          }
+                        >
+                          <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                          <path d="M5 21h14" />
+                        </svg>
+                        <div className="tracker-monitor-dev-migrations-container">
+                          <span className="tracker-monitor-dev-migrations-value">
+                            {((market as any)?.graduatedTokens || 0).toLocaleString()}
+                          </span>{' '}
+                          <span className="tracker-monitor-dev-migrations-slash">/</span>
+                          <span className="tracker-monitor-dev-migrations-value">
+                            {((market as any)?.launchedTokens || 0).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </Tooltip>
                   </div>
                 </div>
               </div>
@@ -3378,15 +3553,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
 
     return (
       <div className="tracker-monitor">
-        {allPositions.length === 0 && orderbookPositions.length === 0 ? (
-          <div className="tracker-empty-state">
-            <div className="tracker-empty-content">
-              <h4>No Open Positions</h4>
-              <p>Your tracked wallets don't have any open positions yet.</p>
-            </div>
-          </div>
-        ) : (
-          <div className="explorer-columns">
+        <div className="explorer-columns">
             <div className="explorer-column">
               <div className="explorer-column-header">
                 <div className="explorer-column-title-section">
@@ -3624,7 +3791,27 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                 </div>
               </div>
             </div>
-          </div>
+
+        </div>
+
+        {hoveredMonitorToken && createPortal(
+          <div
+            className="tracker-bonding-amount-display visible"
+            style={{
+              position: 'absolute',
+              top: `${bondingPopupPosition.top}px`,
+              left: `${bondingPopupPosition.left}px`,
+              transform: 'translateX(-50%)',
+              color: getBondingColor(
+                marketsRef.current.get(hoveredMonitorToken.toLowerCase())?.bondingCurveProgress || 0
+              ),
+              pointerEvents: 'none',
+              zIndex: 9999,
+            }}
+          >
+            BONDING: {(marketsRef.current.get(hoveredMonitorToken.toLowerCase())?.bondingCurveProgress || 0).toFixed(1)}%
+          </div>,
+          document.body
         )}
       </div>
     );
