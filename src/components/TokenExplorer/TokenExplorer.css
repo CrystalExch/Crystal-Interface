@@ -4547,6 +4547,37 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
 .protocol-crystal{
   width: 15px;
 }
+
+.protocol-flapsh{
+  width: 22px;
+  margin-right: -3px;
+}
+.protocol-flapsh-container{
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid #daff00;
+  width: 70px;
+  color: #daff00;
+  background-color: #daff0020;
+  padding: 1px 0;
+  padding-left: 5px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  height: 25px;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+
+.protocol-printr{
+  width: 30px;
+  height: 30px;
+  margin-right: -5px;
+}
+
+
 .protocols-section{
   display: flex;
   flex-direction: column;
@@ -4557,19 +4588,25 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   padding-bottom: 15px;
 }
-
-.protocol-crystal-container{
+.protocol-printr-text{
+  padding-bottom: 2px;
+  font-weight: 300;
+  color: #D1157A;
+}
+.protocol-printr-container{
   display: flex;
   align-items: center;
   gap: 3px;
-  border: 1px solid #aaaecf;
-  width: 107px;
-  color: #d8dcff;
-  background-color: #7c88e820;
+  border: 1px solid #D1157A;
+  width: 77px;
+  color:  white;
+  background-color: #D1157A10;
   padding: 1px 0;
-  padding-left: 5px;
   border-radius: 20px;
   font-size: 0.9rem;
+  height: 25px;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .protocol-crystal-container{
   display: flex;

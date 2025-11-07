@@ -124,6 +124,8 @@ import defaultPfp from './assets/leaderboard_default.png';
 import iconusdc from './assets/iconusdc.png';
 import edgeX from './assets/edgeX.svg';
 import switchicon from './assets/switch.svg';
+import printr from './assets/printr.png';
+import flapsh from './assets/flapsh.png';
 
 //audio
 import stepaudio from './assets/step_audio.mp3';
@@ -17194,6 +17196,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   </svg>
                   <span className="protocol-nadfun">nad.fun</span>
                 </div>
+                <div className="protocol-printr-container">
+                  <img className="protocol-printr" src={printr} />
+                  <span className="protocol-printr-text">Printr</span>
+                </div>
+                <div className="protocol-flapsh-container">
+                  <img className="protocol-flapsh" src={flapsh} />
+                  <span className="protocol-flapsh-text">Flap</span>
+                </div>
               </div>
             </div>
             <div className="keywords-section">
@@ -26250,6 +26260,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           terminalRefetch={terminalRefetch}
           hidden={hidden}
           dispatch={dispatch}
+          pausedTokenQueueRef={pausedTokenQueueRef}
+          pausedColumnRef={pausedColumnRef}
         />
         <PNLWidget
           isOpen={isPNLWidgetOpen}
