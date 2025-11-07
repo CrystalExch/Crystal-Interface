@@ -3220,10 +3220,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             <div className="meme-balance-right">
               {activeTradeType === 'buy' && (
                 <>
-                  <div className="meme-balance-display">
-                    <img src={walleticon} className="meme-wallet-icon" />
-                    {formatNumberWithCommas(getTotalSelectedWalletsBalance(), 3)} MON
-                  </div>
                   <button
                     className="meme-balance-max-buy"
                     onClick={() => {
