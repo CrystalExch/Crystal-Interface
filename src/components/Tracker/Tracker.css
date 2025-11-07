@@ -637,6 +637,77 @@
   border-bottom: none;
 }
 
+/* Token Action Buttons */
+.tracker-monitor-token-actions {
+  position: absolute;
+  left: -6px;
+  top: 0px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 11;
+}
+
+.tracker-monitor-hide-button {
+  align-items: center;
+  background: rgba(15, 15, 15);
+  border: 1px solid rgba(226, 228, 248, 0.1);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  height: 26px;
+  justify-content: center;
+  opacity: 0;
+  padding: 4px;
+  transition: all 0.2s ease;
+  width: 26px;
+  z-index: 11;
+}
+
+.tracker-monitor-hide-button:hover {
+  background-color: rgb(17, 17, 21);
+}
+
+.tracker-monitor-card:hover .tracker-monitor-hide-button,
+.tracker-monitor-card:hover .tracker-monitor-blacklist-button {
+  opacity: 1;
+}
+
+.tracker-monitor-blacklist-button {
+  align-items: center;
+  background: rgba(15, 15, 15);
+  border: 1px solid rgba(226, 228, 248, 0.1);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  height: 26px;
+  justify-content: center;
+  opacity: 0;
+  padding: 4px;
+  transition: all 0.2s ease;
+  width: 26px;
+  z-index: 11;
+}
+
+.tracker-monitor-blacklist-button:hover {
+  background-color: rgb(17, 17, 21);
+}
+
+.tracker-monitor-hide-button.strikethrough svg,
+.tracker-monitor-blacklist-button.strikethrough svg {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.tracker-monitor-blacklist-dev-icon {
+  color: rgba(255, 255, 255, 0.7);
+  transition: color 0.2s ease;
+}
+
+.tracker-monitor-blacklist-button:hover .tracker-monitor-blacklist-dev-icon {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 /* Graduated token styling - only for right section */
 
 .tracker-monitor-card-header {
@@ -669,38 +740,73 @@
   flex-shrink: 0;
 }
 
-.tracker-monitor-icon-spacer {
+.tracker-monitor-image-container {
+  align-items: center;
+  background: conic-gradient(from 0deg,
+      #aaaecf 0deg,
+      #aaaecf var(--progress-angle, 0deg),
+      rgba(157, 169, 240, 0.2) var(--progress-angle, 0deg),
+      rgba(157, 169, 240, 0.2) 360deg);
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  height: 73px;
+  justify-content: center;
+  position: relative;
+  transition: --progress-angle 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 73px;
+  flex-shrink: 0;
+}
+
+.tracker-monitor-image-container.graduated {
+  background: conic-gradient(from 0deg,
+      #ffd700 0deg,
+      #ffed4e 90deg,
+      #ffc107 180deg,
+      #ff8f00 270deg,
+      #ffd700 360deg);
+}
+
+.tracker-monitor-image-container.graduated .tracker-monitor-launchpad-logo-container {
+  border-color: #ffd700;
+}
+
+.tracker-monitor-image-container.graduated .tracker-monitor-launchpad-logo {
+  filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-rotate(311deg) brightness(117%) contrast(86%);
+}
+
+.tracker-monitor-progress-spacer {
   align-items: center;
   background: rgb(6, 6, 6);
-  border-radius: 4px;
+  border-radius: 6px;
   display: flex;
-  height: 53px;
+  height: 70px;
   justify-content: center;
-  width: 53px;
+  width: 70px;
 }
 
 .tracker-monitor-image-wrapper {
   align-items: center;
-  background: rgb(6, 6, 6);
-  border-radius: 4px;
+  border-radius: 3px;
   display: flex;
-  height: 50px;
+  height: 68px;
   justify-content: center;
-  width: 50px;
+  width: 68px;
   overflow: hidden;
+  position: relative;
 }
 
-.tracker-monitor-token-image {
+.tracker-monitor-market-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 4px;
 }
 
-.tracker-monitor-token-letter {
+.tracker-monitor-market-letter {
   width: 100%;
   height: 100%;
-  background-color: rgb(6,6,6);
+  background-color: rgb(6, 6, 6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -710,7 +816,6 @@
   letter-spacing: 0;
   border-radius: 4px;
 }
-.tracker-monitor-icon-emoji { font-size: 1.8rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
 .tracker-monitor-token-details {
   display: flex;
   flex: 1;
@@ -727,7 +832,6 @@
   min-width: 0;
 }
 .tracker-monitor-token-name-text {
-  color: rgba(237, 236, 252, 0.4);
   font-size: 1rem;
   letter-spacing: -0.3px;
   margin: 0;
@@ -2479,4 +2583,73 @@
 .tracker-monitor .explorer-token-row {
   width: 100% !important;
   max-width: none !important;
+}
+
+/* Bonding percentage overlay */
+.tracker-bonding-amount-display {
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  opacity: 0;
+  padding: 6px 12px;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+}
+
+.tracker-bonding-amount-display.visible {
+  opacity: 1;
+}
+
+@property --progress-angle {
+  inherits: false;
+  initial-value: 0deg;
+  syntax: '<angle>';
+}
+
+/* Launchpad logo on token image */
+.tracker-monitor-launchpad-logo {
+  width: 10px;
+}
+
+.tracker-monitor-launchpad-logo-container {
+  align-items: center;
+  background-color: black;
+  border: 1px solid #aaaecf;
+  border-radius: 20px;
+  bottom: -7px;
+  display: flex;
+  height: 17px;
+  justify-content: center;
+  position: absolute;
+  right: -7px;
+  width: 17px;
+}
+
+/* Dev Migrations styling */
+.tracker-monitor-graduated-icon {
+  align-items: center;
+  color: #7f808d;
+  cursor: pointer;
+  display: flex;
+  height: 15px;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 15px;
+}
+
+.tracker-monitor-dev-migrations-container {
+  align-items: center;
+  display: flex;
+  gap: 1px;
+}
+
+.tracker-monitor-dev-migrations-slash {
+  font-size: 0.8rem;
+}
+
+.tracker-monitor-dev-migrations-value {
+  font-size: 0.8rem;
 }

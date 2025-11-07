@@ -105,7 +105,7 @@
 .wtw-widget-header-right {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 8px;
 }
 
 .wtw-open-new-tab-button {
