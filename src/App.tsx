@@ -26,7 +26,7 @@ import {
   useParams,
   matchPath
 } from 'react-router-dom';
-import { TransactionExecutionError, encodeFunctionData, maxUint256, decodeFunctionResult, decodeEventLog } from 'viem';
+import { TransactionExecutionError, encodeFunctionData, maxUint256, decodeFunctionResult, decodeEventLog, decodeAbiParameters } from 'viem';
 import { toUtf8Bytes, computeHmac } from 'ethers';
 import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
@@ -260,7 +260,9 @@ type Action =
   | { type: 'INIT'; tokens: Token[] }
   | { type: 'ADD_MARKET'; token: Partial<Token> }
   | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
+  | { type: 'UPDATE_MARKET_BY_ADDRESS'; tokenAddress: string; updates: Partial<Token> }  // NEW
   | { type: 'GRADUATE_MARKET'; id: string }
+  | { type: 'GRADUATE_MARKET_BY_ADDRESS'; tokenAddress: string }  // NEW
   | { type: 'HIDE_TOKEN'; id: string }
   | { type: 'SHOW_TOKEN'; id: string }
   | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' }
@@ -444,6 +446,45 @@ const Loader = () => {
 }
 
 function App({ stateloading, setstateloading, addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
+
+  const NAD_FUN_EVENTS = {
+    CurveCreate: '0x0973e9cac7e9c2f01af09be904e52e439ffb0b171ef90eaf5d4ca91d0254ff3f',
+    CurveBuy: '0x07309743e5dcfe77c54cbb11eed2bc9e22a8b9ea74631a3385b5e9daf41acca8',
+    CurveSell: '0x4c6cfcf61108a6a6e7ca8f2b7c74a016758588359111165e8b8b5271c2976bac',
+    CurveTokenListed: '0xb1a5d58d86c7ab81f843d3dd779c3f0e0b0319822dd754c37fb28dd21f8a98ff',
+    CurveSync: '0x9f5e8c0f3b7e2e5e5f5e8c0f3b7e2e5e5f5e8c0f3b7e2e5e5f5e8c0f3b7e2e5e',
+  };
+
+
+  function decodeNadFunCreateEvent(dataHex: string) {
+    const data = dataHex.slice(2);
+
+    try {
+      const decoded = decodeAbiParameters(
+        [
+          { name: 'name', type: 'string' },
+          { name: 'symbol', type: 'string' },
+          { name: 'tokenURI', type: 'string' },
+          { name: 'virtualMon', type: 'uint256' },
+          { name: 'virtualToken', type: 'uint256' },
+          { name: 'targetTokenAmount', type: 'uint256' },
+        ],
+        `0x${data}`
+      );
+
+      return {
+        name: decoded[0] as string,
+        symbol: decoded[1] as string,
+        tokenURI: decoded[2] as string,
+        virtualMon: decoded[3] as bigint,
+        virtualToken: decoded[4] as bigint,
+        targetTokenAmount: decoded[5] as bigint,
+      };
+    } catch (error) {
+      console.error('Failed to decode nad.fun create event:', error);
+      return null;
+    }
+  }
   const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');
   const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
   const [selectedSellPreset, setSelectedSellPreset] = useState(1);
@@ -599,6 +640,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, []);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const TOTAL_SUPPLY = 1e9;
+  const nadFunBondingCurve = settings.chainConfig[activechain].nadFunBondingCurve;
   const HTTP_URL = settings.chainConfig[activechain].httpurl;
   const WS_URL = settings.chainConfig[activechain].wssurl;
   const eth = settings.chainConfig[activechain].eth as `0x${string}`;
@@ -4210,6 +4252,19 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }
 
   // tokenexplorer
+  // tokenexplorer
+  type Action =
+    | { type: 'INIT'; tokens: Token[] }
+    | { type: 'ADD_MARKET'; token: Partial<Token> }
+    | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
+    | { type: 'UPDATE_MARKET_BY_ADDRESS'; tokenAddress: string; updates: Partial<Token> }  // NEW
+    | { type: 'GRADUATE_MARKET'; id: string }
+    | { type: 'GRADUATE_MARKET_BY_ADDRESS'; tokenAddress: string }  // NEW
+    | { type: 'HIDE_TOKEN'; id: string }
+    | { type: 'SHOW_TOKEN'; id: string }
+    | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' }
+    | { type: 'ADD_QUEUED_TOKENS'; payload: { status: Token['status']; tokens: Token[] } };
+
   function reducer(state: State, action: Action): State {
     switch (action.type) {
       case 'INIT': {
@@ -4221,6 +4276,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         action.tokens.forEach((t) => buckets[t.status].push(t));
         return { ...state, tokensByStatus: buckets };
       }
+
       case 'ADD_MARKET': {
         const { token } = action;
         const list = [token, ...state.tokensByStatus[token?.status as Token['status']]].slice(
@@ -4232,6 +4288,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           tokensByStatus: { ...state.tokensByStatus, [token?.status as Token['status']]: list },
         };
       }
+
       case 'UPDATE_MARKET': {
         const buckets = { ...state.tokensByStatus };
         let movedToken: any;
@@ -4277,6 +4334,57 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
         return { ...state, tokensByStatus: buckets };
       }
+
+      // NEW: Update token by address (for nad.fun events)
+      case 'UPDATE_MARKET_BY_ADDRESS': {
+        const buckets = { ...state.tokensByStatus };
+        let movedToken: any;
+        (Object.keys(buckets) as Token['status'][]).forEach((s) => {
+          buckets[s] = buckets[s].flatMap((t) => {
+            if (t.tokenAddress.toLowerCase() !== action.tokenAddress.toLowerCase()) return [t];
+
+            const {
+              volumeDelta = 0,
+              buyTransactions = 0,
+              sellTransactions = 0,
+              ...rest
+            } = action.updates;
+
+            // Calculate new status based on progress or market cap
+            const newProgress = rest?.progress ?? t.progress;
+            const status = s == 'graduated'
+              ? 'graduated'
+              : newProgress >= 75
+                ? 'graduating'
+                : 'new';
+
+            if (status != s) {
+              movedToken = {
+                ...t,
+                ...rest,
+                volume24h: t.volume24h + volumeDelta,
+                buyTransactions: t.buyTransactions + buyTransactions,
+                sellTransactions: t.sellTransactions + sellTransactions,
+                status: status,
+              }
+              return []
+            }
+            return [{
+              ...t,
+              ...rest,
+              volume24h: t.volume24h + volumeDelta,
+              buyTransactions: t.buyTransactions + buyTransactions,
+              sellTransactions: t.sellTransactions + sellTransactions,
+              status: status,
+            }];
+          });
+        });
+        if (movedToken?.status) {
+          buckets[movedToken?.status as Token['status']].unshift(movedToken);
+        }
+        return { ...state, tokensByStatus: buckets };
+      }
+
       case 'GRADUATE_MARKET': {
         const buckets = { ...state.tokensByStatus };
         let movedToken: any;
@@ -4290,12 +4398,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               movedToken = {
                 ...t,
                 status: status,
+                progress: 100, // Set progress to 100% when graduated
               }
               return []
             }
             return [{
               ...t,
               status: status,
+              progress: 100,
             }];
           });
         });
@@ -4304,21 +4414,56 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
         return { ...state, tokensByStatus: buckets };
       }
+
+      // NEW: Graduate token by address (for nad.fun CurveTokenListed event)
+      case 'GRADUATE_MARKET_BY_ADDRESS': {
+        const buckets = { ...state.tokensByStatus };
+        let movedToken: any;
+        (Object.keys(buckets) as Token['status'][]).forEach((s) => {
+          buckets[s] = buckets[s].flatMap((t) => {
+            if (t.tokenAddress.toLowerCase() !== action.tokenAddress.toLowerCase()) return [t];
+
+            const status = 'graduated'
+
+            if (status != s) {
+              movedToken = {
+                ...t,
+                status: status,
+                progress: 100, // Set progress to 100% when graduated
+              }
+              return []
+            }
+            return [{
+              ...t,
+              status: status,
+              progress: 100,
+            }];
+          });
+        });
+        if (movedToken?.status) {
+          buckets[movedToken?.status as Token['status']].push(movedToken);
+        }
+        return { ...state, tokensByStatus: buckets };
+      }
+
       case 'HIDE_TOKEN': {
         const h = new Set(state.hidden).add(action.id);
         return { ...state, hidden: h };
       }
+
       case 'SET_LOADING': {
         const l = new Set(state.loading);
         const key = action.buttonType ? `${action.id}-${action.buttonType}` : action.id;
         action.loading ? l.add(key) : l.delete(key);
         return { ...state, loading: l };
       }
+
       case 'SHOW_TOKEN': {
         const h = new Set(state.hidden);
         h.delete(action.id);
         return { ...state, hidden: h };
       }
+
       case 'ADD_QUEUED_TOKENS': {
         return {
           ...state,
@@ -4331,11 +4476,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
         };
       }
+
       default:
         return state;
     }
   }
-
   const addMarket = useCallback(
     async (log: any) => {
       const { args } = decodeEventLog({
@@ -4745,7 +4890,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     }
 
     bootstrap();
-
     const connectWebSocket = () => {
       if (cancelled) return;
       explorerWsRef.current = new WebSocket(WS_URL);
@@ -4759,22 +4903,52 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             params: [
               'monadLogs',
               {
-                address: settings.chainConfig[activechain].router,
-                topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT, '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']],
+                address: router,
+                topics: [
+                  '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982',
+                ],
               },
             ],
-          }), ...(address?.slice(2) ? [JSON.stringify({
+          }),
+          JSON.stringify({
             jsonrpc: '2.0',
-            id: 'sub2',
+            id: 'sub_nadfun',
             method: 'eth_subscribe',
             params: [
               'monadLogs',
               {
-                address: '0x52D34d8536350Cd997bCBD0b9E9d722452f341F5',
-                topics: [['0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9']],
+                address: nadFunBondingCurve,
+                topics: [
+                  [
+                    NAD_FUN_EVENTS.CurveCreate,
+                    NAD_FUN_EVENTS.CurveBuy,
+                    NAD_FUN_EVENTS.CurveSell,
+                    NAD_FUN_EVENTS.CurveTokenListed,
+                  ]
+                ],
               },
             ],
-          })] : [])
+          }),
+          ...(address?.slice(2) ? [
+            JSON.stringify({
+              jsonrpc: '2.0',
+              id: 'sub2',
+              method: 'eth_subscribe',
+              params: [
+                'monadLogs',
+                {
+                  address: router,
+                  topics: [
+                    [
+                      '0xa195980963150be5fcca4acd6a80bf5a9de7f9c862258501b7c705e7d2c2d2f4',
+                      '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c'
+                    ],
+                    null,
+                    '0x000000000000000000000000' + address?.slice(2),
+                  ],
+                },
+              ],
+            })] : [])
         ];
 
         explorerPingIntervalRef.current = setInterval(() => {
@@ -9233,6 +9407,175 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         const message = JSON.parse(event.data);
         if (message?.params?.result && message?.params?.result?.commitState == "Proposed") {
           const log = message?.params?.result;
+
+          // ============================================
+          // NAD.FUN EVENT HANDLING (ADD THIS FIRST)
+          // ============================================
+          const nadFunBondingCurve = settings.chainConfig[activechain]?.nadFunBondingCurve;
+
+          if (log['address']?.toLowerCase() === nadFunBondingCurve?.toLowerCase()) {
+            const eventTopic = log['topics']?.[0];
+
+            // Debug: Log received nad.fun events
+            console.log('🎉 NAD.FUN EVENT RECEIVED:', {
+              eventTopic,
+              address: log['address'],
+              data: log['data'],
+            });
+
+            // CurveCreate - New token launched
+            if (eventTopic === NAD_FUN_EVENTS.CurveCreate) {
+              console.log('✨ CurveCreate event detected!');
+
+              const creator = '0x' + log['topics'][1].slice(26);
+              const tokenAddress = '0x' + log['topics'][2].slice(26);
+              const poolAddress = '0x' + log['topics'][3].slice(26);
+
+              try {
+                // For now, create a simple token without decoding
+                // We'll add proper decoding later
+                const newToken: Partial<Token> = {
+                  id: `nadfun-${tokenAddress}-${Date.now()}`,
+                  tokenAddress: tokenAddress,
+                  dev: creator,
+                  name: `NAD Token ${tokenAddress.slice(0, 6)}`, // Temporary
+                  symbol: `NAD${tokenAddress.slice(2, 6)}`, // Temporary
+                  image: 'https://via.placeholder.com/150', // Temporary placeholder
+                  price: 0.00001,
+                  marketCap: 0,
+                  change24h: 0,
+                  volume24h: 0,
+                  holders: 1,
+                  proTraders: 0,
+                  sniperHolding: 0,
+                  devHolding: 100,
+                  bundleHolding: 0,
+                  insiderHolding: 0,
+                  top10Holding: 100,
+                  buyTransactions: 0,
+                  sellTransactions: 0,
+                  globalFeesPaid: 0,
+                  website: '',
+                  twitterHandle: '',
+                  progress: 0,
+                  status: 'new',
+                  description: 'Launched on nad.fun',
+                  created: Math.floor(Date.now() / 1000),
+                  bondingAmount: 25000,
+                  volumeDelta: 0,
+                  telegramHandle: '',
+                  discordHandle: '',
+                  graduatedTokens: 0,
+                  launchedTokens: 0,
+                };
+
+                console.log('💎 Creating new nad.fun token:', newToken);
+
+                // Check if column is paused
+                if (pausedColumnRef.current === 'new') {
+                  pausedTokenQueueRef.current.new.push(newToken as Token);
+                } else {
+                  dispatch({ type: 'ADD_MARKET', token: newToken });
+                }
+
+                // Play alert sound
+                if (alertSettingsRef.current?.soundAlertsEnabled) {
+                  const audio = new Audio(alertSettingsRef.current.sounds.newPairs);
+                  audio.volume = alertSettingsRef.current.volume / 100;
+                  audio.play().catch(console.error);
+                }
+              } catch (error) {
+                console.error('❌ Failed to create nad.fun token:', error);
+              }
+
+              return; // Exit early
+            }
+
+            // CurveBuy - Someone bought tokens
+            else if (eventTopic === NAD_FUN_EVENTS.CurveBuy) {
+              console.log('💰 CurveBuy event detected!');
+
+              const buyer = '0x' + log['topics'][1].slice(26);
+              const tokenAddress = '0x' + log['topics'][2].slice(26);
+              const amountIn = BigInt('0x' + log['data'].slice(2, 66));
+              const amountOut = BigInt('0x' + log['data'].slice(66, 130));
+
+              console.log('Buy details:', {
+                buyer,
+                tokenAddress,
+                amountInMON: Number(amountIn) / 1e18,
+                amountOutTokens: Number(amountOut) / 1e18,
+              });
+
+              // Update token
+              dispatch({
+                type: 'UPDATE_MARKET_BY_ADDRESS',
+                tokenAddress: tokenAddress,
+                updates: {
+                  buyTransactions: 1,
+                  volumeDelta: Number(amountIn) / 1e18,
+                  holders: 1, // Simplified - should check if new holder
+                }
+              });
+
+              return;
+            }
+
+            // CurveSell - Someone sold tokens
+            else if (eventTopic === NAD_FUN_EVENTS.CurveSell) {
+              console.log('📉 CurveSell event detected!');
+
+              const seller = '0x' + log['topics'][1].slice(26);
+              const tokenAddress = '0x' + log['topics'][2].slice(26);
+              const amountIn = BigInt('0x' + log['data'].slice(2, 66));
+              const amountOut = BigInt('0x' + log['data'].slice(66, 130));
+
+              console.log('Sell details:', {
+                seller,
+                tokenAddress,
+                amountInTokens: Number(amountIn) / 1e18,
+                amountOutMON: Number(amountOut) / 1e18,
+              });
+
+              // Update token
+              dispatch({
+                type: 'UPDATE_MARKET_BY_ADDRESS',
+                tokenAddress: tokenAddress,
+                updates: {
+                  sellTransactions: 1,
+                  volumeDelta: Number(amountOut) / 1e18,
+                }
+              });
+
+              return;
+            }
+
+            // CurveTokenListed - Token graduated to DEX
+            else if (eventTopic === NAD_FUN_EVENTS.CurveTokenListed) {
+              console.log('🎓 CurveTokenListed event detected!');
+
+              const tokenAddress = '0x' + log['topics'][1].slice(26);
+              const poolAddress = '0x' + log['topics'][2].slice(26);
+
+              console.log('Token graduated:', { tokenAddress, poolAddress });
+
+              // Graduate the token
+              dispatch({
+                type: 'GRADUATE_MARKET_BY_ADDRESS',
+                tokenAddress: tokenAddress
+              });
+
+              // Play graduation sound
+              if (alertSettingsRef.current?.soundAlertsEnabled) {
+                const audio = new Audio(alertSettingsRef.current.sounds.migrated);
+                audio.volume = alertSettingsRef.current.volume / 100;
+                audio.play().catch(console.error);
+              }
+
+              return;
+            }
+          }
+
           let ordersChanged = false;
           let canceledOrdersChanged = false;
           let tradesByMarketChanged = false;
