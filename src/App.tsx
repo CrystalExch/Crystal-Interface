@@ -2615,6 +2615,28 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   };
 
   // vaults
+  const [valueSeries, setValueSeries] = useState<Array<{ name: string; value: number; ts: number }>>([]);
+  const [pnlSeries, setPnlSeries] = useState<Array<{ name: string; value: number; ts: number }>>([]);
+  const [seriesLoading, setSeriesLoading] = useState(false);
+  const [seriesError, setSeriesError] = useState<string | null>(null);
+  const [activeVaultPerformance, _setActiveVaultPerformance] = useState<any>([
+    { name: 'Jan', value: 12.4 },
+    { name: 'Feb', value: 14.8 },
+    { name: 'Mar', value: 18.2 },
+    { name: 'Apr', value: 16.9 },
+    { name: 'May', value: 21.3 },
+    { name: 'Jun', value: 22.7 },
+    { name: 'Jul', value: 24.5 },
+  ]);
+  const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<
+    '1D' | '1W' | '1M' | 'All'
+  >('All');
+  const [vaultStrategyChartType, setVaultStrategyChartType] = useState<
+    'value' | 'pnl'
+  >('value');
+
+  const vaultChartData = vaultStrategyChartType === 'value' ? valueSeries : pnlSeries;
+
   async function fetchVaultBalances(vaults: { id: `0x${string}` }[]) {
     const calls = vaults.map(v => ({
       address: v.id,
@@ -2671,54 +2693,54 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       setIsVaultsLoading(true);
 
       const VAULTS_QUERY = `
-          query VaultQuery($acct: Bytes!) {
-            userVaultPositions(
-              first: 1000,
-              where: { account: $acct },
-              orderBy: updatedAt,
-              orderDirection: desc
-            ) {
-              vault { id }
-              shares
-              depositCount
-              withdrawCount
-              totalDepositedQuote
-              totalDepositedBase
-              totalWithdrawnQuote
-              totalWithdrawnBase
-              lastDepositAt
-              lastWithdrawAt
-              updatedAt
-            }
-            vaults(first: 1000, orderBy: lastUpdatedAt, orderDirection: desc) {
-              id
-              owner
-              factory
-              quoteAsset { id symbol name decimals }
-              baseAsset { id symbol name decimals }
-              symbol
-              name
-              description
-              social1
-              social2
-              social3
-              lockup
-              decreaseOnWithdraw
-              locked
-              closed
-              maxShares
-              totalShares
-              quoteBalance
-              baseBalance
-              depositCount
-              withdrawalCount
-              uniqueDepositors
-              createdAt
-              createdBlock
-              createdTx
-              lastUpdatedAt
-            }
+        query VaultQuery($acct: Bytes!) {
+          userVaultPositions(
+            first: 1000,
+            where: { account: $acct },
+            orderBy: updatedAt,
+            orderDirection: desc
+          ) {
+            vault { id }
+            shares
+            depositCount
+            withdrawCount
+            totalDepositedQuote
+            totalDepositedBase
+            totalWithdrawnQuote
+            totalWithdrawnBase
+            lastDepositAt
+            lastWithdrawAt
+            updatedAt
           }
+          vaults(first: 1000, orderBy: lastUpdatedAt, orderDirection: desc) {
+            id
+            owner
+            factory
+            quoteAsset { id symbol name decimals }
+            baseAsset { id symbol name decimals }
+            symbol
+            name
+            description
+            social1
+            social2
+            social3
+            lockup
+            decreaseOnWithdraw
+            locked
+            closed
+            maxShares
+            totalShares
+            quoteBalance
+            baseBalance
+            depositCount
+            withdrawalCount
+            uniqueDepositors
+            createdAt
+            createdBlock
+            createdTx
+            lastUpdatedAt
+          }
+        }
       `;
 
       try {
@@ -2809,58 +2831,95 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
 
       try {
+        const url = `https://api.crystal.exchange/vaults/${selectedVaultStrategy}/${address ?? "0x0000000000000000000000000000000000000000"}`;
+        const res = await fetch(url, { method: "GET" });
+        if (!res.ok) throw new Error(`backend ${res.status}`);
+        const backend = await res.json();
+
+        const normDepositors = (backend?.depositors ?? []).map((d: any) => ({
+          id: `${(d.address || '').toLowerCase()}-${String(selectedVaultStrategy).toLowerCase()}`,
+          account: { id: (d.address || '').toLowerCase() },
+          shares: BigInt(String(d.shares ?? 0)),
+          depositCount: Number(d.deposits ?? d.depositCount ?? 0),
+          withdrawCount: Number(d.withdraws ?? d.withdrawCount ?? 0),
+          lastDepositAt: Number(d.lastDeposit ?? d.lastDepositAt ?? 0),
+          lastWithdrawAt: Number(d.lastWithdraw ?? d.lastWithdrawAt ?? 0),
+        }));
+
+        const toRow = (e: any) => ({
+          id: e.id ?? `${String(e.hash || e.txHash || '')}-${String(e.timestamp || 0)}`,
+          account: { id: (e.user || e.account?.id || '').toLowerCase() },
+          shares: BigInt(String(e.shares ?? 0)),
+          amountQuote: BigInt(String(e.quoteAmount ?? e.amountQuote ?? 0)),
+          amountBase: BigInt(String(e.baseAmount ?? e.amountBase ?? 0)),
+          txHash: e.hash ?? e.txHash ?? '',
+          timestamp: Number(e.timestamp ?? 0),
+        });
+
+        const normDeposits = (backend?.depositHistory ?? backend?.deposits ?? []).map(toRow);
+        const normWithdraws = (backend?.withdrawHistory ?? backend?.withdrawals ?? []).map(toRow);
+
+        setDepositors(normDepositors);
+        setDepositHistory(normDeposits);
+        setWithdrawHistory(normWithdraws);
+
+        const mapRangeToTf = (r: '1D' | '1W' | '1M' | 'All') => {
+          if (r === '1D') return 1;
+          if (r === '1W') return 2;
+          if (r === '1M') return 3;
+          return 4;
+        };
+
+        const fmtLabel = (ts: number, r: '1D' | '1W' | '1M' | 'All') => {
+          const d = new Date(ts * 1000);
+          const pad = (n: number) => n.toString().padStart(2, '0');
+          if (r === '1D') return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+          if (r === '1W' || r === '1M') return `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
+          return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        };
+
+        setSeriesLoading(true);
+        setSeriesError(null);
+        try {
+          const tf = mapRangeToTf(vaultStrategyTimeRange);
+          const histUrl = `https://api.crystal.exchange/vaults/${selectedVaultStrategy}/history/${tf}`;
+          const histRes = await fetch(histUrl);
+          if (!histRes.ok) throw new Error(`history http ${histRes.status}`);
+          const hist = await histRes.json();
+
+          const tvlArr = Array.isArray(hist?.series?.tvl) ? hist.series.tvl : [];
+          const pnlArr = Array.isArray(hist?.series?.pnl) ? hist.series.pnl : [];
+
+          const vSeries = tvlArr.map((p: any) => {
+            const ts = Number(p.timestamp || 0);
+            return {
+              ts,
+              name: fmtLabel(ts, vaultStrategyTimeRange),
+              value: Number(p.tvlUsd || 0),
+            };
+          });
+
+          const pSeries = pnlArr.map((p: any) => {
+            const ts = Number(p.timestamp || 0);
+            return {
+              ts,
+              name: fmtLabel(ts, vaultStrategyTimeRange),
+              value: Number(p.pnlUsd || 0),
+            };
+          });
+
+          if (!cancelled) {
+            setValueSeries(vSeries);
+            setPnlSeries(pSeries);
+          }
+        } catch (e: any) {
+          if (!cancelled) setSeriesError(e?.message || 'failed to load history');
+        } finally {
+          if (!cancelled) setSeriesLoading(false);
+        }
+
         const VAULT_DETAIL_QUERY = `
-          query VaultDetail($vault: Bytes!, $acct: ID!) {
-            depositors: userVaultPositions(
-              first: 1000
-              where: { vault: $vault }
-              orderBy: shares
-              orderDirection: desc
-            ) {
-              id
-              account { id }
-              shares
-              depositCount
-              withdrawCount
-              totalDepositedQuote
-              totalDepositedBase
-              totalWithdrawnQuote
-              totalWithdrawnBase
-              lastDepositAt
-              lastWithdrawAt
-              updatedAt
-            }
-
-            deposits: deposits(
-              first: 1000
-              where: { vault: $vault }
-              orderBy: timestamp
-              orderDirection: desc
-            ) {
-              id
-              account { id }
-              shares
-              amountQuote
-              amountBase
-              txHash
-              timestamp
-            }
-
-            withdrawals: withdrawals(
-              first: 1000
-              where: { vault: $vault }
-              orderBy: timestamp
-              orderDirection: desc
-            ) {
-              id
-              account { id }
-              shares
-              amountQuote
-              amountBase
-              txHash
-              timestamp
-            }
-
+          query VaultDetail($acct: ID!) {
             account(id: $acct) {
               id
               openOrderMap {
@@ -2933,9 +2992,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         const _openOrders = flattenMap(acct?.openOrderMap, "orders") || [];
         const _allOrders = flattenMap(acct?.orderMap, "orders") || [];
 
-        setDepositors(data?.depositors ?? []);
-        setDepositHistory(data?.deposits ?? []);
-        setWithdrawHistory(data?.withdrawals ?? []);
         setOpenOrders(flattenMap(acct?.openOrderMap, 'orders') || []);
         setAllOrders(flattenMap(acct?.orderMap, 'orders') || []);
 
@@ -26284,6 +26340,16 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 allOrders={_allOrders}
                 selectedVaultStrategy={selectedVaultStrategy}
                 setSelectedVaultStrategy={setSelectedVaultStrategy}
+                valueSeries={valueSeries}
+                pnlSeries={pnlSeries}
+                seriesLoading={seriesLoading}
+                seriesError={seriesError}
+                activeVaultPerformance={activeVaultPerformance}
+                vaultStrategyTimeRange={vaultStrategyTimeRange}
+                setVaultStrategyTimeRange={setVaultStrategyTimeRange}
+                vaultStrategyChartType={vaultStrategyChartType}
+                setVaultStrategyChartType={setVaultStrategyChartType}
+                chartData={vaultChartData}
               />
             } />
           <Route path="/earn/vaults/:vaultAddress"
@@ -26334,6 +26400,16 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 allOrders={_allOrders}
                 selectedVaultStrategy={selectedVaultStrategy}
                 setSelectedVaultStrategy={setSelectedVaultStrategy}
+                valueSeries={valueSeries}
+                pnlSeries={pnlSeries}
+                seriesLoading={seriesLoading}
+                seriesError={seriesError}
+                activeVaultPerformance={activeVaultPerformance}
+                vaultStrategyTimeRange={vaultStrategyTimeRange}
+                setVaultStrategyTimeRange={setVaultStrategyTimeRange}
+                vaultStrategyChartType={vaultStrategyChartType}
+                setVaultStrategyChartType={setVaultStrategyChartType}
+                chartData={vaultChartData}
               />
             } />
           <Route path="/portfolio"

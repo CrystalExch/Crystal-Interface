@@ -45,6 +45,16 @@ interface EarnProps {
   allOrders: any;
   selectedVaultStrategy: any;
   setSelectedVaultStrategy: any;
+  valueSeries: Array<{ name: string; value: number; ts: number }>;
+  pnlSeries: Array<{ name: string; value: number; ts: number }>
+  seriesLoading: boolean;
+  seriesError: any;
+  activeVaultPerformance: any;
+  vaultStrategyTimeRange: '1D' | '1W' | '1M' | 'All';
+  setVaultStrategyTimeRange: (r: '1D' | '1W' | '1M' | 'All') => void;
+  vaultStrategyChartType: 'value' | 'pnl';
+  setVaultStrategyChartType: (t: 'value' | 'pnl') => void;
+  chartData: any;
 }
 
 const Earn: React.FC<EarnProps> = (props) => {
@@ -147,6 +157,16 @@ const Earn: React.FC<EarnProps> = (props) => {
             allOrders={props.allOrders}
             selectedVaultStrategy={props.selectedVaultStrategy}
             setSelectedVaultStrategy={props.setSelectedVaultStrategy}
+            valueSeries={props.valueSeries}
+            pnlSeries={props.pnlSeries}
+            seriesLoading={props.seriesLoading}
+            seriesError={props.seriesError}
+            activeVaultPerformance={props.activeVaultPerformance}
+            vaultStrategyTimeRange={props.vaultStrategyTimeRange}
+            setVaultStrategyTimeRange={props.setVaultStrategyTimeRange}
+            vaultStrategyChartType={props.vaultStrategyChartType}
+            setVaultStrategyChartType={props.setVaultStrategyChartType}
+            chartData={props.chartData}
           />
         )}
       </div>

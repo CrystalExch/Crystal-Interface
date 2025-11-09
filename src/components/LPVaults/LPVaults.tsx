@@ -56,6 +56,16 @@ interface LPVaultsProps {
   allOrders: any;
   selectedVaultStrategy: any;
   setSelectedVaultStrategy: any;
+  valueSeries: Array<{ name: string; value: number; ts: number }>;
+  pnlSeries: Array<{ name: string; value: number; ts: number }>
+  seriesLoading: boolean;
+  seriesError: any;
+  activeVaultPerformance: any;
+  vaultStrategyTimeRange: '1D' | '1W' | '1M' | 'All';
+  setVaultStrategyTimeRange: (r: '1D' | '1W' | '1M' | 'All') => void;
+  vaultStrategyChartType: 'value' | 'pnl';
+  setVaultStrategyChartType: (t: 'value' | 'pnl') => void;
+  chartData: any;
 }
 
 interface VaultSnapshotProps {
@@ -134,6 +144,7 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({
     </div>
   );
 };
+
 const TooltipLabel: React.FC<{
   content: string;
   children: React.ReactNode;
@@ -285,6 +296,7 @@ const TooltipLabel: React.FC<{
     </div>
   );
 };
+
 const LPVaults: React.FC<LPVaultsProps> = ({
   setpopup,
   tokendict,
@@ -312,6 +324,16 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   // allOrders,
   selectedVaultStrategy,
   setSelectedVaultStrategy,
+  valueSeries,
+  pnlSeries,
+  seriesLoading,
+  seriesError,
+  activeVaultPerformance,
+  vaultStrategyTimeRange,
+  setVaultStrategyTimeRange,
+  vaultStrategyChartType,
+  setVaultStrategyChartType,
+  chartData,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [vaultFilter, setVaultFilter] = useState<'Active' | 'Closed' | 'All'>(
@@ -324,21 +346,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const [activeVaultStrategyTab, setActiveVaultStrategyTab] = useState<
     'Balances' | 'Open Orders' | 'Depositors' | 'Deposit History' | 'Withdraw History'
   >('Balances');
-  const [activeVaultPerformance, _setActiveVaultPerformance] = useState<any>([
-    { name: 'Jan', value: 12.4 },
-    { name: 'Feb', value: 14.8 },
-    { name: 'Mar', value: 18.2 },
-    { name: 'Apr', value: 16.9 },
-    { name: 'May', value: 21.3 },
-    { name: 'Jun', value: 22.7 },
-    { name: 'Jul', value: 24.5 },
-  ]);
-  const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<
-    '1D' | '1W' | '1M' | 'All'
-  >('All');
-  const [vaultStrategyChartType, setVaultStrategyChartType] = useState<
-    'value' | 'pnl'
-  >('value');
   const [showTimeRangeDropdown, setShowTimeRangeDropdown] = useState(false);
 
   const vaultStrategyIndicatorRef = useRef<HTMLDivElement>(null);
@@ -497,34 +504,34 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     await sendUserOperationAsync({ uo: deployUo });
   };
 
-const updateVaultStrategyIndicatorPosition = useCallback(
-  (activeTab: string) => {
-    if (!vaultStrategyIndicatorRef.current || !vaultStrategyTabsRef.current) {
-      return;
-    }
-
-    const availableTabs = [
-      'Balances',
-      'Open Orders',
-      'Depositors',
-      'Deposit History',
-      'Withdraw History'
-    ];
-    const activeTabIndex = availableTabs.findIndex(
-      (tab) => tab === activeTab,
-    );
-
-    if (activeTabIndex !== -1) {
-      const activeTabElement = vaultStrategyTabsRef.current[activeTabIndex];
-      if (activeTabElement) {  
-        const indicator = vaultStrategyIndicatorRef.current;
-        indicator.style.width = `${activeTabElement.offsetWidth}px`;
-        indicator.style.left = `${activeTabElement.offsetLeft}px`;
+  const updateVaultStrategyIndicatorPosition = useCallback(
+    (activeTab: string) => {
+      if (!vaultStrategyIndicatorRef.current || !vaultStrategyTabsRef.current) {
+        return;
       }
-    }
-  },
-  [],  
-);
+
+      const availableTabs = [
+        'Balances',
+        'Open Orders',
+        'Depositors',
+        'Deposit History',
+        'Withdraw History'
+      ];
+      const activeTabIndex = availableTabs.findIndex(
+        (tab) => tab === activeTab,
+      );
+
+      if (activeTabIndex !== -1) {
+        const activeTabElement = vaultStrategyTabsRef.current[activeTabIndex];
+        if (activeTabElement) {  
+          const indicator = vaultStrategyIndicatorRef.current;
+          indicator.style.width = `${activeTabElement.offsetWidth}px`;
+          indicator.style.left = `${activeTabElement.offsetLeft}px`;
+        }
+      }
+    },
+    [],  
+  );
 
   useEffect(() => {
     if (selectedVaultStrategy && selectedVault) {
@@ -1116,32 +1123,15 @@ const updateVaultStrategyIndicatorPosition = useCallback(
 
                   <div className="performance-chart">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={activeVaultPerformance}>
+                      <AreaChart data={chartData}>
                         <defs>
-                          <linearGradient
-                            id="vaultPerformanceGrad"
-                            x1="0"
-                            y1="0"
-                            x2="0"
-                            y2="1"
-                          >
-                            <stop
-                              offset="0%"
-                              stopColor="#aaaecf"
-                              stopOpacity={0.4}
-                            />
-                            <stop
-                              offset="50%"
-                              stopColor="#aaaecf"
-                              stopOpacity={0.1}
-                            />
-                            <stop
-                              offset="100%"
-                              stopColor="#aaaecf"
-                              stopOpacity={0}
-                            />
+                          <linearGradient id="vaultPerformanceGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#aaaecf" stopOpacity={0.4} />
+                            <stop offset="50%" stopColor="#aaaecf" stopOpacity={0.1} />
+                            <stop offset="100%" stopColor="#aaaecf" stopOpacity={0} />
                           </linearGradient>
                         </defs>
+
                         <XAxis
                           dataKey="name"
                           axisLine={false}
@@ -1150,11 +1140,13 @@ const updateVaultStrategyIndicatorPosition = useCallback(
                         />
                         <YAxis hide />
                         <Tooltip
-                          contentStyle={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#fff',
-                          }}
+                          contentStyle={{ background: 'none', border: 'none', color: '#fff' }}
+                          formatter={(v: any) =>
+                            vaultStrategyChartType === 'value'
+                              ? [`$${Number(v).toLocaleString()}`, 'Value']
+                              : [`$${Number(v).toLocaleString()}`, 'PnL']
+                          }
+                          labelFormatter={(l: any) => String(l)}
                         />
                         <Area
                           type="monotone"
@@ -1163,15 +1155,16 @@ const updateVaultStrategyIndicatorPosition = useCallback(
                           strokeWidth={2}
                           fill="url(#vaultPerformanceGrad)"
                           dot={false}
-                          activeDot={{
-                            r: 4,
-                            fill: 'rgb(6,6,6)',
-                            stroke: '#aaaecf',
-                            strokeWidth: 2,
-                          }}
+                          activeDot={{ r: 4, fill: 'rgb(6,6,6)', stroke: '#aaaecf', strokeWidth: 2 }}
                         />
                       </AreaChart>
                     </ResponsiveContainer>
+
+                    {seriesLoading && <div className="chart-overlay">loading…</div>}
+                    {seriesError && <div className="chart-overlay">failed to load series</div>}
+                    {!seriesLoading && chartData.length === 0 && (
+                      <div className="chart-overlay">no data</div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1338,7 +1331,12 @@ const updateVaultStrategyIndicatorPosition = useCallback(
                                     : ''}
                                 </div>
                                 <div className="vault-depositors-col">
-                                  {((d.shares * 100 / Number(stableSelectedVault.totalShares)) || 0).toFixed(2)}%
+                                  {(() => {
+                                    const shares = Number(d?.shares ?? 0);
+                                    const total = Number(stableSelectedVault?.totalShares ?? 0);
+                                    const pct = total > 0 ? (shares * 100) / total : 0;
+                                    return pct.toFixed(2) + '%';
+                                  })()}
                                 </div>
                                 <div className="vault-depositors-col">
                                   {d.depositCount}
