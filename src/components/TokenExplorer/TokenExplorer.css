@@ -2590,6 +2590,7 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
   transition: all 0.2s ease;
   width: 26px;
   z-index: 11;
+  
 }
 
 .explorer-token-row:hover .explorer-blacklist-button {
@@ -4722,3 +4723,25 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
 
 
 
+
+
+
+.explorer-token-row.nadfun-token .token-explorer-launchpad-logo-container {
+  border-color: #AD5FFB;
+}
+
+.explorer-token-row.nadfun-token .explorer-token-image-container {
+  background: conic-gradient(from 0deg,
+    #AD5FFB 0deg,
+    #AD5FFB var(--progress-angle),
+    rgba(173, 95, 251, 0.2) var(--progress-angle),
+    rgba(173, 95, 251, 0.2) 360deg);
+}
+
+.explorer-token-row.nadfun-token .explorer-progress-line-fill {
+  background: #AD5FFB;
+}
+
+.explorer-token-row.nadfun-token .explorer-progress-line {
+  background: rgba(173, 95, 251, 0.2);
+}

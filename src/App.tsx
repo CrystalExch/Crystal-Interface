@@ -239,6 +239,7 @@ interface Token {
   discordHandle: string;
   graduatedTokens: number;
   launchedTokens: number;
+  launchpad?: 'crystal' | 'nadfun';
 }
 
 type AudioGroups = 'swap' | 'order' | 'transfer' | 'approve';
@@ -4944,6 +4945,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           const log = msg.params?.result;
 
           if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
+          console.log('EVENT RECEIVED:', {
+            address: log.address,
+            topic0: log.topics?.[0],
+            commitState: log.commitState,
+            txHash: log.transactionHash,
+          });
+          console.log('NAD.FUN EVENT DETECTED!');
+          console.log('full log:', log);
           setProcessedLogs(prev => {
             let tempset = new Set(prev);
             const resolve = txReceiptResolvers.current.get(log['transactionHash']);
@@ -5547,19 +5556,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 status: 'graduated'
               }));
             }
-            else if (log.topics?.[0] == '0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9') {
-              console.log(log)
-              const dev = `0x${log.topics[1].slice(26)}`.toLowerCase();
-              const marketAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
-              const graduatedPool = `0x${log.topics[3].slice(26)}`.toLowerCase();
-              const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
-              const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
-            }
             else if (log.topics?.[0] === NAD_FUN_EVENTS.CurveCreate) {
               const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
               const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
 
-              const metadataOffset = Number(word(2)) / 2;
+              const metadataOffset = Number(word(2)) * 2;
               const metadataLength = Number(BigInt('0x' + hex.slice(metadataOffset, metadataOffset + 64)));
               const metadataStart = metadataOffset + 64;
               const metadataHex = hex.slice(metadataStart, metadataStart + metadataLength * 2);
@@ -5575,50 +5576,87 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const tokenAddress = `0x${log.topics[1].slice(26)}`.toLowerCase();
               const creatorAddress = `0x${log.topics[2].slice(26)}`.toLowerCase();
 
-              console.log('Token Address:', tokenAddress);
-              console.log('Creator:', creatorAddress);
-              console.log('Metadata URI:', metadataURI);
+              console.log('nad.fun Token Created:', tokenAddress);
 
               fetch(metadataURI)
                 .then(response => response.json())
                 .then(metadata => {
-                  console.log('TOKEN METADATA:', metadata);
-                  console.log('Name:', metadata.name);
-                  console.log('Symbol:', metadata.symbol);
-                  console.log('Image:', metadata.image);
-                  console.log('Description:', metadata.description);
+                  const newToken: Token = {
+                    ...defaultMetrics,
+                    id: tokenAddress,
+                    tokenAddress: tokenAddress,
+                    dev: creatorAddress,
+                    name: metadata.name || 'Unknown',
+                    symbol: metadata.symbol || 'UNKNOWN',
+                    image: metadata.image_uri || '',
+                    description: metadata.description || '',
+                    twitterHandle: metadata.twitter || '',
+                    telegramHandle: metadata.telegram || '',
+                    discordHandle: '',
+                    website: metadata.website || '',
+                    status: 'new',
+                    created: Date.now() / 1000,
+                    price: 0,
+                    marketCap: 0,
+                    volumeDelta: 0,
+                    graduatedTokens: 0,
+                    launchedTokens: 0,
+                    launchpad: 'nadfun',
+                  };
 
-                  dispatch({
-                    type: 'ADD_QUEUED_TOKENS',
-                    payload: {
-                      status: 'new',
-                      tokens: [{
-                        ...defaultMetrics,
-                        id: tokenAddress,
-                        tokenAddress: tokenAddress,
-                        dev: creatorAddress,
-                        name: metadata.name || 'Unknown',
-                        symbol: metadata.symbol || 'UNKNOWN',
-                        image: metadata.image || '',
-                        description: metadata.description || '',
-                        twitterHandle: metadata.twitter || '',
-                        telegramHandle: metadata.telegram || '',
-                        discordHandle: metadata.discord || '',
-                        website: metadata.website || '',
+                  // Check if column is paused
+                  if (pausedColumnRef.current === 'new') {
+                    console.log('Column paused, queueing token:', tokenAddress);
+                    pausedTokenQueueRef.current['new'].push(newToken);
+                  } else {
+                    console.log('Adding token directly:', tokenAddress);
+                    dispatch({
+                      type: 'ADD_QUEUED_TOKENS',
+                      payload: {
                         status: 'new',
-                        created: Date.now() / 1000,
-                        price: 0,
-                        marketCap: 0,
-                        volumeDelta: 0,
-                        graduatedTokens: 0,
-                        launchedTokens: 0,
-                      }]
-                    }
-                  });
+                        tokens: [newToken]
+                      }
+                    });
+                  }
                 })
-                .catch(err => console.error('Failed to fetch metadata:', err));
-            }
+                .catch(err => {
+                  console.error('Failed to fetch nad.fun metadata:', err);
+                  const newToken: Token = {
+                    ...defaultMetrics,
+                    id: tokenAddress,
+                    tokenAddress: tokenAddress,
+                    dev: creatorAddress,
+                    name: tokenAddress.slice(0, 8) + '...',
+                    symbol: 'NAD',
+                    image: '',
+                    description: '',
+                    twitterHandle: '',
+                    telegramHandle: '',
+                    discordHandle: '',
+                    website: '',
+                    status: 'new',
+                    created: Date.now() / 1000,
+                    price: 0,
+                    marketCap: 0,
+                    volumeDelta: 0,
+                    graduatedTokens: 0,
+                    launchedTokens: 0,
+                    launchpad: 'nadfun',
+                  };
 
+                  if (pausedColumnRef.current === 'new') {
+                    pausedTokenQueueRef.current['new'].push(newToken);
+                  } else {
+                    dispatch({
+                      type: 'ADD_QUEUED_TOKENS',
+                      payload: {
+                        status: 'new',
+                        tokens: [newToken]
+                      }
+                    });
+                  }
+                });
+            }
             return tempset;
           })
         } catch (parseError) {
@@ -9477,18 +9515,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (message?.method === 'eth_subscription' && message?.params?.result) {
           const log = message?.params?.result;
 
-          console.log('📨 EVENT RECEIVED:', {
-            address: log.address,
-            topic0: log.topics?.[0],
-            commitState: log.commitState,
-            txHash: log.transactionHash,
-          });
 
-          // Check if it's from nad.fun
+
           const nadFunBondingCurve = settings.chainConfig[activechain]?.nadFunBondingCurve;
           if (log.address?.toLowerCase() === nadFunBondingCurve?.toLowerCase()) {
-            console.log('🎉 NAD.FUN EVENT DETECTED!');
-            console.log('Full log:', log);
 
             const eventTopic = log.topics?.[0];
 
@@ -9496,14 +9526,201 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               console.log('✨ CurveCreate event!');
               // Your handling code here
             }
-            else if (eventTopic === NAD_FUN_EVENTS.CurveBuy) {
-              console.log('💰 CurveBuy event!');
-              // Your handling code here
-            }
-            else if (eventTopic === NAD_FUN_EVENTS.CurveSell) {
-              console.log('📉 CurveSell event!');
-              // Your handling code here
-            }
+            else if (log.topics?.[0] === NAD_FUN_EVENTS.CurveBuy || log.topics?.[0] === NAD_FUN_EVENTS.CurveSell) {
+  const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+  const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
+  
+  const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+const word = (i: number) => {
+  const chunk = hex.slice(i * 64, i * 64 + 64);
+  return chunk && chunk.trim().length ? BigInt('0x' + chunk) : 0n;
+};  
+  const isBuy = log.topics[0] === NAD_FUN_EVENTS.CurveBuy;
+  const amountIn = Number(word(0)) / 1e18;
+  const amountOut = Number(word(1)) / 1e18;
+  const priceAfter = Number(word(2)) / 1e18;
+  
+  console.log('nad.fun Trade:', {
+    token: tokenAddr,
+    isBuy,
+    amountIn,
+    amountOut,
+    priceAfter,
+    caller: callerAddr
+  });
+
+  // Update token in explorer
+  dispatch({
+    type: 'UPDATE_MARKET',
+    id: tokenAddr,
+    updates: {
+      price: priceAfter,
+      marketCap: priceAfter * TOTAL_SUPPLY,
+      buyTransactions: isBuy ? 1 : 0,
+      sellTransactions: isBuy ? 0 : 1,
+      volumeDelta: isBuy ? amountIn : amountOut,
+    },
+  });
+
+  // Update tracked wallet trades if applicable
+  if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
+    const normalized = normalizeTrade({
+      caller: callerAddr,
+      id: log.transactionHash,
+      isBuy: isBuy,
+      price: priceAfter,
+      symbol: 'NAD', // You might want to fetch the actual symbol
+      amountIn,
+      amountOut,
+      timestamp: Date.now(),
+    }, trackedWalletsRef.current);
+
+    setTrackedWalletTrades(prev => {
+      const updated = [normalized, ...prev];
+      return updated.length > 500 ? updated.slice(0, 500) : updated;
+    });
+  }
+
+  // If this is the currently viewed token, update its details
+  if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
+    setTokenData(p => ({
+      ...p,
+      price: priceAfter,
+      marketCap: priceAfter * TOTAL_SUPPLY,
+      change24h: p?.mini?.[0]?.open ? ((priceAfter * 1e9 - p?.mini?.[0]?.open) / (priceAfter * 1e9) * 100) : p?.change24h,
+      buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
+      sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
+      volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
+    }));
+
+    setMemeTrades(prev => [
+      {
+        id: `${log.transactionHash}-${log.logIndex}`,
+        timestamp: Date.now() / 1000,
+        isBuy,
+        price: priceAfter,
+        nativeAmount: isBuy ? amountIn : amountOut,
+        tokenAmount: isBuy ? amountOut : amountIn,
+        caller: callerAddr,
+      },
+      ...prev.slice(0, 99),
+    ]);
+
+    // Update chart data
+    setChartData((prev: any) => {
+      if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
+      const [bars, key, flag] = prev;
+      const sel = key?.split('MON').pop() || ''
+      const RESOLUTION_SECS: Record<string, number> = {
+        '1S': 1, '5S': 5, '15S': 15, '1m': 60, '5m': 300, '15m': 900,
+        '1h': 3600, '4h': 14400, '1d': 86400,
+      };
+      const resSecs = RESOLUTION_SECS[sel] ?? 60;
+      const now = Date.now();
+      const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
+      const volNative = isBuy ? amountIn : amountOut;
+      
+      const updated = [...bars];
+      const last = updated[updated.length - 1];
+      
+      if (!last || last.time < bucket) {
+        const prevClose = last?.close ?? priceAfter;
+        const open = prevClose;
+        const high = Math.max(open, priceAfter);
+        const low = Math.min(open, priceAfter);
+        const newBar = {
+          time: bucket,
+          open,
+          high,
+          low,
+          close: priceAfter,
+          volume: volNative || 0,
+        };
+        updated.push(newBar);
+        const cb = memeRealtimeCallbackRef.current?.[key];
+        if (cb) cb(newBar);
+      } else {
+        const cur = { ...last };
+        cur.high = Math.max(cur.high, priceAfter);
+        cur.low = Math.min(cur.low, priceAfter);
+        cur.close = priceAfter;
+        cur.volume = (cur.volume || 0) + (volNative || 0);
+        updated[updated.length - 1] = cur;
+        const cb = memeRealtimeCallbackRef.current?.[key];
+        if (cb) cb(cur);
+      }
+      
+      if (updated.length > 1200) updated.splice(0, updated.length - 1200);
+      return [updated, key, flag];
+    });
+
+    // Update holders
+    setMemeHolders(prev => {
+      const arr = prev.slice();
+      let idx = memeHoldersMapRef.current.get?.(callerAddr);
+      if (idx == undefined) {
+        const fresh: Holder = {
+          address: callerAddr,
+          balance: 0,
+          amountBought: 0,
+          amountSold: 0,
+          valueBought: 0,
+          valueSold: 0,
+          valueNet: 0,
+          tokenNet: 0,
+        };
+        arr.push(fresh);
+        idx = arr.length - 1;
+        memeHoldersMapRef.current.set(callerAddr, idx);
+      }
+      const h = { ...arr[idx] };
+      if (isBuy) {
+        h.amountBought = (h.amountBought || 0) + amountOut;
+        h.valueBought = (h.valueBought || 0) + amountIn;
+        h.balance = (h.balance || 0) + amountOut;
+      } else {
+        h.amountSold = (h.amountSold || 0) + amountIn;
+        h.valueSold = (h.valueSold || 0) + amountOut;
+        h.balance = Math.max(0, (h.balance || 0) - amountIn);
+      }
+      arr[idx] = h;
+
+      for (let i = 0; i < arr.length; i++) {
+        const hh = arr[i];
+        const realized = (hh.valueSold || 0) - (hh.valueBought || 0);
+        const bal = Math.max(0, hh.balance || 0);
+        arr[i] = { ...hh, valueNet: realized + bal * priceAfter };
+      }
+
+      const topSum = arr
+        .map(hh => Math.max(0, hh.balance || 0))
+        .sort((a, b) => b - a)
+        .slice(0, 10)
+        .reduce((s, n) => s + n, 0);
+      setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
+      return arr;
+    });
+  }
+
+  // Update dev tokens if applicable
+  if (memeDevTokenIdsRef.current.has(tokenAddr)) {
+    setMemeDevTokens(prev => {
+      const updated = prev.map(t => {
+        if ((t.id || '').toLowerCase() !== tokenAddr) return t;
+        return { 
+          ...t, 
+          price: priceAfter, 
+          marketCap: priceAfter * TOTAL_SUPPLY, 
+          timestamp: Date.now() / 1000 
+        };
+      });
+      memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
+      return updated;
+    });
+  }
+
+  return tempset;
+}
           }
         }
       };
