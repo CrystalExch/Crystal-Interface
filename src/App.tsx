@@ -26044,75 +26044,68 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           </div>
         </>
       )}
-      {
-        <div
-        // style={getAppContainerStyle()} 
-        >
-
-          <Header
-            setTokenIn={setTokenIn}
-            setTokenOut={setTokenOut}
-            setorders={setorders}
-            settradehistory={settradehistory}
-            settradesByMarket={settradesByMarket}
-            setcanceledorders={setcanceledorders}
-            setpopup={setpopup}
-            setChain={handleSetChain}
-            account={{
-              connected: connected,
-              address: address,
-              chainId: userchain,
-            }}
-            activechain={activechain}
-            tokenIn={tokenIn}
-            setShowTrade={setShowTrade}
-            simpleView={simpleView}
-            setSimpleView={setSimpleView}
-            tokendict={tokendict}
-            transactions={transactions}
-            activeMarket={activeMarket}
-            orderdata={{
-              liquidityBuyOrders,
-              liquiditySellOrders,
-              reserveQuote,
-              reserveBase
-            }}
-            onMarketSelect={onMarketSelect}
-            marketsData={sortedMarkets}
-            tradesloading={tradesloading}
-            tradesByMarket={tradesByMarket}
-            currentWalletIcon={currentWalletIcon}
-            subWallets={subWallets}
-            walletTokenBalances={walletTokenBalances}
-            activeWalletPrivateKey={oneCTSigner}
-            setOneCTSigner={setOneCTSigner}
-            refetch={refetch}
-            isBlurred={isBlurred}
-            terminalRefetch={terminalRefetch}
-            tokenList={memoizedTokenList}
-            logout={logout}
-            tokenBalances={tokenBalances}
-            lastRefGroupFetch={lastRefGroupFetch}
-            tokenData={token}
-            monUsdPrice={monUsdPrice}
-            sendUserOperationAsync={sendUserOperationAsync}
-            setTokenData={setTokenData}
-            quickAmounts={quickAmounts}
-            setQuickAmount={setQuickAmount}
-            activePresets={activePresets}
-            setActivePreset={setActivePreset}
-            handleInputFocus={handleInputFocus}
-            buyPresets={buyPresets}
-            sellPresets={sellPresets}
-            perpsActiveMarketKey={perpsActiveMarketKey}
-            setperpsActiveMarketKey={handlePerpsMarketSelect}
-            perpsMarketsData={perpsMarketsData}
-            perpsFilterOptions={perpsFilterOptions}
-            externalUserStats={memeUserStats}
-            lastNonceGroupFetch={lastNonceGroupFetch}
-          />
-        </div>
-      }
+      <Header
+        setTokenIn={setTokenIn}
+        setTokenOut={setTokenOut}
+        setorders={setorders}
+        settradehistory={settradehistory}
+        settradesByMarket={settradesByMarket}
+        setcanceledorders={setcanceledorders}
+        setpopup={setpopup}
+        setChain={handleSetChain}
+        account={{
+          connected: connected,
+          address: address,
+          chainId: userchain,
+        }}
+        activechain={activechain}
+        tokenIn={tokenIn}
+        setShowTrade={setShowTrade}
+        simpleView={simpleView}
+        setSimpleView={setSimpleView}
+        tokendict={tokendict}
+        transactions={transactions}
+        activeMarket={activeMarket}
+        orderdata={{
+          liquidityBuyOrders,
+          liquiditySellOrders,
+          reserveQuote,
+          reserveBase
+        }}
+        onMarketSelect={onMarketSelect}
+        marketsData={sortedMarkets}
+        tradesloading={tradesloading}
+        tradesByMarket={tradesByMarket}
+        currentWalletIcon={currentWalletIcon}
+        subWallets={subWallets}
+        walletTokenBalances={walletTokenBalances}
+        activeWalletPrivateKey={oneCTSigner}
+        setOneCTSigner={setOneCTSigner}
+        refetch={refetch}
+        isBlurred={isBlurred}
+        terminalRefetch={terminalRefetch}
+        tokenList={memoizedTokenList}
+        logout={logout}
+        tokenBalances={tokenBalances}
+        lastRefGroupFetch={lastRefGroupFetch}
+        tokenData={token}
+        monUsdPrice={monUsdPrice}
+        sendUserOperationAsync={sendUserOperationAsync}
+        setTokenData={setTokenData}
+        quickAmounts={quickAmounts}
+        setQuickAmount={setQuickAmount}
+        activePresets={activePresets}
+        setActivePreset={setActivePreset}
+        handleInputFocus={handleInputFocus}
+        buyPresets={buyPresets}
+        sellPresets={sellPresets}
+        perpsActiveMarketKey={perpsActiveMarketKey}
+        setperpsActiveMarketKey={handlePerpsMarketSelect}
+        perpsMarketsData={perpsMarketsData}
+        perpsFilterOptions={perpsFilterOptions}
+        externalUserStats={memeUserStats}
+        lastNonceGroupFetch={lastNonceGroupFetch}
+      />
       <div className="app-container" style={{
         marginLeft: (() => {
           let total = 0;
@@ -26714,31 +26707,31 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         currentSnapSide={widgetExplorerSnapSide}
         onWidgetResize={handleWidgetExplorerResize} 
       /> */}
-        <Footer
-          subWallets={subWallets}
-          selectedWallets={selectedWallets}
-          setSelectedWallets={setSelectedWallets}
-          walletTokenBalances={walletTokenBalances}
-          activeWalletPrivateKey={oneCTSigner}
-          activeChain={activechain}
-          monUsdPrice={monUsdPrice}
-          isTrackerWidgetOpen={isTrackerWidgetOpen}
-          onToggleTrackerWidget={setIsTrackerWidgetOpen}
-          isSpectraWidgetOpen={isSpectraWidgetOpen}
-          onToggleSpectraWidget={(open: any) => {
-            if (!open && spectraWidgetSnap) {
-              setSpectraWidgetSnap(null);
-              setSpectraWidgetWidth(0);
-            }
-            setIsSpectraWidgetOpen(open);
-          }}
-          isPNLWidgetOpen={isPNLWidgetOpen}
-          onTogglePNLWidget={setIsPNLWidgetOpen}
-          isWalletTrackerWidgetOpen={isWalletTrackerWidgetOpen}
-          onToggleWalletTrackerWidget={setIsWalletTrackerWidgetOpen}
-          setpopup={setpopup}
-        />
       </div>
+      <Footer
+        subWallets={subWallets}
+        selectedWallets={selectedWallets}
+        setSelectedWallets={setSelectedWallets}
+        walletTokenBalances={walletTokenBalances}
+        activeWalletPrivateKey={oneCTSigner}
+        activeChain={activechain}
+        monUsdPrice={monUsdPrice}
+        isTrackerWidgetOpen={isTrackerWidgetOpen}
+        onToggleTrackerWidget={setIsTrackerWidgetOpen}
+        isSpectraWidgetOpen={isSpectraWidgetOpen}
+        onToggleSpectraWidget={(open: any) => {
+          if (!open && spectraWidgetSnap) {
+            setSpectraWidgetSnap(null);
+            setSpectraWidgetWidth(0);
+          }
+          setIsSpectraWidgetOpen(open);
+        }}
+        isPNLWidgetOpen={isPNLWidgetOpen}
+        onTogglePNLWidget={setIsPNLWidgetOpen}
+        isWalletTrackerWidgetOpen={isWalletTrackerWidgetOpen}
+        onToggleWalletTrackerWidget={setIsWalletTrackerWidgetOpen}
+        setpopup={setpopup}
+      />
     </div>
   );
 }
