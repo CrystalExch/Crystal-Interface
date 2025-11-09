@@ -618,7 +618,6 @@
   font-size: 0.9rem;
 }
 
-/* Resize Handles */
 .spectra-resize-handle {
   position: absolute;
   background: transparent;
@@ -693,6 +692,10 @@
   width: 3px;
   background: transparent;
   transition: background 0.2s ease;
+}
+
+.spectra-resize-handle.snapped-resize{
+  background: transparent;
 }
 
 .spectra-resize-handle.snapped-resize:hover {

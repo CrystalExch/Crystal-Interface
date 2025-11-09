@@ -361,7 +361,7 @@ html {
 }
 
 .send-popup-background {
-  height: min(335px, 90vh);
+  height: min(325px, 90vh);
   padding-top: 5px;
 }
 

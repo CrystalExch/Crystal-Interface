@@ -448,43 +448,13 @@ const Loader = () => {
 function App({ stateloading, setstateloading, addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
 
   const NAD_FUN_EVENTS = {
-    CurveCreate: '0x0973e9cac7e9c2f01af09be904e52e439ffb0b171ef90eaf5d4ca91d0254ff3f',
-    CurveBuy: '0x07309743e5dcfe77c54cbb11eed2bc9e22a8b9ea74631a3385b5e9daf41acca8',
-    CurveSell: '0x4c6cfcf61108a6a6e7ca8f2b7c74a016758588359111165e8b8b5271c2976bac',
+    CurveCreate: '0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9',
+    CurveBuy: '0x00a7ba871905cb955432583640b5c9fc6bdd27d36884ab2b5420839224638862',
+    CurveSell: '0x393ce1f1cc725c248fb5e08e6ff41ed3caa8dc577d33f7a8571ce9dc7638b063',
     CurveTokenListed: '0xb1a5d58d86c7ab81f843d3dd779c3f0e0b0319822dd754c37fb28dd21f8a98ff',
     CurveSync: '0x9f5e8c0f3b7e2e5e5f5e8c0f3b7e2e5e5f5e8c0f3b7e2e5e5f5e8c0f3b7e2e5e',
   };
 
-
-  function decodeNadFunCreateEvent(dataHex: string) {
-    const data = dataHex.slice(2);
-
-    try {
-      const decoded = decodeAbiParameters(
-        [
-          { name: 'name', type: 'string' },
-          { name: 'symbol', type: 'string' },
-          { name: 'tokenURI', type: 'string' },
-          { name: 'virtualMon', type: 'uint256' },
-          { name: 'virtualToken', type: 'uint256' },
-          { name: 'targetTokenAmount', type: 'uint256' },
-        ],
-        `0x${data}`
-      );
-
-      return {
-        name: decoded[0] as string,
-        symbol: decoded[1] as string,
-        tokenURI: decoded[2] as string,
-        virtualMon: decoded[3] as bigint,
-        virtualToken: decoded[4] as bigint,
-        targetTokenAmount: decoded[5] as bigint,
-      };
-    } catch (error) {
-      console.error('Failed to decode nad.fun create event:', error);
-      return null;
-    }
-  }
   const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');
   const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
   const [selectedSellPreset, setSelectedSellPreset] = useState(1);
@@ -5585,6 +5555,70 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
               const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
             }
+            else if (log.topics?.[0] === NAD_FUN_EVENTS.CurveCreate) {
+              const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+              const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
+
+              const metadataOffset = Number(word(2)) / 2;
+              const metadataLength = Number(BigInt('0x' + hex.slice(metadataOffset, metadataOffset + 64)));
+              const metadataStart = metadataOffset + 64;
+              const metadataHex = hex.slice(metadataStart, metadataStart + metadataLength * 2);
+
+              let metadataURI = '';
+              try {
+                metadataURI = decodeURIComponent(metadataHex.match(/.{1,2}/g)?.map((byte: string) => '%' + byte).join('') || '');
+              } catch {
+                const bytes = metadataHex.match(/.{1,2}/g) || [];
+                metadataURI = bytes.map((byte: string) => String.fromCharCode(parseInt(byte, 16))).join('');
+              }
+
+              const tokenAddress = `0x${log.topics[1].slice(26)}`.toLowerCase();
+              const creatorAddress = `0x${log.topics[2].slice(26)}`.toLowerCase();
+
+              console.log('Token Address:', tokenAddress);
+              console.log('Creator:', creatorAddress);
+              console.log('Metadata URI:', metadataURI);
+
+              fetch(metadataURI)
+                .then(response => response.json())
+                .then(metadata => {
+                  console.log('TOKEN METADATA:', metadata);
+                  console.log('Name:', metadata.name);
+                  console.log('Symbol:', metadata.symbol);
+                  console.log('Image:', metadata.image);
+                  console.log('Description:', metadata.description);
+
+                  dispatch({
+                    type: 'ADD_QUEUED_TOKENS',
+                    payload: {
+                      status: 'new',
+                      tokens: [{
+                        ...defaultMetrics,
+                        id: tokenAddress,
+                        tokenAddress: tokenAddress,
+                        dev: creatorAddress,
+                        name: metadata.name || 'Unknown',
+                        symbol: metadata.symbol || 'UNKNOWN',
+                        image: metadata.image || '',
+                        description: metadata.description || '',
+                        twitterHandle: metadata.twitter || '',
+                        telegramHandle: metadata.telegram || '',
+                        discordHandle: metadata.discord || '',
+                        website: metadata.website || '',
+                        status: 'new',
+                        created: Date.now() / 1000,
+                        price: 0,
+                        marketCap: 0,
+                        volumeDelta: 0,
+                        graduatedTokens: 0,
+                        launchedTokens: 0,
+                      }]
+                    }
+                  });
+                })
+                .catch(err => console.error('Failed to fetch metadata:', err));
+            }
+
             return tempset;
           })
         } catch (parseError) {
@@ -9346,7 +9380,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       wsRef.current = new WebSocket(WS_URL);
 
       wsRef.current.onopen = async () => {
+        console.log('websocket connected');
+        const nadFunBondingCurve = settings.chainConfig[activechain]?.nadFunBondingCurve;
+        console.log('📍 Nad.fun address we are listening to:', nadFunBondingCurve);
         const subscriptionMessages = [
+
           JSON.stringify({
             jsonrpc: '2.0',
             id: 'sub1',
@@ -9358,6 +9396,22 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 topics: [
                   '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982',
                 ],
+              },
+            ],
+          }),
+          JSON.stringify({
+            jsonrpc: '2.0',
+            id: 'sub_nadfun',
+            method: 'eth_subscribe',
+            params: [
+              'monadLogs',
+              {
+                address: nadFunBondingCurve,
+                topics: [[
+                  '0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9', // CurveCreate
+                  '0x00a7ba871905cb955432583640b5c9fc6bdd27d36884ab2b5420839224638862', // CurveBuy
+                  '0x393ce1f1cc725c248fb5e08e6ff41ed3caa8dc577d33f7a8571ce9dc7638b063', // CurveSell
+                ]]
               },
             ],
           }), ...(address?.slice(2) ? [JSON.stringify({
@@ -9377,7 +9431,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             ],
           })] : [])
         ];
-
+        console.log('📤 Sending subscriptions...');
+        subscriptionMessages.forEach((message, i) => {
+          console.log(`Subscription ${i + 1}:`, JSON.parse(message));
+          wsRef.current?.send(message);
+        });
         pingIntervalRef.current = setInterval(() => {
           if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({
@@ -9405,766 +9463,50 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
       wsRef.current.onmessage = (event) => {
         const message = JSON.parse(event.data);
-        if (message?.params?.result && message?.params?.result?.commitState == "Proposed") {
+
+        // Log subscription confirmations
+        if (message?.result && message?.id) {
+          console.log('✅ Subscription confirmed:', {
+            id: message.id,
+            subscriptionId: message.result
+          });
+          return;
+        }
+
+        // Log ALL incoming log events, regardless of commitState
+        if (message?.method === 'eth_subscription' && message?.params?.result) {
           const log = message?.params?.result;
 
-          // ============================================
-          // NAD.FUN EVENT HANDLING (ADD THIS FIRST)
-          // ============================================
+          console.log('📨 EVENT RECEIVED:', {
+            address: log.address,
+            topic0: log.topics?.[0],
+            commitState: log.commitState,
+            txHash: log.transactionHash,
+          });
+
+          // Check if it's from nad.fun
           const nadFunBondingCurve = settings.chainConfig[activechain]?.nadFunBondingCurve;
+          if (log.address?.toLowerCase() === nadFunBondingCurve?.toLowerCase()) {
+            console.log('🎉 NAD.FUN EVENT DETECTED!');
+            console.log('Full log:', log);
 
-          if (log['address']?.toLowerCase() === nadFunBondingCurve?.toLowerCase()) {
-            const eventTopic = log['topics']?.[0];
+            const eventTopic = log.topics?.[0];
 
-            // Debug: Log received nad.fun events
-            console.log('🎉 NAD.FUN EVENT RECEIVED:', {
-              eventTopic,
-              address: log['address'],
-              data: log['data'],
-            });
-
-            // CurveCreate - New token launched
             if (eventTopic === NAD_FUN_EVENTS.CurveCreate) {
-              console.log('✨ CurveCreate event detected!');
-
-              const creator = '0x' + log['topics'][1].slice(26);
-              const tokenAddress = '0x' + log['topics'][2].slice(26);
-              const poolAddress = '0x' + log['topics'][3].slice(26);
-
-              try {
-                // For now, create a simple token without decoding
-                // We'll add proper decoding later
-                const newToken: Partial<Token> = {
-                  id: `nadfun-${tokenAddress}-${Date.now()}`,
-                  tokenAddress: tokenAddress,
-                  dev: creator,
-                  name: `NAD Token ${tokenAddress.slice(0, 6)}`, // Temporary
-                  symbol: `NAD${tokenAddress.slice(2, 6)}`, // Temporary
-                  image: 'https://via.placeholder.com/150', // Temporary placeholder
-                  price: 0.00001,
-                  marketCap: 0,
-                  change24h: 0,
-                  volume24h: 0,
-                  holders: 1,
-                  proTraders: 0,
-                  sniperHolding: 0,
-                  devHolding: 100,
-                  bundleHolding: 0,
-                  insiderHolding: 0,
-                  top10Holding: 100,
-                  buyTransactions: 0,
-                  sellTransactions: 0,
-                  globalFeesPaid: 0,
-                  website: '',
-                  twitterHandle: '',
-                  progress: 0,
-                  status: 'new',
-                  description: 'Launched on nad.fun',
-                  created: Math.floor(Date.now() / 1000),
-                  bondingAmount: 25000,
-                  volumeDelta: 0,
-                  telegramHandle: '',
-                  discordHandle: '',
-                  graduatedTokens: 0,
-                  launchedTokens: 0,
-                };
-
-                console.log('💎 Creating new nad.fun token:', newToken);
-
-                // Check if column is paused
-                if (pausedColumnRef.current === 'new') {
-                  pausedTokenQueueRef.current.new.push(newToken as Token);
-                } else {
-                  dispatch({ type: 'ADD_MARKET', token: newToken });
-                }
-
-                // Play alert sound
-                if (alertSettingsRef.current?.soundAlertsEnabled) {
-                  const audio = new Audio(alertSettingsRef.current.sounds.newPairs);
-                  audio.volume = alertSettingsRef.current.volume / 100;
-                  audio.play().catch(console.error);
-                }
-              } catch (error) {
-                console.error('❌ Failed to create nad.fun token:', error);
-              }
-
-              return; // Exit early
+              console.log('✨ CurveCreate event!');
+              // Your handling code here
             }
-
-            // CurveBuy - Someone bought tokens
             else if (eventTopic === NAD_FUN_EVENTS.CurveBuy) {
-              console.log('💰 CurveBuy event detected!');
-
-              const buyer = '0x' + log['topics'][1].slice(26);
-              const tokenAddress = '0x' + log['topics'][2].slice(26);
-              const amountIn = BigInt('0x' + log['data'].slice(2, 66));
-              const amountOut = BigInt('0x' + log['data'].slice(66, 130));
-
-              console.log('Buy details:', {
-                buyer,
-                tokenAddress,
-                amountInMON: Number(amountIn) / 1e18,
-                amountOutTokens: Number(amountOut) / 1e18,
-              });
-
-              // Update token
-              dispatch({
-                type: 'UPDATE_MARKET_BY_ADDRESS',
-                tokenAddress: tokenAddress,
-                updates: {
-                  buyTransactions: 1,
-                  volumeDelta: Number(amountIn) / 1e18,
-                  holders: 1, // Simplified - should check if new holder
-                }
-              });
-
-              return;
+              console.log('💰 CurveBuy event!');
+              // Your handling code here
             }
-
-            // CurveSell - Someone sold tokens
             else if (eventTopic === NAD_FUN_EVENTS.CurveSell) {
-              console.log('📉 CurveSell event detected!');
-
-              const seller = '0x' + log['topics'][1].slice(26);
-              const tokenAddress = '0x' + log['topics'][2].slice(26);
-              const amountIn = BigInt('0x' + log['data'].slice(2, 66));
-              const amountOut = BigInt('0x' + log['data'].slice(66, 130));
-
-              console.log('Sell details:', {
-                seller,
-                tokenAddress,
-                amountInTokens: Number(amountIn) / 1e18,
-                amountOutMON: Number(amountOut) / 1e18,
-              });
-
-              // Update token
-              dispatch({
-                type: 'UPDATE_MARKET_BY_ADDRESS',
-                tokenAddress: tokenAddress,
-                updates: {
-                  sellTransactions: 1,
-                  volumeDelta: Number(amountOut) / 1e18,
-                }
-              });
-
-              return;
-            }
-
-            // CurveTokenListed - Token graduated to DEX
-            else if (eventTopic === NAD_FUN_EVENTS.CurveTokenListed) {
-              console.log('🎓 CurveTokenListed event detected!');
-
-              const tokenAddress = '0x' + log['topics'][1].slice(26);
-              const poolAddress = '0x' + log['topics'][2].slice(26);
-
-              console.log('Token graduated:', { tokenAddress, poolAddress });
-
-              // Graduate the token
-              dispatch({
-                type: 'GRADUATE_MARKET_BY_ADDRESS',
-                tokenAddress: tokenAddress
-              });
-
-              // Play graduation sound
-              if (alertSettingsRef.current?.soundAlertsEnabled) {
-                const audio = new Audio(alertSettingsRef.current.sounds.migrated);
-                audio.volume = alertSettingsRef.current.volume / 100;
-                audio.play().catch(console.error);
-              }
-
-              return;
+              console.log('📉 CurveSell event!');
+              // Your handling code here
             }
           }
-
-          let ordersChanged = false;
-          let canceledOrdersChanged = false;
-          let tradesByMarketChanged = false;
-          let tradeHistoryChanged = false;
-          let temporders: any;
-          let tempcanceledorders: any;
-          let temptradesByMarket: any;
-          let temptradehistory: any;
-          setorders((orders) => {
-            temporders = [...orders];
-            return orders;
-          })
-          setcanceledorders((canceledorders) => {
-            tempcanceledorders = [...canceledorders];
-            return canceledorders;
-          })
-          settradesByMarket((tradesByMarket: any) => {
-            temptradesByMarket = { ...tradesByMarket };
-            return tradesByMarket;
-          })
-          settradehistory((tradehistory: any) => {
-            temptradehistory = [...tradehistory];
-            return tradehistory;
-          })
-          setProcessedLogs(prev => {
-            let tempset = new Set(prev);
-            let temptrades: any = {};
-            if (log['topics']?.[0] == '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982') {
-              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
-              if (!tempset.has(logIdentifier) && marketKey && !temptradesByMarket[marketKey]?.some((trade: any) =>
-                trade[0] == parseInt(log['data'].slice(66, 130), 16) &&
-                trade[1] == parseInt(log['data'].slice(130, 194), 16) &&
-                trade[5] == log['transactionHash'])) {
-                if (tempset.size >= 10000) {
-                  const first = tempset.values().next().value;
-                  if (first !== undefined) {
-                    tempset.delete(first);
-                  }
-                }
-                tempset.add(logIdentifier);
-                const resolve = txReceiptResolvers.current.get(log['transactionHash']);
-                if (resolve) {
-                  resolve();
-                  txReceiptResolvers.current.delete(log['transactionHash']);
-                }
-                let _timestamp = Math.floor(Date.now() / 1000);
-                tradesByMarketChanged = true;
-                if (!Array.isArray(temptradesByMarket[marketKey])) {
-                  temptradesByMarket[marketKey] = [];
-                }
-                let amountIn = parseInt(log['data'].slice(66, 130), 16);
-                let amountOut = parseInt(log['data'].slice(130, 194), 16);
-                let buy = parseInt(log['data'].slice(65, 66), 16);
-                let price = parseInt(log['data'].slice(258, 322), 16);
-                temptradesByMarket[marketKey].unshift([
-                  amountIn,
-                  amountOut,
-                  buy,
-                  price,
-                  marketKey,
-                  log['transactionHash'],
-                  _timestamp,
-                ]);
-                if (!Array.isArray(temptrades[marketKey])) {
-                  temptrades[marketKey] = [];
-                }
-                temptrades[marketKey].unshift([
-                  amountIn,
-                  amountOut,
-                  buy,
-                  price,
-                  marketKey,
-                  log['transactionHash'],
-                  _timestamp,
-                  parseInt(log['data'].slice(194, 258), 16),
-                ])
-                if (
-                  log['topics'][2].slice(26) ==
-                  address?.slice(2).toLowerCase()
-                ) {
-                  tradeHistoryChanged = true;
-                  temptradehistory.push([
-                    amountIn,
-                    amountOut,
-                    buy,
-                    price,
-                    marketKey,
-                    log['transactionHash'],
-                    _timestamp,
-                    1,
-                  ])
-                  let quoteasset =
-                    markets[marketKey].quoteAddress;
-                  let baseasset =
-                    markets[marketKey].baseAddress;
-                  let popupAmountIn = customRound(
-                    amountIn /
-                    10 **
-                    Number(
-                      buy
-                        ? markets[marketKey]
-                          .quoteDecimals
-                        : markets[marketKey]
-                          .baseDecimals,
-                    ),
-                    3,
-                  );
-                  let popupAmountOut = customRound(
-                    amountOut /
-                    10 **
-                    Number(
-                      buy
-                        ? markets[marketKey]
-                          .baseDecimals
-                        : markets[marketKey]
-                          .quoteDecimals,
-                    ),
-                    3,
-                  );
-                  newTxPopup(
-                    log['transactionHash'],
-                    'swap',
-                    buy ? quoteasset : baseasset,
-                    buy ? baseasset : quoteasset,
-                    popupAmountIn,
-                    popupAmountOut,
-                    '',
-                    '',
-                  );
-                }
-              }
-              if (tradesByMarketChanged) {
-                setChartData(([existingBars, existingIntervalLabel, existingShowOutliers]) => {
-                  const marketKey = existingIntervalLabel?.match(/^\D*/)?.[0];
-                  const updatedBars = [...existingBars];
-                  let rawVolume;
-                  if (marketKey && Array.isArray(temptrades?.[marketKey])) {
-                    const barSizeSec =
-                      existingIntervalLabel?.match(/\d.*/)?.[0] === '1' ? 60 :
-                        existingIntervalLabel?.match(/\d.*/)?.[0] === '5' ? 5 * 60 :
-                          existingIntervalLabel?.match(/\d.*/)?.[0] === '15' ? 15 * 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '30' ? 30 * 60 :
-                              existingIntervalLabel?.match(/\d.*/)?.[0] === '60' ? 60 * 60 :
-                                existingIntervalLabel?.match(/\d.*/)?.[0] === '240' ? 4 * 60 * 60 :
-                                  existingIntervalLabel?.match(/\d.*/)?.[0] === '1D' ? 24 * 60 * 60 :
-                                    5 * 60;
-                    const priceFactor = Number(markets[marketKey].priceFactor);
-                    for (const lastTrade of temptrades[marketKey]) {
-                      const lastBarIndex = updatedBars.length - 1;
-                      const lastBar = updatedBars[lastBarIndex];
-
-                      let openPrice = parseFloat((lastTrade[7] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
-                      let closePrice = parseFloat((lastTrade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
-                      rawVolume =
-                        (lastTrade[2] == 0 ? lastTrade[0] : lastTrade[1]) /
-                        10 ** Number(markets[marketKey].baseDecimals);
-
-                      const tradeTimeSec = lastTrade[6];
-                      const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
-                      const lastBarTimeSec = Math.floor(new Date(lastBar?.time).getTime() / 1000);
-                      if (flooredTradeTimeSec === lastBarTimeSec) {
-                        updatedBars[lastBarIndex] = {
-                          ...lastBar,
-                          high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
-                          low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
-                          close: closePrice,
-                          volume: lastBar.volume + rawVolume,
-                        };
-                        if (realtimeCallbackRef.current[existingIntervalLabel]) {
-                          realtimeCallbackRef.current[existingIntervalLabel]({
-                            ...lastBar,
-                            high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
-                            low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
-                            close: closePrice,
-                            volume: lastBar.volume + rawVolume,
-                          });
-                        }
-                      } else {
-                        updatedBars.push({
-                          time: flooredTradeTimeSec * 1000,
-                          open: lastBar?.close ?? openPrice,
-                          high: Math.max(lastBar?.close ?? openPrice, closePrice),
-                          low: Math.min(lastBar?.close ?? openPrice, closePrice),
-                          close: closePrice,
-                          volume: rawVolume,
-                        });
-                        if (realtimeCallbackRef.current[existingIntervalLabel]) {
-                          realtimeCallbackRef.current[existingIntervalLabel]({
-                            time: flooredTradeTimeSec * 1000,
-                            open: lastBar?.close ?? openPrice,
-                            high: Math.max(lastBar?.close ?? openPrice, closePrice),
-                            low: Math.min(lastBar?.close ?? openPrice, closePrice),
-                            close: closePrice,
-                            volume: rawVolume,
-                          });
-                        }
-                      }
-                    }
-                  }
-                  setMarketsData((marketsData) =>
-                    marketsData.map((market) => {
-                      if (!market) return;
-                      const marketKey = market?.marketKey.replace(
-                        new RegExp(`^${wethticker}|${wethticker}$`, 'g'),
-                        ethticker
-                      );
-                      const newTrades = temptrades?.[marketKey]
-                      if (!Array.isArray(newTrades) || newTrades.length < 1) return market;
-                      const firstKlineOpen: number =
-                        market?.mini && Array.isArray(market?.mini) && market?.mini.length > 0
-                          ? Number(market?.mini[0].value * Number(market.priceFactor))
-                          : 0;
-                      const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
-                      const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
-                      const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
-                        / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
-                      let high = market.high24h ? Number(market.high24h.replace(/,/g, '')) : null;
-                      let low = market.low24h ? Number(market.low24h.replace(/,/g, '')) : null;
-                      const volume = newTrades.reduce((sum: number, trade: any) => {
-                        if (high && trade[3] / Number(market.priceFactor) > high) {
-                          high = trade[3] / Number(market.priceFactor)
-                        }
-                        if (low && trade[3] / Number(market.priceFactor) < low) {
-                          low = trade[3] / Number(market.priceFactor)
-                        }
-                        const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
-                        return sum + amount;
-                      }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
-
-                      return {
-                        ...market,
-                        volume: formatCommas(
-                          (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
-                        ),
-                        currentPrice: formatSig(
-                          (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
-                        ),
-                        priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-                        priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(formatSig(
-                          (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
-                        ).split('.')[1]?.length || 0)),
-                        ...(high != null && {
-                          high24h: formatSig(
-                            high.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
-                          )
-                        }),
-                        ...(low != null && {
-                          low24h: formatSig(
-                            low.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
-                          )
-                        })
-                      };
-                    })
-                  );
-                  return [updatedBars, existingIntervalLabel, existingShowOutliers];
-                });
-              }
-            }
-            else if (log['topics']?.[0] == '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c') {
-              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
-              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
-                address?.slice(2).toLowerCase()) {
-                if (tempset.size >= 10000) {
-                  const first = tempset.values().next().value;
-                  if (first !== undefined) {
-                    tempset.delete(first);
-                  }
-                }
-                tempset.add(logIdentifier);
-                const resolve = txReceiptResolvers.current.get(log['transactionHash']);
-                if (resolve) {
-                  resolve();
-                  txReceiptResolvers.current.delete(log['transactionHash']);
-                }
-                let _timestamp = Math.floor(Date.now() / 1000);
-                let _orderdata = log['data'].slice(130);
-                for (let i = 0; i < _orderdata.length; i += 64) {
-                  let chunk = _orderdata.slice(i, i + 64);
-                  let _isplace = parseInt(chunk.slice(0, 1), 16) >= 2;
-                  if (_isplace) {
-                    let buy = 3 - parseInt(chunk.slice(0, 1), 16);
-                    let price = parseInt(chunk.slice(2, 22), 16);
-                    let id = parseInt(chunk.slice(22, 36), 16);
-                    let size = parseInt(chunk.slice(36, 64), 16);
-                    let alreadyExist = tempcanceledorders.some(
-                      (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
-                    );
-                    buy ? size *= Number(markets[marketKey].scaleFactor) : size *= price
-                    if (!alreadyExist) {
-                      ordersChanged = true;
-                      canceledOrdersChanged = true;
-                      let order = [
-                        price,
-                        id,
-                        size /
-                        price,
-                        buy,
-                        marketKey,
-                        log['transactionHash'],
-                        _timestamp,
-                        0,
-                        size,
-                        2,
-                      ];
-                      temporders.push(order)
-                      tempcanceledorders.push([
-                        price,
-                        id,
-                        size /
-                        price,
-                        buy,
-                        marketKey,
-                        log['transactionHash'],
-                        _timestamp,
-                        0,
-                        size,
-                        2,
-                      ])
-                      let quoteasset =
-                        markets[marketKey].quoteAddress;
-                      let baseasset =
-                        markets[marketKey].baseAddress;
-                      let amountquote = (
-                        size /
-                        (Number(
-                          markets[marketKey].scaleFactor,
-                        ) *
-                          10 **
-                          Number(
-                            markets[marketKey]
-                              .quoteDecimals,
-                          ))
-                      ).toFixed(2);
-                      let amountbase = customRound(
-                        size /
-                        price /
-                        10 **
-                        Number(
-                          markets[marketKey]
-                            .baseDecimals,
-                        ),
-                        3,
-                      );
-                      newTxPopup(
-                        log['transactionHash'],
-                        'limit',
-                        buy ? quoteasset : baseasset,
-                        buy ? baseasset : quoteasset,
-                        buy ? amountquote : amountbase,
-                        buy ? amountbase : amountquote,
-                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                        '',
-                      );
-                    }
-                  } else {
-                    let buy = parseInt(chunk.slice(0, 1), 16) == 0;
-                    let price = parseInt(chunk.slice(2, 22), 16);
-                    let id = parseInt(chunk.slice(22, 36), 16);
-                    let size = parseInt(chunk.slice(36, 64), 16);
-                    let index = temporders.findIndex(
-                      (o: any) =>
-                        o[0] == price &&
-                        o[1] == id &&
-                        o[4] == marketKey,
-                    );
-                    if (index != -1) {
-                      ordersChanged = true;
-                      canceledOrdersChanged = true;
-                      let canceledOrderIndex: number;
-                      canceledOrderIndex = tempcanceledorders.findIndex(
-                        (canceledOrder: any) =>
-                          canceledOrder[0] ==
-                          price &&
-                          canceledOrder[1] ==
-                          id &&
-                          canceledOrder[4] ==
-                          marketKey,
-                      );
-                      if (canceledOrderIndex !== -1 && tempcanceledorders[canceledOrderIndex][9] != 0) {
-                        tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
-                        tempcanceledorders[canceledOrderIndex][9] = 0;
-                        tempcanceledorders[canceledOrderIndex][8] =
-                          tempcanceledorders[canceledOrderIndex][8] -
-                          size;
-                        tempcanceledorders[canceledOrderIndex][6] =
-                          _timestamp;
-                      }
-                      if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
-                        temporders[index] = [...temporders[index]]
-                        try {
-                          temporders[index][10].remove();
-                        }
-                        catch { }
-                        temporders[index].splice(10, 1)
-                      }
-                      temporders.splice(index, 1);
-                      let quoteasset =
-                        markets[marketKey].quoteAddress;
-                      let baseasset =
-                        markets[marketKey].baseAddress;
-                      let amountquote = (
-                        (buy ? size : size * price / Number(
-                          markets[marketKey].scaleFactor
-                        )) /
-                        (10 **
-                          Number(
-                            markets[marketKey]
-                              .quoteDecimals,
-                          ))
-                      ).toFixed(2);
-                      let amountbase = customRound(
-                        (buy ? size * Number(
-                          markets[marketKey].scaleFactor
-                        ) / price : size) /
-                        10 **
-                        Number(
-                          markets[marketKey]
-                            .baseDecimals,
-                        ),
-                        3,
-                      );
-                      newTxPopup(
-                        log['transactionHash'],
-                        'cancel',
-                        buy ? quoteasset : baseasset,
-                        buy ? baseasset : quoteasset,
-                        buy ? amountquote : amountbase,
-                        buy ? amountbase : amountquote,
-                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                        '',
-                      );
-                    }
-                  }
-                }
-              }
-            }
-            else {
-              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
-              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
-                address?.slice(2).toLowerCase()) {
-                if (tempset.size >= 10000) {
-                  const first = tempset.values().next().value;
-                  if (first !== undefined) {
-                    tempset.delete(first);
-                  }
-                }
-                tempset.add(logIdentifier);
-                let _timestamp = Math.floor(Date.now() / 1000);
-                let _orderdata = log['data'].slice(2);
-                let buy = 1 - parseInt(_orderdata.slice(0, 1), 16);
-                let price = parseInt(_orderdata.slice(1, 22), 16);
-                let id = parseInt(_orderdata.slice(22, 36), 16);
-                let size = parseInt(_orderdata.slice(36, 64), 16);
-                buy ? size *= price : size *= Number(markets[marketKey].scaleFactor)
-                let orderIndex = temporders.findIndex(
-                  (sublist: any) =>
-                    sublist[0] ==
-                    price &&
-                    sublist[1] ==
-                    id &&
-                    sublist[4] == marketKey,
-                );
-                let canceledOrderIndex = tempcanceledorders.findIndex(
-                  (sublist: any) =>
-                    sublist[0] ==
-                    price &&
-                    sublist[1] ==
-                    id &&
-                    sublist[4] == marketKey,
-                );
-                if (orderIndex != -1 && canceledOrderIndex != -1) {
-                  ordersChanged = true;
-                  temporders[orderIndex] = [...temporders[orderIndex]]
-                  let order = [...temporders[orderIndex]];
-                  let buy = order[3];
-                  let quoteasset =
-                    markets[marketKey]
-                      .quoteAddress;
-                  let baseasset =
-                    markets[marketKey]
-                      .baseAddress;
-                  let amountquote = (
-                    ((order[2] - order[7] - size / order[0]) *
-                      order[0]) /
-                    (Number(
-                      markets[marketKey]
-                        .scaleFactor,
-                    ) *
-                      10 **
-                      Number(
-                        markets[marketKey]
-                          .quoteDecimals,
-                      ))
-                  ).toFixed(2);
-                  let amountbase = customRound(
-                    (order[2] - order[7] - size / order[0]) /
-                    10 **
-                    Number(
-                      markets[marketKey]
-                        .baseDecimals,
-                    ),
-                    3,
-                  );
-                  newTxPopup(
-                    log['transactionHash'],
-                    'fill',
-                    buy ? quoteasset : baseasset,
-                    buy ? baseasset : quoteasset,
-                    buy ? amountquote : amountbase,
-                    buy ? amountbase : amountquote,
-                    `${order[0] / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                    '',
-                  );
-                  if (size == 0) {
-                    tradeHistoryChanged = true;
-                    temptradehistory.push([
-                      order[3] == 1
-                        ? (order[2] * order[0]) /
-                        Number(markets[order[4]].scaleFactor)
-                        : order[2],
-                      order[3] == 1
-                        ? order[2]
-                        : (order[2] * order[0]) /
-                        Number(markets[order[4]].scaleFactor),
-                      order[3],
-                      order[0],
-                      order[4],
-                      order[5],
-                      _timestamp,
-                      0,
-                    ]);
-                    if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
-                      try {
-                        temporders[orderIndex][10].remove();
-                      }
-                      catch { }
-                      temporders[orderIndex].splice(10, 1)
-                    }
-                    temporders.splice(orderIndex, 1);
-                    tempcanceledorders[canceledOrderIndex][9] =
-                      1;
-                    tempcanceledorders[canceledOrderIndex][7] = order[2]
-                    tempcanceledorders[canceledOrderIndex][8] = order[8];
-                  } else {
-                    if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
-                      try {
-                        temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
-                      }
-                      catch { }
-                    }
-                    temporders[orderIndex][7] =
-                      order[2] - size / order[0];
-                  }
-                  if (canceledOrderIndex != -1) {
-                    canceledOrdersChanged = true;
-                    tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
-                    if (size == 0) {
-                      tempcanceledorders[canceledOrderIndex][9] =
-                        1;
-                      tempcanceledorders[canceledOrderIndex][7] = order[2]
-                      tempcanceledorders[canceledOrderIndex][8] = order[8];
-                    }
-                    else {
-                      tempcanceledorders[canceledOrderIndex][7] =
-                        order[2] - size / order[0];
-                    }
-                  }
-                }
-              }
-            }
-            if (tradeHistoryChanged) {
-              settradehistory(temptradehistory)
-            }
-            if (tradesByMarketChanged) {
-              settradesByMarket(temptradesByMarket)
-            }
-            if (canceledOrdersChanged) {
-              setcanceledorders(tempcanceledorders)
-            }
-            if (ordersChanged) {
-              setorders(temporders)
-            }
-            return tempset;
-          })
         }
-      }
+      };
 
       wsRef.current.onclose = () => {
         if (pingIntervalRef.current) {
