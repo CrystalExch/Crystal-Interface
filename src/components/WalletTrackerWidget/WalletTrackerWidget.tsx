@@ -95,13 +95,17 @@ const formatCreatedDate = (isoString: string) => {
   const date = new Date(isoString);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
 
-  if (days === 0) return 'Today';
-  if (days === 1) return '1d ago';
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  return `${Math.floor(days / 30)}mo ago`;
+  if (days >= 30) return `${Math.floor(days / 30)}mo`;
+  if (days >= 7) return `${Math.floor(days / 7)}w`;
+  if (days >= 1) return `${days}d`;
+  if (hours >= 1) return `${hours}h`;
+  if (minutes >= 1) return `${minutes}m`;
+  return `${seconds}s`;
 };
 
 const Tooltip: React.FC<{
@@ -1235,8 +1239,21 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       </div>
 
       <div className="wtw-header">
+
           {activeTab === 'wallets' && (
             <div className="wtw-header-actions">
+                        <div className="wtw-search-bar">
+            <div className="wtw-search">
+              <Search size={14} className="wtw-search-icon" />
+              <input
+                type="text"
+                className="wtw-search-input"
+                placeholder="Search by name or addr..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
               <button
                 className="wtw-header-button"
                 onClick={() => setShowImportPopup(true)}
@@ -1248,12 +1265,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                 onClick={handleExport}
               >
                 Export
-              </button>
-              <button
-                className="wtw-header-button"
-                onClick={() => setWalletCurrency(prev => prev === 'USD' ? 'MON' : 'USD')}
-              >
-                {walletCurrency === 'USD' ? 'USD' : 'MON'}
               </button>
               <button
                 className="wtw-add-button"
@@ -1334,20 +1345,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
           )}
       </div>
 
-      {activeTab === 'wallets' && (
-          <div className="wtw-search-bar">
-            <div className="wtw-search">
-              <Search size={14} className="wtw-search-icon" />
-              <input
-                type="text"
-                className="wtw-search-input"
-                placeholder="Search by name or addr..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
-      )}
 
       {activeTab === 'monitor' && (
           <div className="wtw-search-bar">
@@ -1394,15 +1391,11 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                     <div className="wtw-empty-content">
                       <h4>No Wallets Found</h4>
                       <p>Add a wallet to start tracking</p>
-                      <button className="wtw-cta-button" onClick={() => alert('Add wallet')}>
-                        Add Wallet
-                      </button>
                     </div>
                   </div>
                 ) : (
                   filteredWallets.map((wallet) => (
                     <div key={wallet.id} className="wtw-wallet-item">
-                      {/* Created */}
                       <div className="wtw-wallet-created">
                         <span className="wtw-wallet-created-date">
                           {formatCreatedDate(wallet.createdAt)}
@@ -1466,13 +1459,11 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                       <div className="wtw-wallet-balance">
                         <span className="wtw-balance-value">
                           {(() => {
-                            // Try both original and lowercase address
                             const b = walletTokenBalances[wallet.address] || walletTokenBalances[wallet.address.toLowerCase()];
                             const ethToken = chainCfg?.eth;
 
                             let balanceInMON;
                             if (b && ethToken) {
-                              // Try to get balance with different case variations of ethToken
                               balanceInMON = Number(b[ethToken] || b[ethToken?.toLowerCase()] || b[ethToken?.toUpperCase()] || 0) / 1e18;
                             } else {
                               balanceInMON = wallet.balance || 0;
@@ -1494,14 +1485,12 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                         )}
                       </div>
 
-                      {/* Last Active */}
                       <div className="wtw-wallet-last-active">
                         <span className="wtw-wallet-last-active-time">
                           {lastActiveLabel(wallet)}
                         </span>
                       </div>
 
-                      {/* Actions */}
                       <div className="wtw-wallet-actions">
                         <Tooltip content="View on Explorer">
                           <a

@@ -131,12 +131,11 @@
   cursor: pointer;
 }
 
-/* Header */
 .wtw-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0px 20px;
+  padding: 0px 10px;
   min-height: 40px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   background: rgb(6, 6, 6);
@@ -175,13 +174,12 @@
   align-items: center;
   gap: 0px;
   flex: 0 1 auto;
+  width: 100%;
 }
 
-/* Search Bar - Full width container */
 .wtw-search-bar {
-  padding: 12px 20px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-  background: rgb(6, 6, 6);
+  padding: 12px 0px;
+  width: 100%;
 }
 
 .wtw-search {
@@ -212,10 +210,6 @@
   height: 25px;
 }
 
-.wtw-search-input:focus {
-  border-color: #aaaecf;
-  box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.3);
-}
 
 .wtw-search-input::placeholder {
   color: rgba(255, 255, 255, 0.4);
@@ -224,7 +218,7 @@
 .wtw-header-button {
   background: transparent;
   color: rgba(255, 255, 255, 0.95);
-  padding: 4px 8px;
+  padding: 4px 12px;
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -234,10 +228,12 @@
   align-items: center;
   justify-content: center;
   border: none;
+  background: rgba(178, 183, 224, 0.092);
+  border-radius: 20px;
+  margin: 0 5px;
 }
 
 .wtw-header-button:hover {
-  background: rgba(255, 255, 255, 0.05);
   color: #ffffff;
 }
 
@@ -253,13 +249,16 @@
   box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
   display: flex;
   align-items: center;
-  padding: 4px 8px;
+  padding: 4px 12px;
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s;
   letter-spacing: -0.3px;
   height: 25px;
-  border-radius: 8px;
+  border-radius: 20px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
 }
 
 .wtw-add-button:hover {
@@ -287,7 +286,6 @@
   min-width: 520px;
 }
 
-/* Table Header */
 .wtw-wallets-header {
   display: grid;
   grid-template-columns: 60px 20px 160px 95px 85px 60px;
@@ -309,14 +307,15 @@
   right: 15px;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
+  color: #e0e3f473;
+  font-size: 0.75rem;
   letter-spacing: -0.3px;
   pointer-events: none;
+  font-weight: 300;
 }
 
 .wtw-wallet-header-cell {
-  color: rgba(255, 255, 255, 0.5);
+  color: #e0e3f473;
   font-size: 0.75rem;
   letter-spacing: -0.3px;
   font-weight: 300;
@@ -340,7 +339,6 @@
   color: #d8dcff;
 }
 
-/* Column classes - Grid-based layout */
 .wtw-wallet-created {
   display: flex;
   align-items: center;
@@ -471,11 +469,11 @@
 
 .wtw-wallet-name-container {
   display: flex;
-  flex-direction: column;
   gap: 2px;
   min-width: 0;
   flex: 1;
   justify-content: center;
+  gap: 6px;
 }
 
 .wtw-wallet-name {
@@ -540,7 +538,6 @@
   letter-spacing: -0.3px;
 }
 
-/* Balance */
 .wtw-balance-icon {
   width: 14px;
   height: 14px;
@@ -548,18 +545,16 @@
 
 .wtw-wallet-balance span {
   color: #fff;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   letter-spacing: -0.3px;
 }
 
-/* Last Active */
 .wtw-wallet-last-active {
-  color: rgba(255, 255, 255, 0.5);
+  color: #e0e3f473;
   font-size: 0.75rem;
   letter-spacing: -0.3px;
 }
 
-/* Actions */
 .wtw-wallet-action-btn {
   background: transparent;
   border: none;
@@ -599,30 +594,28 @@
   height: 16px;
 }
 
-/* Empty State */
 .wtw-empty-state {
   padding-top: 10px;
   height: 100%;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
 }
 
 .wtw-empty-content {
   text-align: center;
-  max-width: 300px;
 }
 
 .wtw-empty-content h4 {
-  color: #ebedfe;
-  font-size: 1rem;
+  color: #e0e3f473;
+  font-size: .85rem;
   margin: 0 0 2px;
   letter-spacing: -0.3px;
 }
 
 .wtw-empty-content p {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.9rem;
+  color: #e0e3f473;
+  font-size: 0.8rem;
   margin: 0 0 10px;
   line-height: 1.4;
   letter-spacing: -0.3px;
@@ -730,47 +723,7 @@
   }
 }
 
-/* Responsive */
-@media (max-width: 600px) {
-  .wtw-container {
-    width: 95%;
-    max-width: 560px;
-  }
 
-  .wtw-wallets-header,
-  .wtw-wallet-item {
-    min-width: 450px;
-  }
-
-  .wtw-header {
-    justify-content: center;
-    padding-bottom: 10px;
-  }
-
-  .wtw-tabs {
-    flex: 1 1 100%;
-    width: 100%;
-    justify-content: center;
-    order: -1;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-    margin-bottom: 0;
-  }
-
-  .wtw-tab {
-    flex: 1;
-    text-align: center;
-    justify-content: center;
-  }
-
-  .wtw-header-actions {
-    flex: 1 1 100%;
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-/* Live Trades Tab */
 .wtw-live-trades {
   width: 100%;
   height: 100%;
@@ -803,7 +756,7 @@
 
 .wtw-detail-trades-header-cell {
   padding: 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: #e0e3f473;
   font-size: 0.75rem;
   font-weight: 300;
   letter-spacing: -0.3px;
@@ -985,7 +938,6 @@
   letter-spacing: -0.3px;
 }
 
-/* Header Button Styles */
 .wtw-settings-image {
   width: 16px;
   height: 16px;
@@ -1545,4 +1497,9 @@
 
 .wtw-snap-zone-overlay.active {
   opacity: 1;
+}
+
+
+.wtw-wallet-last-active-time{
+  color:#a5a5b1;
 }

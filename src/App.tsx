@@ -8509,7 +8509,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 const nadFunProcessedLogsRef = useRef<Set<string>>(new Set());
 
   // fetch initial address info and event stream
-  useEffect(() => {
+useEffect(() => {
     let liveStreamCancelled = false;
     let isAddressInfoFetching = false;
     let startBlockNumber = '';
@@ -9584,7 +9584,6 @@ wsRef.current.onmessage = (event) => {
       }
       else if (log.topics?.[0] === NAD_FUN_EVENTS.CurveBuy || 
                log.topics?.[0] === NAD_FUN_EVENTS.CurveSell) {
-        
         const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
         const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
 
@@ -9598,6 +9597,23 @@ wsRef.current.onmessage = (event) => {
         const amountIn = Number(word(0)) / 1e18;
         const amountOut = Number(word(1)) / 1e18;
         const priceAfter = Number(word(2)) / 1e18;
+
+        // 🔴🔴🔴 ADD OBVIOUS SELL LOGGING HERE 🔴🔴🔴
+        if (!isBuy) {
+          console.log('');
+          console.log('🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴');
+          console.log('🔴🔴🔴 PERSON IS SELLING 🔴🔴🔴');
+          console.log('🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴');
+          console.log('SELL DETAILS:');
+          console.log('  Token:', tokenAddr);
+          console.log('  Caller:', callerAddr);
+          console.log('  Token Amount Sold:', amountIn);
+          console.log('  Native Received:', amountOut);
+          console.log('  Price After:', priceAfter);
+          console.log('  Transaction:', log.transactionHash);
+          console.log('🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴');
+          console.log('');
+        }
 
         console.log('nad.fun Trade:', {
           token: tokenAddr,
@@ -9816,7 +9832,6 @@ wsRef.current.onmessage = (event) => {
       }
     };
   }, [activechain, address]);
-
   // klines + trades
   useEffect(() => {
     (async () => {

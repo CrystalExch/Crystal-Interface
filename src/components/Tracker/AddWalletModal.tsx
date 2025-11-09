@@ -93,7 +93,6 @@ const AddWalletModal: React.FC<AddWalletModalProps> = ({
           </div>
           <div className="add-wallet-modal-content">
             <div className="add-wallet-input-section">
-              <label className="add-wallet-label">Wallet Address:</label>
               <input
                 type="text"
                 className="add-wallet-input"
@@ -102,12 +101,11 @@ const AddWalletModal: React.FC<AddWalletModalProps> = ({
                   setNewWalletAddress(e.target.value);
                   setAddWalletError('');
                 }}
-                placeholder="0x..."
+                placeholder="Wallet Address"
               />
             </div>
 
             <div className="add-wallet-input-section">
-              <label className="add-wallet-label">Wallet Name:</label>
               <div className="add-wallet-input-with-emoji">
                 <button
                   className="add-wallet-emoji-picker-trigger"
@@ -133,7 +131,7 @@ const AddWalletModal: React.FC<AddWalletModalProps> = ({
                     setNewWalletName(e.target.value);
                     setAddWalletError('');
                   }}
-                  placeholder="Enter a name for this wallet"
+                  placeholder="Wallet Name"
                   maxLength={20}
                 />
               </div>
