@@ -197,6 +197,7 @@ export const usePortfolioData = (
                     );
         
                     try {
+                      // temp slice 13
                       const balancesdata = await readContract(config, {
                         blockNumber,
                         abi: CrystalDataHelperAbi,
@@ -204,7 +205,7 @@ export const usePortfolioData = (
                         functionName: 'batchBalanceOf',
                         args: [
                           address as `0x${string}`,
-                          simplifiedTokenList.map(
+                          simplifiedTokenList.slice(0, 13).map(
                             (token) => token.address as `0x${string}`,
                           ),
                         ],
