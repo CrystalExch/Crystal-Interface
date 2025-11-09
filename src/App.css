@@ -49,6 +49,7 @@ html {
   background: rgb(6, 6, 6);
   padding-left: 55px;
   padding-top: 53px;
+  padding-bottom: 32px;
 }
 
 .limit-impact-warning,
@@ -1962,7 +1963,6 @@ body {
   flex-direction: column;
   height: calc(100vh);
   overflow: auto;
-  padding-bottom: 32px;
 }
 
 .trade-container {
@@ -3623,6 +3623,7 @@ body:has(.right-column.show) .blur-background-popups {
   border: 1px solid rgba(179, 184, 249, 0.15);
   overflow: hidden;
   animation: dropdown-fade-in 0.2s ease-out forwards;
+  align-self: center;
 }
 
 @keyframes dropdown-fade-in {

@@ -265,7 +265,7 @@ const fetchRecentTradesForWallet = async (account: string, first = 50) => {
     return (await r.json());
   };
 
-  const q1 = `query ($account: String!, $first: Int!) { trades(where: { account: $account }, orderBy: block, orderDirection: desc, first: $first) { id token { id symbol name } account { id } block isBuy priceNativePerTokenWad amountIn amountOut txHash } }`;
+  const q1 = `query ($account: String!, $first: Int!) { trades(where: { account: $account }, orderBy: block, orderDirection: desc, first: $first) { id token { id symbol name } account { id } block isBuy priceNativePerTokenWad amountIn amountOut } }`;
   try {
     const resp = await tryPost({ query: q1, variables: { account: account.toLowerCase(), first } });
     const list = resp?.data?.trades;
@@ -273,7 +273,7 @@ const fetchRecentTradesForWallet = async (account: string, first = 50) => {
   } catch (e) {
   }
 
-  const q2 = `query ($account: [Bytes!], $first: Int!) { launchpadTokens(first: 1000) { id symbol name trades(where: { account_in: $account }, orderBy: block, orderDirection: desc, first: $first) { id account { id } block isBuy priceNativePerTokenWad amountIn amountOut txHash } } }`;
+  const q2 = `query ($account: [Bytes!], $first: Int!) { launchpadTokens(first: 1000) { id symbol name metadataCID trades(where: { account_in: $account }, orderBy: block, orderDirection: desc, first: $first) { id account { id } block isBuy priceNativePerTokenWad amountIn amountOut } } }`;
   try {
     const resp2 = await tryPost({ query: q2, variables: { account: [account.toLowerCase()], first } });
     const tokens = resp2?.data?.launchpadTokens;
@@ -282,7 +282,7 @@ const fetchRecentTradesForWallet = async (account: string, first = 50) => {
       for (const t of tokens) {
         if (!t?.trades) continue;
         for (const tr of t.trades) {
-          try { tr.token = tr.token || { id: t.id, symbol: t.symbol, name: t.name }; } catch (e) {}
+          try { tr.token = tr.token || { id: t.id, symbol: t.symbol, name: t.name, metadataCID: t.metadataCID }; } catch (e) {}
           out.push(tr);
         }
       }
@@ -568,6 +568,8 @@ const Tracker: React.FC<TrackerProps> = ({
   const [addressPositions, setAddressPositions] = useState<Record<string, GqlPosition[]>>({});
   const [expandedTokenId, setExpandedTokenId] = useState<string | null>(null);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const [historicalTrades, setHistoricalTrades] = useState<Record<string, any[]>>({});
+  const [isLoadingHistory, setIsLoadingHistory] = useState<Set<string>>(new Set());
   useEffect(() => { trackedWalletsRef.current = trackedWallets; }, [trackedWallets]);
 
   const lastEventTsRef = useRef<number | null>(null);
@@ -1363,8 +1365,120 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       : s;
   };
 
+  // Fetch historical trades for a wallet
+  const fetchHistoricalTradesForWallet = useCallback(async (wallet: TrackedWallet) => {
+    const walletAddr = wallet.address.toLowerCase();
+
+    // Check if already loading or loaded using functional state update
+    let shouldSkip = false;
+    setIsLoadingHistory(prev => {
+      if (prev.has(walletAddr)) {
+        shouldSkip = true;
+        return prev;
+      }
+      return new Set(prev).add(walletAddr);
+    });
+
+    setHistoricalTrades(prev => {
+      if (prev[walletAddr]) {
+        shouldSkip = true;
+      }
+      return prev;
+    });
+
+    if (shouldSkip) {
+      return;
+    }
+
+    try {
+      const trades = await fetchRecentTradesForWallet(walletAddr, 100);
+
+      // Convert trades to the same format as trackedWalletTrades
+      const normalizedTrades = trades.map((trade: any) => {
+        const isBuy = !!trade.isBuy;
+        const nativeAmount = Number(isBuy ? trade.amountIn : trade.amountOut) / 1e18;
+        const price = Number(trade.priceNativePerTokenWad) / 1e18;
+        const TOTAL_SUPPLY = 1e9;
+        const marketCap = price * TOTAL_SUPPLY;
+
+        // Handle timestamp
+        let timestamp = Number(trade.block || Date.now() / 1000);
+        if (timestamp > 5000000000) timestamp = timestamp / 1000;
+        if (timestamp < 1000000000) timestamp = Date.now() / 1000;
+
+        const now = Date.now() / 1000;
+        const secondsAgo = Math.max(0, now - timestamp);
+        let timeAgo = 'now';
+        if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
+        else if (secondsAgo < 3600) timeAgo = `${Math.floor(secondsAgo / 60)}m`;
+        else if (secondsAgo < 86400) timeAgo = `${Math.floor(secondsAgo / 3600)}h`;
+        else timeAgo = `${Math.floor(secondsAgo / 86400)}d`;
+
+        const tokenAddress = trade.token?.id;
+        const tokenSymbol = trade.token?.symbol || 'TKN';
+        const tokenName = trade.token?.name || tokenSymbol;
+        const metadataCID = trade.token?.metadataCID;
+
+        // metadataCID is actually the full URL, not just the CID
+        let tokenIcon = metadataCID || undefined;
+
+        return {
+          id: trade.id,
+          walletName: wallet.name,
+          walletEmoji: wallet.emoji || '👤',
+          walletAddress: walletAddr,
+          token: tokenSymbol,
+          tokenName: tokenName,
+          tokenAddress: tokenAddress,
+          tokenIcon: tokenIcon,
+          type: isBuy ? 'buy' : 'sell',
+          amount: nativeAmount,
+          price: price,
+          marketCap: marketCap,
+          time: timeAgo,
+          timeAgo: timeAgo,
+          timestamp: timestamp,
+          txHash: trade.id,
+          createdAt: new Date(timestamp * 1000).toISOString(),
+          isHistorical: true
+        };
+      });
+
+      setHistoricalTrades(prev => ({
+        ...prev,
+        [walletAddr]: normalizedTrades
+      }));
+    } catch (error) {
+      console.error(`Failed to fetch historical trades for ${wallet.name}:`, error);
+    } finally {
+      setIsLoadingHistory(prev => {
+        const next = new Set(prev);
+        next.delete(walletAddr);
+        return next;
+      });
+    }
+  }, []);
+
+  // Fetch historical trades for all tracked wallets
+  useEffect(() => {
+    if (activeTab === 'trades' && trackedWallets.length > 0) {
+      trackedWallets.forEach(wallet => {
+        fetchHistoricalTradesForWallet(wallet);
+      });
+    }
+  }, [activeTab, trackedWallets, fetchHistoricalTradesForWallet]);
+
   const getFilteredTrades = () => {
-    let trades = trackedWalletTrades.filter((trade: any) => {
+    // Merge live trades with historical trades
+    const allHistoricalTrades = Object.values(historicalTrades).flat();
+    const allTrades = [...trackedWalletTrades, ...allHistoricalTrades];
+
+    // Remove duplicates based on txHash
+    const uniqueTrades = Array.from(
+      new Map(allTrades.map(trade => [trade.txHash || trade.id, trade])).values()
+    );
+
+    let trades = uniqueTrades.filter((trade: any) => {
 
       const isBuy = trade.type === 'buy';
       const isSell = trade.type === 'sell';
@@ -1905,6 +2019,13 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         setTrackedWalletTrades((prev: any[]) =>
           prev.filter((trade: any) => trade.walletAddress?.toLowerCase() !== addressToRemove)
         );
+
+        // Remove historical trades for this wallet
+        setHistoricalTrades(prev => {
+          const newHistoricalTrades = { ...prev };
+          delete newHistoricalTrades[addressToRemove];
+          return newHistoricalTrades;
+        });
       }
     } else {
       setWalletToDelete(id);
@@ -1954,6 +2075,13 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       setTrackedWalletTrades((prev: any[]) =>
         prev.filter((trade: any) => trade.walletAddress?.toLowerCase() !== addressToRemove)
       );
+
+      // Remove historical trades for this wallet
+      setHistoricalTrades(prev => {
+        const newHistoricalTrades = { ...prev };
+        delete newHistoricalTrades[addressToRemove];
+        return newHistoricalTrades;
+      });
     }
 
     setShowDeleteConfirmation(false);
@@ -2220,8 +2348,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       });
     }
 
-    const limitedTrades = trades.slice(0, 50);
-
     marketsRef.current.set(id, {
       id,
       tokenAddress: t.tokenAddr?.toLowerCase() || id,
@@ -2250,7 +2376,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       telegram: m?.telegram ?? '',
       createdAt: m?.createdAt ?? nowIso,
       lastTransaction: nowIso,
-      trades: limitedTrades
+      trades: trades
     });
 
     if (demoMode.monitor) {
@@ -2638,7 +2764,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
 
     return (
       <div className="tracker-live-trades">
-        <div className="tracker=detail-trades-table">
+        <div className="tracker-detail-trades-table">
           <div className="detail-trades-table-header">
             <div className="detail-trades-header-cell detail-trades-time">Time</div>
             <div className="detail-trades-header-cell detail-trades-account">Account</div>

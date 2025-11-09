@@ -276,7 +276,7 @@ const LP: React.FC<LPProps> = ({
       categoryMatch = market?.verified === false;
     }
 
-    return tokenMatch && isDeposited && categoryMatch;
+    return tokenMatch && isDeposited && categoryMatch && market.marketType != 0;
   });
 
   if (filteredVaults.some((m: any) =>
