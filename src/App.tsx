@@ -8508,7 +8508,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [tradesByMarket?.[activeMarketKey]?.[0]])
 const nadFunProcessedLogsRef = useRef<Set<string>>(new Set());
 
-  // fetch initial address info and event stream
 useEffect(() => {
     let liveStreamCancelled = false;
     let isAddressInfoFetching = false;
@@ -9500,7 +9499,7 @@ useEffect(() => {
                 topics: [[
                   '0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9', // CurveCreate
                   '0x00a7ba871905cb955432583640b5c9fc6bdd27d36884ab2b5420839224638862', // CurveBuy
-                  '0x393ce1f1cc725c248fb5e08e6ff41ed3caa8dc577d33f7a8571ce9dc7638b063', // CurveSell
+                  '0x0eb25df0e2137de8ce042eeaf39080d25f0c8d451372c99db69a4c0a298d0fa1', // CurveSell
                 ]]
               },
             ],
