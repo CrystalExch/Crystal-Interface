@@ -3493,7 +3493,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     const ageSec = now - createdTimestamp;
 
     if (ageSec < 60) {
-      return `${Math.floor(ageSec)}s`;
+      return `${Math.ceil(ageSec)}s`;
     } else if (ageSec < 3600) {
       return `${Math.floor(ageSec / 60)}m`;
     } else if (ageSec < 86400) {
@@ -3556,7 +3556,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     }
   }, [isWalletDropdownOpen]);
 
-  // Wallet helper functions
   const getWalletTokenCount = (address: string) => {
     const balances = walletTokenBalances[address];
     if (!balances) return 0;

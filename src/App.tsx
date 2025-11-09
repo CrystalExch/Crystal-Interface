@@ -4601,8 +4601,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     else if (secondsAgo < 3600) timeAgo = `${Math.floor(secondsAgo / 60)}m`;
     else if (secondsAgo < 86400) timeAgo = `${Math.floor(secondsAgo / 3600)}h`;
     else timeAgo = `${Math.floor(secondsAgo / 86400)}d`;
-
-    // Get token symbol, name, address, and icon
     const tokenAddress = trade.token?.address || trade.tokenAddress || undefined;
     const tokenSymbol = trade.token?.symbol || trade.symbol || 'TKN';
     const tokenName = trade.token?.name || trade.token?.symbol || trade.name || tokenSymbol;
@@ -4874,10 +4872,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             params: [
               'monadLogs',
               {
-                address: router,
-                topics: [
-                  '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982',
-                ],
+                address: settings.chainConfig[activechain].router,
+                topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT, '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']],
               },
             ],
           }),
@@ -4908,7 +4904,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               params: [
                 'monadLogs',
                 {
-                  address: router,
+                  address: settings.chainConfig[activechain].router,
                   topics: [
                     [
                       '0xa195980963150be5fcca4acd6a80bf5a9de7f9c862258501b7c705e7d2c2d2f4',
@@ -5604,7 +5600,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     launchpad: 'nadfun',
                   };
 
-                  // Check if column is paused
                   if (pausedColumnRef.current === 'new') {
                     console.log('Column paused, queueing token:', tokenAddress);
                     pausedTokenQueueRef.current['new'].push(newToken);
@@ -8455,6 +8450,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     setTrades(processed);
   }, [tradesByMarket?.[activeMarketKey]?.[0]])
+const nadFunProcessedLogsRef = useRef<Set<string>>(new Set());
 
   // fetch initial address info and event stream
   useEffect(() => {
@@ -9483,11 +9479,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             }));
           }
         }, 15000);
-
-        subscriptionMessages.forEach((message) => {
-          wsRef.current?.send(message);
-        });
-
         if (blockNumber.current) {
           startBlockNumber = '0x' + (blockNumber.current - BigInt(80)).toString(16)
           endBlockNumber = '0x' + (blockNumber.current + BigInt(10)).toString(16)
@@ -9499,228 +9490,238 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         fetchData();
       };
 
-      wsRef.current.onmessage = (event) => {
-        const message = JSON.parse(event.data);
+wsRef.current.onmessage = (event) => {
+  const message = JSON.parse(event.data);
 
-        // Log subscription confirmations
-        if (message?.result && message?.id) {
-          console.log('✅ Subscription confirmed:', {
-            id: message.id,
-            subscriptionId: message.result
-          });
-          return;
-        }
+  if (message?.result && message?.id) {
+    console.log('✅ Subscription confirmed:', {
+      id: message.id,
+      subscriptionId: message.result
+    });
+    return;
+  }
 
-        // Log ALL incoming log events, regardless of commitState
-        if (message?.method === 'eth_subscription' && message?.params?.result) {
-          const log = message?.params?.result;
+  if (message?.method === 'eth_subscription' && message?.params?.result) {
+    const log = message?.params?.result;
 
+    const nadFunBondingCurve = settings.chainConfig[activechain]?.nadFunBondingCurve;
+    if (log.address?.toLowerCase() === nadFunBondingCurve?.toLowerCase()) {
+      
+      const logIdentifier = `${log.transactionHash}-${log.logIndex}`;
+      if (nadFunProcessedLogsRef.current.has(logIdentifier)) {
+        console.log('duplicate nad.fun event, skipping:', logIdentifier);
+        return; 
+      }
+      
+      // Prevent memory leak - keep set size limited
+      if (nadFunProcessedLogsRef.current.size >= 10000) {
+        const first = Array.from(nadFunProcessedLogsRef.current)[0];
+        nadFunProcessedLogsRef.current.delete(first);
+      }
+      
+      nadFunProcessedLogsRef.current.add(logIdentifier);
 
+      const eventTopic = log.topics?.[0];
 
-          const nadFunBondingCurve = settings.chainConfig[activechain]?.nadFunBondingCurve;
-          if (log.address?.toLowerCase() === nadFunBondingCurve?.toLowerCase()) {
+      if (eventTopic === NAD_FUN_EVENTS.CurveCreate) {
+        console.log('✨ CurveCreate event!');
+      }
+      else if (log.topics?.[0] === NAD_FUN_EVENTS.CurveBuy || 
+               log.topics?.[0] === NAD_FUN_EVENTS.CurveSell) {
+        
+        const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+        const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
 
-            const eventTopic = log.topics?.[0];
+        const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+        const word = (i: number) => {
+          const chunk = hex.slice(i * 64, i * 64 + 64);
+          return chunk && chunk.trim().length ? BigInt('0x' + chunk) : 0n;
+        };
+        
+        const isBuy = log.topics[0] === NAD_FUN_EVENTS.CurveBuy;
+        const amountIn = Number(word(0)) / 1e18;
+        const amountOut = Number(word(1)) / 1e18;
+        const priceAfter = Number(word(2)) / 1e18;
 
-            if (eventTopic === NAD_FUN_EVENTS.CurveCreate) {
-              console.log('✨ CurveCreate event!');
-              // Your handling code here
+        console.log('nad.fun Trade:', {
+          token: tokenAddr,
+          isBuy,
+          amountIn,
+          amountOut,
+          priceAfter,
+          caller: callerAddr
+        });
+
+              // Update token in explorer
+              dispatch({
+                type: 'UPDATE_MARKET',
+                id: tokenAddr,
+                updates: {
+                  price: priceAfter,
+                  marketCap: priceAfter * TOTAL_SUPPLY,
+                  buyTransactions: isBuy ? 1 : 0,
+                  sellTransactions: isBuy ? 0 : 1,
+                  volumeDelta: isBuy ? amountIn : amountOut,
+                },
+              });
+
+              // Update tracked wallet trades if applicable
+              if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
+                const normalized = normalizeTrade({
+                  caller: callerAddr,
+                  id: log.transactionHash,
+                  isBuy: isBuy,
+                  price: priceAfter,
+                  symbol: 'NAD', // You might want to fetch the actual symbol
+                  amountIn,
+                  amountOut,
+                  timestamp: Date.now(),
+                }, trackedWalletsRef.current);
+
+                setTrackedWalletTrades(prev => {
+                  const updated = [normalized, ...prev];
+                  return updated.length > 500 ? updated.slice(0, 500) : updated;
+                });
+              }
+
+              // If this is the currently viewed token, update its details
+              if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
+                setTokenData(p => ({
+                  ...p,
+                  price: priceAfter,
+                  marketCap: priceAfter * TOTAL_SUPPLY,
+                  change24h: p?.mini?.[0]?.open ? ((priceAfter * 1e9 - p?.mini?.[0]?.open) / (priceAfter * 1e9) * 100) : p?.change24h,
+                  buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
+                  sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
+                  volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
+                }));
+
+                setMemeTrades(prev => [
+                  {
+                    id: `${log.transactionHash}-${log.logIndex}`,
+                    timestamp: Date.now() / 1000,
+                    isBuy,
+                    price: priceAfter,
+                    nativeAmount: isBuy ? amountIn : amountOut,
+                    tokenAmount: isBuy ? amountOut : amountIn,
+                    caller: callerAddr,
+                  },
+                  ...prev.slice(0, 99),
+                ]);
+
+                // Update chart data
+                setChartData((prev: any) => {
+                  if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
+                  const [bars, key, flag] = prev;
+                  const sel = key?.split('MON').pop() || ''
+                  const RESOLUTION_SECS: Record<string, number> = {
+                    '1S': 1, '5S': 5, '15S': 15, '1m': 60, '5m': 300, '15m': 900,
+                    '1h': 3600, '4h': 14400, '1d': 86400,
+                  };
+                  const resSecs = RESOLUTION_SECS[sel] ?? 60;
+                  const now = Date.now();
+                  const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
+                  const volNative = isBuy ? amountIn : amountOut;
+
+                  const updated = [...bars];
+                  const last = updated[updated.length - 1];
+
+                  if (!last || last.time < bucket) {
+                    const prevClose = last?.close ?? priceAfter;
+                    const open = prevClose;
+                    const high = Math.max(open, priceAfter);
+                    const low = Math.min(open, priceAfter);
+                    const newBar = {
+                      time: bucket,
+                      open,
+                      high,
+                      low,
+                      close: priceAfter,
+                      volume: volNative || 0,
+                    };
+                    updated.push(newBar);
+                    const cb = memeRealtimeCallbackRef.current?.[key];
+                    if (cb) cb(newBar);
+                  } else {
+                    const cur = { ...last };
+                    cur.high = Math.max(cur.high, priceAfter);
+                    cur.low = Math.min(cur.low, priceAfter);
+                    cur.close = priceAfter;
+                    cur.volume = (cur.volume || 0) + (volNative || 0);
+                    updated[updated.length - 1] = cur;
+                    const cb = memeRealtimeCallbackRef.current?.[key];
+                    if (cb) cb(cur);
+                  }
+
+                  if (updated.length > 1200) updated.splice(0, updated.length - 1200);
+                  return [updated, key, flag];
+                });
+
+                // Update holders
+                setMemeHolders(prev => {
+                  const arr = prev.slice();
+                  let idx = memeHoldersMapRef.current.get?.(callerAddr);
+                  if (idx == undefined) {
+                    const fresh: Holder = {
+                      address: callerAddr,
+                      balance: 0,
+                      amountBought: 0,
+                      amountSold: 0,
+                      valueBought: 0,
+                      valueSold: 0,
+                      valueNet: 0,
+                      tokenNet: 0,
+                    };
+                    arr.push(fresh);
+                    idx = arr.length - 1;
+                    memeHoldersMapRef.current.set(callerAddr, idx);
+                  }
+                  const h = { ...arr[idx] };
+                  if (isBuy) {
+                    h.amountBought = (h.amountBought || 0) + amountOut;
+                    h.valueBought = (h.valueBought || 0) + amountIn;
+                    h.balance = (h.balance || 0) + amountOut;
+                  } else {
+                    h.amountSold = (h.amountSold || 0) + amountIn;
+                    h.valueSold = (h.valueSold || 0) + amountOut;
+                    h.balance = Math.max(0, (h.balance || 0) - amountIn);
+                  }
+                  arr[idx] = h;
+
+                  for (let i = 0; i < arr.length; i++) {
+                    const hh = arr[i];
+                    const realized = (hh.valueSold || 0) - (hh.valueBought || 0);
+                    const bal = Math.max(0, hh.balance || 0);
+                    arr[i] = { ...hh, valueNet: realized + bal * priceAfter };
+                  }
+
+                  const topSum = arr
+                    .map(hh => Math.max(0, hh.balance || 0))
+                    .sort((a, b) => b - a)
+                    .slice(0, 10)
+                    .reduce((s, n) => s + n, 0);
+                  setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
+                  return arr;
+                });
+              }
+
+              // Update dev tokens if applicable
+              if (memeDevTokenIdsRef.current.has(tokenAddr)) {
+                setMemeDevTokens(prev => {
+                  const updated = prev.map(t => {
+                    if ((t.id || '').toLowerCase() !== tokenAddr) return t;
+                    return {
+                      ...t,
+                      price: priceAfter,
+                      marketCap: priceAfter * TOTAL_SUPPLY,
+                      timestamp: Date.now() / 1000
+                    };
+                  });
+                  memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
+                  return updated;
+                });
+              }
             }
-            else if (log.topics?.[0] === NAD_FUN_EVENTS.CurveBuy || log.topics?.[0] === NAD_FUN_EVENTS.CurveSell) {
-  const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
-  const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
-  
-  const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
-const word = (i: number) => {
-  const chunk = hex.slice(i * 64, i * 64 + 64);
-  return chunk && chunk.trim().length ? BigInt('0x' + chunk) : 0n;
-};  
-  const isBuy = log.topics[0] === NAD_FUN_EVENTS.CurveBuy;
-  const amountIn = Number(word(0)) / 1e18;
-  const amountOut = Number(word(1)) / 1e18;
-  const priceAfter = Number(word(2)) / 1e18;
-  
-  console.log('nad.fun Trade:', {
-    token: tokenAddr,
-    isBuy,
-    amountIn,
-    amountOut,
-    priceAfter,
-    caller: callerAddr
-  });
-
-  // Update token in explorer
-  dispatch({
-    type: 'UPDATE_MARKET',
-    id: tokenAddr,
-    updates: {
-      price: priceAfter,
-      marketCap: priceAfter * TOTAL_SUPPLY,
-      buyTransactions: isBuy ? 1 : 0,
-      sellTransactions: isBuy ? 0 : 1,
-      volumeDelta: isBuy ? amountIn : amountOut,
-    },
-  });
-
-  // Update tracked wallet trades if applicable
-  if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
-    const normalized = normalizeTrade({
-      caller: callerAddr,
-      id: log.transactionHash,
-      isBuy: isBuy,
-      price: priceAfter,
-      symbol: 'NAD', // You might want to fetch the actual symbol
-      amountIn,
-      amountOut,
-      timestamp: Date.now(),
-    }, trackedWalletsRef.current);
-
-    setTrackedWalletTrades(prev => {
-      const updated = [normalized, ...prev];
-      return updated.length > 500 ? updated.slice(0, 500) : updated;
-    });
-  }
-
-  // If this is the currently viewed token, update its details
-  if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
-    setTokenData(p => ({
-      ...p,
-      price: priceAfter,
-      marketCap: priceAfter * TOTAL_SUPPLY,
-      change24h: p?.mini?.[0]?.open ? ((priceAfter * 1e9 - p?.mini?.[0]?.open) / (priceAfter * 1e9) * 100) : p?.change24h,
-      buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
-      sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
-      volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
-    }));
-
-    setMemeTrades(prev => [
-      {
-        id: `${log.transactionHash}-${log.logIndex}`,
-        timestamp: Date.now() / 1000,
-        isBuy,
-        price: priceAfter,
-        nativeAmount: isBuy ? amountIn : amountOut,
-        tokenAmount: isBuy ? amountOut : amountIn,
-        caller: callerAddr,
-      },
-      ...prev.slice(0, 99),
-    ]);
-
-    // Update chart data
-    setChartData((prev: any) => {
-      if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
-      const [bars, key, flag] = prev;
-      const sel = key?.split('MON').pop() || ''
-      const RESOLUTION_SECS: Record<string, number> = {
-        '1S': 1, '5S': 5, '15S': 15, '1m': 60, '5m': 300, '15m': 900,
-        '1h': 3600, '4h': 14400, '1d': 86400,
-      };
-      const resSecs = RESOLUTION_SECS[sel] ?? 60;
-      const now = Date.now();
-      const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
-      const volNative = isBuy ? amountIn : amountOut;
-      
-      const updated = [...bars];
-      const last = updated[updated.length - 1];
-      
-      if (!last || last.time < bucket) {
-        const prevClose = last?.close ?? priceAfter;
-        const open = prevClose;
-        const high = Math.max(open, priceAfter);
-        const low = Math.min(open, priceAfter);
-        const newBar = {
-          time: bucket,
-          open,
-          high,
-          low,
-          close: priceAfter,
-          volume: volNative || 0,
-        };
-        updated.push(newBar);
-        const cb = memeRealtimeCallbackRef.current?.[key];
-        if (cb) cb(newBar);
-      } else {
-        const cur = { ...last };
-        cur.high = Math.max(cur.high, priceAfter);
-        cur.low = Math.min(cur.low, priceAfter);
-        cur.close = priceAfter;
-        cur.volume = (cur.volume || 0) + (volNative || 0);
-        updated[updated.length - 1] = cur;
-        const cb = memeRealtimeCallbackRef.current?.[key];
-        if (cb) cb(cur);
-      }
-      
-      if (updated.length > 1200) updated.splice(0, updated.length - 1200);
-      return [updated, key, flag];
-    });
-
-    // Update holders
-    setMemeHolders(prev => {
-      const arr = prev.slice();
-      let idx = memeHoldersMapRef.current.get?.(callerAddr);
-      if (idx == undefined) {
-        const fresh: Holder = {
-          address: callerAddr,
-          balance: 0,
-          amountBought: 0,
-          amountSold: 0,
-          valueBought: 0,
-          valueSold: 0,
-          valueNet: 0,
-          tokenNet: 0,
-        };
-        arr.push(fresh);
-        idx = arr.length - 1;
-        memeHoldersMapRef.current.set(callerAddr, idx);
-      }
-      const h = { ...arr[idx] };
-      if (isBuy) {
-        h.amountBought = (h.amountBought || 0) + amountOut;
-        h.valueBought = (h.valueBought || 0) + amountIn;
-        h.balance = (h.balance || 0) + amountOut;
-      } else {
-        h.amountSold = (h.amountSold || 0) + amountIn;
-        h.valueSold = (h.valueSold || 0) + amountOut;
-        h.balance = Math.max(0, (h.balance || 0) - amountIn);
-      }
-      arr[idx] = h;
-
-      for (let i = 0; i < arr.length; i++) {
-        const hh = arr[i];
-        const realized = (hh.valueSold || 0) - (hh.valueBought || 0);
-        const bal = Math.max(0, hh.balance || 0);
-        arr[i] = { ...hh, valueNet: realized + bal * priceAfter };
-      }
-
-      const topSum = arr
-        .map(hh => Math.max(0, hh.balance || 0))
-        .sort((a, b) => b - a)
-        .slice(0, 10)
-        .reduce((s, n) => s + n, 0);
-      setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
-      return arr;
-    });
-  }
-
-  // Update dev tokens if applicable
-  if (memeDevTokenIdsRef.current.has(tokenAddr)) {
-    setMemeDevTokens(prev => {
-      const updated = prev.map(t => {
-        if ((t.id || '').toLowerCase() !== tokenAddr) return t;
-        return { 
-          ...t, 
-          price: priceAfter, 
-          marketCap: priceAfter * TOTAL_SUPPLY, 
-          timestamp: Date.now() / 1000 
-        };
-      });
-      memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
-      return updated;
-    });
-  }
-
-  return tempset;
-}
           }
         }
       };
