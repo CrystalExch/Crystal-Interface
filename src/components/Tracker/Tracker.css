@@ -587,7 +587,7 @@
   transform: rotate(180deg);
 }
 
-.tracker-live-trades .detail-trades-body {
+.tracker-detail-trades-body {
   flex: 1;
   overflow-x: hidden;
   overflow-y: auto;
@@ -595,17 +595,17 @@
   min-height: 0;
 }
 
-.tracker-live-trades .detail-trades-body::-webkit-scrollbar  {
+.tracker-detail-trades-body::-webkit-scrollbar  {
   width: 6px;
 }
-.tracker-live-trades .detail-trades-body::-webkit-scrollbar-track  {
+.tracker-detail-trades-body::-webkit-scrollbar-track  {
   background: rgba(179,184,249,0.05);
 }
-.tracker-live-trades .detail-trades-body::-webkit-scrollbar-thumb  {
+.tracker-detail-trades-body::-webkit-scrollbar-thumb  {
   background: rgba(179,184,249,0.2);
   border-radius: 3px;
 }
-.tracker-live-trades .detail-trades-body::-webkit-scrollbar-thumb:hover  {
+.tracker-detail-trades-body::-webkit-scrollbar-thumb:hover  {
   background: rgba(179,184,249,0.3);
 }
 
@@ -2217,7 +2217,7 @@
     min-width: 750px;
   }
   
-  .tracker-live-trades .detail-trades-body {
+  .tracker-detail-trades-body {
     -webkit-overflow-scrolling: touch;
   }
   
@@ -2756,7 +2756,7 @@
   gap: 4px;
 }
 
-.tracker-monitor-card-expanded .detail-trades-body {
+.tracker-monitor-card-expanded .tracker-detail-trades-body {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -2764,20 +2764,20 @@
   scrollbar-color: rgba(170, 174, 207, 0.2) transparent;
 }
 
-.tracker-monitor-card-expanded .detail-trades-body::-webkit-scrollbar {
+.tracker-monitor-card-expanded .tracker-detail-trades-body::-webkit-scrollbar {
   width: 6px;
 }
 
-.tracker-monitor-card-expanded .detail-trades-body::-webkit-scrollbar-track {
+.tracker-monitor-card-expanded .tracker-detail-trades-body::-webkit-scrollbar-track {
   background: rgba(179, 184, 249, 0.05);
 }
 
-.tracker-monitor-card-expanded .detail-trades-body::-webkit-scrollbar-thumb {
+.tracker-monitor-card-expanded .tracker-detail-trades-body::-webkit-scrollbar-thumb {
   background: rgba(179, 184, 249, 0.2);
   border-radius: 3px;
 }
 
-.tracker-monitor-card-expanded .detail-trades-body::-webkit-scrollbar-thumb:hover {
+.tracker-monitor-card-expanded .tracker-detail-trades-body::-webkit-scrollbar-thumb:hover {
   background: rgba(179, 184, 249, 0.3);
 }
 
@@ -3185,4 +3185,53 @@
 
 .tracker-monitor-dev-migrations-value {
   font-size: 0.8rem;
+}
+
+/* Live Trades Quick Buy Button */
+.detail-trades-quickbuy-col {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.tracker-detail-trades-row:hover .detail-trades-quickbuy-col {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.tracker-livetrades-quickbuy-btn {
+  align-items: center;
+  background: #aaaecf;
+  border: none;
+  border-radius: 8px;
+  color: #0f0f12;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.7rem;
+  gap: 2px;
+  justify-content: center;
+  letter-spacing: -0.5px;
+  padding: 0.2rem .35rem;
+  transition: all 0.2s ease;
+}
+
+.tracker-livetrades-quickbuy-btn:hover {
+  filter: brightness(1.1);
+}
+
+.tracker-livetrades-quickbuy-btn:disabled {
+  cursor: not-allowed;
+}
+
+.tracker-livetrades-quickbuy-btn:disabled:hover {
+  filter: brightness(1);
+}
+
+.tracker-livetrades-quickbuy-icon {
+  width: 14px;
+  height: 14px;
 }

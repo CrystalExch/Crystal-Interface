@@ -26,7 +26,7 @@
   align-self: center;
   max-width: 1150px;
   width: 90%;
-  min-height: 100vh;
+  min-height: 120vh;
   padding-top: var(--gap-xl);
   color: var(--c-text);
 }
@@ -152,7 +152,10 @@
   background: none;
 }
 
-.detail-info-grid { gap: var(--gap-xl); }
+.detail-info-grid {
+  gap: var(--gap-xl); 
+  padding-bottom: 50px;
+}
 
 .detail-info-section {
   padding: 20px;
@@ -599,12 +602,6 @@
 .detail-chat-qr-section { display: flex; flex-direction: column; align-items: center; gap: var(--gap-lg); margin-bottom: 32px; }
 .detail-chat-scan-text { font-size: .9rem; color: var(--c-dim); font-weight: 500; text-transform: uppercase; letter-spacing: .5px; }
 
-.detail-chat-qr-code {
-  position: relative; width: 180px; height: 180px; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-  background: #fff; border: 1px solid var(--c-border); border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.2);
-}
 .detail-qr-placeholder { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
 .detail-qr-pattern {
   position: absolute; inset: 12px; opacity: .9; border-radius: 8px;
@@ -1472,7 +1469,7 @@
 }
 
 .detail-trades-body {
-  max-height: 400px;
+  max-height: 500px;
   overflow-y: auto;
 }
 

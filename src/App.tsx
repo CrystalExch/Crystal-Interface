@@ -451,9 +451,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const NAD_FUN_EVENTS = {
     CurveCreate: '0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9',
     CurveBuy: '0x00a7ba871905cb955432583640b5c9fc6bdd27d36884ab2b5420839224638862',
-    CurveSell: '0x393ce1f1cc725c248fb5e08e6ff41ed3caa8dc577d33f7a8571ce9dc7638b063',
-    CurveTokenListed: '0xb1a5d58d86c7ab81f843d3dd779c3f0e0b0319822dd754c37fb28dd21f8a98ff',
-    CurveSync: '0x9f5e8c0f3b7e2e5e5f5e8c0f3b7e2e5e5f5e8c0f3b7e2e5e5f5e8c0f3b7e2e5e',
+    CurveSell: '0x0eb25df0e2137de8ce042eeaf39080d25f0c8d451372c99db69a4c0a298d0fa1',
+    CurveTokenListed: '0xaa090437ef524cee1d4e0825c0caff2203af3b38ab39624d8ff7fab67e219704',
+    CurveSync: '0xfd4bb47bd45abdbdb2ecd61052c9571773f9cde876e2a7745f488c20b30ab10a',
   };
 
   const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');
@@ -2660,131 +2660,103 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   useEffect(() => {
     if (!['earn'].includes(location.pathname.split('/')[1]) || !address) return;
     let cancelled = false;
+
     (async () => {
       setIsVaultsLoading(true);
-
-      const VAULTS_QUERY = `
-        query VaultQuery($acct: Bytes!) {
-          userVaultPositions(
-            first: 1000,
-            where: { account: $acct },
-            orderBy: updatedAt,
-            orderDirection: desc
-          ) {
-            vault { id }
-            shares
-            depositCount
-            withdrawCount
-            totalDepositedQuote
-            totalDepositedBase
-            totalWithdrawnQuote
-            totalWithdrawnBase
-            lastDepositAt
-            lastWithdrawAt
-            updatedAt
-          }
-          vaults(first: 1000, orderBy: lastUpdatedAt, orderDirection: desc) {
-            id
-            owner
-            factory
-            quoteAsset { id symbol name decimals }
-            baseAsset { id symbol name decimals }
-            symbol
-            name
-            description
-            social1
-            social2
-            social3
-            lockup
-            decreaseOnWithdraw
-            locked
-            closed
-            maxShares
-            totalShares
-            quoteBalance
-            baseBalance
-            depositCount
-            withdrawalCount
-            uniqueDepositors
-            createdAt
-            createdBlock
-            createdTx
-            lastUpdatedAt
-          }
-        }
-      `;
-
       try {
-        const dataVaults = await fetchSubgraph(SUBGRAPH_URL, VAULTS_QUERY, { acct: address.toLowerCase() });
-        const rawVaults = (dataVaults?.vaults ?? []) as any[];
-        const vaultsSlim = rawVaults.map((v: any) => ({
-          id: getAddress(v.id) as `0x${string}`,
-          quoteAsset: getAddress(v.quoteAsset?.id ?? v.quoteAsset) as `0x${string}`,
-          baseAsset: getAddress(v.baseAsset?.id ?? v.baseAsset) as `0x${string}`,
-        }));
+        const resp = await fetch(`https://api.crystal.exchange/vaults/list?limit=1000`);
+        if (!resp.ok) throw new Error(`backend ${resp.status}`);
+        const payload = await resp.json();
+        const rows: any[] = Array.isArray(payload?.vaults) ? payload.vaults : [];
 
-        const onchainBalances = await fetchVaultBalances(vaultsSlim);
+        const mappedBase = rows.map((v: any) => {
+          const qAddr = getAddress(v.quote) as `0x${string}`;
+          const bAddr = getAddress(v.base) as `0x${string}`;
 
-        let userSharesMap: Record<string, bigint> = {};
-        if (address) {
-          const pos = (dataVaults?.userVaultPositions ?? []) as any[];
-          userSharesMap = pos.reduce((m: Record<string, bigint>, p: any) => {
-            m[p.vault.id] = toBigIntSafe(p.shares);
-            return m;
-          }, {});
-        }
+          const quoteDecimals =
+            Number(v.quoteDecimals ?? tokendict[qAddr]?.decimals ?? 18);
+          const baseDecimals =
+            Number(v.baseDecimals ?? tokendict[bAddr]?.decimals ?? 18);
 
-        const mapped = rawVaults.map((v: any) => {
-          const quoteAsset = getAddress(v.quoteAsset?.id?.toLowerCase?.() ?? v.quoteAsset?.id ?? v.quoteAsset);
-          const baseAsset = getAddress(v.baseAsset?.id?.toLowerCase?.() ?? v.baseAsset?.id ?? v.baseAsset);
-          const quoteTicker = v.quoteAsset.symbol;
-          const baseTicker = v.baseAsset.symbol;
-
-          const quoteDecimals = Number(v.quoteAsset?.decimals ?? tokendict[quoteAsset]?.decimals ?? 18);
-          const baseDecimals = Number(v.baseAsset?.decimals ?? tokendict[baseAsset]?.decimals ?? 18);
-          const vid = getAddress(v.id).toLowerCase();
-          const qAddr = getAddress(v.quoteAsset?.id ?? v.quoteAsset) as `0x${string}`;
-          const bAddr = getAddress(v.baseAsset?.id ?? v.baseAsset) as `0x${string}`;
-
-          const oc = onchainBalances[vid] ?? { quoteBalance: 0n, baseBalance: 0n };
+          const oc = v.latest ?? { quoteBalance: 0, baseBalance: 0 };
+          const qb = BigInt(String(oc.quoteBalance ?? 0));
+          const bb = BigInt(String(oc.baseBalance ?? 0));
 
           return {
-            id: v.id,
-            address: v.id,
-            owner: (v.owner ?? '').toLowerCase(),
+            id: getAddress(v.vault),
+            address: getAddress(v.vault),
+            owner: String(v.owner || '').toLowerCase(),
             quoteAsset: qAddr,
             baseAsset: bAddr,
             quoteDecimals,
             baseDecimals,
-            quoteTicker,
-            baseTicker,
-            totalShares: toBigIntSafe(v.totalShares),
-            maxShares: toBigIntSafe(v.maxShares),
-            quoteBalance: oc.quoteBalance,
-            baseBalance: oc.baseBalance,
-            lockup: Number(v.lockup ?? 0),
+            quoteTicker: tokendict[qAddr]?.ticker ?? 'QUOTE',
+            baseTicker: tokendict[bAddr]?.ticker ?? 'BASE',
+            totalShares: BigInt(String(v.circulatingShares ?? 0)),
+            maxShares: BigInt(String(v.maxShares ?? 0)),
+            quoteBalance: qb,
+            baseBalance: bb,
+            lockup: 0,
             locked: Boolean(v.locked),
             closed: Boolean(v.closed),
-            name: v.name || (v.symbol ? `${v.symbol} Vault` : 'Vault'),
+            name: v.name || 'Vault',
             desc: v.description ?? '',
-            social1: v.social1 ?? '',
-            social2: v.social2 ?? '',
-            social3: v.social3 ?? '',
+            social1: v.socials?.social1 ?? '',
+            social2: v.socials?.social2 ?? '',
+            social3: v.socials?.social3 ?? '',
             type: 'Spot',
-            userShares: userSharesMap[v.id] ?? 0n,
-            decreaseOnWithdraw: Boolean(v.decreaseOnWithdraw),
+            userShares: 0n,
+            decreaseOnWithdraw: false,
+            tvlUsd: Number(v.tvlUsd ?? v.latest.usdValue ?? 0),
+            snapshot: v.snapshot || null,
           };
         });
 
-        if (!cancelled) setVaultList(mapped);
+        if (cancelled) return;
+
+        const concurrency = 6;
+        const tfForProbe = 1;
+        const chunks: typeof mappedBase[] = [];
+        for (let i = 0; i < mappedBase.length; i += concurrency) {
+          chunks.push(mappedBase.slice(i, i + concurrency));
+        }
+
+        let enriched: typeof mappedBase = [];
+        for (const chunk of chunks) {
+          if (cancelled) return;
+          const results = await Promise.all(
+            chunk.map(async (v) => {
+              try {
+                const r = await fetch(
+                  `https://api.crystal.exchange/vaults/${v.address}/${address.toLowerCase()}/${tfForProbe}?limit=1`
+                );
+                if (!r.ok) throw new Error(String(r.status));
+                const j = await r.json();
+                const s = j?.userBalance?.shares ?? 0;
+                const userShares = typeof s === 'bigint' ? s : BigInt(String(s));
+                return { ...v, userShares };
+              } catch {
+                return v;
+              }
+            })
+          );
+          enriched = enriched.concat(results);
+        }
+
+        if (!cancelled) {
+          setVaultList(enriched);
+        }
       } catch (err) {
-        console.error('subgraph fetch failed:', err);
+        console.error('backend vaults fetch failed', err);
         if (!cancelled) setVaultList([]);
       } finally {
         if (!cancelled) setIsVaultsLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [address, activechain, tokendict, !['earn'].includes(location.pathname.split('/')[1])]);
 
   // details when a vault is selected
@@ -2802,38 +2774,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
 
       try {
-        const url = `https://api.crystal.exchange/vaults/${selectedVaultStrategy}/${address ?? "0x0000000000000000000000000000000000000000"}`;
-        const res = await fetch(url, { method: "GET" });
-        if (!res.ok) throw new Error(`backend ${res.status}`);
-        const backend = await res.json();
-
-        const normDepositors = (backend?.depositors ?? []).map((d: any) => ({
-          id: `${(d.address || '').toLowerCase()}-${String(selectedVaultStrategy).toLowerCase()}`,
-          account: { id: (d.address || '').toLowerCase() },
-          shares: BigInt(String(d.shares ?? 0)),
-          depositCount: Number(d.deposits ?? d.depositCount ?? 0),
-          withdrawCount: Number(d.withdraws ?? d.withdrawCount ?? 0),
-          lastDepositAt: Number(d.lastDeposit ?? d.lastDepositAt ?? 0),
-          lastWithdrawAt: Number(d.lastWithdraw ?? d.lastWithdrawAt ?? 0),
-        }));
-
-        const toRow = (e: any) => ({
-          id: e.id ?? `${String(e.hash || e.txHash || '')}-${String(e.timestamp || 0)}`,
-          account: { id: (e.user || e.account?.id || '').toLowerCase() },
-          shares: BigInt(String(e.shares ?? 0)),
-          amountQuote: BigInt(String(e.quoteAmount ?? e.amountQuote ?? 0)),
-          amountBase: BigInt(String(e.baseAmount ?? e.amountBase ?? 0)),
-          txHash: e.hash ?? e.txHash ?? '',
-          timestamp: Number(e.timestamp ?? 0),
-        });
-
-        const normDeposits = (backend?.depositHistory ?? backend?.deposits ?? []).map(toRow);
-        const normWithdraws = (backend?.withdrawHistory ?? backend?.withdrawals ?? []).map(toRow);
-
-        setDepositors(normDepositors);
-        setDepositHistory(normDeposits);
-        setWithdrawHistory(normWithdraws);
-
         const mapRangeToTf = (r: '1D' | '1W' | '1M' | 'All') => {
           if (r === '1D') return 1;
           if (r === '1W') return 2;
@@ -2849,17 +2789,45 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
         };
 
+        const tf = mapRangeToTf(vaultStrategyTimeRange);
+        const userAddr = address ?? '0x0000000000000000000000000000000000000000';
+        const url = `https://api.crystal.exchange/vaults/${selectedVaultStrategy}/${userAddr}/${tf}`;
+
+        const res = await fetch(url, { method: 'GET' });
+        if (!res.ok) throw new Error(`backend ${res.status}`);
+        const data = await res.json();
+
+        const normDepositors = (data?.depositors ?? []).map((d: any) => ({
+          id: `${(d.address || '').toLowerCase()}-${String(selectedVaultStrategy).toLowerCase()}`,
+          account: { id: (d.address || '').toLowerCase() },
+          shares: BigInt(String(d.shares ?? 0)),
+          depositCount: Number(d.deposits ?? d.depositCount ?? 0),
+          withdrawCount: Number(d.withdraws ?? d.withdrawCount ?? 0),
+          lastDepositAt: Number(d.lastDeposit ?? d.lastDepositAt ?? 0),
+          lastWithdrawAt: Number(d.lastWithdraw ?? d.lastWithdrawAt ?? 0),
+        }));
+        setDepositors(normDepositors);
+
+        const toRow = (e: any) => ({
+          id: e.id ?? `${String(e.hash || e.txHash || '')}-${String(e.timestamp || 0)}`,
+          account: { id: (e.user || e.account?.id || '').toLowerCase() },
+          shares: BigInt(String(e.shares ?? 0)),
+          amountQuote: BigInt(String(e.quoteAmount ?? e.amountQuote ?? 0)),
+          amountBase: BigInt(String(e.baseAmount ?? e.amountBase ?? 0)),
+          txHash: e.hash ?? e.txHash ?? '',
+          timestamp: Number(e.timestamp ?? 0),
+        });
+
+        const normDeposits = (data?.depositHistory ?? []).map(toRow);
+        const normWithdraws = (data?.withdrawHistory ?? []).map(toRow);
+        setDepositHistory(normDeposits);
+        setWithdrawHistory(normWithdraws);
+
         setSeriesLoading(true);
         setSeriesError(null);
         try {
-          const tf = mapRangeToTf(vaultStrategyTimeRange);
-          const histUrl = `https://api.crystal.exchange/vaults/${selectedVaultStrategy}/history/${tf}`;
-          const histRes = await fetch(histUrl);
-          if (!histRes.ok) throw new Error(`history http ${histRes.status}`);
-          const hist = await histRes.json();
-
-          const tvlArr = Array.isArray(hist?.series?.tvl) ? hist.series.tvl : [];
-          const pnlArr = Array.isArray(hist?.series?.pnl) ? hist.series.pnl : [];
+          const tvlArr = Array.isArray(data?.history?.series?.tvl) ? data.history.series.tvl : [];
+          const pnlArr = Array.isArray(data?.history?.series?.pnl) ? data.history.series.pnl : [];
 
           const vSeries = tvlArr.map((p: any) => {
             const ts = Number(p.timestamp || 0);
@@ -2887,6 +2855,31 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           if (!cancelled) setSeriesError(e?.message || 'failed to load history');
         } finally {
           if (!cancelled) setSeriesLoading(false);
+        }
+
+        const baseVault = (vaultList || []).find(
+          (v: any) => (v?.address || '').toLowerCase() === String(selectedVaultStrategy).toLowerCase()
+        );
+
+        if (baseVault) {
+          let userShares = 0n;
+          try {
+            const s = data?.userBalance?.shares ?? 0;
+            userShares = typeof s === 'bigint' ? s : BigInt(String(s));
+          } catch {}
+
+          if (
+            !selectedVault ||
+            selectedVault.address !== baseVault.address ||
+            String(selectedVault.userShares ?? '') !== String(userShares ?? '')
+          ) {
+            setselectedVault({
+              ...baseVault,
+              userShares,
+            } as any);
+          }
+        } else {
+          if (!cancelled) setselectedVault(null);
         }
 
         const VAULT_DETAIL_QUERY = `
@@ -2950,51 +2943,16 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
         `;
 
-        const data = await fetchSubgraph(SUBGRAPH_URL, VAULT_DETAIL_QUERY, {
-          vault: selectedVaultStrategy,
+        const sgData = await fetchSubgraph(SUBGRAPH_URL, VAULT_DETAIL_QUERY, {
           acct: selectedVaultStrategy,
         });
         if (cancelled) return;
 
-        const acct = data?.account ?? null;
-
+        const acct = sgData?.account ?? null;
         const flattenMap = (mapObj: any, key: 'orders' | 'trades') =>
           (mapObj?.shards ?? []).flatMap((s: any) => s?.batches ?? []).flatMap((b: any) => b?.[key] ?? []);
-        const _openOrders = flattenMap(acct?.openOrderMap, "orders") || [];
-        const _allOrders = flattenMap(acct?.orderMap, "orders") || [];
-
         setOpenOrders(flattenMap(acct?.openOrderMap, 'orders') || []);
         setAllOrders(flattenMap(acct?.orderMap, 'orders') || []);
-
-        const baseVault = (vaultList || []).find(
-          (v: any) => (v?.address || '').toLowerCase() === selectedVaultStrategy.toLowerCase()
-        );
-        if (baseVault) {
-          let userShares = baseVault.userShares ?? 0n;
-          try {
-            const me = (data?.depositors ?? []).find(
-              (d: any) => (d?.account?.id || '').toLowerCase() === (address || '').toLowerCase()
-            );
-            if (me?.shares != null) {
-              userShares = typeof me.shares === 'bigint' ? me.shares : BigInt(String(me.shares));
-            }
-          } catch { }
-
-          if (!cancelled) {
-            if (
-              !selectedVault ||
-              selectedVault.address !== baseVault.address ||
-              String(selectedVault.userShares ?? '') !== String(userShares ?? '')
-            ) {
-              setselectedVault({
-                ...baseVault,
-                userShares,
-              } as any);
-            }
-          }
-        } else {
-          if (!cancelled) setselectedVault(null);
-        }
 
         const wssUrl = settings.chainConfig[activechain]?.wssurl;
         const factoryAddress = settings.chainConfig[activechain]?.crystalVaults;
@@ -3215,6 +3173,73 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     run();
     return () => { cancelled = true; };
   }, [selectedVaultStrategy, !['earn'].includes(location.pathname.split('/')[1])]);
+
+  useEffect(() => {
+    if (!['earn'].includes(location.pathname.split('/')[1])) return;
+    if (!selectedVaultStrategy) return;
+
+    let cancelled = false;
+
+    const mapRangeToTf = (r: '1D' | '1W' | '1M' | 'All') => {
+      if (r === '1D') return 1;
+      if (r === '1W') return 2;
+      if (r === '1M') return 3;
+      return 4;
+    };
+
+    const fmtLabel = (ts: number, r: '1D' | '1W' | '1M' | 'All') => {
+      const d = new Date(ts * 1000);
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      if (r === '1D') return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      if (r === '1W' || r === '1M') return `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    };
+
+    const run = async () => {
+      setSeriesLoading(true);
+      setSeriesError(null);
+      try {
+        const tf = mapRangeToTf(vaultStrategyTimeRange);
+        const url = `https://api.crystal.exchange/vaults/${selectedVaultStrategy}/${tf}`;
+        const res = await fetch(url, { method: 'GET' });
+        if (!res.ok) throw new Error(`backend ${res.status}`);
+        const j = await res.json();
+
+        const tvlArr = Array.isArray(j?.history?.series?.tvl) ? j.history.series.tvl : [];
+        const pnlArr = Array.isArray(j?.history?.series?.pnl) ? j.history.series.pnl : [];
+
+        const vSeries = tvlArr.map((p: any) => {
+          const ts = Number(p.timestamp || 0);
+          return {
+            ts,
+            name: fmtLabel(ts, vaultStrategyTimeRange),
+            value: Number(p.tvlUsd || 0),
+          };
+        });
+
+        const pSeries = pnlArr.map((p: any) => {
+          const ts = Number(p.timestamp || 0);
+          return {
+            ts,
+            name: fmtLabel(ts, vaultStrategyTimeRange),
+            value: Number(p.pnlUsd || 0),
+          };
+        });
+
+        if (!cancelled) {
+          setValueSeries(vSeries);
+          setPnlSeries(pSeries);
+        }
+      } catch (e: any) {
+        if (!cancelled) setSeriesError(e?.message || 'failed to load history');
+      } finally {
+        if (!cancelled) setSeriesLoading(false);
+      }
+    };
+
+    run();
+    return () => { cancelled = true; };
+  }, [vaultStrategyTimeRange, selectedVaultStrategy, !['earn'].includes(location.pathname.split('/')[1])]);
 
   const findMarketForToken = useCallback((tokenAddress: string) => {
     for (const [marketKey, marketData] of Object.entries(markets)) {
