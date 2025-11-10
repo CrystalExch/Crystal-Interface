@@ -2707,23 +2707,6 @@
   justify-content: flex-end;
 }
 
-.txn-link {
-  background: transparent;
-  border: 1px solid rgba(179, 184, 249, 0.2);
-  color: rgba(179, 184, 249, 0.7);
-  padding: 4px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.15s ease;
-}
-
-.txn-link:hover {
-  border-color: rgba(179, 184, 249, 0.5);
-  color: rgba(179, 184, 249, 1);
-  background: rgba(179, 184, 249, 0.05);
-}
-
 .monitor-trades-empty {
   padding: 32px;
   text-align: center;

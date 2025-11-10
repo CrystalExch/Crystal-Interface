@@ -25,7 +25,6 @@ interface TokenDetailProps {
   terminalQueryData: any;
   terminalRefetch: any;
   walletTokenBalances: any;
-  tokenData: any;
   monUsdPrice: any;
   token: any;
   selectedInterval: any;
@@ -143,7 +142,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   setChain,
   setpopup,
   walletTokenBalances,
-  tokenData,
   monUsdPrice,
   token,
   selectedInterval,

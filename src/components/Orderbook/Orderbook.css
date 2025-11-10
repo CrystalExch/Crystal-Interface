@@ -300,26 +300,12 @@
   padding-top: 2.5px;
 }
 
-.ob-lists-container {
-  height: 100%;
-  margin-bottom: 2px;
-  min-height: 200px;
-  position: relative;
-  top: -2px;
-}
-
 .ob-lists-container,
 .view-both {
   display: flex;
   flex-direction: column;
   z-index: 0;
-}
-
-.view-both,
-.ob-sell-only,
-.ob-buy-only {
-  margin: 0;
-  width: 100%;
+  overflow: hidden;
 }
 
 .ob-sell-only,

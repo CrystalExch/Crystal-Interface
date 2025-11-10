@@ -8,7 +8,7 @@ interface Order {
 }
 
 const SPREAD_DISPLAY_HEIGHT = 50;
-const HEADER_HEIGHT = 18;
+const HEADER_HEIGHT = 21;
 const MIN_ORDERS = 0;
 
 export function scaleOrders(

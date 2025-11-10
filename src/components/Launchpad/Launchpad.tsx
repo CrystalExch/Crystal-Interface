@@ -7,6 +7,7 @@ import upload from '../../assets/upload.svg'
 import './Launchpad.css';
 import monadicon from '../../assets/monad.svg';
 import { useNavigate } from 'react-router-dom';
+import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 
 interface LaunchpadFormData {
   name: string;
@@ -136,9 +137,7 @@ const handleLaunch = async () => {
     
     const txId = `create-token-${Date.now()}`;                         // NEW
     
-    // Show loading popup                                               // NEW
-    const { showLoadingPopup, updatePopup } = await import('../MemeTransactionPopup/MemeTransactionPopupManager');  // NEW
-    
+    // Show loading popup                                               // NE    
     if (showLoadingPopup) {                                            // NEW
       showLoadingPopup(txId, {                                         // NEW
         title: 'Creating Token',                                       // NEW

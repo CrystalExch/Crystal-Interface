@@ -4997,14 +4997,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           const log = msg.params?.result;
 
           if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
-          console.log('EVENT RECEIVED:', {
-            address: log.address,
-            topic0: log.topics?.[0],
-            commitState: log.commitState,
-            txHash: log.transactionHash,
-          });
-          console.log('NAD.FUN EVENT DETECTED!');
-          console.log('full log:', log);
+
           setProcessedLogs(prev => {
             let tempset = new Set(prev);
             const resolve = txReceiptResolvers.current.get(log['transactionHash']);
@@ -5958,7 +5951,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         let data = (await response.json())?.data;
         if (isCancelled || !data) return;
-
         if (data.launchpadTokens?.length) {
           const m = data.launchpadTokens[0];
 
@@ -8506,9 +8498,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     setTrades(processed);
   }, [tradesByMarket?.[activeMarketKey]?.[0]])
-const nadFunProcessedLogsRef = useRef<Set<string>>(new Set());
-
-useEffect(() => {
+  
+  // fetch initial address info and event stream
+  useEffect(() => {
     let liveStreamCancelled = false;
     let isAddressInfoFetching = false;
     let startBlockNumber = '';
@@ -9469,11 +9461,7 @@ useEffect(() => {
       wsRef.current = new WebSocket(WS_URL);
 
       wsRef.current.onopen = async () => {
-        console.log('websocket connected');
-        const nadFunBondingCurve = settings.chainConfig[activechain]?.nadFunBondingCurve;
-        console.log('📍 Nad.fun address we are listening to:', nadFunBondingCurve);
         const subscriptionMessages = [
-
           JSON.stringify({
             jsonrpc: '2.0',
             id: 'sub1',
@@ -9485,22 +9473,6 @@ useEffect(() => {
                 topics: [
                   '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982',
                 ],
-              },
-            ],
-          }),
-          JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'sub_nadfun',
-            method: 'eth_subscribe',
-            params: [
-              'monadLogs',
-              {
-                address: nadFunBondingCurve,
-                topics: [[
-                  '0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9', // CurveCreate
-                  '0x00a7ba871905cb955432583640b5c9fc6bdd27d36884ab2b5420839224638862', // CurveBuy
-                  '0x0eb25df0e2137de8ce042eeaf39080d25f0c8d451372c99db69a4c0a298d0fa1', // CurveSell
-                ]]
               },
             ],
           }), ...(address?.slice(2) ? [JSON.stringify({
@@ -9520,11 +9492,7 @@ useEffect(() => {
             ],
           })] : [])
         ];
-        console.log('📤 Sending subscriptions...');
-        subscriptionMessages.forEach((message, i) => {
-          console.log(`Subscription ${i + 1}:`, JSON.parse(message));
-          wsRef.current?.send(message);
-        });
+
         pingIntervalRef.current = setInterval(() => {
           if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({
@@ -9534,6 +9502,11 @@ useEffect(() => {
             }));
           }
         }, 15000);
+
+        subscriptionMessages.forEach((message) => {
+          wsRef.current?.send(message);
+        });
+
         if (blockNumber.current) {
           startBlockNumber = '0x' + (blockNumber.current - BigInt(80)).toString(16)
           endBlockNumber = '0x' + (blockNumber.current + BigInt(10)).toString(16)
@@ -9545,257 +9518,599 @@ useEffect(() => {
         fetchData();
       };
 
-wsRef.current.onmessage = (event) => {
-  const message = JSON.parse(event.data);
-
-  if (message?.result && message?.id) {
-    console.log('✅ Subscription confirmed:', {
-      id: message.id,
-      subscriptionId: message.result
-    });
-    return;
-  }
-
-  if (message?.method === 'eth_subscription' && message?.params?.result) {
-    const log = message?.params?.result;
-
-    const nadFunBondingCurve = settings.chainConfig[activechain]?.nadFunBondingCurve;
-    if (log.address?.toLowerCase() === nadFunBondingCurve?.toLowerCase()) {
-      
-      const logIdentifier = `${log.transactionHash}-${log.logIndex}`;
-      if (nadFunProcessedLogsRef.current.has(logIdentifier)) {
-        console.log('duplicate nad.fun event, skipping:', logIdentifier);
-        return; 
-      }
-      
-      // Prevent memory leak - keep set size limited
-      if (nadFunProcessedLogsRef.current.size >= 10000) {
-        const first = Array.from(nadFunProcessedLogsRef.current)[0];
-        nadFunProcessedLogsRef.current.delete(first);
-      }
-      
-      nadFunProcessedLogsRef.current.add(logIdentifier);
-
-      const eventTopic = log.topics?.[0];
-
-      if (eventTopic === NAD_FUN_EVENTS.CurveCreate) {
-        console.log('✨ CurveCreate event!');
-      }
-      else if (log.topics?.[0] === NAD_FUN_EVENTS.CurveBuy || 
-               log.topics?.[0] === NAD_FUN_EVENTS.CurveSell) {
-        const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
-        const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
-
-        const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
-        const word = (i: number) => {
-          const chunk = hex.slice(i * 64, i * 64 + 64);
-          return chunk && chunk.trim().length ? BigInt('0x' + chunk) : 0n;
-        };
-        
-        const isBuy = log.topics[0] === NAD_FUN_EVENTS.CurveBuy;
-        const amountIn = Number(word(0)) / 1e18;
-        const amountOut = Number(word(1)) / 1e18;
-        const priceAfter = Number(word(2)) / 1e18;
-
-        // 🔴🔴🔴 ADD OBVIOUS SELL LOGGING HERE 🔴🔴🔴
-        if (!isBuy) {
-          console.log('');
-          console.log('🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴');
-          console.log('🔴🔴🔴 PERSON IS SELLING 🔴🔴🔴');
-          console.log('🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴');
-          console.log('SELL DETAILS:');
-          console.log('  Token:', tokenAddr);
-          console.log('  Caller:', callerAddr);
-          console.log('  Token Amount Sold:', amountIn);
-          console.log('  Native Received:', amountOut);
-          console.log('  Price After:', priceAfter);
-          console.log('  Transaction:', log.transactionHash);
-          console.log('🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴');
-          console.log('');
-        }
-
-        console.log('nad.fun Trade:', {
-          token: tokenAddr,
-          isBuy,
-          amountIn,
-          amountOut,
-          priceAfter,
-          caller: callerAddr
-        });
-
-              // Update token in explorer
-              dispatch({
-                type: 'UPDATE_MARKET',
-                id: tokenAddr,
-                updates: {
-                  price: priceAfter,
-                  marketCap: priceAfter * TOTAL_SUPPLY,
-                  buyTransactions: isBuy ? 1 : 0,
-                  sellTransactions: isBuy ? 0 : 1,
-                  volumeDelta: isBuy ? amountIn : amountOut,
-                },
-              });
-
-              // Update tracked wallet trades if applicable
-              if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
-                const normalized = normalizeTrade({
-                  caller: callerAddr,
-                  id: log.transactionHash,
-                  isBuy: isBuy,
-                  price: priceAfter,
-                  symbol: 'NAD', // You might want to fetch the actual symbol
+      wsRef.current.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message?.params?.result && message?.params?.result?.commitState == "Proposed") {
+          const log = message?.params?.result;
+          let ordersChanged = false;
+          let canceledOrdersChanged = false;
+          let tradesByMarketChanged = false;
+          let tradeHistoryChanged = false;
+          let temporders: any;
+          let tempcanceledorders: any;
+          let temptradesByMarket: any;
+          let temptradehistory: any;
+          setorders((orders) => {
+            temporders = [...orders];
+            return orders;
+          })
+          setcanceledorders((canceledorders) => {
+            tempcanceledorders = [...canceledorders];
+            return canceledorders;
+          })
+          settradesByMarket((tradesByMarket: any) => {
+            temptradesByMarket = { ...tradesByMarket };
+            return tradesByMarket;
+          })
+          settradehistory((tradehistory: any) => {
+            temptradehistory = [...tradehistory];
+            return tradehistory;
+          })
+          setProcessedLogs(prev => {
+            let tempset = new Set(prev);
+            let temptrades: any = {};
+            if (log['topics']?.[0] == '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982') {
+              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
+              if (!tempset.has(logIdentifier) && marketKey && !temptradesByMarket[marketKey]?.some((trade: any) =>
+                trade[0] == parseInt(log['data'].slice(66, 130), 16) &&
+                trade[1] == parseInt(log['data'].slice(130, 194), 16) &&
+                trade[5] == log['transactionHash'])) {
+                if (tempset.size >= 10000) {
+                  const first = tempset.values().next().value;
+                  if (first !== undefined) {
+                    tempset.delete(first);
+                  }
+                }
+                tempset.add(logIdentifier);
+                const resolve = txReceiptResolvers.current.get(log['transactionHash']);
+                if (resolve) {
+                  resolve();
+                  txReceiptResolvers.current.delete(log['transactionHash']);
+                }
+                let _timestamp = Math.floor(Date.now() / 1000);
+                tradesByMarketChanged = true;
+                if (!Array.isArray(temptradesByMarket[marketKey])) {
+                  temptradesByMarket[marketKey] = [];
+                }
+                let amountIn = parseInt(log['data'].slice(66, 130), 16);
+                let amountOut = parseInt(log['data'].slice(130, 194), 16);
+                let buy = parseInt(log['data'].slice(65, 66), 16);
+                let price = parseInt(log['data'].slice(258, 322), 16);
+                temptradesByMarket[marketKey].unshift([
                   amountIn,
                   amountOut,
-                  timestamp: Date.now(),
-                }, trackedWalletsRef.current);
-
-                setTrackedWalletTrades(prev => {
-                  const updated = [normalized, ...prev];
-                  return updated.length > 500 ? updated.slice(0, 500) : updated;
-                });
-              }
-
-              // If this is the currently viewed token, update its details
-              if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
-                setTokenData(p => ({
-                  ...p,
-                  price: priceAfter,
-                  marketCap: priceAfter * TOTAL_SUPPLY,
-                  change24h: p?.mini?.[0]?.open ? ((priceAfter * 1e9 - p?.mini?.[0]?.open) / (priceAfter * 1e9) * 100) : p?.change24h,
-                  buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
-                  sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
-                  volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
-                }));
-
-                setMemeTrades(prev => [
-                  {
-                    id: `${log.transactionHash}-${log.logIndex}`,
-                    timestamp: Date.now() / 1000,
-                    isBuy,
-                    price: priceAfter,
-                    nativeAmount: isBuy ? amountIn : amountOut,
-                    tokenAmount: isBuy ? amountOut : amountIn,
-                    caller: callerAddr,
-                  },
-                  ...prev.slice(0, 99),
+                  buy,
+                  price,
+                  marketKey,
+                  log['transactionHash'],
+                  _timestamp,
                 ]);
-
-                // Update chart data
-                setChartData((prev: any) => {
-                  if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
-                  const [bars, key, flag] = prev;
-                  const sel = key?.split('MON').pop() || ''
-                  const RESOLUTION_SECS: Record<string, number> = {
-                    '1S': 1, '5S': 5, '15S': 15, '1m': 60, '5m': 300, '15m': 900,
-                    '1h': 3600, '4h': 14400, '1d': 86400,
-                  };
-                  const resSecs = RESOLUTION_SECS[sel] ?? 60;
-                  const now = Date.now();
-                  const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
-                  const volNative = isBuy ? amountIn : amountOut;
-
-                  const updated = [...bars];
-                  const last = updated[updated.length - 1];
-
-                  if (!last || last.time < bucket) {
-                    const prevClose = last?.close ?? priceAfter;
-                    const open = prevClose;
-                    const high = Math.max(open, priceAfter);
-                    const low = Math.min(open, priceAfter);
-                    const newBar = {
-                      time: bucket,
-                      open,
-                      high,
-                      low,
-                      close: priceAfter,
-                      volume: volNative || 0,
-                    };
-                    updated.push(newBar);
-                    const cb = memeRealtimeCallbackRef.current?.[key];
-                    if (cb) cb(newBar);
-                  } else {
-                    const cur = { ...last };
-                    cur.high = Math.max(cur.high, priceAfter);
-                    cur.low = Math.min(cur.low, priceAfter);
-                    cur.close = priceAfter;
-                    cur.volume = (cur.volume || 0) + (volNative || 0);
-                    updated[updated.length - 1] = cur;
-                    const cb = memeRealtimeCallbackRef.current?.[key];
-                    if (cb) cb(cur);
-                  }
-
-                  if (updated.length > 1200) updated.splice(0, updated.length - 1200);
-                  return [updated, key, flag];
-                });
-
-                // Update holders
-                setMemeHolders(prev => {
-                  const arr = prev.slice();
-                  let idx = memeHoldersMapRef.current.get?.(callerAddr);
-                  if (idx == undefined) {
-                    const fresh: Holder = {
-                      address: callerAddr,
-                      balance: 0,
-                      amountBought: 0,
-                      amountSold: 0,
-                      valueBought: 0,
-                      valueSold: 0,
-                      valueNet: 0,
-                      tokenNet: 0,
-                    };
-                    arr.push(fresh);
-                    idx = arr.length - 1;
-                    memeHoldersMapRef.current.set(callerAddr, idx);
-                  }
-                  const h = { ...arr[idx] };
-                  if (isBuy) {
-                    h.amountBought = (h.amountBought || 0) + amountOut;
-                    h.valueBought = (h.valueBought || 0) + amountIn;
-                    h.balance = (h.balance || 0) + amountOut;
-                  } else {
-                    h.amountSold = (h.amountSold || 0) + amountIn;
-                    h.valueSold = (h.valueSold || 0) + amountOut;
-                    h.balance = Math.max(0, (h.balance || 0) - amountIn);
-                  }
-                  arr[idx] = h;
-
-                  for (let i = 0; i < arr.length; i++) {
-                    const hh = arr[i];
-                    const realized = (hh.valueSold || 0) - (hh.valueBought || 0);
-                    const bal = Math.max(0, hh.balance || 0);
-                    arr[i] = { ...hh, valueNet: realized + bal * priceAfter };
-                  }
-
-                  const topSum = arr
-                    .map(hh => Math.max(0, hh.balance || 0))
-                    .sort((a, b) => b - a)
-                    .slice(0, 10)
-                    .reduce((s, n) => s + n, 0);
-                  setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
-                  return arr;
-                });
+                if (!Array.isArray(temptrades[marketKey])) {
+                  temptrades[marketKey] = [];
+                }
+                temptrades[marketKey].unshift([
+                  amountIn,
+                  amountOut,
+                  buy,
+                  price,
+                  marketKey,
+                  log['transactionHash'],
+                  _timestamp,
+                  parseInt(log['data'].slice(194, 258), 16),
+                ])
+                if (
+                  log['topics'][2].slice(26) ==
+                  address?.slice(2).toLowerCase()
+                ) {
+                  tradeHistoryChanged = true;
+                  temptradehistory.push([
+                    amountIn,
+                    amountOut,
+                    buy,
+                    price,
+                    marketKey,
+                    log['transactionHash'],
+                    _timestamp,
+                    1,
+                  ])
+                  let quoteasset =
+                    markets[marketKey].quoteAddress;
+                  let baseasset =
+                    markets[marketKey].baseAddress;
+                  let popupAmountIn = customRound(
+                    amountIn /
+                    10 **
+                    Number(
+                      buy
+                        ? markets[marketKey]
+                          .quoteDecimals
+                        : markets[marketKey]
+                          .baseDecimals,
+                    ),
+                    3,
+                  );
+                  let popupAmountOut = customRound(
+                    amountOut /
+                    10 **
+                    Number(
+                      buy
+                        ? markets[marketKey]
+                          .baseDecimals
+                        : markets[marketKey]
+                          .quoteDecimals,
+                    ),
+                    3,
+                  );
+                  newTxPopup(
+                    log['transactionHash'],
+                    'swap',
+                    buy ? quoteasset : baseasset,
+                    buy ? baseasset : quoteasset,
+                    popupAmountIn,
+                    popupAmountOut,
+                    '',
+                    '',
+                  );
+                }
               }
+              if (tradesByMarketChanged) {
+                setChartData(([existingBars, existingIntervalLabel, existingShowOutliers]) => {
+                  const marketKey = existingIntervalLabel?.match(/^\D*/)?.[0];
+                  const updatedBars = [...existingBars];
+                  let rawVolume;
+                  if (marketKey && Array.isArray(temptrades?.[marketKey])) {
+                    const barSizeSec =
+                      existingIntervalLabel?.match(/\d.*/)?.[0] === '1' ? 60 :
+                        existingIntervalLabel?.match(/\d.*/)?.[0] === '5' ? 5 * 60 :
+                          existingIntervalLabel?.match(/\d.*/)?.[0] === '15' ? 15 * 60 :
+                            existingIntervalLabel?.match(/\d.*/)?.[0] === '30' ? 30 * 60 :
+                              existingIntervalLabel?.match(/\d.*/)?.[0] === '60' ? 60 * 60 :
+                                existingIntervalLabel?.match(/\d.*/)?.[0] === '240' ? 4 * 60 * 60 :
+                                  existingIntervalLabel?.match(/\d.*/)?.[0] === '1D' ? 24 * 60 * 60 :
+                                    5 * 60;
+                    const priceFactor = Number(markets[marketKey].priceFactor);
+                    for (const lastTrade of temptrades[marketKey]) {
+                      const lastBarIndex = updatedBars.length - 1;
+                      const lastBar = updatedBars[lastBarIndex];
 
-              // Update dev tokens if applicable
-              if (memeDevTokenIdsRef.current.has(tokenAddr)) {
-                setMemeDevTokens(prev => {
-                  const updated = prev.map(t => {
-                    if ((t.id || '').toLowerCase() !== tokenAddr) return t;
-                    return {
-                      ...t,
-                      price: priceAfter,
-                      marketCap: priceAfter * TOTAL_SUPPLY,
-                      timestamp: Date.now() / 1000
-                    };
-                  });
-                  memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
-                  return updated;
+                      let openPrice = parseFloat((lastTrade[7] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
+                      let closePrice = parseFloat((lastTrade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
+                      rawVolume =
+                        (lastTrade[2] == 0 ? lastTrade[0] : lastTrade[1]) /
+                        10 ** Number(markets[marketKey].baseDecimals);
+
+                      const tradeTimeSec = lastTrade[6];
+                      const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
+                      const lastBarTimeSec = Math.floor(new Date(lastBar?.time).getTime() / 1000);
+                      if (flooredTradeTimeSec === lastBarTimeSec) {
+                        updatedBars[lastBarIndex] = {
+                          ...lastBar,
+                          high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
+                          low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
+                          close: closePrice,
+                          volume: lastBar.volume + rawVolume,
+                        };
+                        if (realtimeCallbackRef.current[existingIntervalLabel]) {
+                          realtimeCallbackRef.current[existingIntervalLabel]({
+                            ...lastBar,
+                            high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
+                            low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
+                            close: closePrice,
+                            volume: lastBar.volume + rawVolume,
+                          });
+                        }
+                      } else {
+                        updatedBars.push({
+                          time: flooredTradeTimeSec * 1000,
+                          open: lastBar?.close ?? openPrice,
+                          high: Math.max(lastBar?.close ?? openPrice, closePrice),
+                          low: Math.min(lastBar?.close ?? openPrice, closePrice),
+                          close: closePrice,
+                          volume: rawVolume,
+                        });
+                        if (realtimeCallbackRef.current[existingIntervalLabel]) {
+                          realtimeCallbackRef.current[existingIntervalLabel]({
+                            time: flooredTradeTimeSec * 1000,
+                            open: lastBar?.close ?? openPrice,
+                            high: Math.max(lastBar?.close ?? openPrice, closePrice),
+                            low: Math.min(lastBar?.close ?? openPrice, closePrice),
+                            close: closePrice,
+                            volume: rawVolume,
+                          });
+                        }
+                      }
+                    }
+                  }
+                  setMarketsData((marketsData) =>
+                    marketsData.map((market) => {
+                      if (!market) return;
+                      const marketKey = market?.marketKey.replace(
+                        new RegExp(`^${wethticker}|${wethticker}$`, 'g'),
+                        ethticker
+                      );
+                      const newTrades = temptrades?.[marketKey]
+                      if (!Array.isArray(newTrades) || newTrades.length < 1) return market;
+                      const firstKlineOpen: number =
+                        market?.mini && Array.isArray(market?.mini) && market?.mini.length > 0
+                          ? Number(market?.mini[0].value * Number(market.priceFactor))
+                          : 0;
+                      const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
+                      const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
+                      const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+                        / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+                      let high = market.high24h ? Number(market.high24h.replace(/,/g, '')) : null;
+                      let low = market.low24h ? Number(market.low24h.replace(/,/g, '')) : null;
+                      const volume = newTrades.reduce((sum: number, trade: any) => {
+                        if (high && trade[3] / Number(market.priceFactor) > high) {
+                          high = trade[3] / Number(market.priceFactor)
+                        }
+                        if (low && trade[3] / Number(market.priceFactor) < low) {
+                          low = trade[3] / Number(market.priceFactor)
+                        }
+                        const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
+                        return sum + amount;
+                      }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
+
+                      return {
+                        ...market,
+                        volume: formatCommas(
+                          (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
+                        ),
+                        currentPrice: formatSig(
+                          (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+                        ),
+                        priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
+                        priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(formatSig(
+                          (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+                        ).split('.')[1]?.length || 0)),
+                        ...(high != null && {
+                          high24h: formatSig(
+                            high.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+                          )
+                        }),
+                        ...(low != null && {
+                          low24h: formatSig(
+                            low.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+                          )
+                        })
+                      };
+                    })
+                  );
+                  return [updatedBars, existingIntervalLabel, existingShowOutliers];
                 });
               }
             }
-          }
+            else if (log['topics']?.[0] == '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c') {
+              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
+              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
+                address?.slice(2).toLowerCase()) {
+                if (tempset.size >= 10000) {
+                  const first = tempset.values().next().value;
+                  if (first !== undefined) {
+                    tempset.delete(first);
+                  }
+                }
+                tempset.add(logIdentifier);
+                const resolve = txReceiptResolvers.current.get(log['transactionHash']);
+                if (resolve) {
+                  resolve();
+                  txReceiptResolvers.current.delete(log['transactionHash']);
+                }
+                let _timestamp = Math.floor(Date.now() / 1000);
+                let _orderdata = log['data'].slice(130);
+                for (let i = 0; i < _orderdata.length; i += 64) {
+                  let chunk = _orderdata.slice(i, i + 64);
+                  let _isplace = parseInt(chunk.slice(0, 1), 16) >= 2;
+                  if (_isplace) {
+                    let buy = 3 - parseInt(chunk.slice(0, 1), 16);
+                    let price = parseInt(chunk.slice(2, 22), 16);
+                    let id = parseInt(chunk.slice(22, 36), 16);
+                    let size = parseInt(chunk.slice(36, 64), 16);
+                    let alreadyExist = tempcanceledorders.some(
+                      (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
+                    );
+                    buy ? size *= Number(markets[marketKey].scaleFactor) : size *= price
+                    if (!alreadyExist) {
+                      ordersChanged = true;
+                      canceledOrdersChanged = true;
+                      let order = [
+                        price,
+                        id,
+                        size /
+                        price,
+                        buy,
+                        marketKey,
+                        log['transactionHash'],
+                        _timestamp,
+                        0,
+                        size,
+                        2,
+                      ];
+                      temporders.push(order)
+                      tempcanceledorders.push([
+                        price,
+                        id,
+                        size /
+                        price,
+                        buy,
+                        marketKey,
+                        log['transactionHash'],
+                        _timestamp,
+                        0,
+                        size,
+                        2,
+                      ])
+                      let quoteasset =
+                        markets[marketKey].quoteAddress;
+                      let baseasset =
+                        markets[marketKey].baseAddress;
+                      let amountquote = (
+                        size /
+                        (Number(
+                          markets[marketKey].scaleFactor,
+                        ) *
+                          10 **
+                          Number(
+                            markets[marketKey]
+                              .quoteDecimals,
+                          ))
+                      ).toFixed(2);
+                      let amountbase = customRound(
+                        size /
+                        price /
+                        10 **
+                        Number(
+                          markets[marketKey]
+                            .baseDecimals,
+                        ),
+                        3,
+                      );
+                      newTxPopup(
+                        log['transactionHash'],
+                        'limit',
+                        buy ? quoteasset : baseasset,
+                        buy ? baseasset : quoteasset,
+                        buy ? amountquote : amountbase,
+                        buy ? amountbase : amountquote,
+                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                        '',
+                      );
+                    }
+                  } else {
+                    let buy = parseInt(chunk.slice(0, 1), 16) == 0;
+                    let price = parseInt(chunk.slice(2, 22), 16);
+                    let id = parseInt(chunk.slice(22, 36), 16);
+                    let size = parseInt(chunk.slice(36, 64), 16);
+                    let index = temporders.findIndex(
+                      (o: any) =>
+                        o[0] == price &&
+                        o[1] == id &&
+                        o[4] == marketKey,
+                    );
+                    if (index != -1) {
+                      ordersChanged = true;
+                      canceledOrdersChanged = true;
+                      let canceledOrderIndex: number;
+                      canceledOrderIndex = tempcanceledorders.findIndex(
+                        (canceledOrder: any) =>
+                          canceledOrder[0] ==
+                          price &&
+                          canceledOrder[1] ==
+                          id &&
+                          canceledOrder[4] ==
+                          marketKey,
+                      );
+                      if (canceledOrderIndex !== -1 && tempcanceledorders[canceledOrderIndex][9] != 0) {
+                        tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+                        tempcanceledorders[canceledOrderIndex][9] = 0;
+                        tempcanceledorders[canceledOrderIndex][8] =
+                          tempcanceledorders[canceledOrderIndex][8] -
+                          size;
+                        tempcanceledorders[canceledOrderIndex][6] =
+                          _timestamp;
+                      }
+                      if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
+                        temporders[index] = [...temporders[index]]
+                        try {
+                          temporders[index][10].remove();
+                        }
+                        catch { }
+                        temporders[index].splice(10, 1)
+                      }
+                      temporders.splice(index, 1);
+                      let quoteasset =
+                        markets[marketKey].quoteAddress;
+                      let baseasset =
+                        markets[marketKey].baseAddress;
+                      let amountquote = (
+                        (buy ? size : size * price / Number(
+                          markets[marketKey].scaleFactor
+                        )) /
+                        (10 **
+                          Number(
+                            markets[marketKey]
+                              .quoteDecimals,
+                          ))
+                      ).toFixed(2);
+                      let amountbase = customRound(
+                        (buy ? size * Number(
+                          markets[marketKey].scaleFactor
+                        ) / price : size) /
+                        10 **
+                        Number(
+                          markets[marketKey]
+                            .baseDecimals,
+                        ),
+                        3,
+                      );
+                      newTxPopup(
+                        log['transactionHash'],
+                        'cancel',
+                        buy ? quoteasset : baseasset,
+                        buy ? baseasset : quoteasset,
+                        buy ? amountquote : amountbase,
+                        buy ? amountbase : amountquote,
+                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                        '',
+                      );
+                    }
+                  }
+                }
+              }
+            }
+            else {
+              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
+              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
+                address?.slice(2).toLowerCase()) {
+                if (tempset.size >= 10000) {
+                  const first = tempset.values().next().value;
+                  if (first !== undefined) {
+                    tempset.delete(first);
+                  }
+                }
+                tempset.add(logIdentifier);
+                let _timestamp = Math.floor(Date.now() / 1000);
+                let _orderdata = log['data'].slice(2);
+                let buy = 1 - parseInt(_orderdata.slice(0, 1), 16);
+                let price = parseInt(_orderdata.slice(1, 22), 16);
+                let id = parseInt(_orderdata.slice(22, 36), 16);
+                let size = parseInt(_orderdata.slice(36, 64), 16);
+                buy ? size *= price : size *= Number(markets[marketKey].scaleFactor)
+                let orderIndex = temporders.findIndex(
+                  (sublist: any) =>
+                    sublist[0] ==
+                    price &&
+                    sublist[1] ==
+                    id &&
+                    sublist[4] == marketKey,
+                );
+                let canceledOrderIndex = tempcanceledorders.findIndex(
+                  (sublist: any) =>
+                    sublist[0] ==
+                    price &&
+                    sublist[1] ==
+                    id &&
+                    sublist[4] == marketKey,
+                );
+                if (orderIndex != -1 && canceledOrderIndex != -1) {
+                  ordersChanged = true;
+                  temporders[orderIndex] = [...temporders[orderIndex]]
+                  let order = [...temporders[orderIndex]];
+                  let buy = order[3];
+                  let quoteasset =
+                    markets[marketKey]
+                      .quoteAddress;
+                  let baseasset =
+                    markets[marketKey]
+                      .baseAddress;
+                  let amountquote = (
+                    ((order[2] - order[7] - size / order[0]) *
+                      order[0]) /
+                    (Number(
+                      markets[marketKey]
+                        .scaleFactor,
+                    ) *
+                      10 **
+                      Number(
+                        markets[marketKey]
+                          .quoteDecimals,
+                      ))
+                  ).toFixed(2);
+                  let amountbase = customRound(
+                    (order[2] - order[7] - size / order[0]) /
+                    10 **
+                    Number(
+                      markets[marketKey]
+                        .baseDecimals,
+                    ),
+                    3,
+                  );
+                  newTxPopup(
+                    log['transactionHash'],
+                    'fill',
+                    buy ? quoteasset : baseasset,
+                    buy ? baseasset : quoteasset,
+                    buy ? amountquote : amountbase,
+                    buy ? amountbase : amountquote,
+                    `${order[0] / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                    '',
+                  );
+                  if (size == 0) {
+                    tradeHistoryChanged = true;
+                    temptradehistory.push([
+                      order[3] == 1
+                        ? (order[2] * order[0]) /
+                        Number(markets[order[4]].scaleFactor)
+                        : order[2],
+                      order[3] == 1
+                        ? order[2]
+                        : (order[2] * order[0]) /
+                        Number(markets[order[4]].scaleFactor),
+                      order[3],
+                      order[0],
+                      order[4],
+                      order[5],
+                      _timestamp,
+                      0,
+                    ]);
+                    if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
+                      try {
+                        temporders[orderIndex][10].remove();
+                      }
+                      catch { }
+                      temporders[orderIndex].splice(10, 1)
+                    }
+                    temporders.splice(orderIndex, 1);
+                    tempcanceledorders[canceledOrderIndex][9] =
+                      1;
+                    tempcanceledorders[canceledOrderIndex][7] = order[2]
+                    tempcanceledorders[canceledOrderIndex][8] = order[8];
+                  } else {
+                    if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
+                      try {
+                        temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+                      }
+                      catch { }
+                    }
+                    temporders[orderIndex][7] =
+                      order[2] - size / order[0];
+                  }
+                  if (canceledOrderIndex != -1) {
+                    canceledOrdersChanged = true;
+                    tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+                    if (size == 0) {
+                      tempcanceledorders[canceledOrderIndex][9] =
+                        1;
+                      tempcanceledorders[canceledOrderIndex][7] = order[2]
+                      tempcanceledorders[canceledOrderIndex][8] = order[8];
+                    }
+                    else {
+                      tempcanceledorders[canceledOrderIndex][7] =
+                        order[2] - size / order[0];
+                    }
+                  }
+                }
+              }
+            }
+            if (tradeHistoryChanged) {
+              settradehistory(temptradehistory)
+            }
+            if (tradesByMarketChanged) {
+              settradesByMarket(temptradesByMarket)
+            }
+            if (canceledOrdersChanged) {
+              setcanceledorders(tempcanceledorders)
+            }
+            if (ordersChanged) {
+              setorders(temporders)
+            }
+            return tempset;
+          })
         }
-      };
+      }
 
       wsRef.current.onclose = () => {
         if (pingIntervalRef.current) {
@@ -9831,6 +10146,7 @@ wsRef.current.onmessage = (event) => {
       }
     };
   }, [activechain, address]);
+
   // klines + trades
   useEffect(() => {
     (async () => {
@@ -25845,7 +26161,6 @@ wsRef.current.onmessage = (event) => {
                 terminalQueryData={terminalQueryData}
                 terminalRefetch={terminalRefetch}
                 walletTokenBalances={walletTokenBalances}
-                tokenData={token}
                 monUsdPrice={monUsdPrice}
                 token={token}
                 selectedInterval={memeSelectedInterval}
