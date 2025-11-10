@@ -158,7 +158,7 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({
             />
 
             <Area
-              type="linear"
+              type="monotoneX"
               dataKey="value"
               stroke={stroke}
               strokeWidth={1.5}
@@ -435,43 +435,37 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   };
 
   const calculateTVL = (vault: any) => {
-    return (
-      calculateUSDValue(
-        vault.quoteBalance,
-        tradesByMarket[
+    const tvl = Number(vault?.tvlUsd);
+    if (Number.isFinite(tvl) && tvl > 0) return tvl;
+
+    try {
+      const m = getMarket(vault?.quoteAsset, vault?.baseAsset);
+      const k =
         (({ baseAsset, quoteAsset }) =>
           (baseAsset === settings.chainConfig[activechain].wethticker
             ? settings.chainConfig[activechain].wethticker
             : baseAsset) +
           (quoteAsset === settings.chainConfig[activechain].wethticker
             ? settings.chainConfig[activechain].wethticker
-            : quoteAsset))(getMarket(vault?.quoteAsset, vault?.baseAsset))
-        ],
-        vault?.quoteAsset,
-        getMarket(vault?.quoteAsset, vault?.baseAsset),
-      ) +
-      calculateUSDValue(
-        vault.baseBalance,
-        tradesByMarket[
-        (({ baseAsset, quoteAsset }) =>
-          (baseAsset === settings.chainConfig[activechain].wethticker
-            ? settings.chainConfig[activechain].wethticker
-            : baseAsset) +
-          (quoteAsset === settings.chainConfig[activechain].wethticker
-            ? settings.chainConfig[activechain].wethticker
-            : quoteAsset))(getMarket(vault?.quoteAsset, vault?.baseAsset))
-        ],
-        vault?.baseAsset,
-        getMarket(vault?.quoteAsset, vault?.baseAsset),
-      )
-    );
+            : quoteAsset))(m);
+
+      const q = calculateUSDValue(vault.quoteBalance, tradesByMarket[k], vault?.quoteAsset, m);
+      const b = calculateUSDValue(vault.baseBalance, tradesByMarket[k], vault?.baseAsset, m);
+      return q + b;
+    } catch {
+      return 0;
+    }
   };
 
   const calculateUserPositionValue = (vault: any) => {
-    return vault.totalShares
-      ? (calculateTVL(vault) * Number(vault.userShares)) /
-      Number(vault.totalShares)
-      : 0;
+    const tvl = calculateTVL(vault);
+    const user = BigInt(vault?.userShares ?? 0);
+    const total = BigInt(vault?.totalShares ?? 0);
+
+    if (total === 0n || tvl <= 0) return 0;
+
+    const ratio = Number(user) / Number(total);
+    return tvl * ratio;
   };
 
   const showVaultStrategyDetail = (vaultAddress: string) => {
@@ -1215,7 +1209,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                               labelFormatter={(l: any) => String(l)}
                             />
                             <Area
-                              type="linear"
+                              type="monotoneX"
                               dataKey="value"
                               stroke="#aaaecf"
                               strokeWidth={2}
