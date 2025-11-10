@@ -5,7 +5,7 @@ import {
   Plus,
   Search,
 } from 'lucide-react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import {
   Area,
   AreaChart,
@@ -70,73 +70,103 @@ interface LPVaultsProps {
 
 interface VaultSnapshotProps {
   vaultId: string;
-  performance?: any;
+  snapshot?: {
+    tvl?: Array<[number, number]>;
+    stats?: { pctChange?: number; lastUsd?: number; min?: number; max?: number };
+    timeframe?: number;
+  };
   className?: string;
 }
 
 const VaultSnapshot: React.FC<VaultSnapshotProps> = ({
   vaultId,
+  snapshot,
   className = '',
 }) => {
-  const generateMockPerformance = (
-    trend = 'up',
-    volatility = 0.5,
-  ): { day: number; value: number }[] => {
-    const data: { day: number; value: number }[] = [];
-    let value = 100;
+  const pts = useMemo(() => {
+    const arr = Array.isArray(snapshot?.tvl)
+      ? snapshot!.tvl
+        .map(([ts, usd]) => ({ ts: Number(ts), value: Number(usd) }))
+        .filter(p => Number.isFinite(p.ts) && Number.isFinite(p.value))
+        .sort((a, b) => a.ts - b.ts)
+      : [];
+    if (arr.length > 0) return arr;
 
-    for (let i = 1; i <= 7; i++) {
-      const randomChange = (Math.random() - 0.5) * volatility * 2;
-      const trendChange = trend === 'up' ? 0.5 : trend === 'down' ? -0.3 : 0;
-      value += randomChange + trendChange;
-      data.push({ day: i, value: Math.max(95, value) });
-    }
+    const last = Number(snapshot?.stats?.lastUsd ?? 0);
+    if (!Number.isFinite(last) || last <= 0) return [];
+    const now = Date.now() / 1000;
+    return [
+      { ts: Math.floor(now) - 1, value: last },
+      { ts: Math.floor(now), value: last },
+    ];
+  }, [snapshot]);
 
-    return data;
-  };
+  const pct = Number(snapshot?.stats?.pctChange ?? 0);
+  const stroke = pct >= 0 ? "#aaaecf" : "rgb(235, 112, 112)";
 
-  const data = generateMockPerformance('up', 0.8);
-  const firstValue = data[0]?.value || 100;
-  const lastValue = data[data.length - 1]?.value || 100;
-  const percentChange = ((lastValue - firstValue) / firstValue) * 100;
-  const isPositive = percentChange >= 0;
+  if (pts.length === 0) {
+    return (
+      <div className={`vault-snapshot ${className}`}>
+        <div className="snapshot-chart" />
+      </div>
+    );
+  }
+
+  let yMin = Number.POSITIVE_INFINITY;
+  let yMax = Number.NEGATIVE_INFINITY;
+  for (const p of pts) {
+    if (p.value < yMin) yMin = p.value;
+    if (p.value > yMax) yMax = p.value;
+  }
+  if (!Number.isFinite(yMin) || !Number.isFinite(yMax)) {
+    yMin = 0;
+    yMax = 1;
+  }
+  if (yMin === yMax) {
+    const pad = Math.max(1, Math.abs(yMax) * 0.001);
+    yMin -= pad;
+    yMax += pad;
+  } else {
+    const pad = (yMax - yMin) * 0.06;
+    yMin -= pad;
+    yMax += pad;
+  }
 
   return (
     <div className={`vault-snapshot ${className}`}>
       <div className="snapshot-chart">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={data}
-            margin={{ top: 2, right: 2, left: 2, bottom: 2 }}
-          >
+          <AreaChart data={pts} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
             <defs>
-              <linearGradient
-                id={`gradient-${vaultId}`}
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop
-                  offset="0%"
-                  stopColor={isPositive ? '#aaaecf' : 'rgb(235, 112, 112)'}
-                  stopOpacity={0.3}
-                />
-                <stop
-                  offset="100%"
-                  stopColor={isPositive ? '#aaaecf' : 'rgb(235, 112, 112)'}
-                  stopOpacity={0}
-                />
+              <linearGradient id={`gradient-${vaultId}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={stroke} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={stroke} stopOpacity={0} />
               </linearGradient>
             </defs>
+
+            <XAxis
+              dataKey="ts"
+              type="number"
+              domain={["dataMin", "dataMax"]}
+              hide
+            />
+            <YAxis
+              type="number"
+              domain={[yMin, yMax]}
+              hide
+              allowDecimals
+            />
+
             <Area
-              type="monotone"
+              type="linear"
               dataKey="value"
-              stroke={isPositive ? '#aaaecf' : 'rgb(235, 112, 112)'}
+              stroke={stroke}
               strokeWidth={1.5}
               fill={`url(#gradient-${vaultId})`}
               dot={false}
               activeDot={false}
+              isAnimationActive={false}
+              connectNulls
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -359,8 +389,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     const typeMatch = vaultFilter === 'All' || (vaultFilter == 'Active' && vault.closed == false) || (vaultFilter == 'Closed' && vault.closed == true);
     const myVaultsMatch =
       activeVaultTab === 'all' || (activeVaultTab === 'deposited' &&
-      address &&
-      vault.userShares > 0) ||
+        address &&
+        vault.userShares > 0) ||
       (activeVaultTab === 'my-vaults' &&
         address &&
         vault.owner.toLowerCase() === address.toLowerCase());
@@ -523,14 +553,14 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
       if (activeTabIndex !== -1) {
         const activeTabElement = vaultStrategyTabsRef.current[activeTabIndex];
-        if (activeTabElement) {  
+        if (activeTabElement) {
           const indicator = vaultStrategyIndicatorRef.current;
           indicator.style.width = `${activeTabElement.offsetWidth}px`;
           indicator.style.left = `${activeTabElement.offsetLeft}px`;
         }
       }
     },
-    [],  
+    [],
   );
 
   useEffect(() => {
@@ -544,6 +574,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     selectedVaultStrategy,
     selectedVault,
     updateVaultStrategyIndicatorPosition,
+    currentRoute,
   ]);
 
   useEffect(() => {
@@ -622,7 +653,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   className={`vault-tab ${activeVaultTab === 'all' ? 'active' : ''}`}
                   onClick={() => setActiveVaultTab('all')}
                 >
-                  All Vaults 
+                  All Vaults
                 </button>
                 <button
                   className={`vault-tab ${activeVaultTab === 'deposited' ? 'active' : ''}`}
@@ -820,7 +851,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                     </div>
 
                     <div className="col vault-actions-col">
-                      <VaultSnapshot vaultId={vault.id} />
+                      <VaultSnapshot vaultId={vault.id} snapshot={vault.snapshot} />
                     </div>
                   </div>
                 ))
@@ -1076,95 +1107,128 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                             : vaultStrategyTimeRange}
                           <ChevronDown size={14} />
                         </button>
+                        <div
+                          className={`time-range-dropdown-portal ${showTimeRangeDropdown ? 'visible' : 'hidden'
+                            }`}
+                        >
+                          <button
+                            className={`time-range-option ${vaultStrategyTimeRange === '1D' ? 'active' : ''}`}
+                            onClick={() => {
+                              setVaultStrategyTimeRange('1D');
+                              setShowTimeRangeDropdown(false);
+                            }}
+                          >
+                            1D
+                          </button>
+                          <button
+                            className={`time-range-option ${vaultStrategyTimeRange === '1W' ? 'active' : ''}`}
+                            onClick={() => {
+                              setVaultStrategyTimeRange('1W');
+                              setShowTimeRangeDropdown(false);
+                            }}
+                          >
+                            1W
+                          </button>
+                          <button
+                            className={`time-range-option ${vaultStrategyTimeRange === '1M' ? 'active' : ''}`}
+                            onClick={() => {
+                              setVaultStrategyTimeRange('1M');
+                              setShowTimeRangeDropdown(false);
+                            }}
+                          >
+                            1M
+                          </button>
+                          <button
+                            className={`time-range-option ${vaultStrategyTimeRange === 'All' ? 'active' : ''}`}
+                            onClick={() => {
+                              setVaultStrategyTimeRange('All');
+                              setShowTimeRangeDropdown(false);
+                            }}
+                          >
+                            All-time
+                          </button>
+                        </div>
 
-                        {showTimeRangeDropdown && (
-                          <div className="time-range-dropdown-portal">
-                            <button
-                              className={`time-range-option ${vaultStrategyTimeRange === '1D' ? 'active' : ''}`}
-                              onClick={() => {
-                                setVaultStrategyTimeRange('1D');
-                                setShowTimeRangeDropdown(false);
-                              }}
-                            >
-                              1D
-                            </button>
-                            <button
-                              className={`time-range-option ${vaultStrategyTimeRange === '1W' ? 'active' : ''}`}
-                              onClick={() => {
-                                setVaultStrategyTimeRange('1W');
-                                setShowTimeRangeDropdown(false);
-                              }}
-                            >
-                              1W
-                            </button>
-                            <button
-                              className={`time-range-option ${vaultStrategyTimeRange === '1M' ? 'active' : ''}`}
-                              onClick={() => {
-                                setVaultStrategyTimeRange('1M');
-                                setShowTimeRangeDropdown(false);
-                              }}
-                            >
-                              1M
-                            </button>
-                            <button
-                              className={`time-range-option ${vaultStrategyTimeRange === 'All' ? 'active' : ''}`}
-                              onClick={() => {
-                                setVaultStrategyTimeRange('All');
-                                setShowTimeRangeDropdown(false);
-                              }}
-                            >
-                              All-time
-                            </button>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
 
                   <div className="performance-chart">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData}>
-                        <defs>
-                          <linearGradient id="vaultPerformanceGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#aaaecf" stopOpacity={0.4} />
-                            <stop offset="50%" stopColor="#aaaecf" stopOpacity={0.1} />
-                            <stop offset="100%" stopColor="#aaaecf" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
+                    {(() => {
+                      const vals = Array.isArray(chartData)
+                        ? chartData.map((p: any) => Number(p?.value)).filter((v: number) => Number.isFinite(v))
+                        : [];
 
-                        <XAxis
-                          dataKey="name"
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fill: '#e0e8fd90', fontSize: 12 }}
-                        />
-                        <YAxis hide />
-                        <Tooltip
-                          contentStyle={{ background: 'none', border: 'none', color: '#fff' }}
-                          formatter={(v: any) =>
-                            vaultStrategyChartType === 'value'
-                              ? [`$${Number(v).toLocaleString()}`, 'Value']
-                              : [`$${Number(v).toLocaleString()}`, 'PnL']
-                          }
-                          labelFormatter={(l: any) => String(l)}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="value"
-                          stroke="#aaaecf"
-                          strokeWidth={2}
-                          fill="url(#vaultPerformanceGrad)"
-                          dot={false}
-                          activeDot={{ r: 4, fill: 'rgb(6,6,6)', stroke: '#aaaecf', strokeWidth: 2 }}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                      let yMin = Number.POSITIVE_INFINITY;
+                      let yMax = Number.NEGATIVE_INFINITY;
+                      for (const v of vals) {
+                        if (v < yMin) yMin = v;
+                        if (v > yMax) yMax = v;
+                      }
 
-                    {seriesLoading && <div className="chart-overlay">loading…</div>}
-                    {seriesError && <div className="chart-overlay">failed to load series</div>}
-                    {!seriesLoading && chartData.length === 0 && (
-                      <div className="chart-overlay">no data</div>
-                    )}
+                      if (!Number.isFinite(yMin) || !Number.isFinite(yMax)) {
+                        yMin = 0;
+                        yMax = 1;
+                      }
+
+                      if (yMin === yMax) {
+                        const pad = Math.max(1, Math.abs(yMax) * 0.001);
+                        yMin -= pad;
+                        yMax += pad;
+                      } else {
+                        const pad = (yMax - yMin) * 0.06;
+                        yMin -= pad;
+                        yMax += pad;
+                      }
+
+                      if (vaultStrategyChartType === 'pnl') {
+                        yMin = Math.min(yMin, 0);
+                        yMax = Math.max(yMax, 0);
+                      }
+
+                      return (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={chartData}>
+                            <defs>
+                              <linearGradient id="vaultPerformanceGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#aaaecf" stopOpacity={0.4} />
+                                <stop offset="50%" stopColor="#aaaecf" stopOpacity={0.1} />
+                                <stop offset="100%" stopColor="#aaaecf" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+
+                            <XAxis
+                              dataKey="name"
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fill: '#e0e8fd90', fontSize: 12 }}
+                            />
+                            <YAxis hide domain={[yMin, yMax]} />
+                            <Tooltip
+                              cursor={{ stroke: '#2b2b2bff', strokeWidth: 1 }}
+                              contentStyle={{ background: 'none', border: 'none', color: '#aaaecf', fontSize: '0.8rem', lineHeight: '.9' }}
+                              formatter={(v: any) =>
+                                vaultStrategyChartType === 'value'
+                                  ? [`$${Number(v).toLocaleString()}`, 'Value']
+                                  : [`$${Number(v).toLocaleString()}`, 'PnL']
+                              }
+                              labelFormatter={(l: any) => String(l)}
+                            />
+                            <Area
+                              type="linear"
+                              dataKey="value"
+                              stroke="#aaaecf"
+                              strokeWidth={2}
+                              fill="url(#vaultPerformanceGrad)"
+                              dot={false}
+                              activeDot={{ r: 4, fill: 'rgb(6,6,6)', stroke: '#aaaecf', strokeWidth: 2 }}
+                              isAnimationActive={false}
+                              connectNulls
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
