@@ -2783,7 +2783,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
             </div>
           </div>
 
-          <div className="detail-trades-body">
+          <div className="tracker-detail-trades-body">
             {filteredTrades.length === 0 ? (
               <div className="tracker-empty-state">
                 <div className="tracker-empty-content">

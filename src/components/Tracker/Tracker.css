@@ -587,7 +587,7 @@
   transform: rotate(180deg);
 }
 
-.tracker-live-trades .detail-trades-body {
+.tracker-detail-trades-body {
   flex: 1;
   overflow-x: hidden;
   overflow-y: auto;
@@ -595,17 +595,17 @@
   min-height: 0;
 }
 
-.tracker-live-trades .detail-trades-body::-webkit-scrollbar  {
+.tracker-detail-trades-body::-webkit-scrollbar  {
   width: 6px;
 }
-.tracker-live-trades .detail-trades-body::-webkit-scrollbar-track  {
+.tracker-detail-trades-body::-webkit-scrollbar-track  {
   background: rgba(179,184,249,0.05);
 }
-.tracker-live-trades .detail-trades-body::-webkit-scrollbar-thumb  {
+.tracker-detail-trades-body::-webkit-scrollbar-thumb  {
   background: rgba(179,184,249,0.2);
   border-radius: 3px;
 }
-.tracker-live-trades .detail-trades-body::-webkit-scrollbar-thumb:hover  {
+.tracker-detail-trades-body::-webkit-scrollbar-thumb:hover  {
   background: rgba(179,184,249,0.3);
 }
 
@@ -2217,7 +2217,7 @@
     min-width: 750px;
   }
   
-  .tracker-live-trades .detail-trades-body {
+  .tracker-detail-trades-body {
     -webkit-overflow-scrolling: touch;
   }
   
@@ -2773,7 +2773,7 @@
   gap: 4px;
 }
 
-.tracker-monitor-card-expanded .detail-trades-body {
+.tracker-monitor-card-expanded .tracker-detail-trades-body {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -2781,20 +2781,20 @@
   scrollbar-color: rgba(170, 174, 207, 0.2) transparent;
 }
 
-.tracker-monitor-card-expanded .detail-trades-body::-webkit-scrollbar {
+.tracker-monitor-card-expanded .tracker-detail-trades-body::-webkit-scrollbar {
   width: 6px;
 }
 
-.tracker-monitor-card-expanded .detail-trades-body::-webkit-scrollbar-track {
+.tracker-monitor-card-expanded .tracker-detail-trades-body::-webkit-scrollbar-track {
   background: rgba(179, 184, 249, 0.05);
 }
 
-.tracker-monitor-card-expanded .detail-trades-body::-webkit-scrollbar-thumb {
+.tracker-monitor-card-expanded .tracker-detail-trades-body::-webkit-scrollbar-thumb {
   background: rgba(179, 184, 249, 0.2);
   border-radius: 3px;
 }
 
-.tracker-monitor-card-expanded .detail-trades-body::-webkit-scrollbar-thumb:hover {
+.tracker-monitor-card-expanded .tracker-detail-trades-body::-webkit-scrollbar-thumb:hover {
   background: rgba(179, 184, 249, 0.3);
 }
 
