@@ -1468,6 +1468,15 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     }
   }, [activeTab, trackedWallets, fetchHistoricalTradesForWallet]);
 
+  // Fetch historical trades for Monitor tab
+  useEffect(() => {
+    if (activeTab === 'monitor' && trackedWallets.length > 0) {
+      trackedWallets.forEach(wallet => {
+        fetchHistoricalTradesForWallet(wallet);
+      });
+    }
+  }, [activeTab, trackedWallets, fetchHistoricalTradesForWallet]);
+
   const getFilteredTrades = () => {
     // Merge live trades with historical trades
     const allHistoricalTrades = Object.values(historicalTrades).flat();
@@ -3188,10 +3197,43 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
 
       const isExpanded = expandedTokenId === pos.tokenId;
       const walletAddress = (pos as any).walletAddress;
+      const positionWallets = (pos as any).wallets || []; // For aggregated positions
 
-      // Get trades for this token and wallet
-      let tokenTrades = trackedWalletTrades.filter((trade: any) =>
-        trade.token === pos.symbol && trade.walletName === walletName
+      // Get trades for this token
+      // Merge live trades with historical trades
+      let allTrades = [...trackedWalletTrades];
+
+      // Add historical trades from all relevant wallets
+      if (positionWallets.length > 0) {
+        // Aggregated position - get historical trades from all wallets
+        positionWallets.forEach((wallet: any) => {
+          if (wallet.address) {
+            const walletAddrLower = wallet.address.toLowerCase();
+            if (historicalTrades[walletAddrLower]) {
+              allTrades.push(...historicalTrades[walletAddrLower]);
+            }
+          }
+        });
+      } else if (walletAddress) {
+        // Single wallet position
+        const walletAddrLower = walletAddress.toLowerCase();
+        if (historicalTrades[walletAddrLower]) {
+          allTrades.push(...historicalTrades[walletAddrLower]);
+        }
+      }
+
+      // Remove duplicates by txHash/id
+      const uniqueTradesMap = new Map();
+      allTrades.forEach((trade: any) => {
+        const key = trade.txHash || trade.id;
+        if (key && !uniqueTradesMap.has(key)) {
+          uniqueTradesMap.set(key, trade);
+        }
+      });
+
+      // Filter by token symbol to show only trades for this specific token
+      let tokenTrades = Array.from(uniqueTradesMap.values()).filter((trade: any) =>
+        trade.token === pos.symbol
       );
 
       // For OrderBook tokens, also check tradesByMarket
@@ -3249,6 +3291,13 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
           tokenTrades = [...tokenTrades, ...filteredOrderBookTrades];
         }
       }
+
+      // Sort trades by timestamp (most recent first)
+      tokenTrades.sort((a: any, b: any) => {
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+        return timeB - timeA;
+      });
 
       const isHidden = hiddenTokens.has(pos.tokenId);
       // Use token creator address if available, otherwise use token ID as proxy
@@ -3608,50 +3657,51 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
             </div>
           </div>
 
-          {/* Expanded trades section - styled like TokenDetail */}
+          {/* Expanded trades section */}
           {isExpanded && (
             <div className="tracker-monitor-card-expanded">
-              <div className="detail-trades-table">
-                <div className="detail-trades-table-header">
-                  <div className="detail-trades-header-cell">Account</div>
-                  <div className="detail-trades-header-cell">MON</div>
-                  <div className="detail-trades-header-cell">Tokens</div>
-                  <div className="detail-trades-header-cell">Time</div>
-                  <div className="detail-trades-header-cell">Txn</div>
+              <div className="monitor-trades-table">
+                <div className="monitor-trades-header">
+                  <div className="monitor-trades-header-cell">Wallet</div>
+                  <div className="monitor-trades-header-cell">Type</div>
+                  <div className="monitor-trades-header-cell">Bought</div>
+                  <div className="monitor-trades-header-cell">Sold</div>
+                  <div className="monitor-trades-header-cell">Time</div>
+                  <div className="monitor-trades-header-cell">Txn</div>
                 </div>
 
-                <div className="detail-trades-body">
+                <div className="monitor-trades-body">
                   {tokenTrades.length > 0 ? (
                     tokenTrades.slice(0, 10).map((trade: any, idx: any) => (
                       <div
                         key={`${trade.id}-${idx}`}
-                        className={`tracker-tracker-detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
+                        className="monitor-trades-row"
                       >
-                        <div className="detail-trades-col detail-trades-account">
-                          <div className="detail-trades-avatar">
-                            {walletEmoji}
-                          </div>
-                          <span className="detail-trades-address">
-                            {walletName}
-                          </span>
+                        <div className="monitor-trades-col wallet-col">
+                          <span className="wallet-emoji">{trade.walletEmoji}</span>
+                          <span className="wallet-name">{trade.walletName}</span>
                         </div>
-                        <div className={`detail-trades-col detail-trade-type-badge ${trade.type}`}>
+                        <div className={`monitor-trades-col type-col ${trade.type}`}>
                           {trade.type === 'buy' ? 'Buy' : 'Sell'}
                         </div>
-                        <div className="detail-trades-col">
-                          {trade.monAmount?.toFixed(3) || '0.000'}
+                        <div className="monitor-trades-col bought-col">
+                          {trade.type === 'buy' ? `$${(trade.monAmount || 0).toFixed(1)}` : '-'}
+                          {trade.type === 'buy' && (
+                            <span className="txn-count">{trade.amount < 0.0001 ? trade.amount.toExponential(2) : trade.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                          )}
                         </div>
-                        <div className={`detail-trades-col detail-trades-amount amount-${trade.type}`}>
-                          {trade.amount < 0.0001
-                            ? trade.amount.toExponential(2)
-                            : trade.amount.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                        <div className="monitor-trades-col sold-col">
+                          {trade.type === 'sell' ? `$${(trade.monAmount || 0).toFixed(1)}` : '-'}
+                          {trade.type === 'sell' && (
+                            <span className="txn-count">{trade.amount < 0.0001 ? trade.amount.toExponential(2) : trade.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                          )}
                         </div>
-                        <div className="detail-trades-col detail-trades-time">
+                        <div className="monitor-trades-col time-col">
                           {trade.time}
                         </div>
-                        <div className="detail-trades-col detail-trades-txn">
+                        <div className="monitor-trades-col txn-col">
                           <button
-                            className="detail-trades-txn-link"
+                            className="txn-link"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (trade.txHash) {
@@ -3659,13 +3709,13 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                               }
                             }}
                           >
-                            {trade.txHash ? `${trade.txHash.slice(0, 6)}...` : 'View'}
+                            →
                           </button>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="detail-trades-empty">
+                    <div className="monitor-trades-empty">
                       No trades found for this token
                     </div>
                   )}
