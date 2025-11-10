@@ -727,7 +727,7 @@ const Header: React.FC<HeaderProps> = ({
                         ), 2)}
                     </span>
                   </div>
-                  <div className="header-copy-address">   <CopyButton textToCopy={displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'} /> {displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'} </div>
+                  <div className="header-copy-address">   <CopyButton textToCopy={displayAddress || 'No Address'} /> {displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'} </div>
                 </div>
                 <div className="header-actions-container">
                   <div className="header-action-row">
