@@ -451,9 +451,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const NAD_FUN_EVENTS = {
     CurveCreate: '0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9',
     CurveBuy: '0x00a7ba871905cb955432583640b5c9fc6bdd27d36884ab2b5420839224638862',
-    CurveSell: '0x393ce1f1cc725c248fb5e08e6ff41ed3caa8dc577d33f7a8571ce9dc7638b063',
-    CurveTokenListed: '0xb1a5d58d86c7ab81f843d3dd779c3f0e0b0319822dd754c37fb28dd21f8a98ff',
-    CurveSync: '0x9f5e8c0f3b7e2e5e5f5e8c0f3b7e2e5e5f5e8c0f3b7e2e5e5f5e8c0f3b7e2e5e',
+    CurveSell: '0x0eb25df0e2137de8ce042eeaf39080d25f0c8d451372c99db69a4c0a298d0fa1',
+    CurveTokenListed: '0xaa090437ef524cee1d4e0825c0caff2203af3b38ab39624d8ff7fab67e219704',
+    CurveSync: '0xfd4bb47bd45abdbdb2ecd61052c9571773f9cde876e2a7745f488c20b30ab10a',
   };
 
   const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');

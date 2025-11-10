@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { encodeFunctionData } from 'viem';
+import { NadFunAbi } from '../../abis/NadFun.ts';
 
 import {
   showLoadingPopup,
@@ -1013,7 +1014,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const openInExplorer = (addr: string) =>
     window.open(`${explorer}/token/${addr}`, '_blank');
-  
+
   const currentPrice = token.price || 0;
   const formatNumberWithCommas = fmt;
 
@@ -1085,7 +1086,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     }
   }, []);
 
-  // Handle switching between buy and sell modes
   useEffect(() => {
     if (activeTradeType === 'sell') {
       // When switching to sell, default to percentage mode
@@ -1115,6 +1115,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     },
     [],
   );
+
   const handleSellPresetSelect = useCallback(
     (preset: number) => {
       setSelectedSellPreset(preset);
@@ -1995,6 +1996,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           const amountPerWallet = parseFloat(tradeAmount) / walletsArray.length;
           const totalAmount = parseFloat(tradeAmount);
           const estimatedTokens = totalAmount / currentPrice;
+
+          const isNadFun = token.launchpad === 'nadfun';
+          const contractAddress = isNadFun
+            ? settings.chainConfig[activechain].nadFunRouter
+            : routerAddress;
+
           txId = `multibuy-${Date.now()}`;
           showLoadingPopup?.(txId, {
             title: `Buying ${token.symbol}`,
@@ -2004,67 +2011,100 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             tokenImage: token.image,
           });
 
-          const buyPromises = [];
-          for (const walletAddr of walletsArray) {
-            const wallet = subWallets.find((w) => w.address === walletAddr);
-            if (!wallet) continue;
+          try {
+            const buyPromises = [];
+            for (const walletAddr of walletsArray) {
+              const wallet = subWallets.find((w) => w.address === walletAddr);
+              if (!wallet) continue;
 
-            const value = BigInt(Math.round(amountPerWallet * 1e18));
+              const value = BigInt(Math.round(amountPerWallet * 1e18));
 
-            const uo = {
-              target: routerAddress,
-              data: encodeFunctionData({
-                abi: CrystalRouterAbi,
-                functionName: 'buy',
-                args: [true, token.tokenAddress as `0x${string}`, value, 0n],
-              }),
-              value,
-            };
-            const walletNonce = nonces.current.get(walletAddr);
-            const params = [
-              { uo },
-              0n,
-              0n,
-              false,
-              wallet.privateKey,
-              walletNonce?.nonce,
-            ];
-            if (walletNonce) walletNonce.nonce += 1;
-            walletNonce?.pendingtxs.push(params);
+              let uo;
+              if (isNadFun) {
+                uo = {
+                  target: contractAddress as `0x${string}`,
+                  data: encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'buy',
+                    args: [{
+                      amountOutMin: 0n,
+                      token: token.dev as `0x${string}`,
+                      to: walletAddr as `0x${string}`,
+                      deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
+                    }],
+                  }),
+                  value,
+                };
+              } else {
+                uo = {
+                  target: contractAddress as `0x${string}`,
+                  data: encodeFunctionData({
+                    abi: CrystalRouterAbi,
+                    functionName: 'buy',
+                    args: [true, token.tokenAddress as `0x${string}`, value, 0n],
+                  }),
+                  value,
+                };
+              }
 
-            const buyPromise = sendUserOperationAsync(...params)
-              .then(() => {
-                if (walletNonce)
-                  walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
-                    (p: any) => p[5] != params[5],
-                  );
-                return true;
-              })
-              .catch(() => {
-                if (walletNonce)
-                  walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
-                    (p: any) => p[5] != params[5],
-                  );
-                return false;
-              });
-            buyPromises.push(buyPromise);
+              const walletNonce = nonces.current.get(walletAddr);
+              const params = [
+                { uo },
+                0n,
+                0n,
+                false,
+                wallet.privateKey,
+                walletNonce?.nonce,
+              ];
+              if (walletNonce) walletNonce.nonce += 1;
+              walletNonce?.pendingtxs.push(params);
+
+              const buyPromise = sendUserOperationAsync(...params)
+                .then(() => {
+                  if (walletNonce)
+                    walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
+                      (p: any) => p[5] != params[5],
+                    );
+                  return true;
+                })
+                .catch(() => {
+                  if (walletNonce)
+                    walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
+                      (p: any) => p[5] != params[5],
+                    );
+                  return false;
+                });
+              buyPromises.push(buyPromise);
+            }
+
+            const results = await Promise.allSettled(buyPromises);
+            const successfulBuys = results.filter(
+              (result) => result.status === 'fulfilled' && result.value === true,
+            ).length;
+
+            updatePopup?.(txId, {
+              title: 'Buy Complete',
+              subtitle: `${successfulBuys}/${walletsArray.length} wallet${walletsArray.length > 1 ? 's' : ''} • Got ~${formatNumberWithCommas(estimatedTokens, 2)} ${token.symbol}`,
+              variant: 'success',
+              isLoading: false,
+            });
+
+            terminalRefetch();
+          } catch (error: any) {
+            updatePopup?.(txId, {
+              title: 'Buy Failed',
+              subtitle: error?.message || 'Failed to complete buy',
+              variant: 'error',
+              isLoading: false,
+            });
           }
-
-          const results = await Promise.allSettled(buyPromises);
-          const successfulBuys = results.filter(
-            (result) => result.status === 'fulfilled' && result.value === true,
-          ).length;
-
-          updatePopup?.(txId, {
-            title: 'Buy Complete',
-            subtitle: `${successfulBuys}/${walletsArray.length} wallet${walletsArray.length > 1 ? 's' : ''} • Got ~${formatNumberWithCommas(estimatedTokens, 2)} ${token.symbol}`,
-            variant: 'success',
-            isLoading: false,
-          });
-
-          terminalRefetch();
         } else {
           // Single wallet buy logic
+          const isNadFun = token.launchpad === 'nadfun';
+          const contractAddress = isNadFun
+            ? settings.chainConfig[activechain].nadFunRouter
+            : routerAddress;
+
           txId = walletPopup.showBuyTransaction(
             tradeAmount,
             inputCurrency,
@@ -2075,15 +2115,33 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           const valNum = parseFloat(tradeAmount);
           const value = BigInt(Math.round(valNum * 1e18));
 
-          const uo = {
-            target: routerAddress,
-            data: encodeFunctionData({
-              abi: CrystalRouterAbi,
-              functionName: 'buy',
-              args: [true, token.tokenAddress as `0x${string}`, value, 0n],
-            }),
-            value,
-          };
+          let uo;
+          if (isNadFun) {
+            uo = {
+              target: contractAddress as `0x${string}`,
+              data: encodeFunctionData({
+                abi: NadFunAbi,
+                functionName: 'buy',
+                args: [{
+                  amountOutMin: 0n,
+                  token: token.dev as `0x${string}`,
+                  to: account.address as `0x${string}`,
+                  deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
+                }],
+              }),
+              value,
+            };
+          } else {
+            uo = {
+              target: contractAddress as `0x${string}`,
+              data: encodeFunctionData({
+                abi: CrystalRouterAbi,
+                functionName: 'buy',
+                args: [true, token.tokenAddress as `0x${string}`, value, 0n],
+              }),
+              value,
+            };
+          }
 
           walletPopup.updateTransactionConfirming(
             txId,
@@ -3263,7 +3321,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               onChange={(e) => {
                 const value = e.target.value;
                 setTradeAmount(value);
-                
+
                 // If in sell mode and percentage mode, update the slider
                 if (activeTradeType === 'sell' && sellInputMode === 'percentage') {
                   const percent = parseFloat(value) || 0;
@@ -3273,7 +3331,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               className="meme-trade-input"
               autoFocus
             />
-            <div 
+            <div
               className="meme-trade-currency"
               style={{ cursor: activeTradeType === 'sell' ? 'pointer' : 'default' }}
               onClick={() => {
@@ -3281,7 +3339,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   // Toggle between percentage and token mode
                   setSellInputMode(prev => {
                     const newMode = prev === 'percentage' ? 'token' : 'percentage';
-                    
+
                     // Convert the current value when switching modes
                     const currentBalance = getTotalSelectedWalletsTokenBalance();
                     if (newMode === 'percentage') {
@@ -3296,7 +3354,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       const tokenAmount = (currentBalance * percentage) / 100;
                       setTradeAmount(formatTradeAmount(tokenAmount));
                     }
-                    
+
                     return newMode;
                   });
                 }
@@ -4910,6 +4968,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         selectedWallets={selectedWallets}
         setSelectedWallets={setSelectedWallets}
         isTerminalDataFetching={isTerminalDataFetching}
+        tokenLaunchpad={token.launchpad}
+        tokenDev={token.dev}
       />
 
       {hoveredSimilarTokenImage &&
