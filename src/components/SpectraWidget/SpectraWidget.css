@@ -230,11 +230,12 @@
 .spectra-progress-spacer {
   align-items: center;
   background: rgb(6, 6, 6);
-  border-radius: 6px;
+  box-shadow: 0 0 0 1px rgb(6, 6, 6);
+  border-radius: 4px;
   display: flex;
-  height: 70px;
+  height: 69px;
   justify-content: center;
-  width: 70px;
+  width: 69px;
 }
 
 .spectra-market-image-wrapper,
@@ -242,9 +243,9 @@
   align-items: center;
   border-radius: 3px;
   display: flex;
-  height: 68px;
+  height: 67px;
   justify-content: center;
-  width: 68px;
+  width: 67px;
   overflow: hidden;
   position: relative;
 }
@@ -983,7 +984,6 @@
   opacity: 0;
   transition: opacity 0.2s ease;
   cursor: pointer;
-  z-index: 2;
   border-radius: 4px;
 }
 
