@@ -301,7 +301,7 @@ const Header: React.FC<HeaderProps> = ({
   const location = useLocation();
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
   const navigate = useNavigate();
-  const [isHeaderSubwalletsOpen, setIsHeaderSubwalletsOpen] = useState(false);
+  const [isHeaderSubwalletsOpen, setIsHeaderSubwalletsOpen] = useState(true);
 
   const handleTokenClick = (token: any) => {
     if (setTokenData) {
@@ -798,7 +798,7 @@ const Header: React.FC<HeaderProps> = ({
                       <>
                         <div className="header-wallet-dropdown-subwallets-header">
                           <button
-                            className="wallet-dropdown-action-btn-disable portfolio-btn"
+                            className="wallet-dropdown-action-btn portfolio-btn"
                             onClick={() => {
                               handleSetActiveWallet(activeWalletPrivateKey || "")
                             }}

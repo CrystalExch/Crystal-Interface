@@ -230,7 +230,8 @@
   border-top: 1px solid rgba(207, 210, 252, 0.15);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  padding-top: 6px;
+  padding-top: 8px;
+  padding-bottom: 2px;
 }
 
 .quickbuy-portfolio-item {
@@ -849,8 +850,7 @@
   display: flex;
   font-size: 0.75rem;
   justify-content: center;
-  margin-bottom: 3px;
-  transform: scaleX(1.03);
+  white-space: nowrap;
 }
 
 .quickbuy-portfolio-value.bought {

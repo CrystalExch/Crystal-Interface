@@ -2731,7 +2731,6 @@
   padding: 2px 12px;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-bottom: -5px;
 }
 
 .meme-wallet-dropdown-trigger:hover {
@@ -2757,7 +2756,6 @@
 
 .meme-wallet-dropdown-panel {
   position: absolute;
-  top: 200px;
   right: 10px;
   width: 400px;
   max-height: 320px;
@@ -3091,6 +3089,7 @@
   padding-right: 10px;
   padding-left: 15px;
   margin-top: 5px;
+  margin-bottom: 5px;
 }
 
 .cs-container {

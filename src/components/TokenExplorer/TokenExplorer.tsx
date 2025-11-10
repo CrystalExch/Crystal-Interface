@@ -3647,7 +3647,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const selectedSet = useMemo(() => new Set<string>(), []);
 
   const totalSelectedBalance = useMemo(() => {
-    if (selectedWallets.size === 0) return 0;
+    if (selectedWallets.size == 0) {
+      return (Number(walletTokenBalances?.[account?.address ?? '']?.[settings.chainConfig[activechain]?.eth] ?? 0) / 10 ** Number(18))
+    }
     let total = 0;
     selectedWallets.forEach((address) => {
       total += getWalletBalance(address);
@@ -4471,33 +4473,16 @@ const handleQuickBuy = useCallback(
                     {selectedWallets.size}
                   </span>
                   <span className="subwallet-total-balance">
-                    {selectedWallets.size > 0 ? (
-                      <>
-                        <img
-                          src={monadicon}
-                          className="wallet-dropdown-mon-icon"
-                          style={{
-                            width: '15px',
-                            height: '15px',
-                            marginRight: '4px',
-                          }}
-                        />
-                        {formatNumberWithCommas(totalSelectedBalance, 2)}
-                      </>
-                    ) : (
-                      <>
-                        <img
-                          src={monadicon}
-                          className="wallet-dropdown-mon-icon"
-                          style={{
-                            width: '15px',
-                            height: '15px',
-                            marginRight: '4px',
-                          }}
-                        />{' '}
-                        <span>0</span>
-                      </>
-                    )}
+                    <img
+                      src={monadicon}
+                      className="wallet-dropdown-mon-icon"
+                      style={{
+                        width: '15px',
+                        height: '15px',
+                        marginRight: '4px',
+                      }}
+                    />
+                    {formatNumberWithCommas(totalSelectedBalance, 2)}
                   </span>
                   <svg
                     className={`wallet-dropdown-arrow ${isWalletDropdownOpen ? 'open' : ''}`}

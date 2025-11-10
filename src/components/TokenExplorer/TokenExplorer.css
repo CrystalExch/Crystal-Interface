@@ -126,13 +126,11 @@
 }
 
 .explorer-token-name {
-  color: rgba(237, 236, 252, 0.4);
+  color: rgba(237, 236, 252, 0.5);
   font-size: 1rem;
   margin: 0;
   text-overflow: ellipsis;
   white-space: nowrap;
-
-
 }
 
 .explorer-token-name:hover {

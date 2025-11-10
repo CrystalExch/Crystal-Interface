@@ -2071,7 +2071,6 @@ for (const { addr, amount: partWei } of plan) {
                     <img
                       className="quickbuy-monad-icon"
                       src={monadicon}
-                      alt="MON"
                     />
                     {formatNumberWithCommas(userStats.balance * tokenPrice, 2)}
                   </>
@@ -2084,14 +2083,14 @@ for (const { addr, amount: partWei } of plan) {
               >
                 {showUSD ? (
                   <>
+                    {userStats.valueNet >= 0 ? '+' : '-'}
                     <span>$</span>
-                    {userStats.valueNet >= 0 ? '+' : ''}
                     {formatNumberWithCommas(
-                      userStats.valueNet * monUsdPrice,
+                      Math.abs(userStats.valueNet * monUsdPrice),
                       1,
                     )}
                     {userStats.valueBought > 0
-                      ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)`
+                      ? ` (${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)`
                       : ' (0%)'}
                   </>
                 ) : (
@@ -2099,12 +2098,11 @@ for (const { addr, amount: partWei } of plan) {
                     <img
                       className="quickbuy-monad-icon"
                       src={monadicon}
-                      alt="MON"
                     />
-                    {userStats.valueNet >= 0 ? '+' : ''}
-                    {formatNumberWithCommas(userStats.valueNet, 1)}
+                    {userStats.valueNet >= 0 ? '+' : '-'}
+                    {formatNumberWithCommas(Math.abs(userStats.valueNet), 1)}
                     {userStats.valueBought > 0
-                      ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)`
+                      ? ` (${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)`
                       : ' (0%)'}
                   </>
                 )}

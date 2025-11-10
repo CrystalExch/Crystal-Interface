@@ -849,13 +849,13 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                             <span
                               className={`meme-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'}`}
                             >
-                              {p.pnlNative >= 0 ? '+' : ''}
+                              {p.pnlNative >= 0 ? '+' : '-'}
                               {fmtAmount(
                                 Math.abs(p.pnlNative),
                                 amountMode,
                                 monUsdPrice,
                               )}{' '}
-                              ({p.pnlNative >= 0 ? '+' : ''}
+                              (
                               {p.spentNative > 0
                                 ? ((p.pnlNative / p.spentNative) * 100).toFixed(
                                   1,
