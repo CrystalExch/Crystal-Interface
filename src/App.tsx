@@ -2601,7 +2601,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   ]);
   const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<
     '1D' | '1W' | '1M' | 'All'
-  >('All');
+  >('1D');
   const [vaultStrategyChartType, setVaultStrategyChartType] = useState<
     'value' | 'pnl'
   >('value');
@@ -25567,7 +25567,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                         BigInt(Math.floor(Date.now() / 1000) + 900),
                         usedRefAddress
                       )
-                    }, 30000000n)
+                    }, 10000000n)
                   }
                 }
                 if (!client && hash) {

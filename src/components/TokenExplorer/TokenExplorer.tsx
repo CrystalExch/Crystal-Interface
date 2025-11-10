@@ -3648,7 +3648,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const totalSelectedBalance = useMemo(() => {
     if (selectedWallets.size == 0) {
-      return (Number(walletTokenBalances?.[account?.address ?? '']?.[settings.chainConfig[activechain]?.eth] ?? 0) / 10 ** Number(18))
+      return (Number(walletTokenBalances?.[account.address ?? '']?.[settings.chainConfig[activechain]?.eth] ?? 0) / 10 ** Number(18))
     }
     let total = 0;
     selectedWallets.forEach((address) => {

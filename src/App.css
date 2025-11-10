@@ -3776,12 +3776,6 @@ body:has(.popup-blur) {
   gap: 0 !important;
 }
 
-input[inputmode="numeric"][pattern="[0-9]*"] {
-  border-width: 1px !important;
-  border-color: #a0a9f632 !important;
-  border-radius: 8px !important;
-}
-
 input[name="email"],
 input.text-base.sm\:text-sm,
 input[type="email"] {
