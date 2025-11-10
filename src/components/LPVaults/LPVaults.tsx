@@ -581,7 +581,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       if (
         showManagementMenu &&
-        !(event.target as Element).closest('.vault-management-menu')
+        !(event.target as Element).closest('.vault-management-menu') &&
+        !(event.target as Element).closest('.vault-management-trigger')
       ) {
         setShowManagementMenu(false);
       }
@@ -914,42 +915,39 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                       <>
                         <button
                           className="vault-management-trigger"
-                          onClick={() =>
-                            setShowManagementMenu(!showManagementMenu)
-                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowManagementMenu(!showManagementMenu);
+                          }}
                         >
                           Vault Actions
-                          <ChevronDown size={14} />
+                          <ChevronDown size={14} className={showManagementMenu ? 'open' : ''} />
                         </button>
 
-                        {showManagementMenu && (
-                          <div className="vault-management-menu">
-                            <button
-                              className="vault-management-option"
-                              onClick={() =>
-                                handleVaultManagement('disable-deposits')
-                              }
-                            >
-                              {stableSelectedVault?.locked
-                                ? t('Enable Deposits')
-                                : t('Disable Deposits')}
-                            </button>
-                            <button
-                              className="vault-management-option"
-                              onClick={() => handleVaultManagement('decrease')}
-                            >
-                              {true
-                                ? t('Enable Decrease On Withdraw')
-                                : t('Disable Decrease On Withdraw')}
-                            </button>
-                            <button
-                              className="vault-management-option vault-close-option"
-                              onClick={() => handleVaultManagement('close')}
-                            >
-                              Close Vault
-                            </button>
-                          </div>
-                        )}
+                        <div className={`vault-management-menu ${showManagementMenu ? 'visible' : ''}`}>
+                          <button
+                            className="vault-management-option"
+                            onClick={() => handleVaultManagement('disable-deposits')}
+                          >
+                            {stableSelectedVault?.locked
+                              ? t('Enable Deposits')
+                              : t('Disable Deposits')}
+                          </button>
+                          <button
+                            className="vault-management-option"
+                            onClick={() => handleVaultManagement('decrease')}
+                          >
+                            {true
+                              ? t('Enable Decrease On Withdraw')
+                              : t('Disable Decrease On Withdraw')}
+                          </button>
+                          <button
+                            className="vault-management-option vault-close-option"
+                            onClick={() => handleVaultManagement('close')}
+                          >
+                            Close Vault
+                          </button>
+                        </div>
                       </>
                     )}
                 </div>
@@ -1092,18 +1090,13 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                       >
                         <button
                           className="time-range-select-button"
-                          onClick={() =>
-                            setShowTimeRangeDropdown(!showTimeRangeDropdown)
-                          }
+                          onClick={() => setShowTimeRangeDropdown(!showTimeRangeDropdown)}
                         >
-                          {vaultStrategyTimeRange === 'All'
-                            ? 'All-time'
-                            : vaultStrategyTimeRange}
-                          <ChevronDown size={14} />
+                          {vaultStrategyTimeRange === 'All' ? 'All-time' : vaultStrategyTimeRange}
+                          <ChevronDown size={14} className={showTimeRangeDropdown ? 'open' : ''} />
                         </button>
                         <div
-                          className={`time-range-dropdown-portal ${showTimeRangeDropdown ? 'visible' : 'hidden'
-                            }`}
+                          className={`time-range-dropdown-portal ${showTimeRangeDropdown ? 'visible' : ''}`}
                         >
                           <button
                             className={`time-range-option ${vaultStrategyTimeRange === '1D' ? 'active' : ''}`}

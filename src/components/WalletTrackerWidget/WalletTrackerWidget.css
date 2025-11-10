@@ -55,6 +55,7 @@
 
 .wtw-container.snapped {
   transition: all 0.3s ease;
+  z-index: 0;
 }
 
 .wtw-container.snapped-left {
