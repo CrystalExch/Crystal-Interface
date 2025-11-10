@@ -4533,6 +4533,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         return state;
     }
   }
+  
   const addMarket = useCallback(
     async (log: any) => {
       const { args } = decodeEventLog({
@@ -4761,7 +4762,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 tokens
               }
             }
-            graduating: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{lastPriceNativePerTokenWad_gt:12500}) {
+            graduating: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:false, lastPriceNativePerTokenWad_gt:12500}) {
               id
               creator {
                 id
