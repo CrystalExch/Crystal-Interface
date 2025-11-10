@@ -15,7 +15,7 @@ import {
 
 import { CrystalLaunchpadToken } from '../../../abis/CrystalLaunchpadToken';
 import { CrystalRouterAbi } from '../../../abis/CrystalRouterAbi';
-
+import { NadFunAbi } from '../../../abis/NadFun'; 
 import circle from '../../../assets/circle_handle.png';
 import closebutton from '../../../assets/close_button.png';
 import editicon from '../../../assets/edit.svg';
@@ -71,6 +71,8 @@ interface QuickBuyWidgetProps {
   selectedWallets: Set<string>;
   setSelectedWallets: React.Dispatch<React.SetStateAction<Set<string>>>;
   isTerminalDataFetching: any;
+    tokenLaunchpad?: string;  
+  tokenDev?: string;    
 }
 
 const Tooltip: React.FC<{
@@ -262,7 +264,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   nonces,
   selectedWallets,
   setSelectedWallets,
-  isTerminalDataFetching
+  isTerminalDataFetching,
+    tokenLaunchpad,  
+  tokenDev,   
 }) => {
   const [position, setPosition] = useState(() => {
     try {
@@ -1152,22 +1156,46 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     try {
       const transferPromises: Promise<boolean>[] = [];
 
-      for (const { addr, amount: partWei } of plan) {
-        if (partWei <= 0n) continue;
+for (const { addr, amount: partWei } of plan) {
+  if (partWei <= 0n) continue;
 
-        const wally = subWallets.find((w) => w.address === addr);
-        const pk = wally?.privateKey ?? activeWalletPrivateKey;
-        if (!pk) continue;
+  const wally = subWallets.find((w) => w.address === addr);
+  const pk = wally?.privateKey ?? activeWalletPrivateKey;
+  if (!pk) continue;
 
-        const uo = {
-          target: routerAddress as `0x${string}`,
-          data: encodeFunctionData({
-            abi: CrystalRouterAbi,
-            functionName: 'buy',
-            args: [true, tokenAddress as `0x${string}`, partWei, 0n],
-          }),
-          value: partWei,
-        };
+  const isNadFun = tokenLaunchpad === 'nadfun';
+  const contractAddress = isNadFun
+    ? settings.chainConfig[activechain].nadFunRouter
+    : routerAddress;
+
+  let uo;
+  if (isNadFun) {
+    uo = {
+      target: contractAddress as `0x${string}`,
+      data: encodeFunctionData({
+        abi: NadFunAbi,
+        functionName: 'buy',
+        args: [{
+          amountOutMin: 0n,
+          token: tokenDev as `0x${string}`,
+          to: addr as `0x${string}`,
+          deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
+        }],
+      }),
+      value: partWei,
+    };
+  } else {
+    uo = {
+      target: contractAddress as `0x${string}`,
+      data: encodeFunctionData({
+        abi: CrystalRouterAbi,
+        functionName: 'buy',
+        args: [true, tokenAddress as `0x${string}`, partWei, 0n],
+      }),
+      value: partWei,
+    };
+  }
+
 
         const wallet = nonces.current.get(addr);
         const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, true];
