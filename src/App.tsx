@@ -25567,7 +25567,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                         BigInt(Math.floor(Date.now() / 1000) + 900),
                         usedRefAddress
                       )
-                    })
+                    }, 30000000n)
                   }
                 }
                 if (!client && hash) {

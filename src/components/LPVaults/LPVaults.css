@@ -1970,6 +1970,7 @@
   min-width: 780px;
   align-items: center;
   display: flex;
+  border-radius: 4px;
 }
 
 .vault-row:last-child,
