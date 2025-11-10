@@ -3203,3 +3203,52 @@
 .tracker-monitor-dev-migrations-value {
   font-size: 0.8rem;
 }
+
+/* Live Trades Quick Buy Button */
+.detail-trades-quickbuy-col {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.tracker-detail-trades-row:hover .detail-trades-quickbuy-col {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.tracker-livetrades-quickbuy-btn {
+  align-items: center;
+  background: #aaaecf;
+  border: none;
+  border-radius: 8px;
+  color: #0f0f12;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.7rem;
+  gap: 2px;
+  justify-content: center;
+  letter-spacing: -0.5px;
+  padding: 0.2rem .35rem;
+  transition: all 0.2s ease;
+}
+
+.tracker-livetrades-quickbuy-btn:hover {
+  filter: brightness(1.1);
+}
+
+.tracker-livetrades-quickbuy-btn:disabled {
+  cursor: not-allowed;
+}
+
+.tracker-livetrades-quickbuy-btn:disabled:hover {
+  filter: brightness(1);
+}
+
+.tracker-livetrades-quickbuy-icon {
+  width: 14px;
+  height: 14px;
+}

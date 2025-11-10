@@ -1459,23 +1459,14 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     }
   }, []);
 
-  // Fetch historical trades for all tracked wallets
+  // Fetch historical trades for all tracked wallets on mount and when wallets change
   useEffect(() => {
-    if (activeTab === 'trades' && trackedWallets.length > 0) {
+    if (trackedWallets.length > 0) {
       trackedWallets.forEach(wallet => {
         fetchHistoricalTradesForWallet(wallet);
       });
     }
-  }, [activeTab, trackedWallets, fetchHistoricalTradesForWallet]);
-
-  // Fetch historical trades for Monitor tab
-  useEffect(() => {
-    if (activeTab === 'monitor' && trackedWallets.length > 0) {
-      trackedWallets.forEach(wallet => {
-        fetchHistoricalTradesForWallet(wallet);
-      });
-    }
-  }, [activeTab, trackedWallets, fetchHistoricalTradesForWallet]);
+  }, [trackedWallets, fetchHistoricalTradesForWallet]);
 
   const getFilteredTrades = () => {
     // Merge live trades with historical trades
@@ -2857,11 +2848,13 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                       ].join(' ')}
                     >
                       {trade.amount === 0 || isNaN(trade.amount)
-                        ? '$0'
+                        ? (monitorCurrency === 'USD' ? '$0' : '0 MON')
                         : (() => {
-                            const usd = monUsdPrice ? trade.amount * monUsdPrice : trade.amount;
-                            if (Math.abs(usd) < 1e-8 && usd !== 0) return '$' + usd.toFixed(12).replace(/0+$/, '').replace(/\.$/, '');
-                            return '$' + usd.toLocaleString(undefined, { maximumFractionDigits: 8 });
+                            const value = monitorCurrency === 'USD' ? (monUsdPrice ? trade.amount * monUsdPrice : trade.amount) : trade.amount;
+                            const prefix = monitorCurrency === 'USD' ? '$' : '';
+                            const suffix = monitorCurrency === 'MON' ? ' MON' : '';
+                            if (Math.abs(value) < 1e-8 && value !== 0) return prefix + value.toFixed(12).replace(/0+$/, '').replace(/\.$/, '') + suffix;
+                            return prefix + value.toLocaleString(undefined, { maximumFractionDigits: 8 }) + suffix;
                           })()}
                     </span>
                   </div>
@@ -2869,14 +2862,38 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                   <div className="detail-trades-col" style={{minWidth: '120px', width: '120px'}}>
                     <span className={isBlurred ? 'blurred' : ''}>
                       {trade.marketCap === 0 || isNaN(trade.marketCap)
-                        ? '$0'
+                        ? (monitorCurrency === 'USD' ? '$0' : '0 MON')
                         : (() => {
-                            const usd = monUsdPrice ? trade.marketCap * monUsdPrice : trade.marketCap;
-                            if (Math.abs(usd) < 1e-8 && usd !== 0) return '$' + usd.toFixed(12).replace(/0+$/, '').replace(/\.$/, '');
-                            return '$' + usd.toLocaleString(undefined, { maximumFractionDigits: 8 });
+                            const marketCapInBillions = trade.marketCap * 1e9;
+                            const value = monitorCurrency === 'USD' ? (monUsdPrice ? marketCapInBillions * monUsdPrice : marketCapInBillions) : marketCapInBillions;
+                            const prefix = monitorCurrency === 'USD' ? '$' : '';
+                            const suffix = monitorCurrency === 'MON' ? ' MON' : '';
+                            if (Math.abs(value) < 1e-8 && value !== 0) return prefix + value.toFixed(12).replace(/0+$/, '').replace(/\.$/, '') + suffix;
+                            return prefix + value.toLocaleString(undefined, { maximumFractionDigits: 8 }) + suffix;
                           })()}
                     </span>
                   </div>
+
+                  {trade.type === 'buy' && trade.tokenAddress && (
+                    <div className="detail-trades-col detail-trades-quickbuy-col">
+                      <button
+                        className="tracker-livetrades-quickbuy-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleQuickBuy(trade.tokenAddress, trade.token, trade.tokenIcon);
+                        }}
+                      >
+                        <svg
+                          className="tracker-livetrades-quickbuy-icon"
+                          viewBox="0 0 72 72"
+                          fill="currentColor"
+                        >
+                          <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86 c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833 c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86 c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18 c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
+                        </svg>
+                        1 MON
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))
             )}
@@ -4367,6 +4384,12 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 6h18M7 12h10M10 18h4" />
               </svg>
+            </button>
+            <button
+              className="tracker-header-button"
+              onClick={() => setMonitorCurrency(prev => prev === 'USD' ? 'MON' : 'USD')}
+            >
+              {monitorCurrency === 'USD' ? 'USD' : 'MON'}
             </button>
             <button className="tracker-header-button" onClick={() => setpopup(37)}>P1</button>
             <div className="tracker-combined-flash-input">
