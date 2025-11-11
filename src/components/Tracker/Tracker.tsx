@@ -2874,7 +2874,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                     </span>
                   </div>
 
-                  {trade.type === 'buy' && trade.tokenAddress && (
+                  {trade.tokenAddress && (
                     <div className="detail-trades-col detail-trades-quickbuy-col">
                       <button
                         className="tracker-livetrades-quickbuy-btn"
@@ -3677,62 +3677,81 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
           {/* Expanded trades section */}
           {isExpanded && (
             <div className="tracker-monitor-card-expanded">
-              <div className="monitor-trades-table">
-                <div className="monitor-trades-header">
-                  <div className="monitor-trades-header-cell">Wallet</div>
-                  <div className="monitor-trades-header-cell">Type</div>
-                  <div className="monitor-trades-header-cell">Bought</div>
-                  <div className="monitor-trades-header-cell">Sold</div>
-                  <div className="monitor-trades-header-cell">Time</div>
-                  <div className="monitor-trades-header-cell">Txn</div>
+              <div className="monitor-expanded-trades-table">
+                <div className="monitor-expanded-header">
+                  <div className="monitor-expanded-header-cell">Wallet</div>
+                  <div className="monitor-expanded-header-cell">Time in Trade</div>
+                  <div className="monitor-expanded-header-cell">Bought</div>
+                  <div className="monitor-expanded-header-cell">Sold</div>
+                  <div className="monitor-expanded-header-cell">PNL</div>
+                  <div className="monitor-expanded-header-cell">Remaining</div>
                 </div>
 
-                <div className="monitor-trades-body">
+                <div className="monitor-expanded-body">
                   {tokenTrades.length > 0 ? (
-                    tokenTrades.slice(0, 10).map((trade: any, idx: any) => (
-                      <div
-                        key={`${trade.id}-${idx}`}
-                        className="monitor-trades-row"
-                      >
-                        <div className="monitor-trades-col wallet-col">
-                          <span className="wallet-emoji">{trade.walletEmoji}</span>
-                          <span className="wallet-name">{trade.walletName}</span>
+                    tokenTrades.slice(0, 10).map((trade: any, idx: any) => {
+                      // Calculate PNL: for a single trade, it's 0 since we need both buy and sell
+                      // This is placeholder - you may need to aggregate trades by wallet
+                      const pnl = 0;
+                      const pnlFormatted = pnl >= 0 ? `+$${Math.abs(pnl).toFixed(2)}` : `-$${Math.abs(pnl).toFixed(2)}`;
+
+                      // Calculate Remaining: for buy trades, show current value; for sell trades, show $0
+                      const remaining = trade.type === 'buy' ? (monUsdPrice ? trade.amount * monUsdPrice : trade.amount) : 0;
+                      const remainingFormatted = `$${remaining.toFixed(2)}`;
+
+                      return (
+                        <div
+                          key={`${trade.id}-${idx}`}
+                          className={`monitor-expanded-row ${trade.type}`}
+                        >
+                          <div className="monitor-expanded-col">
+                            <span className="wallet-emoji">{trade.walletEmoji}</span>
+                            <span className="wallet-name">
+                              {trade.walletAddress
+                                ? `${trade.walletAddress.slice(0, 4)}...${trade.walletAddress.slice(-3)}`
+                                : trade.walletName}
+                            </span>
+                          </div>
+                          <div className="monitor-expanded-col">
+                            {trade.time}
+                          </div>
+                          <div className="monitor-expanded-col">
+                            <span className={`monitor-amount ${trade.type === 'buy' ? 'amount-buy' : ''}`}>
+                              {trade.type === 'buy' ? (() => {
+                                const value = monitorCurrency === 'USD' ? (monUsdPrice ? trade.amount * monUsdPrice : trade.amount) : trade.amount;
+                                const prefix = monitorCurrency === 'USD' ? '$' : '';
+                                const suffix = monitorCurrency === 'MON' ? ' MON' : '';
+                                const formattedValue = value < 0.0001 ? value.toExponential(2) : value.toLocaleString(undefined, { maximumFractionDigits: 8 });
+                                return prefix + formattedValue + suffix;
+                              })() : '-'}
+                            </span>
+                          </div>
+                          <div className="monitor-expanded-col">
+                            <span className={`monitor-amount ${trade.type === 'sell' ? 'amount-sell' : ''}`}>
+                              {trade.type === 'sell' ? (() => {
+                                const value = monitorCurrency === 'USD' ? (monUsdPrice ? trade.amount * monUsdPrice : trade.amount) : trade.amount;
+                                const prefix = monitorCurrency === 'USD' ? '$' : '';
+                                const suffix = monitorCurrency === 'MON' ? ' MON' : '';
+                                const formattedValue = value < 0.0001 ? value.toExponential(2) : value.toLocaleString(undefined, { maximumFractionDigits: 8 });
+                                return prefix + formattedValue + suffix;
+                              })() : '-'}
+                            </span>
+                          </div>
+                          <div className="monitor-expanded-col">
+                            <span className={`monitor-pnl ${pnl >= 0 ? 'pnl-positive' : 'pnl-negative'}`}>
+                              {pnlFormatted}
+                            </span>
+                          </div>
+                          <div className="monitor-expanded-col">
+                            <span className="monitor-remaining">
+                              {remainingFormatted}
+                            </span>
+                          </div>
                         </div>
-                        <div className={`monitor-trades-col type-col ${trade.type}`}>
-                          {trade.type === 'buy' ? 'Buy' : 'Sell'}
-                        </div>
-                        <div className="monitor-trades-col bought-col">
-                          {trade.type === 'buy' ? `$${(trade.monAmount || 0).toFixed(1)}` : '-'}
-                          {trade.type === 'buy' && (
-                            <span className="txn-count">{trade.amount < 0.0001 ? trade.amount.toExponential(2) : trade.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                          )}
-                        </div>
-                        <div className="monitor-trades-col sold-col">
-                          {trade.type === 'sell' ? `$${(trade.monAmount || 0).toFixed(1)}` : '-'}
-                          {trade.type === 'sell' && (
-                            <span className="txn-count">{trade.amount < 0.0001 ? trade.amount.toExponential(2) : trade.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                          )}
-                        </div>
-                        <div className="monitor-trades-col time-col">
-                          {trade.time}
-                        </div>
-                        <div className="monitor-trades-col txn-col">
-                          <button
-                            className="txn-link"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (trade.txHash) {
-                                window.open(`https://explorer.monad.xyz/tx/${trade.txHash}`, '_blank');
-                              }
-                            }}
-                          >
-                            →
-                          </button>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
-                    <div className="monitor-trades-empty">
+                    <div className="monitor-expanded-empty">
                       No trades found for this token
                     </div>
                   )}
