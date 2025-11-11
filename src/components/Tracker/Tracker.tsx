@@ -566,7 +566,7 @@ const Tracker: React.FC<TrackerProps> = ({
 
 
   const [addressPositions, setAddressPositions] = useState<Record<string, GqlPosition[]>>({});
-  const [expandedTokenId, setExpandedTokenId] = useState<string | null>(null);
+  const [expandedTokenIds, setExpandedTokenIds] = useState<Set<string>>(new Set());
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [historicalTrades, setHistoricalTrades] = useState<Record<string, any[]>>({});
   const [isLoadingHistory, setIsLoadingHistory] = useState<Set<string>>(new Set());
@@ -3212,7 +3212,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         classes.push('graduated');
       }
 
-      const isExpanded = expandedTokenId === pos.tokenId;
+      const isExpanded = expandedTokenIds.has(pos.tokenId);
       const walletAddress = (pos as any).walletAddress;
       const positionWallets = (pos as any).wallets || []; // For aggregated positions
 
@@ -3334,7 +3334,15 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
             className="tracker-monitor-card-header"
             style={{ cursor: 'pointer' }}
             onClick={() => {
-              setExpandedTokenId(isExpanded ? null : pos.tokenId);
+              setExpandedTokenIds(prev => {
+                const newSet = new Set(prev);
+                if (isExpanded) {
+                  newSet.delete(pos.tokenId);
+                } else {
+                  newSet.add(pos.tokenId);
+                }
+                return newSet;
+              });
             }}
           >
             <div className="tracker-monitor-card-top">
@@ -3683,74 +3691,187 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                   <div className="monitor-expanded-header-cell">Time in Trade</div>
                   <div className="monitor-expanded-header-cell">Bought</div>
                   <div className="monitor-expanded-header-cell">Sold</div>
-                  <div className="monitor-expanded-header-cell">PNL</div>
                   <div className="monitor-expanded-header-cell">Remaining</div>
+                  <div className="monitor-expanded-header-cell">PNL</div>
                 </div>
 
                 <div className="monitor-expanded-body">
-                  {tokenTrades.length > 0 ? (
-                    tokenTrades.slice(0, 10).map((trade: any, idx: any) => {
-                      // Calculate PNL: for a single trade, it's 0 since we need both buy and sell
-                      // This is placeholder - you may need to aggregate trades by wallet
-                      const pnl = 0;
-                      const pnlFormatted = pnl >= 0 ? `+$${Math.abs(pnl).toFixed(2)}` : `-$${Math.abs(pnl).toFixed(2)}`;
+                  {tokenTrades.length > 0 ? (() => {
+                    // Aggregate trades by wallet
+                    const walletPositions = new Map<string, any>();
 
-                      // Calculate Remaining: for buy trades, show current value; for sell trades, show $0
-                      const remaining = trade.type === 'buy' ? (monUsdPrice ? trade.amount * monUsdPrice : trade.amount) : 0;
-                      const remainingFormatted = `$${remaining.toFixed(2)}`;
+                    // Sort trades chronologically (oldest first)
+                    const sortedTrades = [...tokenTrades].sort((a, b) =>
+                      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                    );
+
+                    sortedTrades.forEach((trade: any) => {
+                      const walletKey = trade.walletAddress?.toLowerCase() || trade.walletName;
+
+                      if (!walletPositions.has(walletKey)) {
+                        walletPositions.set(walletKey, {
+                          walletAddress: trade.walletAddress,
+                          walletName: trade.walletName,
+                          walletEmoji: trade.walletEmoji,
+                          totalBought: 0,
+                          totalSold: 0,
+                          buyTxns: 0,
+                          sellTxns: 0,
+                          firstTradeTime: new Date(trade.createdAt).getTime(),
+                          lastTradeTime: new Date(trade.createdAt).getTime(),
+                          trades: []
+                        });
+                      }
+
+                      const position = walletPositions.get(walletKey);
+                      const tradeValue = monitorCurrency === 'USD' ? (monUsdPrice ? trade.amount * monUsdPrice : trade.amount) : trade.amount;
+
+                      if (trade.type === 'buy') {
+                        position.totalBought += tradeValue;
+                        position.buyTxns += 1;
+                      } else {
+                        position.totalSold += tradeValue;
+                        position.sellTxns += 1;
+                      }
+
+                      position.lastTradeTime = Math.max(position.lastTradeTime, new Date(trade.createdAt).getTime());
+                      position.trades.push(trade);
+                    });
+
+                    // Convert to array and calculate derived values
+                    const aggregatedPositions = Array.from(walletPositions.values()).map(pos => {
+                      const remaining = pos.totalBought - pos.totalSold;
+                      const pnl = pos.totalBought > 0 ? (pos.totalSold + remaining) / pos.totalBought : 0;
+
+                      // Calculate time in trade
+                      const duration = pos.lastTradeTime - pos.firstTradeTime;
+                      const seconds = Math.floor(duration / 1000);
+                      let timeInTrade = '';
+                      let isExited = remaining <= 0.01;
+
+                      if (isExited) {
+                        timeInTrade = 'Exited';
+                      } else if (seconds < 60) {
+                        timeInTrade = `${seconds}s`;
+                      } else if (seconds < 3600) {
+                        timeInTrade = `${Math.floor(seconds / 60)}m`;
+                      } else if (seconds < 86400) {
+                        timeInTrade = `${Math.floor(seconds / 3600)}h`;
+                      } else {
+                        timeInTrade = `${Math.floor(seconds / 86400)}d`;
+                      }
+
+                      return {
+                        ...pos,
+                        remaining,
+                        pnl,
+                        timeInTrade,
+                        isExited
+                      };
+                    });
+
+                    return aggregatedPositions.slice(0, 10).map((position: any, idx: any) => {
+                      const pnlAbsolute = position.totalSold + position.remaining - position.totalBought;
+                      const pnlPercentage = position.totalBought > 0 ? (pnlAbsolute / position.totalBought) * 100 : 0;
+
+                      const prefix = monitorCurrency === 'USD' ? '$' : '';
+                      const suffix = monitorCurrency === 'MON' ? ' MON' : '';
+
+                      // Format amounts
+                      const boughtFormatted = position.totalBought === 0
+                        ? '0'
+                        : position.totalBought < 0.0001
+                          ? position.totalBought.toExponential(2)
+                          : position.totalBought.toLocaleString(undefined, { maximumFractionDigits: 1 });
+
+                      const soldFormatted = position.totalSold === 0
+                        ? '0'
+                        : position.totalSold < 0.0001
+                          ? position.totalSold.toExponential(2)
+                          : position.totalSold.toLocaleString(undefined, { maximumFractionDigits: 1 });
+
+                      const remainingFormatted = position.remaining === 0
+                        ? '0'
+                        : position.remaining < 0.0001
+                          ? position.remaining.toExponential(2)
+                          : position.remaining.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+                      const pnlAbsFormatted = pnlAbsolute === 0
+                        ? '0'
+                        : Math.abs(pnlAbsolute) < 0.0001
+                          ? Math.abs(pnlAbsolute).toExponential(2)
+                          : Math.abs(pnlAbsolute).toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+                      const remainingPct = position.totalBought > 0 ? (position.remaining / position.totalBought) * 100 : 0;
+
+                      // Determine row class based on whether they have more buys or sells
+                      const rowClass = position.buyTxns > position.sellTxns ? 'buy' : position.sellTxns > position.buyTxns ? 'sell' : 'buy';
 
                       return (
                         <div
-                          key={`${trade.id}-${idx}`}
-                          className={`monitor-expanded-row ${trade.type}`}
+                          key={`${position.walletAddress}-${idx}`}
+                          className={`monitor-expanded-row ${rowClass}`}
                         >
                           <div className="monitor-expanded-col">
-                            <span className="wallet-emoji">{trade.walletEmoji}</span>
+                            <span className="wallet-emoji">{position.walletEmoji}</span>
                             <span className="wallet-name">
-                              {trade.walletAddress
-                                ? `${trade.walletAddress.slice(0, 4)}...${trade.walletAddress.slice(-3)}`
-                                : trade.walletName}
+                              {position.walletAddress
+                                ? `${position.walletAddress.slice(0, 4)}...${position.walletAddress.slice(-3)}`
+                                : position.walletName}
                             </span>
                           </div>
                           <div className="monitor-expanded-col">
-                            {trade.time}
+                            {position.timeInTrade}
                           </div>
                           <div className="monitor-expanded-col">
-                            <span className={`monitor-amount ${trade.type === 'buy' ? 'amount-buy' : ''}`}>
-                              {trade.type === 'buy' ? (() => {
-                                const value = monitorCurrency === 'USD' ? (monUsdPrice ? trade.amount * monUsdPrice : trade.amount) : trade.amount;
-                                const prefix = monitorCurrency === 'USD' ? '$' : '';
-                                const suffix = monitorCurrency === 'MON' ? ' MON' : '';
-                                const formattedValue = value < 0.0001 ? value.toExponential(2) : value.toLocaleString(undefined, { maximumFractionDigits: 8 });
-                                return prefix + formattedValue + suffix;
-                              })() : '-'}
-                            </span>
+                            <div className="monitor-trade-info">
+                              <span className="monitor-amount amount-buy">
+                                {prefix}{boughtFormatted}{suffix}
+                              </span>
+                              {position.buyTxns > 0 && (
+                                <span className="tracker-monitor-txn-count">{position.buyTxns} txn{position.buyTxns > 1 ? 's' : ''}</span>
+                              )}
+                            </div>
                           </div>
                           <div className="monitor-expanded-col">
-                            <span className={`monitor-amount ${trade.type === 'sell' ? 'amount-sell' : ''}`}>
-                              {trade.type === 'sell' ? (() => {
-                                const value = monitorCurrency === 'USD' ? (monUsdPrice ? trade.amount * monUsdPrice : trade.amount) : trade.amount;
-                                const prefix = monitorCurrency === 'USD' ? '$' : '';
-                                const suffix = monitorCurrency === 'MON' ? ' MON' : '';
-                                const formattedValue = value < 0.0001 ? value.toExponential(2) : value.toLocaleString(undefined, { maximumFractionDigits: 8 });
-                                return prefix + formattedValue + suffix;
-                              })() : '-'}
-                            </span>
+                            <div className="monitor-trade-info">
+                              <span className="monitor-amount amount-sell">
+                                {prefix}{soldFormatted}{suffix}
+                              </span>
+                              {position.sellTxns > 0 && (
+                                <span className="tracker-monitor-txn-count">{position.sellTxns} txn{position.sellTxns > 1 ? 's' : ''}</span>
+                              )}
+                            </div>
                           </div>
                           <div className="monitor-expanded-col">
-                            <span className={`monitor-pnl ${pnl >= 0 ? 'pnl-positive' : 'pnl-negative'}`}>
-                              {pnlFormatted}
-                            </span>
+                            <div className="monitor-remaining-info">
+                              <div className="monitor-remaining-container">
+                                <span className="monitor-remaining">
+                                  {prefix}{remainingFormatted}{suffix}
+                                </span>
+                                <span className="monitor-remaining-percentage">
+                                  {remainingPct.toFixed(0)}%
+                                </span>
+                              </div>
+                              <div className="monitor-remaining-bar">
+                                <div
+                                  className="monitor-remaining-bar-fill"
+                                  style={{
+                                    width: `${Math.max(0, Math.min(100, remainingPct)).toFixed(0)}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
                           </div>
                           <div className="monitor-expanded-col">
-                            <span className="monitor-remaining">
-                              {remainingFormatted}
+                            <span className={`monitor-pnl ${pnlAbsolute >= 0 ? 'pnl-positive' : 'pnl-negative'}`}>
+                              {pnlAbsolute >= 0 ? '+' : '-'}{prefix}{pnlAbsFormatted}{suffix} ({pnlPercentage.toFixed(1)}%)
                             </span>
                           </div>
                         </div>
                       );
-                    })
-                  ) : (
+                    });
+                  })() : (
                     <div className="monitor-expanded-empty">
                       No trades found for this token
                     </div>
