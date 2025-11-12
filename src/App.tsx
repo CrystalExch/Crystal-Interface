@@ -2099,11 +2099,24 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     }
   });
   const [isTokenExplorerLoading, setIsTokenExplorerLoading] = useState(true);
+  const getInitialHidden = (): Set<string> => {
+    const saved = localStorage.getItem('explorer-hidden-tokens');
+    if (saved) {
+      try {
+        return new Set(JSON.parse(saved));
+      } catch {
+        return new Set();
+      }
+    }
+    return new Set();
+  };
+
   const initialState: State = {
     tokensByStatus: { new: [], graduating: [], graduated: [] },
-    hidden: new Set(),
+    hidden: getInitialHidden(),
     loading: new Set(),
   };
+
   const [{ tokensByStatus, hidden, loading: teLoading }, dispatch] = useReducer(
     reducer,
     initialState,
@@ -2866,7 +2879,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           try {
             const s = data?.userBalance?.shares ?? 0;
             userShares = typeof s === 'bigint' ? s : BigInt(String(s));
-          } catch {}
+          } catch { }
 
           if (
             !selectedVault ||
@@ -4304,7 +4317,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }
 
   // tokenexplorer
-  // tokenexplorer
   type Action =
     | { type: 'INIT'; tokens: Token[] }
     | { type: 'ADD_MARKET'; token: Partial<Token> }
@@ -4500,20 +4512,21 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
       case 'HIDE_TOKEN': {
         const h = new Set(state.hidden).add(action.id);
+        localStorage.setItem('explorer-hidden-tokens', JSON.stringify(Array.from(h)));
         return { ...state, hidden: h };
-      }
-
-      case 'SET_LOADING': {
-        const l = new Set(state.loading);
-        const key = action.buttonType ? `${action.id}-${action.buttonType}` : action.id;
-        action.loading ? l.add(key) : l.delete(key);
-        return { ...state, loading: l };
       }
 
       case 'SHOW_TOKEN': {
         const h = new Set(state.hidden);
         h.delete(action.id);
+        localStorage.setItem('explorer-hidden-tokens', JSON.stringify(Array.from(h)));
         return { ...state, hidden: h };
+      }
+      case 'SET_LOADING': {
+        const l = new Set(state.loading);
+        const key = action.buttonType ? `${action.id}-${action.buttonType}` : action.id;
+        action.loading ? l.add(key) : l.delete(key);
+        return { ...state, loading: l };
       }
 
       case 'ADD_QUEUED_TOKENS': {
@@ -4533,7 +4546,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         return state;
     }
   }
-  
+
   const addMarket = useCallback(
     async (log: any) => {
       const { args } = decodeEventLog({
@@ -8524,7 +8537,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     setTrades(processed);
   }, [tradesByMarket?.[activeMarketKey]?.[0]])
-  
+
   // fetch initial address info and event stream
   useEffect(() => {
     let liveStreamCancelled = false;
