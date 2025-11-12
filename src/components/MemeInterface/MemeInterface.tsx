@@ -2171,6 +2171,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             throw new Error('No selected wallets have tokens to sell');
           }
 
+          const isNadFun = token.launchpad === 'nadfun';
+          const sellContractAddress = isNadFun
+            ? settings.chainConfig[activechain].nadFunRouter
+            : routerAddress;
+
           txId = `multisell-${Date.now()}`;
 
           let totalTokensToSell = 0;
@@ -2231,20 +2236,37 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
               if (amountTokenWei <= 0n) continue;
 
-              const sellUo = {
-                target: routerAddress as `0x${string}`,
-                data: encodeFunctionData({
-                  abi: CrystalRouterAbi,
-                  functionName: 'sell',
-                  args: [
-                    true,
-                    tokenAddress as `0x${string}`,
-                    amountTokenWei,
-                    0n,
-                  ],
-                }),
-                value: 0n,
-              };
+              let sellUo;
+              if (isNadFun) {
+                sellUo = {
+                  target: sellContractAddress as `0x${string}`,
+                  data: encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'sell',
+                    args: [
+                      account.address as `0x${string}`,
+                      token.dev as `0x${string}`,
+                      amountTokenWei,
+                    ],
+                  }),
+                  value: 0n,
+                };
+              } else {
+                sellUo = {
+                  target: routerAddress as `0x${string}`,
+                  data: encodeFunctionData({
+                    abi: CrystalRouterAbi,
+                    functionName: 'sell',
+                    args: [
+                      true,
+                      tokenAddress as `0x${string}`,
+                      amountTokenWei,
+                      0n,
+                    ],
+                  }),
+                  value: 0n,
+                };
+              }
 
               const walletNonce = nonces.current.get(walletAddr);
               const params = [
@@ -2300,20 +2322,37 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
               if (amountTokenWei <= 0n) continue;
 
-              const sellUo = {
-                target: routerAddress as `0x${string}`,
-                data: encodeFunctionData({
-                  abi: CrystalRouterAbi,
-                  functionName: 'sell',
-                  args: [
-                    true,
-                    tokenAddress as `0x${string}`,
-                    amountTokenWei,
-                    0n,
-                  ],
-                }),
-                value: 0n,
-              };
+              let sellUo;
+              if (isNadFun) {
+                sellUo = {
+                  target: sellContractAddress as `0x${string}`,
+                  data: encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'sell',
+                    args: [
+                      account.address as `0x${string}`,
+                      token.dev as `0x${string}`,
+                      amountTokenWei,
+                    ],
+                  }),
+                  value: 0n,
+                };
+              } else {
+                sellUo = {
+                  target: routerAddress as `0x${string}`,
+                  data: encodeFunctionData({
+                    abi: CrystalRouterAbi,
+                    functionName: 'sell',
+                    args: [
+                      true,
+                      tokenAddress as `0x${string}`,
+                      amountTokenWei,
+                      0n,
+                    ],
+                  }),
+                  value: 0n,
+                };
+              }
 
               const walletNonce = nonces.current.get(walletAddr);
               const params = [
@@ -2398,6 +2437,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             throw new Error(walletPopup.texts.INSUFFICIENT_TOKEN_BALANCE);
           }
 
+          const isNadFun = token.launchpad === 'nadfun';
+          const sellContractAddress = isNadFun
+            ? settings.chainConfig[activechain].nadFunRouter
+            : routerAddress;
+
           walletPopup.updateTransactionConfirming(
             txId,
             tradeAmount,
@@ -2405,20 +2449,37 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             token.symbol,
           );
 
-          const sellUo = {
-            target: routerAddress as `0x${string}`,
-            data: encodeFunctionData({
-              abi: CrystalRouterAbi,
-              functionName: 'sell',
-              args: [
-                isExactInput,
-                tokenAddress as `0x${string}`,
-                amountTokenWei,
-                monAmountWei,
-              ],
-            }),
-            value: 0n,
-          };
+          let sellUo;
+          if (isNadFun) {
+            sellUo = {
+              target: sellContractAddress as `0x${string}`,
+              data: encodeFunctionData({
+                abi: NadFunAbi,
+                functionName: 'sell',
+                args: [
+                  account.address as `0x${string}`,
+                  token.dev as `0x${string}`,
+                  amountTokenWei,
+                ],
+              }),
+              value: 0n,
+            };
+          } else {
+            sellUo = {
+              target: sellContractAddress as `0x${string}`,
+              data: encodeFunctionData({
+                abi: CrystalRouterAbi,
+                functionName: 'sell',
+                args: [
+                  isExactInput,
+                  tokenAddress as `0x${string}`,
+                  amountTokenWei,
+                  monAmountWei,
+                ],
+              }),
+              value: 0n,
+            };
+          }
 
           await sendUserOperationAsync({ uo: sellUo });
 
@@ -4978,4 +5039,4 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   );
 };
 
-export default MemeInterface;
+export default MemeInterface; 
