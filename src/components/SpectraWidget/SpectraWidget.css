@@ -106,6 +106,7 @@
   letter-spacing: -0.5px;
   padding: 6px;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .spectra-status-tab.active {
