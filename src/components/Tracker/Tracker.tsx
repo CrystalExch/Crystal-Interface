@@ -35,6 +35,7 @@ export type GqlPosition = {
   pnlNative: number;
   lastPrice: number;
   isOrderbook?: boolean;
+  lastTradeTime?: number;
 };
 
 interface LaunchpadPositionData {
@@ -51,6 +52,7 @@ interface LaunchpadPositionData {
   nativeSpent: string;
   nativeReceived: string;
   tokens: string;
+  lastUpdatedAt: string;
 }
 
 const createPositionFromData = (p: LaunchpadPositionData, isOrderbook: boolean): GqlPosition => {
@@ -60,6 +62,7 @@ const createPositionFromData = (p: LaunchpadPositionData, isOrderbook: boolean):
   const receivedNative = Number(p.nativeReceived) / 1e18;
   const remainingTokens = Number(p.tokens) / 1e18;
   const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e9;
+  const lastTradeTime = p.lastUpdatedAt ? Number(p.lastUpdatedAt) * 1000 : undefined;
 
   return {
     tokenId: p.token.id,
@@ -77,6 +80,7 @@ const createPositionFromData = (p: LaunchpadPositionData, isOrderbook: boolean):
     pnlNative: (remainingTokens * lastPrice) + receivedNative - spentNative,
     lastPrice,
     isOrderbook,
+    lastTradeTime,
   };
 };
 
@@ -566,7 +570,7 @@ const Tracker: React.FC<TrackerProps> = ({
 
 
   const [addressPositions, setAddressPositions] = useState<Record<string, GqlPosition[]>>({});
-  const [expandedTokenId, setExpandedTokenId] = useState<string | null>(null);
+  const [expandedTokenIds, setExpandedTokenIds] = useState<Set<string>>(new Set());
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [historicalTrades, setHistoricalTrades] = useState<Record<string, any[]>>({});
   const [isLoadingHistory, setIsLoadingHistory] = useState<Set<string>>(new Set());
@@ -820,6 +824,8 @@ const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveT
   const [quickAmounts, setQuickAmounts] = useState({ launchpad: '', orderbook: '' });
   const [activePresets, setActivePresets] = useState<Record<string, number>>({ launchpad: 1, orderbook: 1 });
   const [pausedColumn, setPausedColumn] = useState<string | null>(null);
+  const [mobileActiveColumn, setMobileActiveColumn] = useState<'launchpad' | 'orderbook'>('launchpad');
+  const [showColumnDropdown, setShowColumnDropdown] = useState(false);
   const [buyPresets, setBuyPresets] = useState<Record<number, any>>({});
 
   useEffect(() => {
@@ -949,23 +955,46 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     const isConnectedWallet = connectedAddr && lowerAccountAddr === connectedAddr;
 
     // Allow trades from either tracked wallets OR the connected wallet
-    if (!isTrackedWallet && !isConnectedWallet) {
+    if (!isTrackedWallet) {
       continue;
     }
 
     const isBuy = Boolean(args.isBuy ?? args.buy ?? (args.from && !args.to));
 
-    // Keep amounts as BigInt - they're already in wei from the contract
     const amountInWei = BigInt(args.amountIn ?? 0);
     const amountOutWei = BigInt(args.amountOut ?? 0);
-    const priceWad = BigInt(args.priceNativePerTokenWad ?? args.price ?? args.endPrice ?? args.startPrice ?? 0);
 
-    // For display/debug only
+    // Calculate price - handle different event types
+    let priceWad = BigInt(args.priceNativePerTokenWad ?? args.price ?? args.endPrice ?? args.startPrice ?? 0);
+
+    // For LaunchpadTrade events, calculate price from virtualReserves
+    if (priceWad === 0n && args.virtualNativeReserve && args.virtualTokenReserve) {
+      const virtualNativeReserve = BigInt(args.virtualNativeReserve);
+      const virtualTokenReserve = BigInt(args.virtualTokenReserve);
+      if (virtualTokenReserve > 0n) {
+        priceWad = (virtualNativeReserve * BigInt(1e18)) / virtualTokenReserve;
+      }
+    }
+
     const amountInEth = Number(amountInWei) / 1e18;
     const amountOutEth = Number(amountOutWei) / 1e18;
     const priceEth = Number(priceWad) / 1e18;
 
-    const tokenAddr = String(args.market || args.token || args.tokenAddress || args.base || args.asset || args.tokenIn || args.tokenOut || (l as any)?.address || '').toLowerCase() || undefined;
+    // remove duplicate in order book
+    let tokenAddr = String(args.tokenAddress || args.token || args.base || args.asset || args.tokenIn || args.tokenOut || (l as any)?.address || '').toLowerCase() || undefined;
+
+    const marketAddr = String(args.market || '').toLowerCase();
+    if (!tokenAddr && marketAddr) {
+      tokenAddr = tokenToMarketRef.current[marketAddr] ||
+                  marketsRef.current.get(marketAddr)?.tokenAddress ||
+                  settings.chainConfig?.[activechain]?.markets?.[marketAddr]?.baseAddress;
+      if (tokenAddr) {
+        tokenAddr = tokenAddr.toLowerCase();
+      } else {
+        tokenAddr = marketAddr;
+      }
+    }
+
     const symbol = (args.symbol || args.ticker || '').toString() || undefined;
     
     // FIX: Extract timestamp properly - handle both seconds and milliseconds
@@ -1035,14 +1064,33 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     return;
   }
 
-}, [normalizeTrade, activechain, demoMode.trades]);
+  // Add the new trades to state
+  console.log('[Tracker] push() adding trades to state:', {
+    count: toAdd.length,
+    trades: toAdd,
+    source
+  });
+
+  if (demoMode.trades) {
+    disableDemo('trades');
+  }
+
+  setTrackedWalletTrades((prev: LiveTrade[]) => {
+    const updated = dedupeTrades([...toAdd, ...prev]);
+    console.log('[Tracker] State updated:', {
+      previousCount: prev.length,
+      newCount: updated.length,
+      added: updated.length - prev.length
+    });
+    return updated;
+  });
+  trackedWalletTradesRef.current = dedupeTrades([...toAdd, ...(trackedWalletTradesRef.current || [])]);
+
+}, [normalizeTrade, activechain, demoMode.trades, setTrackedWalletTrades, disableDemo]);
   // safe RPC wrapper to avoid noisy errors
-  useEffect(() => {
-    // Live contract event watchers are disabled to avoid continuous LiveTrades ingestion.
-    // We only populate Monitor data from portfolio GraphQL positions for tracked wallets.
-    // If you want to re-enable live ingestion later, restore the original watcher code.
-    return;
-  }, [activechain, push]);
+  // NOTE: Direct contract event watchers are disabled because Monad RPC doesn't support eth_newFilter/eth_getFilterChanges
+  // Instead, we rely on the app:chainLog event listener below which receives all logs from the blockchain
+  // and filters them client-side. This approach works with all RPC providers.
 
   useEffect(() => {
     saveWalletsToStorage(trackedWallets);
@@ -1050,6 +1098,35 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: trackedWallets, source: 'tracker' } }));
     setStatus();
   }, [trackedWallets]);
+
+  // Save live trades to localStorage when they change
+  useEffect(() => {
+    try {
+      if (trackedWalletTrades.length > 0) {
+        // Keep only the last 500 trades to avoid localStorage size limits
+        const tradesToSave = trackedWalletTrades.slice(0, 500);
+        localStorage.setItem('tracker_live_trades', JSON.stringify(tradesToSave));
+      }
+    } catch (e) {
+      console.warn('[Tracker] Failed to save trades to localStorage:', e);
+    }
+  }, [trackedWalletTrades]);
+
+  // Restore live trades from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('tracker_live_trades');
+      if (saved) {
+        const trades = JSON.parse(saved);
+        if (Array.isArray(trades) && trades.length > 0) {
+          setTrackedWalletTrades(trades);
+          trackedWalletTradesRef.current = trades;
+        }
+      }
+    } catch (e) {
+      console.warn('[Tracker] Failed to restore trades from localStorage:', e);
+    }
+  }, []); // Run once on mount
 
   // Listen for wallet changes from WalletTrackerWidget
   useEffect(() => {
@@ -2502,6 +2579,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
 
   useEffect(() => {
     const TRADE_EVENT = '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982';
+    const LAUNCHPAD_TRADE_EVENT = '0xfe210c99153843bc67efa2e9a61ec1d63c505e379b9dcf05a9520e84e36e6063'; // LaunchpadTrade(address,address,bool,uint256,uint256,uint256,uint256)
     const MARKET_CREATED_EVENT = '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
     const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
 
@@ -2527,11 +2605,99 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
           return;
         }
 
+        // Handle LaunchpadTrade events (launchpad token swaps)
+        if (log.topics[0] === LAUNCHPAD_TRADE_EVENT) {
+          const tokenAddr = `0x${(log.topics[1] || '').slice(26)}`.toLowerCase();
+          const userAddr = `0x${(log.topics[2] || '').slice(26)}`.toLowerCase();
+          const connectedAddr = account?.address?.toLowerCase();
+
+          // Only process if it's a tracked wallet or connected wallet
+          const isTracked = trackedSetRef.current.has(userAddr);
+          const isConnected = connectedAddr && userAddr === connectedAddr;
+
+          if (!isTracked && !isConnected) return;
+
+          try {
+            const hex = (log.data || '').startsWith('0x') ? (log.data || '').slice(2) : (log.data || '');
+            const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
+
+            const isBuy = word(0) !== 0n;
+            const amountIn = word(1);
+            const amountOut = word(2);
+            const virtualNativeReserve = word(3);
+            const virtualTokenReserve = word(4);
+
+            // Calculate price from virtual reserves
+            const price = virtualTokenReserve > 0n
+              ? Number(virtualNativeReserve) / Number(virtualTokenReserve)
+              : 0;
+
+            // Update market data
+            try {
+              upsertMarket({
+                tokenAddr,
+                price,
+                isBuy,
+                amountNative: isBuy ? Number(amountIn) / 1e18 : Number(amountOut) / 1e18,
+                ts: Math.floor(Date.now() / 1000)
+              });
+            } catch (e) {}
+
+            // Create trade record and push to Live Trades
+            const market = marketsRef.current.get(tokenAddr);
+            const tradeLike = {
+              id: `${log.transactionHash || ''}-${log.logIndex || ''}`,
+              transactionHash: log.transactionHash,
+              args: {
+                user: userAddr,
+                token: tokenAddr,
+                isBuy,
+                amountIn,
+                amountOut,
+                virtualNativeReserve,
+                virtualTokenReserve,
+              },
+              token: {
+                address: tokenAddr,
+                symbol: (market?.symbol || '').toString(),
+                name: (market?.name || market?.symbol || '').toString(),
+              },
+              timestamp: Math.floor(Date.now() / 1000),
+            };
+
+            // Push to Live Trades using the push function
+            push([tradeLike], 'launchpad');
+          } catch (e) {
+            console.error('[Tracker] LaunchpadTrade processing error', e);
+          }
+          return;
+        }
+
+        // Handle Trade events (orderbook trades)
         if (log.topics[0] === TRADE_EVENT) {
           const marketAddr = `0x${(log.topics[1] || '').slice(26)}`.toLowerCase();
           const callerAddr = `0x${(log.topics[2] || '').slice(26)}`.toLowerCase();
+          const connectedAddr = account?.address?.toLowerCase();
 
-          if (!trackedSetRef.current.has(callerAddr)) return;
+          console.log('[Tracker] Trade event received:', {
+            marketAddr,
+            callerAddr,
+            connectedAddr,
+            txHash: log.transactionHash
+          });
+
+          // Only process if it's a tracked wallet or connected wallet
+          const isTracked = trackedSetRef.current.has(callerAddr);
+          const isConnected = connectedAddr && callerAddr === connectedAddr;
+
+          console.log('[Tracker] Trade filtering:', {
+            isTracked,
+            isConnected,
+            trackedWallets: Array.from(trackedSetRef.current),
+            willProcess: isTracked || isConnected
+          });
+
+          if (!isTracked && !isConnected) return;
 
           let tokenAddrFromMarket: string | undefined = undefined;
           try {
@@ -2542,30 +2708,49 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
           const hex = (log.data || '').startsWith('0x') ? (log.data || '').slice(2) : (log.data || '');
           const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
           const isBuy = word(0) !== 0n;
-          const amountIn = Number(word(1) || 0n) / 1e18;
-          const amountOut = Number(word(2) || 0n) / 1e18;
-          const priceRaw = word(4) || 0n;
-          const price = Number(priceRaw) / 1e18;
+          const amountIn = word(1);
+          const amountOut = word(2);
+          const startPrice = word(3);
+          const endPrice = word(4);
+          const price = Number(endPrice || startPrice || 0n) / 1e18;
 
-          try { upsertMarket({ tokenAddr: tokenAddrFromMarket || marketAddr, price: price || 0, isBuy, amountNative: isBuy ? amountIn : amountOut, ts: Math.floor(Date.now() / 1000) }); } catch (e) {}
+          try { upsertMarket({ tokenAddr: tokenAddrFromMarket || marketAddr, price: price || 0, isBuy, amountNative: Number(isBuy ? amountIn : amountOut) / 1e18, ts: Math.floor(Date.now() / 1000) }); } catch (e) {}
 
           try {
-            const market = marketsRef.current.get(tokenAddrFromMarket || '');
+            const market = marketsRef.current.get(tokenAddrFromMarket || marketAddr || '');
+
+            // Get image URL if available
+            const imageUrl = market?.imageUrl || undefined;
+
             const tradeLike = {
               id: `${log.transactionHash || ''}-${log.logIndex || ''}`,
-              account: { id: callerAddr },
-              isBuy,
-              amountIn: BigInt(Math.floor((isBuy ? amountIn : amountOut) * 1e18)),
-              amountOut: BigInt(Math.floor((isBuy ? amountOut : amountIn) * 1e18)),
-              priceNativePerTokenWad: BigInt(Math.floor((price || 0) * 1e18)),
-              token: {
-                symbol: (market?.symbol || '').toString(),
-                name: (market?.name || market?.symbol || '').toString()
+              transactionHash: log.transactionHash,
+              args: {
+                user: callerAddr,
+                market: marketAddr,
+                tokenAddress: tokenAddrFromMarket || marketAddr,
+                isBuy,
+                amountIn,
+                amountOut,
+                startPrice,
+                endPrice,
+                priceNativePerTokenWad: endPrice || startPrice || 0n,
               },
+              token: {
+                address: tokenAddrFromMarket || marketAddr,
+                symbol: (market?.symbol || '').toString(),
+                name: (market?.name || market?.symbol || '').toString(),
+                ...(imageUrl && { imageUrl })
+              },
+              ...(imageUrl && { tokenIcon: imageUrl }),
               timestamp: Math.floor(Date.now() / 1000),
             };
-            ingestExternalTrades([tradeLike]);
-          } catch (e) {}
+            // Push to Live Trades using the push function
+            console.log('[Tracker] Calling push() with trade:', tradeLike);
+            push([tradeLike], 'market');
+          } catch (e) {
+            console.error('[Tracker] Trade processing error', e);
+          }
         }
       } catch (e) { console.error('[Tracker] app:chainLog handler error', e); }
     };
@@ -2576,7 +2761,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       window.removeEventListener('app:chainLog', handler as EventListener);
       setAppListenerActive(false);
     };
-  }, [activechain]);
+  }, [activechain, push, account?.address]);
 
   // Bootstrap: fetch existing launchpadTokens / markets from the GraphQL endpoint
   useEffect(() => {
@@ -2823,7 +3008,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                         <img src={trade.tokenIcon} className="asset-icon" alt={trade.tokenName || trade.token} style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover', background: '#222' }} />
                       )}
                       <div className="asset-details">
-                        <div className="asset-ticker">{trade.tokenName || trade.token}</div>
+                        <div className="asset-ticker">{trade.tokenTicker || trade.token}</div>
                         {trade.tokenAddress && (
                           <a
                             href={`https://testnet.monadex.xyz/token/${trade.tokenAddress}`}
@@ -2874,7 +3059,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                     </span>
                   </div>
 
-                  {trade.type === 'buy' && trade.tokenAddress && (
+                  {trade.tokenAddress && (
                     <div className="detail-trades-col detail-trades-quickbuy-col">
                       <button
                         className="tracker-livetrades-quickbuy-btn"
@@ -3036,8 +3221,15 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       aggregatedOrderbookPositions.push(entry.position);
     });
 
-    // Combine spot tokens, graduated tokens, and migrated orderbook tokens for orderbook column
-    const orderbookPositions = [...aggregatedOrderbookPositions, ...graduatedPositions, ...migratedOrderbookPositions];
+    // Deduplicate: Keep launchpad versions (graduatedPositions) over orderbook versions
+    // Graduated tokens have actual trade data, while migrated orderbook positions may just have balance info
+    const graduatedTokenIds = new Set(graduatedPositions.map(p => p.tokenId.toLowerCase()));
+    const dedupedMigratedPositions = migratedOrderbookPositions.filter(
+      pos => !graduatedTokenIds.has(pos.tokenId.toLowerCase())
+    );
+
+    // Combine spot tokens, graduated tokens, and deduplicated migrated orderbook tokens for orderbook column
+    const orderbookPositions = [...aggregatedOrderbookPositions, ...graduatedPositions, ...dedupedMigratedPositions];
 
     const formatValue = (value: number): string => {
       const converted = monitorCurrency === 'USD' ? value * monUsdPrice : value;
@@ -3051,6 +3243,23 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         return `${sign}${(absNum / 1000).toFixed(2)}K`;
       }
       return `${sign}${absNum.toFixed(2)}`;
+    };
+
+    const formatTimeAgo = (timestamp: number | undefined): string => {
+      if (!timestamp) return '—';
+
+      const now = Date.now();
+      const secondsAgo = Math.floor((now - timestamp) / 1000);
+
+      if (secondsAgo < 60) {
+        return `${secondsAgo}s`;
+      } else if (secondsAgo < 3600) {
+        return `${Math.floor(secondsAgo / 60)}m`;
+      } else if (secondsAgo < 86400) {
+        return `${Math.floor(secondsAgo / 3600)}h`;
+      } else {
+        return `${Math.floor(secondsAgo / 86400)}d`;
+      }
     };
 
     const renderPositionCard = (pos: GqlPosition) => {
@@ -3212,7 +3421,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         classes.push('graduated');
       }
 
-      const isExpanded = expandedTokenId === pos.tokenId;
+      const isExpanded = expandedTokenIds.has(pos.tokenId);
       const walletAddress = (pos as any).walletAddress;
       const positionWallets = (pos as any).wallets || []; // For aggregated positions
 
@@ -3334,7 +3543,15 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
             className="tracker-monitor-card-header"
             style={{ cursor: 'pointer' }}
             onClick={() => {
-              setExpandedTokenId(isExpanded ? null : pos.tokenId);
+              setExpandedTokenIds(prev => {
+                const newSet = new Set(prev);
+                if (isExpanded) {
+                  newSet.delete(pos.tokenId);
+                } else {
+                  newSet.add(pos.tokenId);
+                }
+                return newSet;
+              });
             }}
           >
             <div className="tracker-monitor-card-top">
@@ -3480,37 +3697,41 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
 
                   {/* Additional data section - Holders and Pro Traders */}
                   <div className="explorer-additional-data">
-                    <div className="explorer-stat-item">
-                      <svg
-                        className="traders-icon"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
-                      </svg>
-                      <span className="explorer-stat-value">
-                        {market?.holders?.toLocaleString() || '0'}
-                      </span>
-                    </div>
+                    <Tooltip content="Holders">
+                      <div className="explorer-stat-item">
+                        <svg
+                          className="traders-icon"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
+                        </svg>
+                        <span className="explorer-stat-value">
+                          {market?.holders?.toLocaleString() || '0'}
+                        </span>
+                      </div>
+                    </Tooltip>
 
-                    <div className="explorer-stat-item">
-                      <svg
-                        className="pro-traders-icon"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path d="M 12 2 L 12 4 L 11 4 C 10.4 4 10 4.4 10 5 L 10 10 C 10 10.6 10.4 11 11 11 L 12 11 L 12 13 L 14 13 L 14 11 L 15 11 C 15.6 11 16 10.6 16 10 L 16 5 C 16 4.4 15.6 4 15 4 L 14 4 L 14 2 L 12 2 z M 4 9 L 4 11 L 3 11 C 2.4 11 2 11.4 2 12 L 2 17 C 2 17.6 2.4 18 3 18 L 4 18 L 4 20 L 6 20 L 6 18 L 7 18 C 7.6 18 8 17.6 8 17 L 8 12 C 8 11.4 7.6 11 7 11 L 6 11 L 6 9 L 4 9 z M 18 11 L 18 13 L 17 13 C 16.4 13 16 13.4 16 14 L 16 19 C 16 19.6 16.4 20 17 20 L 18 20 L 18 22 L 20 22 L 20 20 L 21 20 C 21.6 20 22 19.6 22 19 L 22 14 C 22 13.4 21.6 13 21 13 L 20 13 L 20 11 L 18 11 z M 4 13 L 6 13 L 6 16 L 4 16 L 4 13 z" />
-                      </svg>
-                      <span className="explorer-stat-value">
-                        {Math.floor((market?.holders || 0) * 0.15).toLocaleString()}
-                      </span>
-                    </div>
+                    <Tooltip content="Pro Traders">
+                      <div className="explorer-stat-item">
+                        <svg
+                          className="pro-traders-icon"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path d="M 12 2 L 12 4 L 11 4 C 10.4 4 10 4.4 10 5 L 10 10 C 10 10.6 10.4 11 11 11 L 12 11 L 12 13 L 14 13 L 14 11 L 15 11 C 15.6 11 16 10.6 16 10 L 16 5 C 16 4.4 15.6 4 15 4 L 14 4 L 14 2 L 12 2 z M 4 9 L 4 11 L 3 11 C 2.4 11 2 11.4 2 12 L 2 17 C 2 17.6 2.4 18 3 18 L 4 18 L 4 20 L 6 20 L 6 18 L 7 18 C 7.6 18 8 17.6 8 17 L 8 12 C 8 11.4 7.6 11 7 11 L 6 11 L 6 9 L 4 9 z M 18 11 L 18 13 L 17 13 C 16.4 13 16 13.4 16 14 L 16 19 C 16 19.6 16.4 20 17 20 L 18 20 L 18 22 L 20 22 L 20 20 L 21 20 C 21.6 20 22 19.6 22 19 L 22 14 C 22 13.4 21.6 13 21 13 L 20 13 L 20 11 L 18 11 z M 4 13 L 6 13 L 6 16 L 4 16 L 4 13 z" />
+                        </svg>
+                        <span className="explorer-stat-value">
+                          {Math.floor((market?.holders || 0) * 0.15).toLocaleString()}
+                        </span>
+                      </div>
+                    </Tooltip>
 
                     <Tooltip content="Dev Migrations">
                       <div className="explorer-stat-item">
@@ -3638,19 +3859,15 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                   </span>
                 </div>
                 <div className="tracker-monitor-stat-compact">
-                  <span className="stat-label">PNL</span>
-                  <span
-                    className="stat-value"
-                    style={{ color: (pos.pnlNative ?? 0) >= 0 ? '#4ade80' : '#f87171' }}
-                  >
-                    {monitorCurrency === 'USD' ? (
-                      <>$<span>{formatValue(pos.pnlNative)}</span></>
-                    ) : (
-                      <>
-                        <span>{formatValue(pos.pnlNative)}</span>
-                        <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
-                      </>
-                    )}
+                  <span className="stat-label">TX</span>
+                  <span className="stat-value">
+                    {tokenTrades.length}
+                  </span>
+                </div>
+                <div className="tracker-monitor-stat-compact">
+                  <span className="stat-label">Last Txn Time</span>
+                  <span className="stat-value">
+                    {formatTimeAgo(pos.lastTradeTime)}
                   </span>
                 </div>
               </div>
@@ -3677,62 +3894,183 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
           {/* Expanded trades section */}
           {isExpanded && (
             <div className="tracker-monitor-card-expanded">
-              <div className="monitor-trades-table">
-                <div className="monitor-trades-header">
-                  <div className="monitor-trades-header-cell">Wallet</div>
-                  <div className="monitor-trades-header-cell">Type</div>
-                  <div className="monitor-trades-header-cell">Bought</div>
-                  <div className="monitor-trades-header-cell">Sold</div>
-                  <div className="monitor-trades-header-cell">Time</div>
-                  <div className="monitor-trades-header-cell">Txn</div>
+              <div className="monitor-expanded-trades-table">
+                <div className="monitor-expanded-header">
+                  <div className="monitor-expanded-header-cell">Wallet</div>
+                  <div className="monitor-expanded-header-cell">Time in Trade</div>
+                  <div className="monitor-expanded-header-cell">Bought</div>
+                  <div className="monitor-expanded-header-cell">Sold</div>
+                  <div className="monitor-expanded-header-cell">PNL</div>
+                  <div className="monitor-expanded-header-cell">Remaining</div>
                 </div>
 
-                <div className="monitor-trades-body">
-                  {tokenTrades.length > 0 ? (
-                    tokenTrades.slice(0, 10).map((trade: any, idx: any) => (
-                      <div
-                        key={`${trade.id}-${idx}`}
-                        className="monitor-trades-row"
-                      >
-                        <div className="monitor-trades-col wallet-col">
-                          <span className="wallet-emoji">{trade.walletEmoji}</span>
-                          <span className="wallet-name">{trade.walletName}</span>
+                <div className="monitor-expanded-body">
+                  {tokenTrades.length > 0 ? (() => {
+                    // Aggregate trades by wallet
+                    const walletPositions = new Map<string, any>();
+
+                    // Sort trades chronologically (oldest first)
+                    const sortedTrades = [...tokenTrades].sort((a, b) =>
+                      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                    );
+
+                    sortedTrades.forEach((trade: any) => {
+                      const walletKey = trade.walletAddress?.toLowerCase() || trade.walletName;
+
+                      if (!walletPositions.has(walletKey)) {
+                        walletPositions.set(walletKey, {
+                          walletAddress: trade.walletAddress,
+                          walletName: trade.walletName,
+                          walletEmoji: trade.walletEmoji,
+                          totalBought: 0,
+                          totalSold: 0,
+                          buyTxns: 0,
+                          sellTxns: 0,
+                          firstTradeTime: new Date(trade.createdAt).getTime(),
+                          lastTradeTime: new Date(trade.createdAt).getTime(),
+                          trades: []
+                        });
+                      }
+
+                      const position = walletPositions.get(walletKey);
+                      const tradeValue = monitorCurrency === 'USD' ? (monUsdPrice ? trade.amount * monUsdPrice : trade.amount) : trade.amount;
+
+                      if (trade.type === 'buy') {
+                        position.totalBought += tradeValue;
+                        position.buyTxns += 1;
+                      } else {
+                        position.totalSold += tradeValue;
+                        position.sellTxns += 1;
+                      }
+
+                      position.lastTradeTime = Math.max(position.lastTradeTime, new Date(trade.createdAt).getTime());
+                      position.trades.push(trade);
+                    });
+
+                    // Convert to array and calculate derived values
+                    const aggregatedPositions = Array.from(walletPositions.values()).map(pos => {
+                      const remaining = pos.totalBought - pos.totalSold;
+                      const pnl = pos.totalBought > 0 ? (pos.totalSold + remaining) / pos.totalBought : 0;
+
+                      // Calculate time in trade
+                      const duration = pos.lastTradeTime - pos.firstTradeTime;
+                      const seconds = Math.floor(duration / 1000);
+                      let timeInTrade = '';
+                      let isExited = remaining <= 0.01;
+
+                      if (isExited) {
+                        timeInTrade = 'Exited';
+                      } else if (seconds < 60) {
+                        timeInTrade = `${seconds}s`;
+                      } else if (seconds < 3600) {
+                        timeInTrade = `${Math.floor(seconds / 60)}m`;
+                      } else if (seconds < 86400) {
+                        timeInTrade = `${Math.floor(seconds / 3600)}h`;
+                      } else {
+                        timeInTrade = `${Math.floor(seconds / 86400)}d`;
+                      }
+
+                      return {
+                        ...pos,
+                        remaining,
+                        pnl,
+                        timeInTrade,
+                        isExited
+                      };
+                    });
+
+                    return aggregatedPositions.slice(0, 10).map((position: any, idx: any) => {
+                      const pnlAbsolute = position.totalSold + position.remaining - position.totalBought;
+                      const pnlPercentage = position.totalBought > 0 ? (pnlAbsolute / position.totalBought) * 100 : 0;
+
+                      const prefix = monitorCurrency === 'USD' ? '$' : '';
+                      const suffix = monitorCurrency === 'MON' ? ' MON' : '';
+
+                      // Format amounts - show 0 for very small values
+                      const formatAmount = (val: number) => {
+                        if (val === 0) return '0';
+                        const absVal = Math.abs(val);
+                        const threshold = monitorCurrency === 'USD' ? 0.01 : 0.0001;
+                        if (absVal > 0 && absVal < threshold) {
+                          return '0';
+                        }
+                        const decimals = monitorCurrency === 'USD' ? 2 : 4;
+                        return absVal.toLocaleString(undefined, { maximumFractionDigits: decimals, minimumFractionDigits: monitorCurrency === 'USD' ? 2 : 0 });
+                      };
+
+                      const boughtFormatted = formatAmount(position.totalBought);
+                      const soldFormatted = formatAmount(position.totalSold);
+                      const remainingFormatted = formatAmount(position.remaining);
+                      const pnlAbsFormatted = formatAmount(Math.abs(pnlAbsolute));
+
+                      const remainingPct = position.totalBought > 0 ? (position.remaining / position.totalBought) * 100 : 0;
+
+                      // Determine row class based on whether they have more buys or sells
+                      const rowClass = position.buyTxns > position.sellTxns ? 'buy' : position.sellTxns > position.buyTxns ? 'sell' : 'buy';
+
+                      return (
+                        <div
+                          key={`${position.walletAddress}-${idx}`}
+                          className={`monitor-expanded-row ${rowClass}`}
+                        >
+                          <div className="monitor-expanded-col">
+                            <span className="wallet-emoji">{position.walletEmoji}</span>
+                            <span className="wallet-name">
+                              {position.walletAddress
+                                ? `${position.walletAddress.slice(0, 4)}...${position.walletAddress.slice(-3)}`
+                                : position.walletName}
+                            </span>
+                          </div>
+                          <div className="monitor-expanded-col">
+                            {position.remaining === 0 ? (
+                              <>
+                                <div style={{ fontSize: '11px', color: '#888', marginBottom: '2px' }}>Exited</div>
+                                <div>{position.timeInTrade}</div>
+                              </>
+                            ) : (
+                              position.timeInTrade
+                            )}
+                          </div>
+                          <div className="monitor-expanded-col">
+                            <div className="monitor-trade-info">
+                              <span className="monitor-amount amount-buy">
+                                {prefix}{boughtFormatted}{suffix}
+                              </span>
+                              <span className="tracker-monitor-txn-count">{position.buyTxns || 0} txn{position.buyTxns !== 1 ? 's' : ''}</span>
+                            </div>
+                          </div>
+                          <div className="monitor-expanded-col">
+                            <div className="monitor-trade-info">
+                              <span className="monitor-amount amount-sell">
+                                {prefix}{soldFormatted}{suffix}
+                              </span>
+                              <span className="tracker-monitor-txn-count">{position.sellTxns || 0} txn{position.sellTxns !== 1 ? 's' : ''}</span>
+                            </div>
+                          </div>
+                          <div className="monitor-expanded-col">
+                            <div className="monitor-pnl-container">
+                              <span className={`monitor-pnl ${pnlAbsolute >= 0 ? 'pnl-positive' : 'pnl-negative'}`}>
+                                {pnlAbsolute >= 0 ? '+' : '-'}{prefix}{pnlAbsFormatted}{suffix}
+                              </span>
+                              <span className="monitor-pnl-percentage">
+                                ({pnlPercentage.toFixed(1)}%)
+                              </span>
+                            </div>
+                          </div>
+                          <div className="monitor-expanded-col">
+                            <div className="monitor-remaining-info">
+                              <div className="monitor-remaining-container">
+                                <span className="monitor-remaining">
+                                  {prefix}{remainingFormatted}{suffix}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div className={`monitor-trades-col type-col ${trade.type}`}>
-                          {trade.type === 'buy' ? 'Buy' : 'Sell'}
-                        </div>
-                        <div className="monitor-trades-col bought-col">
-                          {trade.type === 'buy' ? `$${(trade.monAmount || 0).toFixed(1)}` : '-'}
-                          {trade.type === 'buy' && (
-                            <span className="txn-count">{trade.amount < 0.0001 ? trade.amount.toExponential(2) : trade.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                          )}
-                        </div>
-                        <div className="monitor-trades-col sold-col">
-                          {trade.type === 'sell' ? `$${(trade.monAmount || 0).toFixed(1)}` : '-'}
-                          {trade.type === 'sell' && (
-                            <span className="txn-count">{trade.amount < 0.0001 ? trade.amount.toExponential(2) : trade.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                          )}
-                        </div>
-                        <div className="monitor-trades-col time-col">
-                          {trade.time}
-                        </div>
-                        <div className="monitor-trades-col txn-col">
-                          <button
-                            className="txn-link"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (trade.txHash) {
-                                window.open(`https://explorer.monad.xyz/tx/${trade.txHash}`, '_blank');
-                              }
-                            }}
-                          >
-                            →
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="monitor-trades-empty">
+                      );
+                    });
+                  })() : (
+                    <div className="monitor-expanded-empty">
                       No trades found for this token
                     </div>
                   )}
@@ -3747,10 +4085,43 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     return (
       <div className="tracker-monitor">
         <div className="explorer-columns">
-            <div className="explorer-column">
+            <div className={`explorer-column ${mobileActiveColumn === 'launchpad' ? 'mobile-active' : 'mobile-hidden'}`}>
               <div className="explorer-column-header">
                 <div className="explorer-column-title-section">
-                  <h2 className="explorer-column-title">Launchpad</h2>
+                  <div className="explorer-column-title-with-dropdown">
+                    <h2 className="tracker-explorer-column-title">{mobileActiveColumn === 'launchpad' ? 'Launchpad' : 'Orderbook'}</h2>
+                    <div
+                      className="explorer-column-dropdown-trigger"
+                      onClick={() => setShowColumnDropdown(!showColumnDropdown)}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                        <path d="M6 9L1 4h10z" />
+                      </svg>
+                    </div>
+                    {showColumnDropdown && (
+                      <div className="explorer-column-dropdown-menu">
+                        <div
+                          className={`explorer-column-dropdown-item ${mobileActiveColumn === 'launchpad' ? 'active' : ''}`}
+                          onClick={() => {
+                            setMobileActiveColumn('launchpad');
+                            setShowColumnDropdown(false);
+                          }}
+                        >
+                          Launchpad
+                        </div>
+                        <div
+                          className={`explorer-column-dropdown-item ${mobileActiveColumn === 'orderbook' ? 'active' : ''}`}
+                          onClick={() => {
+                            setMobileActiveColumn('orderbook');
+                            setShowColumnDropdown(false);
+                          }}
+                        >
+                          Orderbook
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <h2 className="tracker-explorer-column-title explorer-column-title-desktop">Launchpad</h2>
                 </div>
                 <div className="explorer-column-title-right">
                   <div
@@ -3866,10 +4237,43 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
               </div>
             </div>
 
-            <div className="explorer-column">
+            <div className={`explorer-column ${mobileActiveColumn === 'orderbook' ? 'mobile-active' : 'mobile-hidden'}`}>
               <div className="explorer-column-header">
                 <div className="explorer-column-title-section">
-                  <h2 className="explorer-column-title">Orderbook</h2>
+                  <div className="explorer-column-title-with-dropdown">
+                    <h2 className="tracker-explorer-column-title">{mobileActiveColumn === 'launchpad' ? 'Launchpad' : 'Orderbook'}</h2>
+                    <div
+                      className="explorer-column-dropdown-trigger"
+                      onClick={() => setShowColumnDropdown(!showColumnDropdown)}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                        <path d="M6 9L1 4h10z" />
+                      </svg>
+                    </div>
+                    {showColumnDropdown && (
+                      <div className="explorer-column-dropdown-menu">
+                        <div
+                          className={`explorer-column-dropdown-item ${mobileActiveColumn === 'launchpad' ? 'active' : ''}`}
+                          onClick={() => {
+                            setMobileActiveColumn('launchpad');
+                            setShowColumnDropdown(false);
+                          }}
+                        >
+                          Launchpad
+                        </div>
+                        <div
+                          className={`explorer-column-dropdown-item ${mobileActiveColumn === 'orderbook' ? 'active' : ''}`}
+                          onClick={() => {
+                            setMobileActiveColumn('orderbook');
+                            setShowColumnDropdown(false);
+                          }}
+                        >
+                          Orderbook
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <h2 className="explorer-column-title explorer-column-title-desktop">Orderbook</h2>
                 </div>
                 <div className="explorer-column-title-right">
                   <div
