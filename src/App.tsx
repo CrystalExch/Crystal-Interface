@@ -2621,35 +2621,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   const vaultChartData = vaultStrategyChartType === 'value' ? valueSeries : pnlSeries;
 
-  async function fetchVaultBalances(vaults: { id: `0x${string}` }[]) {
-    const calls = vaults.map(v => ({
-      address: v.id,
-      abi: CrystalVaultsAbi,
-      functionName: 'getBalances' as const,
-      args: [],
-    }));
-
-    const res = await readContracts(config, { contracts: calls });
-    const out: Record<string, {
-      quoteBalance: bigint,
-      baseBalance: bigint,
-      availableQuote: bigint,
-      availableBase: bigint
-    }> = {};
-
-    res.forEach((r, i) => {
-      const key = vaults[i].id.toLowerCase();
-      if (r.status === 'success') {
-        const [q, b, aq, ab] = r.result as any;
-        out[key] = { quoteBalance: q, baseBalance: b, availableQuote: aq, availableBase: ab };
-      } else {
-        out[key] = { quoteBalance: 0n, baseBalance: 0n, availableQuote: 0n, availableBase: 0n };
-      }
-    });
-
-    return out;
-  }
-
   const fetchSubgraph = async (endpoint: string, query: string, variables?: Record<string, any>) => {
     const res = await fetch(endpoint, {
       method: 'POST',
@@ -2660,13 +2631,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const json = await res.json();
     if (json.errors?.length) throw new Error(json.errors.map((e: any) => e.message).join('; '));
     return json.data;
-  };
-
-  const toBigIntSafe = (v: any): bigint => {
-    if (v === null || v === undefined) return 0n;
-    if (typeof v === 'bigint') return v;
-    if (typeof v === 'number') return BigInt(Math.trunc(v));
-    return BigInt(String(v));
   };
 
   // fetch vaults list
@@ -2776,13 +2740,19 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   useEffect(() => {
     if (!['earn'].includes(location.pathname.split('/')[1])) return;
     let cancelled = false;
+    let inFlight = false;
 
     const run = async () => {
+      if (inFlight) return;
+      inFlight = true;
+
       if (!selectedVaultStrategy) {
         setDepositors([]);
         setDepositHistory([]);
+        setWithdrawHistory([]);
         setOpenOrders([]);
         setAllOrders([]);
+        inFlight = false;
         return;
       }
 
@@ -2810,15 +2780,26 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (!res.ok) throw new Error(`backend ${res.status}`);
         const data = await res.json();
 
-        const normDepositors = (data?.depositors ?? []).map((d: any) => ({
-          id: `${(d.address || '').toLowerCase()}-${String(selectedVaultStrategy).toLowerCase()}`,
-          account: { id: (d.address || '').toLowerCase() },
-          shares: BigInt(String(d.shares ?? 0)),
-          depositCount: Number(d.deposits ?? d.depositCount ?? 0),
-          withdrawCount: Number(d.withdraws ?? d.withdrawCount ?? 0),
-          lastDepositAt: Number(d.lastDeposit ?? d.lastDepositAt ?? 0),
-          lastWithdrawAt: Number(d.lastWithdraw ?? d.lastWithdrawAt ?? 0),
-        }));
+        const respDepositors = Array.isArray(data?.depositors) ? data.depositors : [];
+        const paramsTotal = data?.vault?.params?.circulatingShares ?? 0;
+        const paramsBI = typeof paramsTotal === 'bigint' ? paramsTotal : BigInt(String(paramsTotal || 0));
+        const sumBI = respDepositors.reduce((acc: bigint, d: any) => acc + BigInt(String(d.shares ?? 0)), 0n);
+        const totalShares = paramsBI > 0n ? paramsBI : sumBI;
+
+        const normDepositors = respDepositors.map((d: any) => {
+          const shares = BigInt(String(d.shares ?? 0));
+          const pct = totalShares > 0n ? Number(shares) / Number(totalShares) : 0;
+          return {
+            id: `${(d.address || '').toLowerCase()}-${String(selectedVaultStrategy).toLowerCase()}`,
+            account: { id: (d.address || '').toLowerCase() },
+            shares,
+            depositCount: Number(d.deposits ?? d.depositCount ?? 0),
+            withdrawCount: Number(d.withdraws ?? d.withdrawCount ?? 0),
+            lastDepositAt: Number(d.lastDeposit ?? d.lastDepositAt ?? 0),
+            lastWithdrawAt: Number(d.lastWithdraw ?? d.lastWithdrawAt ?? 0),
+            sharePct: pct,
+          };
+        });
         setDepositors(normDepositors);
 
         const toRow = (e: any) => ({
@@ -2830,11 +2811,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           txHash: e.hash ?? e.txHash ?? '',
           timestamp: Number(e.timestamp ?? 0),
         });
-
-        const normDeposits = (data?.depositHistory ?? []).map(toRow);
-        const normWithdraws = (data?.withdrawHistory ?? []).map(toRow);
-        setDepositHistory(normDeposits);
-        setWithdrawHistory(normWithdraws);
+        setDepositHistory((Array.isArray(data?.depositHistory) ? data.depositHistory : []).map(toRow));
+        setWithdrawHistory((Array.isArray(data?.withdrawHistory) ? data.withdrawHistory : []).map(toRow));
 
         setSeriesLoading(true);
         setSeriesError(null);
@@ -2844,20 +2822,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
           const vSeries = tvlArr.map((p: any) => {
             const ts = Number(p.timestamp || 0);
-            return {
-              ts,
-              name: fmtLabel(ts, vaultStrategyTimeRange),
-              value: Number(p.tvlUsd || 0),
-            };
+            return { ts, name: fmtLabel(ts, vaultStrategyTimeRange), value: Number(p.tvlUsd || 0) };
           });
 
           const pSeries = pnlArr.map((p: any) => {
             const ts = Number(p.timestamp || 0);
-            return {
-              ts,
-              name: fmtLabel(ts, vaultStrategyTimeRange),
-              value: Number(p.pnlUsd || 0),
-            };
+            return { ts, name: fmtLabel(ts, vaultStrategyTimeRange), value: Number(p.pnlUsd || 0) };
           });
 
           if (!cancelled) {
@@ -2874,23 +2844,49 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           (v: any) => (v?.address || '').toLowerCase() === String(selectedVaultStrategy).toLowerCase()
         );
 
-        if (baseVault) {
-          let userShares = 0n;
-          try {
-            const s = data?.userBalance?.shares ?? 0;
-            userShares = typeof s === 'bigint' ? s : BigInt(String(s));
-          } catch { }
+        const latestQuote = BigInt(String(data?.latestBalance?.quoteBalance ?? 0));
+        const latestBase = BigInt(String(data?.latestBalance?.baseBalance ?? 0));
+        const userSharesBI = BigInt(String(data?.userBalance?.shares ?? 0));
 
-          if (
-            !selectedVault ||
-            selectedVault.address !== baseVault.address ||
-            String(selectedVault.userShares ?? '') !== String(userShares ?? '')
-          ) {
-            setselectedVault({
-              ...baseVault,
-              userShares,
-            } as any);
-          }
+        if (baseVault) {
+          const nextSelected = {
+            ...baseVault,
+            totalShares: totalShares,
+            quoteBalance: latestQuote,
+            baseBalance: latestBase,
+            userShares: userSharesBI,
+            locked: !!data?.status?.locked,
+            closed: !!data?.status?.closed,
+            tvlUsd: data?.tvlUsd ?? data?.latestBalance?.usdValue,
+            userQuoteBalance: BigInt(String(data?.userBalance?.quoteBalance ?? 0)),
+            userBaseBalance: BigInt(String(data?.userBalance?.baseBalance ?? 0)),
+            desc: data?.vault?.description ?? baseVault?.desc,
+            social1: data?.vault?.socials?.social1 ?? baseVault?.social1,
+            social2: data?.vault?.socials?.social2 ?? baseVault?.social2,
+            quoteDecimals: Number(data?.vault?.decimals?.quoteDecimals ?? baseVault?.quoteDecimals ?? 18),
+            baseDecimals: Number(data?.vault?.decimals?.baseDecimals ?? baseVault?.baseDecimals ?? 18),
+          } as any;
+
+          setselectedVault(nextSelected);
+
+          setVaultList((prev: any[]) =>
+            (Array.isArray(prev) ? prev : []).map((v: any) =>
+              String(v?.address || '').toLowerCase() === String(baseVault.address).toLowerCase()
+                ? {
+                    ...v,
+                    totalShares: totalShares,
+                    quoteBalance: latestQuote,
+                    baseBalance: latestBase,
+                    userShares: userSharesBI,
+                    locked: !!data?.status?.locked,
+                    closed: !!data?.status?.closed,
+                    tvlUsd: nextSelected.tvlUsd,
+                    quoteDecimals: nextSelected.quoteDecimals,
+                    baseDecimals: nextSelected.baseDecimals,
+                  }
+                : v
+            )
+          );
         } else {
           if (!cancelled) setselectedVault(null);
         }
@@ -2956,9 +2952,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
         `;
 
-        const sgData = await fetchSubgraph(SUBGRAPH_URL, VAULT_DETAIL_QUERY, {
-          acct: selectedVaultStrategy,
-        });
+        const sgData = await fetchSubgraph(SUBGRAPH_URL, VAULT_DETAIL_QUERY, { acct: selectedVaultStrategy });
         if (cancelled) return;
 
         const acct = sgData?.account ?? null;
@@ -2966,225 +2960,26 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           (mapObj?.shards ?? []).flatMap((s: any) => s?.batches ?? []).flatMap((b: any) => b?.[key] ?? []);
         setOpenOrders(flattenMap(acct?.openOrderMap, 'orders') || []);
         setAllOrders(flattenMap(acct?.orderMap, 'orders') || []);
-
-        const wssUrl = settings.chainConfig[activechain]?.wssurl;
-        const factoryAddress = settings.chainConfig[activechain]?.crystalVaults;
-        if (!wssUrl || !factoryAddress) return;
-
-        const DEPOSIT_TOPIC = '0x4e2ca0515ed1aef1395f66b5303bb5d6f1bf9d61a353fa53f73f8ac9973fa9f6';
-        const WITHDRAW_TOPIC = '0xebff2602b3f468259e1e99f613fed6691f3a6526effe6ef3e768ba7ae7a36c4f';
-        const LOCK_TOPIC = '0x44427e3003a08f22cf803894075ac0297524e09e521fc1c15bc91741ce3dc159';
-        const UNLOCK_TOPIC = '0x7e6adfec7e3f286831a0200a754127c171a2da564078722cb97704741bbdb0ea';
-        const CLOSE_TOPIC = '0x13607bf9d2dd20e1f3a7daf47ab12856f8aad65e6ae7e2c75ace3d0c424a40e8';
-
-        const vaultAddrLc = selectedVaultStrategy.toLowerCase();
-        const quoteLc = (baseVault.quoteAsset || '').toLowerCase();
-        const baseLc = (baseVault.baseAsset || '').toLowerCase();
-        const factoryLc = (factoryAddress || '').toLowerCase();
-        const vaultTopicLc = '0x' + vaultAddrLc.slice(2).padStart(64, '0');
-
-        const ws = new WebSocket(wssUrl);
-
-        const sendSub = (params: any) => {
-          try {
-            ws.send(JSON.stringify({
-              id: Date.now(),
-              jsonrpc: '2.0',
-              method: 'eth_subscribe',
-              params
-            }));
-          } catch { }
-        };
-
-        ws.onopen = () => {
-          sendSub(['logs', {
-            address: factoryLc,
-            topics: [[DEPOSIT_TOPIC, WITHDRAW_TOPIC, LOCK_TOPIC, UNLOCK_TOPIC, CLOSE_TOPIC], vaultTopicLc],
-          }]);
-        };
-
-        ws.onmessage = async ({ data }) => {
-          let msg: any; try { msg = JSON.parse(data as any); } catch { return; }
-          if (msg?.method !== 'eth_subscription') return;
-
-          const log = msg.params?.result;
-          const topic0 = String(log?.topics?.[0] || '').toLowerCase();
-
-          const isVaultEvent =
-            topic0 === DEPOSIT_TOPIC ||
-            topic0 === WITHDRAW_TOPIC ||
-            topic0 === LOCK_TOPIC ||
-            topic0 === UNLOCK_TOPIC ||
-            topic0 === CLOSE_TOPIC;
-
-          const matchesVault =
-            String(log?.topics?.[1] || '').toLowerCase() === vaultTopicLc ||
-            String(log?.topics?.[2] || '').toLowerCase() === vaultTopicLc ||
-            String(log?.topics?.[3] || '').toLowerCase() === vaultTopicLc;
-
-          if (!isVaultEvent || !matchesVault) return;
-
-          try {
-            const topic1 = String(log?.topics?.[1] || '');
-            const topic2 = String(log?.topics?.[2] || '');
-            const vaultAddr = ('0x' + topic1.slice(-40)).toLowerCase() as `0x${string}`;
-            const userAddr = ('0x' + topic2.slice(-40)).toLowerCase();
-
-            const hex = String(log?.data || '0x');
-            const words = hex.startsWith('0x') ? hex.slice(2).match(/.{1,64}/g) || [] : (hex.match(/.{1,64}/g) || []);
-            const shares = words[0] ? BigInt('0x' + words[0]) : 0n;
-            const amountQuote = words[1] ? BigInt('0x' + words[1]) : 0n;
-            const amountBase = words[2] ? BigInt('0x' + words[2]) : 0n;
-
-            const ts = Math.floor(Date.now() / 1000);
-            const rowId = `${log.transactionHash}-${log.logIndex}`;
-
-            if (topic0 === DEPOSIT_TOPIC) {
-              const newRow = {
-                id: rowId,
-                account: { id: userAddr },
-                shares: shares.toString(),
-                amountQuote: amountQuote.toString(),
-                amountBase: amountBase.toString(),
-                txHash: log.transactionHash,
-                timestamp: ts,
-              };
-              setDepositHistory(prev => {
-                if (prev?.some((r: any) => r.id === rowId)) return prev;
-                return [newRow, ...(prev || [])];
-              });
-
-              setDepositors(prev => {
-                const list = Array.isArray(prev) ? [...prev] : [];
-                const i = list.findIndex((d: any) => String(d?.account?.id || '').toLowerCase() === userAddr);
-                if (i >= 0) {
-                  const cur = list[i];
-                  const curShares = toBigIntSafe(cur.shares);
-                  const curDQ = toBigIntSafe(cur.totalDepositedQuote);
-                  const curDB = toBigIntSafe(cur.totalDepositedBase);
-                  list[i] = {
-                    ...cur,
-                    shares: (curShares + shares).toString(),
-                    depositCount: Number(cur.depositCount || 0) + 1,
-                    totalDepositedQuote: (curDQ + amountQuote).toString(),
-                    totalDepositedBase: (curDB + amountBase).toString(),
-                    lastDepositAt: ts,
-                    updatedAt: ts,
-                  };
-                } else {
-                  list.unshift({
-                    id: `${userAddr}-${vaultAddr}`,
-                    account: { id: userAddr },
-                    shares: shares.toString(),
-                    depositCount: 1,
-                    withdrawCount: 0,
-                    totalDepositedQuote: amountQuote.toString(),
-                    totalDepositedBase: amountBase.toString(),
-                    totalWithdrawnQuote: '0',
-                    totalWithdrawnBase: '0',
-                    lastDepositAt: ts,
-                    lastWithdrawAt: 0,
-                    updatedAt: ts,
-                  });
-                }
-                return list;
-              });
-            }
-
-            if (topic0 === WITHDRAW_TOPIC) {
-              const newRow = {
-                id: rowId,
-                account: { id: userAddr },
-                shares: shares.toString(),
-                amountQuote: amountQuote.toString(),
-                amountBase: amountBase.toString(),
-                txHash: log.transactionHash,
-                timestamp: ts,
-              };
-              setWithdrawHistory(prev => {
-                if (prev?.some((r: any) => r.id === rowId)) return prev;
-                return [newRow, ...(prev || [])];
-              });
-
-              setDepositors(prev => {
-                const list = Array.isArray(prev) ? [...prev] : [];
-                const i = list.findIndex((d: any) => String(d?.account?.id || '').toLowerCase() === userAddr);
-                if (i >= 0) {
-                  const cur = list[i];
-                  const curShares = toBigIntSafe(cur.shares);
-                  const curWQ = toBigIntSafe(cur.totalWithdrawnQuote);
-                  const curWB = toBigIntSafe(cur.totalWithdrawnBase);
-                  list[i] = {
-                    ...cur,
-                    shares: (curShares - shares >= 0n ? curShares - shares : 0n).toString(),
-                    withdrawCount: Number(cur.withdrawCount || 0) + 1,
-                    totalWithdrawnQuote: (curWQ + amountQuote).toString(),
-                    totalWithdrawnBase: (curWB + amountBase).toString(),
-                    lastWithdrawAt: ts,
-                    updatedAt: ts,
-                  };
-                } else {
-                  list.unshift({
-                    id: `${userAddr}-${vaultAddr}`,
-                    account: { id: userAddr },
-                    shares: '0',
-                    depositCount: 0,
-                    withdrawCount: 1,
-                    totalDepositedQuote: '0',
-                    totalDepositedBase: '0',
-                    totalWithdrawnQuote: amountQuote.toString(),
-                    totalWithdrawnBase: amountBase.toString(),
-                    lastDepositAt: 0,
-                    lastWithdrawAt: ts,
-                    updatedAt: ts,
-                  });
-                }
-                return list;
-              });
-            }
-          } catch (e) {
-            console.warn('ws update failed', e);
-          }
-
-          const now = Date.now();
-          wsCooldownRef.current = now;
-          if (wsTimerRef.current) clearTimeout(wsTimerRef.current);
-          wsTimerRef.current = setTimeout(async () => {
-            const slim = (vaultList || []).map((v: any) => ({ id: v.id as `0x${string}` }));
-            try {
-              const oc = await fetchVaultBalances(slim);
-              setVaultList((prev: any[]) =>
-                prev.map((v: any) => {
-                  const b = oc[String(v.id).toLowerCase()];
-                  return b ? { ...v, quoteBalance: b.quoteBalance, baseBalance: b.baseBalance } : v;
-                })
-              );
-            } catch (e) {
-              console.warn('ws refresh failed', e);
-            }
-          }, 300);
-        };
-
-        ws.onerror = () => { };
-        ws.onclose = () => { };
-
-        const close = () => { try { ws.close(); } catch { } };
-        const cleanupWs = close;
-        const _noop = cleanupWs;
-
-        return () => { };
       } catch (e) {
-        console.error("vault detail fetch failed:", e);
+        console.error('vault detail fetch failed:', e);
         if (cancelled) return;
         setDepositors([]);
         setDepositHistory([]);
+        setWithdrawHistory([]);
         setOpenOrders([]);
         setAllOrders([]);
+      } finally {
+        inFlight = false;
       }
     };
 
     run();
-    return () => { cancelled = true; };
+    const intervalId = window.setInterval(run, 5000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
   }, [selectedVaultStrategy, !['earn'].includes(location.pathname.split('/')[1])]);
 
   useEffect(() => {
