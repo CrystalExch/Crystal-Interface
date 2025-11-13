@@ -431,7 +431,10 @@ const Header: React.FC<HeaderProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (walletDropdownRef.current && !walletDropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as HTMLElement;
+      const isPopupClick = target.closest('.blur-background-popups') || target.closest('.popup-content');
+      
+      if (!isPopupClick && walletDropdownRef.current && !walletDropdownRef.current.contains(event.target as Node)) {
         setIsWalletDropdownOpen(false);
       }
     };
@@ -523,7 +526,6 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleOpenPortfolio = () => {
     setpopup(4);
-    setIsWalletDropdownOpen(false);
   };
 
   const getCurrentWalletInfo = () => {
