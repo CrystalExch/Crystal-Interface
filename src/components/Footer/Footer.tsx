@@ -417,8 +417,13 @@ const Footer: React.FC<FooterProps> = ({
               </Tooltip>
 
 {isWalletDropdownOpen && (
-  <div className="footer-wallet-dropdown-panel visible">
-    <div className="footer-wallet-dropdown-header">
+  <div className="footer-wallet-dropdown-panel visible" >
+    <div className="footer-wallet-dropdown-header" style={{ 
+            filter: !activeWalletPrivateKey ? 'blur(4px)' : 'none',
+            pointerEvents: !activeWalletPrivateKey ? 'none' : 'auto',
+            opacity: !activeWalletPrivateKey ? 0.3 : 1,
+            transition: 'all 0.2s ease'
+          }}>
       <div className="footer-wallet-dropdown-actions">
         <button
           className="wallet-action-btn"
@@ -451,11 +456,9 @@ const Footer: React.FC<FooterProps> = ({
       </button>
     </div>
 
-    {/* ====== MODIFIED: Added position relative ====== */}
-    <div className="wallet-dropdown-list" style={{ position: 'relative' }}>
+    <div className="wallet-dropdown-list" >
       {subWallets.length > 0 ? (
         <>
-          {/* ====== NEW: Wrapper with blur effect when 1CT disabled ====== */}
           <div style={{ 
             filter: !activeWalletPrivateKey ? 'blur(4px)' : 'none',
             pointerEvents: !activeWalletPrivateKey ? 'none' : 'auto',
