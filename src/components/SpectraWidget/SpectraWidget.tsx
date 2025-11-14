@@ -31,7 +31,7 @@ import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { encodeFunctionData } from 'viem';
 import './SpectraWidget.css';
 import { HexColorPicker } from 'react-colorful';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { settings } from '../../settings';
 
 
@@ -2431,6 +2431,7 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
   pausedColumnRef,
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const hiddenTokens = hidden;
   const blacklistedDevs = useMemo(() => {
     const saved = localStorage.getItem('spectra-blacklisted-devs');

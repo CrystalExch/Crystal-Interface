@@ -486,22 +486,6 @@
 }
 
 
-@media (max-width: 1200px) {
-  .meme-oc-section-content[data-section="positions"] .meme-oc-header,
-  .meme-oc-section-content[data-section="positions"] .meme-oc-item {
-    gap: 10px;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 60px;
-  }
-
-  .meme-oc-section-content[data-section="holders"] .meme-oc-header,
-  .meme-oc-section-content[data-section="holders"] .meme-oc-item,
-  .meme-oc-section-content[data-section="topTraders"] .meme-oc-header,
-  .meme-oc-section-content[data-section="topTraders"] .meme-oc-item {
-    gap: 8px;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 60px;
-  }
-}
-
 @media (max-width: 768px) {
   .meme-oc-section-content[data-section="positions"] .meme-oc-header,
   .meme-oc-section-content[data-section="positions"] .meme-oc-item {

@@ -41,6 +41,7 @@ interface FooterProps {
   isWalletTrackerWidgetOpen?: boolean;
   onToggleWalletTrackerWidget?: any;
   setpopup: (value: number) => void;
+  createSubWallet: any;
 }
 
 const Tooltip: React.FC<{
@@ -212,6 +213,7 @@ const Footer: React.FC<FooterProps> = ({
   isWalletTrackerWidgetOpen = false,
   onToggleWalletTrackerWidget,
   setpopup,
+  createSubWallet
 }) => {
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [isDiscoverPopupOpen, setIsDiscoverPopupOpen] = useState(false);
@@ -333,10 +335,13 @@ const Footer: React.FC<FooterProps> = ({
               </div>
             </Tooltip>
             <div ref={dropdownRef} style={{ position: 'relative' }}>
-              <Tooltip content="Manage Wallets">
+              <Tooltip content={subWallets.length == 0 ? "Enable 1CT" : "Manage Wallets"}>
                 <button
                   className="footer-transparent-button"
                   onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
+                  style={{
+                  transition: 'all 0.2s ease'
+                }}
                 >
                   <span
                     style={{
@@ -414,127 +419,153 @@ const Footer: React.FC<FooterProps> = ({
                 </button>
               </Tooltip>
 
-              {isWalletDropdownOpen && (
-                <div className="footer-wallet-dropdown-panel visible">
-                  <div className="footer-wallet-dropdown-header">
-                    <div className="footer-wallet-dropdown-actions">
-                      <button
-                        className="wallet-action-btn"
-                        onClick={
-                          selectedWallets.size === subWallets.length
-                            ? unselectAllWallets
-                            : selectAllWallets
-                        }
-                      >
-                        {selectedWallets.size === subWallets.length
-                          ? 'Unselect All'
-                          : 'Select All'}
-                      </button>
-                      <button
-                        className="wallet-action-btn"
-                        onClick={selectAllWithBalance}
-                      >
-                        Select All with Balance
-                      </button>
-                    </div>
+              <div className={`footer-wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
+                <div className="footer-wallet-dropdown-header" style={{
+                  transition: 'all 0.2s ease'
+                }}>
+                  <div className="footer-wallet-dropdown-actions">
                     <button
-                      className="wallet-dropdown-close"
-                      onClick={() => setIsWalletDropdownOpen(false)}
+                      className="wallet-action-btn"
+                      onClick={
+                        selectedWallets.size === subWallets.length
+                          ? unselectAllWallets
+                          : selectAllWallets
+                      }
                     >
-                      <img
-                        src={closebutton}
-                        className="wallet-dropdown-close-icon"
-                        alt="Close"
-                      />
+                      {selectedWallets.size === subWallets.length
+                        ? 'Unselect All'
+                        : 'Select All'}
+                    </button>
+                    <button
+                      className="wallet-action-btn"
+                      onClick={selectAllWithBalance}
+                    >
+                      Select All with Balance
                     </button>
                   </div>
-
-                  <div className="wallet-dropdown-list">
-                    {subWallets.length > 0 ? (
-                      subWallets.map((wallet, index) => {
-                        const balance = getWalletBalance(wallet.address);
-                        const isSelected = selectedWallets.has(wallet.address);
-
-                        return (
-                          <React.Fragment key={wallet.address}>
-                            <div
-                              className={`quickbuy-wallet-item ${isSelected ? 'selected' : ''}`}
-                              onClick={() => toggleWalletSelection(wallet.address)}
-                            >
-                              <div className="quickbuy-wallet-checkbox-container">
-                                <input
-                                  type="checkbox"
-                                  className="quickbuy-wallet-checkbox selection"
-                                  checked={isSelected}
-                                  readOnly
-                                />
-                              </div>
-                              <div className="wallet-dropdown-info">
-                                <div className="wallet-dropdown-name">
-                                  {getWalletName(wallet.address, index)}
-                                </div>
-                                <div className="wallet-dropdown-address">
-                                  {wallet.address.slice(0, 6)}...
-                                  {wallet.address.slice(-4)}
-                                </div>
-                              </div>
-                              <div className="wallet-dropdown-balance">
-                                <div className="wallet-dropdown-balance-amount">
-                                  <img
-                                    src={monadicon}
-                                    className="wallet-dropdown-mon-icon"
-                                    alt="MON"
-                                  />
-                                  {formatNumberWithCommas(balance, 2)}
-                                </div>
-                              </div>
-                              <div className="wallet-drag-tokens">
-                                <div className="wallet-token-count">
-                                  <div className="wallet-token-structure-icons">
-                                    <div className="token1"></div>
-                                    <div className="token2"></div>
-                                    <div className="token3"></div>
-                                  </div>
-                                  <span className="wallet-total-tokens">
-                                    {getWalletTokenCount(wallet.address)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            {subWallets.length === 1 && (
-                              <div
-                                className="quickbuy-add-wallet-button"
-                                onClick={() => {
-                                  window.location.href = '/portfolio?tab=wallets';
-                                }}
-                              >
-                                <svg
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                <span>Add Wallet</span>
-                              </div>
-                            )}
-                          </React.Fragment>
-                        );
-                      })
-                    ) : (
-                      <div className="wallet-dropdown-no-subwallets">
-                        <p>No wallets found. Create a wallet to get started.</p>
-                      </div>
-                    )}
-                  </div>
                 </div>
-              )}
+
+                <div className="wallet-dropdown-list" >
+                  {true ? (
+                    <>
+                      <div style={{
+                        transition: 'all 0.2s ease'
+                      }}>
+                        {subWallets.map((wallet, index) => {
+                          const balance = getWalletBalance(wallet.address);
+                          const isSelected = selectedWallets.has(wallet.address);
+
+                          return (
+                            <React.Fragment key={wallet.address}>
+                              <div
+                                className={`quickbuy-wallet-item ${isSelected ? 'selected' : ''}`}
+                                onClick={() => toggleWalletSelection(wallet.address)}
+                              >
+                                <div className="quickbuy-wallet-checkbox-container">
+                                  <input
+                                    type="checkbox"
+                                    className="quickbuy-wallet-checkbox selection"
+                                    checked={isSelected}
+                                    readOnly
+                                  />
+                                </div>
+                                <div className="wallet-dropdown-info">
+                                  <div className="wallet-dropdown-name">
+                                    {getWalletName(wallet.address, index)}
+                                  </div>
+                                  <div className="wallet-dropdown-address">
+                                    {wallet.address.slice(0, 6)}...
+                                    {wallet.address.slice(-4)}
+                                  </div>
+                                </div>
+                                <div className="wallet-dropdown-balance">
+                                  <div className="wallet-dropdown-balance-amount">
+                                    <img
+                                      src={monadicon}
+                                      className="wallet-dropdown-mon-icon"
+                                      alt="MON"
+                                    />
+                                    {formatNumberWithCommas(balance, 2)}
+                                  </div>
+                                </div>
+                                <div className="wallet-drag-tokens">
+                                  <div className="wallet-token-count">
+                                    <div className="wallet-token-structure-icons">
+                                      <div className="token1"></div>
+                                      <div className="token2"></div>
+                                      <div className="token3"></div>
+                                    </div>
+                                    <span className="wallet-total-tokens">
+                                      {getWalletTokenCount(wallet.address)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              {subWallets.length === 1 && (
+                                <div
+                                  className="quickbuy-add-wallet-button"
+                                  onClick={() => {
+                                    createSubWallet()
+                                  }}
+                                >
+                                  <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                  </svg>
+                                  <span>Add Wallet</span>
+                                </div>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      {subWallets.length == 0 && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '12px',
+                          zIndex: 10,
+                          pointerEvents: 'auto'
+                        }}>
+                          <button
+                            onClick={() => {
+                              if (subWallets.length > 0) {
+                                setpopup(28);
+                              } else {
+                                setpopup(28);
+                              }
+                              setIsWalletDropdownOpen(false);
+                            }}
+                            className="enable-1ct-button"
+                          >
+                            Enable 1CT
+                          </button>
+
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="wallet-dropdown-no-subwallets">
+                      <p>No wallets found. Create a wallet to get started.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
             </div>
             <div className="widget-toggle-buttons">
               <Tooltip content="Wallet Tracker">
@@ -606,16 +637,16 @@ const Footer: React.FC<FooterProps> = ({
       <div className="footer-content-right">
         <div className="footer-right">
           <Tooltip content="Discord">
-          <img className="footer-icon" src={discord} />
+            <img className="footer-icon" src={discord} />
           </Tooltip>
           <Tooltip content="Twitter">
-          <img className="footer-icon" src={twitter} />
+            <img className="footer-icon" src={twitter} />
           </Tooltip>
           <Tooltip content="Docs">
-          <div className="footer-docs-icon">
-            <img className="footer-icon" src={docs} />
-            Docs
-          </div>
+            <div className="footer-docs-icon">
+              <img className="footer-icon" src={docs} />
+              Docs
+            </div>
           </Tooltip>
 
         </div>
