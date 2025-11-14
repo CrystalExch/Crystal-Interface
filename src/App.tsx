@@ -73,7 +73,7 @@ import customRound from './utils/customRound';
 import { formatTime } from './utils/formatTime.ts';
 import { formatCommas, formatSubscript } from './utils/numberDisplayFormat';
 import { formatDisplay, formatSig } from './components/OrderCenter/utils/formatDisplay.ts';
-import { loadBuyPresets, loadSellPresets, updateBuyPreset, updateSellPreset } from './utils/presetManager';
+import { loadBuyPresets, loadSellPresets, saveBuyPresets, updateBuyPreset, updateSellPreset } from './utils/presetManager';
 
 // import abis
 import { CrystalDataHelperAbi } from './abis/CrystalDataHelperAbi';
@@ -500,9 +500,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     [],
   );
 
+  const handleSavePresets = useCallback((presets: Record<number, any>) => {
+    saveBuyPresets(presets);
+    setBuyPresets(presets);
+  }, []);
+
   useEffect(() => {
     const handleBuyPresetsUpdate = (event: CustomEvent) => {
       const newPresets = event.detail;
+      setBuyPresets(newPresets);
       if (newPresets[selectedBuyPreset]) {
         setBuySlippageValue(newPresets[selectedBuyPreset].slippage);
         setBuyPriorityFee(newPresets[selectedBuyPreset].priority);
@@ -1554,10 +1560,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     graduated: 1
   });
 
-  const buyPresets = {
-    1: { slippage: '20', priority: '0.01', amount: '5' },
-    2: { slippage: '15', priority: '0.02', amount: '20' },
-    3: { slippage: '10', priority: '0.05', amount: '100' }
+  const [buyPresets, setBuyPresets] = useState(() => loadBuyPresets());
+
+  // Add default amount values for components that expect them
+  const buyPresetsWithAmount = {
+    1: { ...buyPresets[1], amount: '5' },
+    2: { ...buyPresets[2], amount: '20' },
+    3: { ...buyPresets[3], amount: '100' }
   };
 
   const sellPresets = {
@@ -19089,6 +19098,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           <div ref={popupref} style={{ zIndex: 10001 }}>
             <TradingPresetsPopup
               onClose={() => setpopup(0)}
+              buyPresets={buyPresets}
+              onSavePresets={handleSavePresets}
             />
           </div>
         ) : null}
@@ -19236,7 +19247,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               activePresets={activePresets}
               setActivePreset={setActivePreset}
               handleInputFocus={handleInputFocus}
-              buyPresets={buyPresets}
+              buyPresets={buyPresetsWithAmount}
               marketsData={marketsData}
               tokendict={tokendict}
               onMarketSelect={onMarketSelect}
@@ -25829,7 +25840,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         activePresets={activePresets}
         setActivePreset={setActivePreset}
         handleInputFocus={handleInputFocus}
-        buyPresets={buyPresets}
+        buyPresets={buyPresetsWithAmount}
         sellPresets={sellPresets}
         perpsActiveMarketKey={perpsActiveMarketKey}
         setperpsActiveMarketKey={handlePerpsMarketSelect}
@@ -25941,7 +25952,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 tokenData={token}
                 setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
-                buyPresets={buyPresets}
+                buyPresets={buyPresetsWithAmount}
                 sellPresets={sellPresets}
                 monPresets={monPresets}
                 setMonPresets={setMonPresets}
