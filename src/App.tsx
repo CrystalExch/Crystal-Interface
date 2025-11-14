@@ -20747,7 +20747,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                 BigInt(0),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                                true,
+                                false,
                                 BigInt(0),
                                 amountOutSwap,
                                 tokenIn == activeMarket.quoteAddress
@@ -20774,7 +20774,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                 BigInt(0),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                                true,
+                                false,
                                 BigInt(0),
                                 amountOutSwap,
                                 tokenIn == activeMarket.quoteAddress
@@ -20838,7 +20838,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                 BigInt(0),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                                true,
+                                false,
                                 BigInt(0),
                                 amountOutSwap,
                                 tokenIn == activeMarket.quoteAddress
@@ -20869,7 +20869,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                 BigInt(0),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                                true,
+                                false,
                                 BigInt(0),
                                 amountOutSwap,
                                 tokenIn == activeMarket.quoteAddress
