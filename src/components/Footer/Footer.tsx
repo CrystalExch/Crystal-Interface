@@ -29,7 +29,7 @@ interface FooterProps {
   selectedWallets?: Set<string>;
   setSelectedWallets?: (wallets: Set<string>) => void;
   walletTokenBalances?: Record<string, any>;
-  activeWalletPrivateKey?: string;
+  address: string;
   activeChain: number;
   monUsdPrice: number;
   isTrackerWidgetOpen?: boolean;
@@ -200,7 +200,7 @@ const Footer: React.FC<FooterProps> = ({
   selectedWallets = new Set(),
   setSelectedWallets,
   walletTokenBalances = {},
-  activeWalletPrivateKey = '',
+  address,
   activeChain,
   monUsdPrice,
   isTrackerWidgetOpen = false,
@@ -278,6 +278,7 @@ const Footer: React.FC<FooterProps> = ({
       .map((w) => w.address);
     setSelectedWallets(new Set(walletsWithBalance));
   }, [subWallets, setSelectedWallets]);
+
   const getWalletBalance = useCallback(
     (address: string): number => {
       const balances = walletTokenBalances[address];
@@ -289,10 +290,11 @@ const Footer: React.FC<FooterProps> = ({
       const balance = balances[ethAddress];
       if (!balance) return 0;
 
-      return Number(balance) / 10 ** 18; // MON has 18 decimals
+      return Number(balance) / 10 ** 18;
     },
     [walletTokenBalances, activeChain],
   );
+  
   const getWalletTokenCount = useCallback(
     (address: string): number => {
       const balanceData = walletTokenBalances[address];
@@ -302,21 +304,17 @@ const Footer: React.FC<FooterProps> = ({
     [walletTokenBalances],
   );
 
-  const isWalletActive = useCallback(
-    (privateKey: string): boolean => {
-      return privateKey === activeWalletPrivateKey;
-    },
-    [activeWalletPrivateKey],
-  );
-
   const getWalletName = (address: string, index: number): string => {
     const savedName = localStorage.getItem(`wallet_name_${address}`);
     return savedName || `Wallet ${index + 1}`;
   };
 
   const totalSelectedBalance = useMemo(() => {
-    return Array.from(selectedWallets).reduce((total, address) => {
-      return total + getWalletBalance(address);
+    if (selectedWallets.size == 0) {
+      return getWalletBalance(address)
+    }
+    return Array.from(selectedWallets).reduce((total, w) => {
+      return total + getWalletBalance(w);
     }, 0);
   }, [selectedWallets, getWalletBalance]);
 
@@ -455,13 +453,12 @@ const Footer: React.FC<FooterProps> = ({
                     {subWallets.length > 0 ? (
                       subWallets.map((wallet, index) => {
                         const balance = getWalletBalance(wallet.address);
-                        const isActive = isWalletActive(wallet.privateKey);
                         const isSelected = selectedWallets.has(wallet.address);
 
                         return (
                           <React.Fragment key={wallet.address}>
                             <div
-                              className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                              className={`quickbuy-wallet-item ${isSelected ? 'selected' : ''}`}
                               onClick={() => toggleWalletSelection(wallet.address)}
                             >
                               <div className="quickbuy-wallet-checkbox-container">

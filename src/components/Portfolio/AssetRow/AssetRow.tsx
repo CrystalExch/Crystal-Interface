@@ -52,8 +52,48 @@ const AssetRow: React.FC<AssetRowProps> = ({
     return (
     <div className="portfolio-row">
       <div className="oc-cell">
-        <img src={logo} className="asset-icon" />
-        <div className="asset-details">
+        <img src={logo} className="asset-icon" style = {{cursor: 'pointer'}} onClick={() => {
+          setpopup(0);
+          let found = false;
+          for (const market in markets) {
+            if (
+              markets[market].baseAddress === tokenAddress
+            ) {
+              found = true;
+              onMarketSelect({quoteAddress: markets[market].quoteAddress, baseAddress: tokenAddress})
+              break;
+            }
+          }
+          if (!found) {
+            for (const market in markets) {
+              if (markets[market].quoteAddress === tokenAddress) {
+                onMarketSelect({quoteAddress: tokenAddress, baseAddress: markets[market].baseAddress})
+                break;
+              }
+            }
+          }
+        }}/>
+        <div className="asset-details" style = {{cursor: 'pointer'}} onClick={() => {
+          setpopup(0);
+          let found = false;
+          for (const market in markets) {
+            if (
+              markets[market].baseAddress === tokenAddress
+            ) {
+              found = true;
+              onMarketSelect({quoteAddress: markets[market].quoteAddress, baseAddress: tokenAddress})
+              break;
+            }
+          }
+          if (!found) {
+            for (const market in markets) {
+              if (markets[market].quoteAddress === tokenAddress) {
+                onMarketSelect({quoteAddress: tokenAddress, baseAddress: markets[market].baseAddress})
+                break;
+              }
+            }
+          }
+        }}>
           <div className="asset-ticker">
             {assetName}
             <CopyButton textToCopy={tokenAddress} />

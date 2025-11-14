@@ -5091,7 +5091,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 ...p,
                 price: endPrice,
                 marketCap: endPrice * TOTAL_SUPPLY,
-                change24h: p?.mini?.[0]?.open ? ((endPrice * 1e9 - p?.mini?.[0]?.open) / (endPrice * 1e9) * 100) : p?.change24h,
+                change24h: p?.mini?.[0]?.open ? ((endPrice * 1e9 - p?.mini?.[0]?.open) / (p?.mini?.[0]?.open) * 100) : p?.change24h,
                 buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
                 sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
                 volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
@@ -5379,7 +5379,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   ...p,
                   price,
                   marketCap: price * TOTAL_SUPPLY,
-                  change24h: p?.mini?.[0]?.open ? ((price * 1e9 - p?.mini?.[0]?.open) / (price * 1e9) * 100) : p?.change24h,
+                  change24h: p?.mini?.[0]?.open ? ((price * 1e9 - p?.mini?.[0]?.open) / (p?.mini?.[0]?.open) * 100) : p?.change24h,
                   buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
                   sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
                   volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
@@ -6007,7 +6007,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             socials.splice(socials.indexOf(discord), 1);
           }
           const website = socials[0];
-          const change24h = (price * 1e9 - m?.mini?.klines[0].open) / (price * 1e9) * 100
+          const change24h = (price * 1e9 - m?.mini?.klines[0].open) / (m?.mini?.klines[0].open) * 100
           setTokenData(p => {
             tempTokenData = {
               ...p,
@@ -26628,7 +26628,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         selectedWallets={selectedWallets}
         setSelectedWallets={setSelectedWallets}
         walletTokenBalances={walletTokenBalances}
-        activeWalletPrivateKey={oneCTSigner}
+        address={address}
         activeChain={activechain}
         monUsdPrice={monUsdPrice}
         isTrackerWidgetOpen={isTrackerWidgetOpen}
