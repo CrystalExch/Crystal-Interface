@@ -501,7 +501,10 @@ const Footer: React.FC<FooterProps> = ({
                                   </div>
                                 </div>
                               </div>
-                              {subWallets.length === 1 && (
+                            </React.Fragment>
+                          );
+                        })}
+                              {subWallets.length < 10 && (
                                 <div
                                   className="quickbuy-add-wallet-button"
                                   onClick={() => {
@@ -524,9 +527,6 @@ const Footer: React.FC<FooterProps> = ({
                                   <span>Add Wallet</span>
                                 </div>
                               )}
-                            </React.Fragment>
-                          );
-                        })}
                       </div>
                       {subWallets.length == 0 && (
                         <div style={{

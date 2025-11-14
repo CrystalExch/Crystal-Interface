@@ -4558,10 +4558,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               distinctSellers
               lastPriceNativePerTokenWad
               lastUpdatedAt
-              trades {
-                id
-                amountIn
-                amountOut
+              trades(first: 50, orderBy: id, orderDirection: desc) { 
+                trade {
+                  id
+                  amountIn
+                  amountOut
+                }
               }
               totalHolders
               devHoldingAmount
@@ -4601,10 +4603,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               distinctSellers
               lastPriceNativePerTokenWad
               lastUpdatedAt
-              trades {
-                id
-                amountIn
-                amountOut
+              trades(first: 50, orderBy: id, orderDirection: desc) { 
+                trade {
+                  id
+                  amountIn
+                  amountOut
+                }
               }
               totalHolders
               devHoldingAmount
@@ -4644,10 +4648,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               distinctSellers
               lastPriceNativePerTokenWad
               lastUpdatedAt
-              trades {
-                id
-                amountIn
-                amountOut
+              trades(first: 50, orderBy: id, orderDirection: desc) { 
+                trade {
+                  id
+                  amountIn
+                  amountOut
+                }
               }
               totalHolders
               devHoldingAmount
@@ -10019,14 +10025,16 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   usdVolume
                 }
               }
-              trades(first: 50, orderBy: timestamp, orderDirection: desc) {
-                id
-                amountIn
-                amountOut
-                isBuy
-                timestamp
-                tx
-                endPrice
+              trades(first: 50, orderBy: id, orderDirection: desc) {
+                trade {
+                  id
+                  amountIn
+                  amountOut
+                  isBuy
+                  timestamp
+                  tx
+                  endPrice
+                }
               }
             }
           }
@@ -10206,13 +10214,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             for (const t of trades) {
               if (temptradesByMarket[mk]) {
                 temptradesByMarket[mk].push([
-                  Number(t.amountIn ?? 0),
-                  Number(t.amountOut ?? 0),
-                  t.isBuy ? 1 : 0,
-                  t.endPrice,
+                  Number(t.trade.amountIn ?? 0),
+                  Number(t.trade.amountOut ?? 0),
+                  t.trade.isBuy ? 1 : 0,
+                  t.trade.endPrice,
                   mk,
-                  t.tx,
-                  Number(t.timestamp ?? 0),
+                  t.trade.tx,
+                  Number(t.trade.timestamp ?? 0),
                 ]);
               }
             }
@@ -10254,13 +10262,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 if (trades.length && temptradesByMarket[siblingKey]) {
                   for (const t of trades) {
                     temptradesByMarket[siblingKey].push([
-                      Number(t.amountIn ?? 0),
-                      Number(t.amountOut ?? 0),
-                      t.isBuy ? 1 : 0,
-                      t.endPrice,
+                      Number(t.trade.amountIn ?? 0),
+                      Number(t.trade.amountOut ?? 0),
+                      t.trade.isBuy ? 1 : 0,
+                      t.trade.endPrice,
                       siblingKey,
-                      t.tx,
-                      Number(t.timestamp ?? 0),
+                      t.trade.tx,
+                      Number(t.trade.timestamp ?? 0),
                     ]);
                   }
                 }
@@ -26454,6 +26462,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         isWalletTrackerWidgetOpen={isWalletTrackerWidgetOpen}
         onToggleWalletTrackerWidget={setIsWalletTrackerWidgetOpen}
         setpopup={setpopup}
+        createSubWallet={createSubWallet}
       />
     </div>
   );
