@@ -9,6 +9,7 @@ import globe from '../../assets/globe.svg';
 import twitter from '../../assets/twitter.png';
 import monadsvg from '../../assets/monad.svg';
 import './PNLComponent.css';
+import { ref } from 'process';
 
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 
@@ -79,7 +80,7 @@ interface PNLComponentProps {
     valueNet: number;
   };
   currentPrice?: number;
-  refLink?: string;
+  refLink: string;
 }
 
 interface ImageCollection {
@@ -686,7 +687,6 @@ const loadImages = useCallback(async () => {
     ctx.fillText('Save 25% on Fees', 688, bottomY + 25);
     clearShadow(ctx);
   }, [imagesLoaded, images, selectedBg, uploadedBg, displayData, customizationSettings, isUSD, tokenSymbol, tokenName, applyShadow, clearShadow]);
-
   useEffect(() => {
     if (imagesLoaded) {
       drawPNLImage();

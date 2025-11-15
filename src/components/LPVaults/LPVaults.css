@@ -1696,6 +1696,7 @@
 .vault-tab.active,
 .chart-type-btn.active {
   color: #fff;
+  background-color: #161618;
 }
 
 .vault-deposit-form,

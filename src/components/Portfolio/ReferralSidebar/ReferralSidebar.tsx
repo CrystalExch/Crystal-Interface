@@ -300,7 +300,6 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
     setShowEnterCode(true);
     setError('');
   };
-
   return (
     <div className="referral-sidebar">
       <div className="referral-sidebar-header">

@@ -18272,7 +18272,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               refLink={refLink}
             />
           </div>
-
         ) : null}
         {popup === 28 ? (
           <div className="onect-trading-selection-bg">
