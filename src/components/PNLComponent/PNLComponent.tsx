@@ -79,6 +79,7 @@ interface PNLComponentProps {
     valueNet: number;
   };
   currentPrice?: number;
+  refLink?: string;
 }
 
 interface ImageCollection {
@@ -281,6 +282,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   },
   externalUserStats,
   currentPrice = 0,
+  refLink,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [images, setImages] = useState<ImageCollection>({});
@@ -677,7 +679,7 @@ const loadImages = useCallback(async () => {
     ctx.textAlign = 'right';
     ctx.font = '24px Funnel Display, Arial, sans-serif';
     applyShadow(ctx);
-    ctx.fillText('@crystal', 688, bottomY - 10);
+    ctx.fillText(`@${refLink}`, 688, bottomY - 10);
     clearShadow(ctx);
     ctx.font = '16px Funnel Display, Arial, sans-serif';
     applyShadow(ctx);

@@ -18252,6 +18252,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               monUsdPrice={monUsdPrice}
               externalUserStats={memeUserStats}
               currentPrice={currentTokenData.price}
+              refLink={refLink}
             />
           </div>
 
