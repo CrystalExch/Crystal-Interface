@@ -131,6 +131,9 @@ const LP: React.FC<LPProps> = ({
   }, [tokendict]);
 
   const [selectedVaultData, setSelectedVaultData] = useState<any>(undefined);
+  const [poolsList, setPoolsList] = useState<any[]>([]);
+  const [poolsInitialized, setPoolsInitialized] = useState(false);
+  const [poolStatsMap, setPoolStatsMap] = useState<Record<string, any>>({});
   const performanceSeries = useMemo(() => {
     if (!selectedVaultData || !selectedVaultData.apyHistory) {
       return defaultPerformanceData;
@@ -286,6 +289,14 @@ const LP: React.FC<LPProps> = ({
     return `${formattedInteger}.${decimalPart}`;
   };
 
+  const formatUsd = (value: number): string => {
+    if (!Number.isFinite(value) || value <= 0) return '$0.00';
+    if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
+    if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+    if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+    return `$${value.toFixed(2)}`;
+  };
+
   const calculateUSD = (
     amountRaw: string,
     symbol: string
@@ -327,31 +338,37 @@ const LP: React.FC<LPProps> = ({
     return `$${usd.toFixed(2)}`;
   };
 
-  let filteredVaults = Object.values(markets).filter((market: any) => {
-    const tokenMatch =
-      selectedTokens.length === 0 ||
-      selectedTokens.every(token =>
-        market.quoteAsset === token.symbol ||
-        market.baseAsset === token.symbol
-      );
+  let filteredVaults: any[] = [];
 
-    const isDeposited = activeTab === 'deposited'
-      ? parseFloat(tokenBalances?.[market.address]) > 0
-      : true;
+  if (poolsList.length > 0) {
+    filteredVaults = poolsList
+      .map((pool: any) => {
+        const marketKey =
+          (pool.baseTicker === 'WMON'
+            ? 'MON'
+            : pool.base === settings.chainConfig[activechain]?.weth
+            ? settings.chainConfig[activechain]?.eth
+            : pool.baseTicker) +
+          (pool.quoteTicker === 'WMON'
+            ? 'MON'
+            : pool.quote === settings.chainConfig[activechain]?.weth
+            ? settings.chainConfig[activechain]?.eth
+            : pool.quoteTicker);
 
-    let categoryMatch = true;
-    if (activeFilter === 'LSTs') {
-      categoryMatch = market?.category === 'LST';
-    } else if (activeFilter === 'Stables') {
-      categoryMatch = market?.category === 'Stable';
-    } else if (activeFilter === 'Verified') {
-      categoryMatch = market?.verified === true;
-    } else if (activeFilter === 'Unverified') {
-      categoryMatch = market?.verified === false;
-    }
+        const marketInfo = markets[marketKey];
+        if (!marketInfo) return null;
 
-    return tokenMatch && isDeposited && categoryMatch && market.marketType != 0;
-  });
+        return {
+          ...marketInfo,
+          poolId: pool.id ?? pool.address ?? pool.poolAddress ?? marketKey,
+        };
+      })
+      .filter((m: any) => m !== null) as any[];
+  } else if (poolsInitialized) {
+    filteredVaults = Object.values(markets) as any[];
+  } else {
+    filteredVaults = [];
+  }
 
   if (filteredVaults.some((m: any) =>
     m.baseAddress === settings.chainConfig[activechain]?.eth ||
@@ -493,12 +510,6 @@ const LP: React.FC<LPProps> = ({
         }
       }
     }
-  };
-
-  const isAddLiquidityEnabled = () => {
-    return depositAmounts.first !== '' && depositAmounts.second !== '' &&
-      parseFloat(depositAmounts.first) > 0 && parseFloat(depositAmounts.second) > 0 &&
-      !firstTokenExceedsBalance && !secondTokenExceedsBalance;
   };
 
   const isVaultDepositEnabled = () => {
@@ -747,13 +758,6 @@ const LP: React.FC<LPProps> = ({
     }
   };
 
-  const getAddLiquidityButtonText = () => {
-    if (firstTokenExceedsBalance || secondTokenExceedsBalance) {
-      return 'Insufficient Balance';
-    }
-    return 'Add Liquidity';
-  };
-
   const getVaultDepositButtonText = () => {
     if (vaultFirstTokenExceedsBalance || vaultSecondTokenExceedsBalance) {
       return 'Insufficient Balance';
@@ -819,6 +823,44 @@ const LP: React.FC<LPProps> = ({
     if (hasInitializedFavorites.current || availableTokens.length === 0) return;
     hasInitializedFavorites.current = true;
   }, [availableTokens]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('https://api.crystal.exchange/pools/list');
+        if (!res.ok) {
+          setPoolsInitialized(true);
+          return;
+        }
+
+        const data = await res.json();
+        const pools = (data && data.pools) || [];
+
+        setPoolsList(pools);
+
+        const map: Record<string, any> = {};
+
+        for (const p of pools as any[]) {
+          const addr = (p.address || p.poolAddress || '').toLowerCase();
+          const marketKey = (p.market || '').toLowerCase();
+
+          if (addr) {
+            map[addr] = p;
+          }
+
+          if (marketKey) {
+            map[marketKey] = p;
+          }
+        }
+
+        setPoolStatsMap(map);
+        setPoolsInitialized(true);
+      } catch (e) {
+        console.error('failed to fetch pools list', e);
+        setPoolsInitialized(true);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1311,57 +1353,86 @@ const LP: React.FC<LPProps> = ({
               <div className="lp-col lp-borrow-apy-col">24h APY</div>
             </div>
 
-            {filteredVaults.length > 0 ? (filteredVaults.map((vault) => (
-              <div
-                key={vault.address + vault.quoteAddress + vault.baseAddress}
-                className="lp-card"
-                onClick={() => showVaultDetail(vault)}
-              >
-                <div className="lp-summary">
-                  <div className="lp-col lp-asset-col">
-                    <div className="lp-token-pair-icons">
-                      <img
-                        src={tokendict[vault.baseAddress]?.image}
-                        className="lp-token-icon lp-token-icon-first"
-                      />
-                      <img
-                        src={tokendict[vault.quoteAddress]?.image}
-                        className="lp-token-icon lp-token-icon-second"
-                      />
-                    </div>
-                    <div className="lp-asset-info">
-                      <h3 className="lp-listname">{vault.baseAsset + '/' + vault.quoteAsset}</h3>
-                      <div className="lp-fee-amounts">
-                        <span className="lp-fee-amount">0.25%</span>
+            {filteredVaults.length > 0 ? (
+              filteredVaults.map((vault) => {
+                const stats =
+                  poolStatsMap[vault.address?.toLowerCase() || ''] ||
+                  poolStatsMap[(vault.baseAsset + vault.quoteAsset).toLowerCase()] ||
+                  {};
+
+                const tvlUsd = Number(stats?.tvlUsd ?? 0);
+                const vol24 = Number(stats?.volume24hUsd ?? 0);
+                const fees24 = Number(stats?.fees24hUsd ?? 0);
+                const apy24 =
+                  stats && stats.apy24h != null
+                    ? Number(stats.apy24h) * 100
+                    : 0;
+
+                return (
+                  <div
+                    key={vault.address + vault.quoteAddress + vault.baseAddress}
+                    className="lp-card"
+                    onClick={() => showVaultDetail(vault)}
+                  >
+                    <div className="lp-summary">
+                      <div className="lp-col lp-asset-col">
+                        <div className="lp-token-pair-icons">
+                          <img
+                            src={tokendict[vault.baseAddress]?.image}
+                            className="lp-token-icon lp-token-icon-first"
+                          />
+                          <img
+                            src={tokendict[vault.quoteAddress]?.image}
+                            className="lp-token-icon lp-token-icon-second"
+                          />
+                        </div>
+                        <div className="lp-asset-info">
+                          <h3 className="lp-listname">
+                            {vault.baseAsset + '/' + vault.quoteAsset}
+                          </h3>
+                          <div className="lp-fee-amounts">
+                            <span className="lp-fee-amount">0.25%</span>
+                          </div>
+                          {vault?.verified && (
+                            <img
+                              src={verified}
+                              alt="Verified"
+                              className="lp-verified-badge"
+                            />
+                          )}
+                        </div>
                       </div>
-                      {vault?.verified && (
-                        <img src={verified} alt="Verified" className="lp-verified-badge" />
-                      )}
+
+                      <div className="lp-col lp-supply-col">
+                        <div className="lp-supply-value lp-supply-tooltip-wrapper">
+                          <span className="lp-apy-value-text">
+                            {formatUsd(tvlUsd)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="lp-col lp-supply-apy-col">
+                        <div className="lp-supply-apy-value">
+                          {formatUsd(vol24)}
+                        </div>
+                      </div>
+
+                      <div className="lp-col lp-borrowed-col">
+                        <div className="lp-borrowed-value">
+                          {formatUsd(fees24)}
+                        </div>
+                      </div>
+
+                      <div className="lp-col lp-borrow-apy-col">
+                        <div className="lp-borrow-apy-value">
+                          {`${customRound(apy24, 2).toLocaleString()}%`}
+                        </div>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="lp-col lp-supply-col">
-                    <div className="lp-supply-value lp-supply-tooltip-wrapper">
-                      <span className="lp-apy-value-text"> $0 </span>
-                    </div>
-                  </div>
-
-                  <div className="lp-col lp-supply-apy-col">
-                    <div className="lp-supply-apy-value"> $0</div>
-                  </div>
-
-                  <div className="lp-col lp-borrowed-col">
-                    <div className="lp-borrowed-value">$0</div>
-                  </div>
-
-                  <div className="lp-col lp-borrow-apy-col">
-                    <div className="lp-borrow-apy-value">0.00%</div>
-                  </div>
-                </div>
-
-
-              </div>
-            ))) : (
+                );
+              })
+            ) : (
               <div className="no-vaults-message">
                 <p>No vaults found matching your criteria.</p>
               </div>)}
