@@ -1709,13 +1709,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           const json = await res.json();
           const t = json?.data?.launchpadTokens?.[0]?.trades ?? [];
           const mapped: Trade[] = t.map((tt: any) => ({
-            id: tt.id,
-            timestamp: Number(tt.block),
-            isBuy: !!tt.isBuy,
-            price: Number(tt.priceNativePerTokenWad) / 1e9,
-            tokenAmount: Number(tt.isBuy ? tt.amountOut : tt.amountIn) / 1e18,
-            nativeAmount: Number(tt.isBuy ? tt.amountIn : tt.amountOut) / 1e18,
-            caller: tt.account.id,
+            id: tt.trade.id,
+            timestamp: Number(tt.trade.block),
+            isBuy: !!tt.trade.isBuy,
+            price: Number(tt.trade.priceNativePerTokenWad) / 1e9,
+            tokenAmount: Number(tt.trade.isBuy ? tt.trade.amountOut : tt.trade.amountIn) / 1e18,
+            nativeAmount: Number(tt.trade.isBuy ? tt.trade.amountIn : tt.trade.amountOut) / 1e18,
+            caller: tt.trade.account.id,
           }));
           if (!cancelled) setTrades(mapped);
         } catch (e) {

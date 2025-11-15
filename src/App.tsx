@@ -5768,8 +5768,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           time open high low close baseVolume
                         } 
                       }
-                  trades(first: 50, orderBy: block, orderDirection: desc) {
-                    id account {id} block isBuy priceNativePerTokenWad amountIn amountOut
+                  trades(first: 50, orderBy: id, orderDirection: desc) {
+                    trade {
+                      id account {id} block isBuy priceNativePerTokenWad amountIn amountOut
+                    }
                   }
                   totalHolders
                   devHoldingAmount
@@ -5876,13 +5878,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         if (data.launchpadTokens?.[0]?.trades?.length) {
           const mapped = data.launchpadTokens[0].trades.map((t: any) => ({
-            id: t.id,
-            timestamp: Number(t.block),
-            isBuy: t.isBuy,
-            price: Number(t.priceNativePerTokenWad) / 1e9,
-            tokenAmount: Number(t.isBuy ? t.amountOut : t.amountIn) / 1e18,
-            nativeAmount: Number(t.isBuy ? t.amountIn : t.amountOut) / 1e18,
-            caller: t.account.id,
+            id: t.trade.id,
+            timestamp: Number(t.trade.block),
+            isBuy: t.trade.isBuy,
+            price: Number(t.trade.priceNativePerTokenWad) / 1e9,
+            tokenAmount: Number(t.trade.isBuy ? t.trade.amountOut : t.trade.amountIn) / 1e18,
+            nativeAmount: Number(t.trade.isBuy ? t.trade.amountIn : t.trade.amountOut) / 1e18,
+            caller: t.trade.account.id,
           }));
           setMemeTrades(mapped);
         } else {
