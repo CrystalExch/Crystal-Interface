@@ -29,7 +29,7 @@ interface FooterProps {
   selectedWallets?: Set<string>;
   setSelectedWallets?: (wallets: Set<string>) => void;
   walletTokenBalances?: Record<string, any>;
-  activeWalletPrivateKey?: string;
+  address: string;
   activeChain: number;
   monUsdPrice: number;
   isTrackerWidgetOpen?: boolean;
@@ -41,6 +41,7 @@ interface FooterProps {
   isWalletTrackerWidgetOpen?: boolean;
   onToggleWalletTrackerWidget?: any;
   setpopup: (value: number) => void;
+  createSubWallet: any;
 }
 
 const Tooltip: React.FC<{
@@ -200,7 +201,7 @@ const Footer: React.FC<FooterProps> = ({
   selectedWallets = new Set(),
   setSelectedWallets,
   walletTokenBalances = {},
-  activeWalletPrivateKey = '',
+  address,
   activeChain,
   monUsdPrice,
   isTrackerWidgetOpen = false,
@@ -212,6 +213,7 @@ const Footer: React.FC<FooterProps> = ({
   isWalletTrackerWidgetOpen = false,
   onToggleWalletTrackerWidget,
   setpopup,
+  createSubWallet
 }) => {
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [isDiscoverPopupOpen, setIsDiscoverPopupOpen] = useState(false);
@@ -278,6 +280,7 @@ const Footer: React.FC<FooterProps> = ({
       .map((w) => w.address);
     setSelectedWallets(new Set(walletsWithBalance));
   }, [subWallets, setSelectedWallets]);
+
   const getWalletBalance = useCallback(
     (address: string): number => {
       const balances = walletTokenBalances[address];
@@ -289,10 +292,11 @@ const Footer: React.FC<FooterProps> = ({
       const balance = balances[ethAddress];
       if (!balance) return 0;
 
-      return Number(balance) / 10 ** 18; // MON has 18 decimals
+      return Number(balance) / 10 ** 18;
     },
     [walletTokenBalances, activeChain],
   );
+  
   const getWalletTokenCount = useCallback(
     (address: string): number => {
       const balanceData = walletTokenBalances[address];
@@ -302,21 +306,17 @@ const Footer: React.FC<FooterProps> = ({
     [walletTokenBalances],
   );
 
-  const isWalletActive = useCallback(
-    (privateKey: string): boolean => {
-      return privateKey === activeWalletPrivateKey;
-    },
-    [activeWalletPrivateKey],
-  );
-
   const getWalletName = (address: string, index: number): string => {
     const savedName = localStorage.getItem(`wallet_name_${address}`);
     return savedName || `Wallet ${index + 1}`;
   };
 
   const totalSelectedBalance = useMemo(() => {
-    return Array.from(selectedWallets).reduce((total, address) => {
-      return total + getWalletBalance(address);
+    if (selectedWallets.size == 0) {
+      return getWalletBalance(address)
+    }
+    return Array.from(selectedWallets).reduce((total, w) => {
+      return total + getWalletBalance(w);
     }, 0);
   }, [selectedWallets, getWalletBalance]);
 
@@ -335,12 +335,11 @@ const Footer: React.FC<FooterProps> = ({
               </div>
             </Tooltip>
             <div ref={dropdownRef} style={{ position: 'relative' }}>
-<Tooltip content={!activeWalletPrivateKey ? "Enable 1CT" : "Manage Wallets"}>
+              <Tooltip content={subWallets.length == 0 ? "Enable 1CT" : "Manage Wallets"}>
                 <button
                   className="footer-transparent-button"
                   onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
                   style={{
-                  opacity: !activeWalletPrivateKey ? 0.3 : 1,
                   transition: 'all 0.2s ease'
                 }}
                 >
@@ -422,9 +421,6 @@ const Footer: React.FC<FooterProps> = ({
 
               <div className={`footer-wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
                 <div className="footer-wallet-dropdown-header" style={{
-                  filter: !activeWalletPrivateKey ? 'blur(4px)' : 'none',
-                  pointerEvents: !activeWalletPrivateKey ? 'none' : 'auto',
-                  opacity: !activeWalletPrivateKey ? 0.3 : 1,
                   transition: 'all 0.2s ease'
                 }}>
                   <div className="footer-wallet-dropdown-actions">
@@ -447,36 +443,22 @@ const Footer: React.FC<FooterProps> = ({
                       Select All with Balance
                     </button>
                   </div>
-                  <button
-                    className="wallet-dropdown-close"
-                    onClick={() => setIsWalletDropdownOpen(false)}
-                  >
-                    <img
-                      src={closebutton}
-                      className="wallet-dropdown-close-icon"
-                      alt="Close"
-                    />
-                  </button>
                 </div>
 
                 <div className="wallet-dropdown-list" >
-                  {subWallets.length > 0 ? (
+                  {true ? (
                     <>
                       <div style={{
-                        filter: !activeWalletPrivateKey ? 'blur(4px)' : 'none',
-                        pointerEvents: !activeWalletPrivateKey ? 'none' : 'auto',
-                        opacity: !activeWalletPrivateKey ? 0.3 : 1,
                         transition: 'all 0.2s ease'
                       }}>
                         {subWallets.map((wallet, index) => {
                           const balance = getWalletBalance(wallet.address);
-                          const isActive = isWalletActive(wallet.privateKey);
                           const isSelected = selectedWallets.has(wallet.address);
 
                           return (
                             <React.Fragment key={wallet.address}>
                               <div
-                                className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                                className={`quickbuy-wallet-item ${isSelected ? 'selected' : ''}`}
                                 onClick={() => toggleWalletSelection(wallet.address)}
                               >
                                 <div className="quickbuy-wallet-checkbox-container">
@@ -519,11 +501,14 @@ const Footer: React.FC<FooterProps> = ({
                                   </div>
                                 </div>
                               </div>
-                              {subWallets.length === 1 && (
+                            </React.Fragment>
+                          );
+                        })}
+                              {subWallets.length < 10 && (
                                 <div
                                   className="quickbuy-add-wallet-button"
                                   onClick={() => {
-                                    window.location.href = '/portfolio?tab=wallets';
+                                    createSubWallet()
                                   }}
                                 >
                                   <svg
@@ -542,11 +527,8 @@ const Footer: React.FC<FooterProps> = ({
                                   <span>Add Wallet</span>
                                 </div>
                               )}
-                            </React.Fragment>
-                          );
-                        })}
                       </div>
-                      {!activeWalletPrivateKey && (
+                      {subWallets.length == 0 && (
                         <div style={{
                           position: 'absolute',
                           top: '50%',

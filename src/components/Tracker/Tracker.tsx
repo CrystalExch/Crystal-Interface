@@ -1,5 +1,6 @@
-import { Search, Edit2 } from 'lucide-react';
+import { Search, Edit2, ChevronDown, Hash, EyeOff, Image, BarChart3 } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { HexColorPicker } from 'react-colorful';
 import { createPortal } from 'react-dom';
 import copy from '../../assets/copy.svg';
 import closebutton from '../../assets/close_button.png';
@@ -9,11 +10,13 @@ import lightning from '../../assets/flash.png';
 import filter from '../../assets/filter.svg';
 import gas from '../../assets/gas.svg';
 import slippage from '../../assets/slippage.svg';
+import reset from '../../assets/reset.svg';
 import { settings } from '../../settings';
-import { loadBuyPresets } from '../../utils/presetManager';
+import { loadBuyPresets, saveBuyPresets } from '../../utils/presetManager';
 import { createPublicClient, http, encodeFunctionData } from 'viem';
 import ImportWalletsPopup from './ImportWalletsPopup';
 import AddWalletModal from './AddWalletModal';
+import TradingPresetsPopup from './TradingPresetsPopup/TradingPresetsPopup';
 import {
   showLoadingPopup,
   updatePopup,
@@ -160,7 +163,6 @@ import MonitorFiltersPopup, { MonitorFilterState } from './MonitorFiltersPopup/M
 import '../TokenExplorer/TokenExplorer.css';
 import settingsicon from '../../assets/settings.svg';
 import circle from '../../assets/circle_handle.png';
-import key from '../../assets/key.svg';
 import defaultPfp from '../../assets/leaderboard_default.png';
 import {
   SHOW_DEMO_TRADES,
@@ -172,9 +174,6 @@ import {
 } from './trackerDemoData';
 
 import './Tracker.css';
-
-import { config } from '../../wagmi';
-import { CrystalMarketAbi } from '../../abis/CrystalMarketAbi';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 
 
@@ -205,7 +204,6 @@ interface LiveTrade {
   createdAt: string;
 }
 
-// Add Position interface from MemeOrderCenter
 interface Position {
   tokenId: string;
   symbol?: string;
@@ -222,7 +220,6 @@ interface Position {
   lastPrice: number;
 }
 
-// Enhanced MonitorToken to include position data
 interface MonitorToken {
   id: string;
   tokenAddress: string;
@@ -258,7 +255,6 @@ interface MonitorToken {
   totalRemainingTokens?: number;
 }
 
-// Helper: fetch recent trades
 const fetchRecentTradesForWallet = async (account: string, first = 50) => {
   const url = SUBGRAPH_URL;
   if (!url) return [];
@@ -400,18 +396,8 @@ const loadWalletsFromStorage = (): TrackedWallet[] => {
 
 const isValidAddress = (addr: string) => {
   return /^0x[a-fA-F0-9]{40}$/.test(addr);
-};
+}; 
 
-const SIMPLE_SORT_PRESETS: Record<string, SortPreset> = {
-  latest: { sortBy: 'lastTransaction', order: 'desc' },
-  marketCap: { sortBy: 'marketCap', order: 'desc' },
-  liquidity: { sortBy: 'liquidity', order: 'desc' },
-  txns: { sortBy: 'txCount', order: 'desc' },
-  holders: { sortBy: 'holders', order: 'desc' },
-  inflow: { sortBy: 'inflowVolume', order: 'desc' },
-  outflow: { sortBy: 'outflowVolume', order: 'desc' },
-  tokenAge: { sortBy: 'createdAt', order: 'asc' }
-};
 const Tooltip: React.FC<{
   content: string | React.ReactNode;
   children: React.ReactNode;
@@ -505,6 +491,1033 @@ const Tooltip: React.FC<{
 type MarketsMap = Map<string, MonitorToken>;
 type TrackerTab = 'wallets' | 'trades' | 'monitor';
 type SortDirection = 'asc' | 'desc';
+type ColumnKey = 'new' | 'graduating' | 'graduated';
+
+interface DisplaySettings {
+  metricSize: 'small' | 'large';
+  quickBuySize: 'small' | 'large' | 'mega' | 'ultra';
+  quickBuyStyle: 'color' | 'grey';
+  ultraStyle: 'default' | 'glowing' | 'border';
+  ultraColor: 'color' | 'grey';
+  hideSearchBar: boolean;
+  noDecimals: boolean;
+  hideHiddenTokens: boolean;
+  squareImages: boolean;
+  progressBar: boolean;
+  spacedTables: boolean;
+  colorRows: boolean;
+  columnOrder: Array<ColumnKey>;
+  hiddenColumns?: Array<ColumnKey>;
+  quickBuyClickBehavior: 'nothing' | 'openPage' | 'openNewTab';
+  secondQuickBuyEnabled: boolean;
+  secondQuickBuyColor: string;
+  visibleRows: {
+    marketCap: boolean;
+    volume: boolean;
+    fees: boolean;
+    tx: boolean;
+    socials: boolean;
+    holders: boolean;
+    proTraders: boolean;
+    devMigrations: boolean;
+    top10Holders: boolean;
+    devHolding: boolean;
+    fundingTime: boolean;
+    snipers: boolean;
+    insiders: boolean;
+    dexPaid: boolean;
+  };
+  metricColoring: boolean;
+  metricColors: {
+    marketCap: { range1: string; range2: string; range3: string };
+    volume: { range1: string; range2: string; range3: string };
+    holders: { range1: string; range2: string; range3: string };
+  };
+}
+
+type Token = {
+  status: 'new' | 'graduating' | 'graduated';
+};
+
+const DisplayDropdown: React.FC<{
+  settings: DisplaySettings;
+  onSettingsChange: (settings: DisplaySettings) => void;
+  quickAmountsSecond: Record<Token['status'], string>;
+  setQuickAmountSecond: (status: Token['status'], value: string) => void;
+  activePresetsSecond: Record<Token['status'], number>;
+  setActivePresetSecond: (status: Token['status'], preset: number) => void;
+}> = ({
+  settings,
+  onSettingsChange,
+  quickAmountsSecond,
+  setQuickAmountSecond,
+  activePresetsSecond,
+  setActivePresetSecond,
+}) => {
+    const [showSecondButtonColorPicker, setShowSecondButtonColorPicker] =
+      useState(false);
+    const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
+    const [showMetricColorPicker, setShowMetricColorPicker] = useState(false);
+    const [metricPickerPosition, setMetricPickerPosition] = useState({
+      top: 0,
+      left: 0,
+    });
+    const [hexInputValue, setHexInputValue] = useState(
+      settings.secondQuickBuyColor.replace('#', '').toUpperCase(),
+    );
+    useEffect(() => {
+      setHexInputValue(
+        settings.secondQuickBuyColor.replace('#', '').toUpperCase(),
+      );
+    }, [settings.secondQuickBuyColor]);
+    const [activeMetricPicker, setActiveMetricPicker] = useState<{
+      metric: 'marketCap' | 'volume' | 'holders';
+      range: 'range1' | 'range2' | 'range3';
+    } | null>(null);
+    const handleColorPickerClick = (event: React.MouseEvent) => {
+      event.stopPropagation();
+
+      if (showSecondButtonColorPicker) {
+        setShowSecondButtonColorPicker(false);
+        return;
+      }
+
+      const rect = (event.target as HTMLElement).getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const pickerWidth = 200;
+      const pickerHeight = 250;
+
+      let left = rect.right + 10;
+      let top = rect.top;
+
+      if (left + pickerWidth > viewportWidth) {
+        left = rect.left - pickerWidth - 10;
+      }
+      if (top + pickerHeight > viewportHeight) {
+        top = viewportHeight - pickerHeight - 20;
+      }
+      if (top < 20) {
+        top = 20;
+      }
+
+      setPickerPosition({ top, left });
+      setShowSecondButtonColorPicker(true);
+    };
+
+    const handleMetricColorPickerClick = (
+      event: React.MouseEvent,
+      metric: 'marketCap' | 'volume' | 'holders',
+      range: 'range1' | 'range2' | 'range3',
+    ) => {
+      event.stopPropagation();
+
+      if (
+        showMetricColorPicker &&
+        activeMetricPicker?.metric === metric &&
+        activeMetricPicker?.range === range
+      ) {
+        setShowMetricColorPicker(false);
+        setActiveMetricPicker(null);
+        return;
+      }
+
+      const rect = (event.target as HTMLElement).getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const pickerWidth = 200;
+      const pickerHeight = 250;
+
+      let left = rect.right + 10;
+      let top = rect.top;
+
+      if (left + pickerWidth > viewportWidth) {
+        left = rect.left - pickerWidth - 10;
+      }
+      if (top + pickerHeight > viewportHeight) {
+        top = viewportHeight - pickerHeight - 20;
+      }
+      if (top < 20) {
+        top = 20;
+      }
+
+      setMetricPickerPosition({ top, left });
+      setActiveMetricPicker({ metric, range });
+      setShowMetricColorPicker(true);
+    };
+    const [isOpen, setIsOpen] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+    const [activeTab, setActiveTab] = useState<
+      'layout' | 'metrics' | 'row' | 'extras'
+    >('layout');
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+    const safeOrder: Array<ColumnKey> =
+      Array.isArray(settings?.columnOrder) && settings.columnOrder.length
+        ? settings.columnOrder
+        : (['new', 'graduating', 'graduated'] as Array<ColumnKey>);
+
+    const handleToggle = useCallback(() => {
+      if (isOpen) {
+        setIsVisible(false);
+        setTimeout(() => {
+          setIsOpen(false);
+        }, 200);
+      } else {
+        setIsOpen(true);
+        requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      }
+    }, [isOpen]);
+
+    const handleDragStart = (e: React.DragEvent, index: number) => {
+      setDraggedIndex(index);
+      e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      setDragOverIndex(index);
+    };
+
+    const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+      e.preventDefault();
+      if (draggedIndex === null || draggedIndex === dropIndex) return;
+
+      const newOrder = [...safeOrder];
+      const draggedItem = newOrder[draggedIndex];
+      newOrder.splice(draggedIndex, 1);
+      newOrder.splice(dropIndex, 0, draggedItem);
+
+      onSettingsChange({ ...settings, columnOrder: newOrder });
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+    };
+
+    const handleDragEnd = () => {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+    };
+    const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(
+      () => new Set(settings.hiddenColumns || []),
+    );
+
+    const handleHide = (e: React.MouseEvent, column: ColumnKey) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const newHidden = new Set(hiddenColumns);
+      if (newHidden.has(column)) {
+        newHidden.delete(column);
+      } else {
+        newHidden.add(column);
+      }
+      setHiddenColumns(newHidden);
+      onSettingsChange({ ...settings, hiddenColumns: Array.from(newHidden) });
+    };
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+
+        if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+          if (isOpen) {
+            setIsVisible(false);
+            setTimeout(() => {
+              setIsOpen(false);
+            }, 200);
+          }
+        }
+
+        if (showSecondButtonColorPicker) {
+          if (
+            !target.closest('.tracker-color-picker-dropdown') &&
+            !target.closest('.tracker-color-preview')
+          ) {
+            setShowSecondButtonColorPicker(false);
+          }
+        }
+
+        if (showMetricColorPicker) {
+          if (
+            !target.closest('.tracker-metric-color-picker-dropdown') &&
+            !target.closest('.tracker-metric-color-square')
+          ) {
+            setShowMetricColorPicker(false);
+            setActiveMetricPicker(null);
+          }
+        }
+      };
+
+      if (isOpen || showSecondButtonColorPicker || showMetricColorPicker) {
+        document.addEventListener('mousedown', handleClickOutside);
+      }
+
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen, showSecondButtonColorPicker, showMetricColorPicker]);
+    const updateSetting = <K extends keyof DisplaySettings>(
+      key: K,
+      value: DisplaySettings[K],
+    ) => onSettingsChange({ ...settings, [key]: value });
+
+    const updateMetricColor = (
+      metric: 'marketCap' | 'volume' | 'holders',
+      range: 'range1' | 'range2' | 'range3',
+      color: string,
+    ) => {
+      onSettingsChange({
+        ...settings,
+        metricColors: {
+          ...settings.metricColors,
+          [metric]: {
+            ...settings.metricColors?.[metric],
+            [range]: color,
+          },
+        },
+      });
+    };
+
+    const updateRowSetting = (
+      key: keyof DisplaySettings['visibleRows'],
+      value: boolean,
+    ) => {
+      onSettingsChange({
+        ...settings,
+        visibleRows: { ...settings.visibleRows, [key]: value },
+      });
+    };
+
+    return (
+      <div className="tracker-display-dropdown" ref={dropdownRef}>
+        <button
+          className={`tracker-display-dropdown-trigger ${isOpen ? 'active' : ''}`}
+          onClick={handleToggle}
+        >
+          <span>Display</span>
+          <ChevronDown
+            size={16}
+            className={`tracker-display-dropdown-arrow ${isOpen ? 'open' : ''}`}
+            aria-hidden="true"
+          />
+        </button>
+
+        {isOpen && (
+          <div
+            className={`tracker-display-dropdown-content ${isVisible ? 'visible' : ''}`}
+          >
+            <div className="tracker-display-section">
+              <h4 className="tracker-display-section-title">Metrics</h4>
+              <div className="tracker-metrics-size-options">
+                <button
+                  className={`tracker-small-size-option ${settings.metricSize === 'small' ? 'active' : ''}`}
+                  onClick={() => updateSetting('metricSize', 'small')}
+                >
+                  MC 123K
+                  <br />
+                  <span className="tracker-size-label">Small</span>
+                </button>
+                <button
+                  className={`tracker-large-size-option ${settings.metricSize === 'large' ? 'active' : ''}`}
+                  onClick={() => updateSetting('metricSize', 'large')}
+                >
+                  MC 123K
+                  <br />
+                  <span className="tracker-size-label">Large</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="tracker-display-section">
+              <h4 className="tracker-display-section-title">Quick Buy</h4>
+              <div className="tracker-quickbuy-size-options">
+                <button
+                  className={`tracker-quickbuy-option ${settings.quickBuySize === 'small' ? 'active' : ''}`}
+                  onClick={() => updateSetting('quickBuySize', 'small')}
+                >
+                  <div
+                    className={`tracker-quickbuy-preview-button-small ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
+                  >
+                    <img
+                      className="tracker-quickbuy-preview-button-lightning-small"
+                      src={lightning}
+                      alt=""
+                    />
+                    7
+                  </div>
+                  Small
+                </button>
+                <button
+                  className={`tracker-quickbuy-option ${settings.quickBuySize === 'large' ? 'active' : ''}`}
+                  onClick={() => updateSetting('quickBuySize', 'large')}
+                >
+                  <div
+                    className={`tracker-quickbuy-preview-button-large ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
+                  >
+                    <img
+                      className="tracker-quickbuy-preview-button-lightning-large"
+                      src={lightning}
+                      alt=""
+                    />
+                    7
+                  </div>
+                  Large
+                </button>
+                <button
+                  className={`tracker-quickbuy-option ${settings.quickBuySize === 'mega' ? 'active' : ''}`}
+                  onClick={() => updateSetting('quickBuySize', 'mega')}
+                >
+                  <div
+                    className={`tracker-quickbuy-preview-button-mega ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
+                  >
+                    <img
+                      className="tracker-quickbuy-preview-button-lightning-mega"
+                      src={lightning}
+                      alt=""
+                    />
+                    7
+                  </div>
+                  Mega
+                </button>
+                <button
+                  className={`tracker-quickbuy-option ${settings.quickBuySize === 'ultra' ? 'active' : ''}`}
+                  onClick={() => updateSetting('quickBuySize', 'ultra')}
+                >
+                  <div
+                    className={`tracker-quickbuy-preview-button-ultra ultra-${settings.ultraStyle} ultra-text-${settings.ultraColor}`}
+                  >
+                    <img
+                      className="tracker-quickbuy-preview-button-lightning-ultra"
+                      src={lightning}
+                      alt=""
+                    />
+                    7
+                  </div>
+                  Ultra
+                </button>
+              </div>
+
+              {(settings.quickBuySize === 'small' ||
+                settings.quickBuySize === 'large' ||
+                settings.quickBuySize === 'mega') && (
+                  <div className="tracker-quickbuy-style-toggles">
+                    <div className="tracker-style-toggle-row">
+                      <span className="tracker-style-toggle-label">Style</span>
+                      <div className="tracker-style-toggle-buttons">
+                        <button
+                          className={`tracker-style-toggle-btn ${settings.quickBuyStyle === 'color' ? 'active' : ''}`}
+                          onClick={() => updateSetting('quickBuyStyle', 'color')}
+                        >
+                          Color
+                        </button>
+                        <button
+                          className={`tracker-style-toggle-btn ${settings.quickBuyStyle === 'grey' ? 'active' : ''}`}
+                          onClick={() => updateSetting('quickBuyStyle', 'grey')}
+                        >
+                          Grey
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              {settings.quickBuySize === 'ultra' && (
+                <div className="tracker-ultra-style-controls">
+                  <div className="tracker-style-toggle-row">
+                    <span className="tracker-style-toggle-label">Ultra Style:</span>
+                    <div className="tracker-style-toggle-buttons">
+                      <button
+                        className={`tracker-style-toggle-btn ${settings.ultraStyle === 'default' ? 'active' : ''}`}
+                        onClick={() => updateSetting('ultraStyle', 'default')}
+                      >
+                        Default
+                      </button>
+                      <button
+                        className={`tracker-style-toggle-btn ${settings.ultraStyle === 'glowing' ? 'active' : ''}`}
+                        onClick={() => updateSetting('ultraStyle', 'glowing')}
+                      >
+                        Glowing
+                      </button>
+                      <button
+                        className={`tracker-style-toggle-btn ${settings.ultraStyle === 'border' ? 'active' : ''}`}
+                        onClick={() => updateSetting('ultraStyle', 'border')}
+                      >
+                        Border
+                      </button>
+                    </div>
+                  </div>
+                  <div className="tracker-style-toggle-row">
+                    <span className="tracker-style-toggle-label">Text Color:</span>
+                    <div className="tracker-style-toggle-buttons">
+                      <button
+                        className={`tracker-style-toggle-btn ${settings.ultraColor === 'color' ? 'active' : ''}`}
+                        onClick={() => updateSetting('ultraColor', 'color')}
+                      >
+                        Color
+                      </button>
+                      <button
+                        className={`tracker-style-toggle-btn ${settings.ultraColor === 'grey' ? 'active' : ''}`}
+                        onClick={() => updateSetting('ultraColor', 'grey')}
+                      >
+                        Grey
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="tracker-display-tabs">
+              <button
+                className={`tracker-display-tab ${activeTab === 'layout' ? 'active' : ''}`}
+                onClick={() => setActiveTab('layout')}
+              >
+                Layout
+              </button>
+              <button
+                className={`tracker-display-tab ${activeTab === 'metrics' ? 'active' : ''}`}
+                onClick={() => setActiveTab('metrics')}
+              >
+                Metrics
+              </button>
+              <button
+                className={`tracker-display-tab ${activeTab === 'row' ? 'active' : ''}`}
+                onClick={() => setActiveTab('row')}
+              >
+                Row
+              </button>
+              <button
+                className={`tracker-display-tab ${activeTab === 'extras' ? 'active' : ''}`}
+                onClick={() => setActiveTab('extras')}
+              >
+                Extras
+              </button>
+            </div>
+
+            <div className="tracker-display-content">
+              {activeTab === 'layout' && (
+                <div>
+                  <div className="tracker-display-toggles">
+                    <div className="tracker-toggle-item">
+                      <label className="tracker-toggle-label">
+                        <Hash size={16} />
+                        No Decimals
+                      </label>
+                      <div
+                        className={`tracker-toggle-switch ${settings.noDecimals ? 'active' : ''}`}
+                        onClick={() =>
+                          updateSetting('noDecimals', !settings.noDecimals)
+                        }
+                      >
+                        <div className="tracker-toggle-slider" />
+                      </div>
+                    </div>
+
+                    <div className="tracker-toggle-item">
+                      <label className="tracker-toggle-label">
+                        <EyeOff size={16} />
+                        Hide Hidden Tokens
+                      </label>
+                      <div
+                        className={`tracker-toggle-switch ${settings.hideHiddenTokens ? 'active' : ''}`}
+                        onClick={() =>
+                          updateSetting(
+                            'hideHiddenTokens',
+                            !settings.hideHiddenTokens,
+                          )
+                        }
+                      >
+                        <div className="tracker-toggle-slider" />
+                      </div>
+                    </div>
+
+                    <div className="tracker-toggle-item">
+                      <label className="tracker-toggle-label">
+                        <Image size={16} />
+                        Square Images
+                      </label>
+                      <div
+                        className={`tracker-toggle-switch ${settings.squareImages ? 'active' : ''}`}
+                        onClick={() =>
+                          updateSetting('squareImages', !settings.squareImages)
+                        }
+                      >
+                        <div className="tracker-toggle-slider" />
+                      </div>
+                    </div>
+
+                    <div className="tracker-toggle-item">
+                      <label className="tracker-toggle-label">
+                        <BarChart3 size={16} />
+                        Progress Ring
+                      </label>
+                      <div
+                        className={`tracker-toggle-switch ${settings.progressBar ? 'active' : ''}`}
+                        onClick={() =>
+                          updateSetting('progressBar', !settings.progressBar)
+                        }
+                      >
+                        <div className="tracker-toggle-slider" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="tracker-customize-section">
+                    <h4 className="tracker-display-section-title">Customize rows</h4>
+                    <div className="tracker-row-toggles">
+                      {(
+                        [
+                          ['marketCap', 'Market Cap'],
+                          ['volume', 'Volume'],
+                          ['fees', 'Fees'],
+                          ['tx', 'TX'],
+                          ['socials', 'Socials'],
+                          ['holders', 'Holders'],
+                          ['proTraders', 'Pro Traders'],
+                          ['devMigrations', 'Dev Migrations'],
+                          ['top10Holders', 'Remaining'],
+                          ['devHolding', 'Price'],
+                          ['snipers', 'Last Txn Time'],
+                        ] as Array<[keyof DisplaySettings['visibleRows'], string]>
+                      ).map(([k, label]) => (
+                        <div
+                          key={k}
+                          className={`tracker-row-toggle ${settings.visibleRows[k] ? 'active' : ''}`}
+                          onClick={() =>
+                            updateRowSetting(k, !settings.visibleRows[k])
+                          }
+                        >
+                          <span className="tracker-row-toggle-label">{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'metrics' && (
+                <div>
+                  {(['marketCap', 'volume', 'holders'] as const).map((metric) => (
+                    <div className="tracker-metrics-display-section" key={metric}>
+                      <h4 className="tracker-display-section-title">
+                        {metric === 'marketCap'
+                          ? 'Market Cap'
+                          : metric === 'volume'
+                            ? 'Volume'
+                            : 'Holders'}
+                      </h4>
+                      <div className="tracker-metric-color-options">
+                        {(['range1', 'range2', 'range3'] as const).map(
+                          (range, idx) => (
+                            <div className="tracker-metric-color-option">
+                              <div className="tracker-metric-color-item" key={range}>
+                                <div className="tracker-display-metric-value">
+                                  {metric === 'marketCap'
+                                    ? idx === 0
+                                      ? '30000'
+                                      : idx === 1
+                                        ? '150000'
+                                        : 'Above'
+                                    : metric === 'volume'
+                                      ? idx === 0
+                                        ? '1000'
+                                        : idx === 1
+                                          ? '2000'
+                                          : 'Above'
+                                      : idx === 0
+                                        ? '10'
+                                        : idx === 1
+                                          ? '50'
+                                          : 'Above'}
+                                </div>
+                                <div className="tracker-metric-color-controls">
+                                  <button
+                                    className="tracker-metric-color-square"
+                                    style={{
+                                      backgroundColor:
+                                        (settings.metricColors as any)?.[
+                                        metric
+                                        ]?.[range] || '#ffffff',
+                                    }}
+                                    onClick={(e) =>
+                                      handleMetricColorPickerClick(
+                                        e,
+                                        metric,
+                                        range,
+                                      )
+                                    }
+                                  />
+                                  <button
+                                    className="tracker-metric-reset-btn"
+                                    onClick={() =>
+                                      updateMetricColor(
+                                        metric,
+                                        range,
+                                        metric === 'marketCap'
+                                          ? range === 'range1'
+                                            ? '#d8dcff'
+                                            : range === 'range2'
+                                              ? '#eab308'
+                                              : '#14b8a6'
+                                          : '#ffffff',
+                                      )
+                                    }
+                                  >
+                                    <img
+                                      src={reset}
+                                      alt="Reset"
+                                      className="tracker-reset-icon"
+                                    />
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="tracker-metric-range-label">
+                                {metric === 'marketCap'
+                                  ? idx === 0
+                                    ? '0 - 30K'
+                                    : idx === 1
+                                      ? '30K - 150K'
+                                      : '150K+'
+                                  : metric === 'volume'
+                                    ? idx === 0
+                                      ? '0 - 1K'
+                                      : idx === 1
+                                        ? '1K - 2K'
+                                        : '2K+'
+                                    : idx === 0
+                                      ? '0 - 10'
+                                      : idx === 1
+                                        ? '10 - 50'
+                                        : '50+'}
+                              </div>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activeTab === 'row' && (
+                <div>
+                  <div className="tracker-display-section">
+                    <div className="tracker-display-toggles">
+                      <div className="tracker-toggle-item">
+                        <label className="tracker-toggle-label">
+                          <BarChart3 size={16} />
+                          Color Rows
+                        </label>
+                        <div
+                          className={`tracker-toggle-switch ${settings.colorRows ? 'active' : ''}`}
+                          onClick={() =>
+                            updateSetting('colorRows', !settings.colorRows)
+                          }
+                        >
+                          <div className="tracker-toggle-slider" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'extras' && (
+                <div>
+                  <div className="tracker-extras-display-section">
+                    <h4 className="tracker-display-section-title">Table Layout</h4>
+                    <div className="tracker-column-drag-container">
+                      {safeOrder.map((column, index) => (
+                        <div
+                          key={column}
+                          className={`tracker-column-drag-item ${hiddenColumns.has(column) ? 'tracker-column-hidden' : ''} ${dragOverIndex === index && draggedIndex !== index ? 'tracker-drag-over' : ''}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, index)}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDrop={(e) => handleDrop(e, index)}
+                          onDragEnd={handleDragEnd}
+                          onClick={(e) => handleHide(e, column)}
+                        >
+                          {column === 'new'
+                            ? 'New Pairs'
+                            : column === 'graduating'
+                              ? 'Final Stretch'
+                              : 'Migrated'}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="tracker-extras-display-section">
+                    <h4 className="tracker-display-section-title">
+                      Click Quick Buy Behavior
+                    </h4>
+                    <div className="tracker-quickbuy-behavior-options">
+                      {(['nothing', 'openPage', 'openNewTab'] as const).map(
+                        (mode) => (
+                          <div
+                            key={mode}
+                            className={`tracker-behavior-option ${settings.quickBuyClickBehavior === mode ? 'active' : ''}`}
+                            onClick={() =>
+                              updateSetting('quickBuyClickBehavior', mode)
+                            }
+                          >
+                            <span className="tracker-behavior-label">
+                              {mode === 'nothing'
+                                ? 'Nothing'
+                                : mode === 'openPage'
+                                  ? 'Open Page'
+                                  : 'Open in New Tab'}
+                            </span>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="tracker-extras-display-section">
+                    <div className="tracker-toggle-item">
+                      <label className="tracker-toggle-label">
+                        Second Quick Buy Button
+                      </label>
+                      <div
+                        className={`tracker-toggle-switch ${settings.secondQuickBuyEnabled ? 'active' : ''}`}
+                        onClick={() =>
+                          updateSetting(
+                            'secondQuickBuyEnabled',
+                            !settings.secondQuickBuyEnabled,
+                          )
+                        }
+                      >
+                        <div className="tracker-toggle-slider" />
+                      </div>
+                    </div>
+
+                    {settings.secondQuickBuyEnabled && (
+                      <div className="tracker-second-quickbuy-controls">
+                        <div className="tracker-explorer-quickbuy-container-second">
+                          <span className="tracker-explorer-second-quickbuy-label">
+                            Quick Buy
+                          </span>
+                          <input
+                            type="text"
+                            placeholder="0.0"
+                            value={quickAmountsSecond.new}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setQuickAmountSecond('new', value);
+                              setQuickAmountSecond('graduating', value);
+                              setQuickAmountSecond('graduated', value);
+                            }}
+                            className="tracker-explorer-quickbuy-input-second"
+                          />
+                          <img className="tracker-quickbuy-monad-icon" src={monadicon} />
+                          <div className="tracker-explorer-preset-controls">
+                            {[1, 2, 3].map((p) => (
+                              <button
+                                key={p}
+                                className={`tracker-explorer-preset-pill-second ${activePresetsSecond.new === p ? 'active' : ''}`}
+                                onClick={() => {
+                                  setActivePresetSecond('new', p);
+                                  setActivePresetSecond('graduating', p);
+                                  setActivePresetSecond('graduated', p);
+                                }}
+                              >
+                                P{p}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="tracker-color-input-row">
+                          <div className="tracker-color-input-container">
+                            <div
+                              className="tracker-color-preview"
+                              style={{
+                                backgroundColor: settings.secondQuickBuyColor,
+                              }}
+                              onClick={handleColorPickerClick}
+                            />
+                            <input
+                              type="text"
+                              value={hexInputValue}
+                              onChange={(e) => {
+                                const value = e.target.value
+                                  .replace(/[^0-9A-Fa-f]/g, '')
+                                  .toUpperCase();
+                                setHexInputValue(value);
+
+                                if (value.length === 6) {
+                                  updateSetting(
+                                    'secondQuickBuyColor',
+                                    `#${value}`,
+                                  );
+                                }
+                              }}
+                              onBlur={() => {
+                                if (hexInputValue.length === 3) {
+                                  const expanded = hexInputValue
+                                    .split('')
+                                    .map((c) => c + c)
+                                    .join('');
+                                  updateSetting(
+                                    'secondQuickBuyColor',
+                                    `#${expanded}`,
+                                  );
+                                  setHexInputValue(expanded);
+                                } else if (hexInputValue.length !== 6) {
+                                  setHexInputValue(
+                                    settings.secondQuickBuyColor
+                                      .replace('#', '')
+                                      .toUpperCase(),
+                                  );
+                                }
+                              }}
+                              onFocus={(e) => e.target.select()}
+                              className="tracker-quickbuy-hex-input"
+                              placeholder="FFFFFF"
+                              maxLength={6}
+                            />
+                            <button
+                              className="tracker-refresh-button"
+                              onClick={() =>
+                                updateSetting('secondQuickBuyColor', '#aaaecf')
+                              }
+                              title="Reset to default"
+                              type="button"
+                            >
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {showSecondButtonColorPicker && (
+          <div
+            className="tracker-color-picker-dropdown"
+            style={{
+              top: `${pickerPosition.top}px`,
+              left: `${pickerPosition.left}px`,
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <HexColorPicker
+              color={settings.secondQuickBuyColor}
+              onChange={(color) => updateSetting('secondQuickBuyColor', color)}
+            />
+            <div className="tracker-rgb-inputs">
+              {['R', 'G', 'B'].map((channel, i) => {
+                const currentColor = settings.secondQuickBuyColor;
+                const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
+                const value = parseInt(slice, 16) || 0;
+
+                return (
+                  <div className="tracker-rgb-input-group" key={channel}>
+                    <label>{channel}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="255"
+                      value={value}
+                      onChange={(e) => {
+                        const rgb = [0, 0, 0].map((_, idx) =>
+                          idx === i
+                            ? Math.max(0, Math.min(255, Number(e.target.value)))
+                            : parseInt(
+                              currentColor.slice(1 + idx * 2, 3 + idx * 2),
+                              16,
+                            ),
+                        );
+                        const newColor = `#${rgb
+                          .map((c) => c.toString(16).padStart(2, '0'))
+                          .join('')}`;
+                        updateSetting('secondQuickBuyColor', newColor);
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {showMetricColorPicker && activeMetricPicker && (
+          <div
+            className="tracker-color-picker-dropdown"
+            style={{
+              top: `${metricPickerPosition.top}px`,
+              left: `${metricPickerPosition.left}px`,
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <HexColorPicker
+              color={
+                (settings.metricColors as any)?.[activeMetricPicker.metric]?.[
+                activeMetricPicker.range
+                ] || '#ffffff'
+              }
+              onChange={(color) =>
+                updateMetricColor(
+                  activeMetricPicker.metric,
+                  activeMetricPicker.range,
+                  color,
+                )
+              }
+            />
+            <div className="tracker-rgb-inputs">
+              {['R', 'G', 'B'].map((channel, i) => {
+                const currentColor = settings.secondQuickBuyColor;
+                const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
+                const value = parseInt(slice, 16) || 0;
+
+                return (
+                  <div className="tracker-rgb-input-group" key={channel}>
+                    <label>{channel}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="255"
+                      value={value}
+                      onChange={(e) => {
+                        const rgb = [0, 0, 0].map((_, idx) =>
+                          idx === i
+                            ? Math.max(0, Math.min(255, Number(e.target.value)))
+                            : parseInt(
+                              currentColor.slice(1 + idx * 2, 3 + idx * 2),
+                              16,
+                            ),
+                        );
+                        const newColor = `#${rgb
+                          .map((c) => c.toString(16).padStart(2, '0'))
+                          .join('')}`;
+                        updateSetting('secondQuickBuyColor', newColor);
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
 interface TrackerProps {
   isBlurred: boolean;
@@ -574,6 +1587,9 @@ const Tracker: React.FC<TrackerProps> = ({
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [historicalTrades, setHistoricalTrades] = useState<Record<string, any[]>>({});
   const [isLoadingHistory, setIsLoadingHistory] = useState<Set<string>>(new Set());
+  const [monitorQuickAmount, setMonitorQuickAmount] = useState<string>(
+    () => localStorage.getItem('tracker-monitor-quickbuy') ?? '1'
+  );
   useEffect(() => { trackedWalletsRef.current = trackedWallets; }, [trackedWallets]);
 
   const lastEventTsRef = useRef<number | null>(null);
@@ -585,20 +1601,18 @@ const Tracker: React.FC<TrackerProps> = ({
     lastEventAt: lastEventTsRef.current,
     ...extra
   });
-  
 
-const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveTrade => {
+
+  const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveTrade => {
   const tradeAccountAddr = (trade.account?.id || trade.caller || '').toLowerCase();
   const connectedAddr = account?.address?.toLowerCase();
 
-  // Try to find in tracked wallets first, then check if it's the connected wallet
   const trackedWallet = wallets.find(
     w => w.address.toLowerCase() === tradeAccountAddr
   );
 
   const isConnectedWallet = connectedAddr && tradeAccountAddr === connectedAddr;
 
-  // Use tracked wallet name if found, otherwise use "You" for connected wallet, otherwise use shortened address
   let walletName: string;
   let emoji: string;
 
@@ -620,17 +1634,15 @@ const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveT
   const TOTAL_SUPPLY = 1e9;
   const marketCap = price * TOTAL_SUPPLY;
 
-  // FIX: Better timestamp handling - handles both seconds and milliseconds
+  // Handle both seconds and milliseconds timestamps
   let timestamp = Number(trade.timestamp || trade.block || Date.now() / 1000);
-  // If timestamp is in milliseconds (> year 2100 in seconds), convert to seconds
   if (timestamp > 5000000000) {
     timestamp = timestamp / 1000;
   }
-  // If timestamp is 0 or very small, use current time
   if (timestamp < 1000000000) {
     timestamp = Date.now() / 1000;
   }
-  
+
   const now = Date.now() / 1000;
   const secondsAgo = Math.max(0, now - timestamp);
   let timeAgo = 'now';
@@ -639,24 +1651,20 @@ const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveT
   else if (secondsAgo < 86400) timeAgo = `${Math.floor(secondsAgo / 3600)}h`;
   else timeAgo = `${Math.floor(secondsAgo / 86400)}d`;
 
-  // Get token symbol, name, address, and icon
   const tokenAddress = trade.token?.address || trade.tokenAddress || trade.token?.id || undefined;
   const tokenSymbol = trade.token?.symbol || trade.symbol || 'TKN';
   const tokenName = trade.token?.name || trade.token?.symbol || trade.name || tokenSymbol;
-  
-  // FIX: Enhanced token icon resolution - check multiple sources
+
+  // Enhanced token icon resolution - check multiple sources
   let tokenIcon = trade.tokenIcon || trade.token?.imageUrl || undefined;
-  
-  // If no icon but we have a token address, try to get it from marketsRef
+
   if (!tokenIcon && tokenAddress) {
     const market = marketsRef.current.get(tokenAddress.toLowerCase());
     if (market) {
-      // Check multiple possible icon fields
       tokenIcon = market.imageUrl || (market as any).image;
     }
   }
-  
-  // If still no icon and we have metadataCID, construct the URL
+
   if (!tokenIcon && trade.token?.metadataCID) {
     tokenIcon = `https://pub-8aff0f9ec88b4fff8cdce3f213f21b7f.r2.dev/img/${trade.token.metadataCID}.png`;
   }
@@ -679,9 +1687,8 @@ const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveT
   };
 }, [account?.address]);
 
-  // Quick buy function - buys 1 MON worth of token instantly
   const handleQuickBuy = useCallback(async (tokenAddress: string, tokenSymbol: string, tokenImage?: string) => {
-    const amt = '1'; // Always buy 1 MON worth
+    const amt = monitorQuickAmount || '1';
     const val = BigInt(amt || '0') * 10n ** 18n;
     if (val === 0n) return;
 
@@ -753,9 +1760,8 @@ const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveT
         });
       }
     }
-  }, [sendUserOperationAsync, activechain, terminalRefetch]);
+  }, [sendUserOperationAsync, activechain, terminalRefetch, monitorQuickAmount]);
 
-  const toMon = (x: number) => (x > 1e12 ? x / 1e18 : x);
   const dedupeTrades = (arr: LiveTrade[]) => {
     const seen = new Set<string>();
     const out: LiveTrade[] = [];
@@ -768,7 +1774,6 @@ const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveT
     return out;
   };
 
-  // Copied from TokenExplorer for consistent formatting
   const formatPrice = (p: number, noDecimals = false, isUSD = true) => {
     const prefix = isUSD ? '$' : '';
     const suffix = isUSD ? '' : ' MON';
@@ -820,17 +1825,113 @@ const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveT
   const [isLoadingPortfolioMarkets, setIsLoadingPortfolioMarkets] = useState(false);
   const [walletCurrency, setWalletCurrency] = useState<'USD' | 'MON'>('USD');
 
-  // Monitor column state
   const [quickAmounts, setQuickAmounts] = useState({ launchpad: '', orderbook: '' });
   const [activePresets, setActivePresets] = useState<Record<string, number>>({ launchpad: 1, orderbook: 1 });
   const [pausedColumn, setPausedColumn] = useState<string | null>(null);
   const [mobileActiveColumn, setMobileActiveColumn] = useState<'launchpad' | 'orderbook'>('launchpad');
   const [showColumnDropdown, setShowColumnDropdown] = useState(false);
   const [buyPresets, setBuyPresets] = useState<Record<number, any>>({});
+  const [showTradingPresetsPopup, setShowTradingPresetsPopup] = useState(false);
+
+  const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(() => {
+    const saved = localStorage.getItem('trackerDisplaySettings');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.warn('Failed to parse saved display settings');
+      }
+    }
+    return {
+      metricSize: 'small',
+      quickBuySize: 'small',
+      quickBuyStyle: 'color',
+      ultraStyle: 'default',
+      ultraColor: 'color',
+      hideSearchBar: false,
+      noDecimals: false,
+      hideHiddenTokens: false,
+      squareImages: false,
+      progressBar: false,
+      spacedTables: false,
+      colorRows: false,
+      quickBuyClickBehavior: 'nothing',
+      secondQuickBuyEnabled: false,
+      secondQuickBuyColor: '#aaaecf',
+      metricColors: {
+        marketCap: { range1: '#ff6b6b', range2: '#ffd93d', range3: '#6bcf7f' },
+        volume: { range1: '#ff6b6b', range2: '#ffd93d', range3: '#6bcf7f' },
+        holders: { range1: '#ff6b6b', range2: '#ffd93d', range3: '#6bcf7f' },
+      },
+      visibleRows: {
+        marketCap: true,
+        volume: true,
+        fees: true,
+        tx: true,
+        socials: true,
+        holders: true,
+        proTraders: true,
+        devMigrations: true,
+        top10Holders: true,
+        devHolding: true,
+        fundingTime: true,
+        snipers: true,
+        insiders: true,
+      },
+      columnOrder: [
+        'ticker',
+        'image',
+        'price',
+        'marketCap',
+        'volume',
+        'fees',
+        'tx',
+        'bondingProgress',
+        'age',
+        'quickBuy',
+      ],
+    };
+  });
+
+  const [quickAmountsSecond, setQuickAmountsSecond] = useState<Record<Token['status'], string>>({
+    new: '',
+    graduating: '',
+    graduated: ''
+  });
+
+  const [activePresetsSecond, setActivePresetsSecond] = useState<Record<Token['status'], number>>({
+    new: 1,
+    graduating: 1,
+    graduated: 1
+  });
+
+  useEffect(() => {
+    localStorage.setItem('trackerDisplaySettings', JSON.stringify(displaySettings));
+  }, [displaySettings]);
 
   useEffect(() => {
     const presets = loadBuyPresets();
     setBuyPresets(presets);
+
+    const handleBuyPresetsUpdate = (e: CustomEvent) => {
+      setBuyPresets(e.detail);
+    };
+
+    window.addEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+    return () => {
+      window.removeEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+    };
+  }, []);
+
+  const handleSavePresets = (presets: Record<number, any>) => {
+    saveBuyPresets(presets);
+    setBuyPresets(presets);
+  };
+
+  const handleMonitorQuickAmountChange = useCallback((v: string) => {
+    const clean = v.replace(/[^0-9.]/g, '');
+    setMonitorQuickAmount(clean);
+    localStorage.setItem('tracker-monitor-quickbuy', clean);
   }, []);
 
   const setQuickAmount = (column: string, value: string) => {
@@ -839,6 +1940,14 @@ const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveT
 
   const setActivePreset = (column: string, preset: number) => {
     setActivePresets(prev => ({ ...prev, [column]: preset }));
+  };
+
+  const setQuickAmountSecond = (status: Token['status'], value: string) => {
+    setQuickAmountsSecond(prev => ({ ...prev, [status]: value }));
+  };
+
+  const setActivePresetSecond = (status: Token['status'], preset: number) => {
+    setActivePresetsSecond(prev => ({ ...prev, [status]: preset }));
   };
 
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -954,7 +2063,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     const isTrackedWallet = trackedSetRef.current.has(lowerAccountAddr);
     const isConnectedWallet = connectedAddr && lowerAccountAddr === connectedAddr;
 
-    // Allow trades from either tracked wallets OR the connected wallet
     if (!isTrackedWallet) {
       continue;
     }
@@ -964,7 +2072,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     const amountInWei = BigInt(args.amountIn ?? 0);
     const amountOutWei = BigInt(args.amountOut ?? 0);
 
-    // Calculate price - handle different event types
     let priceWad = BigInt(args.priceNativePerTokenWad ?? args.price ?? args.endPrice ?? args.startPrice ?? 0);
 
     // For LaunchpadTrade events, calculate price from virtualReserves
@@ -980,7 +2087,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     const amountOutEth = Number(amountOutWei) / 1e18;
     const priceEth = Number(priceWad) / 1e18;
 
-    // remove duplicate in order book
     let tokenAddr = String(args.tokenAddress || args.token || args.base || args.asset || args.tokenIn || args.tokenOut || (l as any)?.address || '').toLowerCase() || undefined;
 
     const marketAddr = String(args.market || '').toLowerCase();
@@ -996,30 +2102,25 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     }
 
     const symbol = (args.symbol || args.ticker || '').toString() || undefined;
-    
-    // FIX: Extract timestamp properly - handle both seconds and milliseconds
+
+    // Handle both seconds and milliseconds timestamps
     let ts = Number(l.timestamp || l.block || args.timestamp || Date.now() / 1000);
     if (ts > 5000000000) {
       ts = ts / 1000;
     }
 
-    // prefer live price when available
-    // resolve market id - try token address first since that's most reliable
     const addrLower = tokenAddr ? tokenAddr.toLowerCase() : undefined;
     const symbolLower = (symbol || '').toLowerCase();
 
-    // Try to find the token in marketsRef using address directly first
     const live = addrLower ? marketsRef.current.get(addrLower) : null;
 
-    // Use live price if available, convert to BigInt
     const livePriceWad = live?.price != null && live.price > 0
       ? BigInt(Math.floor(live.price * 1e18))
       : priceWad;
 
-    // FIX: Extract imageUrl from multiple sources
+    // Extract imageUrl from multiple sources, falling back to metadataCID if available
     let imageUrl = args.imageUrl || args.tokenIcon || l.token?.imageUrl || live?.imageUrl;
-    
-    // If we have metadataCID, construct the URL
+
     if (!imageUrl && (args.metadataCID || l.token?.metadataCID)) {
       const cid = args.metadataCID || l.token?.metadataCID;
       imageUrl = `https://pub-8aff0f9ec88b4fff8cdce3f213f21b7f.r2.dev/img/${cid}.png`;
@@ -1056,7 +2157,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       ts, 
       wallet: wallets.find((w: any)=>lower(w.address)===lower(accountAddr||''))?.name, 
       emoji: wallets.find((w: any)=>lower(w.address)===lower(accountAddr||''))?.emoji,
-      imageUrl: imageUrl // Pass imageUrl to upsertMarket
+      imageUrl: imageUrl
     });
   }
 
@@ -1064,7 +2165,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     return;
   }
 
-  // Add the new trades to state
   console.log('[Tracker] push() adding trades to state:', {
     count: toAdd.length,
     trades: toAdd,
@@ -1087,32 +2187,31 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
   trackedWalletTradesRef.current = dedupeTrades([...toAdd, ...(trackedWalletTradesRef.current || [])]);
 
 }, [normalizeTrade, activechain, demoMode.trades, setTrackedWalletTrades, disableDemo]);
-  // safe RPC wrapper to avoid noisy errors
+
   // NOTE: Direct contract event watchers are disabled because Monad RPC doesn't support eth_newFilter/eth_getFilterChanges
-  // Instead, we rely on the app:chainLog event listener below which receives all logs from the blockchain
+  // Instead, we rely on the app:chainLog event listener which receives all logs from the blockchain
   // and filters them client-side. This approach works with all RPC providers.
 
   useEffect(() => {
     saveWalletsToStorage(trackedWallets);
-    // Dispatch custom event for same-window sync with WalletTrackerWidget
     window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: trackedWallets, source: 'tracker' } }));
     setStatus();
   }, [trackedWallets]);
 
-  // Save live trades to localStorage when they change
   useEffect(() => {
     try {
       if (trackedWalletTrades.length > 0) {
         // Keep only the last 500 trades to avoid localStorage size limits
         const tradesToSave = trackedWalletTrades.slice(0, 500);
         localStorage.setItem('tracker_live_trades', JSON.stringify(tradesToSave));
+      } else {
+        localStorage.removeItem('tracker_live_trades');
       }
     } catch (e) {
       console.warn('[Tracker] Failed to save trades to localStorage:', e);
     }
   }, [trackedWalletTrades]);
 
-  // Restore live trades from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem('tracker_live_trades');
@@ -1126,9 +2225,8 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     } catch (e) {
       console.warn('[Tracker] Failed to restore trades from localStorage:', e);
     }
-  }, []); // Run once on mount
+  }, []);
 
-  // Listen for wallet changes from WalletTrackerWidget
   useEffect(() => {
     const handleCustomWalletUpdate = (e: CustomEvent) => {
       if (e.detail && e.detail.source !== 'tracker') {
@@ -1159,8 +2257,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       const results = await Promise.all(addrs.map((a: any) => fetchPortfolio(a).catch(() => null)));
       if (stop) return;
       const pos: Record<string, GqlPosition[]> = {};
-      // Don't update balances from fetchPortfolio since it doesn't fetch native balance
-      // Balance updates come from walletTokenBalances prop via the useEffect below
       results.forEach((w, i) => {
         if (!w) return;
         pos[addrs[i]] = w.positions || [];
@@ -1180,7 +2276,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         const addrs = trackedWalletsRef.current.map((w: any) => w.address);
         if (!addrs.length) return;
 
-        // If we already have addressPositions data, the other effect will populate Monitor.
+        // If we already have addressPositions data, the other effect will populate Monitor
         if (Object.keys(addressPositions).length > 0) return;
 
         const posResults = await Promise.all(addrs.map((a: any) => fetchPortfolio(a).catch(() => null)));
@@ -1263,45 +2359,40 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
           }
         });
 
-        // Merge into marketsRef and flush
         for (const [id, tk] of tokensMap.entries()) marketsRef.current.set(id, tk);
         flushMarketsToState();
       } catch (e) {
-        // ignore
       }
     };
     run();
     return () => { cancelled = true; };
   }, [activeTab, trackedWallets, addressPositions]);
 
-  // Enhanced polling logic with better error handling
   useEffect(() => {
     if (activeTab !== 'monitor') return;
-    
+
     if (SHOW_DEMO_MONITOR) {
       setMonitorTokens(DEMO_MONITOR_TOKENS);
       return;
     }
 
     const fetchMarkets = async () => {
-      // Skip if no wallets to track
       if (trackedWallets.length === 0) {
         setMonitorTokens([]);
+        setTrackedWalletTrades([]);
+        trackedWalletTradesRef.current = [];
         setIsLoadingPortfolioMarkets(false);
         return;
       }
 
       setIsLoadingPortfolioMarkets(true);
 
-      // NOTE: Disabled fetchPortfolioMarketsForWallets because it requires graphqlUrl which is not configured
-      // Monitor tab will use positions from addressPositions state instead (fetched via fetchPortfolio)
+      // NOTE: fetchPortfolioMarketsForWallets is disabled because it requires graphqlUrl which is not configured
+      // Monitor tab uses positions from addressPositions state instead (fetched via fetchPortfolio)
       setIsLoadingPortfolioMarkets(false);
     };
 
-    // Initial fetch
     fetchMarkets();
-
-    // Set up polling
     const interval = setInterval(fetchMarkets, MONITOR_POLL_MS);
 
     return () => clearInterval(interval);
@@ -1309,7 +2400,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
 
   // Populate marketsRef with volume and transaction data from tokensByStatus (TokenExplorer's data source)
   useEffect(() => {
-    // Flatten all tokens from TokenExplorer's state
     const allTokens = [
       ...(tokensByStatus.new || []),
       ...(tokensByStatus.graduating || []),
@@ -1442,11 +2532,9 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       : s;
   };
 
-  // Fetch historical trades for a wallet
   const fetchHistoricalTradesForWallet = useCallback(async (wallet: TrackedWallet) => {
     const walletAddr = wallet.address.toLowerCase();
 
-    // Check if already loading or loaded using functional state update
     let shouldSkip = false;
     setIsLoadingHistory(prev => {
       if (prev.has(walletAddr)) {
@@ -1470,7 +2558,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     try {
       const trades = await fetchRecentTradesForWallet(walletAddr, 100);
 
-      // Convert trades to the same format as trackedWalletTrades
       const normalizedTrades = trades.map((trade: any) => {
         const isBuy = !!trade.isBuy;
         const nativeAmount = Number(isBuy ? trade.amountIn : trade.amountOut) / 1e18;
@@ -1478,7 +2565,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         const TOTAL_SUPPLY = 1e9;
         const marketCap = price * TOTAL_SUPPLY;
 
-        // Handle timestamp
         let timestamp = Number(trade.block || Date.now() / 1000);
         if (timestamp > 5000000000) timestamp = timestamp / 1000;
         if (timestamp < 1000000000) timestamp = Date.now() / 1000;
@@ -1496,7 +2582,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         const tokenName = trade.token?.name || tokenSymbol;
         const metadataCID = trade.token?.metadataCID;
 
-        // metadataCID is actually the full URL, not just the CID
         let tokenIcon = metadataCID || undefined;
 
         return {
@@ -1536,7 +2621,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     }
   }, []);
 
-  // Fetch historical trades for all tracked wallets on mount and when wallets change
   useEffect(() => {
     if (trackedWallets.length > 0) {
       trackedWallets.forEach(wallet => {
@@ -1546,11 +2630,9 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
   }, [trackedWallets, fetchHistoricalTradesForWallet]);
 
   const getFilteredTrades = () => {
-    // Merge live trades with historical trades
     const allHistoricalTrades = Object.values(historicalTrades).flat();
     const allTrades = [...trackedWalletTrades, ...allHistoricalTrades];
 
-    // Remove duplicates based on txHash
     const uniqueTrades = Array.from(
       new Map(allTrades.map(trade => [trade.txHash || trade.id, trade])).values()
     );
@@ -1636,18 +2718,14 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
   };
 
   const getFilteredPositions = (): GqlPosition[] => {
-    // Flatten all positions from all tracked wallets
     const allPositions: GqlPosition[] = [];
 
     Object.entries(addressPositions).forEach(([walletAddr, positions]) => {
-      // Skip positions from wallets that are no longer tracked
       const wallet = trackedWallets.find(w => w.address.toLowerCase() === walletAddr.toLowerCase());
       if (!wallet) return;
 
       positions.forEach(pos => {
-        // Only include positions with remaining tokens
         if (pos.remainingTokens && pos.remainingTokens > 0) {
-          // Add wallet info to position for display
           (pos as any).walletName = wallet.name;
           (pos as any).walletEmoji = wallet.emoji || '👤';
           (pos as any).walletAddress = walletAddr;
@@ -1658,7 +2736,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
 
     let positions = allPositions;
 
-    // Search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       positions = positions.filter((p) =>
@@ -1668,11 +2745,9 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       );
     }
 
-    // Apply monitor filters
     positions = positions.filter(pos => {
       const market = marketsRef.current.get(pos.tokenId.toLowerCase());
 
-      // General filters
       if (monitorFilters.general.lastTransaction) {
         const maxAge = Number(monitorFilters.general.lastTransaction);
         if (!isNaN(maxAge) && market?.lastTransaction) {
@@ -1698,7 +2773,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         }
       }
 
-      // Market filters
       if (monitorFilters.market.marketCapMin) {
         const minMC = Number(monitorFilters.market.marketCapMin);
         if (!isNaN(minMC)) {
@@ -1743,7 +2817,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         }
       }
 
-      // Transaction filters
       if (monitorFilters.transactions.transactionCountMin) {
         const minTx = Number(monitorFilters.transactions.transactionCountMin);
         if (!isNaN(minTx) && market?.txCount !== undefined) {
@@ -1789,7 +2862,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       return true;
     });
 
-    // Apply sorting based on selectedSimpleFilter
     if (selectedSimpleFilter) {
       switch (selectedSimpleFilter) {
         case 'latest':
@@ -1853,15 +2925,12 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
           });
           break;
         default:
-          // Default sort by PnL
           positions.sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0));
       }
     } else {
-      // Default sort by PnL if no simple filter selected
       positions.sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0));
     }
 
-    // Move pinned tokens to top
     const pinned = positions.filter(p => pinnedTokens.has(p.tokenId));
     const unpinned = positions.filter(p => !pinnedTokens.has(p.tokenId));
 
@@ -1876,7 +2945,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         if (items && items.length) ingestExternalTrades(items);
       }).catch(() => {});
     } catch (e) {}
-    // also fetch portfolio positions immediately so Monitor reflects the new wallet
     try {
       (async () => {
         try {
@@ -1890,11 +2958,9 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     setShowAddWalletModal(false);
   };
 
-  // Function to fetch portfolio positions for all tracked wallets with error handling
   const fetchPortfolioMarketsForWallets = async (wallets: TrackedWallet[]) => {
     if (!wallets.length) return [];
 
-    // Check if GraphQL URL is available
     const graphqlUrl = (settings as any).graphqlUrl || (settings as any).api?.graphqlUrl;
     if (!graphqlUrl) {
       console.warn('[Tracker] GraphQL URL not configured - cannot fetch portfolio data');
@@ -1904,8 +2970,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     const allPositions: GqlPosition[] = [];
     let successCount = 0;
     let errorCount = 0;
-    
-    // Fetch portfolio for each tracked wallet
+
     for (const wallet of wallets) {
       try {
         const portfolio = await fetchPortfolio(wallet.address);
@@ -1924,7 +2989,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       return [];
     }
 
-    // Extract unique tokens from positions (using tokenId as key)
     const uniqueTokens = new Map<string, GqlPosition>();
     allPositions.forEach(position => {
       if (position.tokenId && !uniqueTokens.has(position.tokenId)) {
@@ -1932,11 +2996,9 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       }
     });
 
-    // Convert positions to MonitorToken format
     const markets: MonitorToken[] = Array.from(uniqueTokens.values()).map(position => {
-      // Calculate market cap from position data if possible
-      const estimatedMarketCap = position.lastPrice * 1000000000; // Assume 1B total supply
-      
+      const estimatedMarketCap = position.lastPrice * 1000000000;
+
       return {
         id: position.tokenId,
         tokenAddress: position.tokenId,
@@ -1945,8 +3007,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         emoji: getTokenEmoji(position.symbol),
         price: position.lastPrice || 0,
         marketCap: estimatedMarketCap,
-        
-        // Fields not available from portfolio data - set to 0 or defaults
+
         change24h: 0,
         volume24h: 0,
         liquidity: 0,
@@ -1987,7 +3048,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     return markets;
   };
 
-  // Helper function to assign emojis based on token symbol
   const getTokenEmoji = (symbol?: string): string => {
     if (!symbol) return '🪙';
     
@@ -2137,23 +3197,19 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     const walletToRemove = trackedWallets.find(w => w.id === walletToDelete);
     setTrackedWallets(prev => prev.filter(w => w.id !== walletToDelete));
 
-    // Clean up data for deleted wallet
     if (walletToRemove) {
       const addressToRemove = walletToRemove.address.toLowerCase();
 
-      // Remove positions for this wallet
       setAddressPositions(prev => {
         const newPositions = { ...prev };
         delete newPositions[addressToRemove];
         return newPositions;
       });
 
-      // Remove trades for this wallet
       setTrackedWalletTrades((prev: any[]) =>
         prev.filter((trade: any) => trade.walletAddress?.toLowerCase() !== addressToRemove)
       );
 
-      // Remove historical trades for this wallet
       setHistoricalTrades(prev => {
         const newHistoricalTrades = { ...prev };
         delete newHistoricalTrades[addressToRemove];
@@ -2202,7 +3258,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       return newSet;
     });
 
-    // Also hide the token when blacklisting
     handleHideToken(tokenId);
   };
 
@@ -2477,7 +3532,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     } catch (e) {}
   };
 
-  // websocket helpers
   const subscribe = useCallback((ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
     try {
       const reqId = subIdRef.current++;
@@ -3231,20 +4285,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     // Combine spot tokens, graduated tokens, and deduplicated migrated orderbook tokens for orderbook column
     const orderbookPositions = [...aggregatedOrderbookPositions, ...graduatedPositions, ...dedupedMigratedPositions];
 
-    const formatValue = (value: number): string => {
-      const converted = monitorCurrency === 'USD' ? value * monUsdPrice : value;
-      if (converted === 0) return '0';
-      const absNum = Math.abs(converted);
-      const sign = converted < 0 ? '-' : '';
-
-      if (absNum >= 1000000) {
-        return `${sign}${(absNum / 1000000).toFixed(2)}M`;
-      } else if (absNum >= 1000) {
-        return `${sign}${(absNum / 1000).toFixed(2)}K`;
-      }
-      return `${sign}${absNum.toFixed(2)}`;
-    };
-
     const formatTimeAgo = (timestamp: number | undefined): string => {
       if (!timestamp) return '—';
 
@@ -3376,6 +4416,19 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       }
 
       const classes: string[] = ['tracker-monitor-card'];
+
+      // Add displaySettings classes
+      classes.push(`metrics-size-${displaySettings.metricSize}`);
+      if (displaySettings.quickBuySize === 'large') classes.push('large-quickbuy-mode');
+      if (displaySettings.quickBuySize === 'mega') classes.push('mega-quickbuy-mode');
+      if (displaySettings.quickBuySize === 'ultra') {
+        classes.push('ultra-quickbuy-mode');
+        classes.push(`ultra-${displaySettings.ultraStyle}`);
+        classes.push(`ultra-text-${displaySettings.ultraColor}`);
+        if (displaySettings.secondQuickBuyEnabled) {
+          classes.push('ultra-dual-buttons');
+        }
+      }
 
       // Add metric coloring classes
       if (market) {
@@ -3697,44 +4750,49 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
 
                   {/* Additional data section - Holders and Pro Traders */}
                   <div className="explorer-additional-data">
-                    <Tooltip content="Holders">
-                      <div className="explorer-stat-item">
-                        <svg
-                          className="traders-icon"
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
-                        </svg>
-                        <span className="explorer-stat-value">
-                          {market?.holders?.toLocaleString() || '0'}
-                        </span>
-                      </div>
-                    </Tooltip>
+                    {displaySettings.visibleRows.holders && (
+                      <Tooltip content="Holders">
+                        <div className="explorer-stat-item">
+                          <svg
+                            className="traders-icon"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
+                          </svg>
+                          <span className="explorer-stat-value">
+                            {market?.holders?.toLocaleString() || '0'}
+                          </span>
+                        </div>
+                      </Tooltip>
+                    )}
 
-                    <Tooltip content="Pro Traders">
-                      <div className="explorer-stat-item">
-                        <svg
-                          className="pro-traders-icon"
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path d="M 12 2 L 12 4 L 11 4 C 10.4 4 10 4.4 10 5 L 10 10 C 10 10.6 10.4 11 11 11 L 12 11 L 12 13 L 14 13 L 14 11 L 15 11 C 15.6 11 16 10.6 16 10 L 16 5 C 16 4.4 15.6 4 15 4 L 14 4 L 14 2 L 12 2 z M 4 9 L 4 11 L 3 11 C 2.4 11 2 11.4 2 12 L 2 17 C 2 17.6 2.4 18 3 18 L 4 18 L 4 20 L 6 20 L 6 18 L 7 18 C 7.6 18 8 17.6 8 17 L 8 12 C 8 11.4 7.6 11 7 11 L 6 11 L 6 9 L 4 9 z M 18 11 L 18 13 L 17 13 C 16.4 13 16 13.4 16 14 L 16 19 C 16 19.6 16.4 20 17 20 L 18 20 L 18 22 L 20 22 L 20 20 L 21 20 C 21.6 20 22 19.6 22 19 L 22 14 C 22 13.4 21.6 13 21 13 L 20 13 L 20 11 L 18 11 z M 4 13 L 6 13 L 6 16 L 4 16 L 4 13 z" />
-                        </svg>
-                        <span className="explorer-stat-value">
-                          {Math.floor((market?.holders || 0) * 0.15).toLocaleString()}
-                        </span>
-                      </div>
-                    </Tooltip>
+                    {displaySettings.visibleRows.proTraders && (
+                      <Tooltip content="Pro Traders">
+                        <div className="explorer-stat-item">
+                          <svg
+                            className="pro-traders-icon"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path d="M 12 2 L 12 4 L 11 4 C 10.4 4 10 4.4 10 5 L 10 10 C 10 10.6 10.4 11 11 11 L 12 11 L 12 13 L 14 13 L 14 11 L 15 11 C 15.6 11 16 10.6 16 10 L 16 5 C 16 4.4 15.6 4 15 4 L 14 4 L 14 2 L 12 2 z M 4 9 L 4 11 L 3 11 C 2.4 11 2 11.4 2 12 L 2 17 C 2 17.6 2.4 18 3 18 L 4 18 L 4 20 L 6 20 L 6 18 L 7 18 C 7.6 18 8 17.6 8 17 L 8 12 C 8 11.4 7.6 11 7 11 L 6 11 L 6 9 L 4 9 z M 18 11 L 18 13 L 17 13 C 16.4 13 16 13.4 16 14 L 16 19 C 16 19.6 16.4 20 17 20 L 18 20 L 18 22 L 20 22 L 20 20 L 21 20 C 21.6 20 22 19.6 22 19 L 22 14 C 22 13.4 21.6 13 21 13 L 20 13 L 20 11 L 18 11 z M 4 13 L 6 13 L 6 16 L 4 16 L 4 13 z" />
+                          </svg>
+                          <span className="explorer-stat-value">
+                            {Math.floor((market?.holders || 0) * 0.15).toLocaleString()}
+                          </span>
+                        </div>
+                      </Tooltip>
+                    )}
 
-                    <Tooltip content="Dev Migrations">
-                      <div className="explorer-stat-item">
+                    {displaySettings.visibleRows.devMigrations && (
+                      <Tooltip content="Dev Migrations">
+                        <div className="explorer-stat-item">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 24 24"
@@ -3764,6 +4822,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                         </div>
                       </div>
                     </Tooltip>
+                    )}
                   </div>
                 </div>
               </div>
@@ -3772,35 +4831,42 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
               <div className="tracker-monitor-right-section">
                 <div className="tracker-monitor-third-row">
                   <div className="tracker-monitor-metrics-container">
-                    <div className="tracker-monitor-volume">
-                      <span className="tracker-monitor-mc-label">V</span>
-                      <span className="tracker-monitor-mc-value">
-                        {monitorCurrency === 'USD'
-                          ? formatPrice(((market?.volume24h || 0) * monUsdPrice), false, true)
-                          : formatPrice((market?.volume24h || 0), false, false)}
-                      </span>
-                    </div>
-                    <div className="tracker-monitor-market-cap">
-                      <span className="tracker-monitor-mc-label">MC</span>
-                      <span className="tracker-monitor-mc-value">
-                        {monitorCurrency === 'USD'
-                          ? formatPrice((market?.marketCap || pos.lastPrice * 1e9) * monUsdPrice, false, true)
-                          : formatPrice((market?.marketCap || pos.lastPrice * 1e9), false, false)}
-                      </span>
-                    </div>
+                    {displaySettings.visibleRows.volume && (
+                      <div className="tracker-monitor-volume">
+                        <span className="tracker-monitor-mc-label">V</span>
+                        <span className="tracker-monitor-mc-value">
+                          {monitorCurrency === 'USD'
+                            ? formatPrice(((market?.volume24h || 0) * monUsdPrice), displaySettings.noDecimals, true)
+                            : formatPrice((market?.volume24h || 0), displaySettings.noDecimals, false)}
+                        </span>
+                      </div>
+                    )}
+                    {displaySettings.visibleRows.marketCap && (
+                      <div className="tracker-monitor-market-cap">
+                        <span className="tracker-monitor-mc-label">MC</span>
+                        <span className="tracker-monitor-mc-value">
+                          {monitorCurrency === 'USD'
+                            ? formatPrice((market?.marketCap || pos.lastPrice * 1e9) * monUsdPrice, displaySettings.noDecimals, true)
+                            : formatPrice((market?.marketCap || pos.lastPrice * 1e9), displaySettings.noDecimals, false)}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="tracker-monitor-third-row-section">
-                    <div className="tracker-monitor-stat-item">
-                      <span className="tracker-monitor-fee-label">F</span>
-                      <span className="tracker-monitor-fee-total">
-                        {monitorCurrency === 'USD'
-                          ? formatPrice(((market?.volume24h || 0) * monUsdPrice) / 100, false, true)
-                          : formatPrice((market?.volume24h || 0) / 100, false, false)}
-                      </span>
-                    </div>
+                    {displaySettings.visibleRows.fees && (
+                      <div className="tracker-monitor-stat-item">
+                        <span className="tracker-monitor-fee-label">F</span>
+                        <span className="tracker-monitor-fee-total">
+                          {monitorCurrency === 'USD'
+                            ? formatPrice(((market?.volume24h || 0) * monUsdPrice) / 100, displaySettings.noDecimals, true)
+                            : formatPrice((market?.volume24h || 0) / 100, displaySettings.noDecimals, false)}
+                        </span>
+                      </div>
+                    )}
 
-                    <div className="tracker-monitor-tx-bar">
+                    {displaySettings.visibleRows.tx && (
+                      <div className="tracker-monitor-tx-bar">
                       <div className="tracker-monitor-tx-header">
                         <span className="tracker-monitor-tx-label">TX</span>
                         <span className="tracker-monitor-tx-total">
@@ -3833,6 +4899,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                         )}
                       </div>
                     </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -3841,53 +4908,71 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
             {/* Bottom section with stats on left and quickbuy on right */}
             <div className="tracker-monitor-bottom-controls">
               <div className="tracker-monitor-bottom-left">
-                <div className="tracker-monitor-stat-compact">
-                  <span className="stat-label">Remaining</span>
-                  <span className="stat-value">{pos.remainingTokens?.toFixed(2) || 0}</span>
-                </div>
-                <div className="tracker-monitor-stat-compact">
-                  <span className="stat-label">Price</span>
-                  <span className={`stat-value ${monitorCurrency === 'MON' ? 'tracker-monitor-stat-value-with-icon' : ''}`}>
-                    {monitorCurrency === 'USD' ? (
-                      <>$<span>{(pos.lastPrice * monUsdPrice).toFixed(6)}</span></>
-                    ) : (
-                      <>
-                        <span>{pos.lastPrice?.toFixed(6) || 0}</span>
-                        <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
-                      </>
-                    )}
-                  </span>
-                </div>
-                <div className="tracker-monitor-stat-compact">
-                  <span className="stat-label">TX</span>
-                  <span className="stat-value">
-                    {tokenTrades.length}
-                  </span>
-                </div>
-                <div className="tracker-monitor-stat-compact">
-                  <span className="stat-label">Last Txn Time</span>
-                  <span className="stat-value">
-                    {formatTimeAgo(pos.lastTradeTime)}
-                  </span>
-                </div>
+                {displaySettings.visibleRows.top10Holders && (
+                  <div className="tracker-monitor-stat-compact">
+                    <span className="stat-label">Remaining</span>
+                    <span className="stat-value">{pos.remainingTokens?.toFixed(2) || 0}</span>
+                  </div>
+                )}
+                {displaySettings.visibleRows.devHolding && (
+                  <div className="tracker-monitor-stat-compact">
+                    <span className="stat-label">Price</span>
+                    <span className={`stat-value ${monitorCurrency === 'MON' ? 'tracker-monitor-stat-value-with-icon' : ''}`}>
+                      {monitorCurrency === 'USD' ? (
+                        <>$<span>{(pos.lastPrice * monUsdPrice).toFixed(6)}</span></>
+                      ) : (
+                        <>
+                          <span>{pos.lastPrice?.toFixed(6) || 0}</span>
+                          <img src={monadicon} style={{ width: '10px', height: '10px' }} alt="MON" />
+                        </>
+                      )}
+                    </span>
+                  </div>
+                )}
+                {displaySettings.visibleRows.tx && (
+                  <div className="tracker-monitor-stat-compact">
+                    <span className="stat-label">TX</span>
+                    <span className="stat-value">
+                      {tokenTrades.length}
+                    </span>
+                  </div>
+                )}
+                {displaySettings.visibleRows.snipers && (
+                  <div className="tracker-monitor-stat-compact">
+                    <span className="stat-label">Last Txn Time</span>
+                    <span className="stat-value">
+                      {formatTimeAgo(pos.lastTradeTime)}
+                    </span>
+                  </div>
+                )}
               </div>
 
-              <button
-                className="tracker-monitor-quickbuy-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleQuickBuy(pos.tokenId, tokenSymbol, pos.imageUrl);
-                }}
-              >
-                <svg
-                  className="tracker-monitor-quickbuy-icon"
-                  viewBox="0 0 72 72"
-                  fill="currentColor"
-                >
-                  <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86 c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833 c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86 c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18 c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
-                </svg>
-                1 MON
-              </button>
+              {(() => {
+                const sizeClass = `size-${displaySettings.quickBuySize}`;
+                const modeClass = displaySettings.quickBuySize !== 'ultra'
+                  ? `style-${displaySettings.quickBuyStyle}`
+                  : `ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`;
+                const buttonClass = `tracker-monitor-quickbuy-btn ${sizeClass} ${modeClass}`;
+
+                return (
+                  <button
+                    className={buttonClass}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleQuickBuy(pos.tokenId, tokenSymbol, pos.imageUrl);
+                    }}
+                  >
+                    <svg
+                      className="tracker-monitor-quickbuy-icon"
+                      viewBox="0 0 72 72"
+                      fill="currentColor"
+                    >
+                      <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86 c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833 c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86 c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18 c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
+                    </svg>
+                    1 MON
+                  </button>
+                );
+              })()}
             </div>
           </div>
 
@@ -4685,7 +5770,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       </div>
     );
   };
-
+  //react frontend stuff
   const startSelection = (e: React.MouseEvent) => {
       if (e.button !== 0) return;
       
@@ -4795,7 +5880,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
             >
               {monitorCurrency === 'USD' ? 'USD' : 'MON'}
             </button>
-            <button className="tracker-header-button" onClick={() => setpopup(37)}>P1</button>
+            <button className="tracker-header-button" onClick={() => setShowTradingPresetsPopup(true)}>P1</button>
             <div className="tracker-combined-flash-input">
               <button className="tracker-combined-flash-btn" onClick={() => setpopup(33)}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -4805,13 +5890,9 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
               <input
                 type="text"
                 className="tracker-combined-input"
-                placeholder="0.0"
-                onFocus={(e) => e.target.placeholder = ''}
-                onBlur={(e) => {
-                  if (e.target.value === '') {
-                    e.target.placeholder = '0.0';
-                  }
-                }}
+                value={monitorQuickAmount}
+                onChange={(e) => handleMonitorQuickAmountChange(e.target.value)}
+                onFocus={(e) => e.target.select()}
               />
               <img src={monadicon} className="tracker-combined-mon-icon" alt="MON" />
             </div>
@@ -4830,18 +5911,21 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button className="tracker-header-button" onClick={() => setShowMonitorFiltersPopup(true)}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 6h18M7 12h10M10 18h4" />
-              </svg>
-            </button>
+            <DisplayDropdown
+              settings={displaySettings}
+              onSettingsChange={setDisplaySettings}
+              quickAmountsSecond={quickAmountsSecond}
+              setQuickAmountSecond={setQuickAmountSecond}
+              activePresetsSecond={activePresetsSecond}
+              setActivePresetSecond={setActivePresetSecond}
+            />
             <button
               className="tracker-header-button"
               onClick={() => setMonitorCurrency(prev => prev === 'USD' ? 'MON' : 'USD')}
             >
               {monitorCurrency === 'USD' ? 'USD' : 'MON'}
             </button>
-            <button className="tracker-header-button" onClick={() => setpopup(34)}>P1</button>
+            <button className="tracker-header-button" onClick={() => setShowTradingPresetsPopup(true)}>P1</button>
             <div className="tracker-combined-flash-input">
               <button className="tracker-combined-flash-btn" onClick={() => setpopup(33)}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -4851,13 +5935,9 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
               <input
                 type="text"
                 className="tracker-combined-input"
-                placeholder="0.0"
-                onFocus={(e) => e.target.placeholder = ''}
-                onBlur={(e) => {
-                  if (e.target.value === '') {
-                    e.target.placeholder = '0.0';
-                  }
-                }}
+                value={monitorQuickAmount}
+                onChange={(e) => handleMonitorQuickAmountChange(e.target.value)}
+                onFocus={(e) => e.target.select()}
               />
               <img src={monadicon} className="tracker-combined-mon-icon" alt="MON" />
             </div>
@@ -4948,6 +6028,14 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
           onApply={handleApplyMonitorFilters}
           onSimpleSort={setSelectedSimpleFilter}
           initialFilters={monitorFilters}
+        />
+      )}
+
+      {showTradingPresetsPopup && (
+        <TradingPresetsPopup
+          onClose={() => setShowTradingPresetsPopup(false)}
+          buyPresets={buyPresets}
+          onSavePresets={handleSavePresets}
         />
       )}
     </div>

@@ -274,7 +274,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
             }),
             value: 0n,
           },
-        });
+        }, 10000000n);
         lastRefGroupFetch.current = 0;
         await refetch();
       } catch (error) {

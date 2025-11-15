@@ -1,21 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import closebutton from '../../../assets/close_button.png';
 import './TradingPresetsPopup.css';
 
+interface PresetValues {
+  slippage: string;
+  priority: string;
+  bribe?: string;
+  autoFee?: boolean;
+  maxFee?: string;
+  mevMode?: 'off' | 'reduced' | 'secure';
+  rpc?: string;
+}
+
 interface TradingPresetsPopupProps {
   onClose: () => void;
-}   
+  buyPresets: Record<number, PresetValues>;
+  onSavePresets: (presets: Record<number, PresetValues>) => void;
+}
 
-const TradingPresetsPopup: React.FC<TradingPresetsPopupProps> = ({ onClose }) => {
+const TradingPresetsPopup: React.FC<TradingPresetsPopupProps> = ({ onClose, buyPresets, onSavePresets }) => {
   const [activePreset, setActivePreset] = useState(1);
   const [activeSettings, setActiveSettings] = useState<'buy' | 'sell'>('buy');
-  const [slippage, setSlippage] = useState('20');
-  const [priority, setPriority] = useState('0.001');
-  const [bribe, setBribe] = useState('0.001');
-  const [autoFee, setAutoFee] = useState(false);
-  const [maxFee, setMaxFee] = useState('0.1');
-  const [mevMode, setMevMode] = useState<'off' | 'reduced' | 'secure'>('off');
-  const [rpc, setRpc] = useState('https://a...e.com');
+  const [localPresets, setLocalPresets] = useState<Record<number, PresetValues>>(buyPresets);
+
+  const currentPreset = localPresets[activePreset] || { slippage: '20', priority: '0.001' };
+  const [slippage, setSlippage] = useState(currentPreset.slippage);
+  const [priority, setPriority] = useState(currentPreset.priority);
+  const [bribe, setBribe] = useState(currentPreset.bribe || '0.001');
+  const [autoFee, setAutoFee] = useState(currentPreset.autoFee || false);
+  const [maxFee, setMaxFee] = useState(currentPreset.maxFee || '0.1');
+  const [mevMode, setMevMode] = useState<'off' | 'reduced' | 'secure'>(currentPreset.mevMode || 'off');
+  const [rpc, setRpc] = useState(currentPreset.rpc || 'https://a...e.com');
+
+  useEffect(() => {
+    const preset = localPresets[activePreset] || { slippage: '20', priority: '0.001' };
+    setSlippage(preset.slippage);
+    setPriority(preset.priority);
+    setBribe(preset.bribe || '0.001');
+    setAutoFee(preset.autoFee || false);
+    setMaxFee(preset.maxFee || '0.1');
+    setMevMode(preset.mevMode || 'off');
+    setRpc(preset.rpc || 'https://a...e.com');
+  }, [activePreset, localPresets]);
 
   const handleReset = () => {
     setSlippage('20');
@@ -25,22 +51,55 @@ const TradingPresetsPopup: React.FC<TradingPresetsPopupProps> = ({ onClose }) =>
     setMaxFee('0.1');
     setMevMode('off');
     setRpc('https://a...e.com');
+
+    const updated = {
+      ...localPresets,
+      [activePreset]: {
+        slippage: '20',
+        priority: '0.001',
+        bribe: '0.001',
+        autoFee: false,
+        maxFee: '0.1',
+        mevMode: 'off' as const,
+        rpc: 'https://a...e.com',
+      },
+    };
+    setLocalPresets(updated);
   };
 
   const handleApply = () => {
-    // Here you would save the settings
-    console.log('Settings applied:', {
-      preset: activePreset,
-      settings: activeSettings,
-      slippage,
-      priority,
-      bribe,
-      autoFee,
-      maxFee,
-      mevMode,
-      rpc
-    });
+    const updatedPresets = {
+      ...localPresets,
+      [activePreset]: {
+        slippage,
+        priority,
+        bribe,
+        autoFee,
+        maxFee,
+        mevMode,
+        rpc,
+      },
+    };
+
+    onSavePresets(updatedPresets);
     onClose();
+  };
+
+  const handlePresetChange = (preset: number) => {
+    const updated = {
+      ...localPresets,
+      [activePreset]: {
+        slippage,
+        priority,
+        bribe,
+        autoFee,
+        maxFee,
+        mevMode,
+        rpc,
+      },
+    };
+    setLocalPresets(updated);
+    setActivePreset(preset);
   };
 
   return (
@@ -59,7 +118,7 @@ const TradingPresetsPopup: React.FC<TradingPresetsPopupProps> = ({ onClose }) =>
               <button
                 key={preset}
                 className={`trading-preset-tab ${activePreset === preset ? 'active' : ''}`}
-                onClick={() => setActivePreset(preset)}
+                onClick={() => handlePresetChange(preset)}
               >
                 PRESET {preset}
               </button>

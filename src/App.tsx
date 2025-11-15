@@ -73,7 +73,7 @@ import customRound from './utils/customRound';
 import { formatTime } from './utils/formatTime.ts';
 import { formatCommas, formatSubscript } from './utils/numberDisplayFormat';
 import { formatDisplay, formatSig } from './components/OrderCenter/utils/formatDisplay.ts';
-import { loadBuyPresets, loadSellPresets, updateBuyPreset, updateSellPreset } from './utils/presetManager';
+import { loadBuyPresets, loadSellPresets, saveBuyPresets, updateBuyPreset, updateSellPreset } from './utils/presetManager';
 
 // import abis
 import { CrystalDataHelperAbi } from './abis/CrystalDataHelperAbi';
@@ -500,9 +500,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     [],
   );
 
+  const handleSavePresets = useCallback((presets: Record<number, any>) => {
+    saveBuyPresets(presets);
+    setBuyPresets(presets);
+  }, []);
+
   useEffect(() => {
     const handleBuyPresetsUpdate = (event: CustomEvent) => {
       const newPresets = event.detail;
+      setBuyPresets(newPresets);
       if (newPresets[selectedBuyPreset]) {
         setBuySlippageValue(newPresets[selectedBuyPreset].slippage);
         setBuyPriorityFee(newPresets[selectedBuyPreset].priority);
@@ -1554,10 +1560,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     graduated: 1
   });
 
-  const buyPresets = {
-    1: { slippage: '20', priority: '0.01', amount: '5' },
-    2: { slippage: '15', priority: '0.02', amount: '20' },
-    3: { slippage: '10', priority: '0.05', amount: '100' }
+  const [buyPresets, setBuyPresets] = useState(() => loadBuyPresets());
+
+  // Add default amount values for components that expect them
+  const buyPresetsWithAmount = {
+    1: { ...buyPresets[1], amount: '5' },
+    2: { ...buyPresets[2], amount: '20' },
+    3: { ...buyPresets[3], amount: '100' }
   };
 
   const sellPresets = {
@@ -4558,10 +4567,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               distinctSellers
               lastPriceNativePerTokenWad
               lastUpdatedAt
-              trades {
-                id
-                amountIn
-                amountOut
+              trades(first: 50, orderBy: id, orderDirection: desc) { 
+                trade {
+                  id
+                  amountIn
+                  amountOut
+                }
               }
               totalHolders
               devHoldingAmount
@@ -4601,10 +4612,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               distinctSellers
               lastPriceNativePerTokenWad
               lastUpdatedAt
-              trades {
-                id
-                amountIn
-                amountOut
+              trades(first: 50, orderBy: id, orderDirection: desc) { 
+                trade {
+                  id
+                  amountIn
+                  amountOut
+                }
               }
               totalHolders
               devHoldingAmount
@@ -4644,10 +4657,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               distinctSellers
               lastPriceNativePerTokenWad
               lastUpdatedAt
-              trades {
-                id
-                amountIn
-                amountOut
+              trades(first: 50, orderBy: id, orderDirection: desc) { 
+                trade {
+                  id
+                  amountIn
+                  amountOut
+                }
               }
               totalHolders
               devHoldingAmount
@@ -4899,7 +4914,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 ...p,
                 price: endPrice,
                 marketCap: endPrice * TOTAL_SUPPLY,
-                change24h: p?.mini?.[0]?.open ? ((endPrice * 1e9 - p?.mini?.[0]?.open) / (endPrice * 1e9) * 100) : p?.change24h,
+                change24h: p?.mini?.[0]?.open ? ((endPrice * 1e9 - p?.mini?.[0]?.open) / (p?.mini?.[0]?.open) * 100) : p?.change24h,
                 buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
                 sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
                 volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
@@ -5187,7 +5202,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   ...p,
                   price,
                   marketCap: price * TOTAL_SUPPLY,
-                  change24h: p?.mini?.[0]?.open ? ((price * 1e9 - p?.mini?.[0]?.open) / (price * 1e9) * 100) : p?.change24h,
+                  change24h: p?.mini?.[0]?.open ? ((price * 1e9 - p?.mini?.[0]?.open) / (p?.mini?.[0]?.open) * 100) : p?.change24h,
                   buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
                   sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
                   volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
@@ -5815,7 +5830,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             socials.splice(socials.indexOf(discord), 1);
           }
           const website = socials[0];
-          const change24h = (price * 1e9 - m?.mini?.klines[0].open) / (price * 1e9) * 100
+          const change24h = (price * 1e9 - m?.mini?.klines[0].open) / (m?.mini?.klines[0].open) * 100
           setTokenData(p => {
             tempTokenData = {
               ...p,
@@ -10019,14 +10034,16 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   usdVolume
                 }
               }
-              trades(first: 50, orderBy: timestamp, orderDirection: desc) {
-                id
-                amountIn
-                amountOut
-                isBuy
-                timestamp
-                tx
-                endPrice
+              trades(first: 50, orderBy: id, orderDirection: desc) {
+                trade {
+                  id
+                  amountIn
+                  amountOut
+                  isBuy
+                  timestamp
+                  tx
+                  endPrice
+                }
               }
             }
           }
@@ -10206,13 +10223,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             for (const t of trades) {
               if (temptradesByMarket[mk]) {
                 temptradesByMarket[mk].push([
-                  Number(t.amountIn ?? 0),
-                  Number(t.amountOut ?? 0),
-                  t.isBuy ? 1 : 0,
-                  t.endPrice,
+                  Number(t.trade.amountIn ?? 0),
+                  Number(t.trade.amountOut ?? 0),
+                  t.trade.isBuy ? 1 : 0,
+                  t.trade.endPrice,
                   mk,
-                  t.tx,
-                  Number(t.timestamp ?? 0),
+                  t.trade.tx,
+                  Number(t.trade.timestamp ?? 0),
                 ]);
               }
             }
@@ -10254,13 +10271,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 if (trades.length && temptradesByMarket[siblingKey]) {
                   for (const t of trades) {
                     temptradesByMarket[siblingKey].push([
-                      Number(t.amountIn ?? 0),
-                      Number(t.amountOut ?? 0),
-                      t.isBuy ? 1 : 0,
-                      t.endPrice,
+                      Number(t.trade.amountIn ?? 0),
+                      Number(t.trade.amountOut ?? 0),
+                      t.trade.isBuy ? 1 : 0,
+                      t.trade.endPrice,
                       siblingKey,
-                      t.tx,
-                      Number(t.timestamp ?? 0),
+                      t.trade.tx,
+                      Number(t.trade.timestamp ?? 0),
                     ]);
                   }
                 }
@@ -19082,6 +19099,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           <div ref={popupref} style={{ zIndex: 10001 }}>
             <TradingPresetsPopup
               onClose={() => setpopup(0)}
+              buyPresets={buyPresets}
+              onSavePresets={handleSavePresets}
             />
           </div>
         ) : null}
@@ -19229,7 +19248,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               activePresets={activePresets}
               setActivePreset={setActivePreset}
               handleInputFocus={handleInputFocus}
-              buyPresets={buyPresets}
+              buyPresets={buyPresetsWithAmount}
               marketsData={marketsData}
               tokendict={tokendict}
               onMarketSelect={onMarketSelect}
@@ -20740,7 +20759,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                 BigInt(0),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                                true,
+                                false,
                                 BigInt(0),
                                 amountOutSwap,
                                 tokenIn == activeMarket.quoteAddress
@@ -20767,7 +20786,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                 BigInt(0),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                                true,
+                                false,
                                 BigInt(0),
                                 amountOutSwap,
                                 tokenIn == activeMarket.quoteAddress
@@ -20831,7 +20850,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                 BigInt(0),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                                true,
+                                false,
                                 BigInt(0),
                                 amountOutSwap,
                                 tokenIn == activeMarket.quoteAddress
@@ -20862,7 +20881,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                 BigInt(0),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
                                 activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                                true,
+                                false,
                                 BigInt(0),
                                 amountOutSwap,
                                 tokenIn == activeMarket.quoteAddress
@@ -25822,7 +25841,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         activePresets={activePresets}
         setActivePreset={setActivePreset}
         handleInputFocus={handleInputFocus}
-        buyPresets={buyPresets}
+        buyPresets={buyPresetsWithAmount}
         sellPresets={sellPresets}
         perpsActiveMarketKey={perpsActiveMarketKey}
         setperpsActiveMarketKey={handlePerpsMarketSelect}
@@ -25934,7 +25953,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 tokenData={token}
                 setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
-                buyPresets={buyPresets}
+                buyPresets={buyPresetsWithAmount}
                 sellPresets={sellPresets}
                 monPresets={monPresets}
                 setMonPresets={setMonPresets}
@@ -26437,7 +26456,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         selectedWallets={selectedWallets}
         setSelectedWallets={setSelectedWallets}
         walletTokenBalances={walletTokenBalances}
-        activeWalletPrivateKey={oneCTSigner}
+        address={address}
         activeChain={activechain}
         monUsdPrice={monUsdPrice}
         isTrackerWidgetOpen={isTrackerWidgetOpen}
@@ -26455,6 +26474,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         isWalletTrackerWidgetOpen={isWalletTrackerWidgetOpen}
         onToggleWalletTrackerWidget={setIsWalletTrackerWidgetOpen}
         setpopup={setpopup}
+        createSubWallet={createSubWallet}
       />
     </div>
   );

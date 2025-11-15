@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ArrowUpRight, ChevronDown, ChevronLeft, Plus, Search, Star, X } from 'lucide-react';
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from 'recharts';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { ChevronDown, ChevronLeft, Plus, Search, Star } from 'lucide-react';
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { encodeFunctionData } from "viem";
 import { MaxUint256 } from "ethers";
 import { readContracts } from '@wagmi/core';
@@ -38,7 +38,7 @@ interface LPProps {
   refetch?: () => void;
 }
 
-const performanceData = [
+const defaultPerformanceData = [
   { name: 'Jan', value: 12.4 },
   { name: 'Feb', value: 14.8 },
   { name: 'Mar', value: 18.2 },
@@ -131,6 +131,29 @@ const LP: React.FC<LPProps> = ({
   }, [tokendict]);
 
   const [selectedVaultData, setSelectedVaultData] = useState<any>(undefined);
+  const performanceSeries = useMemo(() => {
+    if (!selectedVaultData || !selectedVaultData.apyHistory) {
+      return defaultPerformanceData;
+    }
+
+    try {
+      const history = selectedVaultData.apyHistory as { timestamp: number; apy: number }[];
+
+      if (!Array.isArray(history) || history.length === 0) {
+        return defaultPerformanceData;
+      }
+
+      return history.map(point => ({
+        name: new Date(point.timestamp * 1000).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+        }),
+        value: Number(point.apy) * 100,
+      }));
+    } catch {
+      return defaultPerformanceData;
+    }
+  }, [selectedVaultData]);
 
   const hasInitializedFavorites = useRef(false);
 
@@ -142,39 +165,90 @@ const LP: React.FC<LPProps> = ({
     (async () => {
       setLoadingVaultDetails(true);
       try {
-        const [vaultDetails, vaultTotalSupply, vaultUserBalance] = (await readContracts(config, {
-          contracts: [
-            { abi: CrystalRouterAbi as any, address: router, functionName: 'getReserves', args: [markets?.[selectedVault]?.address] },
-            { abi: TokenAbi as any, address: markets?.[selectedVault]?.address, functionName: 'totalSupply', args: [] },
-            ...(account.address ? [{
-              abi: TokenAbi as any,
-              address: markets?.[selectedVault]?.address,
-              functionName: 'balanceOf',
-              args: [account.address as `0x${string}`],
-            }] : [])],
-        })) as any[];
-        if (vaultDetails?.status === "success") {
-          const vaultDict = {
-            ...markets?.[selectedVault],
-            quoteBalance: vaultDetails.result[0],
-            baseBalance: vaultDetails.result[1],
-            userBalance: 0n,
-            userShares: 0n,
-            totalShares: vaultTotalSupply.result,
-          }
-          if (account.address) {
-            vaultDict.userBalance = vaultUserBalance.result;
-            vaultDict.userShares = vaultUserBalance.result;
-          }
-          setSelectedVaultData(vaultDict);
+        const marketInfo = markets?.[selectedVault];
+        if (!marketInfo || !marketInfo.address) {
+          setSelectedVaultData(undefined);
+          return;
         }
+
+        const poolAddress = marketInfo.address as `0x${string}`;
+        const poolAddressLower = poolAddress.toLowerCase();
+
+        const res = await fetch(`https://api.crystal.exchange/pools/${poolAddressLower}`);
+        if (!res.ok) {
+          console.error('failed to fetch pool stats for', poolAddressLower);
+          setSelectedVaultData({
+            ...marketInfo,
+          });
+          return;
+        }
+
+        const poolStats = await res.json();
+
+        const contracts: any[] = [
+          {
+            abi: TokenAbi as any,
+            address: poolAddress,
+            functionName: 'totalSupply',
+            args: [],
+          },
+        ];
+
+        const hasAccount = Boolean(account.address);
+        if (hasAccount) {
+          contracts.push({
+            abi: TokenAbi as any,
+            address: poolAddress,
+            functionName: 'balanceOf',
+            args: [account.address as `0x${string}`],
+          });
+        }
+
+        const readResults = (await readContracts(config, {
+          contracts,
+        })) as any[];
+
+        let totalShares = 0n;
+        let userShares = 0n;
+
+        if (readResults[0]?.status === 'success') {
+          totalShares = readResults[0].result as bigint;
+        }
+
+        if (hasAccount && readResults[1]?.status === 'success') {
+          userShares = readResults[1].result as bigint;
+        }
+
+        const reserveQuote = poolStats.reserveQuote != null ? BigInt(poolStats.reserveQuote) : 0n;
+        const reserveBase = poolStats.reserveBase != null ? BigInt(poolStats.reserveBase) : 0n;
+
+        const tvlUsd = Number(poolStats.tvlUsd ?? 0);
+        let userBalanceUsd = 0;
+
+        if (tvlUsd > 0 && totalShares > 0n && userShares > 0n) {
+          const frac = Number(userShares) / Number(totalShares);
+          userBalanceUsd = tvlUsd * frac;
+        }
+
+        const vaultDict = {
+          ...marketInfo,
+          ...poolStats,
+          quoteBalance: reserveQuote,
+          baseBalance: reserveBase,
+          userShares,
+          totalShares,
+          userBalanceUsd,
+        };
+
+        setSelectedVaultData(vaultDict);
       } catch (e) {
         console.error(e);
+        setSelectedVaultData(undefined);
       } finally {
         setLoadingVaultDetails(false);
       }
     })();
-  }, [selectedVault, account.address]);
+  }, [selectedVault, account.address, markets]);
 
   const showVaultDetail = (vault: any) => {
     setSelectedVault(vault.baseAsset + vault.quoteAsset);
@@ -1405,19 +1479,27 @@ const LP: React.FC<LPProps> = ({
                       <div className="lp-detail-stats">
                         <div className="lp-detail-stat">
                           <span className="lp-stat-label">APY</span>
-                          <span className="lp-stat-value">{selectedVaultData.apy}0.00%</span>
+                          <span className="lp-stat-value">
+                            {`${customRound(Number(selectedVaultData.apy24hPercent ?? 0), 2).toLocaleString()}%`}
+                          </span>
                         </div>
                         <div className="lp-detail-stat">
                           <span className="lp-stat-label">TVL</span>
-                          <span className="lp-stat-value">{selectedVaultData.tvl}$0</span>
+                          <span className="lp-stat-value">
+                            {`$${customRound(Number(selectedVaultData.tvlUsd ?? 0), 2).toLocaleString()}`}
+                          </span>
                         </div>
                         <div className="lp-detail-stat">
                           <span className="lp-stat-label">Daily Yield</span>
-                          <span className="lp-stat-value">{selectedVaultData.dailyYield}0.00% </span>
+                          <span className="lp-stat-value">
+                            {`${customRound(Number(selectedVaultData.dailyYieldPercent ?? 0), 2).toLocaleString()}%`}
+                          </span>
                         </div>
                         <div className="lp-detail-stat">
                           <span className="lp-stat-label">Your Balance</span>
-                          <span className="lp-stat-value">${selectedVaultData.userBalance}0.00</span>
+                          <span className="lp-stat-value">
+                            {`$${customRound(Number(selectedVaultData.userBalanceUsd ?? 0), 2).toLocaleString()}`}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1427,7 +1509,7 @@ const LP: React.FC<LPProps> = ({
                         PERFORMANCE
                       </h4>
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={performanceData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                        <AreaChart data={performanceSeries} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                           <defs>
                             <linearGradient id="performanceGrad" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="0%" stopColor="#aaaecf" stopOpacity={0.4} />
