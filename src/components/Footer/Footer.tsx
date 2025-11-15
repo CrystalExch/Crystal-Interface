@@ -558,9 +558,27 @@ const Footer: React.FC<FooterProps> = ({
                         </div>
                       )}
                     </>
-                  ) : (
-                    <div className="wallet-dropdown-no-subwallets">
-                      <p>No wallets found. Create a wallet to get started.</p>
+) : (
+                    <div className="wallet-dropdown-no-subwallets" style={{
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '40px 20px'
+                    }}>
+                      {!activeWalletPrivateKey ? (
+                        <button
+                          onClick={() => {
+                            setpopup(28);
+                            setIsWalletDropdownOpen(false);
+                          }}
+                          className="enable-1ct-button"
+                        >
+                          Enable 1CT and Create Subwallet
+                        </button>
+                      ) : (
+                        <p>No wallets found. Create a wallet to get started.</p>
+                      )}
                     </div>
                   )}
                 </div>

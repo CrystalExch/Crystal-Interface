@@ -10,7 +10,7 @@ import customRound from '../../../utils/customRound';
 import defaultPfp from '../../../assets/leaderboard_default.png';
 import closebutton from '../../../assets/close_button.png';
 import './ReferralSidebar.css';
-import { formatSubscript } from '../../../utils/numberDisplayFormat';
+import { formatSubscript } from '../../../utils/numberDisplayFormat'; 
 
 interface ReferralSidebarProps {
   tokendict: { [key: string]: any };
@@ -300,7 +300,6 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
     setShowEnterCode(true);
     setError('');
   };
-
   return (
     <div className="referral-sidebar">
       <div className="referral-sidebar-header">
@@ -410,7 +409,6 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         </button>
       </div>
 
-      {/* My Referral Link */}
       <div className="my-link-section">
         <div className="ref-section-header">
           <span className="section-title">My Link</span>
@@ -502,7 +500,6 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         )}
       </div>
 
-      {/* Create/Customize Modal - CustomLinkModal Style */}
       {showCreateModal && (
         <div className="custom-modal-overlay" onClick={() => setShowCreateModal(false)}>
           <div className="custom-modal-container" onClick={(e) => e.stopPropagation()}>

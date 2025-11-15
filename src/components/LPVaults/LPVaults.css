@@ -1693,9 +1693,13 @@
   color: #fff
 }
 
-.vault-tab.active,
+.vault-tab.active{
+  color: #fff;
+}
+
 .chart-type-btn.active {
   color: #fff;
+  background-color: #161618;
 }
 
 .vault-deposit-form,
@@ -4547,4 +4551,13 @@
 .time-range-select-button svg.open,
 .vault-management-trigger svg.open {
   transform: rotate(180deg);
+}
+
+
+
+.vault-depositors p,
+.vault-dh p{
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

@@ -18271,9 +18271,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               monUsdPrice={monUsdPrice}
               externalUserStats={memeUserStats}
               currentPrice={currentTokenData.price}
+              refLink={refLink}
             />
           </div>
-
         ) : null}
         {popup === 28 ? (
           <div className="onect-trading-selection-bg">
