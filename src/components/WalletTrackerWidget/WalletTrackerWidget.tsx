@@ -1222,6 +1222,38 @@ const confirmDeleteAll = () => {
             </button>
           </div>
           <div className="wtw-widget-header-right">
+                      {activeTab === 'trades' && (
+            <div className="wtw-header-actions">
+              <button className="wtw-header-button" onClick={() => setpopup?.(33)}>
+                <img className="wtw-settings-image" src={settingsicon} alt="Settings" />
+              </button>
+              <button className="wtw-header-button" onClick={() => setShowFiltersPopup(true)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 6h18M7 12h10M10 18h4" />
+                </svg>
+              </button>
+              <button className="wtw-header-button" onClick={() => setpopup?.(37)}>P1</button>
+              <div className="wtw-combined-flash-input">
+                <button className="wtw-combined-flash-btn" onClick={() => setpopup?.(33)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  </svg>
+                </button>
+                <input
+                  type="text"
+                  className="wtw-combined-input"
+                  placeholder="0.0"
+                  onFocus={(e) => e.target.placeholder = ''}
+                  onBlur={(e) => {
+                    if (e.target.value === '') {
+                      e.target.placeholder = '0.0';
+                    }
+                  }}
+                />
+                <img src={monadicon} className="wtw-combined-mon-icon" alt="MON" />
+              </div>
+            </div>
+          )}
             <Tooltip content="Open Wallet Tracker in a new tab">
               <button
                 className="wtw-open-new-tab-button"
@@ -1250,9 +1282,10 @@ const confirmDeleteAll = () => {
           </div>
         </div>
 
-        <div className="wtw-header">
 
           {activeTab === 'wallets' && (
+                    <div className="wtw-header">
+
             <div className="wtw-header-actions">
               <div className="wtw-search-bar">
                 <div className="wtw-search">
@@ -1285,42 +1318,13 @@ const confirmDeleteAll = () => {
                 Add Wallet
               </button>
             </div>
+          </div>
           )}
 
-          {activeTab === 'trades' && (
-            <div className="wtw-header-actions">
-              <button className="wtw-header-button" onClick={() => setpopup?.(33)}>
-                <img className="wtw-settings-image" src={settingsicon} alt="Settings" />
-              </button>
-              <button className="wtw-header-button" onClick={() => setShowFiltersPopup(true)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 6h18M7 12h10M10 18h4" />
-                </svg>
-              </button>
-              <button className="wtw-header-button" onClick={() => setpopup?.(37)}>P1</button>
-              <div className="wtw-combined-flash-input">
-                <button className="wtw-combined-flash-btn" onClick={() => setpopup?.(33)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                  </svg>
-                </button>
-                <input
-                  type="text"
-                  className="wtw-combined-input"
-                  placeholder="0.0"
-                  onFocus={(e) => e.target.placeholder = ''}
-                  onBlur={(e) => {
-                    if (e.target.value === '') {
-                      e.target.placeholder = '0.0';
-                    }
-                  }}
-                />
-                <img src={monadicon} className="wtw-combined-mon-icon" alt="MON" />
-              </div>
-            </div>
-          )}
 
           {activeTab === 'monitor' && (
+                                <div className="wtw-header">
+
             <div className="wtw-header-actions">
               <button className="wtw-header-button" onClick={() => setShowMonitorFiltersPopup(true)}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1354,8 +1358,9 @@ const confirmDeleteAll = () => {
                 <img src={monadicon} className="wtw-combined-mon-icon" alt="MON" />
               </div>
             </div>
+                    </div>
+
           )}
-        </div>
 
 
         {activeTab === 'monitor' && (

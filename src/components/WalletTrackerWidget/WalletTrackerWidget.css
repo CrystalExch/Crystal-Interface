@@ -294,11 +294,6 @@
   transition: color 0.2s;
 }
 
-
-.wtw-wallet-header-cell.active {
-  color: #d8dcff;
-}
-
 .wtw-wallet-created {
   display: flex;
   align-items: center;
@@ -686,6 +681,7 @@
   display: flex;
   align-items: center;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  border-top:  1px solid rgba(179, 184, 249, 0.1);
   padding: 6px 15px;
   position: sticky;
   top: 0;
