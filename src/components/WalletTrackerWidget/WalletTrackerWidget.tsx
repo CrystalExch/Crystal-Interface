@@ -16,6 +16,7 @@ import { FilterState } from '../Tracker/Tracker';
 import MonitorFiltersPopup, { MonitorFilterState } from '../Tracker/MonitorFiltersPopup/MonitorFiltersPopup';
 import circle from '../../assets/circle_handle.png';
 import lightning from '../../assets/flash.png';
+import SortArrow from '../OrderCenter/SortArrow/SortArrow';
 
 interface GqlPosition {
   tokenId: string;
@@ -311,7 +312,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [dontShowDeleteAgain, setDontShowDeleteAgain] = useState(false);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
-  const [sortBy, setSortBy] = useState<'balance' | 'lastActive' | null>(null);
+  const [sortBy, setSortBy] = useState<'created' | 'name' | 'balance' | 'lastActive' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [walletCurrency, setWalletCurrency] = useState<'USD' | 'MON'>('USD');
 
@@ -651,8 +652,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       window.removeEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
     };
   }, [externalWallets, localWallets]);
-
-  const handleSort = (field: 'balance' | 'lastActive') => {
+  const handleSort = (field: 'created' | 'name' | 'balance' | 'lastActive') => {
     if (sortBy === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -665,20 +665,31 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     if (!sortBy) return wallets;
 
     return [...wallets].sort((a, b) => {
-      let aVal: number, bVal: number;
+      let aVal: number | string, bVal: number | string;
 
       if (sortBy === 'balance') {
         aVal = a.balance || 0;
         bVal = b.balance || 0;
-      } else {
+      } else if (sortBy === 'lastActive') {
         aVal = a.lastActiveAt || 0;
         bVal = b.lastActiveAt || 0;
+      } else if (sortBy === 'created') {
+        aVal = new Date(a.createdAt).getTime();
+        bVal = new Date(b.createdAt).getTime();
+      } else if (sortBy === 'name') {
+        aVal = a.name.toLowerCase();
+        bVal = b.name.toLowerCase();
+      } else {
+        return 0;
       }
 
-      return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+
+      return sortDirection === 'asc' ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
     });
   };
-
   const filteredWallets = getSortedWallets(
     localWallets.filter(
       (w) =>
@@ -1226,16 +1237,16 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
             {activeTab === 'trades' && (
               <div className="wtw-header-actions">
                 <Tooltip content="Live Trade Settings">
-                <button className="wtw-header-button" onClick={() => setpopup?.(33)}>
-                  <img className="wtw-settings-image" src={settingsicon} alt="Settings" />
-                </button>
+                  <button className="wtw-header-button" onClick={() => setpopup?.(33)}>
+                    <img className="wtw-settings-image" src={settingsicon} alt="Settings" />
+                  </button>
                 </Tooltip>
                 <Tooltip content="Filters">
-                <button className="wtw-header-button" onClick={() => setShowFiltersPopup(true)}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M3 6h18M7 12h10M10 18h4" />
-                  </svg>
-                </button>
+                  <button className="wtw-header-button" onClick={() => setShowFiltersPopup(true)}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 6h18M7 12h10M10 18h4" />
+                    </svg>
+                  </button>
                 </Tooltip>
                 <Tooltip content="Presets">
                   <button className="wtw-header-button" onClick={() => setpopup?.(37)}>P1</button>
@@ -1378,24 +1389,37 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
           </div>
         )}
 
-        {/* Content */}
         <div className="wtw-content">
           {activeTab === 'wallets' && (
             <div className="wtw-wallet-manager">
               <div className="wtw-wallets-header" data-wallet-count={filteredWallets.length}>
-                <div className="wtw-wallet-header-cell wtw-wallet-created">Created</div>
-                <div className="wtw-wallet-header-cell wtw-wallet-profile">Name</div>
+                <div
+                  className={`wtw-wallet-header-cell wtw-wallet-created sortable ${sortBy === 'created' ? 'active' : ''}`}
+                  onClick={() => handleSort('created')}
+                >
+                  Created
+                  <SortArrow sortDirection={sortBy === 'created' ? sortDirection : undefined} />
+                </div>
+                <div
+                  className={`wtw-wallet-header-cell wtw-wallet-profile sortable ${sortBy === 'name' ? 'active' : ''}`}
+                  onClick={() => handleSort('name')}
+                >
+                  Name
+                  <SortArrow sortDirection={sortBy === 'name' ? sortDirection : undefined} />
+                </div>
                 <div
                   className={`wtw-wallet-header-cell wtw-wallet-balance sortable ${sortBy === 'balance' ? 'active' : ''}`}
                   onClick={() => handleSort('balance')}
                 >
                   Balance
+                  <SortArrow sortDirection={sortBy === 'balance' ? sortDirection : undefined} />
                 </div>
                 <div
                   className={`wtw-wallet-header-cell wtw-wallet-last-active sortable ${sortBy === 'lastActive' ? 'active' : ''}`}
                   onClick={() => handleSort('lastActive')}
                 >
                   Last Active
+                  <SortArrow sortDirection={sortBy === 'lastActive' ? sortDirection : undefined} />
                 </div>
                 <div
                   className="wtw-wallet-header-cell wtw-wallet-remove sortable"
