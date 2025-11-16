@@ -318,18 +318,9 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [walletCurrency, setWalletCurrency] = useState<'USD' | 'MON'>('USD');
 
-  // Trades tab state
   const [tradeSortField, setTradeSortField] = useState<'amount' | 'marketCap' | null>(null);
   const [tradeSortDirection, setTradeSortDirection] = useState<'asc' | 'desc'>('desc');
-
-  // Monitor tab state
-  const [monitorCurrency, setMonitorCurrency] = useState<'USD' | 'MON'>('USD');
-  const [pinnedTokens, setPinnedTokens] = useState<Set<string>>(new Set());
-  const [monitorSortField, setMonitorSortField] = useState<string | null>(null);
-  const [monitorSortDirection, setMonitorSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [expandedTokenId, setExpandedTokenId] = useState<string | null>(null);
-
-  // Filter popups state
+  const [tradeAmountCurrency, setTradeAmountCurrency] = useState<'USD' | 'MON'>('USD');
   const [showFiltersPopup, setShowFiltersPopup] = useState(false);
   const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState>({
@@ -912,19 +903,18 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   };
 
 
-  const formatPrice = (price: number, noDecimals = false, compact = false) => {
-    if (price >= 1e6) {
-      return `$${(price / 1e6).toFixed(noDecimals ? 0 : 2)}M`;
+  const formatAmount = (amount: number, decimals: number = 2) => {
+    if (amount >= 1e9) {
+      return `${(amount / 1e9).toFixed(decimals)}B`;
     }
-    if (price >= 1e3) {
-      return `$${(price / 1e3).toFixed(noDecimals ? 0 : 2)}K`;
+    if (amount >= 1e6) {
+      return `${(amount / 1e6).toFixed(decimals)}M`;
     }
-    if (price >= 1) {
-      return `$${price.toFixed(noDecimals ? 0 : 2)}`;
+    if (amount >= 1e3) {
+      return `${(amount / 1e3).toFixed(decimals)}K`;
     }
-    return `$${price.toFixed(noDecimals ? 4 : 6)}`;
+    return amount.toFixed(decimals);
   };
-
   const renderLiveTrades = () => {
     const filteredTrades = getFilteredTrades();
 
@@ -932,8 +922,8 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       <div className="wtw-live-trades">
         <div className="wtw-detail-trades-table">
           <div className="wtw-detail-trades-header">
-            <div className="wtw-detail-trades-header-cell wtw-detail-trades-time">Time</div>
-            <div className="wtw-detail-trades-header-cell wtw-detail-trades-account">Account</div>
+            <div className="wtw-detail-trades-header-cell wtw-detail-trades-time"></div>
+            <div className="wtw-detail-trades-header-cell wtw-detail-trades-account">Name</div>
             <div className="wtw-detail-trades-header-cell">Token</div>
             <div
               className={`wtw-detail-trades-header-cell wtw-sortable ${tradeSortField === 'amount' ? 'active' : ''}`}
@@ -959,7 +949,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
               </div>
             ) : (
               filteredTrades.map((trade: any) => (
-                
+
                 <div
                   key={trade.id}
                   className={`wtw-detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
@@ -991,39 +981,50 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                       }}
                     >
                       {trade.tokenIcon && (
-                        <img src={trade.tokenIcon} className="wtw-asset-icon" alt={trade.tokenName || trade.token}  />
+                        <img src={trade.tokenIcon} className="wtw-asset-icon" alt={trade.tokenName || trade.token} />
                       )}
                       <div className="wtw-asset-details">
-                        <div className="wtw-asset-ticker">{trade.tokenName || trade.token}</div>                    
+                        <div className="wtw-asset-ticker">{trade.tokenName || trade.token}</div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="wtw-detail-trades-col">
-                    <span
-                      className={[
-                        'wtw-detail-trades-amount',
-                        trade.type === 'buy' ? 'wtw-amount-buy' : 'wtw-amount-sell'
-                      ].join(' ')}
-                    >
-                      {trade.amount === 0 || isNaN(trade.amount)
-                        ? '$0'
-                        : (() => {
-                          const usd = monUsdPrice ? trade.amount * monUsdPrice : trade.amount;
-                          if (Math.abs(usd) < 1e-8 && usd !== 0) return '$' + usd.toFixed(12).replace(/0+$/, '').replace(/\.$/, '');
-                          return '$' + usd.toLocaleString(undefined, { maximumFractionDigits: 8 });
-                        })()}
-                    </span>
+                  <div
+                    className="wtw-detail-trades-col"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setTradeAmountCurrency(prev => prev === 'USD' ? 'MON' : 'USD')}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {tradeAmountCurrency === 'MON' && (
+                        <img src={monadicon} style={{ width: '14px', height: '14px' }} alt="MON" />
+                      )}
+                      <span
+                        className={[
+                          'wtw-detail-trades-amount',
+                          trade.type === 'buy' ? 'wtw-amount-buy' : 'wtw-amount-sell'
+                        ].join(' ')}
+                      >
+                        {trade.amount === 0 || isNaN(trade.amount)
+                          ? (tradeAmountCurrency === 'USD' ? '$0.00' : '0.00')
+                          : (() => {
+                            if (tradeAmountCurrency === 'USD') {
+                              const usd = monUsdPrice ? trade.amount * monUsdPrice : trade.amount;
+                              return '$' + formatAmount(usd, 2);
+                            } else {
+                              return formatAmount(trade.amount, 2);
+                            }
+                          })()}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="wtw-detail-trades-col" style={{ minWidth: '120px', width: '120px' }}>
+                  <div className="wtw-detail-trades-col" >
                     <span>
                       {trade.marketCap === 0 || isNaN(trade.marketCap)
-                        ? '$0'
+                        ? '$0.0'
                         : (() => {
                           const usd = monUsdPrice ? trade.marketCap * monUsdPrice : trade.marketCap;
-                          if (Math.abs(usd) < 1e-8 && usd !== 0) return '$' + usd.toFixed(12).replace(/0+$/, '').replace(/\.$/, '');
-                          return '$' + usd.toLocaleString(undefined, { maximumFractionDigits: 8 });
+                          return '$' + formatAmount(usd, 1);
                         })()}
                     </span>
                   </div>
@@ -1066,7 +1067,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
           height: `${size.height}px`,
         }}
       >
-        {/* Filters Header */}
         <div className="wtw-filters-header" onMouseDown={handleDragStart}>
           <div className="wtw-tabs">
             <button

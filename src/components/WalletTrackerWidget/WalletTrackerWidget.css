@@ -685,6 +685,7 @@
   z-index: 1;
   min-width: 520px;
   width: 100%;
+  white-space: nowrap;
 }
 
 .wtw-detail-trades-header-cell {
@@ -766,8 +767,8 @@
 
 .wtw-detail-trades-time,
 .wtw-detail-trades-header-cell:nth-child(1) {
-  min-width: 70px;
-  flex: 0 0 70px;
+  min-width: 30px;
+  flex: 0 0 30px;
 }
 
 .wtw-detail-trades-account,
@@ -778,8 +779,8 @@
 
 .wtw-detail-trades-col:nth-child(3),
 .wtw-detail-trades-header-cell:nth-child(3) {
-  min-width: 80px;
-  flex: 0.8;
+  min-width: 120px;
+  flex: 1.5;
 }
 
 .wtw-detail-trades-col:nth-child(4),
@@ -790,8 +791,8 @@
 
 .wtw-detail-trades-col:nth-child(5),
 .wtw-detail-trades-header-cell:nth-child(5) {
-  min-width: 100px;
-  flex: 1.2;
+  min-width: 60px;
+  flex: .3;
   justify-content: flex-end;
 }
 
