@@ -15,6 +15,7 @@ import LiveTradesFiltersPopup from '../Tracker/LiveTradesFiltersPopup/LiveTrades
 import { FilterState } from '../Tracker/Tracker';
 import MonitorFiltersPopup, { MonitorFilterState } from '../Tracker/MonitorFiltersPopup/MonitorFiltersPopup';
 import circle from '../../assets/circle_handle.png';
+import lightning from '../../assets/flash.png';
 
 interface GqlPosition {
   tokenId: string;
@@ -729,14 +730,14 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     setDontShowDeleteAgain(false);
   };
 
-const handleRemoveAll = () => {
-  setShowDeleteAllConfirm(true);
-};
+  const handleRemoveAll = () => {
+    setShowDeleteAllConfirm(true);
+  };
 
-const confirmDeleteAll = () => {
-  setLocalWallets([]);
-  setShowDeleteAllConfirm(false);
-};
+  const confirmDeleteAll = () => {
+    setLocalWallets([]);
+    setShowDeleteAllConfirm(false);
+  };
   const startEditingWallet = (wallet: TrackedWallet) => {
     setEditingWallet(wallet.id);
     setEditingName(wallet.name);
@@ -1222,38 +1223,41 @@ const confirmDeleteAll = () => {
             </button>
           </div>
           <div className="wtw-widget-header-right">
-                      {activeTab === 'trades' && (
-            <div className="wtw-header-actions">
-              <button className="wtw-header-button" onClick={() => setpopup?.(33)}>
-                <img className="wtw-settings-image" src={settingsicon} alt="Settings" />
-              </button>
-              <button className="wtw-header-button" onClick={() => setShowFiltersPopup(true)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 6h18M7 12h10M10 18h4" />
-                </svg>
-              </button>
-              <button className="wtw-header-button" onClick={() => setpopup?.(37)}>P1</button>
-              <div className="wtw-combined-flash-input">
-                <button className="wtw-combined-flash-btn" onClick={() => setpopup?.(33)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            {activeTab === 'trades' && (
+              <div className="wtw-header-actions">
+                <Tooltip content="Live Trade Settings">
+                <button className="wtw-header-button" onClick={() => setpopup?.(33)}>
+                  <img className="wtw-settings-image" src={settingsicon} alt="Settings" />
+                </button>
+                </Tooltip>
+                <Tooltip content="Filters">
+                <button className="wtw-header-button" onClick={() => setShowFiltersPopup(true)}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 6h18M7 12h10M10 18h4" />
                   </svg>
                 </button>
-                <input
-                  type="text"
-                  className="wtw-combined-input"
-                  placeholder="0.0"
-                  onFocus={(e) => e.target.placeholder = ''}
-                  onBlur={(e) => {
-                    if (e.target.value === '') {
-                      e.target.placeholder = '0.0';
-                    }
-                  }}
-                />
-                <img src={monadicon} className="wtw-combined-mon-icon" alt="MON" />
+                </Tooltip>
+                <Tooltip content="Presets">
+                  <button className="wtw-header-button" onClick={() => setpopup?.(37)}>P1</button>
+                </Tooltip>
+                <div className="wtw-combined-flash-input">
+                  <img className="edit-spectra-quick-buy-icon" src={lightning} alt="" />
+
+                  <input
+                    type="text"
+                    className="wtw-combined-input"
+                    placeholder="0.0"
+                    onFocus={(e) => e.target.placeholder = ''}
+                    onBlur={(e) => {
+                      if (e.target.value === '') {
+                        e.target.placeholder = '0.0';
+                      }
+                    }}
+                  />
+                  <img src={monadicon} className="wtw-combined-mon-icon" alt="MON" />
+                </div>
               </div>
-            </div>
-          )}
+            )}
             <Tooltip content="Open Wallet Tracker in a new tab">
               <button
                 className="wtw-open-new-tab-button"
@@ -1283,8 +1287,8 @@ const confirmDeleteAll = () => {
         </div>
 
 
-          {activeTab === 'wallets' && (
-                    <div className="wtw-header">
+        {activeTab === 'wallets' && (
+          <div className="wtw-header">
 
             <div className="wtw-header-actions">
               <div className="wtw-search-bar">
@@ -1300,13 +1304,13 @@ const confirmDeleteAll = () => {
                 </div>
               </div>
               <button
-                className="wtw-header-button"
+                className="wtw-import-button"
                 onClick={() => setShowImportPopup(true)}
               >
                 Import
               </button>
               <button
-                className="wtw-header-button"
+                className="wtw-export-button"
                 onClick={handleExport}
               >
                 Export
@@ -1319,12 +1323,11 @@ const confirmDeleteAll = () => {
               </button>
             </div>
           </div>
-          )}
+        )}
 
 
-          {activeTab === 'monitor' && (
-                                <div className="wtw-header">
-
+        {activeTab === 'monitor' && (
+          <div className="wtw-header">
             <div className="wtw-header-actions">
               <button className="wtw-header-button" onClick={() => setShowMonitorFiltersPopup(true)}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1339,11 +1342,8 @@ const confirmDeleteAll = () => {
               </button>
               <button className="wtw-header-button" onClick={() => setpopup?.(34)}>P1</button>
               <div className="wtw-combined-flash-input">
-                <button className="wtw-combined-flash-btn" onClick={() => setpopup?.(33)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                  </svg>
-                </button>
+                <img className="edit-spectra-quick-buy-icon" src={lightning} alt="" />
+
                 <input
                   type="text"
                   className="wtw-combined-input"
@@ -1358,9 +1358,9 @@ const confirmDeleteAll = () => {
                 <img src={monadicon} className="wtw-combined-mon-icon" alt="MON" />
               </div>
             </div>
-                    </div>
+          </div>
 
-          )}
+        )}
 
 
         {activeTab === 'monitor' && (
@@ -1548,33 +1548,33 @@ const confirmDeleteAll = () => {
 
           {activeTab === 'monitor' && renderMonitor()}
         </div>
-{showDeleteAllConfirm && (
-  <div className="tracker-modal-backdrop" onClick={() => setShowDeleteAllConfirm(false)}>
-    <div className="tracker-modal-container" onClick={(e) => e.stopPropagation()}>
-      <div className="tracker-modal-header">
-        <h3 className="tracker-modal-title">Delete All Wallets</h3>
-        <button className="tracker-modal-close" onClick={() => setShowDeleteAllConfirm(false)}>
-          <img src={closebutton} className="close-button-icon" />
-        </button>
-      </div>
-      <div className="tracker-modal-content">
-        <div className="tracker-delete-warning">
-          <p>Are you sure you want to remove all wallets from tracking?</p>
-          <p>This action cannot be undone.</p>
-        </div>
+        {showDeleteAllConfirm && (
+          <div className="tracker-modal-backdrop" onClick={() => setShowDeleteAllConfirm(false)}>
+            <div className="tracker-modal-container" onClick={(e) => e.stopPropagation()}>
+              <div className="tracker-modal-header">
+                <h3 className="tracker-modal-title">Delete All Wallets</h3>
+                <button className="tracker-modal-close" onClick={() => setShowDeleteAllConfirm(false)}>
+                  <img src={closebutton} className="close-button-icon" />
+                </button>
+              </div>
+              <div className="tracker-modal-content">
+                <div className="tracker-delete-warning">
+                  <p>Are you sure you want to remove all wallets from tracking?</p>
+                  <p>This action cannot be undone.</p>
+                </div>
 
-        <div className="tracker-modal-actions">
-          <button
-            className="tracker-delete-confirm-button"
-            onClick={confirmDeleteAll}
-          >
-            Delete All Wallets
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+                <div className="tracker-modal-actions">
+                  <button
+                    className="tracker-delete-confirm-button"
+                    onClick={confirmDeleteAll}
+                  >
+                    Delete All Wallets
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {showDeleteConfirm && (
           <div className="tracker-modal-backdrop" onClick={() => {
             setShowDeleteConfirm(null);

@@ -7906,10 +7906,10 @@ input::-webkit-inner-spin-button {
   transform: translateX(-50%);
   background-color: rgb(6, 6, 6);
   backdrop-filter: blur(10px);
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.15);
   border-radius: 6px;
   width: 90%;
-  max-width: 450px;
+  max-width: 400px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
@@ -7920,7 +7920,7 @@ input::-webkit-inner-spin-button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 8px 15px;
   border-bottom: 1.5px solid rgba(179, 184, 249, 0.1);
   flex-shrink: 0;
 }
@@ -7978,11 +7978,6 @@ input::-webkit-inner-spin-button {
   transition: all 0.2s;
   box-sizing: border-box;
   margin-bottom: 16px;
-}
-
-.import-wallets-textarea:focus {
-  border-color: rgba(179, 184, 249, 0.2);
-  box-shadow: none;
 }
 
 .import-wallets-textarea::placeholder {

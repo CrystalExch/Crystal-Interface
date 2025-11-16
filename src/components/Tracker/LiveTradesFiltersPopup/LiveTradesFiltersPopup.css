@@ -18,7 +18,7 @@
   border: 1px solid rgba(179, 184, 249, 0.15);
   border-radius: 6px;
   width: 90%;
-  max-width: 420px;
+  max-width: 380px;
   max-height: 90vh;
   overflow: hidden;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
@@ -31,7 +31,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 8px 15px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.15);
   flex-shrink: 0;
 }
@@ -71,7 +71,7 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
   scrollbar-width: thin;
   scrollbar-color: rgba(179, 184, 249, 0.2) transparent;
 }
@@ -143,8 +143,8 @@
   background-color: #d8dcff;
   border-radius: 3px;
   content: '';
-  height: 12px;
-  width: 12px;
+  height: 13px;
+  width: 13px;
   position: absolute;
   left: 2px;
   top: 2px;
@@ -174,7 +174,7 @@
   background: transparent;
   border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 4px;
-  padding: 8px 50px 8px 12px;
+  padding: 4px 40px 4px 8px;
   color: #fff;
   font-size: 0.8rem;
   font-weight: 300;
@@ -205,7 +205,7 @@
 .live-trades-filters-footer {
   display: flex;
   gap: 8px;
-  padding: 16px 20px;
+  padding: 10px 15px;
   border-top: 1px solid rgba(179, 184, 249, 0.15);
   flex-shrink: 0;
 }
