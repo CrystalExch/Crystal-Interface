@@ -566,7 +566,7 @@ const Footer: React.FC<FooterProps> = ({
                       justifyContent: 'center',
                       padding: '40px 20px'
                     }}>
-                      {!activeWalletPrivateKey ? (
+                      {subWallets.length == 0 ? (
                         <button
                           onClick={() => {
                             setpopup(28);
