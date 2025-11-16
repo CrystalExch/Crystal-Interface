@@ -277,7 +277,7 @@
   font-weight: 300;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0px !important;
   padding: 0;
 }
 
@@ -702,14 +702,6 @@
   cursor: pointer;
   user-select: none;
   transition: color 0.2s ease;
-}
-
-.wtw-detail-trades-header-cell.wtw-sortable:hover {
-  color: #fff;
-}
-
-.wtw-detail-trades-header-cell.active {
-  color: #d8dcff;
 }
 
 .wtw-detail-trades-body {
