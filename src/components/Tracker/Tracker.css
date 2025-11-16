@@ -1556,7 +1556,6 @@
   width: 40px; height: 40px; border: 3px solid rgba(170,174,207,0.2); border-top-color: #aaaecf; border-radius: 50%; animation: spin 1s linear infinite;
 }
 
-/* Modals */
 .tracker-modal-backdrop {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75);
   display: flex; align-items: center; justify-content: center; z-index: 12; animation: fadeIn .2s ease-out;
@@ -1596,6 +1595,8 @@
 }
 .tracker-modal-content  {
   padding: 20px;
+  padding-top: 10px;
+  padding-bottom: 15px;
 }
 .tracker-input-section  {
   margin-bottom: 20px;
@@ -1649,7 +1650,10 @@
   margin-bottom: 20px;
 }
 .tracker-delete-warning p  {
-  margin: 8px 0;
+  color: #e0e8fd73;
+  font-weight: 300;
+  letter-spacing: -0.3px;
+  font-size: 0.8rem;
 }
 .tracker-delete-confirm-button {
   background: rgba(235, 112, 112, 0.075);
@@ -1657,14 +1661,15 @@
   border-radius: 20px;
   color: rgb(235, 112, 112);
   cursor: pointer;
-  font-size: 0.85rem;
-  padding: 10px 20px;
+  font-size: .9rem;
+  padding: 6px 20px;
   transition: all 0.2s ease;
   flex: 1;
+  letter-spacing: -0.3px;
 }
 
 .tracker-delete-confirm-button:hover {
-  background: rgba(235, 112, 112, 0.15);
+  background: rgba(235, 112, 112, 0.1);
   color: rgb(255, 107, 107);
 }
 

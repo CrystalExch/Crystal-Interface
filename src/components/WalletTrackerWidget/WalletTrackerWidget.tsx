@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, X } from 'lucide-react';
+import { Search, X, Edit2 } from 'lucide-react';
 import './WalletTrackerWidget.css';
 import monadicon from '../../assets/monadlogo.svg';
 import copy from '../../assets/copy.svg';
@@ -1389,7 +1389,12 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                 >
                   Last Active
                 </div>
-                <div className="wtw-wallet-header-cell wtw-wallet-remove">Remove All</div>
+                <div
+                  className="wtw-wallet-header-cell wtw-wallet-remove sortable"
+                  onClick={handleRemoveAll}
+                >
+                  Remove All
+                </div>
               </div>
 
               <div className="wtw-wallets-container">
@@ -1431,10 +1436,22 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                                   }
                                 }}
                                 autoFocus
+                                onFocus={(e) => e.target.select()}
+                                style={{ width: `${editingName.length * 8 + 12}px` }}
                               />
                             ) : (
-                              <div className="wtw-wallet-name" onClick={() => startEditingWallet(wallet)}>
-                                {wallet.name}
+                              <div className="wtw-wallet-name-display">
+                                <span className="wtw-wallet-name">
+                                  {wallet.name}
+                                </span>
+                                <Edit2
+                                  size={12}
+                                  className="wtw-wallet-name-edit-icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    startEditingWallet(wallet);
+                                  }}
+                                />
                               </div>
                             )}
                             <div className="wtw-wallet-address">
@@ -1463,10 +1480,10 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                             } else {
                               balanceInMON = wallet.balance || 0;
                             }
-                            return balanceInMON.toFixed(2);                            
+                            return balanceInMON.toFixed(2);
                           })()}
                         </span>
-                        
+
                       </div>
 
                       <div className="wtw-wallet-last-active">

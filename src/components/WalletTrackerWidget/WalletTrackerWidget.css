@@ -1,28 +1,4 @@
-/* Wallet Tracker Widget - Compact 560px Version Matching Tracker Exactly */
 
-/* CSS Variables (matching tracker) */
-.wtw-container {
-  --c-text: #fff;
-  --c-muted: #ffffff79;
-  --c-dim: #ffffff54;
-  --c-border: rgba(179, 184, 249, 0.1);
-  --c-gold: #ffd700;
-  --c-buy: rgb(67 254 154);
-  --c-buy-bg: #326e4051;
-  --c-sell: rgb(235, 112, 112);
-  --c-sell-bg: #6e324051;
-  --radius-sm: 6px;
-  --radius: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 20px;
-  --gap-sm: 8px;
-  --gap: 12px;
-  --gap-lg: 16px;
-  --gap-xl: 24px;
-  --tr-fast: 0.2s ease;
-}
-
-/* Container - Fixed positioning like TrackerWidget */
 .wtw-container {
   position: fixed;
   background: rgb(8, 8, 8);
@@ -229,9 +205,9 @@
   align-items: center;
   justify-content: center;
   border: none;
-  background: rgba(178, 183, 224, 0.092);
+  background: rgba(178, 183, 224, 0.05);
   border-radius: 20px;
-  margin: 0 5px;
+  margin-left: 8px;
 }
 
 .wtw-header-button:hover {
@@ -260,6 +236,7 @@
   font-weight: 500;
   letter-spacing: -0.3px;
   white-space: nowrap;
+  margin-left: 8px;
 }
 
 .wtw-add-button:hover {
@@ -317,9 +294,6 @@
   transition: color 0.2s;
 }
 
-.wtw-wallet-header-cell.sortable:hover {
-  color: rgba(255, 255, 255, 0.8);
-}
 
 .wtw-wallet-header-cell.active {
   color: #d8dcff;
@@ -395,17 +369,12 @@
   display: grid;
   grid-template-columns: .4fr 2.2fr 1fr 1fr 1fr;
   align-items: center;
-  padding: 6px 15px;
+  padding: 8px 15px;
   transition: all 0.2s ease;
-  cursor: pointer;
   position: relative;
   min-width: 520px;
   width: 100%;
   gap: 16px;
-}
-
-.wtw-wallet-item:hover {
-  background: rgba(179, 183, 239, 0.05);
 }
 
 .wtw-wallet-created-date {
@@ -414,28 +383,36 @@
   color: #a5a5b1;
 }
 
-.wtw-wallet-name-display {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-  gap: 8px;
-  padding: 4px 6px;
-  padding-right: 4px;
-  padding-left: 0;
-  flex: 1;
+.wtw-wallet-name-edit-icon {
+  color: rgba(255, 255, 255, 0.4);
+  opacity: 0;
+  width: 0;
+  transition: opacity 0.2s ease, width 0.2s ease;
+  flex-shrink: 0;
   overflow: hidden;
+}
+
+.wtw-wallet-name-display:hover .wtw-wallet-name-edit-icon {
+  opacity: 1;
+  width: 12px;
 }
 
 
 .wtw-wallet-name-container {
   display: flex;
-  gap: 2px;
+  gap: 6px;
   min-width: 0;
   flex: 1;
-  gap: 6px;
+  align-items: center;
   margin-left: 3px;
+}
+
+.wtw-wallet-name-display {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 0;
+  overflow: visible;
 }
 
 .wtw-wallet-name {
@@ -445,10 +422,24 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex-shrink: 0;
   max-width: 140px;
 }
 
+.wtw-wallet-name-edit-icon {
+  color: rgba(255, 255, 255, 0.4);
+  opacity: 0;
+  width: 0;
+  transition: opacity 0.2s ease, width 0.2s ease;
+  flex-shrink: 0;
+  overflow: hidden;
+  margin-left: 0;
+}
+
+.wtw-wallet-name-display:hover .wtw-wallet-name-edit-icon {
+  opacity: 1;
+  width: 12px;
+  margin-left: 4px;
+}
 .wtw-wallet-address {
   color: #e0e3f473;
   font-size: 0.75rem;
@@ -487,13 +478,11 @@
 }
 
 .wtw-wallet-name-input {
-  background: rgba(179, 184, 249, 0.1);
-  border: 1px solid rgba(179, 184, 249, 0.3);
-  border-radius: 4px;
+  background: none;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.3);
   color: #fff;
   font-size: 0.85rem;
   font-weight: 300;
-  padding: 4px 8px;
   outline: none;
   letter-spacing: -0.3px;
 }
