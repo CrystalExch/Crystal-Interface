@@ -7887,7 +7887,6 @@ input::-webkit-inner-spin-button {
   }
 }
 
-/* Tracker import wallet popup css */
 .import-wallets-backdrop {
   position: fixed;
   display: flex;
@@ -8018,7 +8017,7 @@ input::-webkit-inner-spin-button {
 
 .import-wallets-button {
   width: 100%;
-  padding: 10px 20px;
+  padding: 6px 20px;
   background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
   border: none;
   border-radius: 20px;
