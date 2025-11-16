@@ -7967,8 +7967,8 @@ input::-webkit-inner-spin-button {
 .import-wallets-textarea {
   width: 100%;
   min-height: 200px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
+  background: none;
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 4px;
   color: #fff;
   padding: 12px;
@@ -8014,11 +8014,7 @@ input::-webkit-inner-spin-button {
   height: 24px;
 }
 
-.import-wallets-button-container {
-  padding-top: 16px;
-  border-top: 1px solid rgba(179, 184, 249, 0.1);
-  margin-top: 8px;
-}
+
 
 .import-wallets-button {
   width: 100%;

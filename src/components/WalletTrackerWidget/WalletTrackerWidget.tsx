@@ -1001,22 +1001,22 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                       {trade.amount === 0 || isNaN(trade.amount)
                         ? '$0'
                         : (() => {
-                            const usd = monUsdPrice ? trade.amount * monUsdPrice : trade.amount;
-                            if (Math.abs(usd) < 1e-8 && usd !== 0) return '$' + usd.toFixed(12).replace(/0+$/, '').replace(/\.$/, '');
-                            return '$' + usd.toLocaleString(undefined, { maximumFractionDigits: 8 });
-                          })()}
+                          const usd = monUsdPrice ? trade.amount * monUsdPrice : trade.amount;
+                          if (Math.abs(usd) < 1e-8 && usd !== 0) return '$' + usd.toFixed(12).replace(/0+$/, '').replace(/\.$/, '');
+                          return '$' + usd.toLocaleString(undefined, { maximumFractionDigits: 8 });
+                        })()}
                     </span>
                   </div>
 
-                  <div className="wtw-detail-trades-col" style={{minWidth: '120px', width: '120px'}}>
+                  <div className="wtw-detail-trades-col" style={{ minWidth: '120px', width: '120px' }}>
                     <span>
                       {trade.marketCap === 0 || isNaN(trade.marketCap)
                         ? '$0'
                         : (() => {
-                            const usd = monUsdPrice ? trade.marketCap * monUsdPrice : trade.marketCap;
-                            if (Math.abs(usd) < 1e-8 && usd !== 0) return '$' + usd.toFixed(12).replace(/0+$/, '').replace(/\.$/, '');
-                            return '$' + usd.toLocaleString(undefined, { maximumFractionDigits: 8 });
-                          })()}
+                          const usd = monUsdPrice ? trade.marketCap * monUsdPrice : trade.marketCap;
+                          if (Math.abs(usd) < 1e-8 && usd !== 0) return '$' + usd.toFixed(12).replace(/0+$/, '').replace(/\.$/, '');
+                          return '$' + usd.toLocaleString(undefined, { maximumFractionDigits: 8 });
+                        })()}
                     </span>
                   </div>
                 </div>
@@ -1170,6 +1170,15 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
   return (
     <>
+      {(isDragging || isResizing) && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 9998,
+          cursor: isDragging ? 'move' : 'resize',
+          userSelect: 'none'
+        }} />
+      )}
       {snapZoneHover && (
         <>
           <div className={`wtw-snap-zone-overlay left ${snapZoneHover === 'left' ? 'active' : ''}`} />
@@ -1187,8 +1196,8 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
           height: `${size.height}px`,
         }}
       >
-      {/* Filters Header */}
-      <div className="wtw-filters-header" onMouseDown={handleDragStart}>
+        {/* Filters Header */}
+        <div className="wtw-filters-header" onMouseDown={handleDragStart}>
           <div className="wtw-tabs">
             <button
               className={`wtw-tab ${activeTab === 'wallets' ? 'active' : ''}`}
@@ -1209,51 +1218,51 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
               Monitor
             </button>
           </div>
-        <div className="wtw-widget-header-right">
-          <Tooltip content="Open Wallet Tracker in a new tab">
-            <button
-              className="wtw-open-new-tab-button"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(`${window.location.origin}/tracker`, '_blank');
-              }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="wtw-link-icon">
-                <path d="M15 3h6v6" />
-                <path d="M10 14 21 3" />
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              </svg>
-            </button>
-          </Tooltip>
-          <Tooltip content="Close">
-            <button className="wtw-filters-close-button" onClick={onClose}>
-              <X size={16} />
-            </button>
-          </Tooltip>
-        </div>
-                  <div className="quickbuy-drag-handle">
+          <div className="wtw-widget-header-right">
+            <Tooltip content="Open Wallet Tracker in a new tab">
+              <button
+                className="wtw-open-new-tab-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(`${window.location.origin}/tracker`, '_blank');
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="wtw-link-icon">
+                  <path d="M15 3h6v6" />
+                  <path d="M10 14 21 3" />
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                </svg>
+              </button>
+            </Tooltip>
+            <Tooltip content="Close">
+              <button className="wtw-filters-close-button" onClick={onClose}>
+                <X size={16} />
+              </button>
+            </Tooltip>
+          </div>
+          <div className="quickbuy-drag-handle">
             <div className="circle-row">
               <img src={circle} className="circle" />
             </div>
           </div>
-      </div>
+        </div>
 
-      <div className="wtw-header">
+        <div className="wtw-header">
 
           {activeTab === 'wallets' && (
             <div className="wtw-header-actions">
-                        <div className="wtw-search-bar">
-            <div className="wtw-search">
-              <Search size={14} className="wtw-search-icon" />
-              <input
-                type="text"
-                className="wtw-search-input"
-                placeholder="Search by name or addr..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
+              <div className="wtw-search-bar">
+                <div className="wtw-search">
+                  <Search size={14} className="wtw-search-icon" />
+                  <input
+                    type="text"
+                    className="wtw-search-input"
+                    placeholder="Search by name or addr..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
               <button
                 className="wtw-header-button"
                 onClick={() => setShowImportPopup(true)}
@@ -1343,10 +1352,10 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
               </div>
             </div>
           )}
-      </div>
+        </div>
 
 
-      {activeTab === 'monitor' && (
+        {activeTab === 'monitor' && (
           <div className="wtw-search-bar">
             <div className="wtw-search">
               <Search size={14} className="wtw-search-icon" />
@@ -1359,16 +1368,14 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
               />
             </div>
           </div>
-      )}
+        )}
 
-      {/* Content */}
-      <div className="wtw-content">
+        {/* Content */}
+        <div className="wtw-content">
           {activeTab === 'wallets' && (
             <div className="wtw-wallet-manager">
-              {/* Table Header - Exact copy of tracker-wallets-header */}
               <div className="wtw-wallets-header" data-wallet-count={filteredWallets.length}>
                 <div className="wtw-wallet-header-cell wtw-wallet-created">Created</div>
-                <div className="wtw-wallet-header-cell wtw-wallet-drag-handle"></div>
                 <div className="wtw-wallet-header-cell wtw-wallet-profile">Name</div>
                 <div
                   className={`wtw-wallet-header-cell wtw-wallet-balance sortable ${sortBy === 'balance' ? 'active' : ''}`}
@@ -1382,9 +1389,9 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                 >
                   Last Active
                 </div>
+                <div className="wtw-wallet-header-cell wtw-wallet-remove">Remove All</div>
               </div>
 
-              {/* Wallet Items Container */}
               <div className="wtw-wallets-container">
                 {filteredWallets.length === 0 ? (
                   <div className="wtw-empty-state">
@@ -1402,22 +1409,10 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                         </span>
                       </div>
 
-                      {/* Drag Handle */}
-                      <div className="wtw-wallet-drag-handle">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="9" cy="5" r="1" />
-                          <circle cx="9" cy="12" r="1" />
-                          <circle cx="9" cy="19" r="1" />
-                          <circle cx="15" cy="5" r="1" />
-                          <circle cx="15" cy="12" r="1" />
-                          <circle cx="15" cy="19" r="1" />
-                        </svg>
-                      </div>
 
-                      {/* Profile */}
                       <div className="wtw-wallet-profile">
                         <div className="wtw-wallet-avatar">
-                          <img src={defaultPfp} alt={wallet.name} />
+                          <span className="wtw-wallet-emoji-avatar">{wallet.emoji}</span>
                         </div>
                         <div className="wtw-wallet-name-display">
                           <div className="wtw-wallet-name-container">
@@ -1455,8 +1450,8 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                         </div>
                       </div>
 
-                      {/* Balance */}
                       <div className="wtw-wallet-balance">
+                        <img src={monadicon} className="wtw-balance-icon" alt="MON" />
                         <span className="wtw-balance-value">
                           {(() => {
                             const b = walletTokenBalances[wallet.address] || walletTokenBalances[wallet.address.toLowerCase()];
@@ -1468,21 +1463,10 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                             } else {
                               balanceInMON = wallet.balance || 0;
                             }
-
-                            const displayValue = walletCurrency === 'USD'
-                              ? (balanceInMON * monUsdPrice)
-                              : balanceInMON;
-
-                            if (walletCurrency === 'USD') {
-                              return `$${displayValue.toFixed(2)}`;
-                            } else {
-                              return displayValue.toFixed(2);
-                            }
+                            return balanceInMON.toFixed(2);                            
                           })()}
                         </span>
-                        {walletCurrency === 'MON' && (
-                          <img src={monadicon} className="wtw-balance-icon" alt="MON" />
-                        )}
+                        
                       </div>
 
                       <div className="wtw-wallet-last-active">
@@ -1538,112 +1522,107 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
           {activeTab === 'trades' && renderLiveTrades()}
 
           {activeTab === 'monitor' && renderMonitor()}
-      </div>
+        </div>
 
-      {/* Delete Confirmation Dialog */}
-      {showDeleteConfirm && (
-        <div className="tracker-modal-backdrop" onClick={() => {
-          setShowDeleteConfirm(null);
-          setDontShowDeleteAgain(false);
-        }}>
-          <div className="tracker-modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="tracker-modal-header">
-              <h3 className="tracker-modal-title">Delete Wallet</h3>
-              <button className="tracker-modal-close" onClick={() => {
-                setShowDeleteConfirm(null);
-                setDontShowDeleteAgain(false);
-              }}>
-                <img src={closebutton} className="close-button-icon" />
-              </button>
-            </div>
-            <div className="tracker-modal-content">
-              <div className="tracker-delete-warning">
-                <p>Are you sure you want to remove this wallet from tracking?</p>
-                <p>This action cannot be undone.</p>
-              </div>
-
-              <div className="checkbox-row">
-                <input
-                  type="checkbox"
-                  className="tracker-delete-checkbox"
-                  id="dontShowDeleteAgain"
-                  checked={dontShowDeleteAgain}
-                  onChange={(e) => setDontShowDeleteAgain(e.target.checked)}
-                />
-                <label className="checkbox-label" htmlFor="dontShowDeleteAgain">
-                  Don't show this confirmation again
-                </label>
-              </div>
-
-              <div className="tracker-modal-actions">
-                <button
-                  className="tracker-delete-confirm-button"
-                  onClick={() => handleDeleteWallet(showDeleteConfirm)}
-                >
-                  Delete Wallet
+        {/* Delete Confirmation Dialog */}
+        {showDeleteConfirm && (
+          <div className="tracker-modal-backdrop" onClick={() => {
+            setShowDeleteConfirm(null);
+            setDontShowDeleteAgain(false);
+          }}>
+            <div className="tracker-modal-container" onClick={(e) => e.stopPropagation()}>
+              <div className="tracker-modal-header">
+                <h3 className="tracker-modal-title">Delete Wallet</h3>
+                <button className="tracker-modal-close" onClick={() => {
+                  setShowDeleteConfirm(null);
+                  setDontShowDeleteAgain(false);
+                }}>
+                  <img src={closebutton} className="close-button-icon" />
                 </button>
+              </div>
+              <div className="tracker-modal-content">
+                <div className="tracker-delete-warning">
+                  <p>Are you sure you want to remove this wallet from tracking?</p>
+                  <p>This action cannot be undone.</p>
+                </div>
+
+                <div className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    className="tracker-delete-checkbox"
+                    id="dontShowDeleteAgain"
+                    checked={dontShowDeleteAgain}
+                    onChange={(e) => setDontShowDeleteAgain(e.target.checked)}
+                  />
+                  <label className="checkbox-label" htmlFor="dontShowDeleteAgain">
+                    Don't show this confirmation again
+                  </label>
+                </div>
+
+                <div className="tracker-modal-actions">
+                  <button
+                    className="tracker-delete-confirm-button"
+                    onClick={() => handleDeleteWallet(showDeleteConfirm)}
+                  >
+                    Delete Wallet
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Live Trades Filters Popup */}
-      {showFiltersPopup && (
-        <LiveTradesFiltersPopup
-          onClose={() => setShowFiltersPopup(false)}
-          onApply={handleApplyFilters}
-          initialFilters={activeFilters}
-        />
-      )}
+        {showFiltersPopup && (
+          <LiveTradesFiltersPopup
+            onClose={() => setShowFiltersPopup(false)}
+            onApply={handleApplyFilters}
+            initialFilters={activeFilters}
+          />
+        )}
 
-      {/* Monitor Filters Popup */}
-      {showMonitorFiltersPopup && (
-        <MonitorFiltersPopup
-          onClose={() => setShowMonitorFiltersPopup(false)}
-          onApply={handleApplyMonitorFilters}
-          initialFilters={monitorFilters}
-        />
-      )}
+        {showMonitorFiltersPopup && (
+          <MonitorFiltersPopup
+            onClose={() => setShowMonitorFiltersPopup(false)}
+            onApply={handleApplyMonitorFilters}
+            initialFilters={monitorFilters}
+          />
+        )}
 
-      {/* Import Wallets Popup */}
-      {showImportPopup && (
+        {showImportPopup && (
           <ImportWalletsPopup
             onClose={() => setShowImportPopup(false)}
             onImport={handleImportWallets}
           />
-      )}
+        )}
 
-      {/* Add Wallet Modal */}
-      {showAddWalletModal && (
+        {showAddWalletModal && (
           <AddWalletModal
             onClose={() => setShowAddWalletModal(false)}
             onAdd={handleAddWallet}
             existingWallets={localWallets}
           />
-      )}
+        )}
 
-      {/* Resize Handles */}
-      {!isSnapped && (
-        <>
-          <div className="wtw-resize-handle top-left" onMouseDown={(e) => handleResizeStart(e, 'top-left')} />
-          <div className="wtw-resize-handle top-right" onMouseDown={(e) => handleResizeStart(e, 'top-right')} />
-          <div className="wtw-resize-handle bottom-left" onMouseDown={(e) => handleResizeStart(e, 'bottom-left')} />
-          <div className="wtw-resize-handle bottom-right" onMouseDown={(e) => handleResizeStart(e, 'bottom-right')} />
-          <div className="wtw-resize-handle top" onMouseDown={(e) => handleResizeStart(e, 'top')} />
-          <div className="wtw-resize-handle bottom" onMouseDown={(e) => handleResizeStart(e, 'bottom')} />
-          <div className="wtw-resize-handle left" onMouseDown={(e) => handleResizeStart(e, 'left')} />
-          <div className="wtw-resize-handle right" onMouseDown={(e) => handleResizeStart(e, 'right')} />
-        </>
-      )}
+        {!isSnapped && (
+          <>
+            <div className="wtw-resize-handle top-left" onMouseDown={(e) => handleResizeStart(e, 'top-left')} />
+            <div className="wtw-resize-handle top-right" onMouseDown={(e) => handleResizeStart(e, 'top-right')} />
+            <div className="wtw-resize-handle bottom-left" onMouseDown={(e) => handleResizeStart(e, 'bottom-left')} />
+            <div className="wtw-resize-handle bottom-right" onMouseDown={(e) => handleResizeStart(e, 'bottom-right')} />
+            <div className="wtw-resize-handle top" onMouseDown={(e) => handleResizeStart(e, 'top')} />
+            <div className="wtw-resize-handle bottom" onMouseDown={(e) => handleResizeStart(e, 'bottom')} />
+            <div className="wtw-resize-handle left" onMouseDown={(e) => handleResizeStart(e, 'left')} />
+            <div className="wtw-resize-handle right" onMouseDown={(e) => handleResizeStart(e, 'right')} />
+          </>
+        )}
 
-      {isSnapped === 'left' && (
-        <div className="wtw-resize-handle right snapped-resize" onMouseDown={(e) => handleResizeStart(e, 'right')} />
-      )}
-      {isSnapped === 'right' && (
-        <div className="wtw-resize-handle left snapped-resize" onMouseDown={(e) => handleResizeStart(e, 'left')} />
-      )}
-    </div>
+        {isSnapped === 'left' && (
+          <div className="wtw-resize-handle right snapped-resize" onMouseDown={(e) => handleResizeStart(e, 'right')} />
+        )}
+        {isSnapped === 'right' && (
+          <div className="wtw-resize-handle left snapped-resize" onMouseDown={(e) => handleResizeStart(e, 'left')} />
+        )}
+      </div>
     </>
   );
 };
