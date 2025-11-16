@@ -17,6 +17,8 @@ import MonitorFiltersPopup, { MonitorFilterState } from '../Tracker/MonitorFilte
 import circle from '../../assets/circle_handle.png';
 import lightning from '../../assets/flash.png';
 import SortArrow from '../OrderCenter/SortArrow/SortArrow';
+import { useNavigate } from 'react-router-dom';
+
 
 interface GqlPosition {
   tokenId: string;
@@ -303,7 +305,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   const resizeStartPosition = useRef({ x: 0, y: 0 });
   const snapHoverTimeout = useRef<NodeJS.Timeout | null>(null);
   const presnapState = useRef<{ position: { x: number; y: number }; size: { width: number; height: number } } | null>(null);
-
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TrackerTab>('wallets');
   const [searchQuery, setSearchQuery] = useState('');
   const [localWallets, setLocalWallets] = useState<TrackedWallet[]>([]);
@@ -816,8 +818,14 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     setMonitorFilters(filters);
   };
 
-  // Trade filtering and sorting - copied from Tracker.tsx
   const getFilteredTrades = () => {
+    console.log('[LiveTrades] Filtering trades:', {
+      totalTrades: allTrades.length,
+      searchQuery,
+      activeFilters,
+      trackedWallets: localWallets.length
+    });
+
     let trades = allTrades.filter((trade: any) => {
       const isBuy = trade.type === 'buy';
       const isSell = trade.type === 'sell';
@@ -864,10 +872,12 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       const query = searchQuery.toLowerCase();
       trades = trades.filter((trade: any) =>
         trade.walletName?.toLowerCase().includes(query) ||
-        trade.token?.toLowerCase().includes(query)
+        trade.token?.toLowerCase().includes(query) ||
+        trade.tokenName?.toLowerCase().includes(query)
       );
     }
 
+    console.log('[LiveTrades] After filtering:', trades.length, 'trades');
     return trades;
   };
 
@@ -901,19 +911,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     });
   };
 
-  const formatValue = (value: number): string => {
-    const converted = monitorCurrency === 'USD' ? value * monUsdPrice : value;
-    if (converted === 0) return '0';
-    const absNum = Math.abs(converted);
-    const sign = converted < 0 ? '-' : '';
-
-    if (absNum >= 1000000) {
-      return `${sign}${(absNum / 1000000).toFixed(2)}M`;
-    } else if (absNum >= 1000) {
-      return `${sign}${(absNum / 1000).toFixed(2)}K`;
-    }
-    return `${sign}${absNum.toFixed(2)}`;
-  };
 
   const formatPrice = (price: number, noDecimals = false, compact = false) => {
     if (price >= 1e6) {
@@ -928,7 +925,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     return `$${price.toFixed(noDecimals ? 4 : 6)}`;
   };
 
-  // Render Live Trades
   const renderLiveTrades = () => {
     const filteredTrades = getFilteredTrades();
 
@@ -963,6 +959,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
               </div>
             ) : (
               filteredTrades.map((trade: any) => (
+                
                 <div
                   key={trade.id}
                   className={`wtw-detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
@@ -975,9 +972,9 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
                   <div className="wtw-detail-trades-col wtw-detail-trades-account">
                     <div className="wtw-detail-trades-avatar">
-                      <div>
-                        <img src={defaultPfp} alt="Avatar" />
-                      </div>
+                      <span style={{ fontSize: '15px' }}>
+                        {trade.emoji}
+                      </span>
                     </div>
                     <span className="wtw-detail-trades-address">
                       {trade.walletName}
@@ -985,23 +982,19 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                   </div>
 
                   <div className="wtw-detail-trades-col">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                      onClick={() => {
+                        if (trade.tokenAddress) {
+                          navigate(`/meme/${trade.tokenAddress}`);
+                        }
+                      }}
+                    >
                       {trade.tokenIcon && (
-                        <img src={trade.tokenIcon} className="wtw-asset-icon" alt={trade.tokenName || trade.token} style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover', background: '#222' }} />
+                        <img src={trade.tokenIcon} className="wtw-asset-icon" alt={trade.tokenName || trade.token}  />
                       )}
                       <div className="wtw-asset-details">
-                        <div className="wtw-asset-ticker">{trade.tokenName || trade.token}</div>
-                        {trade.tokenAddress && (
-                          <a
-                            href={`https://testnet.monadex.xyz/token/${trade.tokenAddress}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: '#b3b8f9', textDecoration: 'none', fontSize: '0.8em' }}
-                            onClick={e => e.stopPropagation()}
-                          >
-                            {trade.tokenAddress.slice(0, 6)}...{trade.tokenAddress.slice(-4)}
-                          </a>
-                        )}
+                        <div className="wtw-asset-ticker">{trade.tokenName || trade.token}</div>                    
                       </div>
                     </div>
                   </div>
@@ -1038,144 +1031,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
               ))
             )}
           </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Render Monitor
-  const renderMonitor = () => {
-    const allPositions = getFilteredPositions();
-
-    // Create positions from tokenList (Orderbook tokens)
-    const spotTokenPositions: GqlPosition[] = [];
-
-    if (walletTokenBalances && tokenList && tokenList.length > 0) {
-      localWallets.forEach(wallet => {
-        const walletBalances = walletTokenBalances[wallet.address] || walletTokenBalances[wallet.address.toLowerCase()];
-        if (!walletBalances) return;
-
-        tokenList.forEach((token: any) => {
-          const tokenAddr = token.address?.toLowerCase();
-          if (!tokenAddr) return;
-
-          let balanceWei = walletBalances[tokenAddr];
-          if (!balanceWei) {
-            const matchingKey = Object.keys(walletBalances).find(k => k.toLowerCase() === tokenAddr);
-            if (matchingKey) {
-              balanceWei = walletBalances[matchingKey];
-            }
-          }
-          if (!balanceWei || balanceWei === 0n) return;
-
-          const decimals = token.decimals || 18;
-          const balance = Number(balanceWei) / (10 ** Number(decimals));
-          if (balance <= 0) return;
-
-          // Get price from marketsData if available
-          let price = 0;
-          if (marketsData && Array.isArray(marketsData)) {
-            const market = marketsData.find((m: any) =>
-              m.baseAddress?.toLowerCase() === tokenAddr ||
-              m.address?.toLowerCase() === tokenAddr ||
-              m.symbol === token.ticker
-            );
-            price = market?.currentPrice || market?.price || 0;
-          }
-
-          const position: GqlPosition = {
-            tokenId: tokenAddr,
-            symbol: token.ticker,
-            name: token.name,
-            imageUrl: token.image,
-            boughtTokens: balance,
-            soldTokens: 0,
-            spentNative: 0,
-            receivedNative: 0,
-            remainingTokens: balance,
-            remainingPct: 100,
-            pnlNative: 0,
-            lastPrice: price,
-            isOrderbook: true,
-          };
-
-          (position as any).walletName = wallet.name;
-          (position as any).walletEmoji = wallet.emoji;
-          (position as any).walletAddress = wallet.address;
-
-          spotTokenPositions.push(position);
-        });
-      });
-    }
-
-    const allMonitorPositions = [...allPositions, ...spotTokenPositions];
-
-    if (allMonitorPositions.length === 0) {
-      return (
-        <div className="wtw-monitor">
-          <div className="wtw-empty-state">
-            <div className="wtw-empty-content">
-              <h4>No Positions Found</h4>
-              <p>No tokens held by tracked wallets</p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="wtw-monitor">
-        <div className="wtw-monitor-grid">
-          {allMonitorPositions.map((pos) => {
-            const tokenName = pos.name || pos.symbol || 'Unknown';
-            const tokenSymbol = pos.symbol || 'UNK';
-            const walletName = (pos as any).walletName || 'Unknown';
-            const walletEmoji = (pos as any).walletEmoji || '👤';
-
-            const value = pos.remainingTokens * pos.lastPrice;
-            const displayValue = monitorCurrency === 'USD' ? value * monUsdPrice : value;
-
-            return (
-              <div key={`${pos.tokenId}-${walletName}`} className="wtw-monitor-card">
-                <div className="wtw-monitor-card-header">
-                  <div className="wtw-monitor-token-info">
-                    {pos.imageUrl && (
-                      <img src={pos.imageUrl} className="wtw-monitor-token-icon" alt={tokenSymbol} />
-                    )}
-                    <div className="wtw-monitor-token-details">
-                      <div className="wtw-monitor-token-name">{tokenName}</div>
-                      <div className="wtw-monitor-token-symbol">{tokenSymbol}</div>
-                    </div>
-                  </div>
-                  <div className="wtw-monitor-wallet-badge">
-                    <span className="wtw-monitor-wallet-emoji">{walletEmoji}</span>
-                    <span className="wtw-monitor-wallet-name">{walletName}</span>
-                  </div>
-                </div>
-                <div className="wtw-monitor-card-body">
-                  <div className="wtw-monitor-stat">
-                    <div className="wtw-monitor-stat-label">Holdings</div>
-                    <div className="wtw-monitor-stat-value">
-                      {pos.remainingTokens.toFixed(2)} {tokenSymbol}
-                    </div>
-                  </div>
-                  <div className="wtw-monitor-stat">
-                    <div className="wtw-monitor-stat-label">Value</div>
-                    <div className="wtw-monitor-stat-value">
-                      {monitorCurrency === 'USD' ? '$' : ''}{displayValue.toFixed(2)}
-                      {monitorCurrency === 'MON' && <img src={monadicon} className="wtw-monitor-mon-icon" alt="MON" />}
-                    </div>
-                  </div>
-                  <div className="wtw-monitor-stat">
-                    <div className="wtw-monitor-stat-label">Price</div>
-                    <div className="wtw-monitor-stat-value">
-                      ${(pos.lastPrice * monUsdPrice).toFixed(6)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
         </div>
       </div>
     );
@@ -1218,19 +1073,13 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
               className={`wtw-tab ${activeTab === 'wallets' ? 'active' : ''}`}
               onClick={() => setActiveTab('wallets')}
             >
-              Wallet
+              Manager
             </button>
             <button
               className={`wtw-tab ${activeTab === 'trades' ? 'active' : ''}`}
               onClick={() => setActiveTab('trades')}
             >
               Trades
-            </button>
-            <button
-              className={`wtw-tab ${activeTab === 'monitor' ? 'active' : ''}`}
-              onClick={() => setActiveTab('monitor')}
-            >
-              Monitor
             </button>
           </div>
           <div className="wtw-widget-header-right">
@@ -1332,59 +1181,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
               >
                 Add Wallet
               </button>
-            </div>
-          </div>
-        )}
-
-
-        {activeTab === 'monitor' && (
-          <div className="wtw-header">
-            <div className="wtw-header-actions">
-              <button className="wtw-header-button" onClick={() => setShowMonitorFiltersPopup(true)}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 6h18M7 12h10M10 18h4" />
-                </svg>
-              </button>
-              <button
-                className="wtw-header-button"
-                onClick={() => setMonitorCurrency(prev => prev === 'USD' ? 'MON' : 'USD')}
-              >
-                {monitorCurrency === 'USD' ? 'USD' : 'MON'}
-              </button>
-              <button className="wtw-header-button" onClick={() => setpopup?.(34)}>P1</button>
-              <div className="wtw-combined-flash-input">
-                <img className="edit-spectra-quick-buy-icon" src={lightning} alt="" />
-
-                <input
-                  type="text"
-                  className="wtw-combined-input"
-                  placeholder="0.0"
-                  onFocus={(e) => e.target.placeholder = ''}
-                  onBlur={(e) => {
-                    if (e.target.value === '') {
-                      e.target.placeholder = '0.0';
-                    }
-                  }}
-                />
-                <img src={monadicon} className="wtw-combined-mon-icon" alt="MON" />
-              </div>
-            </div>
-          </div>
-
-        )}
-
-
-        {activeTab === 'monitor' && (
-          <div className="wtw-search-bar">
-            <div className="wtw-search">
-              <Search size={14} className="wtw-search-icon" />
-              <input
-                type="text"
-                className="wtw-search-input"
-                placeholder="Search by name or ticker"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
             </div>
           </div>
         )}
@@ -1569,8 +1365,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
           )}
 
           {activeTab === 'trades' && renderLiveTrades()}
-
-          {activeTab === 'monitor' && renderMonitor()}
         </div>
         {showDeleteAllConfirm && (
           <div className="tracker-modal-backdrop" onClick={() => setShowDeleteAllConfirm(false)}>
@@ -1651,14 +1445,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
             onClose={() => setShowFiltersPopup(false)}
             onApply={handleApplyFilters}
             initialFilters={activeFilters}
-          />
-        )}
-
-        {showMonitorFiltersPopup && (
-          <MonitorFiltersPopup
-            onClose={() => setShowMonitorFiltersPopup(false)}
-            onApply={handleApplyMonitorFilters}
-            initialFilters={monitorFilters}
           />
         )}
 

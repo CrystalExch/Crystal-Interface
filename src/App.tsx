@@ -2153,7 +2153,46 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const trackedWalletsRef = useRef<any>([]);
   const trackedWalletTradesRef = useRef<any>([]);
   const [trackedWalletTrades, setTrackedWalletTrades] = useState<any[]>([]);
+  useEffect(() => {
+    const updateTrackedWalletsRef = () => {
+      try {
+        const stored = localStorage.getItem('tracked_wallets_data');
+        if (stored) {
+          const wallets = JSON.parse(stored);
+          trackedWalletsRef.current = wallets;
+          console.log('[TrackedWallets] Updated ref with', wallets.length, 'wallets');
+        } else {
+          trackedWalletsRef.current = [];
+        }
+      } catch (error) {
+        console.error('[TrackedWallets] Failed to sync ref:', error);
+        trackedWalletsRef.current = [];
+      }
+    };
 
+    updateTrackedWalletsRef();
+
+    const handleWalletsUpdate = (e: CustomEvent) => {
+      if (e.detail?.wallets) {
+        trackedWalletsRef.current = e.detail.wallets;
+        console.log('[TrackedWallets] Ref updated from event:', e.detail.wallets.length, 'wallets');
+      }
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'tracked_wallets_data') {
+        updateTrackedWalletsRef();
+      }
+    };
+
+    window.addEventListener('wallets-updated', handleWalletsUpdate as EventListener);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('wallets-updated', handleWalletsUpdate as EventListener);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
   const audio = useMemo(() => {
     const a = new Audio(stepaudio);
     a.volume = 1;
@@ -2882,17 +2921,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             (Array.isArray(prev) ? prev : []).map((v: any) =>
               String(v?.address || '').toLowerCase() === String(baseVault.address).toLowerCase()
                 ? {
-                    ...v,
-                    totalShares: totalShares,
-                    quoteBalance: latestQuote,
-                    baseBalance: latestBase,
-                    userShares: userSharesBI,
-                    locked: !!data?.status?.locked,
-                    closed: !!data?.status?.closed,
-                    tvlUsd: nextSelected.tvlUsd,
-                    quoteDecimals: nextSelected.quoteDecimals,
-                    baseDecimals: nextSelected.baseDecimals,
-                  }
+                  ...v,
+                  totalShares: totalShares,
+                  quoteBalance: latestQuote,
+                  baseBalance: latestBase,
+                  userShares: userSharesBI,
+                  locked: !!data?.status?.locked,
+                  closed: !!data?.status?.closed,
+                  tvlUsd: nextSelected.tvlUsd,
+                  quoteDecimals: nextSelected.quoteDecimals,
+                  baseDecimals: nextSelected.baseDecimals,
+                }
                 : v
             )
           );
@@ -4463,14 +4502,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const tradeAccountAddr = (trade.account?.id || trade.caller || '').toLowerCase();
     const connectedAddr = address?.toLowerCase();
 
-    // Try to find in tracked wallets first, then check if it's the connected wallet
     const trackedWallet = wallets.find(
       w => w.address.toLowerCase() === tradeAccountAddr
     );
 
     const isConnectedWallet = connectedAddr && tradeAccountAddr === connectedAddr;
 
-    // Use tracked wallet name if found, otherwise use "You" for connected wallet, otherwise use shortened address
     let walletName: string;
     let emoji: string;
 
@@ -4492,22 +4529,31 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const TOTAL_SUPPLY = 1e9;
     const marketCap = price * TOTAL_SUPPLY;
 
-    const timestamp = Number(trade.timestamp || 0);
-    const now = Date.now() / 1000;
+const timestamp = trade.timestamp 
+  ? (trade.timestamp > 1e12 ? Number(trade.timestamp) / 1000 : Number(trade.timestamp))
+  : Date.now() / 1000;    const now = Date.now() / 1000;
     const secondsAgo = Math.max(0, now - timestamp);
     let timeAgo = 'now';
     if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
     else if (secondsAgo < 3600) timeAgo = `${Math.floor(secondsAgo / 60)}m`;
     else if (secondsAgo < 86400) timeAgo = `${Math.floor(secondsAgo / 3600)}h`;
     else timeAgo = `${Math.floor(secondsAgo / 86400)}d`;
-    const tokenAddress = trade.token?.address || trade.tokenAddress || undefined;
-    const tokenSymbol = trade.token?.symbol || trade.symbol || 'TKN';
-    const tokenName = trade.token?.name || trade.token?.symbol || trade.name || tokenSymbol;
-    const tokenIcon = trade.tokenIcon || trade.token?.imageUrl || undefined;
+
+    const tokenAddress = (
+      trade.tokenAddress ||
+      trade.token?.address ||
+      trade.token?.id ||
+      undefined
+    )?.toLowerCase();
+
+    const tokenSymbol = trade.symbol || trade.token?.symbol || 'TKN';
+    const tokenName = trade.name || trade.token?.name || trade.token?.symbol || tokenSymbol;
+    const tokenIcon = trade.tokenIcon || trade.token?.imageUrl || trade.icon || undefined;
 
     return {
-      id: trade.id,
+      id: trade.id || `${trade.transactionHash || trade.txHash}-${Date.now()}`,
       walletName: walletName,
+      walletAddress: tradeAccountAddr,
       emoji: emoji,
       token: tokenSymbol,
       tokenName: tokenName,
@@ -4517,12 +4563,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       price: price,
       marketCap: marketCap,
       time: timeAgo,
-      txHash: trade.transaction?.id || trade.id,
+      txHash: trade.transaction?.id || trade.transactionHash || trade.id,
       type: isBuy ? 'buy' : 'sell',
       createdAt: new Date(timestamp * 1000).toISOString(),
     };
   }, [address]);
-
   useEffect(() => {
     if (!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])) return;
 
@@ -4892,12 +4937,27 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               });
 
               if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
+                const mcfg = markets[addresstoMarket[marketAddr]];
+
+                console.log('[TrackedTrade] Orderbook trade detected:', {
+                  caller: callerAddr,
+                  token: mcfg?.baseAsset,
+                  tokenAddress: tokenAddrFromMarket,
+                  isBuy,
+                  amountIn,
+                  amountOut,
+                  price: endPrice
+                });
+
                 const normalized = normalizeTrade({
                   caller: callerAddr,
                   id: log.transactionHash,
                   isBuy: isBuy,
                   price: endPrice,
-                  symbol: mcfg.baseAsset,
+                  symbol: mcfg?.baseAsset || 'TKN',
+                  name: mcfg?.baseAsset || 'Unknown',
+                  tokenAddress: tokenAddrFromMarket,
+                  tokenIcon: mcfg?.icon || undefined,
                   amountIn,
                   amountOut,
                   timestamp: Date.now(),
@@ -4905,10 +4965,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                 setTrackedWalletTrades(prev => {
                   const updated = [normalized, ...prev];
+                  console.log('[TrackedTrade] Added to list, total trades:', updated.length);
                   return updated.length > 500 ? updated.slice(0, 500) : updated;
                 });
               }
-
               if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
               setTokenData(p => ({
                 ...p,
@@ -5181,11 +5241,29 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const price = vToken === 0 ? 0 : vNative / vToken;
 
               if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
+                console.log('[TrackedTrade] Launchpad trade detected:', {
+                  caller: callerAddr,
+                  tokenAddress: tokenAddr,
+                  isBuy,
+                  amountIn,
+                  amountOut,
+                  price
+                });
+                let tokenInfo: any = null;
+                Object.values(tokensByStatus).forEach((tokens: any[]) => {
+                  const found = tokens.find(t => t.tokenAddress?.toLowerCase() === tokenAddr);
+                  if (found) tokenInfo = found;
+                });
+
                 const normalized = normalizeTrade({
                   caller: callerAddr,
                   id: log.transactionHash,
                   isBuy: isBuy,
-                  price: (price),
+                  price: price,
+                  symbol: tokenInfo?.symbol || 'TKN',
+                  name: tokenInfo?.name || 'Unknown',
+                  tokenAddress: tokenAddr,
+                  tokenIcon: tokenInfo?.image || undefined,
                   amountIn: amountIn,
                   amountOut: amountOut,
                   timestamp: Date.now(),
@@ -5193,6 +5271,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                 setTrackedWalletTrades(prev => {
                   const updated = [normalized, ...prev];
+                  console.log('[TrackedTrade] Added launchpad trade, total trades:', updated.length);
                   return updated.length > 500 ? updated.slice(0, 500) : updated;
                 });
               }

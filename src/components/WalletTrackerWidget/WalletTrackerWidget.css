@@ -749,11 +749,11 @@
 }
 
 .wtw-detail-trades-row.buy {
-  background-image: linear-gradient(90deg, rgba(67, 254, 154, 0.08), transparent);
+  background-color: rgba(67, 254, 154, 0.04);
 }
 
 .wtw-detail-trades-row.sell {
-  background-image: linear-gradient(90deg, rgba(235, 112, 112, 0.08), transparent);
+  background-color: rgba(235, 112, 112, 0.04);
 }
 
 .wtw-detail-trades-col {
@@ -764,7 +764,6 @@
   align-items: center;
 }
 
-/* Column sizing */
 .wtw-detail-trades-time,
 .wtw-detail-trades-header-cell:nth-child(1) {
   min-width: 70px;
@@ -793,22 +792,9 @@
 .wtw-detail-trades-header-cell:nth-child(5) {
   min-width: 100px;
   flex: 1.2;
+  justify-content: flex-end;
 }
 
-.wtw-detail-trades-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-  border: 1px solid var(--c-border);
-  background: rgba(255, 255, 255, 0.04);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  margin-right: 8px;
-}
 
 .wtw-detail-trades-avatar img {
   width: 100%;
@@ -823,6 +809,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: -0.2px;
+  margin-left: 3px;
 }
 
 .wtw-detail-trades-amount {
@@ -843,7 +830,7 @@
 .wtw-asset-icon {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: 2px;
   flex-shrink: 0;
 }
 
