@@ -309,6 +309,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   const [editingName, setEditingName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [dontShowDeleteAgain, setDontShowDeleteAgain] = useState(false);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [sortBy, setSortBy] = useState<'balance' | 'lastActive' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [walletCurrency, setWalletCurrency] = useState<'USD' | 'MON'>('USD');
@@ -728,12 +729,14 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     setDontShowDeleteAgain(false);
   };
 
-  const handleRemoveAll = () => {
-    if (window.confirm('Remove all wallets?')) {
-      setLocalWallets([]);
-    }
-  };
+const handleRemoveAll = () => {
+  setShowDeleteAllConfirm(true);
+};
 
+const confirmDeleteAll = () => {
+  setLocalWallets([]);
+  setShowDeleteAllConfirm(false);
+};
   const startEditingWallet = (wallet: TrackedWallet) => {
     setEditingWallet(wallet.id);
     setEditingName(wallet.name);
@@ -1540,8 +1543,33 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
           {activeTab === 'monitor' && renderMonitor()}
         </div>
+{showDeleteAllConfirm && (
+  <div className="tracker-modal-backdrop" onClick={() => setShowDeleteAllConfirm(false)}>
+    <div className="tracker-modal-container" onClick={(e) => e.stopPropagation()}>
+      <div className="tracker-modal-header">
+        <h3 className="tracker-modal-title">Delete All Wallets</h3>
+        <button className="tracker-modal-close" onClick={() => setShowDeleteAllConfirm(false)}>
+          <img src={closebutton} className="close-button-icon" />
+        </button>
+      </div>
+      <div className="tracker-modal-content">
+        <div className="tracker-delete-warning">
+          <p>Are you sure you want to remove all wallets from tracking?</p>
+          <p>This action cannot be undone.</p>
+        </div>
 
-        {/* Delete Confirmation Dialog */}
+        <div className="tracker-modal-actions">
+          <button
+            className="tracker-delete-confirm-button"
+            onClick={confirmDeleteAll}
+          >
+            Delete All Wallets
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
         {showDeleteConfirm && (
           <div className="tracker-modal-backdrop" onClick={() => {
             setShowDeleteConfirm(null);
