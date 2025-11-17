@@ -813,6 +813,14 @@
   margin-left: 3px;
 }
 
+.wtw-detail-trades-address.sell{
+  color: rgb(235, 112, 112);
+}
+
+.wtw-detail-trades-address.buy{
+  color: rgb(67, 254, 154);
+}
+
 .wtw-detail-trades-amount {
   letter-spacing: -0.3px;
   white-space: nowrap;
@@ -1446,4 +1454,9 @@
   transition: all 0.2s;
   letter-spacing: -0.3px;
   padding: 2px 8px;
+}
+
+
+.wtw-market-cap-value{
+  color: #e3e4f0bd;
 }

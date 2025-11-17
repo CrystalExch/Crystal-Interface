@@ -955,7 +955,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                   className={`wtw-detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
                 >
                   <div className="wtw-detail-trades-col wtw-detail-trades-time">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' , color: '#e3e4f0bd' , fontWeight: '300' }}>
                       <span>{trade.time}</span>
                     </div>
                   </div>
@@ -966,9 +966,9 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                         {trade.emoji}
                       </span>
                     </div>
-                    <span className="wtw-detail-trades-address">
+                    <div className={`wtw-detail-trades-address ${trade.type === 'sell' ? 'sell' : trade.type === 'buy' ? 'buy' : ''}`}>
                       {trade.walletName}
-                    </span>
+                    </div>
                   </div>
 
                   <div className="wtw-detail-trades-col">
@@ -1019,7 +1019,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                   </div>
 
                   <div className="wtw-detail-trades-col" >
-                    <span>
+                    <span className="wtw-market-cap-value">
                       {trade.marketCap === 0 || isNaN(trade.marketCap)
                         ? '$0.0'
                         : (() => {
