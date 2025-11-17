@@ -2153,6 +2153,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const trackedWalletsRef = useRef<any>([]);
   const trackedWalletTradesRef = useRef<any>([]);
   const [trackedWalletTrades, setTrackedWalletTrades] = useState<any[]>([]);
+
   useEffect(() => {
     const updateTrackedWalletsRef = () => {
       try {
@@ -2193,6 +2194,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
+  
   const audio = useMemo(() => {
     const a = new Audio(stepaudio);
     a.volume = 1;
@@ -5794,6 +5796,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return merged;
   }, [tokenAddress, tokenData]);
 
+  const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
+  const trackedAddressesRef = useRef<string[]>([]);
+  useEffect(() => {
+    trackedAddressesRef.current = trackedAddresses.map((a) => a.toLowerCase());
+  }, [trackedAddresses]);
+
   // metadata n klines
   useEffect(() => {
     if (!token.id) return;
@@ -5848,7 +5856,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           time open high low close baseVolume
                         } 
                       }
-                  trades(first: 50, orderBy: id, orderDirection: desc) {
+                  trades(first: 1000, orderBy: id, orderDirection: desc) {
                     trade {
                       id account {id} block isBuy priceNativePerTokenWad amountIn amountOut
                     }
@@ -5997,6 +6005,56 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
           setChartData([bars, data.launchpadTokens[0].symbol + 'MON' + resForChart, true]);
         }
+        let cancelled = false;
+    
+        (async () => {
+          try {
+            const res = await fetch(SUBGRAPH_URL, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({
+                query: `query ($id: ID!, $accounts: [Bytes!], $first: Int!) {
+                  launchpadTokens(where: { id: $id }) {
+                    trades(
+                      where: { account_in: $accounts }
+                      orderBy: block
+                      orderDirection: desc
+                      first: $first
+                    ) {
+                      id
+                      account { id }
+                      block
+                      isBuy
+                      priceNativePerTokenWad
+                      amountIn
+                      amountOut
+                    }
+                  }
+                }
+                `,
+                variables: {
+                  id: token.id.toLowerCase(),
+                  accounts: trackedAddresses.map((a) => a.toLowerCase()),
+                  first: 1000,
+                },
+              }),
+            });
+            const json = await res.json();
+            const t = json?.data?.launchpadTokens?.[0]?.trades ?? [];
+            const mapped: any[] = t.map((tt: any) => ({
+              id: tt.id,
+              timestamp: Number(tt.block),
+              isBuy: !!tt.isBuy,
+              price: Number(tt.priceNativePerTokenWad) / 1e9,
+              tokenAmount: Number(tt.isBuy ? tt.amountOut : tt.amountIn) / 1e18,
+              nativeAmount: Number(tt.isBuy ? tt.amountIn : tt.amountOut) / 1e18,
+              caller: tt.account.id,
+            }));
+            if (!cancelled) setMemeTrades(mapped);
+          } catch (e) {
+            console.error('filtered trades fetch failed', e);
+          }
+        })();
 
         setInitialMemeFetchDone(true);
 
@@ -26060,6 +26118,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setSelectedWallets={setSelectedWallets}
                 selectedIntervalRef={memeSelectedIntervalRef}
                 isTerminalDataFetching={isTerminalDataFetching}
+                trackedAddresses={trackedAddresses}
+                setTrackedAddresses={setTrackedAddresses}
               />
             }
           />

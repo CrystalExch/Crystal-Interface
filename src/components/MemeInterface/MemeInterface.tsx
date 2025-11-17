@@ -23,8 +23,6 @@ import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { useSharedContext } from '../../contexts/SharedContext';
 import { settings } from '../../settings';
 import customRound from '../../utils/customRound';
-import { FILTERED_TRADES_QUERY, GENERIC_TRADES_QUERY } from './graphql';
-
 import closebutton from '../../assets/close_button.png';
 import contract from '../../assets/contract.svg';
 import editicon from '../../assets/edit.svg';
@@ -131,6 +129,8 @@ interface MemeInterfaceProps {
   setSelectedWallets: React.Dispatch<React.SetStateAction<Set<string>>>;
   selectedIntervalRef: any;
   isTerminalDataFetching: any;
+  trackedAddresses: string[];
+  setTrackedAddresses: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
@@ -357,7 +357,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   selectedWallets,
   setSelectedWallets,
   selectedIntervalRef,
-  isTerminalDataFetching
+  isTerminalDataFetching,
+  trackedAddresses,
+  setTrackedAddresses
 }) => {
   const getSliderPosition = (
     activeView: 'chart' | 'trades' | 'ordercenter',
@@ -997,8 +999,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [isConsolidating, setIsConsolidating] = useState(false);
   const [isSplitting, setIsSplitting] = useState(false);
 
-  const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
-  const trackedAddressesRef = useRef<string[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(false);
   const { activechain } = useSharedContext();
 
@@ -1686,84 +1686,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       setIsLoadingTrades(false);
     }
   }, [trades]);
-
-  useEffect(() => {
-    trackedAddressesRef.current = trackedAddresses.map((a) => a.toLowerCase());
-  }, [trackedAddresses]);
-
-  useEffect(() => {
-    if (!token.id) return;
-
-    if (trackedAddresses.length === 0) {
-      let cancelled = false;
-      (async () => {
-        try {
-          const res = await fetch(SUBGRAPH_URL, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              query: GENERIC_TRADES_QUERY,
-              variables: { id: token.id.toLowerCase(), first: 1000 },
-            }),
-          });
-          const json = await res.json();
-          const t = json?.data?.launchpadTokens?.[0]?.trades ?? [];
-          const mapped: Trade[] = t.map((tt: any) => ({
-            id: tt.trade.id,
-            timestamp: Number(tt.trade.block),
-            isBuy: !!tt.trade.isBuy,
-            price: Number(tt.trade.priceNativePerTokenWad) / 1e9,
-            tokenAmount: Number(tt.trade.isBuy ? tt.trade.amountOut : tt.trade.amountIn) / 1e18,
-            nativeAmount: Number(tt.trade.isBuy ? tt.trade.amountIn : tt.trade.amountOut) / 1e18,
-            caller: tt.trade.account.id,
-          }));
-          if (!cancelled) setTrades(mapped);
-        } catch (e) {
-          console.error('generic trades fetch failed', e);
-        }
-      })();
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const res = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: FILTERED_TRADES_QUERY,
-            variables: {
-              id: token.id.toLowerCase(),
-              accounts: trackedAddresses.map((a) => a.toLowerCase()),
-              first: 1000,
-            },
-          }),
-        });
-        const json = await res.json();
-        const t = json?.data?.launchpadTokens?.[0]?.trades ?? [];
-        const mapped: Trade[] = t.map((tt: any) => ({
-          id: tt.id,
-          timestamp: Number(tt.block),
-          isBuy: !!tt.isBuy,
-          price: Number(tt.priceNativePerTokenWad) / 1e9,
-          tokenAmount: Number(tt.isBuy ? tt.amountOut : tt.amountIn) / 1e18,
-          nativeAmount: Number(tt.isBuy ? tt.amountIn : tt.amountOut) / 1e18,
-          caller: tt.account.id,
-        }));
-        if (!cancelled) setTrades(mapped);
-      } catch (e) {
-        console.error('filtered trades fetch failed', e);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [token.id, trackedAddresses]);
 
   useEffect(() => {
     if (onTokenDataChange) {
