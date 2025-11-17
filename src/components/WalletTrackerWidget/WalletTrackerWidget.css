@@ -848,13 +848,18 @@
   min-width: 0;
 }
 
+.wtw-asset-details:hover .wtw-asset-ticker {
+  text-decoration: underline;
+}
+
+
 .wtw-asset-ticker {
   font-size: 0.85rem;
   color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.5px;
 }
 
 .wtw-settings-image {
@@ -1457,4 +1462,5 @@
 
 .wtw-market-cap-value{
   color: #e3e4f0bd;
+  font-weight: 300;
 }

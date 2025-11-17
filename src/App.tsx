@@ -4529,9 +4529,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const TOTAL_SUPPLY = 1e9;
     const marketCap = price * TOTAL_SUPPLY;
 
-const timestamp = trade.timestamp 
-  ? (trade.timestamp > 1e12 ? Number(trade.timestamp) / 1000 : Number(trade.timestamp))
-  : Date.now() / 1000;    const now = Date.now() / 1000;
+    const timestamp = trade.timestamp
+      ? (trade.timestamp > 1e12 ? Number(trade.timestamp) / 1000 : Number(trade.timestamp))
+      : Date.now() / 1000;
+     const now = Date.now() / 1000;
     const secondsAgo = Math.max(0, now - timestamp);
     let timeAgo = 'now';
     if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
