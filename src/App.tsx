@@ -4532,7 +4532,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const timestamp = trade.timestamp
       ? (trade.timestamp > 1e12 ? Number(trade.timestamp) / 1000 : Number(trade.timestamp))
       : Date.now() / 1000;
-     const now = Date.now() / 1000;
+    const now = Date.now() / 1000;
     const secondsAgo = Math.max(0, now - timestamp);
     let timeAgo = 'now';
     if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
@@ -26518,6 +26518,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           tradesByMarket={tradesByMarket}
           setpopup={setpopup}
           currentPopup={popup}
+          sendUserOperationAsync={sendUserOperationAsync}
+          terminalRefetch={terminalRefetch}
+          nonces={nonces}
+          subWallets={subWallets}
+          activeWalletPrivateKey={oneCTSigner}
+          account={{
+            connected: connected,
+            address: address,
+            chainId: userchain,
+          }}
+          selectedWallets={selectedWallets}
         />
         {/* <WidgetExplorer
         isOpen={isWidgetExplorerOpen}

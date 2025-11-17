@@ -7,6 +7,7 @@ import copy from '../../assets/copy.svg';
 import trash from '../../assets/trash.svg';
 import defaultPfp from '../../assets/leaderboard_default.png';
 import closebutton from '../../assets/close_button.png';
+import filtericon from '../../assets/filtercup.svg';
 import settingsicon from '../../assets/settings.svg';
 import filter from '../../assets/filter.svg';
 import ImportWalletsPopup from '../Tracker/ImportWalletsPopup';
@@ -18,7 +19,14 @@ import circle from '../../assets/circle_handle.png';
 import lightning from '../../assets/flash.png';
 import SortArrow from '../OrderCenter/SortArrow/SortArrow';
 import { useNavigate } from 'react-router-dom';
-
+import { encodeFunctionData } from 'viem';
+import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';
+import { NadFunAbi } from '../../abis/NadFun.ts';
+import { settings as appSettings } from '../../settings';
+import {
+  showLoadingPopup,
+  updatePopup,
+} from '../MemeTransactionPopup/MemeTransactionPopupManager';
 
 interface GqlPosition {
   tokenId: string;
@@ -54,6 +62,17 @@ interface WalletTrackerWidgetProps {
   marketsRef?: any;
   setpopup?: (popupId: number) => void;
   currentPopup?: number;
+  sendUserOperationAsync?: any;
+  terminalRefetch?: any;
+  nonces?: any;
+  subWallets?: Array<{ address: string; privateKey: string }>;
+  activeWalletPrivateKey?: string;
+  account?: {
+    connected: boolean;
+    address?: string;
+    chainId?: number;
+  };
+  selectedWallets?: Set<string>;
 }
 
 type TrackerTab = 'wallets' | 'trades' | 'monitor';
@@ -110,6 +129,19 @@ const formatCreatedDate = (isoString: string) => {
   return `${seconds}s`;
 };
 
+
+const formatTradeTime = (timestamp: number) => {
+  if (!timestamp) return '0s';
+
+  const now = Date.now();
+  const tradeTime = timestamp > 1e12 ? timestamp : timestamp * 1000;
+  const secondsAgo = Math.max(0, Math.floor((now - tradeTime) / 1000));
+
+  if (secondsAgo < 60) return `${secondsAgo}s`;
+  if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m`;
+  if (secondsAgo < 86400) return `${Math.floor(secondsAgo / 3600)}h`;
+  return `${Math.floor(secondsAgo / 86400)}d`;
+};
 const Tooltip: React.FC<{
   content: string | React.ReactNode;
   children: React.ReactNode;
@@ -288,6 +320,13 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   marketsRef,
   setpopup,
   currentPopup = 0,
+  sendUserOperationAsync,
+  terminalRefetch,
+  nonces,
+  subWallets,
+  activeWalletPrivateKey,
+  account,
+  selectedWallets,
 }) => {
   const crystal = '/CrystalLogo.png';
   const widgetRef = useRef<HTMLDivElement>(null);
@@ -319,6 +358,43 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   const [tradeAmountCurrency, setTradeAmountCurrency] = useState<'USD' | 'MON'>('USD');
   const [showFiltersPopup, setShowFiltersPopup] = useState(false);
   const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
+  const [hoveredTradeRow, setHoveredTradeRow] = useState<string | null>(null);
+  const [buyingTrade, setBuyingTrade] = useState<string | null>(null);
+const [hoveredImage, setHoveredImage] = useState<string | null>(null);
+const [showPreview, setShowPreview] = useState(false);
+const [previewPosition, setPreviewPosition] = useState({ top: 0, left: 0 });
+
+const handleImageHover = useCallback((tradeId: string) => {
+  setHoveredImage(tradeId);
+}, []);
+
+const handleImageLeave = useCallback(() => {
+  setHoveredImage(null);
+  setShowPreview(false);
+}, []);
+
+const updatePreviewPosition = useCallback((containerElement: HTMLElement) => {
+  if (!containerElement) return;
+
+  const rect = containerElement.getBoundingClientRect();
+  const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+  const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+  const viewportWidth = window.innerWidth;
+  const previewWidth = 220;
+  const offset = 10;
+
+  let left = rect.right + scrollX + offset;
+
+  if (left + previewWidth > viewportWidth) {
+    left = rect.left + scrollX - previewWidth - offset;
+  }
+
+  const top = rect.top + scrollY;
+
+  setPreviewPosition({ top, left });
+  setTimeout(() => setShowPreview(true), 10);
+}, []);
   const [activeFilters, setActiveFilters] = useState<FilterState>({
     transactionTypes: {
       buyMore: true,
@@ -365,18 +441,15 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     },
   });
 
-  // Import and Add Wallet modals
   const [showImportPopup, setShowImportPopup] = useState(false);
   const [showAddWalletModal, setShowAddWalletModal] = useState(false);
 
   const chainCfg = chainCfgOf(activechain, settings);
 
-  // Drag functionality
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).classList.contains('wtw-resize-handle')) {
       return;
     }
-    // Don't drag if clicking on interactive elements
     const target = e.target as HTMLElement;
     if (
       target.closest('button') ||
@@ -406,7 +479,236 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
     setIsDragging(true);
   }, [position, isSnapped]);
+  const getMaxSpendableWei = useCallback(
+    (addr: string): bigint => {
+      const balances = walletTokenBalances[addr];
+      if (!balances) return 0n;
 
+      const ethToken = tokenList?.find(
+        (t: any) => t.address === chainCfg?.eth,
+      );
+      if (!ethToken || !balances[ethToken.address]) return 0n;
+
+      let raw = balances[ethToken.address];
+      if (raw <= 0n) return 0n;
+
+      const gasReserve = BigInt(chainCfg?.gasamount ?? 0);
+      const safe = raw > gasReserve ? raw - gasReserve : 0n;
+
+      return safe;
+    },
+    [walletTokenBalances, tokenList, chainCfg],
+  );
+
+  const handleTradeQuickBuy = useCallback(
+    async (trade: any, quickAmount: string) => {
+      const val = BigInt(Math.floor(parseFloat(quickAmount) * 1e18));
+      if (val === 0n || !trade.tokenAddress) return;
+
+      const targets: string[] = Array.from(selectedWallets || new Set());
+      const txId = `quickbuy-trade-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+      setBuyingTrade(trade.id);
+
+      try {
+        if (showLoadingPopup) {
+          showLoadingPopup(txId, {
+            title: 'Sending batch buy...',
+            subtitle: `Buying ${quickAmount} MON of ${trade.tokenName || trade.token} across ${targets.length || 1} wallet${targets.length > 1 ? 's' : ''}`,
+            amount: quickAmount,
+            amountUnit: 'MON',
+            tokenImage: trade.tokenIcon,
+          });
+        }
+
+        const isNadFun = trade.launchpad === 'nadfun';
+        const contractAddress = isNadFun
+          ? appSettings.chainConfig[activechain].nadFunRouter
+          : appSettings.chainConfig[activechain].launchpadRouter;
+
+        let remaining = val;
+        const plan: { addr: string; amount: bigint }[] = [];
+        const transferPromises = [];
+
+        if (targets.length > 0) {
+          for (const addr of targets) {
+            const maxWei = getMaxSpendableWei(addr);
+            const fairShare = val / BigInt(targets.length);
+            const allocation = fairShare > maxWei ? maxWei : fairShare;
+            if (allocation > 0n) {
+              plan.push({ addr, amount: allocation });
+              remaining -= allocation;
+            } else {
+              plan.push({ addr, amount: 0n });
+            }
+          }
+
+          for (const entry of plan) {
+            if (remaining <= 0n) break;
+            const maxWei = getMaxSpendableWei(entry.addr);
+            const room = maxWei - entry.amount;
+            if (room > 0n) {
+              const add = remaining > room ? room : remaining;
+              entry.amount += add;
+              remaining -= add;
+            }
+          }
+
+          if (remaining > 0n) {
+            if (updatePopup) {
+              updatePopup(txId, {
+                title: 'Batch buy failed',
+                subtitle: 'Not enough MON balance across selected wallets',
+                variant: 'error',
+                isLoading: false,
+              });
+            }
+            setBuyingTrade(null);
+            return;
+          }
+
+          for (const { addr, amount: partWei } of plan) {
+            if (partWei <= 0n) continue;
+
+            const wally = subWallets?.find((w: any) => w.address === addr);
+            const pk = wally?.privateKey ?? activeWalletPrivateKey;
+            if (!pk) continue;
+
+            let uo;
+
+            if (isNadFun) {
+              uo = {
+                target: contractAddress as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: NadFunAbi,
+                  functionName: 'buy',
+                  args: [{
+                    amountOutMin: 0n,
+                    token: trade.devAddress as `0x${string}`,
+                    to: account?.address as `0x${string}`,
+                    deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
+                  }],
+                }),
+                value: partWei,
+              };
+            } else {
+              uo = {
+                target: contractAddress as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: CrystalRouterAbi,
+                  functionName: 'buy',
+                  args: [true, trade.tokenAddress as `0x${string}`, partWei, 0n],
+                }),
+                value: partWei,
+              };
+            }
+
+            const wallet = nonces?.current.get(addr);
+            const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
+            if (wallet) wallet.nonce += 1;
+            wallet?.pendingtxs.push(params);
+
+            const transferPromise = sendUserOperationAsync(...params)
+              .then(() => {
+                if (wallet)
+                  wallet.pendingtxs = wallet.pendingtxs.filter(
+                    (p: any) => p[5] != params[5],
+                  );
+                return true;
+              })
+              .catch(() => {
+                if (wallet)
+                  wallet.pendingtxs = wallet.pendingtxs.filter(
+                    (p: any) => p[5] != params[5],
+                  );
+                return false;
+              });
+            transferPromises.push(transferPromise);
+          }
+        } else {
+          if (account?.address) {
+            let uo;
+
+            if (isNadFun) {
+              uo = {
+                target: contractAddress as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: NadFunAbi,
+                  functionName: 'buy',
+                  args: [{
+                    amountOutMin: 0n,
+                    token: trade.devAddress as `0x${string}`,
+                    to: account.address as `0x${string}`,
+                    deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
+                  }],
+                }),
+                value: val,
+              };
+            } else {
+              uo = {
+                target: contractAddress as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: CrystalRouterAbi,
+                  functionName: 'buy',
+                  args: [true, trade.tokenAddress as `0x${string}`, val, 0n],
+                }),
+                value: val,
+              };
+            }
+
+            const transferPromise = sendUserOperationAsync({ uo });
+            transferPromises.push(transferPromise);
+          }
+        }
+
+        const results = await Promise.allSettled(transferPromises);
+        const successfulTransfers = results.filter(
+          (result) => result.status === 'fulfilled' && result.value === true,
+        ).length;
+
+        if (terminalRefetch) terminalRefetch();
+
+        if (updatePopup) {
+          updatePopup(txId, {
+            title: `Bought ${quickAmount} MON Worth`,
+            subtitle: `Distributed across ${successfulTransfers} wallet${successfulTransfers !== 1 ? 's' : ''}`,
+            variant: 'success',
+            confirmed: true,
+            isLoading: false,
+            tokenImage: trade.tokenIcon,
+          });
+        }
+      } catch (e: any) {
+        console.error('Quick buy failed', e);
+        const msg = String(e?.message ?? '');
+        if (updatePopup) {
+          updatePopup(txId, {
+            title: msg.toLowerCase().includes('insufficient')
+              ? 'Insufficient Balance'
+              : 'Buy Failed',
+            subtitle: msg || 'Transaction failed',
+            variant: 'error',
+            confirmed: true,
+            isLoading: false,
+            tokenImage: trade.tokenIcon,
+          });
+        }
+      } finally {
+        setBuyingTrade(null);
+      }
+    },
+    [
+      selectedWallets,
+      subWallets,
+      activeWalletPrivateKey,
+      getMaxSpendableWei,
+      account,
+      nonces,
+      terminalRefetch,
+      activechain,
+      sendUserOperationAsync,
+    ],
+  );
   const handleResizeStart = useCallback(
     (e: React.MouseEvent, direction: string) => {
       e.stopPropagation();
@@ -577,7 +879,9 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       };
     }
   }, [isDragging, isResizing, resizeDirection, size, isSnapped]);
-
+  const [pausedTrades, setPausedTrades] = useState(false);
+  const pausedTradesQueue = useRef<any[]>([]);
+  const lastTradeCount = useRef(0);
   const lastActiveLabel = (w: TrackedWallet) => {
     const ts = w.lastActiveAt ?? new Date(w.createdAt).getTime();
     const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
@@ -796,7 +1100,23 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   };
 
   const getFilteredTrades = () => {
-    let trades = allTrades.filter((trade: any) => {
+    let trades = allTrades;
+
+    // Handle paused state
+    if (pausedTrades) {
+      // Check if there are new trades since we paused
+      if (allTrades.length > lastTradeCount.current) {
+        const newTrades = allTrades.slice(0, allTrades.length - lastTradeCount.current);
+        pausedTradesQueue.current = [...pausedTradesQueue.current, ...newTrades];
+        // Only show the trades that existed when we started hovering
+        trades = allTrades.slice(allTrades.length - lastTradeCount.current);
+      } else {
+        trades = allTrades;
+      }
+    }
+
+    // Apply filters
+    trades = trades.filter((trade: any) => {
       const isBuy = trade.type === 'buy';
       const isSell = trade.type === 'sell';
 
@@ -848,14 +1168,42 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     }
     return amount.toFixed(decimals);
   };
+  const handleTradesBodyHover = useCallback(() => {
+    setPausedTrades(true);
+    lastTradeCount.current = allTrades.length;
+  }, [allTrades.length]);
+
+  const handleTradesBodyLeave = useCallback(() => {
+    setPausedTrades(false);
+    pausedTradesQueue.current = [];
+    lastTradeCount.current = allTrades.length;
+  }, [allTrades.length]);
   const renderLiveTrades = () => {
     const filteredTrades = getFilteredTrades();
+
+    const getQuickbuyAmount = () => {
+      const input = document.querySelector('.wtw-combined-input') as HTMLInputElement;
+      return input?.value || '1';
+    };
 
     return (
       <div className="wtw-live-trades">
         <div className="wtw-detail-trades-table">
           <div className="wtw-detail-trades-header">
-            <div className="wtw-detail-trades-header-cell wtw-detail-trades-time"></div>
+            <div className="wtw-detail-trades-header-cell wtw-detail-trades-time">
+              {pausedTrades && (
+                <div className="wtw-trades-pause-icon">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                  </svg>
+                </div>
+              )}
+            </div>
             <div className="wtw-detail-trades-header-cell wtw-detail-trades-account">Name</div>
             <div className="wtw-detail-trades-header-cell">Token</div>
             <div
@@ -867,7 +1215,11 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
             </div>
             <div className="wtw-detail-trades-header-cell">Market Cap</div>
           </div>
-          <div className="wtw-detail-trades-body">
+          <div
+            className="wtw-detail-trades-body"
+            onMouseEnter={handleTradesBodyHover}
+            onMouseLeave={handleTradesBodyLeave}
+          >
             {filteredTrades.length === 0 ? (
               <div className="wtw-empty-state">
                 <div className="wtw-empty-content">
@@ -877,14 +1229,15 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
               </div>
             ) : (
               filteredTrades.map((trade: any) => (
-
                 <div
                   key={trade.id}
                   className={`wtw-detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
+                  onMouseEnter={() => setHoveredTradeRow(trade.id)}
+                  onMouseLeave={() => setHoveredTradeRow(null)}
                 >
                   <div className="wtw-detail-trades-col wtw-detail-trades-time">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', color: '#e3e4f0bd', fontWeight: '300' }}>
-                      <span>{trade.time}</span>
+                      <span>{trade.timestamp ? formatTradeTime(trade.timestamp) : (trade.time || '0s')}</span>
                     </div>
                   </div>
 
@@ -899,27 +1252,33 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                     </div>
                   </div>
 
-                  <div className="wtw-detail-trades-col">
-                    <div
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
-                      onClick={() => {
-                        if (trade.tokenAddress) {
-                          navigate(`/meme/${trade.tokenAddress}`);
-                        }
-                      }}
-                    >
-                      {trade.tokenIcon && (
-                        <div style={{ position: 'relative' }}>
-                          <img src={trade.tokenIcon} className="wtw-asset-icon" alt={trade.tokenName || trade.token} />
-                          <img src={crystal} className="wtw-launchpad-logo crystal" />
-                        </div>
-                      )}
-                      <div className="wtw-asset-details">
-                        <div className="wtw-asset-ticker">{trade.tokenName || trade.token}</div>
-                      </div>
-                    </div>
-                  </div>
-
+<div className="wtw-detail-trades-col">
+  <div
+    style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+    onClick={() => {
+      if (trade.tokenAddress) {
+        navigate(`/meme/${trade.tokenAddress}`);
+      }
+    }}
+  >
+    {trade.tokenIcon && (
+      <div 
+        style={{ position: 'relative' }}
+        onMouseEnter={(e) => {
+          handleImageHover(trade.id);
+          updatePreviewPosition(e.currentTarget);
+        }}
+        onMouseLeave={handleImageLeave}
+      >
+        <img src={trade.tokenIcon} className="wtw-asset-icon" alt={trade.tokenName || trade.token} />
+        <img src={crystal} className="wtw-launchpad-logo crystal" />
+      </div>
+    )}
+    <div className="wtw-asset-details">
+      <div className="wtw-asset-ticker">{trade.tokenName || trade.token}</div>
+    </div>
+  </div>
+</div>
                   <div
                     className="wtw-detail-trades-col"
                     style={{ cursor: 'pointer' }}
@@ -949,25 +1308,70 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                     </div>
                   </div>
 
-                  <div className="wtw-detail-trades-col" >
-                    <span className="wtw-market-cap-value">
-                      {trade.marketCap === 0 || isNaN(trade.marketCap)
-                        ? '$0.0'
-                        : (() => {
-                          const usd = monUsdPrice ? trade.marketCap * monUsdPrice : trade.marketCap;
-                          return '$' + formatAmount(usd, 1);
-                        })()}
-                    </span>
+                  <div className="wtw-detail-trades-col">
+                    {hoveredTradeRow === trade.id ? (
+                      <button
+                        className={`wtw-trade-quickbuy-btn ${buyingTrade === trade.id ? 'loading' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const amount = getQuickbuyAmount();
+                          handleTradeQuickBuy(trade, amount);
+                        }}
+                        disabled={buyingTrade === trade.id}
+                      >
+                        {buyingTrade === trade.id ? (
+                          <div className="wtw-quickbuy-spinner" />
+                        ) : (
+                          <>
+                            <img src={lightning} className="wtw-quickbuy-icon" alt="Buy" />
+                            {getQuickbuyAmount()}
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <span className="wtw-market-cap-value">
+                        {trade.marketCap === 0 || isNaN(trade.marketCap)
+                          ? '$0.0'
+                          : (() => {
+                            const usd = monUsdPrice ? trade.marketCap * monUsdPrice : trade.marketCap;
+                            return '$' + formatAmount(usd, 1);
+                          })()}
+                      </span>
+                    )}
                   </div>
                 </div>
               ))
-            )}
+)}
           </div>
         </div>
+
+        {hoveredImage && showPreview && (() => {
+          const trade = filteredTrades.find((t: any) => t.id === hoveredImage);
+          if (!trade || !trade.tokenIcon) return null;
+
+          return createPortal(
+            <div
+              className="wtw-image-preview show"
+              style={{
+                position: 'absolute',
+                top: `${previewPosition.top}px`,
+                left: `${previewPosition.left}px`,
+                zIndex: 9999,
+                pointerEvents: 'none',
+              }}
+            >
+              <img
+                src={trade.tokenIcon}
+                alt={trade.tokenName || trade.token}
+                className="wtw-preview-image"
+              />
+            </div>,
+            document.body
+          );
+        })()}
       </div>
     );
   };
-
   if (!isOpen) return null;
 
   return (
@@ -1023,9 +1427,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                 </Tooltip>
                 <Tooltip content="Filters">
                   <button className="wtw-header-button" onClick={() => setShowFiltersPopup(true)}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M3 6h18M7 12h10M10 18h4" />
-                    </svg>
+                    <img src={filtericon} className="wtw-filter-image"/>
                   </button>
                 </Tooltip>
                 <Tooltip content="Presets">
