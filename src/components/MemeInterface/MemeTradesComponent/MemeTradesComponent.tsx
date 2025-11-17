@@ -144,10 +144,10 @@ const Tooltip: React.FC<{
               top: `${tooltipPosition.top - 20}px`,
               left: `${tooltipPosition.left}px`,
               transform: `${position === 'top' || position === 'bottom'
-                ? 'translateX(-50%)'
-                : position === 'left' || position === 'right'
-                  ? 'translateY(-50%)'
-                  : 'none'
+                  ? 'translateX(-50%)'
+                  : position === 'left' || position === 'right'
+                    ? 'translateY(-50%)'
+                    : 'none'
                 } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
@@ -251,7 +251,6 @@ interface Props {
   trackedAddresses?: string[];
   onFilterDev?: () => void;
   onFilterYou?: (addresses?: string[]) => void;
-  onFilterTracked?: (addresses: string[]) => void;
   onClearTracked?: () => void;
   isLoadingTrades?: boolean;
   subWallets?: Array<{ address: string; privateKey: string }>;
@@ -281,7 +280,6 @@ export default function MemeTradesComponent({
   trackedAddresses = [],
   onFilterDev,
   onFilterYou,
-  onFilterTracked,
   onClearTracked,
   isLoadingTrades = false,
   subWallets = [],
@@ -561,11 +559,11 @@ export default function MemeTradesComponent({
         subWalletSet.has(callerLower);
       const isTopHolder = top10HolderAddresses.has(callerLower);
       const isDev = Boolean(devAddressLower && callerLower === devAddressLower);
-
+      
       // Check if this is a tracked wallet
       const trackedWallet = trackedWalletsMap.get(callerLower);
       const isTracked = !!trackedWallet;
-
+      
       const sign = r.isBuy ? 1 : -1;
 
       let amountMON = sign * (r.nativeAmount ?? 0);
@@ -589,10 +587,10 @@ export default function MemeTradesComponent({
       }
 
       const amountUSD = monUsd > 0 ? amountMON * monUsd : 0;
-
+      
       let short: string;
       let emoji: string | undefined;
-
+      
       if (isCurrentUser) {
         short = 'YOU';
       } else if (trackedWallet) {
@@ -601,7 +599,7 @@ export default function MemeTradesComponent({
       } else {
         short = r.caller.slice(2, 6);
       }
-
+      
       const tags: (
         | 'sniper'
         | 'dev'
@@ -675,7 +673,7 @@ export default function MemeTradesComponent({
     if (val >= 0.01) return val.toFixed(4);
     return val.toPrecision(3);
   };
-
+  
   const fmtTimeAgo = (ts: number) => {
     const now = Date.now() / 1000;
     const secondsAgo = Math.max(0, Math.floor(now - ts));
@@ -695,7 +693,7 @@ export default function MemeTradesComponent({
     if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(decimals)}K`;
     return `${sign}${abs.toFixed(1)}`;
   };
-
+  
   const handleApplyFilters = (filters: TransactionFilters) => {
     setTransactionFilters(filters);
   };
@@ -798,12 +796,7 @@ export default function MemeTradesComponent({
 
       case 'tracked':
         if (trackedActive) {
-          if (trackedActive) {
           onClearTracked?.();
-        } else {
-          const allTrackedAddresses = trackedWallets.map(w => w.address.toLowerCase());
-          onFilterTracked?.(allTrackedAddresses);
-        }
         } else {
           onFilterSet?.();
         }
@@ -975,30 +968,27 @@ export default function MemeTradesComponent({
                       </span>
                     )}
                   </div>
-
-<div
-  className={`meme-trade-trader ${t.isCurrentUser ? 'current-user' : t.isTracked ? 'tracked-wallet clickable' : 'clickable'}`}
-  onClick={() =>
-    !t.isCurrentUser && setPopupAddr(t.fullAddress)
-  }
->
-  {t.emoji && <span style={{ marginRight: '4px' }}>{t.emoji}</span>}
-  {t.trader}
-</div>
-
+                  <div
+                    className={`meme-trade-trader ${t.isCurrentUser ? 'current-user' : t.isTracked ? 'tracked-wallet clickable' : 'clickable'}`}
+                    onClick={() =>
+                      !t.isCurrentUser && setPopupAddr(t.fullAddress)
+                    }
+                  >
+                    {t.emoji && <span style={{ marginRight: '4px' }}>{t.emoji}</span>}
+                    {t.trader}
+                  </div>
                   <div className="meme-trade-age-container">
                     <div className="meme-trade-tags">
                       {t.tags.length > 0 && renderTraderTags(t.tags)}
                     </div>
-                    <span
-                      className="meme-trade-age clickable-age"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(`https://testnet.monadscan.com/tx/${t.id}`, '_blank');
-                      }}
-                      title="View transaction on MonadScan"
-                    >
-                      {fmtTimeAgo(t.timestamp)}
+                    <span className="meme-trade-age">
+                      <a
+                          href={`${settings.chainConfig[activechain].explorer}/tx/${t.id.split('-')[0]}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                        {fmtTimeAgo(t.timestamp)}
+                      </a>
                     </span>
                   </div>
                 </div>

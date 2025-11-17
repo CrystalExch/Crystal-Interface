@@ -2636,10 +2636,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               trackedAddresses={trackedAddresses}
               onFilterDev={setTrackedToDev}
               onFilterYou={setTrackedToYou}
-              onFilterTracked={(addresses) => {
-                setIsLoadingTrades(true);
-                setTrackedAddresses(addresses);
-              }}
               onFilterSet={setTrackedToSet}
               onClearTracked={clearTracked}
               isLoadingTrades={isLoadingTrades}
