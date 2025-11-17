@@ -828,12 +828,10 @@
 
 .wtw-detail-trades-amount.wtw-amount-buy {
   color: rgb(67, 254, 154);
-  text-shadow: 0 0 10px rgba(67, 254, 154, 0.3);
 }
 
 .wtw-detail-trades-amount.wtw-amount-sell {
   color: rgb(235, 112, 112);
-  text-shadow: 0 0 10px rgba(235, 112, 112, 0.3);
 }
 
 .wtw-asset-icon {
