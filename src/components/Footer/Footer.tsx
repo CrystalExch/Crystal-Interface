@@ -296,7 +296,7 @@ const Footer: React.FC<FooterProps> = ({
     },
     [walletTokenBalances, activeChain],
   );
-  
+
   const getWalletTokenCount = useCallback(
     (address: string): number => {
       const balanceData = walletTokenBalances[address];
@@ -340,8 +340,8 @@ const Footer: React.FC<FooterProps> = ({
                   className="footer-transparent-button"
                   onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
                   style={{
-                  transition: 'all 0.2s ease'
-                }}
+                    transition: 'all 0.2s ease'
+                  }}
                 >
                   <span
                     style={{
@@ -478,7 +478,7 @@ const Footer: React.FC<FooterProps> = ({
                                     {wallet.address.slice(-4)}
                                   </div>
                                 </div>
-<div className="wallet-dropdown-balance">
+                                <div className="wallet-dropdown-balance">
                                   {(() => {
                                     const gasReserve = BigInt(settings.chainConfig[activeChain].gasamount ?? 0);
                                     const balanceWei = walletTokenBalances[wallet.address]?.[
@@ -518,29 +518,29 @@ const Footer: React.FC<FooterProps> = ({
                             </React.Fragment>
                           );
                         })}
-                              {subWallets.length < 10 && (
-                                <div
-                                  className="quickbuy-add-wallet-button"
-                                  onClick={() => {
-                                    createSubWallet()
-                                  }}
-                                >
-                                  <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  >
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                  </svg>
-                                  <span>Add Wallet</span>
-                                </div>
-                              )}
+                        {subWallets.length < 10 && (
+                          <div
+                            className="quickbuy-add-wallet-button"
+                            onClick={() => {
+                              createSubWallet()
+                            }}
+                          >
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <line x1="12" y1="5" x2="12" y2="19"></line>
+                              <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span>Add Wallet</span>
+                          </div>
+                        )}
                       </div>
                       {subWallets.length == 0 && (
                         <div style={{
@@ -572,7 +572,7 @@ const Footer: React.FC<FooterProps> = ({
                         </div>
                       )}
                     </>
-) : (
+                  ) : (
                     <div className="wallet-dropdown-no-subwallets" style={{
                       position: 'relative',
                       display: 'flex',
@@ -620,10 +620,9 @@ const Footer: React.FC<FooterProps> = ({
                   Twitter
                 </div>
               </Tooltip>
-              <Tooltip content="Discover Tracker">
+              <Tooltip content="Coming Soon!">
                 <div
-                  className={`footer-widget-button ${isDiscoverPopupOpen ? 'active' : ''}`}
-                  onClick={() => setIsDiscoverPopupOpen(!isDiscoverPopupOpen)}
+                  className="footer-widget-button"
                   style={{ cursor: 'pointer' }}
                 >
                   <img src={discovericon} className="footer-widget-icon" />

@@ -1275,7 +1275,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                         </div>
                       )}
                       <div className="wtw-asset-details">
-                        <div className="wtw-asset-ticker">{trade.tokenName || trade.token}</div>
+                        <div className="wtw-asset-ticker">{trade.token}</div>
                       </div>
                     </div>
                   </div>

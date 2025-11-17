@@ -4564,6 +4564,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       price: price,
       marketCap: marketCap,
       time: timeAgo,
+      timestamp: timestamp * 1000,
       txHash: trade.transaction?.id || trade.transactionHash || trade.id,
       type: isBuy ? 'buy' : 'sell',
       createdAt: new Date(timestamp * 1000).toISOString(),
@@ -4967,7 +4968,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setTrackedWalletTrades(prev => {
                   const updated = [normalized, ...prev];
                   console.log('[TrackedTrade] Added to list, total trades:', updated.length);
-                  return updated.length > 500 ? updated.slice(0, 500) : updated;
+                  return updated.length > 50 ? updated.slice(0, 50) : updated;
                 });
               }
               if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
@@ -5273,7 +5274,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setTrackedWalletTrades(prev => {
                   const updated = [normalized, ...prev];
                   console.log('[TrackedTrade] Added launchpad trade, total trades:', updated.length);
-                  return updated.length > 500 ? updated.slice(0, 500) : updated;
+                  return updated.length > 50 ? updated.slice(0, 50) : updated;
                 });
               }
 
@@ -26530,18 +26531,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }}
           selectedWallets={selectedWallets}
         />
-        {/* <WidgetExplorer
-        isOpen={isWidgetExplorerOpen}
-        onClose={handleCloseWidgetExplorer}
-        setpopup={setpopup}
-        appliedFilters={appliedExplorerFilters}
-        activeFilterTab={activeExplorerFilterTab}
-        onOpenFiltersForColumn={handleOpenFiltersForColumn}
-        sendUserOperationAsync={sendUserOperationAsync}
-        onSnapToSide={handleWidgetExplorerSnapToSide}
-        currentSnapSide={widgetExplorerSnapSide}
-        onWidgetResize={handleWidgetExplorerResize} 
-      /> */}
       </div>
       <Footer
         subWallets={subWallets}
