@@ -478,15 +478,29 @@ const Footer: React.FC<FooterProps> = ({
                                     {wallet.address.slice(-4)}
                                   </div>
                                 </div>
-                                <div className="wallet-dropdown-balance">
-                                  <div className="wallet-dropdown-balance-amount">
-                                    <img
-                                      src={monadicon}
-                                      className="wallet-dropdown-mon-icon"
-                                      alt="MON"
-                                    />
-                                    {formatNumberWithCommas(balance, 2)}
-                                  </div>
+<div className="wallet-dropdown-balance">
+                                  {(() => {
+                                    const gasReserve = BigInt(settings.chainConfig[activeChain].gasamount ?? 0);
+                                    const balanceWei = walletTokenBalances[wallet.address]?.[
+                                      settings.chainConfig[activeChain]?.eth
+                                    ] || 0n;
+                                    const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+
+                                    return (
+                                      <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                        <div
+                                          className={`wallet-dropdown-balance-amount ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                        >
+                                          <img
+                                            src={monadicon}
+                                            className="wallet-dropdown-mon-icon"
+                                            alt="MON"
+                                          />
+                                          {formatNumberWithCommas(balance, 2)}
+                                        </div>
+                                      </Tooltip>
+                                    );
+                                  })()}
                                 </div>
                                 <div className="wallet-drag-tokens">
                                   <div className="wallet-token-count">

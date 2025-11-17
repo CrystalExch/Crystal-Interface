@@ -358,9 +358,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
   setOneCTDepositAddress
 }) => {
   const [activeTab, setActiveTab] = useState<PortfolioTab>('spot');
-const [activeSection, setActiveSection] = useState<
-  'orders' | 'tradeHistory' | 'orderHistory'
->('orders');
+  const [activeSection, setActiveSection] = useState<
+    'orders' | 'tradeHistory' | 'orderHistory'
+  >('orders');
 
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -391,7 +391,7 @@ const [activeSection, setActiveSection] = useState<
       }
     }
     return {};
-  });  
+  });
   const [editingWallet, setEditingWallet] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
 
@@ -506,7 +506,7 @@ const [activeSection, setActiveSection] = useState<
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
-    
+
     if (tabParam) {
       const validTabs: PortfolioTab[] = ['spot', 'Perpetuals', 'wallets', 'trenches'];
       if (validTabs.includes(tabParam as PortfolioTab)) {
@@ -575,7 +575,7 @@ const [activeSection, setActiveSection] = useState<
   const getActiveAddress = () => {
     return isSpectating ? spectatedAddress : address;
   };
-  
+
   const getMainWalletBalance = () => {
     const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
 
@@ -639,7 +639,7 @@ const [activeSection, setActiveSection] = useState<
       }
     }
   };
-  
+
   const handleUniversalDrop = (e: React.DragEvent, targetZone: 'source' | 'destination' | 'main') => {
     e.preventDefault();
     e.stopPropagation();
@@ -1876,10 +1876,22 @@ const [activeSection, setActiveSection] = useState<
         </div>
 
         <div className="wallet-drag-values">
-          <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
-            <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
-            {getWalletBalance(wallet.address).toFixed(2)}
-          </div>
+          {(() => {
+            const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+            const balanceWei = walletTokenBalances[wallet.address]?.[
+              settings.chainConfig[activechain]?.eth
+            ] || 0n;
+            const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+
+            return (
+              <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}>
+                  <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
+                  {getWalletBalance(wallet.address).toFixed(2)}
+                </div>
+              </Tooltip>
+            );
+          })()}
         </div>
         <div className="wallet-drag-tokens">
           <div className="wallet-token-count">
@@ -2152,219 +2164,192 @@ const [activeSection, setActiveSection] = useState<
         return (
           <div className="portfolio-layout-with-referrals">
             <div className="port-top-section">
-            <ReferralSidebar
-              tokendict={tokendict}
-              router={router}
-              setClaimableFees={setClaimableFees}
-              address={getActiveAddress() as `0x${string}`}
-              usedRefLink={usedRefLink}
-              setUsedRefLink={setUsedRefLink}
-              setUsedRefAddress={setUsedRefAddress}
-              totalClaimableFees={totalClaimableFees}
-              claimableFees={claimableFees}
-              refLink={refLink}
-              setRefLink={setRefLink}
-              setChain={setChain}
-              setpopup={setpopup}
-              account={account}
-              refetch={refetch}
-              sendUserOperationAsync={sendUserOperationAsync}
-              client={client}
-              activechain={activechain}
-              lastRefGroupFetch={lastRefGroupFetch}
-            />
+              <ReferralSidebar
+                tokendict={tokendict}
+                router={router}
+                setClaimableFees={setClaimableFees}
+                address={getActiveAddress() as `0x${string}`}
+                usedRefLink={usedRefLink}
+                setUsedRefLink={setUsedRefLink}
+                setUsedRefAddress={setUsedRefAddress}
+                totalClaimableFees={totalClaimableFees}
+                claimableFees={claimableFees}
+                refLink={refLink}
+                setRefLink={setRefLink}
+                setChain={setChain}
+                setpopup={setpopup}
+                account={account}
+                refetch={refetch}
+                sendUserOperationAsync={sendUserOperationAsync}
+                client={client}
+                activechain={activechain}
+                lastRefGroupFetch={lastRefGroupFetch}
+              />
 
-            <div className="portfolio-left-column">
-              <div className="graph-outer-container">
-                {portChartLoading ? (
-                  <div className="graph-container">
-                    <Overlay isVisible={true} bgcolor={'rgb(6,6,6)'} height={15} maxLogoHeight={100} />
-                  </div>
-                ) : (
-                  <div className="graph-container">
-                    <span className="graph-label">
-                      {isSpectating ? t("spectatingPerformance") : t("performance")}
-                    </span>
-                    <PortfolioGraph
-                      address={getActiveAddress()}
-                      colorValue={portfolioColorValue}
-                      setColorValue={setPortfolioColorValue}
-                      isPopup={false}
-                      onPercentageChange={setPercentage}
-                      chartData={chartData}
-                      portChartLoading={portChartLoading}
-                      chartDays={chartDays}
-                      setChartDays={setChartDays}
-                      isBlurred={isBlurred}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="account-stats-wrapper">
-              <div className="controls-container">
-                <button
-                  className="control-button"
-                  onClick={() => setIsBlurred(!isBlurred)}
-                >
-                  <div style={{ position: 'relative' }}>
-                    <Eye className="control-icon" size={12} />
-                    <div className={`port-eye-slash ${isBlurred ? '' : 'hidden'}`} />
-                  </div>
-                  Hide Balances
-                </button>
-
-                <button
-                  className="control-button"
-                  onClick={() => {
-                    account.logout()
-                  }}
-                >
-                  <svg
-                    className="control-icon"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M8.90002 7.55999C9.21002 3.95999 11.06 2.48999 15.11 2.48999H15.24C19.71 2.48999 21.5 4.27999 21.5 8.74999V15.27C21.5 19.74 19.71 21.53 15.24 21.53H15.11C11.09 21.53 9.24002 20.08 8.91002 16.54" />
-                    <path d="M2 12H14.88" />
-                    <path d="M12.65 8.6499L16 11.9999L12.65 15.3499" />
-                  </svg>
-                  Disconnect
-                </button>
-              </div>
-              <div
-                className={`account-summary-container ${percentage >= 0 ? 'positive' : 'negative'}`}
-              >
-                <div className="account-header">
-                  {isSpectating ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <EyeIcon size={16} style={{ color: '#ff6b6b' }} />
-                      <span>SPECTATING</span>
+              <div className="portfolio-left-column">
+                <div className="graph-outer-container">
+                  {portChartLoading ? (
+                    <div className="graph-container">
+                      <Overlay isVisible={true} bgcolor={'rgb(6,6,6)'} height={15} maxLogoHeight={100} />
                     </div>
                   ) : (
-                    t("account")
+                    <div className="graph-container">
+                      <span className="graph-label">
+                        {isSpectating ? t("spectatingPerformance") : t("performance")}
+                      </span>
+                      <PortfolioGraph
+                        address={getActiveAddress()}
+                        colorValue={portfolioColorValue}
+                        setColorValue={setPortfolioColorValue}
+                        isPopup={false}
+                        onPercentageChange={setPercentage}
+                        chartData={chartData}
+                        portChartLoading={portChartLoading}
+                        chartDays={chartDays}
+                        setChartDays={setChartDays}
+                        isBlurred={isBlurred}
+                      />
+                    </div>
                   )}
                 </div>
-                {isSpectating && (
-                  <div style={{
-                    fontSize: '12px',
-                    color: '#888',
-                    marginBottom: '8px',
-                    wordBreak: 'break-all'
-                  }}>
-                    {spectatedAddress.slice(0, 6)}...{spectatedAddress.slice(-4)}
-                  </div>
-                )}
-                <div className="total-value-container">
-                  <span className={`total-value ${isBlurred ? 'blurred' : ''}`}>
-                    ${formatCommas(typeof totalAccountValue === 'number' ? totalAccountValue.toFixed(2) : '0.00')}
-                  </span>
-                  <div className="percentage-change-container">
-                    <span
-                      className={`percentage-value ${isBlurred ? 'blurred' : ''} ${percentage >= 0 ? 'positive' : 'negative'
-                        }`}
-                    >
-                      {portChartLoading ? (
-                        <div className="port-loading" style={{ width: 55 }} />
-                      ) : (
-                        `${percentage >= 0 ? '+' : ''}${formatCommas(percentage.toFixed(2))}%`
-                      )}
-                    </span>
-                    <span className="time-range">
-                      (past {getTimeRangeText(timeRange)})
-                    </span>
-                  </div>
-                </div>
               </div>
-              <div className="trading-stats-container">
-                <div className="trading-stats-header">
-                  <span className="trading-stats-title">
-                    {isSpectating ? t("spectatedTradingStats") : t("tradingStats")}
-                  </span>
+
+              <div className="account-stats-wrapper">
+                <div className="controls-container">
+                  <button
+                    className="control-button"
+                    onClick={() => setIsBlurred(!isBlurred)}
+                  >
+                    <div style={{ position: 'relative' }}>
+                      <Eye className="control-icon" size={12} />
+                      <div className={`port-eye-slash ${isBlurred ? '' : 'hidden'}`} />
+                    </div>
+                    Hide Balances
+                  </button>
+
+                  <button
+                    className="control-button"
+                    onClick={() => {
+                      account.logout()
+                    }}
+                  >
+                    <svg
+                      className="control-icon"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M8.90002 7.55999C9.21002 3.95999 11.06 2.48999 15.11 2.48999H15.24C19.71 2.48999 21.5 4.27999 21.5 8.74999V15.27C21.5 19.74 19.71 21.53 15.24 21.53H15.11C11.09 21.53 9.24002 20.08 8.91002 16.54" />
+                      <path d="M2 12H14.88" />
+                      <path d="M12.65 8.6499L16 11.9999L12.65 15.3499" />
+                    </svg>
+                    Disconnect
+                  </button>
                 </div>
-                <div className="stats-list">
-                  <div className="stat-row">
-                    Total Volume
-                    <span className={`account-stat-value ${isBlurred ? 'blurred' : ''}`}>
-                      {portChartLoading ? (
-                        <div className="port-loading" style={{ width: 80 }} />
-                      ) : (
-                        `$${formatCommas(getActiveAddress() ? totalVolume.toFixed(2) : '0.00')}`
-                      )}
+                <div
+                  className={`account-summary-container ${percentage >= 0 ? 'positive' : 'negative'}`}
+                >
+                  <div className="account-header">
+                    {isSpectating ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <EyeIcon size={16} style={{ color: '#ff6b6b' }} />
+                        <span>SPECTATING</span>
+                      </div>
+                    ) : (
+                      t("account")
+                    )}
+                  </div>
+                  {isSpectating && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#888',
+                      marginBottom: '8px',
+                      wordBreak: 'break-all'
+                    }}>
+                      {spectatedAddress.slice(0, 6)}...{spectatedAddress.slice(-4)}
+                    </div>
+                  )}
+                  <div className="total-value-container">
+                    <span className={`total-value ${isBlurred ? 'blurred' : ''}`}>
+                      ${formatCommas(typeof totalAccountValue === 'number' ? totalAccountValue.toFixed(2) : '0.00')}
+                    </span>
+                    <div className="percentage-change-container">
+                      <span
+                        className={`percentage-value ${isBlurred ? 'blurred' : ''} ${percentage >= 0 ? 'positive' : 'negative'
+                          }`}
+                      >
+                        {portChartLoading ? (
+                          <div className="port-loading" style={{ width: 55 }} />
+                        ) : (
+                          `${percentage >= 0 ? '+' : ''}${formatCommas(percentage.toFixed(2))}%`
+                        )}
+                      </span>
+                      <span className="time-range">
+                        (past {getTimeRangeText(timeRange)})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="trading-stats-container">
+                  <div className="trading-stats-header">
+                    <span className="trading-stats-title">
+                      {isSpectating ? t("spectatedTradingStats") : t("tradingStats")}
                     </span>
                   </div>
-                  <div className="stat-row">
-                    Session High
-                    <span className={`account-stat-value ${isBlurred ? 'blurred' : ''}`}>
-                      {portChartLoading ? (
-                        <div className="port-loading" style={{ width: 80 }} />
-                      ) : (
-                        `$${formatCommas(getActiveAddress() ? high.toFixed(2) : '0.00')}`
-                      )}
-                    </span>
-                  </div>
-                  <div className="stat-row">
-                    Session Low
-                    <span className={`account-stat-value ${isBlurred ? 'blurred' : ''}`}>
-                      {portChartLoading ? (
-                        <div className="port-loading" style={{ width: 80 }} />
-                      ) : (
-                        `$${formatCommas(getActiveAddress() ? low.toFixed(2) : '0.00')}`
-                      )}
-                    </span>
-                  </div>
-                  <div className="stat-row">
-                    Active Orders
-                    <span className={`account-stat-value`}>
-                      {portChartLoading ? (
-                        <div className="port-loading" style={{ width: 80 }} />
-                      ) : (
-                        `${getActiveAddress() ? activeOrders : 0}`
-                      )}
-                    </span>
+                  <div className="stats-list">
+                    <div className="stat-row">
+                      Total Volume
+                      <span className={`account-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                        {portChartLoading ? (
+                          <div className="port-loading" style={{ width: 80 }} />
+                        ) : (
+                          `$${formatCommas(getActiveAddress() ? totalVolume.toFixed(2) : '0.00')}`
+                        )}
+                      </span>
+                    </div>
+                    <div className="stat-row">
+                      Session High
+                      <span className={`account-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                        {portChartLoading ? (
+                          <div className="port-loading" style={{ width: 80 }} />
+                        ) : (
+                          `$${formatCommas(getActiveAddress() ? high.toFixed(2) : '0.00')}`
+                        )}
+                      </span>
+                    </div>
+                    <div className="stat-row">
+                      Session Low
+                      <span className={`account-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                        {portChartLoading ? (
+                          <div className="port-loading" style={{ width: 80 }} />
+                        ) : (
+                          `$${formatCommas(getActiveAddress() ? low.toFixed(2) : '0.00')}`
+                        )}
+                      </span>
+                    </div>
+                    <div className="stat-row">
+                      Active Orders
+                      <span className={`account-stat-value`}>
+                        {portChartLoading ? (
+                          <div className="port-loading" style={{ width: 80 }} />
+                        ) : (
+                          `${getActiveAddress() ? activeOrders : 0}`
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div className="order-section">
-            <OrderCenter
-              orders={orders}
-              tradehistory={tradehistory}
-              canceledorders={canceledorders}
-              router={router}
-              address={getActiveAddress()}
-              trades={trades}
-              currentMarket={''}
-              orderCenterHeight={orderCenterHeight}
-              tokenList={tokenList}
-              onMarketSelect={onMarketSelect}
-              setSendTokenIn={setSendTokenIn}
-              setpopup={setpopup}
-              sortConfig={sortConfig}
-              onSort={setSortConfig}
-              tokenBalances={tokenBalances}
-              hideMarketFilter={true}
-              hideBalances={true}
-              activeSection={activeSection}
-              setActiveSection={setActiveSection}
-              filter={filter}
-              setFilter={setFilter}
-              onlyThisMarket={onlyThisMarket}
-              setOnlyThisMarket={setOnlyThisMarket}
-              isPortfolio={true}
-              refetch={refetch}
-              sendUserOperationAsync={sendUserOperationAsync}
-              setChain={setChain}
-              isBlurred={isBlurred}
-              openEditOrderPopup={() => {}}
-              openEditOrderSizePopup={() => {}}
-              marketsData={marketsData}
-            />
-            <div className="portfolio-balance-wrapper" style={{height: orderCenterHeight}}>
-              <div className="portfolio-balance-header"><span className="portfolio-balance-header-title">Balances</span></div>
-              <PortfolioBalance
+            <div className="order-section">
+              <OrderCenter
+                orders={orders}
+                tradehistory={tradehistory}
+                canceledorders={canceledorders}
+                router={router}
+                address={getActiveAddress()}
+                trades={trades}
+                currentMarket={''}
+                orderCenterHeight={orderCenterHeight}
                 tokenList={tokenList}
                 onMarketSelect={onMarketSelect}
                 setSendTokenIn={setSendTokenIn}
@@ -2372,13 +2357,40 @@ const [activeSection, setActiveSection] = useState<
                 sortConfig={sortConfig}
                 onSort={setSortConfig}
                 tokenBalances={tokenBalances}
-                marketsData={marketsData}
+                hideMarketFilter={true}
+                hideBalances={true}
+                activeSection={activeSection}
+                setActiveSection={setActiveSection}
+                filter={filter}
+                setFilter={setFilter}
+                onlyThisMarket={onlyThisMarket}
+                setOnlyThisMarket={setOnlyThisMarket}
+                isPortfolio={true}
+                refetch={refetch}
+                sendUserOperationAsync={sendUserOperationAsync}
+                setChain={setChain}
                 isBlurred={isBlurred}
+                openEditOrderPopup={() => { }}
+                openEditOrderSizePopup={() => { }}
+                marketsData={marketsData}
               />
+              <div className="portfolio-balance-wrapper" style={{ height: orderCenterHeight }}>
+                <div className="portfolio-balance-header"><span className="portfolio-balance-header-title">Balances</span></div>
+                <PortfolioBalance
+                  tokenList={tokenList}
+                  onMarketSelect={onMarketSelect}
+                  setSendTokenIn={setSendTokenIn}
+                  setpopup={setpopup}
+                  sortConfig={sortConfig}
+                  onSort={setSortConfig}
+                  tokenBalances={tokenBalances}
+                  marketsData={marketsData}
+                  isBlurred={isBlurred}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      );
+        );
 
       case 'wallets':
         const filteredWallets = subWallets.filter(wallet => {
@@ -3143,8 +3155,8 @@ const [activeSection, setActiveSection] = useState<
                           );
 
                           days.push(
-                            <div 
-                              key={`day-${day}`} 
+                            <div
+                              key={`day-${day}`}
                               className={`pnl-calendar-day ${isPastOrToday ? 'past-or-today' : ''}`}
                             >
                               <div className="pnl-calendar-day-number">{day}</div>
@@ -3230,7 +3242,7 @@ const [activeSection, setActiveSection] = useState<
             >
               Spot
             </span>
-                        <span
+            <span
               className={`portfolio-tab-title ${activeTab === 'wallets' ? 'active' : 'nonactive'}`}
               onClick={() => setActiveTab('wallets')}
             >
@@ -3243,7 +3255,7 @@ const [activeSection, setActiveSection] = useState<
             </span>
             <span
               className="portfolio-tab-title perpetuals"
-              // onClick={() => setActiveTab('trenches')}
+            // onClick={() => setActiveTab('trenches')}
             >
               Trenches
             </span>

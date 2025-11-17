@@ -360,41 +360,41 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
   const [hoveredTradeRow, setHoveredTradeRow] = useState<string | null>(null);
   const [buyingTrade, setBuyingTrade] = useState<string | null>(null);
-const [hoveredImage, setHoveredImage] = useState<string | null>(null);
-const [showPreview, setShowPreview] = useState(false);
-const [previewPosition, setPreviewPosition] = useState({ top: 0, left: 0 });
+  const [hoveredImage, setHoveredImage] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewPosition, setPreviewPosition] = useState({ top: 0, left: 0 });
 
-const handleImageHover = useCallback((tradeId: string) => {
-  setHoveredImage(tradeId);
-}, []);
+  const handleImageHover = useCallback((tradeId: string) => {
+    setHoveredImage(tradeId);
+  }, []);
 
-const handleImageLeave = useCallback(() => {
-  setHoveredImage(null);
-  setShowPreview(false);
-}, []);
+  const handleImageLeave = useCallback(() => {
+    setHoveredImage(null);
+    setShowPreview(false);
+  }, []);
 
-const updatePreviewPosition = useCallback((containerElement: HTMLElement) => {
-  if (!containerElement) return;
+  const updatePreviewPosition = useCallback((containerElement: HTMLElement) => {
+    if (!containerElement) return;
 
-  const rect = containerElement.getBoundingClientRect();
-  const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-  const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const rect = containerElement.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
-  const viewportWidth = window.innerWidth;
-  const previewWidth = 220;
-  const offset = 10;
+    const viewportWidth = window.innerWidth;
+    const previewWidth = 220;
+    const offset = 10;
 
-  let left = rect.right + scrollX + offset;
+    let left = rect.right + scrollX + offset;
 
-  if (left + previewWidth > viewportWidth) {
-    left = rect.left + scrollX - previewWidth - offset;
-  }
+    if (left + previewWidth > viewportWidth) {
+      left = rect.left + scrollX - previewWidth - offset;
+    }
 
-  const top = rect.top + scrollY;
+    const top = rect.top + scrollY;
 
-  setPreviewPosition({ top, left });
-  setTimeout(() => setShowPreview(true), 10);
-}, []);
+    setPreviewPosition({ top, left });
+    setTimeout(() => setShowPreview(true), 10);
+  }, []);
   const [activeFilters, setActiveFilters] = useState<FilterState>({
     transactionTypes: {
       buyMore: true,
@@ -1252,33 +1252,33 @@ const updatePreviewPosition = useCallback((containerElement: HTMLElement) => {
                     </div>
                   </div>
 
-<div className="wtw-detail-trades-col">
-  <div
-    style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
-    onClick={() => {
-      if (trade.tokenAddress) {
-        navigate(`/meme/${trade.tokenAddress}`);
-      }
-    }}
-  >
-    {trade.tokenIcon && (
-      <div 
-        style={{ position: 'relative' }}
-        onMouseEnter={(e) => {
-          handleImageHover(trade.id);
-          updatePreviewPosition(e.currentTarget);
-        }}
-        onMouseLeave={handleImageLeave}
-      >
-        <img src={trade.tokenIcon} className="wtw-asset-icon" alt={trade.tokenName || trade.token} />
-        <img src={crystal} className="wtw-launchpad-logo crystal" />
-      </div>
-    )}
-    <div className="wtw-asset-details">
-      <div className="wtw-asset-ticker">{trade.tokenName || trade.token}</div>
-    </div>
-  </div>
-</div>
+                  <div className="wtw-detail-trades-col">
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                      onClick={() => {
+                        if (trade.tokenAddress) {
+                          navigate(`/meme/${trade.tokenAddress}`);
+                        }
+                      }}
+                    >
+                      {trade.tokenIcon && (
+                        <div
+                          style={{ position: 'relative' }}
+                          onMouseEnter={(e) => {
+                            handleImageHover(trade.id);
+                            updatePreviewPosition(e.currentTarget);
+                          }}
+                          onMouseLeave={handleImageLeave}
+                        >
+                          <img src={trade.tokenIcon} className="wtw-asset-icon" alt={trade.tokenName || trade.token} />
+                          <img src={crystal} className="wtw-launchpad-logo crystal" />
+                        </div>
+                      )}
+                      <div className="wtw-asset-details">
+                        <div className="wtw-asset-ticker">{trade.tokenName || trade.token}</div>
+                      </div>
+                    </div>
+                  </div>
                   <div
                     className="wtw-detail-trades-col"
                     style={{ cursor: 'pointer' }}
@@ -1341,7 +1341,7 @@ const updatePreviewPosition = useCallback((containerElement: HTMLElement) => {
                   </div>
                 </div>
               ))
-)}
+            )}
           </div>
         </div>
 
@@ -1427,7 +1427,7 @@ const updatePreviewPosition = useCallback((containerElement: HTMLElement) => {
                 </Tooltip>
                 <Tooltip content="Filters">
                   <button className="wtw-header-button" onClick={() => setShowFiltersPopup(true)}>
-                    <img src={filtericon} className="wtw-filter-image"/>
+                    <img src={filtericon} className="wtw-filter-image" />
                   </button>
                 </Tooltip>
                 <Tooltip content="Presets">
@@ -1456,7 +1456,7 @@ const updatePreviewPosition = useCallback((containerElement: HTMLElement) => {
                 className="wtw-open-new-tab-button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  window.open(`${window.location.origin}/tracker`, '_blank');
+                  window.open(`${window.location.origin}/trackers`, '_blank');
                 }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="wtw-link-icon">

@@ -627,6 +627,12 @@
   gap: 5px;
 }
 
+
+.wallet-drag-balance.insufficient-gas {
+  border-color: rgba(235, 112, 112, 0.3);
+  color: rgb(235, 112, 112);
+}
+
 .wallet-drag-total {
   color: rgba(255, 255, 255, .6);
   font-size: .75rem;

@@ -851,15 +851,27 @@ const Header: React.FC<HeaderProps> = ({
                                   <div className="wallet-dropdown-address">
                                     {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
                                   </div>
+</div>
+                                <div className="wallet-dropdown-balance">
+                                  {(() => {
+                                    const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                                    const balanceWei = walletTokenBalances[wallet.address]?.[
+                                      settings.chainConfig[activechain]?.eth
+                                    ] || 0n;
+                                    const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+
+                                    return (
+                                      <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                        <div
+                                          className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                        >
+                                          <img src={monadicon} className="wallet-dropdown-mon-icon" />
+                                          {formatNumberWithCommas(balance, 2)}
+                                        </div>
+                                      </Tooltip>
+                                    );
+                                  })()}
                                 </div>
-                                <Tooltip content="MON Balance">
-                                  <div className="wallet-dropdown-balance">
-                                    <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
-                                      <img src={monadicon} className="wallet-dropdown-mon-icon" />
-                                      {formatNumberWithCommas(balance, 2)}
-                                    </div>
-                                  </div>
-                                </Tooltip>
                                 <Tooltip content="Tokens">
                                   <div className="wallet-drag-tokens">
                                     <div className="wallet-token-count">
