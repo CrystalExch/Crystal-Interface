@@ -2783,7 +2783,7 @@ const TokenRow = React.memo<{
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <Tooltip content="Website">
+                        <Tooltip content={token.website}>
                           <svg
                             width="16"
                             height="16"
