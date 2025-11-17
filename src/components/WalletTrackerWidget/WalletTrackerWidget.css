@@ -839,6 +839,7 @@
   height: 20px;
   border-radius: 2px;
   flex-shrink: 0;
+  border: 1px solid #b6bbea53;
 }
 
 .wtw-asset-details {
@@ -860,6 +861,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: -0.5px;
+  max-width: 70px;
 }
 
 .wtw-settings-image {
@@ -1463,4 +1465,17 @@
 .wtw-market-cap-value{
   color: #e3e4f0bd;
   font-weight: 300;
+}
+
+
+.wtw-launchpad-logo{
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background-color: black;
+  border-radius: 50%;
+  border: 1px solid #aaaecf;
+  padding: 1px;
+  bottom:-3px;
+  right: -3px;
 }

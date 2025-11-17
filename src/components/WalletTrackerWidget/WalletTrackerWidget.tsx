@@ -291,6 +291,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   setpopup,
   currentPopup = 0,
 }) => {
+  const crystal = '/CrystalLogo.png';
   const widgetRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 100, y: 100 });
   const [size, setSize] = useState({ width: 600, height: 700 });
@@ -317,9 +318,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   const [sortBy, setSortBy] = useState<'created' | 'name' | 'balance' | 'lastActive' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [walletCurrency, setWalletCurrency] = useState<'USD' | 'MON'>('USD');
-
-  const [tradeSortField, setTradeSortField] = useState<'amount' | 'marketCap' | null>(null);
-  const [tradeSortDirection, setTradeSortDirection] = useState<'asc' | 'desc'>('desc');
   const [tradeAmountCurrency, setTradeAmountCurrency] = useState<'USD' | 'MON'>('USD');
   const [showFiltersPopup, setShowFiltersPopup] = useState(false);
   const [showMonitorFiltersPopup, setShowMonitorFiltersPopup] = useState(false);
@@ -845,20 +843,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       return true;
     });
 
-    if (tradeSortField) {
-      trades = [...trades].sort((a, b) => {
-        let comparison = 0;
-
-        if (tradeSortField === 'amount') {
-          comparison = a.amount - b.amount;
-        } else if (tradeSortField === 'marketCap') {
-          comparison = a.marketCap - b.marketCap;
-        }
-
-        return tradeSortDirection === 'desc' ? -comparison : comparison;
-      });
-    }
-
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       trades = trades.filter((trade: any) =>
@@ -871,37 +855,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     console.log('[LiveTrades] After filtering:', trades.length, 'trades');
     return trades;
   };
-
-  const handleTradeSort = (field: 'amount' | 'marketCap') => {
-    if (tradeSortField === field) {
-      setTradeSortDirection(tradeSortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setTradeSortField(field);
-      setTradeSortDirection('desc');
-    }
-  };
-
-  // Monitor filtering and sorting
-  const getFilteredPositions = () => {
-    if (!launchpadPositions) return [];
-
-    const walletAddressSet = new Set(localWallets.map(w => w.address.toLowerCase()));
-
-    return launchpadPositions.filter((pos: any) => {
-      const posWalletAddr = pos.walletAddress?.toLowerCase();
-      if (!walletAddressSet.has(posWalletAddr)) return false;
-
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        return (
-          pos.name?.toLowerCase().includes(query) ||
-          pos.symbol?.toLowerCase().includes(query)
-        );
-      }
-      return true;
-    });
-  };
-
 
   const formatAmount = (amount: number, decimals: number = 2) => {
     if (amount >= 1e9) {
@@ -925,20 +878,9 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
             <div className="wtw-detail-trades-header-cell wtw-detail-trades-time"></div>
             <div className="wtw-detail-trades-header-cell wtw-detail-trades-account">Name</div>
             <div className="wtw-detail-trades-header-cell">Token</div>
-            <div
-              className={`wtw-detail-trades-header-cell wtw-sortable ${tradeSortField === 'amount' ? 'active' : ''}`}
-              onClick={() => handleTradeSort('amount')}
-            >
-              Amount
-            </div>
-            <div
-              className={`wtw-detail-trades-header-cell wtw-sortable ${tradeSortField === 'marketCap' ? 'active' : ''}`}
-              onClick={() => handleTradeSort('marketCap')}
-            >
-              Market Cap
-            </div>
+            <div className="wtw-detail-trades-header-cell">Amount</div>
+            <div className="wtw-detail-trades-header-cell">Market Cap</div>
           </div>
-
           <div className="wtw-detail-trades-body">
             {filteredTrades.length === 0 ? (
               <div className="wtw-empty-state">
@@ -955,7 +897,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                   className={`wtw-detail-trades-row ${trade.type === 'buy' ? 'buy' : 'sell'}`}
                 >
                   <div className="wtw-detail-trades-col wtw-detail-trades-time">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' , color: '#e3e4f0bd' , fontWeight: '300' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', color: '#e3e4f0bd', fontWeight: '300' }}>
                       <span>{trade.time}</span>
                     </div>
                   </div>
@@ -981,7 +923,10 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                       }}
                     >
                       {trade.tokenIcon && (
-                        <img src={trade.tokenIcon} className="wtw-asset-icon" alt={trade.tokenName || trade.token} />
+                        <div style={{ position: 'relative' }}>
+                          <img src={trade.tokenIcon} className="wtw-asset-icon" alt={trade.tokenName || trade.token} />
+                          <img src={crystal} className="wtw-launchpad-logo crystal" />
+                        </div>
                       )}
                       <div className="wtw-asset-details">
                         <div className="wtw-asset-ticker">{trade.tokenName || trade.token}</div>
