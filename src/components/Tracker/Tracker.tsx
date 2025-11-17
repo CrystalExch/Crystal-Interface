@@ -2398,7 +2398,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     return () => clearInterval(interval);
   }, [activeTab, trackedWallets]);
 
-  // Populate marketsRef with volume and transaction data from tokensByStatus (TokenExplorer's data source)
   useEffect(() => {
     const allTokens = [
       ...(tokensByStatus.new || []),
@@ -2419,6 +2418,8 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         name: token.name || existing?.name || '',
         symbol: token.symbol || existing?.symbol || '',
         emoji: token.emoji || existing?.emoji || '🪙',
+        image: token.image || existing?.image || existing?.imageUrl,
+        imageUrl: token.image || existing?.imageUrl || existing?.image,
         price: token.price ?? existing?.price ?? 0,
         marketCap: token.marketCap ?? existing?.marketCap ?? 0,
         change24h: token.change24h ?? existing?.change24h ?? 0,
@@ -3486,6 +3487,8 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       name: t.name || m?.name || t.symbol || 'Token',
       symbol: t.symbol || m?.symbol || 'TKN',
       emoji: m?.emoji || '🪙',
+      image: t.imageUrl || m?.image || m?.imageUrl,
+      imageUrl: t.imageUrl || m?.imageUrl || m?.image,
       price,
       marketCap: mk || m?.marketCap || 0,
       change24h: m?.change24h ?? 0,
@@ -4145,28 +4148,75 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
   const renderMonitor = () => {
     const allPositions = getFilteredPositions();
 
-    // Launchpad column: Only memecoin positions (exclude major tokens from tokenList, graduated tokens, and migrated/orderbook tokens)
-    // These come from GraphQL launchpadPositions query
-    // Filter out graduated tokens (bondingCurveProgress === 100) and orderbook tokens (isOrderbook === true)
-    let launchpadPositions = allPositions.filter(pos => {
-      // Exclude orderbook tokens (migrated tokens from GraphQL)
+    let launchpadPositionsRaw = allPositions.filter(pos => {
       if (pos.isOrderbook) return false;
-
       const market = marketsRef.current.get(pos.tokenId.toLowerCase());
       return !market || market.bondingCurveProgress < 100;
     });
 
-    // Get graduated tokens for orderbook column (bondingCurveProgress === 100 but not already marked as orderbook from migration)
+    const aggregatedLaunchpadPositions: GqlPosition[] = [];
+    const launchpadTokenMap = new Map<string, { position: GqlPosition, wallets: any[] }>();
+
+    launchpadPositionsRaw.forEach(pos => {
+      const tokenId = pos.tokenId.toLowerCase();
+      if (!launchpadTokenMap.has(tokenId)) {
+        launchpadTokenMap.set(tokenId, {
+          position: {
+            tokenId: pos.tokenId,
+            symbol: pos.symbol,
+            name: pos.name,
+            imageUrl: pos.imageUrl,
+            boughtTokens: 0,
+            soldTokens: 0,
+            spentNative: 0,
+            receivedNative: 0,
+            remainingTokens: 0,
+            remainingPct: 0,
+            pnlNative: 0,
+            lastPrice: pos.lastPrice,
+            isOrderbook: false
+          },
+          wallets: []
+        });
+      }
+
+      const entry = launchpadTokenMap.get(tokenId)!;
+      entry.position.boughtTokens += pos.boughtTokens;
+      entry.position.soldTokens += pos.soldTokens;
+      entry.position.spentNative += pos.spentNative;
+      entry.position.receivedNative += pos.receivedNative;
+      entry.position.remainingTokens += pos.remainingTokens;
+      entry.position.pnlNative += pos.pnlNative;
+      if (pos.lastPrice > entry.position.lastPrice) {
+        entry.position.lastPrice = pos.lastPrice;
+      }
+
+      entry.wallets.push({
+        name: (pos as any).walletName,
+        emoji: (pos as any).walletEmoji,
+        address: (pos as any).walletAddress,
+        balance: pos.remainingTokens,
+        pnl: pos.pnlNative,
+        spent: pos.spentNative,
+        received: pos.receivedNative
+      });
+    });
+
+    launchpadTokenMap.forEach((entry, tokenId) => {
+      (entry.position as any).wallets = entry.wallets;
+      aggregatedLaunchpadPositions.push(entry.position);
+    });
+
+    const launchpadPositions = aggregatedLaunchpadPositions;
+
     const graduatedPositions = allPositions.filter(pos => {
-      if (pos.isOrderbook) return false; // These are already in orderbook via migration
+      if (pos.isOrderbook) return false;
       const market = marketsRef.current.get(pos.tokenId.toLowerCase());
       return market && market.bondingCurveProgress === 100;
     });
 
-    // Get migrated orderbook positions from GraphQL (these have isOrderbook: true)
     const migratedOrderbookPositions = allPositions.filter(pos => pos.isOrderbook === true);
 
-    // Orderbook column: only major tokens from tokenList
     const spotTokenPositions: GqlPosition[] = [];
     const chainCfg = settings.chainConfig?.[activechain];
 
@@ -4175,15 +4225,12 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         const walletBalances = walletTokenBalances[wallet.address] || walletTokenBalances[wallet.address.toLowerCase()];
         if (!walletBalances) return;
 
-        // Only iterate through tokens in tokenList (major tokens)
         tokenList.forEach((token: any) => {
           const tokenAddr = token.address?.toLowerCase();
           if (!tokenAddr) return;
 
-          // Try to find balance with both lowercase and original case
           let balanceWei = walletBalances[tokenAddr];
           if (!balanceWei) {
-            // Try finding by checking all keys case-insensitively
             const matchingKey = Object.keys(walletBalances).find(k => k.toLowerCase() === tokenAddr);
             if (matchingKey) {
               balanceWei = walletBalances[matchingKey];
@@ -4224,7 +4271,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       });
     }
 
-    // Aggregate orderbook positions by token (combine all wallets)
     const aggregatedOrderbookPositions: GqlPosition[] = [];
     const tokenMap = new Map<string, { position: GqlPosition, wallets: any[] }>();
 
@@ -4275,14 +4321,11 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       aggregatedOrderbookPositions.push(entry.position);
     });
 
-    // Deduplicate: Keep launchpad versions (graduatedPositions) over orderbook versions
-    // Graduated tokens have actual trade data, while migrated orderbook positions may just have balance info
     const graduatedTokenIds = new Set(graduatedPositions.map(p => p.tokenId.toLowerCase()));
     const dedupedMigratedPositions = migratedOrderbookPositions.filter(
       pos => !graduatedTokenIds.has(pos.tokenId.toLowerCase())
     );
 
-    // Combine spot tokens, graduated tokens, and deduplicated migrated orderbook tokens for orderbook column
     const orderbookPositions = [...aggregatedOrderbookPositions, ...graduatedPositions, ...dedupedMigratedPositions];
 
     const formatTimeAgo = (timestamp: number | undefined): string => {
@@ -4362,7 +4405,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
             volume24h = orderBookMarket.volume24h;
           }
 
-          // Get transactions from tradesByMarket if available
           let buyTxs = 0;
           let sellTxs = 0;
 
@@ -4381,7 +4423,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
             });
           }
 
-          // Convert marketsData format to expected market format
           market = {
             id: pos.tokenId,
             tokenAddress: pos.tokenId,
@@ -4417,7 +4458,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
 
       const classes: string[] = ['tracker-monitor-card'];
 
-      // Add displaySettings classes
       classes.push(`metrics-size-${displaySettings.metricSize}`);
       if (displaySettings.quickBuySize === 'large') classes.push('large-quickbuy-mode');
       if (displaySettings.quickBuySize === 'mega') classes.push('mega-quickbuy-mode');
@@ -4430,11 +4470,8 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         }
       }
 
-      // Add metric coloring classes
       if (market) {
         classes.push('metric-colored');
-
-        // Market cap coloring
         const marketCap = pos.lastPrice * 1e9;
         if (marketCap < 30000) {
           classes.push('market-cap-range1');
@@ -4501,7 +4538,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         }
       }
 
-      // Remove duplicates by txHash/id
       const uniqueTradesMap = new Map();
       allTrades.forEach((trade: any) => {
         const key = trade.txHash || trade.id;
@@ -4510,14 +4546,11 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         }
       });
 
-      // Filter by token symbol to show only trades for this specific token
       let tokenTrades = Array.from(uniqueTradesMap.values()).filter((trade: any) =>
         trade.token === pos.symbol
       );
 
-      // For OrderBook tokens, also check tradesByMarket
       if (pos.isOrderbook && tradesByMarket) {
-        // Try multiple keys to find trades
         const possibleKeys = [
           pos.tokenId.toLowerCase(),
           pos.symbol ? `${pos.symbol}USDC` : null,
@@ -4534,7 +4567,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         }
 
         if (orderBookTrades.length > 0) {
-          // Filter trades by wallet address if available
           const filteredOrderBookTrades = orderBookTrades
             .filter((trade: any) => {
               const tradeWalletAddr = (trade.account?.id || trade.caller || '').toLowerCase();
@@ -4571,7 +4603,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
         }
       }
 
-      // Sort trades by timestamp (most recent first)
       tokenTrades.sort((a: any, b: any) => {
         const timeA = new Date(a.createdAt || 0).getTime();
         const timeB = new Date(b.createdAt || 0).getTime();
@@ -4579,15 +4610,12 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       });
 
       const isHidden = hiddenTokens.has(pos.tokenId);
-      // Use token creator address if available, otherwise use token ID as proxy
       const devAddress = (market as any)?.creator || (market as any)?.devAddress || pos.tokenId;
       const isBlacklisted = blacklistedDevs.has(devAddress);
 
-      // Get bonding curve progress for overlay
       const bondingPercentage = market?.bondingCurveProgress || 0;
       const showBonding = bondingPercentage < 100 && hoveredMonitorToken === pos.tokenId;
 
-      // Get image URL - prefer market data, fallback to position data
       const imageUrl = market?.imageUrl || (market as any)?.image || pos.imageUrl;
 
       return (
@@ -4743,9 +4771,19 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                   </div>
                   <div className="tracker-monitor-token-subtitle">
                     <span className="tracker-monitor-token-symbol">{tokenSymbol}</span>
-                    <span className="tracker-monitor-wallet-badge">
-                      {walletEmoji} {walletName}
-                    </span>
+                    {positionWallets.length > 0 ? (
+                      <span className="tracker-monitor-wallet-badge">
+                        {positionWallets.map((w: any, i: number) => (
+                          <span key={i} style={{ marginRight: i < positionWallets.length - 1 ? '4px' : '0' }}>
+                            {w.emoji} {w.name}{i < positionWallets.length - 1 ? ',' : ''}
+                          </span>
+                        ))}
+                      </span>
+                    ) : (
+                      <span className="tracker-monitor-wallet-badge">
+                        {walletEmoji} {walletName}
+                      </span>
+                    )}
                   </div>
 
                   {/* Additional data section - Holders and Pro Traders */}

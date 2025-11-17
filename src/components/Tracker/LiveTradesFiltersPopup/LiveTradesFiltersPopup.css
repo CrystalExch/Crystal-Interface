@@ -130,10 +130,6 @@
   flex-shrink: 0;
 }
 
-.live-trades-filters-checkbox:hover {
-  background: rgba(170, 174, 207, 0.05);
-  border-color: rgba(170, 174, 207, 0.6);
-}
 
 .live-trades-filters-checkbox:checked {
   border-color: #d8dcff;
@@ -183,9 +179,6 @@
   letter-spacing: -0.3px;
 }
 
-.live-trades-filters-input:focus {
-  border-color: #aaaecf;
-}
 
 .live-trades-filters-input::placeholder {
   color: #ffffff4d;

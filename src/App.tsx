@@ -4534,7 +4534,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const timestamp = trade.timestamp
       ? (trade.timestamp > 1e12 ? Number(trade.timestamp) / 1000 : Number(trade.timestamp))
       : Date.now() / 1000;
-     const now = Date.now() / 1000;
+    const now = Date.now() / 1000;
     const secondsAgo = Math.max(0, now - timestamp);
     let timeAgo = 'now';
     if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
@@ -4566,6 +4566,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       price: price,
       marketCap: marketCap,
       time: timeAgo,
+      timestamp: timestamp * 1000,
       txHash: trade.transaction?.id || trade.transactionHash || trade.id,
       type: isBuy ? 'buy' : 'sell',
       createdAt: new Date(timestamp * 1000).toISOString(),
@@ -4969,7 +4970,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setTrackedWalletTrades(prev => {
                   const updated = [normalized, ...prev];
                   console.log('[TrackedTrade] Added to list, total trades:', updated.length);
-                  return updated.length > 500 ? updated.slice(0, 500) : updated;
+                  return updated.length > 50 ? updated.slice(0, 50) : updated;
                 });
               }
               if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
@@ -5275,7 +5276,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setTrackedWalletTrades(prev => {
                   const updated = [normalized, ...prev];
                   console.log('[TrackedTrade] Added launchpad trade, total trades:', updated.length);
-                  return updated.length > 500 ? updated.slice(0, 500) : updated;
+                  return updated.length > 50 ? updated.slice(0, 50) : updated;
                 });
               }
 
@@ -26578,19 +26579,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           tradesByMarket={tradesByMarket}
           setpopup={setpopup}
           currentPopup={popup}
+          sendUserOperationAsync={sendUserOperationAsync}
+          terminalRefetch={terminalRefetch}
+          nonces={nonces}
+          subWallets={subWallets}
+          activeWalletPrivateKey={oneCTSigner}
+          account={{
+            connected: connected,
+            address: address,
+            chainId: userchain,
+          }}
+          selectedWallets={selectedWallets}
         />
-        {/* <WidgetExplorer
-        isOpen={isWidgetExplorerOpen}
-        onClose={handleCloseWidgetExplorer}
-        setpopup={setpopup}
-        appliedFilters={appliedExplorerFilters}
-        activeFilterTab={activeExplorerFilterTab}
-        onOpenFiltersForColumn={handleOpenFiltersForColumn}
-        sendUserOperationAsync={sendUserOperationAsync}
-        onSnapToSide={handleWidgetExplorerSnapToSide}
-        currentSnapSide={widgetExplorerSnapSide}
-        onWidgetResize={handleWidgetExplorerResize} 
-      /> */}
       </div>
       <Footer
         subWallets={subWallets}

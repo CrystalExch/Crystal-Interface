@@ -175,6 +175,16 @@ export interface RawTrade {
   caller: string;
 }
 
+interface TrackedWallet {
+  address: string;
+  name: string;
+  emoji: string;
+  balance: number;
+  lastActiveAt: number | null;
+  id: string;
+  createdAt: string;
+}
+
 interface ViewTrade {
   id: string;
   timestamp: number;
@@ -183,11 +193,13 @@ interface ViewTrade {
   mcUSD: number;
   priceUSD: number;
   trader: string;
+  emoji?: string;
   fullAddress: string;
   tags: ('sniper' | 'dev' | 'kol' | 'bundler' | 'insider' | 'topHolder')[];
   isTopHolder: boolean;
   isCurrentUser: boolean;
   isDev: boolean;
+  isTracked: boolean;
 }
 
 interface Holder {
@@ -244,6 +256,8 @@ interface Props {
   marketsData: any;
 }
 
+const STORAGE_KEY = 'tracked_wallets_data';
+
 export default function MemeTradesComponent({
   trades,
   tokenList = [],
@@ -280,8 +294,60 @@ export default function MemeTradesComponent({
       minUSD: '',
       maxUSD: '',
     });
+  const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
   const tradesBacklogRef = useRef<RawTrade[]>([]);
   const lastProcessedTradesRef = useRef<RawTrade[]>([]);
+
+  // Load tracked wallets from localStorage
+  useEffect(() => {
+    const loadTrackedWallets = () => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          setTrackedWallets(JSON.parse(stored));
+        }
+      } catch (error) {
+        console.error('Error loading tracked wallets:', error);
+      }
+    };
+
+    loadTrackedWallets();
+
+    // Listen for storage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          setTrackedWallets(JSON.parse(e.newValue));
+        } catch (error) {
+          console.error('Error parsing tracked wallets:', error);
+        }
+      }
+    };
+
+    // Listen for custom events
+    const handleCustomWalletUpdate = (e: CustomEvent) => {
+      if (e.detail && e.detail.wallets) {
+        setTrackedWallets(e.detail.wallets);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange as EventListener);
+    window.addEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange as EventListener);
+      window.removeEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
+    };
+  }, []);
+
+  // Create a map for quick lookup of tracked wallets
+  const trackedWalletsMap = useMemo(() => {
+    const map = new Map<string, TrackedWallet>();
+    trackedWallets.forEach(wallet => {
+      map.set(wallet.address.toLowerCase(), wallet);
+    });
+    return map;
+  }, [trackedWallets]);
 
   const norm = (s?: string) => (s || '').toLowerCase();
   const trackedSet = new Set((trackedAddresses || []).map(norm));
@@ -474,7 +540,6 @@ export default function MemeTradesComponent({
           }
         }
 
-
         // Calculate USD amount for filtering
         let amountUSD = 0;
         const sign = r.isBuy ? 1 : -1;
@@ -535,6 +600,11 @@ export default function MemeTradesComponent({
         subWalletSet.has(callerLower);
       const isTopHolder = top10HolderAddresses.has(callerLower);
       const isDev = Boolean(devAddressLower && callerLower === devAddressLower);
+      
+      // Check if this is a tracked wallet
+      const trackedWallet = trackedWalletsMap.get(callerLower);
+      const isTracked = !!trackedWallet;
+      
       const sign = r.isBuy ? 1 : -1;
 
       let amountMON = sign * (r.nativeAmount ?? 0);
@@ -558,7 +628,19 @@ export default function MemeTradesComponent({
       }
 
       const amountUSD = monUsd > 0 ? amountMON * monUsd : 0;
-      const short = isCurrentUser ? 'YOU' : r.caller.slice(2, 6);
+      
+      let short: string;
+      let emoji: string | undefined;
+      
+      if (isCurrentUser) {
+        short = 'YOU';
+      } else if (trackedWallet) {
+        short = trackedWallet.name;
+        emoji = trackedWallet.emoji;
+      } else {
+        short = r.caller.slice(2, 6);
+      }
+      
       const tags: (
         | 'sniper'
         | 'dev'
@@ -582,11 +664,13 @@ export default function MemeTradesComponent({
         mcUSD: r.price * monUsdPrice * 1_000_000_000,
         priceUSD: r.price * quoteUsd * monUsdPrice,
         trader: short,
+        emoji: emoji,
         fullAddress: r.caller,
         tags,
         isTopHolder,
         isCurrentUser,
         isDev,
+        isTracked,
       };
     });
   }, [
@@ -600,6 +684,8 @@ export default function MemeTradesComponent({
     devAddress,
     transactionFilters,
     hasActiveFilters,
+    trackedWalletsMap,
+    monUsdPrice,
   ]);
 
   const maxForMode = useMemo(() => {
@@ -628,6 +714,7 @@ export default function MemeTradesComponent({
     if (val >= 0.01) return val.toFixed(4);
     return val.toPrecision(3);
   };
+  
   const fmtTimeAgo = (ts: number) => {
     const now = Date.now() / 1000;
     const secondsAgo = Math.max(0, Math.floor(now - ts));
@@ -647,6 +734,7 @@ export default function MemeTradesComponent({
     if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(decimals)}K`;
     return `${sign}${abs.toFixed(1)}`;
   };
+  
   const handleApplyFilters = (filters: TransactionFilters) => {
     setTransactionFilters(filters);
   };
@@ -853,53 +941,6 @@ export default function MemeTradesComponent({
           </button>
         </div>
 
-        {false && (
-          <div className="meme-filter-status">
-            <div className="filter-status-text">
-              Showing {viewTrades.length} transactions of maker{' '}
-              {devAddress?.slice(0, 6)}...{devAddress?.slice(-4)}
-            </div>
-            <button
-              className="filter-reset-btn"
-              onClick={() => onClearTracked?.()}
-            >
-              RESET
-            </button>
-          </div>
-        )}
-        {false && (
-          <div className="meme-filter-status">
-            <div className="filter-status-text">
-              Showing {viewTrades.length} of your transactions
-            </div>
-            <button
-              className="filter-reset-btn"
-              onClick={() => onClearTracked?.()}
-            >
-              RESET
-            </button>
-          </div>
-        )}
-        {false && !devActive && !youActive && (
-          <div className="meme-filter-status">
-            <div className="filter-status-text">
-              Showing {viewTrades.length} filtered transactions
-            </div>
-            <button
-              className="filter-reset-btn"
-              onClick={() =>
-                setTransactionFilters({
-                  makerAddress: '',
-                  minUSD: '',
-                  maxUSD: '',
-                })
-              }
-            >
-              RESET
-            </button>
-          </div>
-        )}
-
         <div className="meme-trades-header">
           <div
             className="meme-trades-header-item meme-trades-header-amount"
@@ -969,14 +1010,15 @@ export default function MemeTradesComponent({
                     )}
                   </div>
 
-                  <div
-                    className={`meme-trade-trader ${t.isCurrentUser ? 'current-user' : 'clickable'}`}
-                    onClick={() =>
-                      !t.isCurrentUser && setPopupAddr(t.fullAddress)
-                    }
-                  >
-                    {t.trader}
-                  </div>
+<div
+  className={`meme-trade-trader ${t.isCurrentUser ? 'current-user' : t.isTracked ? 'tracked-wallet clickable' : 'clickable'}`}
+  onClick={() =>
+    !t.isCurrentUser && setPopupAddr(t.fullAddress)
+  }
+>
+  {t.emoji && <span style={{ marginRight: '4px' }}>{t.emoji}</span>}
+  {t.trader}
+</div>
 
                   <div className="meme-trade-age-container">
                     <div className="meme-trade-tags">
