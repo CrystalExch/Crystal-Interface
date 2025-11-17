@@ -653,7 +653,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       setShowPreview(false);
     }
   }, [hoveredMemeImage, memeTokenData?.image, updatePreviewPosition]);
-  
+
   const filteredPerpsMarkets = useMemo(() => {
     const filtered = Object.values(perpsMarketsData)
       .filter(market =>
@@ -892,7 +892,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       }
     };
   }, [isMemeToken]);
-  
+
   useEffect(() => {
     const handlePerpsScroll = () => {
       const container = perpsMetricsRef.current;
@@ -1243,7 +1243,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   useEffect(() => {
     setMemeImageError(false);
   }, [memeTokenData?.tokenAddress, memeTokenData?.image]);
-  
+
   useEffect(() => {
     if (!perpsTokenInfo?.lastPrice) return
     const current = Number(perpsTokenInfo.lastPrice)
@@ -1495,31 +1495,34 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                       </a>
                     </TwitterHover>
                   )}
+                  <Tooltip content={memeTokenData.website}>
+                    {memeTokenData.website && (
+                      <a
+                        className="token-info-meme-interface-social-btn"
+                        href={memeTokenData.website}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                        </svg>
+                      </a>
+                    )}
+                  </Tooltip>
+                  <Tooltip content="Telegram">
+                    {memeTokenData.telegramHandle && (
+                      <a
+                        className="token-info-meme-interface-social-btn"
+                        href={memeTokenData.telegramHandle}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <img src={telegram} alt="telegram" style={{ width: '16px', height: '16px' }} />
+                      </a>
+                    )}
+                  </Tooltip>
 
-                  {memeTokenData.website && (
-                    <a
-                      className="token-info-meme-interface-social-btn"
-                      href={memeTokenData.website}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                      </svg>
-                    </a>
-                  )}
-
-                  {memeTokenData.telegramHandle && (
-                    <a
-                      className="token-info-meme-interface-social-btn"
-                      href={memeTokenData.telegramHandle}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <img src={telegram} alt="telegram" style={{ width: '16px', height: '16px' }} />
-                    </a>
-                  )}
-
+                  <Tooltip content="Discord">
                   {memeTokenData.discordHandle && (
                     <a
                       className="token-info-meme-interface-social-btn"
@@ -1530,7 +1533,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                       <img src={discord} alt="discord" style={{ width: '14px', height: '14px' }} />
                     </a>
                   )}
-
+                  </Tooltip>
+                  <Tooltip content="Search on Twitter">
                   <a
                     className="token-info-meme-interface-social-btn"
                     href={`https://twitter.com/search?q=${memeTokenData.tokenAddress}`}
@@ -1539,6 +1543,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   >
                     <Search size={14} />
                   </a>
+                  </Tooltip>
 
                 </div>
               </div>
@@ -2176,7 +2181,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             </div>
           )}
         </div>
-        
+
         <div className="ctrlktooltip">
           Ctrl+K
         </div>
