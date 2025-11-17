@@ -240,6 +240,7 @@ interface Token {
   graduatedTokens: number;
   launchedTokens: number;
   launchpad?: 'crystal' | 'nadfun';
+  trades?: any;
 }
 
 type AudioGroups = 'swap' | 'order' | 'transfer' | 'approve';
@@ -2153,6 +2154,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const trackedWalletsRef = useRef<any>([]);
   const trackedWalletTradesRef = useRef<any>([]);
   const [trackedWalletTrades, setTrackedWalletTrades] = useState<any[]>([]);
+
   useEffect(() => {
     const updateTrackedWalletsRef = () => {
       try {
@@ -2193,6 +2195,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
+
   const audio = useMemo(() => {
     const a = new Audio(stepaudio);
     a.volume = 1;
@@ -4066,10 +4069,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       return n / Math.pow(10, decimals);
     };
 
-    const x0 = Math.max(1e-18, toHuman(reserve1Raw, baseDecimals));
-    const y0 = Math.max(1e-18, toHuman(reserve2Raw, quoteDecimals));
+    const x0 = Number(reserve1Raw);
+    const y0 = Number(reserve2Raw);
     const k = x0 * y0;
-    const pMid = y0 / x0;
+    const pMid = y0 * (10 ** baseDecimals) / (x0 * (10 ** quoteDecimals));
 
     const xFromP = (p: number) => Math.sqrt(k * Math.max(p, 1e-18));
 
@@ -4100,9 +4103,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     {
       let tMid = toTicks(pMid);
-      let tHere = Math.floor(tMid / intervalTicks) * intervalTicks;
+      let tHere = tMid;
       for (let i = 0; i < MAX_LEVELS_PER_SIDE; i++) {
-        const tLow = tHere - intervalTicks;
+        const tLow = tHere * oneMinusFee;
         if (tLow <= 0) break;
 
         const pLow = fromTicks(tLow);
@@ -4110,7 +4113,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         const xLow = xFromP(pLow);
         const xHi = xFromP(pHere);
-        const dxEff = Math.max(0, xHi - xLow);
+        const dxEff = Math.max(0, (xHi - xLow) * (10 ** 6) / (10 ** 18));
 
         const baseIn = dxEff / oneMinusFee;
         if (baseIn <= 0) break;
@@ -4131,15 +4134,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     {
       let tMid = toTicks(pMid);
-      let tHere = Math.ceil(tMid / intervalTicks) * intervalTicks;
+      let tHere = tMid;
       for (let i = 0; i < MAX_LEVELS_PER_SIDE; i++) {
-        const tHigh = tHere + intervalTicks;
+        const tHigh = tHere / oneMinusFee;
         const pHere = fromTicks(tHere);
         const pHigh = fromTicks(tHigh);
 
         const xA = xFromP(pHere);
         const xN = xFromP(pHigh);
-        const baseOut = Math.max(0, xN - xA);
+        const baseOut = Math.max(0, (xN - xA) * (10 ** 6) / (10 ** 18));
         if (baseOut <= 0) break;
 
         const effectivePrice = pHigh * (1 + fee);
@@ -4317,7 +4320,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           });
         });
         if (movedToken?.status) {
-          buckets[movedToken?.status as Token['status']].push(movedToken);
+          buckets[movedToken?.status as Token['status']].unshift(movedToken);
         }
         return { ...state, tokensByStatus: buckets };
       }
@@ -4348,7 +4351,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           });
         });
         if (movedToken?.status) {
-          buckets[movedToken?.status as Token['status']].push(movedToken);
+          buckets[movedToken?.status as Token['status']].unshift(movedToken);
         }
         return { ...state, tokensByStatus: buckets };
       }
@@ -4570,6 +4573,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       createdAt: new Date(timestamp * 1000).toISOString(),
     };
   }, [address]);
+
   useEffect(() => {
     if (!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])) return;
 
@@ -4614,13 +4618,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               distinctSellers
               lastPriceNativePerTokenWad
               lastUpdatedAt
-              trades(first: 50, orderBy: id, orderDirection: desc) { 
-                trade {
-                  id
-                  amountIn
-                  amountOut
-                }
-              }
               totalHolders
               devHoldingAmount
               holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
@@ -4659,13 +4656,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               distinctSellers
               lastPriceNativePerTokenWad
               lastUpdatedAt
-              trades(first: 50, orderBy: id, orderDirection: desc) { 
-                trade {
-                  id
-                  amountIn
-                  amountOut
-                }
-              }
               totalHolders
               devHoldingAmount
               holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
@@ -4704,13 +4694,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               distinctSellers
               lastPriceNativePerTokenWad
               lastUpdatedAt
-              trades(first: 50, orderBy: id, orderDirection: desc) { 
-                trade {
-                  id
-                  amountIn
-                  amountOut
-                }
-              }
               totalHolders
               devHoldingAmount
               holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
@@ -5688,7 +5671,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   );
   const memeSelectedIntervalRef = useRef<string>(memeSelectedInterval);
   const [page, _setPage] = useState(0);
-  const [initialMemeFetchDone, setInitialMemeFetchDone] = useState(false);
   const [currentTokenData, setCurrentTokenData] = useState({
     address: '',
     symbol: '',
@@ -5700,6 +5682,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const memePositionsMapRef = useRef<Map<string, number>>(new Map());
   const memeTopTradersMapRef = useRef<Map<string, number>>(new Map());
   const memeDevTokenIdsRef = useRef<Set<string>>(new Set());
+  const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
+  const [isLoadingTrades, setIsLoadingTrades] = useState(false);
   const memeLastInvalidateRef = useRef(0);
   const pendingTradesRef = useRef<Array<any>>([]);
   const queuedUpdatesRef = useRef<Array<any>>([]);
@@ -5795,6 +5779,67 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return merged;
   }, [tokenAddress, tokenData]);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (trackedAddresses.length == 0) {
+      setMemeTrades(token?.trades ?? [])
+    }
+    else {
+      (async () => {
+        try {
+          const res = await fetch(SUBGRAPH_URL, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              query: `query ($id: ID!, $accounts: [Bytes!], $first: Int!) {
+                launchpadTokens(where: { id: $id }) {
+                  trades(
+                    where: { account_in: $accounts }
+                    orderBy: block
+                    orderDirection: desc
+                    first: $first
+                  ) {
+                    id
+                    account { id }
+                    block
+                    isBuy
+                    priceNativePerTokenWad
+                    amountIn
+                    amountOut
+                  }
+                }
+              }
+              `,
+              variables: {
+                id: token.id.toLowerCase(),
+                accounts: trackedAddresses.map((a) => a.toLowerCase()),
+                first: 1000,
+              },
+            }),
+          });
+          const json = await res.json();
+          const t = json?.data?.launchpadTokens?.[0]?.trades ?? [];
+          const mapped: any[] = t.map((tt: any) => ({
+            id: tt.id,
+            timestamp: Number(tt.block),
+            isBuy: !!tt.isBuy,
+            price: Number(tt.priceNativePerTokenWad) / 1e9,
+            tokenAmount: Number(tt.isBuy ? tt.amountOut : tt.amountIn) / 1e18,
+            nativeAmount: Number(tt.isBuy ? tt.amountIn : tt.amountOut) / 1e18,
+            caller: tt.account.id,
+          }));
+          if (!cancelled) setMemeTrades(mapped);
+        } catch (e) {
+          console.error('filtered trades fetch failed', e);
+        }
+      })();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [trackedAddresses])
+
   // metadata n klines
   useEffect(() => {
     if (!token.id) return;
@@ -5803,7 +5848,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const id = (token.id || '').toLowerCase();
     let tempTokenData: any = {};
     let price = 0;
-
+    if (trackedAddresses.length > 0) setTrackedAddresses([])
+    setIsLoadingTrades(true)
     const fetchMemeTokenData = async () => {
       try {
         let response = await fetch(SUBGRAPH_URL, {
@@ -5843,13 +5889,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   distinctSellers
                   lastPriceNativePerTokenWad
                   lastUpdatedAt
-                  mini: ${'series' + '3600'
-              } { 
-                        klines(first: 1000, orderBy: time, orderDirection: desc) {
-                          time open high low close baseVolume
-                        } 
-                      }
-                  trades(first: 50, orderBy: id, orderDirection: desc) {
+                  mini: ${'series' + '3600'} { 
+                    klines(first: 1000, orderBy: time, orderDirection: desc) {
+                      time open high low close baseVolume
+                    } 
+                  }
+                  trades: trades(first: 100, orderBy: id, orderDirection: desc) {
+                    trade {
+                      id account {id} block isBuy priceNativePerTokenWad amountIn amountOut
+                    }
+                  }
+                  trackedtrades: trades(first: 1000, orderBy: id, orderDirection: desc, ${trackedAddresses.length == 0 ? '' : `where:{account_in: [${[...new Set(trackedAddresses)].map(a => `"${a.toLowerCase()}"`).join(",")}]}`}) {
                     trade {
                       id account {id} block isBuy priceNativePerTokenWad amountIn amountOut
                     }
@@ -5885,7 +5935,48 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (isCancelled || !data) return;
         if (data.launchpadTokens?.length) {
           const m = data.launchpadTokens[0];
-
+          let mapped: any;
+          if (m?.trades?.length) {
+            mapped = data.launchpadTokens[0].trades.map((t: any) => ({
+              id: t.trade.id,
+              timestamp: Number(t.trade.block),
+              isBuy: t.trade.isBuy,
+              price: Number(t.trade.priceNativePerTokenWad) / 1e9,
+              tokenAmount: Number(t.trade.isBuy ? t.trade.amountOut : t.trade.amountIn) / 1e18,
+              nativeAmount: Number(t.trade.isBuy ? t.trade.amountIn : t.trade.amountOut) / 1e18,
+              caller: t.trade.account.id,
+            }));
+            setMemeTrades(mapped);
+          } else {
+            setMemeTrades([]);
+          }
+  
+          if (m?.series?.klines) {
+            const bars = data.launchpadTokens[0].series.klines
+              .slice()
+              .reverse()
+              .map((c: any) => ({
+                time: Number(c.time) * 1000,
+                open: Number(c.open) / 1e9,
+                high: Number(c.high) / 1e9,
+                low: Number(c.low) / 1e9,
+                close: Number(c.close) / 1e9,
+                volume: Number(c.baseVolume) / 1e18,
+              }));
+  
+            const resForChart =
+              memeSelectedInterval === '1d'
+                ? '1D'
+                : memeSelectedInterval === '4h'
+                  ? '240'
+                  : memeSelectedInterval === '1h'
+                    ? '60'
+                    : memeSelectedInterval.endsWith('s')
+                      ? memeSelectedInterval.slice(0, -1).toUpperCase() + 'S'
+                      : memeSelectedInterval.slice(0, -1);
+  
+            setChartData([bars, data.launchpadTokens[0].symbol + 'MON' + resForChart, true]);
+          }
           let imageUrl = m.metadataCID || '';
 
           price = Number(m.lastPriceNativePerTokenWad || 0) / 1e9;
@@ -5914,92 +6005,47 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
           const website = socials[0];
           const change24h = (price * 1e9 - m?.mini?.klines[0].open) / (m?.mini?.klines[0].open) * 100
-          setTokenData(p => {
-            tempTokenData = {
-              ...p,
-              ...data.launchpadTokens[0],
-              id: m.id.toLowerCase(),
-              tokenAddress: m.id.toLowerCase(),
-              dev: m.creator.id,
-              name: m.name,
-              symbol: m.symbol,
-              image: imageUrl,
-              twitterHandle: twitter ?? '',
-              website: website ?? '',
-              created: m.timestamp,
-              status: m.migrated
-                ? 'graduated'
-                : price * TOTAL_SUPPLY > 12500
-                  ? 'graduating'
-                  : 'new',
-              price,
-              marketCap: price * TOTAL_SUPPLY,
-              buyTransactions: Number(m.buyTxs),
-              sellTransactions: Number(m.sellTxs),
-              mini: m?.mini?.klines ?? '',
-              change24h,
-              volume24h: Number(m.volumeNative) / 1e18,
-              volumeDelta: 0,
-              discordHandle: discord ?? '',
-              telegramHandle: telegram ?? '',
-              launchedTokens: m.creator.tokensLaunched ?? '',
-              graduatedTokens: m.creator.tokensGraduated ?? '',
-              holders: m.totalHolders - 1,
-              devHolding: m.devHoldingAmount / 1e27,
-              top10Holding: Number(
-                (m.holders ?? [])
-                  .filter((h: { account?: { id?: string } }) => (h.account?.id?.toLowerCase() ?? '') !== (settings.chainConfig[activechain].router ?? '').toLowerCase())
-                  .slice(0, 10)
-                  .reduce((sum: bigint, h: { tokens: string }) => sum + BigInt(h.tokens || '0'), 0n)
-              ) / 1e25,
-            }
-            return tempTokenData
-          });
+          tempTokenData = {
+            ...tokenData,
+            ...data.launchpadTokens[0],
+            id: m.id.toLowerCase(),
+            tokenAddress: m.id.toLowerCase(),
+            dev: m.creator.id,
+            name: m.name,
+            symbol: m.symbol,
+            image: imageUrl,
+            twitterHandle: twitter ?? '',
+            website: website ?? '',
+            created: m.timestamp,
+            status: m.migrated
+              ? 'graduated'
+              : price * TOTAL_SUPPLY > 12500
+                ? 'graduating'
+                : 'new',
+            price,
+            marketCap: price * TOTAL_SUPPLY,
+            buyTransactions: Number(m.buyTxs),
+            sellTransactions: Number(m.sellTxs),
+            mini: m?.mini?.klines ?? '',
+            change24h,
+            volume24h: Number(m.volumeNative) / 1e18,
+            volumeDelta: 0,
+            discordHandle: discord ?? '',
+            telegramHandle: telegram ?? '',
+            launchedTokens: m.creator.tokensLaunched ?? '',
+            graduatedTokens: m.creator.tokensGraduated ?? '',
+            holders: m.totalHolders - 1,
+            devHolding: m.devHoldingAmount / 1e27,
+            top10Holding: Number(
+              (m.holders ?? [])
+                .filter((h: { account?: { id?: string } }) => (h.account?.id?.toLowerCase() ?? '') !== (settings.chainConfig[activechain].router ?? '').toLowerCase())
+                .slice(0, 10)
+                .reduce((sum: bigint, h: { tokens: string }) => sum + BigInt(h.tokens || '0'), 0n)
+            ) / 1e25,
+            trades: mapped,
+          }
+          setTokenData(tempTokenData);
         }
-
-        if (data.launchpadTokens?.[0]?.trades?.length) {
-          const mapped = data.launchpadTokens[0].trades.map((t: any) => ({
-            id: t.trade.id,
-            timestamp: Number(t.trade.block),
-            isBuy: t.trade.isBuy,
-            price: Number(t.trade.priceNativePerTokenWad) / 1e9,
-            tokenAmount: Number(t.trade.isBuy ? t.trade.amountOut : t.trade.amountIn) / 1e18,
-            nativeAmount: Number(t.trade.isBuy ? t.trade.amountIn : t.trade.amountOut) / 1e18,
-            caller: t.trade.account.id,
-          }));
-          setMemeTrades(mapped);
-        } else {
-          setMemeTrades([]);
-        }
-
-        if (data.launchpadTokens?.[0]?.series?.klines) {
-          const bars = data.launchpadTokens[0].series.klines
-            .slice()
-            .reverse()
-            .map((c: any) => ({
-              time: Number(c.time) * 1000,
-              open: Number(c.open) / 1e9,
-              high: Number(c.high) / 1e9,
-              low: Number(c.low) / 1e9,
-              close: Number(c.close) / 1e9,
-              volume: Number(c.baseVolume) / 1e18,
-            }));
-
-          const resForChart =
-            memeSelectedInterval === '1d'
-              ? '1D'
-              : memeSelectedInterval === '4h'
-                ? '240'
-                : memeSelectedInterval === '1h'
-                  ? '60'
-                  : memeSelectedInterval.endsWith('s')
-                    ? memeSelectedInterval.slice(0, -1).toUpperCase() + 'S'
-                    : memeSelectedInterval.slice(0, -1);
-
-          setChartData([bars, data.launchpadTokens[0].symbol + 'MON' + resForChart, true]);
-        }
-
-        setInitialMemeFetchDone(true);
 
         const first = 100;
         const skip = page * 100;
@@ -6380,7 +6426,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         .map(a => a.toLowerCase())
     )];
 
-    if (allAddresses.length === 0 || !initialMemeFetchDone) return;
+    if (allAddresses.length === 0) return;
 
     let cancelled = false;
 
@@ -6513,7 +6559,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return () => {
       cancelled = true;
     };
-  }, [address, subWallets, token.id, initialMemeFetchDone]);
+  }, [address, subWallets, token.id]);
 
   // live dev holding
   useEffect(() => {
@@ -26061,6 +26107,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setSelectedWallets={setSelectedWallets}
                 selectedIntervalRef={memeSelectedIntervalRef}
                 isTerminalDataFetching={isTerminalDataFetching}
+                trackedAddresses={trackedAddresses}
+                setTrackedAddresses={setTrackedAddresses}
+                isLoadingTrades={isLoadingTrades}
+                setIsLoadingTrades={setIsLoadingTrades}
+                trackedWalletsRef={trackedWalletsRef}
               />
             }
           />
