@@ -144,21 +144,25 @@
  .add-wallet-input-with-emoji-field {
      flex: 1;
 }
- .add-wallet-emoji-picker-backdrop {
-     position: fixed;
-     top: 0;
-     left: 0;
-     right: 0;
-     bottom: 0;
-     background: rgba(0, 0, 0, 0.5);
-     z-index: 1999;
-}
  .add-wallet-emoji-picker-positioned {
      position: fixed;
-     z-index: 2000;
+     z-index: 13;
      background: #000000;
      border: 1px solid rgba(179, 184, 249, 0.2);
      border-radius: 8px;
      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
 }
  
+
+.epr_-2zpaw9{
+     background: transparent !important;
+     border: 1px solid rgba(179, 184, 249, 0.15) !important;
+}
+
+.epr_-8ygbw8{
+   padding-bottom: 0 !important;
+}
+
+.epr_-xuzz9z{
+  background: #000000c3 !important;
+}
