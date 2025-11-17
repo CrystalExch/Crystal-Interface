@@ -77,7 +77,6 @@ const loadWalletsFromStorage = (): TrackedWallet[] => {
       return JSON.parse(stored);
     }
   } catch (error) {
-    console.error('Failed to load wallets from localStorage:', error);
   }
   return [];
 };
@@ -86,7 +85,6 @@ const saveWalletsToStorage = (wallets: TrackedWallet[]) => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(wallets));
   } catch (error) {
-    console.error('Failed to save wallets to localStorage:', error);
   }
 };
 
@@ -589,7 +587,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     return `${Math.floor(s / 86400)}d`;
   };
 
-  // Initialize wallets from external prop or localStorage
   useEffect(() => {
     if (externalWallets) {
       setLocalWallets(externalWallets);
@@ -598,11 +595,9 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     }
   }, [externalWallets]);
 
-  // Save to localStorage when wallets change
   useEffect(() => {
     if (!externalWallets && localWallets.length >= 0) {
       saveWalletsToStorage(localWallets);
-      // Dispatch custom event for same-window sync
       window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: localWallets, source: 'widget' } }));
     }
     if (onWalletsChange) {
@@ -610,7 +605,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     }
   }, [localWallets, externalWallets, onWalletsChange]);
 
-  // Listen for wallet changes from Tracker.tsx or other components
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY && e.newValue) {
@@ -618,7 +612,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
           const updatedWallets = JSON.parse(e.newValue);
           setLocalWallets(updatedWallets);
         } catch (error) {
-          console.error('Failed to parse updated wallets:', error);
         }
       }
     };
@@ -626,16 +619,13 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     const handleCustomWalletUpdate = (e: CustomEvent) => {
       if (e.detail && e.detail.source !== 'widget' && !externalWallets) {
         const updatedWallets = e.detail.wallets;
-        // Only update if the wallets are actually different to avoid infinite loops
         if (JSON.stringify(updatedWallets) !== JSON.stringify(localWallets)) {
           setLocalWallets(updatedWallets);
         }
       }
     };
 
-    // Listen for localStorage changes from other tabs/windows
     window.addEventListener('storage', handleStorageChange as EventListener);
-    // Listen for custom events from same window (Tracker component)
     window.addEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
 
     return () => {
@@ -789,8 +779,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       setLocalWallets((prev) => [...prev, ...newWallets]);
       setShowImportPopup(false);
     } catch (error) {
-      console.error('Failed to import wallets:', error);
-      alert('Invalid JSON format. Please check your import data.');
     }
   };
 
@@ -808,13 +796,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   };
 
   const getFilteredTrades = () => {
-    console.log('[LiveTrades] Filtering trades:', {
-      totalTrades: allTrades.length,
-      searchQuery,
-      activeFilters,
-      trackedWallets: localWallets.length
-    });
-
     let trades = allTrades.filter((trade: any) => {
       const isBuy = trade.type === 'buy';
       const isSell = trade.type === 'sell';
@@ -852,7 +833,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       );
     }
 
-    console.log('[LiveTrades] After filtering:', trades.length, 'trades');
     return trades;
   };
 
@@ -878,7 +858,13 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
             <div className="wtw-detail-trades-header-cell wtw-detail-trades-time"></div>
             <div className="wtw-detail-trades-header-cell wtw-detail-trades-account">Name</div>
             <div className="wtw-detail-trades-header-cell">Token</div>
-            <div className="wtw-detail-trades-header-cell">Amount</div>
+            <div
+              className="wtw-detail-trades-header-cell"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setTradeAmountCurrency(prev => prev === 'USD' ? 'MON' : 'USD')}
+            >
+              Amount ({tradeAmountCurrency})
+            </div>
             <div className="wtw-detail-trades-header-cell">Market Cap</div>
           </div>
           <div className="wtw-detail-trades-body">
