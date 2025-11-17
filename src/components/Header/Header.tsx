@@ -298,6 +298,70 @@ const Header: React.FC<HeaderProps> = ({
   externalUserStats,
   lastNonceGroupFetch
 }) => {
+  const copyToClipboard = async (text: string, label = 'Address copied') => {
+  const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  try {
+    await navigator.clipboard.writeText(text);
+    if (showLoadingPopup && updatePopup) {
+      showLoadingPopup(txId, {
+        title: label,
+        subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+      });
+      setTimeout(() => {
+        updatePopup(txId, {
+          title: label,
+          subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+          variant: 'success',
+          confirmed: true,
+          isLoading: false,
+        });
+      }, 100);
+    }
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      if (showLoadingPopup && updatePopup) {
+        showLoadingPopup(txId, {
+          title: label,
+          subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+        });
+        setTimeout(() => {
+          updatePopup(txId, {
+            title: label,
+            subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+            variant: 'success',
+            confirmed: true,
+            isLoading: false,
+          });
+        }, 100);
+      }
+    } catch (fallbackErr) {
+      if (showLoadingPopup && updatePopup) {
+        showLoadingPopup(txId, {
+          title: 'Copy Failed',
+          subtitle: 'Unable to copy to clipboard',
+        });
+        setTimeout(() => {
+          updatePopup(txId, {
+            title: 'Copy Failed',
+            subtitle: 'Unable to copy to clipboard',
+            variant: 'error',
+            confirmed: true,
+            isLoading: false,
+          });
+        }, 100);
+      }
+    } finally {
+      document.body.removeChild(ta);
+    }
+  }
+};
   const location = useLocation();
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
   const navigate = useNavigate();
@@ -433,7 +497,7 @@ const Header: React.FC<HeaderProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       const isPopupClick = target.closest('.blur-background-popups') || target.closest('.popup-content');
-      
+
       if (!isPopupClick && walletDropdownRef.current && !walletDropdownRef.current.contains(event.target as Node)) {
         setIsWalletDropdownOpen(false);
       }
@@ -805,18 +869,18 @@ const Header: React.FC<HeaderProps> = ({
                               handleSetActiveWallet(activeWalletPrivateKey || "")
                             }}
                           >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="wallet-dropdown-action-icon"><path d="M10.513 4.856 13.12 2.17a.5.5 0 0 1 .86.46l-1.377 4.317"/><path d="M15.656 10H20a1 1 0 0 1 .78 1.63l-1.72 1.773"/><path d="M16.273 16.273 10.88 21.83a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14H4a1 1 0 0 1-.78-1.63l4.507-4.643"/><path d="m2 2 20 20"/></svg>    
-                             Disable 1CT
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="wallet-dropdown-action-icon"><path d="M10.513 4.856 13.12 2.17a.5.5 0 0 1 .86.46l-1.377 4.317" /><path d="M15.656 10H20a1 1 0 0 1 .78 1.63l-1.72 1.773" /><path d="M16.273 16.273 10.88 21.83a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14H4a1 1 0 0 1-.78-1.63l4.507-4.643" /><path d="m2 2 20 20" /></svg>
+                            Disable 1CT
                           </button>
                           <Tooltip content="Show/Hide Subwallets" position="left">
-                          <button
-                            className={`open-wallets-dropdown-arrow ${isHeaderSubwalletsOpen ? 'rotated' : ''}`}
-                            onClick={() => setIsHeaderSubwalletsOpen(prev => !prev)}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="open-subwallets-dropdown-arrow-icon">
-                              <path d="m6 9 6 6 6-6" />
-                            </svg>
-                          </button>
+                            <button
+                              className={`open-wallets-dropdown-arrow ${isHeaderSubwalletsOpen ? 'rotated' : ''}`}
+                              onClick={() => setIsHeaderSubwalletsOpen(prev => !prev)}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="open-subwallets-dropdown-arrow-icon">
+                                <path d="m6 9 6 6 6-6" />
+                              </svg>
+                            </button>
                           </Tooltip>
                         </div>
                         {isHeaderSubwalletsOpen && (
@@ -848,10 +912,25 @@ const Header: React.FC<HeaderProps> = ({
                                   <div className="wallet-dropdown-name">
                                     {getWalletName(wallet.address, index)}
                                   </div>
-                                  <div className="wallet-dropdown-address">
+                                  <div className="wallet-dropdown-address"              
+                                   onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(wallet.address, 'Wallet address copied');
+                                    }}
+                                    style={{ cursor: 'pointer' }}>
                                     {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                                      <svg
+                                      className="wallet-dropdown-address-copy-icon"
+                                      width="11"
+                                      height="11"
+                                      viewBox="0 0 24 24"
+                                      fill="currentColor"
+                                      style={{ marginLeft: '2px' }}
+                                    >
+                                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                    </svg>
                                   </div>
-</div>
+                                </div>
                                 <div className="wallet-dropdown-balance">
                                   {(() => {
                                     const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);

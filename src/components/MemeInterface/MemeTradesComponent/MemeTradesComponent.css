@@ -561,3 +561,10 @@
 .meme-trade-trader.tracked-wallet:hover {
   text-decoration: underline;
 }
+
+
+.tracked-trader-name{
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 20px;
+}

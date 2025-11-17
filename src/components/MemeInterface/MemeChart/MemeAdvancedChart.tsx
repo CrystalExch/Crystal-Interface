@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 
 import { LocalStorageSaveLoadAdapter } from './LocalStorageSaveLoadAdapter';
 import { memeOverrides } from './memeOverrides';
@@ -136,6 +136,65 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       : [];
   }, [subWalletAddresses]);
 
+  // Load tracked wallets with emojis from localStorage
+  const [trackedWallets, setTrackedWallets] = useState<Array<{
+    address: string;
+    name: string;
+    emoji: string;
+    balance: number;
+    lastActiveAt: number | null;
+    id: string;
+    createdAt: string;
+  }>>([]);
+
+  useEffect(() => {
+    const loadTrackedWallets = () => {
+      try {
+        const stored = localStorage.getItem('tracked_wallets_data');
+        if (stored) {
+          setTrackedWallets(JSON.parse(stored));
+        }
+      } catch (error) {
+        console.error('Error loading tracked wallets:', error);
+      }
+    };
+
+    loadTrackedWallets();
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'tracked_wallets_data' && e.newValue) {
+        try {
+          setTrackedWallets(JSON.parse(e.newValue));
+        } catch (error) {
+          console.error('Error parsing tracked wallets:', error);
+        }
+      }
+    };
+
+    const handleCustomWalletUpdate = (e: CustomEvent) => {
+      if (e.detail && e.detail.wallets) {
+        setTrackedWallets(e.detail.wallets);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange as EventListener);
+    window.addEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange as EventListener);
+      window.removeEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
+    };
+  }, []);
+
+  // Create a memoized map for quick lookup of tracked wallet emojis
+  const trackedWalletsMap = useMemo(() => {
+    const map = new Map<string, { name: string; emoji: string }>();
+    trackedWallets.forEach(wallet => {
+      map.set(wallet.address.toLowerCase(), { name: wallet.name, emoji: wallet.emoji });
+    });
+    return map;
+  }, [trackedWallets]);
+
   function enforceOpenEqualsPrevClose(bars: any[] = []) {
     if (!Array.isArray(bars) || bars.length === 0) return bars;
     const out = [...bars].sort((a, b) => a.time - b.time);
@@ -196,10 +255,16 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
             const c = caller.toLowerCase();
             const dev = String(devAddressRef.current || '').toLowerCase();
             const you = String(addressRef.current || '').toLowerCase();
-            const subs = trackedAddresses;
 
             if (c === dev) return isBuy ? 'DB' : 'DS';
-            if (c === you || subs.includes(c)) return isBuy ? 'B' : 'S';
+            
+            const trackedWallet = trackedWalletsMap.get(c);
+            if (trackedWallet && trackedWallet.emoji) {
+              return trackedWallet.emoji;
+            }
+            
+            if (c === you || trackedAddresses.includes(c)) return isBuy ? 'B' : 'S';
+            
             return isBuy ? 'B' : 'S';
           };
 
@@ -275,10 +340,19 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
             const c = caller.toLowerCase();
             const dev = String(devAddressRef.current || '').toLowerCase();
             const you = String(addressRef.current || '').toLowerCase();
-            const subs = trackedAddresses;
 
+            // Check if this is the dev wallet
             if (c === dev) return isBuy ? 'DB' : 'DS';
-            if (c === you || subs.includes(c)) return isBuy ? 'B' : 'S';
+            
+            // Check if this is a tracked wallet with an emoji
+            const trackedWallet = trackedWalletsMap.get(c);
+            if (trackedWallet && trackedWallet.emoji) {
+              return trackedWallet.emoji;
+            }
+            
+            // Check if this is the user's wallet or a sub-wallet
+            if (c === you || trackedAddresses.includes(c)) return isBuy ? 'B' : 'S';
+            
             return isBuy ? 'B' : 'S';
           };
           const rows = (diff ?? [])
@@ -336,7 +410,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         }
       }
     } catch (e) {}
-  }, [tradehistory.length]);
+  }, [tradehistory.length, trackedWalletsMap]);
 
   useEffect(() => {
     dataRef.current[data[1]] = enforceOpenEqualsPrevClose(data[0]);
@@ -567,10 +641,19 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               const c = caller.toLowerCase();
               const dev = String(devAddressRef.current || '').toLowerCase();
               const you = String(addressRef.current || '').toLowerCase();
-              const subs = trackedAddresses;
 
+              // Check if this is the dev wallet
               if (c === dev) return isBuy ? 'DB' : 'DS';
-              if (c === you || subs.includes(c)) return isBuy ? 'B' : 'S';
+              
+              // Check if this is a tracked wallet with an emoji
+              const trackedWallet = trackedWalletsMap.get(c);
+              if (trackedWallet && trackedWallet.emoji) {
+                return trackedWallet.emoji;
+              }
+              
+              // Check if this is the user's wallet or a sub-wallet
+              if (c === you || trackedAddresses.includes(c)) return isBuy ? 'B' : 'S';
+              
               return isBuy ? 'B' : 'S';
             };
 

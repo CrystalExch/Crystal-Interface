@@ -18,7 +18,10 @@ import discord from '../../assets/Discord.svg'
 import docs from '../../assets/docs.png';
 import { createPortal } from 'react-dom';
 import { formatSubscript } from '../../utils/numberDisplayFormat';
-
+import {
+  showLoadingPopup,
+  updatePopup,
+} from '../MemeTransactionPopup/MemeTransactionPopupManager';
 interface SubWallet {
   address: string;
   privateKey: string;
@@ -220,7 +223,70 @@ const Footer: React.FC<FooterProps> = ({
   const [discoverActiveTab, setDiscoverActiveTab] = useState<'trending' | 'dex' | 'surge' | 'live' | 'p1'>('surge');
   const [discoverActiveFilter, setDiscoverActiveFilter] = useState<'early' | 'surging'>('early');
   const dropdownRef = useRef<HTMLDivElement>(null);
-
+const copyToClipboard = async (text: string, label = 'Address copied') => {
+  const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  try {
+    await navigator.clipboard.writeText(text);
+    if (showLoadingPopup && updatePopup) {
+      showLoadingPopup(txId, {
+        title: label,
+        subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+      });
+      setTimeout(() => {
+        updatePopup(txId, {
+          title: label,
+          subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+          variant: 'success',
+          confirmed: true,
+          isLoading: false,
+        });
+      }, 100);
+    }
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      if (showLoadingPopup && updatePopup) {
+        showLoadingPopup(txId, {
+          title: label,
+          subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+        });
+        setTimeout(() => {
+          updatePopup(txId, {
+            title: label,
+            subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+            variant: 'success',
+            confirmed: true,
+            isLoading: false,
+          });
+        }, 100);
+      }
+    } catch (fallbackErr) {
+      if (showLoadingPopup && updatePopup) {
+        showLoadingPopup(txId, {
+          title: 'Copy Failed',
+          subtitle: 'Unable to copy to clipboard',
+        });
+        setTimeout(() => {
+          updatePopup(txId, {
+            title: 'Copy Failed',
+            subtitle: 'Unable to copy to clipboard',
+            variant: 'error',
+            confirmed: true,
+            isLoading: false,
+          });
+        }, 100);
+      }
+    } finally {
+      document.body.removeChild(ta);
+    }
+  }
+};
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -473,9 +539,26 @@ const Footer: React.FC<FooterProps> = ({
                                   <div className="wallet-dropdown-name">
                                     {getWalletName(wallet.address, index)}
                                   </div>
-                                  <div className="wallet-dropdown-address">
+                                  <div
+                                    className="wallet-dropdown-address"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(wallet.address, 'Wallet address copied');
+                                    }}
+                                    style={{ cursor: 'pointer' }}
+                                  >
                                     {wallet.address.slice(0, 6)}...
                                     {wallet.address.slice(-4)}
+                                    <svg
+                                      className="wallet-dropdown-address-copy-icon"
+                                      width="11"
+                                      height="11"
+                                      viewBox="0 0 24 24"
+                                      fill="currentColor"
+                                      style={{ marginLeft: '2px' }}
+                                    >
+                                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                    </svg>
                                   </div>
                                 </div>
                                 <div className="wallet-dropdown-balance">

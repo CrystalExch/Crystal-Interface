@@ -295,3 +295,15 @@
     padding: 4px 12px;
     letter-spacing: -0.5px;
 }
+
+.wallet-dropdown-address {
+  font-size: 12px;
+  color: rgb(142, 142, 160);
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+
+.wallet-dropdown-address:hover {
+  color: #d8dcff;
+}

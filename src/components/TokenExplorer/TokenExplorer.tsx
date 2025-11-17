@@ -3853,25 +3853,23 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           let subtitle = '';
 
           if (type === 'dev') {
-            title = 'Developer Address Copied';
+            title = 'Developer address copied';
             subtitle = `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`;
           } else if (type === 'ca') {
-            title = 'Contract Address Copied';
+            title = 'Contract address copied';
             subtitle = `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`;
           } else if (type === 'keyword') {
-            title = 'Keyword Copied';
+            title = 'Keyword copied';
             subtitle = `"${text}" copied to clipboard`;
           } else if (type === 'website') {
-            title = 'Website Copied';
+            title = 'Website copied';
             subtitle = `${text} copied to clipboard`;
           } else if (type === 'handle') {
-            title = 'Twitter Handle Copied';
+            title = 'Twitter handle copied';
             subtitle = `${text} copied to clipboard`;
           } else {
-            // Default for token addresses (when called from token rows without type)
-            // Check if text looks like an Ethereum address
             if (/^0x[a-fA-F0-9]{40}$/.test(text)) {
-              title = 'Address Copied';
+              title = 'Wallet address copied';
               subtitle = `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`;
             } else {
               title = 'Copied';
@@ -4580,10 +4578,24 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                                 <div className="wallet-dropdown-name">
                                   {getWalletName(wallet.address, index)}
                                 </div>
-                                <div className="wallet-dropdown-address">
-                                  {wallet.address.slice(0, 6)}...
-                                  {wallet.address.slice(-4)}
-                                </div>
+                               <div className="wallet-dropdown-address"              
+                                   onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(wallet.address, 'Wallet address copied');
+                                    }}
+                                    style={{ cursor: 'pointer' }}>
+                                    {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                                      <svg
+                                      className="wallet-dropdown-address-copy-icon"
+                                      width="11"
+                                      height="11"
+                                      viewBox="0 0 24 24"
+                                      fill="currentColor"
+                                      style={{ marginLeft: '2px' }}
+                                    >
+                                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                    </svg>
+                                  </div>
                               </div>
                               <div className="wallet-dropdown-balance">
                                 {(() => {

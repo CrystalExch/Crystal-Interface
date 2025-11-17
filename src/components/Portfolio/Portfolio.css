@@ -581,8 +581,8 @@
 
 .wallet-drag-name {
   color: #fff;
-  font-size: .85rem;
-  letter-spacing: -.3px;
+  font-size: .9rem;
+  letter-spacing: -.5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3646,7 +3646,6 @@
 .wallet-active-checkbox:checked~.wallet-drag-info .wallet-drag-name,
 .wallet-drag-name.active {
   color: #d8dcff !important;
-  font-weight: 500;
 }
 
 .wallet-active-checkbox-container .tooltip-container {

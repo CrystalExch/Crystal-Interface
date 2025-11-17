@@ -1461,3 +1461,20 @@
   color: rgb(206, 208, 223);
   font-weight: 500;
 }
+
+.oc-meme-wallet-address.current-user {
+  color: #d8dcff;
+  cursor: default;
+  font-family: Funnel Display;
+  font-weight: 500;
+}
+
+.oc-meme-wallet-address.tracked-wallet {
+  color: #ffed4e;
+  cursor: pointer;
+}
+
+.oc-meme-wallet-address.tracked-wallet:hover {
+  color: #fff485;
+  text-decoration: underline;
+}
