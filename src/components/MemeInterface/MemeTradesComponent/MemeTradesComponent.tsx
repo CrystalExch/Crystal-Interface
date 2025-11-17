@@ -8,6 +8,7 @@ import monadlogo from '../../../assets/monadlogo.svg';
 import switchicon from '../../../assets/switch.svg';
 import TraderPortfolioPopup from './TraderPortfolioPopup/TraderPortfolioPopup';
 import TransactionFiltersPopup from './TransactionFiltersPopup';
+import { settings } from '../../../settings';
 import { formatSubscript } from '../../../utils/numberDisplayFormat';
 
 import './MemeTradesComponent.css';
@@ -254,6 +255,8 @@ interface Props {
   isLoadingTrades?: boolean;
   subWallets?: Array<{ address: string; privateKey: string }>;
   marketsData: any;
+  trackedWalletsRef: any;
+  onFilterSet: any;
 }
 
 const STORAGE_KEY = 'tracked_wallets_data';
@@ -281,6 +284,8 @@ export default function MemeTradesComponent({
   isLoadingTrades = false,
   subWallets = [],
   marketsData,
+  trackedWalletsRef,
+  onFilterSet,
 }: Props) {
   const [amountMode, setAmountMode] = useState<AmountMode>('MON');
   const [mcMode, setMcMode] = useState<MCMode>('MC');
@@ -294,60 +299,16 @@ export default function MemeTradesComponent({
       minUSD: '',
       maxUSD: '',
     });
-  const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
   const tradesBacklogRef = useRef<RawTrade[]>([]);
   const lastProcessedTradesRef = useRef<RawTrade[]>([]);
 
-  // Load tracked wallets from localStorage
-  useEffect(() => {
-    const loadTrackedWallets = () => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          setTrackedWallets(JSON.parse(stored));
-        }
-      } catch (error) {
-        console.error('Error loading tracked wallets:', error);
-      }
-    };
-
-    loadTrackedWallets();
-
-    // Listen for storage changes
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY && e.newValue) {
-        try {
-          setTrackedWallets(JSON.parse(e.newValue));
-        } catch (error) {
-          console.error('Error parsing tracked wallets:', error);
-        }
-      }
-    };
-
-    // Listen for custom events
-    const handleCustomWalletUpdate = (e: CustomEvent) => {
-      if (e.detail && e.detail.wallets) {
-        setTrackedWallets(e.detail.wallets);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange as EventListener);
-    window.addEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange as EventListener);
-      window.removeEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
-    };
-  }, []);
-
-  // Create a map for quick lookup of tracked wallets
   const trackedWalletsMap = useMemo(() => {
     const map = new Map<string, TrackedWallet>();
-    trackedWallets.forEach(wallet => {
+    trackedWalletsRef.current.forEach((wallet: any) => {
       map.set(wallet.address.toLowerCase(), wallet);
     });
     return map;
-  }, [trackedWallets]);
+  }, []);
 
   const norm = (s?: string) => (s || '').toLowerCase();
   const trackedSet = new Set((trackedAddresses || []).map(norm));
@@ -365,7 +326,6 @@ export default function MemeTradesComponent({
   let devActive = false;
   let youActive = false;
   let trackedActive = false;
-
   if (trackedSet.size === 0) {
   } else if (trackedSet.size === 1) {
     const [only] = Array.from(trackedSet);
@@ -379,7 +339,6 @@ export default function MemeTradesComponent({
       trackedActive = true;
     }
   } else {
-    // Check if all tracked addresses are "you" addresses
     const allYou = Array.from(trackedSet).every((addr) => youSet.has(addr));
     if (allYou) {
       youActive = true;
@@ -817,20 +776,6 @@ export default function MemeTradesComponent({
     </svg>
   );
 
-  const LoadingSkeleton = () => (
-    <div className="meme-trades-loading">
-      {Array.from({ length: 20 }, (_, i) => (
-        <div key={i} className="meme-trade-skeleton">
-          <div className="skeleton-bar"></div>
-          <div className="skeleton-amount"></div>
-          <div className="skeleton-mc"></div>
-          <div className="skeleton-trader"></div>
-          <div className="skeleton-age"></div>
-        </div>
-      ))}
-    </div>
-  );
-
   const handleFilterClick = (filterType: 'dev' | 'you' | 'tracked') => {
     switch (filterType) {
       case 'dev':
@@ -850,7 +795,11 @@ export default function MemeTradesComponent({
         break;
 
       case 'tracked':
-        onClearTracked?.();
+        if (trackedActive) {
+          onClearTracked?.();
+        } else {
+          onFilterSet?.();
+        }
         break;
     }
   };
@@ -961,7 +910,7 @@ export default function MemeTradesComponent({
             Trader
           </div>
           <div className="meme-trades-header-item meme-trades-header-age">
-            Time
+            Age
           </div>
         </div>
 
@@ -971,7 +920,17 @@ export default function MemeTradesComponent({
           onMouseLeave={() => setHover(false)}
         >
           {isLoadingTrades ? (
-            <LoadingSkeleton />
+            <div className="meme-trades-loading">
+              {Array.from({ length: 100 }, (_, i) => (
+                <div key={i} className="meme-trade-skeleton">
+                  <div className="skeleton-bar"></div>
+                  <div className="skeleton-amount"></div>
+                  <div className="skeleton-mc"></div>
+                  <div className="skeleton-trader"></div>
+                  <div className="skeleton-age"></div>
+                </div>
+              ))}
+            </div>
           ) : (
             viewTrades.map((t) => {
               const shownAmount =
@@ -1009,23 +968,27 @@ export default function MemeTradesComponent({
                       </span>
                     )}
                   </div>
-
-<div
-  className={`meme-trade-trader ${t.isCurrentUser ? 'current-user' : t.isTracked ? 'tracked-wallet clickable' : 'clickable'}`}
-  onClick={() =>
-    !t.isCurrentUser && setPopupAddr(t.fullAddress)
-  }
->
-  {t.emoji && <span style={{ marginRight: '4px' }}>{t.emoji}</span>}
-  {t.trader}
-</div>
-
+                  <div
+                    className={`meme-trade-trader ${t.isCurrentUser ? 'current-user' : t.isTracked ? 'tracked-wallet clickable' : 'clickable'}`}
+                    onClick={() =>
+                      !t.isCurrentUser && setPopupAddr(t.fullAddress)
+                    }
+                  >
+                    {t.emoji && <span style={{ marginRight: '4px' }}>{t.emoji}</span>}
+                    {t.trader}
+                  </div>
                   <div className="meme-trade-age-container">
                     <div className="meme-trade-tags">
                       {t.tags.length > 0 && renderTraderTags(t.tags)}
                     </div>
                     <span className="meme-trade-age">
-                      {fmtTimeAgo(t.timestamp)}
+                      <a
+                          href={`${settings.chainConfig[activechain].explorer}/tx/${t.id.split('-')[0]}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                        {fmtTimeAgo(t.timestamp)}
+                      </a>
                     </span>
                   </div>
                 </div>

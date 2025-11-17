@@ -131,6 +131,9 @@ interface MemeInterfaceProps {
   isTerminalDataFetching: any;
   trackedAddresses: string[];
   setTrackedAddresses: React.Dispatch<React.SetStateAction<string[]>>;
+  isLoadingTrades: any;
+  setIsLoadingTrades: any;
+  trackedWalletsRef: any;
 }
 
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
@@ -359,7 +362,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   selectedIntervalRef,
   isTerminalDataFetching,
   trackedAddresses,
-  setTrackedAddresses
+  setTrackedAddresses,
+  isLoadingTrades,
+  setIsLoadingTrades,
+  trackedWalletsRef
 }) => {
   const getSliderPosition = (
     activeView: 'chart' | 'trades' | 'ordercenter',
@@ -999,7 +1005,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [isConsolidating, setIsConsolidating] = useState(false);
   const [isSplitting, setIsSplitting] = useState(false);
 
-  const [isLoadingTrades, setIsLoadingTrades] = useState(false);
   const { activechain } = useSharedContext();
 
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
@@ -1665,6 +1670,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setIsLoadingTrades(true);
     setTrackedAddresses(d ? [d] : []);
   }, [token.dev]);
+
+  const setTrackedToSet = useCallback(() => {
+    setIsLoadingTrades(true);
+    setTrackedAddresses(trackedWalletsRef.current.map((w: any) => (w.address || '').toLowerCase()));
+  }, []);
 
   const setTrackedToYou = useCallback(() => {
     const allYouAddresses = [
@@ -2588,14 +2598,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               isMarksVisible={true}
               address={address}
               devAddress={token.dev}
-              trackedAddresses={
-                trackedAddresses && trackedAddresses.length
-                  ? trackedAddresses
-                  : [
-                    String(address || '').toLowerCase(),
-                    String(token?.dev || '').toLowerCase(),
-                    ...subWallets.map(w => String(w.address || '').toLowerCase())
-                  ]
+              trackedAddresses={[
+                String(address || '').toLowerCase(),
+                String(token?.dev || '').toLowerCase(),
+                ...subWallets.map(w => String(w.address || '').toLowerCase()),
+                ...trackedAddresses,
+                ...trackedWalletsRef.current
+              ]
               }
               selectedIntervalRef={selectedIntervalRef}
             />
@@ -2627,10 +2636,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               trackedAddresses={trackedAddresses}
               onFilterDev={setTrackedToDev}
               onFilterYou={setTrackedToYou}
+              onFilterSet={setTrackedToSet}
               onClearTracked={clearTracked}
               isLoadingTrades={isLoadingTrades}
               subWallets={subWallets}
               marketsData={marketsData}
+              trackedWalletsRef={trackedWalletsRef}
             />
           </div>
         </div>
