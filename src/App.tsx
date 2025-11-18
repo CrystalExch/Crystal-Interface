@@ -4710,13 +4710,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           ...(json.data?.graduating ?? []),
           ...(json.data?.migrated ?? []),
         ];
-        rawMarkets.forEach((m: any) => {
-  setTokenMetadata(m.id, {
-    symbol: m.symbol,
-    name: m.name,
-    icon: m.metadataCID,
-  });
-});
 
         const tokens: Token[] = await Promise.all(
           rawMarkets.map(async (m: any) => {
@@ -4928,68 +4921,70 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 },
               });
 
-if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
-  const mcfg = markets[addresstoMarket[marketAddr]];
-  
-  const cachedMetadata = getCachedTokenMetadata(tokenAddrFromMarket);
-  const symbol = cachedMetadata?.symbol || mcfg?.baseAsset || 'TKN';
-  const name = cachedMetadata?.name || mcfg?.baseAsset || 'Unknown';
-  const icon = cachedMetadata?.icon || mcfg?.icon || undefined;
+              if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
+                const mcfg = markets[addresstoMarket[marketAddr]];
 
-  console.log('[TrackedTrade] Orderbook trade detected:', {
-    caller: callerAddr,
-    token: symbol,
-    tokenAddress: tokenAddrFromMarket,
-    isBuy,
-    amountIn,
-    amountOut,
-    price: endPrice,
-    cached: !!cachedMetadata
-  });
+                const tradeId = `${log.transactionHash}-${log.logIndex}`;
 
-  const normalized = normalizeTrade({
-    caller: callerAddr,
-    id: log.transactionHash,
-    isBuy: isBuy,
-    price: endPrice,
-    symbol: symbol,
-    name: name,
-    tokenAddress: tokenAddrFromMarket,
-    tokenIcon: icon,
-    amountIn,
-    amountOut,
-    timestamp: Date.now(),
-  }, trackedWalletsRef.current);
+                if (processedTradeIds.current.has(tradeId)) {
+                  console.log('[TrackedTrade] Skipping duplicate orderbook trade:', tradeId);
+                  return tempset;
+                }
 
-  setTrackedWalletTrades(prev => {
-    const updated = [normalized, ...prev];
-    console.log('[TrackedTrade] Added to list, total trades:', updated.length);
-    return updated.length > 50 ? updated.slice(0, 50) : updated;
-  });
+                const cachedMetadata = getCachedTokenMetadata(tokenAddrFromMarket);
+                const symbol = cachedMetadata?.symbol || mcfg?.baseAsset || 'TKN';
+                const name = cachedMetadata?.name || mcfg?.baseAsset || 'Unknown';
+                const icon = cachedMetadata?.icon || mcfg?.icon || undefined;
 
-  if (!cachedMetadata) {
-    getTokenMetadata(tokenAddrFromMarket, {
-      symbol: mcfg?.baseAsset,
-      name: mcfg?.baseAsset,
-      icon: mcfg?.icon,
-    }).then(metadata => {
-      if (metadata) {
-        setTrackedWalletTrades(prev => 
-          prev.map(t => 
-            t.tokenAddress?.toLowerCase() === tokenAddrFromMarket && t.id === log.transactionHash
-              ? { ...t, token: metadata.symbol, tokenName: metadata.name, tokenIcon: metadata.icon }
-              : t
-          )
-        );
-      }
-    });
-  }
+                const normalized = normalizeTrade({
+                  caller: callerAddr,
+                  id: tradeId,  
+                  isBuy: isBuy,
+                  price: endPrice,
+                  symbol: symbol,
+                  name: name,
+                  tokenAddress: tokenAddrFromMarket,
+                  tokenIcon: icon,
+                  amountIn,
+                  amountOut,
+                  timestamp: Date.now(),
+                }, trackedWalletsRef.current);
+
+                processedTradeIds.current.add(tradeId);
 
                 setTrackedWalletTrades(prev => {
+                  if (prev.some(t => t.id === tradeId)) {
+                    return prev;
+                  }
+
                   const updated = [normalized, ...prev];
-                  console.log('[TrackedTrade] Added to list, total trades:', updated.length);
-                  return updated.length > 50 ? updated.slice(0, 50) : updated;
+                  const kept = updated.slice(0, 50);
+                  const keptIds = new Set(kept.map(t => t.id));
+
+                  processedTradeIds.current = new Set(
+                    Array.from(processedTradeIds.current).filter(id => keptIds.has(id))
+                  );
+
+                  return kept;
                 });
+
+                if (!cachedMetadata) {
+                  getTokenMetadata(tokenAddrFromMarket, {
+                    symbol: mcfg?.baseAsset,
+                    name: mcfg?.baseAsset,
+                    icon: mcfg?.icon,
+                  }).then(metadata => {
+                    if (metadata) {
+                      setTrackedWalletTrades(prev =>
+                        prev.map(t =>
+                          t.id === tradeId  
+                            ? { ...t, token: metadata.symbol, tokenName: metadata.name, tokenIcon: metadata.icon }
+                            : t
+                        )
+                      );
+                    }
+                  });
+                }
               }
               if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
               setTokenData(p => ({
@@ -5262,70 +5257,72 @@ if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === calle
 
               const price = vToken === 0 ? 0 : vNative / vToken;
 
-if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
-  console.log('[TrackedTrade] Launchpad trade detected:', {
-    caller: callerAddr,
-    tokenAddress: tokenAddr,
-    isBuy,
-    amountIn,
-    amountOut,
-    price
-  });
-  
-  const cachedMetadata = getCachedTokenMetadata(tokenAddr);
-  
-  let tokenInfo: any = null;
-  if (!cachedMetadata) {
-    Object.values(tokensByStatus).forEach((tokens: any[]) => {
-      const found = tokens.find(t => t.tokenAddress?.toLowerCase() === tokenAddr);
-      if (found) tokenInfo = found;
-    });
-  }
+              if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
+                const tradeId = `${log.transactionHash}-${log.logIndex}`;
 
-  const symbol = cachedMetadata?.symbol || tokenInfo?.symbol || 'TKN';
-  const name = cachedMetadata?.name || tokenInfo?.name || 'Unknown';
-  const icon = cachedMetadata?.icon || tokenInfo?.image || undefined;
+                if (processedTradeIds.current.has(tradeId)) {
+                  return tempset;
+                }
+                const cachedMetadata = getCachedTokenMetadata(tokenAddr);
 
-  const normalized = normalizeTrade({
-    caller: callerAddr,
-    id: log.transactionHash,
-    isBuy: isBuy,
-    price: price,
-    symbol: symbol,
-    name: name,
-    tokenAddress: tokenAddr,
-    tokenIcon: icon,
-    amountIn: amountIn,
-    amountOut: amountOut,
-    timestamp: Date.now(),
-  }, trackedWalletsRef.current);
+                let tokenInfo: any = null;
+                if (!cachedMetadata) {
+                  Object.values(tokensByStatus).forEach((tokens: any[]) => {
+                    const found = tokens.find(t => t.tokenAddress?.toLowerCase() === tokenAddr);
+                    if (found) tokenInfo = found;
+                  });
+                }
 
-  setTrackedWalletTrades(prev => {
-    const updated = [normalized, ...prev];
-    console.log('[TrackedTrade] Added launchpad trade, total trades:', updated.length);
-    return updated.length > 50 ? updated.slice(0, 50) : updated;
-  });
+                const symbol = cachedMetadata?.symbol || tokenInfo?.symbol || 'TKN';
+                const name = cachedMetadata?.name || tokenInfo?.name || 'Unknown';
+                const icon = cachedMetadata?.icon || tokenInfo?.image || undefined;
 
-  if (!cachedMetadata && !tokenInfo) {
-    getTokenMetadata(tokenAddr).then(metadata => {
-      if (metadata) {
-        setTrackedWalletTrades(prev => 
-          prev.map(t => 
-            t.tokenAddress?.toLowerCase() === tokenAddr && t.id === log.transactionHash
-              ? { ...t, token: metadata.symbol, tokenName: metadata.name, tokenIcon: metadata.icon }
-              : t
-          )
-        );
-      }
-    });
-  }
+                const normalized = normalizeTrade({
+                  caller: callerAddr,
+                  id: tradeId,  
+                  isBuy: isBuy,
+                  price: price,
+                  symbol: symbol,
+                  name: name,
+                  tokenAddress: tokenAddr,
+                  tokenIcon: icon,
+                  amountIn: amountIn,
+                  amountOut: amountOut,
+                  timestamp: Date.now(),
+                }, trackedWalletsRef.current);
+
+                processedTradeIds.current.add(tradeId);
 
                 setTrackedWalletTrades(prev => {
+                  if (prev.some(t => t.id === tradeId)) {
+                    return prev;
+                  }
+
                   const updated = [normalized, ...prev];
-                  console.log('[TrackedTrade] Added launchpad trade, total trades:', updated.length);
-                  return updated.length > 50 ? updated.slice(0, 50) : updated;
+                  const kept = updated.slice(0, 50);
+                  const keptIds = new Set(kept.map(t => t.id));
+                  processedTradeIds.current = new Set(
+                    Array.from(processedTradeIds.current).filter(id => keptIds.has(id))
+                  );
+
+                  return kept;
                 });
+
+                if (!cachedMetadata && !tokenInfo) {
+                  getTokenMetadata(tokenAddr).then(metadata => {
+                    if (metadata) {
+                      setTrackedWalletTrades(prev =>
+                        prev.map(t =>
+                          t.id === tradeId 
+                            ? { ...t, token: metadata.symbol, tokenName: metadata.name, tokenIcon: metadata.icon }
+                            : t
+                        )
+                      );
+                    }
+                  });
+                }
               }
+
 
               if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
                 setTokenData(p => ({
@@ -5738,41 +5735,42 @@ if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === calle
   const memeSelectedIntervalRef = useRef<string>(memeSelectedInterval);
 
   interface TokenMetadata {
-  address: string;
-  symbol: string;
-  name: string;
-  icon?: string;
-  lastUpdated: number;
-}
-
-const tokenMetadataCache = useRef<Map<string, TokenMetadata>>(new Map());
-const pendingMetadataFetches = useRef<Map<string, Promise<TokenMetadata | null>>>(new Map());
-
-const getTokenMetadata = useCallback(async (
-  tokenAddress: string,
-  fallback?: Partial<TokenMetadata>
-): Promise<TokenMetadata | null> => {
-  const normalized = tokenAddress.toLowerCase();
-  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
-  
-  // Check cache first
-  const cached = tokenMetadataCache.current.get(normalized);
-  if (cached && Date.now() - cached.lastUpdated < CACHE_TTL) {
-    return cached;
+    address: string;
+    symbol: string;
+    name: string;
+    icon?: string;
+    lastUpdated: number;
   }
 
-  // Check if already fetching
-  const pending = pendingMetadataFetches.current.get(normalized);
-  if (pending) return pending;
+  const tokenMetadataCache = useRef<Map<string, TokenMetadata>>(new Map());
+  const pendingMetadataFetches = useRef<Map<string, Promise<TokenMetadata | null>>>(new Map());
+  const processedTradeIds = useRef<Set<string>>(new Set());
 
-  // Fetch new metadata
-  const fetchPromise = (async () => {
-    try {
-      const response = await fetch(SUBGRAPH_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          query: `{
+  const getTokenMetadata = useCallback(async (
+    tokenAddress: string,
+    fallback?: Partial<TokenMetadata>
+  ): Promise<TokenMetadata | null> => {
+    const normalized = tokenAddress.toLowerCase();
+    const CACHE_TTL = 24 * 60 * 60 * 1000;
+
+    // Check cache first
+    const cached = tokenMetadataCache.current.get(normalized);
+    if (cached && Date.now() - cached.lastUpdated < CACHE_TTL) {
+      return cached;
+    }
+
+    // Check if already fetching
+    const pending = pendingMetadataFetches.current.get(normalized);
+    if (pending) return pending;
+
+    // Fetch new metadata
+    const fetchPromise = (async () => {
+      try {
+        const response = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: `{
             launchpadToken(id: "${normalized}") {
               id
               name
@@ -5780,77 +5778,77 @@ const getTokenMetadata = useCallback(async (
               metadataCID
             }
           }`,
-        }),
-      });
+          }),
+        });
 
-      const json = await response.json();
-      const token = json.data?.launchpadToken;
+        const json = await response.json();
+        const token = json.data?.launchpadToken;
 
-      if (token) {
+        if (token) {
+          const metadata = {
+            address: normalized,
+            symbol: token.symbol || 'TKN',
+            name: token.name || 'Unknown',
+            icon: token.metadataCID || undefined,
+            lastUpdated: Date.now(),
+          };
+          tokenMetadataCache.current.set(normalized, metadata);
+          return metadata;
+        }
+      } catch (error) {
+        console.error('Failed to fetch token metadata:', error);
+      }
+
+      // Use fallback on error or not found
+      if (fallback) {
         const metadata = {
           address: normalized,
-          symbol: token.symbol || 'TKN',
-          name: token.name || 'Unknown',
-          icon: token.metadataCID || undefined,
+          symbol: fallback.symbol || 'TKN',
+          name: fallback.name || 'Unknown',
+          icon: fallback.icon,
           lastUpdated: Date.now(),
         };
         tokenMetadataCache.current.set(normalized, metadata);
         return metadata;
       }
-    } catch (error) {
-      console.error('Failed to fetch token metadata:', error);
+
+      return null;
+    })();
+
+    pendingMetadataFetches.current.set(normalized, fetchPromise);
+
+    try {
+      const result = await fetchPromise;
+      return result;
+    } finally {
+      pendingMetadataFetches.current.delete(normalized);
+    }
+  }, []);
+
+  const getCachedTokenMetadata = useCallback((tokenAddress: string): TokenMetadata | null => {
+    const normalized = tokenAddress.toLowerCase();
+    const CACHE_TTL = 24 * 60 * 60 * 1000;
+    const cached = tokenMetadataCache.current.get(normalized);
+
+    if (cached && Date.now() - cached.lastUpdated < CACHE_TTL) {
+      return cached;
     }
 
-    // Use fallback on error or not found
-    if (fallback) {
-      const metadata = {
-        address: normalized,
-        symbol: fallback.symbol || 'TKN',
-        name: fallback.name || 'Unknown',
-        icon: fallback.icon,
-        lastUpdated: Date.now(),
-      };
-      tokenMetadataCache.current.set(normalized, metadata);
-      return metadata;
-    }
-    
     return null;
-  })();
+  }, []);
 
-  pendingMetadataFetches.current.set(normalized, fetchPromise);
-  
-  try {
-    const result = await fetchPromise;
-    return result;
-  } finally {
-    pendingMetadataFetches.current.delete(normalized);
-  }
-}, []);
+  const setTokenMetadata = useCallback((tokenAddress: string, metadata: Partial<TokenMetadata>): void => {
+    const normalized = tokenAddress.toLowerCase();
+    const existing = tokenMetadataCache.current.get(normalized);
 
-const getCachedTokenMetadata = useCallback((tokenAddress: string): TokenMetadata | null => {
-  const normalized = tokenAddress.toLowerCase();
-  const CACHE_TTL = 24 * 60 * 60 * 1000;
-  const cached = tokenMetadataCache.current.get(normalized);
-  
-  if (cached && Date.now() - cached.lastUpdated < CACHE_TTL) {
-    return cached;
-  }
-  
-  return null;
-}, []);
-
-const setTokenMetadata = useCallback((tokenAddress: string, metadata: Partial<TokenMetadata>): void => {
-  const normalized = tokenAddress.toLowerCase();
-  const existing = tokenMetadataCache.current.get(normalized);
-  
-  tokenMetadataCache.current.set(normalized, {
-    address: normalized,
-    symbol: metadata.symbol || existing?.symbol || 'TKN',
-    name: metadata.name || existing?.name || 'Unknown',
-    icon: metadata.icon || existing?.icon,
-    lastUpdated: Date.now(),
-  });
-}, []);
+    tokenMetadataCache.current.set(normalized, {
+      address: normalized,
+      symbol: metadata.symbol || existing?.symbol || 'TKN',
+      name: metadata.name || existing?.name || 'Unknown',
+      icon: metadata.icon || existing?.icon,
+      lastUpdated: Date.now(),
+    });
+  }, []);
   const [page, _setPage] = useState(0);
   const [currentTokenData, setCurrentTokenData] = useState({
     address: '',
@@ -6131,7 +6129,7 @@ const setTokenMetadata = useCallback((tokenAddress: string, metadata: Partial<To
           } else {
             setMemeTrades([]);
           }
-  
+
           if (m?.series?.klines) {
             const bars = data.launchpadTokens[0].series.klines
               .slice()
@@ -6144,7 +6142,7 @@ const setTokenMetadata = useCallback((tokenAddress: string, metadata: Partial<To
                 close: Number(c.close) / 1e9,
                 volume: Number(c.baseVolume) / 1e18,
               }));
-  
+
             const resForChart =
               memeSelectedInterval === '1d'
                 ? '1D'
@@ -6155,7 +6153,7 @@ const setTokenMetadata = useCallback((tokenAddress: string, metadata: Partial<To
                     : memeSelectedInterval.endsWith('s')
                       ? memeSelectedInterval.slice(0, -1).toUpperCase() + 'S'
                       : memeSelectedInterval.slice(0, -1);
-  
+
             setChartData([bars, data.launchpadTokens[0].symbol + 'MON' + resForChart, true]);
           }
           let imageUrl = m.metadataCID || '';
