@@ -568,3 +568,12 @@
   text-overflow: ellipsis;
   max-width: 20px;
 }
+
+.meme-trade-trader.tracked-wallet {
+  color: #ffed4e;
+}
+
+.meme-trade-trader.tracked-wallet:hover {
+  color: #fff485;
+  text-decoration: underline;
+}

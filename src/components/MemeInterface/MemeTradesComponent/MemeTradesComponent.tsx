@@ -302,13 +302,13 @@ export default function MemeTradesComponent({
   const tradesBacklogRef = useRef<RawTrade[]>([]);
   const lastProcessedTradesRef = useRef<RawTrade[]>([]);
 
-  const trackedWalletsMap = useMemo(() => {
-    const map = new Map<string, TrackedWallet>();
-    trackedWalletsRef.current.forEach((wallet: any) => {
-      map.set(wallet.address.toLowerCase(), wallet);
-    });
-    return map;
-  }, []);
+const trackedWalletsMap = useMemo(() => {
+  const map = new Map<string, TrackedWallet>();
+  trackedWalletsRef.current.forEach((wallet: any) => {
+    map.set(wallet.address.toLowerCase(), wallet);
+  });
+  return map;
+}, [trackedWalletsRef.current]);
 
   const norm = (s?: string) => (s || '').toLowerCase();
   const trackedSet = new Set((trackedAddresses || []).map(norm));
@@ -974,7 +974,7 @@ export default function MemeTradesComponent({
                       !t.isCurrentUser && setPopupAddr(t.fullAddress)
                     }
                   >
-                    {t.emoji && <span style={{ marginRight: '4px' }}>{t.emoji}</span>}
+                    {t.emoji && <span>{t.emoji}</span>}
                     {t.trader}
                   </div>
                   <div className="meme-trade-age-container">
