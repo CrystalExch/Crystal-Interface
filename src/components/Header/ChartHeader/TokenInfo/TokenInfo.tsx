@@ -1530,7 +1530,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <img src={discord} alt="discord" style={{ width: '14px', height: '14px' }} />
+                      <img src={discord} alt="discord" style={{ width: '16px', height: '16px' }} />
                     </a>
                   )}
                   </Tooltip>

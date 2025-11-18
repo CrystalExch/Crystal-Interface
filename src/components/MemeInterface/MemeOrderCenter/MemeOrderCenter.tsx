@@ -1054,7 +1054,7 @@ case 'holders':
                   <div className="oc-meme-wallet-info">
                     <span className="meme-wallet-index">{row.rank}</span>
                     {walletDisplay.emoji && (
-                      <span style={{ marginRight: '4px', fontSize: '14px' }}>
+                      <span style={{ marginRight: '-4px', fontSize: '14px' }}>
                         {walletDisplay.emoji}
                       </span>
                     )}
