@@ -5687,7 +5687,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   });
   const [memeSimilarTokens, setMemeSimilarTokens] = useState<any[]>([]);
   const [memeSelectedInterval, setMemeSelectedInterval] = useState(
-    () => localStorage.getItem('meme_chart_timeframe') || '1m',
+    () => localStorage.getItem('meme_chart_timeframe') || '15s',
   );
   const memeSelectedIntervalRef = useRef<string>(memeSelectedInterval);
 

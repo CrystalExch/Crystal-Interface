@@ -833,9 +833,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [isWidgetOpen, setIsWidgetOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('crystal_quickbuy_widget_open');
-      return saved ? JSON.parse(saved) : false;
+      return saved ? JSON.parse(saved) : true;
     } catch (error) {
-      return false;
+      return true;
     }
   });
   const [tradeAmount, setTradeAmount] = useState('');
