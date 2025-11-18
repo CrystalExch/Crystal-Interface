@@ -4053,77 +4053,39 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   function v2ToOrderbook(
     reserve1Raw: number | bigint,
     reserve2Raw: number | bigint,
-    interval: number,
     baseDecimals: number,
     quoteDecimals: number,
     amountsQuote: string
   ): { bids: Order[]; asks: Order[] } {
-    if (reserve1Raw == 0 || reserve2Raw == 0 || interval <= 0) return { bids: [], asks: [] };
+    if (reserve1Raw == 0 || reserve2Raw == 0) return { bids: [], asks: [] };
 
-    const UNI_V2_FEE_BIPS = 25;
-    const fee = Math.max(0, UNI_V2_FEE_BIPS) / 10_000;
-    const oneMinusFee = Math.max(1e-12, 1 - fee);
-
-    const toHuman = (raw: number | bigint, decimals: number) => {
-      const n = typeof raw === 'bigint' ? Number(raw) : raw;
-      return n / Math.pow(10, decimals);
-    };
-
+    const oneMinusFee = 1 - (25 / 10000);
     const x0 = Number(reserve1Raw);
     const y0 = Number(reserve2Raw);
     const k = x0 * y0;
-    const pMid = y0 * (10 ** baseDecimals) / (x0 * (10 ** quoteDecimals));
+    const pMid = y0 / x0;
 
-    const xFromP = (p: number) => Math.sqrt(k * Math.max(p, 1e-18));
-
-    const intervalToScale = (iv: number) => {
-      const s = iv.toString();
-      let dec: number;
-      if (s.includes('e-')) {
-        const [base, exp] = s.split('e-');
-        const baseDec = (base.split('.')[1] || '').length;
-        dec = parseInt(exp, 10) + baseDec;
-      } else {
-        const dot = s.indexOf('.');
-        dec = dot === -1 ? 0 : s.length - dot - 1;
-      }
-      const pow = Math.min(12, dec + 6);
-      const SCALE = Math.pow(10, pow);
-      const intervalTicks = Math.max(1, Math.round(iv * SCALE));
-      return { SCALE, intervalTicks };
-    };
-
-    const { SCALE, intervalTicks } = intervalToScale(interval);
-    const toTicks = (p: number) => Math.round(p * SCALE);
-    const fromTicks = (t: number) => t / SCALE;
+    const xFromP = (p: number) => Math.sqrt(k * p);
 
     const bids: any[] = [];
     const asks: any[] = [];
     const MAX_LEVELS_PER_SIDE = 2000;
 
     {
-      let tMid = toTicks(pMid);
-      let tHere = tMid;
+      let tHere = pMid;
       for (let i = 0; i < MAX_LEVELS_PER_SIDE; i++) {
         const tLow = tHere * oneMinusFee;
         if (tLow <= 0) break;
-
-        const pLow = fromTicks(tLow);
-        const pHere = fromTicks(tHere);
-
-        const xLow = xFromP(pLow);
-        const xHi = xFromP(pHere);
-        const dxEff = Math.max(0, (xHi - xLow) * (10 ** 6) / (10 ** 18));
-
-        const baseIn = dxEff / oneMinusFee;
+        const xLow = xFromP(tLow);
+        const xHi = xFromP(tHere);
+        const baseIn = Math.max(0, (xHi - xLow));
         if (baseIn <= 0) break;
 
-        const effectivePrice = pLow * (1 - fee);
-        const size = amountsQuote == 'Quote' ? baseIn * effectivePrice : baseIn
+        const effectivePrice = tLow * (10 ** baseDecimals) / (10 ** quoteDecimals);
+        const size = amountsQuote == 'Quote' ? baseIn / (10 ** quoteDecimals) : baseIn / effectivePrice / (10 ** baseDecimals)
         bids.push({
           price: effectivePrice,
           size: size,
-          totalSize: size,
           shouldFlash: false,
           userPrice: false,
         });
@@ -4133,24 +4095,19 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     }
 
     {
-      let tMid = toTicks(pMid);
-      let tHere = tMid;
+      let tHere = pMid;
       for (let i = 0; i < MAX_LEVELS_PER_SIDE; i++) {
         const tHigh = tHere / oneMinusFee;
-        const pHere = fromTicks(tHere);
-        const pHigh = fromTicks(tHigh);
-
-        const xA = xFromP(pHere);
-        const xN = xFromP(pHigh);
-        const baseOut = Math.max(0, (xN - xA) * (10 ** 6) / (10 ** 18));
+        const xA = xFromP(tHere);
+        const xN = xFromP(tHigh);
+        const baseOut = Math.max(0, (xN - xA));
         if (baseOut <= 0) break;
 
-        const effectivePrice = pHigh * (1 + fee);
-        const size = amountsQuote == 'Quote' ? baseOut * effectivePrice : baseOut
+        const effectivePrice = tHigh * (10 ** baseDecimals) / (10 ** quoteDecimals);
+        const size = amountsQuote == 'Quote' ? baseOut / (10 ** quoteDecimals) : baseOut / effectivePrice / (10 ** baseDecimals)
         asks.push({
           price: effectivePrice,
           size: size,
-          totalSize: size,
           shouldFlash: false,
           userPrice: false,
         });
@@ -7742,7 +7699,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             ),
           )
           : 1 / (activeMarket?.marketType != 0 && (Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)) ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)))) - 1) : Number(activeMarket.priceFactor))
-        const { bids, asks } = v2ToOrderbook(prevOrderData[1], prevOrderData[0], interval * 10, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
+        const { bids, asks } = v2ToOrderbook(prevOrderData[1], prevOrderData[0], Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
 
         setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
         setRoundedSellOrders({ orders: roundedSell.concat(asks as any), key: activeMarketKey, amountsQuote });
@@ -8012,7 +7969,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               )
               : 1 / (activeMarket?.marketType != 0 && spread?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor))
 
-            const { bids, asks } = v2ToOrderbook(orderdata[1], orderdata[0], interval * 10, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
+            const { bids, asks } = v2ToOrderbook(orderdata[1], orderdata[0], Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
 
             setSpreadData({ spread: `${((spread?.spread / spread?.averagePrice) * 100).toFixed(2)}%`, averagePrice: formatSubscript(formatSig(spread?.averagePrice.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket?.marketType != 0)) });
             setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
