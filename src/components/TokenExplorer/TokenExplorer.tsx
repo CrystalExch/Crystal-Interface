@@ -4581,7 +4581,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                                <div className="wallet-dropdown-address"              
                                    onClick={(e) => {
                                       e.stopPropagation();
-                                      copyToClipboard(wallet.address, 'Wallet address copied');
+                                      copyToClipboard(wallet.address);
                                     }}
                                     style={{ cursor: 'pointer' }}>
                                     {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
