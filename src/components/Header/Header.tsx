@@ -793,8 +793,29 @@ const Header: React.FC<HeaderProps> = ({
                         ), 2)}
                     </span>
                   </div>
-                  <div className="header-copy-address">   <CopyButton textToCopy={displayAddress || 'No Address'} /> {displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'} </div>
+                        <div className="wallet-dropdown-address"              
+                                   onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (displayAddress) {
+                                        copyToClipboard(displayAddress, 'Wallet address copied');
+                                      }
+                                    }}
+                                    style={{ cursor: 'pointer' }}>
+                                    {displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'} 
+                                      <svg
+                                      className="wallet-dropdown-address-copy-icon"
+                                      width="11"
+                                      height="11"
+                                      viewBox="0 0 24 24"
+                                      fill="currentColor"
+                                      style={{ marginLeft: '2px' }}
+                                    >
+                                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                    </svg>
+                                  </div>
                 </div>
+
+            
                 <div className="header-actions-container">
                   <div className="header-action-row">
                     <button className="header-action-item"
