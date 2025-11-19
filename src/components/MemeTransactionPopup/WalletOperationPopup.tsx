@@ -147,7 +147,6 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
         className={`wallet-popup-container ${exiting ? 'slide-out' : 'slide-in'} variant-${variant} ${isClickable ? 'clickable' : ''}`}
         onClick={isClickable && onClick ? () => {
           onClick();
-          handleClose();
         } : undefined}
         style={{ cursor: isClickable ? 'pointer' : 'default' }}
       >
