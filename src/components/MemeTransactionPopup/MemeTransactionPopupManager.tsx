@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import WalletOperationPopup from './WalletOperationPopup';
 import './MemeTransactionPopupManager.css';
 import stepaudio from '../../assets/step_audio.mp3';
@@ -17,6 +17,9 @@ interface PopupData {
   targetIndex?: number;
   onClick?: () => void;
   isClickable?: boolean;
+  walletAddress?: string;
+  timestamp?: number;
+  actionType?: 'buy' | 'sell';
 }
 interface AudioSettings {
   soundAlertsEnabled: boolean;
@@ -27,7 +30,17 @@ interface AudioSettings {
     migrated: string;
   };
 }
+interface TrackedWallet {
+  id: string;
+  address: string;
+  name: string;
+  emoji: string;
+  createdAt: string;
+  balance?: number;
+  lastActiveAt?: number | null;
+}
 
+const TRACKED_WALLETS_KEY = 'tracked_wallets_data';
 interface AudioGroups {
   swap: boolean;
   order: boolean;
@@ -82,6 +95,9 @@ export const showLoadingPopup = (id: string, data: {
   tokenImage?: string;
   onClick?: () => void;
   isClickable?: boolean;
+  walletAddress?: string;
+  timestamp?: number;
+  actionType?: 'buy' | 'sell';
 }) => {
   const newPopup: PopupData = {
     id,
@@ -96,6 +112,9 @@ export const showLoadingPopup = (id: string, data: {
     confirmed: false,
     onClick: data.onClick,
     isClickable: data.isClickable,
+    walletAddress: data.walletAddress,
+    timestamp: data.timestamp || Date.now(),
+    actionType: data.actionType,
   };
   if (globalSetPopups) {
     globalSetPopups(prev => [newPopup, ...prev].slice(0, 7));
@@ -111,6 +130,9 @@ export const updatePopup = (id: string, data: {
   tokenImage?: string;
   onClick?: () => void;
   isClickable?: boolean;
+  walletAddress?: string;
+  timestamp?: number;
+  actionType?: 'buy' | 'sell';
 }) => {
   if (globalSetPopups) {
     globalSetPopups(prev =>
@@ -127,6 +149,9 @@ export const updatePopup = (id: string, data: {
             tokenImage: data.tokenImage || p.tokenImage,
             onClick: data.onClick || p.onClick,
             isClickable: data.isClickable !== undefined ? data.isClickable : p.isClickable,
+            walletAddress: data.walletAddress || p.walletAddress,
+            timestamp: data.timestamp || p.timestamp,
+            actionType: data.actionType || p.actionType,
           };
 
           if (data.variant === 'success' && data.confirmed !== false) {
@@ -190,10 +215,67 @@ export const updatePopup = (id: string, data: {
   }
 };
 
-const MemeTransactionPopupManager: React.FC = () => {
+interface MemeTransactionPopupManagerProps {
+  trackedWallets?: TrackedWallet[];
+}
+
+const MemeTransactionPopupManager: React.FC<MemeTransactionPopupManagerProps> = ({
+  trackedWallets: externalTrackedWallets
+}) => {
   const [transactionPopups, setTransactionPopups] = useState<PopupData[]>([]);
   const [newPopupIds, setNewPopupIds] = useState<Set<string>>(new Set());
+  const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
 
+  useEffect(() => {
+    if (externalTrackedWallets && externalTrackedWallets.length > 0) {
+      setTrackedWallets(externalTrackedWallets);
+      return;
+    }
+
+    const loadWallets = () => {
+      try {
+        const stored = localStorage.getItem(TRACKED_WALLETS_KEY);
+        if (stored) {
+          setTrackedWallets(JSON.parse(stored));
+        }
+      } catch (error) {
+        console.error('Error loading tracked wallets:', error);
+      }
+    };
+
+    loadWallets();
+    // Listen for wallet updates
+    const handleWalletUpdate = (e: CustomEvent) => {
+      if (e.detail?.wallets) {
+        setTrackedWallets(e.detail.wallets);
+      }
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === TRACKED_WALLETS_KEY && e.newValue) {
+        try {
+          setTrackedWallets(JSON.parse(e.newValue));
+        } catch (error) {
+          console.error('Error parsing tracked wallets:', error);
+        }
+      }
+    };
+
+    window.addEventListener('wallets-updated', handleWalletUpdate as EventListener);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('wallets-updated', handleWalletUpdate as EventListener);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [externalTrackedWallets]);
+
+  const findTrackedWallet = (address?: string): TrackedWallet | null => {
+    if (!address) return null;
+    return trackedWallets.find(
+      w => w.address.toLowerCase() === address.toLowerCase()
+    ) || null;
+  };
   React.useEffect(() => {
     globalSetPopups = setTransactionPopups;
   }, []);
@@ -246,21 +328,30 @@ const MemeTransactionPopupManager: React.FC = () => {
             }}
           >
             <div className={`meme-transaction-popup-inner ${isNew ? 'enter' : ''}`}>
-              <WalletOperationPopup
-                isVisible={popup.visible}
-                title={popup.title}
-                subtitle={popup.subtitle}
-                amount={popup.amount}
-                amountUnit={popup.amountUnit}
-                variant={popup.variant}
-                onClose={() => closeTransactionPopup(popup.id)}
-                autoCloseDelay={popup.isLoading || !popup.confirmed ? 999999 : popup.isClickable ? 10000 : 6000}
-                type="transfer"
-                isLoading={popup.isLoading}
-                tokenImage={popup.tokenImage}
-                onClick={popup.onClick}
-                isClickable={popup.isClickable}
-              />
+              {(() => {
+                const trackedWallet = findTrackedWallet(popup.walletAddress);
+                return (
+                  <WalletOperationPopup
+                    isVisible={popup.visible}
+                    title={popup.title}
+                    subtitle={popup.subtitle}
+                    amount={popup.amount}
+                    amountUnit={popup.amountUnit}
+                    variant={popup.variant}
+                    onClose={() => closeTransactionPopup(popup.id)}
+                    autoCloseDelay={popup.isLoading || !popup.confirmed ? 999999 : popup.isClickable ? 10000 : 6000}
+                    type={trackedWallet ? "wallet_trade" : "transfer"}
+                    isLoading={popup.isLoading}
+                    tokenImage={popup.tokenImage}
+                    onClick={popup.onClick}
+                    isClickable={popup.isClickable}
+                    walletEmoji={trackedWallet?.emoji}
+                    walletName={trackedWallet?.name}
+                    timestamp={popup.timestamp}
+                    actionType={popup.actionType}
+                  />
+                );
+              })()}
             </div>
           </div>
         );

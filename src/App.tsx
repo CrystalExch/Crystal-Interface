@@ -448,7 +448,20 @@ const Loader = () => {
 }
 
 function App({ stateloading, setstateloading, addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
+  interface TrackedWallet {
+    id: string;
+    address: string;
+    name: string;
+    emoji: string;
+    createdAt: string;
+    balance?: number;
+    lastActiveAt?: number | null;
+  }
 
+  const TRACKED_WALLETS_KEY = 'tracked_wallets_data';
+  const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
+  const lastProcessedTradeId = useRef<string | null>(null);
+  const shownTradeIds = useRef<Set<string>>(new Set());
   const NAD_FUN_EVENTS = {
     CurveCreate: '0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9',
     CurveBuy: '0x00a7ba871905cb955432583640b5c9fc6bdd27d36884ab2b5420839224638862',
@@ -504,6 +517,44 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const handleSavePresets = useCallback((presets: Record<number, any>) => {
     saveBuyPresets(presets);
     setBuyPresets(presets);
+  }, []);
+  useEffect(() => {
+    const loadWallets = () => {
+      try {
+        const stored = localStorage.getItem(TRACKED_WALLETS_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setTrackedWallets(parsed);
+        }
+      } catch (error) {
+      }
+    };
+
+    loadWallets();
+
+    const handleWalletUpdate = (e: CustomEvent) => {
+      if (e.detail?.wallets) {
+        setTrackedWallets(e.detail.wallets);
+      }
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === TRACKED_WALLETS_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          setTrackedWallets(parsed);
+        } catch (error) {
+        }
+      }
+    };
+
+    window.addEventListener('wallets-updated', handleWalletUpdate as EventListener);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('wallets-updated', handleWalletUpdate as EventListener);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -1127,7 +1178,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [navigate]);
 
   // state vars
-  const [_trackedWallets, setTrackedWallets] = useState<any[]>([]);
   const [showSendDropdown, setShowSendDropdown] = useState(false);
   const sendDropdownRef = useRef<HTMLDivElement | null>(null);
   const sendButtonRef = useRef<HTMLSpanElement | null>(null);
@@ -2162,12 +2212,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (stored) {
           const wallets = JSON.parse(stored);
           trackedWalletsRef.current = wallets;
-          console.log('[TrackedWallets] Updated ref with', wallets.length, 'wallets');
         } else {
           trackedWalletsRef.current = [];
         }
       } catch (error) {
-        console.error('[TrackedWallets] Failed to sync ref:', error);
         trackedWalletsRef.current = [];
       }
     };
@@ -2177,7 +2225,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const handleWalletsUpdate = (e: CustomEvent) => {
       if (e.detail?.wallets) {
         trackedWalletsRef.current = e.detail.wallets;
-        console.log('[TrackedWallets] Ref updated from event:', e.detail.wallets.length, 'wallets');
       }
     };
 
@@ -3633,19 +3680,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   })
 
   const handleImportWallets = (walletsText: string, addToSingleGroup: boolean) => {
-    console.log('Importing wallets:', walletsText, 'Add to single group:', addToSingleGroup);
-
     try {
       const lines = walletsText.trim().split('\n');
       const newWallets = lines.map((line, index) => {
         const parts = line.split(',');
         return {
-          id: Date.now().toString() + index,
+          id: `wallet-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
           address: parts[0]?.trim() || '',
           name: parts[1]?.trim() || `Imported Wallet ${index + 1}`,
           emoji: parts[2]?.trim() || '😀',
           balance: 0,
-          lastActive: 'Never'
+          lastActiveAt: null,
+          createdAt: new Date().toISOString()
         };
       }).filter(w => w.address);
 
@@ -4532,8 +4578,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [address]);
 
   useEffect(() => {
-    if (!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])) return;
-
     let cancelled = false;
 
     async function bootstrap() {
@@ -4884,7 +4928,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 const tradeId = `${log.transactionHash}-${log.logIndex}`;
 
                 if (processedTradeIds.current.has(tradeId)) {
-                  console.log('[TrackedTrade] Skipping duplicate orderbook trade:', tradeId);
                   return tempset;
                 }
 
@@ -4895,7 +4938,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                 const normalized = normalizeTrade({
                   caller: callerAddr,
-                  id: tradeId,  
+                  id: tradeId,
                   isBuy: isBuy,
                   price: endPrice,
                   symbol: symbol,
@@ -4934,7 +4977,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     if (metadata) {
                       setTrackedWalletTrades(prev =>
                         prev.map(t =>
-                          t.id === tradeId  
+                          t.id === tradeId
                             ? { ...t, token: metadata.symbol, tokenName: metadata.name, tokenIcon: metadata.icon }
                             : t
                         )
@@ -5236,7 +5279,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                 const normalized = normalizeTrade({
                   caller: callerAddr,
-                  id: tradeId,  
+                  id: tradeId,
                   isBuy: isBuy,
                   price: price,
                   symbol: symbol,
@@ -5270,7 +5313,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     if (metadata) {
                       setTrackedWalletTrades(prev =>
                         prev.map(t =>
-                          t.id === tradeId 
+                          t.id === tradeId
                             ? { ...t, token: metadata.symbol, tokenName: metadata.name, tokenIcon: metadata.icon }
                             : t
                         )
@@ -5554,7 +5597,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const tokenAddress = `0x${log.topics[1].slice(26)}`.toLowerCase();
               const creatorAddress = `0x${log.topics[2].slice(26)}`.toLowerCase();
 
-              console.log('nad.fun Token Created:', tokenAddress);
 
               fetch(metadataURI)
                 .then(response => response.json())
@@ -5583,10 +5625,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   };
 
                   if (pausedColumnRef.current === 'new') {
-                    console.log('Column paused, queueing token:', tokenAddress);
                     pausedTokenQueueRef.current['new'].push(newToken);
                   } else {
-                    console.log('Adding token directly:', tokenAddress);
                     dispatch({
                       type: 'ADD_QUEUED_TOKENS',
                       payload: {
@@ -5673,7 +5713,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         explorerWsRef.current = null;
       }
     };
-  }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
+  }, []);
 
   // memeinterface
   const [memeTrades, setMemeTrades] = useState<LaunchpadTrade[]>([]);
@@ -7645,7 +7685,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   useEffect(() => {
     const cleaned = deduplicateWallets(subWallets);
     if (cleaned.length !== subWallets.length) {
-      console.log(`Removed ${subWallets.length - cleaned.length} duplicate wallets on startup`);
       saveSubWallets(cleaned);
     }
   }, []);
@@ -13315,6 +13354,96 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       localStorage.removeItem('crystal_applied_explorer_filters');
     }
   }, [appliedExplorerFilters]);
+  useEffect(() => {
+    if (!trackedWalletTrades || trackedWalletTrades.length === 0 || trackedWallets.length === 0) {
+      return;
+    }
+
+    const formatAmount = (amount: number, decimals: number = 2) => {
+      if (amount >= 1e9) return `${(amount / 1e9).toFixed(decimals)}B`;
+      if (amount >= 1e6) return `${(amount / 1e6).toFixed(decimals)}M`;
+      if (amount >= 1e3) return `${(amount / 1e3).toFixed(decimals)}K`;
+      return amount.toFixed(decimals);
+    };
+
+    const formatMarketCap = (marketCap: number) => {
+      const usd = monUsdPrice ? marketCap * monUsdPrice : marketCap;
+      return '$' + formatAmount(usd, 1);
+    };
+
+    trackedWalletTrades.forEach((trade: any) => {
+      if (shownTradeIds.current.has(trade.id)) {
+        return;
+      }
+
+
+      const trackedWallet = trackedWallets.find(
+        w => w.address.toLowerCase() === trade.walletAddress?.toLowerCase()
+      );
+
+      if (!trackedWallet) {
+        return;
+      }
+
+      shownTradeIds.current.add(trade.id);
+
+      let actionText = '';
+      if (trade.type === 'buy') {
+        actionText = trade.isFirstBuy ? 'bought' : 'bought more';
+      } else if (trade.type === 'sell') {
+        actionText = trade.soldAll ? 'sold all' : 'sold some';
+      } else {
+        actionText = trade.type;
+      }
+
+      const title = `${actionText} ${trade.token || trade.tokenSymbol || 'token'}`;
+      const subtitle = `${formatAmount(trade.amount, 2)} at ${formatMarketCap(trade.marketCap)} MC`;
+
+
+      const notificationId = `tracked-trade-${trade.id}`;
+
+      showLoadingPopup(notificationId, {
+        title,
+        subtitle,
+        tokenImage: trade.tokenIcon,
+        walletAddress: trackedWallet.address,
+        timestamp: trade.timestamp || Date.now(),
+        isClickable: true,
+        actionType: trade.type,
+        onClick: () => {
+          if (trade.tokenAddress) {
+            navigate(`/meme/${trade.tokenAddress}`);
+          }
+        }
+      });
+
+      setTimeout(() => {
+        updatePopup(notificationId, {
+          title,
+          subtitle,
+          variant: 'success',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: trade.tokenIcon,
+          walletAddress: trackedWallet.address,
+          timestamp: trade.timestamp || Date.now(),
+          isClickable: true,
+          actionType: trade.type,
+          onClick: () => {
+            if (trade.tokenAddress) {
+              navigate(`/meme/${trade.tokenAddress}`);
+            }
+          }
+        });
+      }, 50);
+    });
+
+    if (shownTradeIds.current.size > 1000) {
+      const idsArray = Array.from(shownTradeIds.current);
+      shownTradeIds.current = new Set(idsArray.slice(-1000));
+    }
+  }, [trackedWalletTrades, trackedWallets, monUsdPrice, navigate]);
+
 
   const handleExplorerFilterInputChange = useCallback((field: string, value: string | boolean) => {
     setExplorerFilters((prev: any) => ({
@@ -25998,7 +26127,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   return (
     <div className="app-wrapper" key={language}>
       <NavigationProgress location={location} />
-      <MemeTransactionPopupManager />
+      <MemeTransactionPopupManager trackedWallets={trackedWallets} />
 
       {Modals}
       <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} />
