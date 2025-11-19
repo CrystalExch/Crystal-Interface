@@ -112,118 +112,39 @@
 }
 
 .live-trades-settings-toggle {
+  background: #26262eb8;
+  border-radius: 5px;
+  cursor: pointer;
+  height: 20px;
   position: relative;
-  display: inline-block;
-  width: 48px;
-  height: 26px;
+  transition: all 0.2s ease;
+  width: 40px;
 }
 
-.live-trades-settings-toggle input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+.live-trades-settings-toggle.active {
+  background: #aaaecf6d;
 }
 
 .live-trades-settings-toggle-slider {
+  background: #ffffff5a;
+  border-radius: 3px;
+  height: 16px;
+  left: 2px;
   position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #3a3a3f;
-  transition: 0.3s;
-  border-radius: 34px;
+  top: 2px;
+  transition: transform 0.2s ease;
+  width: 16px;
 }
 
-.live-trades-settings-toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 20px;
-  width: 20px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.3s;
-  border-radius: 50%;
-}
-
-.live-trades-settings-toggle input:checked + .live-trades-settings-toggle-slider {
-  background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
-}
-
-.live-trades-settings-toggle input:checked + .live-trades-settings-toggle-slider:before {
-  transform: translateX(22px);
+.live-trades-settings-toggle.active .live-trades-settings-toggle-slider {
+  background: #bdc2f1;
+  transform: translateX(20px);
 }
 
 .live-trades-settings-divider {
   height: 1px;
   background: rgba(179, 184, 249, 0.1);
   margin: 8px 0;
-}
-
-.live-trades-settings-option {
-  align-items: center;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  font-size: 0.7rem;
-  gap: 2px;
-  justify-content: center;
-  padding: 8px 12px;
-  padding-bottom: 4px;
-  transition: all 0.2s ease;
-  width: 100%;
-}
-
-.live-trades-settings-option.active {
-  background-color: rgba(201, 194, 243, .05);
-  border-color: #aaaecf;
-  box-shadow: 0 0 0 2px rgba(170, 174, 207, .3);
-  color: #d8dcff;
-}
-
-.live-trades-settings-option:hover:not(.active) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(179, 184, 249, 0.2);
-}
-
-.live-trades-settings-behavior-option {
-  align-items: center;
-  border: 1.5px solid rgba(179, 184, 249, 0.1);
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 4px;
-  justify-content: center;
-  min-height: 60px;
-  padding: 12px 8px;
-  transition: all 0.2s ease;
-}
-
-.live-trades-settings-behavior-option.active {
-  background-color: rgba(201, 194, 243, 0.05);
-  border-color: #aaaecf;
-  box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.3);
-  color: #d8dcff;
-}
-
-.live-trades-settings-behavior-option:hover:not(.active) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(179, 184, 249, 0.2);
-}
-
-.live-trades-settings-behavior-label {
-  font-size: 0.75rem;
-  letter-spacing: -0.2px;
-  line-height: 1.2;
-  text-align: center;
 }
 
 .live-trades-settings-volume {
@@ -233,71 +154,95 @@
 }
 
 .live-trades-settings-volume-header {
+  align-items: center;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  margin-bottom: 2px;
+  padding: 0;
 }
 
 .live-trades-settings-volume-value {
-  background: transparent;
-  border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 4px;
-  padding: 4px 12px;
-  font-size: 0.75rem;
-  font-weight: 300;
-  color: #ffffffcf;
-  letter-spacing: -0.3px;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  font-size: 0.8rem;
 }
 
 .live-trades-settings-slider {
+  -webkit-appearance: none;
+  -moz-appearance: none;
   appearance: none;
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(to right, 
-    rgba(170, 174, 207, 0.8) 0%, 
-    rgba(170, 174, 207, 0.8) var(--slider-percent, 50%), 
-    rgba(255, 255, 255, 0.1) var(--slider-percent, 50%), 
-    rgba(255, 255, 255, 0.1) 100%);
-  border-radius: 2px;
-  outline: none;
+  border-radius: 1px;
   cursor: pointer;
+  height: 4px;
+  margin: 0 4px;
+  outline: 0;
+  position: relative;
+  width: calc(100% - 15px);
+  background: linear-gradient(to right,
+    rgba(170, 174, 207, 0.8) 0%,
+    rgba(170, 174, 207, 0.8) var(--slider-percent, 50%),
+    rgba(255, 255, 255, 0.1) var(--slider-percent, 50%),
+    rgba(255, 255, 255, 0.1) 100%);
 }
 
 .live-trades-settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
-  background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
-  border-radius: 50%;
+  background: #d4d4d4;
+  border-radius: 3px;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
   cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.live-trades-settings-slider::-webkit-slider-thumb:hover {
-  filter: brightness(1.1);
+  height: 10px;
+  position: relative;
+  top: 4.5px;
+  transform: translate(0%, -50%);
+  -webkit-transition: all 0.2s ease;
+  transition: all 0.2s ease;
+  width: 10px;
+  z-index: 2;
 }
 
 .live-trades-settings-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
-  border-radius: 50%;
+  background: #d4d4d4;
   border: none;
+  border-radius: 3px;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
   cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.live-trades-settings-slider::-moz-range-thumb:hover {
-  filter: brightness(1.1);
+  height: 10px;
+  margin-top: -5.5px;
+  position: relative;
+  top: 4px;
+  -moz-transition: all 0.2s ease;
+  transition: all 0.2s ease;
+  width: 10px;
+  z-index: 13;
 }
 
 .live-trades-settings-slider-labels {
-  display: flex;
-  justify-content: space-between;
   color: #ffffff7b;
-  font-size: 0.7rem;
-  font-weight: 300;
-  letter-spacing: -0.3px;
+  display: flex;
+  font-size: 0.75rem;
+  justify-content: space-between;
+  padding: 0;
+  position: relative;
+  width: 101%;
+  z-index: 1;
+}
+
+.live-trades-settings-slider-label {
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 200;
+  margin: 0 -4px;
+  padding: 0 8px;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.live-trades-settings-slider-label:hover {
+  color: #ffffff93;
 }
 
 .live-trades-settings-footer {
@@ -335,40 +280,38 @@
   }
 }
 
-
 @media (max-width: 768px) {
   .live-trades-settings-container {
     max-width: 380px;
     width: 92%;
   }
-  
+
   .live-trades-settings-header {
     padding: 14px 18px;
   }
-  
+
   .live-trades-settings-content {
     padding: 18px;
   }
-  
+
   .live-trades-settings-footer {
     padding: 14px 18px;
   }
-  
+
   .live-trades-settings-title {
     font-size: 0.95rem;
   }
-  
+
   .live-trades-settings-label {
     font-size: 0.8rem;
   }
-  
+
   .live-trades-settings-sublabel {
     font-size: 0.72rem;
   }
-  
+
   .live-trades-settings-volume-value {
     font-size: 0.72rem;
-    padding: 3px 10px;
   }
 }
 
@@ -378,60 +321,59 @@
     width: 95%;
     max-height: 85vh;
   }
-  
+
   .live-trades-settings-header {
     padding: 12px 16px;
   }
-  
+
   .live-trades-settings-content {
     padding: 16px;
   }
-  
+
   .live-trades-settings-footer {
     padding: 12px 16px;
   }
-  
+
   .live-trades-settings-title {
     font-size: 0.9rem;
   }
-  
+
   .live-trades-settings-label {
     font-size: 0.78rem;
   }
-  
+
   .live-trades-settings-sublabel {
     font-size: 0.7rem;
   }
-  
+
   .live-trades-settings-section {
     gap: 14px;
   }
-  
+
   .live-trades-settings-volume {
     gap: 10px;
   }
-  
+
   .live-trades-settings-volume-value {
     font-size: 0.7rem;
-    padding: 2px 8px;
   }
-  
+
   .live-trades-settings-slider-labels {
     font-size: 0.65rem;
   }
-  
+
   .live-trades-settings-toggle {
     width: 44px;
     height: 24px;
   }
-  
+
   .live-trades-settings-toggle-slider:before {
     height: 18px;
     width: 18px;
     left: 3px;
     bottom: 3px;
   }
-  
+
   .live-trades-settings-toggle input:checked + .live-trades-settings-toggle-slider:before {
     transform: translateX(20px);
   }
