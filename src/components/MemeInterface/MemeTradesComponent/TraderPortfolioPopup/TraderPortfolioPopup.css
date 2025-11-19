@@ -21,7 +21,7 @@
   display: flex;
   flex-direction: column;
   max-height: 90vh;
-  max-width: 1100px;
+  max-width: 1200px;
   overflow: hidden;
   width: 100%;
 }
@@ -58,14 +58,15 @@
 }
 
 .trader-address-container {
-  align-items: center;
   display: flex;
-  gap: 0px;
+  align-items: center;
+  gap: 15px;
 }
 
 .trader-address {
-  color: rgba(255, 255, 255, 0.5);
+  color: #e0e8fd73;
   font-size: 0.8rem;
+  font-weight: 300;
 }
 
 .trader-action-btn {
@@ -118,22 +119,12 @@
 }
 
 .trader-account-summary {
-  background: rgba(179, 184, 249, 0.05);
   border: 1px solid rgba(179, 184, 249, 0.1);
   border-top-left-radius: 5px;
   padding: 20px;
   transition: all 0.3s ease;
-  width: 300px;
-}
-
-.trader-account-summary.positive {
-  background: rgba(0, 184, 148, 0.05);
-  border-color: rgba(0, 184, 148, 0.3);
-}
-
-.trader-account-summary.negative {
-  background: rgba(214, 48, 49, 0.05);
-  border-color: rgba(214, 48, 49, 0.3);
+  min-width: 350px;
+  border-right: none;
 }
 
 .trader-total-value {
@@ -268,14 +259,14 @@
 }
 
 .trader-graph-label {
-  color: rgba(255, 255, 255, 0.8);
-  display: block;
-  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.9rem;
+  letter-spacing: -0.3px;
   margin-bottom: 16px;
 }
 
 .trader-graph-wrapper {
-  height: 200px;
+  height: 250px;
   width: 100%;
 }
 
@@ -284,7 +275,7 @@
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
   border-top: none;
-  max-height: 210px;
+  height: 300px;
   overflow: hidden;
 }
 
@@ -403,13 +394,14 @@
 
 .trader-account-summary-container {
   display: flex;
+  height: 300px;
 }
 
 .trader-performance-container {
   border: 1px solid rgba(179, 184, 249, 0.1);
   border-left: none;
   border-top-right-radius: 5px;
-  min-width: 250px;
+  min-width: 350px;
   padding: 20px;
 }
 
@@ -419,8 +411,9 @@
 }
 
 .trader-performance-label {
-  color: rgba(255, 255, 255, 0.6);
+  color: #e0e8fd73;
   font-size: 0.75rem;
+  font-weight: 300;
 }
 
 .trader-performance-value {
@@ -437,9 +430,9 @@
 }
 
 .trader-balance-label {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.7rem;
-  font-weight: 100;
+  color: #e0e8fd73;
+  font-size: 0.75rem;
+  font-weight: 300;
 }
 
 .trader-balance-row {
@@ -448,6 +441,13 @@
 }
 
 .trader-balance-title {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.9rem;
+  letter-spacing: -0.3px;
+}
+
+.rename-track-button{
+  letter-spacing: -0.5px;
+  margin-top: -2px;
+  margin-left: 4px;
 }

@@ -1519,33 +1519,37 @@ for (const { addr, amount: partWei } of plan) {
     handleSellTrade,
   ]);
 
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (!widgetRef.current || isEditMode) return;
+const handleMouseDown = useCallback(
+  (e: React.MouseEvent) => {
+    if (!widgetRef.current || isEditMode) return;
 
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'BUTTON' ||
-        target.tagName === 'IMG' ||
-        target.closest('button') ||
-        target.closest('.quickbuy-edit-icon') ||
-        target.closest('.close-btn') ||
-        target.closest('.quickbuy-settings-display') ||
-        target.closest('.quickbuy-preset-controls')
-      ) {
-        return;
-      }
+    const target = e.target as HTMLElement;
+    if (
+      target.tagName === 'BUTTON' ||
+      target.tagName === 'IMG' ||
+      target.closest('button') ||
+      target.closest('.quickbuy-edit-icon') ||
+      target.closest('.close-btn') ||
+      target.closest('.quickbuy-settings-display') ||
+      target.closest('.quickbuy-preset-controls')
+    ) {
+      return;
+    }
 
-      const rect = widgetRef.current.getBoundingClientRect();
-      setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      });
-      setIsDragging(true);
-      e.preventDefault();
-    },
-    [isEditMode],
-  );
+    const rect = widgetRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+    setIsDragging(true);
+    e.preventDefault();
+
+    if (e.target && 'setPointerCapture' in e.target) {
+      (e.target as HTMLElement).setPointerCapture((e.nativeEvent as PointerEvent).pointerId);
+    }
+  },
+  [isEditMode],
+);
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
@@ -1565,25 +1569,39 @@ for (const { addr, amount: partWei } of plan) {
     [isDragging, dragOffset, widgetDimensions],
   );
 
-  useEffect(() => {
-    if (isDragging) {
-      const handleMouseUp = () => {
-        setIsDragging(false);
-        localStorage.setItem(
-          'crystal_quickbuy_widget_position',
-          JSON.stringify(position),
-        );
-      };
+useEffect(() => {
+  if (isDragging) {
+    const handleMouseUp = (e: MouseEvent) => {
+      if (e.target && 'releasePointerCapture' in e.target) {
+        const target = e.target as HTMLElement;
+        target.releasePointerCapture((e as any).pointerId);
+      }
 
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      setIsDragging(false);
+      localStorage.setItem(
+        'crystal_quickbuy_widget_position',
+        JSON.stringify(position),
+      );
+    };
 
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging, position, handleMouseMove]);
+    document.addEventListener('mousemove', handleMouseMove, true);
+    document.addEventListener('mouseup', handleMouseUp, true);
+    document.addEventListener('mouseleave', handleMouseUp, true);
+
+    document.addEventListener('pointermove', handleMouseMove as any, true);
+    document.addEventListener('pointerup', handleMouseUp as any, true);
+    document.addEventListener('pointercancel', handleMouseUp as any, true);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove, true);
+      document.removeEventListener('mouseup', handleMouseUp, true);
+      document.removeEventListener('mouseleave', handleMouseUp, true);
+      document.removeEventListener('pointermove', handleMouseMove as any, true);
+      document.removeEventListener('pointerup', handleMouseUp as any, true);
+      document.removeEventListener('pointercancel', handleMouseUp as any, true);
+    };
+  }
+}, [isDragging, position, handleMouseMove]);
 
   useEffect(() => {
     if (editingIndex !== null && inputRef.current) {
@@ -1705,6 +1723,15 @@ for (const { addr, amount: partWei } of plan) {
 
   return (
     <>
+     {(isDragging) && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 9998,
+          cursor: isDragging ? 'move' : 'resize',
+          userSelect: 'none'
+        }} />
+      )}
       <div
         ref={widgetRef}
         className={`quickbuy-widget ${isDragging ? 'dragging' : ''}`}

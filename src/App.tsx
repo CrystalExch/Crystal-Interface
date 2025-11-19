@@ -259,16 +259,16 @@ type State = {
 };
 
 type Action =
-  | { type: 'INIT'; tokens: Token[] }
-  | { type: 'ADD_MARKET'; token: Partial<Token> }
-  | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
-  | { type: 'UPDATE_MARKET_BY_ADDRESS'; tokenAddress: string; updates: Partial<Token> }  // NEW
-  | { type: 'GRADUATE_MARKET'; id: string }
-  | { type: 'GRADUATE_MARKET_BY_ADDRESS'; tokenAddress: string }  // NEW
-  | { type: 'HIDE_TOKEN'; id: string }
-  | { type: 'SHOW_TOKEN'; id: string }
-  | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' }
-  | { type: 'ADD_QUEUED_TOKENS'; payload: { status: Token['status']; tokens: Token[] } };
+| { type: 'INIT'; tokens: Token[] }
+| { type: 'ADD_MARKET'; token: Partial<Token> }
+| { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
+| { type: 'UPDATE_MARKET_BY_ADDRESS'; tokenAddress: string; updates: Partial<Token> }  // NEW
+| { type: 'GRADUATE_MARKET'; id: string }
+| { type: 'GRADUATE_MARKET_BY_ADDRESS'; tokenAddress: string }  // NEW
+| { type: 'HIDE_TOKEN'; id: string }
+| { type: 'SHOW_TOKEN'; id: string }
+| { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' }
+| { type: 'ADD_QUEUED_TOKENS'; payload: { status: Token['status']; tokens: Token[] } };
 
 interface AlertSettings {
   soundAlertsEnabled: boolean;
@@ -278,6 +278,16 @@ interface AlertSettings {
     pairMigrating: string;
     migrated: string;
   };
+}
+
+interface TrackedWallet {
+  id: string;
+  address: string;
+  name: string;
+  emoji: string;
+  createdAt: string;
+  balance?: number;
+  lastActiveAt?: number | null;
 }
 
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
@@ -448,7 +458,10 @@ const Loader = () => {
 }
 
 function App({ stateloading, setstateloading, addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
-
+  const TRACKED_WALLETS_KEY = 'tracked_wallets_data';
+  const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
+  const lastProcessedTradeId = useRef<string | null>(null);
+  const shownTradeIds = useRef<Set<string>>(new Set());
   const NAD_FUN_EVENTS = {
     CurveCreate: '0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9',
     CurveBuy: '0x00a7ba871905cb955432583640b5c9fc6bdd27d36884ab2b5420839224638862',
@@ -504,6 +517,45 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const handleSavePresets = useCallback((presets: Record<number, any>) => {
     saveBuyPresets(presets);
     setBuyPresets(presets);
+  }, []);
+
+  useEffect(() => {
+    const loadWallets = () => {
+      try {
+        const stored = localStorage.getItem(TRACKED_WALLETS_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setTrackedWallets(parsed);
+        }
+      } catch (error) {
+      }
+    };
+
+    loadWallets();
+
+    const handleWalletUpdate = (e: CustomEvent) => {
+      if (e.detail?.wallets) {
+        setTrackedWallets(e.detail.wallets);
+      }
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === TRACKED_WALLETS_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          setTrackedWallets(parsed);
+        } catch (error) {
+        }
+      }
+    };
+
+    window.addEventListener('wallets-updated', handleWalletUpdate as EventListener);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('wallets-updated', handleWalletUpdate as EventListener);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -752,77 +804,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const saved = localStorage.getItem('crystal_trading_mode');
     return (saved === 'perps' || saved === 'spectra') ? saved : 'spot';
   });
-  //  const [isWidgetExplorerOpen, setIsWidgetExplorerOpen] = useState(false);
-  // const [widgetExplorerSnapSide, setWidgetExplorerSnapSide] = useState<'left' | 'right' | 'none'>('none');
-  // const [widgetWidth, setWidgetWidth] = useState(400);
-
-  // const handleOpenWidgetExplorer = useCallback(() => {
-  //   setIsWidgetExplorerOpen(true);
-  // }, []);
-
-  // const handleCloseWidgetExplorer = useCallback(() => {
-  //   setIsWidgetExplorerOpen(false);
-  //   setWidgetExplorerSnapSide('none');
-  //   setWidgetWidth(400); 
-  // }, []);
-
-  // const handleWidgetExplorerSnapToSide = useCallback((side: 'left' | 'right' | 'none') => {
-  //   console.log('Widget snapped to:', side); // Debug log
-  //   setWidgetExplorerSnapSide(side);
-  // }, []);
-
-  // const handleWidgetExplorerResize = useCallback((width) => {
-  //   console.log('Widget resized to:', width, 'Snap side:', widgetExplorerSnapSide); 
-  //   setWidgetWidth(width);
-  // }, [widgetExplorerSnapSide]);
-
-  // const getAppContainerStyle = () => {
-  //   const style = {};
-
-  //   if (widgetExplorerSnapSide === 'left') {
-  //     style.marginLeft = `${widgetWidth}px`;
-  //     console.log('Applying left margin:', widgetWidth);
-  //   } else if (widgetExplorerSnapSide === 'right') {
-  //     style.marginRight = `${widgetWidth}px`;
-  //     console.log('Applying right margin:', widgetWidth); 
-  //   }
-
-  //   style.transition = 'margin-left 0.2s ease, margin-right 0.2s ease';
-
-  //   return style;
-  // };
-
-  // const getHeaderStyle = () => {
-  //   const style = {};
-
-  //   let leftPosition = 55;
-
-  //   if (widgetExplorerSnapSide === 'left') {
-  //     leftPosition = 55 + widgetWidth;
-  //     console.log('Header left position:', leftPosition);
-  //   }
-
-  //   style.left = `${leftPosition}px`;
-  //   style.transition = 'left 0.3s ease';
-
-  //   return style;
-  // };
-
-  // const getHeaderClassName = () => {
-  //   let className = 'app-header';
-
-  //   if (widgetExplorerSnapSide === 'left') {
-  //     className += ' widget-left';
-  //   } else if (widgetExplorerSnapSide === 'right') {
-  //     className += ' widget-right';
-  //   }
-
-  //   const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
-  //   if (isTradeRoute && !simpleView) {
-  //   }
-
-  //   return className;
-  // };
 
   const [oneCTDepositAddress, setOneCTDepositAddress] = useState('');
   const [oneCTSigner, setOneCTSigner] = useState(() => {
@@ -1127,7 +1108,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [navigate]);
 
   // state vars
-  const [_trackedWallets, setTrackedWallets] = useState<any[]>([]);
   const [showSendDropdown, setShowSendDropdown] = useState(false);
   const sendDropdownRef = useRef<HTMLDivElement | null>(null);
   const sendButtonRef = useRef<HTMLSpanElement | null>(null);
@@ -1563,7 +1543,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   const [buyPresets, setBuyPresets] = useState(() => loadBuyPresets());
 
-  // Add default amount values for components that expect them
   const buyPresetsWithAmount = {
     1: { ...buyPresets[1], amount: '5' },
     2: { ...buyPresets[2], amount: '20' },
@@ -1588,14 +1567,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       return [5, 20, 100, 500];
     }
   });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('crystal_mon_presets', JSON.stringify(monPresets));
-    } catch (error) {
-      console.error('Error saving MON presets:', error);
-    }
-  }, [monPresets]);
 
   const setQuickAmount = (category: string, amount: string) => {
     setQuickAmounts(prev => ({
@@ -2081,9 +2052,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [openOrders, setOpenOrders] = useState<any[]>([]);
   const [_allOrders, setAllOrders] = useState<any[]>([]);
 
-  const wsCooldownRef = useRef<number>(0);
-  const wsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const ALERT_DEFAULTS: AlertSettings = {
     soundAlertsEnabled: true,
     volume: 100,
@@ -2162,12 +2130,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (stored) {
           const wallets = JSON.parse(stored);
           trackedWalletsRef.current = wallets;
-          console.log('[TrackedWallets] Updated ref with', wallets.length, 'wallets');
         } else {
           trackedWalletsRef.current = [];
         }
       } catch (error) {
-        console.error('[TrackedWallets] Failed to sync ref:', error);
         trackedWalletsRef.current = [];
       }
     };
@@ -2177,7 +2143,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const handleWalletsUpdate = (e: CustomEvent) => {
       if (e.detail?.wallets) {
         trackedWalletsRef.current = e.detail.wallets;
-        console.log('[TrackedWallets] Ref updated from event:', e.detail.wallets.length, 'wallets');
       }
     };
 
@@ -2296,7 +2261,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return actualAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
-  const formatUSDDisplay = (amount: number) => {
+  const formatUSDDisplay = (amount: number, k: boolean = false) => {
     if (amount === 0) return '$0.00';
 
     const absAmount = Math.abs(amount);
@@ -2306,6 +2271,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       return `$${(amount / 1e9).toFixed(2)}B`;
     } else if (absAmount >= 1e6) {
       return `$${(amount / 1e6).toFixed(2)}M`;
+    } else if (k && absAmount >= 1e3) {
+      return `$${(amount / 1e3).toFixed(2)}K`;
     }
 
     if (absAmount >= 1) {
@@ -2365,6 +2332,29 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       ),
     );
   };
+
+  // vaults
+  const [valueSeries, setValueSeries] = useState<Array<{ name: string; value: number; ts: number }>>([]);
+  const [pnlSeries, setPnlSeries] = useState<Array<{ name: string; value: number; ts: number }>>([]);
+  const [seriesLoading, setSeriesLoading] = useState(false);
+  const [seriesError, setSeriesError] = useState<string | null>(null);
+  const [activeVaultPerformance, _setActiveVaultPerformance] = useState<any>([
+    { name: 'Jan', value: 12.4 },
+    { name: 'Feb', value: 14.8 },
+    { name: 'Mar', value: 18.2 },
+    { name: 'Apr', value: 16.9 },
+    { name: 'May', value: 21.3 },
+    { name: 'Jun', value: 22.7 },
+    { name: 'Jul', value: 24.5 },
+  ]);
+  const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<
+    '1D' | '1W' | '1M' | 'All'
+  >('1D');
+  const [vaultStrategyChartType, setVaultStrategyChartType] = useState<
+    'value' | 'pnl'
+  >('value');
+
+  const vaultChartData = vaultStrategyChartType === 'value' ? valueSeries : pnlSeries;
 
   const calculateSharesFromPercentage = (percentage: string, userShares: any) => {
     if (!percentage || !userShares) return '0';
@@ -2471,13 +2461,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   };
 
   const handleVaultDeposit = async () => {
-    if (!selectedVault || !connected || !vaultDepositAmounts) return;
-
-    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-    if (userchain !== targetChainId) {
-      handleSetChain();
-      return;
-    }
+    if (!isVaultDepositEnabled()) return;
 
     try {
       setIsVaultDepositSigning(true);
@@ -2486,6 +2470,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       // Step 1: Validating
       setDepositVaultStep('validating');
       await new Promise(resolve => setTimeout(resolve, 500));
+
+      await handleSetChain();
 
       const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
       const quoteTokenAddress = selectedVault.quoteAsset;
@@ -2497,8 +2483,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       const amountQuoteMin = (amountQuoteDesired * 50n) / 100n;
       const amountBaseMin = (amountBaseDesired * 50n) / 100n;
 
-      // Step 2: Approve Quote Token
-      if (quoteTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+      // Step 2: Approve Quote Token if needed
+      if (quoteTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' && vaultDepositAmounts.quote > 0n) {
         setDepositVaultStep('approve-quote');
         const approveQuoteUo = {
           target: quoteTokenAddress as `0x${string}`,
@@ -2521,8 +2507,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         await sendUserOperationAsync({ uo: approveQuoteUo });
       }
 
-      // Step 3: Approve Base Token
-      if (baseTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+      // Step 3: Approve Base Token if needed
+      if (baseTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' && vaultDepositAmounts.base > 0n) {
         setDepositVaultStep('approve-base');
         const approveBaseUo = {
           target: baseTokenAddress as `0x${string}`,
@@ -2545,7 +2531,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         await sendUserOperationAsync({ uo: approveBaseUo });
       }
 
-      // Step 4: Deposit into vault
+      // Step 4: Deposit
       setDepositVaultStep('depositing');
 
       const ethValue =
@@ -2559,8 +2545,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           functionName: "deposit",
           args: [
             selectedVault.address as `0x${string}`,
-            quoteTokenAddress,
-            baseTokenAddress,
+            quoteTokenAddress as `0x${string}`,
+            baseTokenAddress as `0x${string}`,
             amountQuoteDesired,
             amountBaseDesired,
             amountQuoteMin,
@@ -2576,16 +2562,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       setDepositVaultStep('success');
 
       setTimeout(() => {
+        setpopup(0);
+        setselectedVault(null);
         setVaultDepositAmounts({ shares: 0n, quote: 0n, base: 0n });
         setVaultInputStrings({ quote: '', base: '' });
         setVaultQuoteExceedsBalance(false);
         setVaultBaseExceedsBalance(false);
         setDepositVaultStep('idle');
         setDepositVaultError('');
-
-        refetch();
-        setpopup(0);
-        setselectedVault(null);
+        refetch?.();
       }, 2000);
 
     } catch (e: any) {
@@ -2595,24 +2580,28 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     } finally {
       setIsVaultDepositSigning(false);
     }
-  };
+  }
 
   const handleVaultWithdraw = async () => {
-    if (!selectedVault || !connected || !withdrawPreview) return;
-
-    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-    if (userchain !== targetChainId) {
-      handleSetChain();
-      return;
-    }
+    if (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
+      withdrawExceedsBalance || !withdrawPreview) return;
 
     try {
       setIsVaultWithdrawSigning(true);
+      setWithdrawVaultError('');
+
+      setWithdrawVaultStep('validating');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      await handleSetChain();
 
       const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
 
       const amountQuoteMin = (withdrawPreview.amountQuote * 50n) / 100n;
       const amountBaseMin = (withdrawPreview.amountBase * 50n) / 100n;
+
+      // Step 2: Withdrawing
+      setWithdrawVaultStep('withdrawing');
 
       const withdrawUo = {
         target: crystalVaultsAddress as `0x${string}`,
@@ -2621,8 +2610,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           functionName: "withdraw",
           args: [
             selectedVault.address as `0x${string}`,
-            selectedVault.quoteAsset,
-            selectedVault.baseAsset,
+            selectedVault.quoteAsset as `0x${string}`,
+            selectedVault.baseAsset as `0x${string}`,
             BigInt(withdrawShares),
             amountQuoteMin,
             amountBaseMin,
@@ -2633,44 +2622,28 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
       await sendUserOperationAsync({ uo: withdrawUo });
 
-      // Reset form
-      setWithdrawShares('');
-      setWithdrawExceedsBalance(false);
-      setWithdrawPreview(null);
+      // Step 3: Success
+      setWithdrawVaultStep('success');
 
-      refetch();
-      setpopup(0);
-      setselectedVault(null);
+      setTimeout(() => {
+        setpopup(0);
+        setselectedVault(null);
+        setWithdrawPercentage('');
+        setWithdrawExceedsBalance(false);
+        setWithdrawPreview(null);
+        setWithdrawVaultStep('idle');
+        setWithdrawVaultError('');
+        refetch?.();
+      }, 2000);
 
     } catch (e: any) {
-      console.error('Vault withdraw error:', e);
+      console.error('Vault withdrawal error:', e);
+      setWithdrawVaultError(e?.message || 'An error occurred while withdrawing. Please try again.');
+      setWithdrawVaultStep('idle');
     } finally {
       setIsVaultWithdrawSigning(false);
     }
-  };
-
-  // vaults
-  const [valueSeries, setValueSeries] = useState<Array<{ name: string; value: number; ts: number }>>([]);
-  const [pnlSeries, setPnlSeries] = useState<Array<{ name: string; value: number; ts: number }>>([]);
-  const [seriesLoading, setSeriesLoading] = useState(false);
-  const [seriesError, setSeriesError] = useState<string | null>(null);
-  const [activeVaultPerformance, _setActiveVaultPerformance] = useState<any>([
-    { name: 'Jan', value: 12.4 },
-    { name: 'Feb', value: 14.8 },
-    { name: 'Mar', value: 18.2 },
-    { name: 'Apr', value: 16.9 },
-    { name: 'May', value: 21.3 },
-    { name: 'Jun', value: 22.7 },
-    { name: 'Jul', value: 24.5 },
-  ]);
-  const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<
-    '1D' | '1W' | '1M' | 'All'
-  >('1D');
-  const [vaultStrategyChartType, setVaultStrategyChartType] = useState<
-    'value' | 'pnl'
-  >('value');
-
-  const vaultChartData = vaultStrategyChartType === 'value' ? valueSeries : pnlSeries;
+  }
 
   const fetchSubgraph = async (endpoint: string, query: string, variables?: Record<string, any>) => {
     const res = await fetch(endpoint, {
@@ -3633,19 +3606,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   })
 
   const handleImportWallets = (walletsText: string, addToSingleGroup: boolean) => {
-    console.log('Importing wallets:', walletsText, 'Add to single group:', addToSingleGroup);
-
     try {
       const lines = walletsText.trim().split('\n');
       const newWallets = lines.map((line, index) => {
         const parts = line.split(',');
         return {
-          id: Date.now().toString() + index,
+          id: `wallet-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
           address: parts[0]?.trim() || '',
           name: parts[1]?.trim() || `Imported Wallet ${index + 1}`,
           emoji: parts[2]?.trim() || '😀',
           balance: 0,
-          lastActive: 'Never'
+          lastActiveAt: null,
+          createdAt: new Date().toISOString()
         };
       }).filter(w => w.address);
 
@@ -4053,77 +4025,39 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   function v2ToOrderbook(
     reserve1Raw: number | bigint,
     reserve2Raw: number | bigint,
-    interval: number,
     baseDecimals: number,
     quoteDecimals: number,
     amountsQuote: string
   ): { bids: Order[]; asks: Order[] } {
-    if (reserve1Raw == 0 || reserve2Raw == 0 || interval <= 0) return { bids: [], asks: [] };
+    if (reserve1Raw == 0 || reserve2Raw == 0) return { bids: [], asks: [] };
 
-    const UNI_V2_FEE_BIPS = 25;
-    const fee = Math.max(0, UNI_V2_FEE_BIPS) / 10_000;
-    const oneMinusFee = Math.max(1e-12, 1 - fee);
-
-    const toHuman = (raw: number | bigint, decimals: number) => {
-      const n = typeof raw === 'bigint' ? Number(raw) : raw;
-      return n / Math.pow(10, decimals);
-    };
-
+    const oneMinusFee = 1 - (25 / 10000);
     const x0 = Number(reserve1Raw);
     const y0 = Number(reserve2Raw);
     const k = x0 * y0;
-    const pMid = y0 * (10 ** baseDecimals) / (x0 * (10 ** quoteDecimals));
+    const pMid = y0 / x0;
 
-    const xFromP = (p: number) => Math.sqrt(k * Math.max(p, 1e-18));
-
-    const intervalToScale = (iv: number) => {
-      const s = iv.toString();
-      let dec: number;
-      if (s.includes('e-')) {
-        const [base, exp] = s.split('e-');
-        const baseDec = (base.split('.')[1] || '').length;
-        dec = parseInt(exp, 10) + baseDec;
-      } else {
-        const dot = s.indexOf('.');
-        dec = dot === -1 ? 0 : s.length - dot - 1;
-      }
-      const pow = Math.min(12, dec + 6);
-      const SCALE = Math.pow(10, pow);
-      const intervalTicks = Math.max(1, Math.round(iv * SCALE));
-      return { SCALE, intervalTicks };
-    };
-
-    const { SCALE, intervalTicks } = intervalToScale(interval);
-    const toTicks = (p: number) => Math.round(p * SCALE);
-    const fromTicks = (t: number) => t / SCALE;
+    const xFromP = (p: number) => Math.sqrt(k * p);
 
     const bids: any[] = [];
     const asks: any[] = [];
     const MAX_LEVELS_PER_SIDE = 2000;
 
     {
-      let tMid = toTicks(pMid);
-      let tHere = tMid;
+      let tHere = pMid;
       for (let i = 0; i < MAX_LEVELS_PER_SIDE; i++) {
         const tLow = tHere * oneMinusFee;
         if (tLow <= 0) break;
-
-        const pLow = fromTicks(tLow);
-        const pHere = fromTicks(tHere);
-
-        const xLow = xFromP(pLow);
-        const xHi = xFromP(pHere);
-        const dxEff = Math.max(0, (xHi - xLow) * (10 ** 6) / (10 ** 18));
-
-        const baseIn = dxEff / oneMinusFee;
+        const xLow = xFromP(tLow);
+        const xHi = xFromP(tHere);
+        const baseIn = Math.max(0, (xHi - xLow));
         if (baseIn <= 0) break;
 
-        const effectivePrice = pLow * (1 - fee);
-        const size = amountsQuote == 'Quote' ? baseIn * effectivePrice : baseIn
+        const effectivePrice = tLow * (10 ** baseDecimals) / (10 ** quoteDecimals);
+        const size = amountsQuote == 'Quote' ? baseIn / (10 ** quoteDecimals) : baseIn / effectivePrice / (10 ** baseDecimals)
         bids.push({
           price: effectivePrice,
           size: size,
-          totalSize: size,
           shouldFlash: false,
           userPrice: false,
         });
@@ -4133,24 +4067,19 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     }
 
     {
-      let tMid = toTicks(pMid);
-      let tHere = tMid;
+      let tHere = pMid;
       for (let i = 0; i < MAX_LEVELS_PER_SIDE; i++) {
         const tHigh = tHere / oneMinusFee;
-        const pHere = fromTicks(tHere);
-        const pHigh = fromTicks(tHigh);
-
-        const xA = xFromP(pHere);
-        const xN = xFromP(pHigh);
-        const baseOut = Math.max(0, (xN - xA) * (10 ** 6) / (10 ** 18));
+        const xA = xFromP(tHere);
+        const xN = xFromP(tHigh);
+        const baseOut = Math.max(0, (xN - xA));
         if (baseOut <= 0) break;
 
-        const effectivePrice = pHigh * (1 + fee);
-        const size = amountsQuote == 'Quote' ? baseOut * effectivePrice : baseOut
+        const effectivePrice = tHigh * (10 ** baseDecimals) / (10 ** quoteDecimals);
+        const size = amountsQuote == 'Quote' ? baseOut / (10 ** quoteDecimals) : baseOut / effectivePrice / (10 ** baseDecimals)
         asks.push({
           price: effectivePrice,
           size: size,
-          totalSize: size,
           shouldFlash: false,
           userPrice: false,
         });
@@ -4163,18 +4092,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }
 
   // tokenexplorer
-  type Action =
-    | { type: 'INIT'; tokens: Token[] }
-    | { type: 'ADD_MARKET'; token: Partial<Token> }
-    | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
-    | { type: 'UPDATE_MARKET_BY_ADDRESS'; tokenAddress: string; updates: Partial<Token> }  // NEW
-    | { type: 'GRADUATE_MARKET'; id: string }
-    | { type: 'GRADUATE_MARKET_BY_ADDRESS'; tokenAddress: string }  // NEW
-    | { type: 'HIDE_TOKEN'; id: string }
-    | { type: 'SHOW_TOKEN'; id: string }
-    | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' }
-    | { type: 'ADD_QUEUED_TOKENS'; payload: { status: Token['status']; tokens: Token[] } };
-
   function reducer(state: State, action: Action): State {
     switch (action.type) {
       case 'INIT': {
@@ -4575,12 +4492,62 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [address]);
 
   useEffect(() => {
-    if (!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])) return;
-
     let cancelled = false;
-    let intervalId: NodeJS.Timeout | null = null;
+    let startBlockNumber = '';
+    let endBlockNumber = '';
 
-    async function bootstrap() {
+    const fetchData = async () => {
+      try {
+        const req = await fetch(HTTP_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify([{
+            jsonrpc: '2.0',
+            id: 0,
+            method: 'eth_blockNumber',
+          }, {
+            jsonrpc: '2.0',
+            id: 0,
+            method: 'eth_getLogs',
+            params: [
+              {
+                fromBlock: startBlockNumber,
+                toBlock: endBlockNumber,
+                address: router,
+                topics: [
+                  '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982',
+                ],
+              },
+            ],
+          }, ...(address?.slice(2) ? [{
+            jsonrpc: '2.0',
+            id: 0,
+            method: 'eth_getLogs',
+            params: [
+              {
+                fromBlock: startBlockNumber,
+                toBlock: endBlockNumber,
+                address: router,
+                topics: [
+                  '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c',
+                  null,
+                  '0x000000000000000000000000' + address?.slice(2),
+                ],
+              },
+            ],
+          }] : [])]),
+        });
+        const result = await req.json();
+        if (cancelled) return;
+        startBlockNumber = '0x' + (parseInt(result[0].result, 16) - 30).toString(16);
+        endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 10).toString(16);
+        const tradelogs = result[1].result;
+      } catch {}
+    };
+
+    (async () => {
       try {
         const res = await fetch('https://api.crystal.exchange/tokens', {
           method: 'GET',
@@ -4654,17 +4621,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       } finally {
         if (!cancelled) setIsTokenExplorerLoading(false);
       }
-    }
-
-    bootstrap();
-
-    intervalId = setInterval(bootstrap, 15000);
-
-    return () => {
-      cancelled = true;
-      if (intervalId) clearInterval(intervalId);
-    };
-
+    })();
     // const connectWebSocket = () => {
     //   if (cancelled) return;
     //   explorerWsRef.current = new WebSocket(WS_URL);
@@ -5601,7 +5558,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   });
   const [memeSimilarTokens, setMemeSimilarTokens] = useState<any[]>([]);
   const [memeSelectedInterval, setMemeSelectedInterval] = useState(
-    () => localStorage.getItem('meme_chart_timeframe') || '1m',
+    () => localStorage.getItem('meme_chart_timeframe') || '15s',
   );
   const memeSelectedIntervalRef = useRef<string>(memeSelectedInterval);
 
@@ -6911,655 +6868,364 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     gcTime: 0,
   });
 
-  // memeinterface ws
-  /* useEffect(() => {
-    if (!token.id || !initialMemeFetchDone) return;
-    const wssUrl = settings.chainConfig[activechain]?.wssurl;
-    const routerAddress = settings.chainConfig[activechain]?.router;
+  const [explorerFiltersActiveTab, setExplorerFiltersActiveTab] = useState<'new' | 'graduating' | 'graduated'>(() => {
+    const saved = localStorage.getItem('crystal_explorer_active_tab');
+    return (saved as 'new' | 'graduating' | 'graduated') || 'new';
+  });
 
-    if (!wssUrl || !routerAddress) return;
+  const [explorerFiltersActiveSection, setExplorerFiltersActiveSection] = useState<'audit' | 'metrics' | 'socials'>(() => {
+    const saved = localStorage.getItem('crystal_explorer_active_section');
+    return (saved as 'audit' | 'metrics' | 'socials') || 'audit';
+  });
 
-    const currentTokenDev = tokenData?.dev || '';
+  const handleOpenFiltersForColumn = useCallback((columnType: 'new' | 'graduating' | 'graduated') => {
+    setExplorerFiltersActiveTab(columnType);
+    setpopup(24);
+  }, []);
 
-    const ws = new WebSocket(wssUrl);
-    memeWsRef.current = ws;
+  const initialExplorerFilters = {
+    ageMin: '', ageMax: '',
+    holdersMin: '', holdersMax: '',
+    proTradersMin: '', proTradersMax: '',
+    top10HoldingMin: '', top10HoldingMax: '',
+    devHoldingMin: '', devHoldingMax: '',
+    sniperHoldingMin: '', sniperHoldingMax: '',
+    insiderHoldingMin: '', insiderHoldingMax: '',
+    marketCapMin: '', marketCapMax: '',
+    volume24hMin: '', volume24hMax: '',
+    globalFeesMin: '', globalFeesMax: '',
+    buyTransactionsMin: '', buyTransactionsMax: '',
+    sellTransactionsMin: '', sellTransactionsMax: '',
+    priceMin: '', priceMax: '',
+    searchKeywords: '',
+    excludeKeywords: '',
+    hasWebsite: false,
+    hasTwitter: false,
+    hasTelegram: false
+  };
 
-    const sendSub = (params: any) => {
-      const id = Date.now();
-      try {
-        const payload = { id, jsonrpc: '2.0', method: 'eth_subscribe', params };
-        ws.send(JSON.stringify(payload));
-        subsRef.current.set(id, { params, ok: false, ts: Date.now() });
-        console.log('[ws] subscribing...', payload);
-      } catch (e) {
-        console.error('[ws] send failed for', params, e);
+  const [explorerFilters, setExplorerFilters] = useState(() => {
+    const saved = localStorage.getItem('crystal_explorer_filters');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Handle migration from old single filter to per-tab filters
+      if (!parsed.new && !parsed.graduating && !parsed.graduated) {
+        return {
+          new: parsed,
+          graduating: initialExplorerFilters,
+          graduated: initialExplorerFilters
+        };
       }
+      return parsed;
+    }
+    return {
+      new: initialExplorerFilters,
+      graduating: initialExplorerFilters,
+      graduated: initialExplorerFilters
+    };
+  });
+
+  const [appliedExplorerFilters, setAppliedExplorerFilters] = useState(() => {
+    const saved = localStorage.getItem('crystal_applied_explorer_filters');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Handle migration from old single filter to per-tab filters
+      if (!parsed.new && !parsed.graduating && !parsed.graduated) {
+        return {
+          new: null,
+          graduating: null,
+          graduated: null
+        };
+      }
+      return parsed;
+    }
+    return {
+      new: null,
+      graduating: null,
+      graduated: null
+    };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('crystal_explorer_active_tab', explorerFiltersActiveTab);
+  }, [explorerFiltersActiveTab]);
+
+  useEffect(() => {
+    localStorage.setItem('crystal_explorer_active_section', explorerFiltersActiveSection);
+  }, [explorerFiltersActiveSection]);
+
+  useEffect(() => {
+    localStorage.setItem('crystal_explorer_filters', JSON.stringify(explorerFilters));
+  }, [explorerFilters]);
+
+  useEffect(() => {
+    const hasAnyFilters = Object.values(appliedExplorerFilters).some(tabFilters => tabFilters !== null);
+    if (hasAnyFilters) {
+      localStorage.setItem('crystal_applied_explorer_filters', JSON.stringify(appliedExplorerFilters));
+    } else {
+      localStorage.removeItem('crystal_applied_explorer_filters');
+    }
+  }, [appliedExplorerFilters]);
+
+  useEffect(() => {
+    if (!trackedWalletTrades || trackedWalletTrades.length === 0 || trackedWallets.length === 0) {
+      return;
+    }
+
+    const formatAmount = (amount: number, decimals: number = 2) => {
+      if (amount >= 1e9) return `${(amount / 1e9).toFixed(decimals)}B`;
+      if (amount >= 1e6) return `${(amount / 1e6).toFixed(decimals)}M`;
+      if (amount >= 1e3) return `${(amount / 1e3).toFixed(decimals)}K`;
+      return amount.toFixed(decimals);
     };
 
-    ws.onopen = () => {
-      sendSub(['monadLogs', { address: token.id, topics: [[TRANSFER_TOPIC]] }]);
-      sendSub(['monadLogs', { address: routerAddress, topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT, '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']] }]);
+    const formatMarketCap = (marketCap: number) => {
+      const usd = monUsdPrice ? marketCap * monUsdPrice : marketCap;
+      return '$' + formatAmount(usd, 1);
     };
 
-    ws.onmessage = ({ data }) => {
-      const msg = JSON.parse(data);
-        if (typeof msg?.id === 'number') {
-        const pending = subsRef.current.get(msg.id);
-        if (!pending) return;
-
-        if (msg.error) {
-          console.error('ws subscribe error:', pending.params, msg.error);
-          subsRef.current.set(msg.id, { ...pending, ok: false });
-        } else if (msg.result) {
-          subsRef.current.set(msg.id, { ...pending, ok: true, subId: msg.result });
-          subIdsRef.current.add(msg.result);
-        }
+    trackedWalletTrades.forEach((trade: any) => {
+      if (shownTradeIds.current.has(trade.id)) {
         return;
       }
-      if (msg?.method !== 'eth_subscription') return;       
-      const log = msg.params?.result;
-      if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
-      setProcessedLogs(prev => {
-        let tempset = new Set(prev);
-        const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-        if (tempset.has(logIdentifier)) return tempset;
-        if (tempset.size >= 10000) {
-          const first = tempset.values().next().value;
-          if (first !== undefined) {
-            tempset.delete(first);
+
+
+      const trackedWallet = trackedWallets.find(
+        w => w.address.toLowerCase() === trade.walletAddress?.toLowerCase()
+      );
+
+      if (!trackedWallet) {
+        return;
+      }
+
+      shownTradeIds.current.add(trade.id);
+
+      let actionText = '';
+      if (trade.type === 'buy') {
+        actionText = trade.isFirstBuy ? 'bought' : 'bought more';
+      } else if (trade.type === 'sell') {
+        actionText = trade.soldAll ? 'sold all' : 'sold some';
+      } else {
+        actionText = trade.type;
+      }
+
+      const title = `${actionText} ${trade.token || trade.tokenSymbol || 'token'}`;
+      const subtitle = `${formatAmount(trade.amount, 2)} at ${formatMarketCap(trade.marketCap)} MC`;
+
+
+      const notificationId = `tracked-trade-${trade.id}`;
+
+      showLoadingPopup(notificationId, {
+        title,
+        subtitle,
+        tokenImage: trade.tokenIcon,
+        walletAddress: trackedWallet.address,
+        timestamp: trade.timestamp || Date.now(),
+        isClickable: true,
+        actionType: trade.type,
+        onClick: () => {
+          if (trade.tokenAddress) {
+            navigate(`/meme/${trade.tokenAddress}`);
           }
         }
-        tempset.add(logIdentifier);
-        const resolve = txReceiptResolvers.current.get(log['transactionHash']);
-        if (resolve) {
-          resolve();
-          txReceiptResolvers.current.delete(log['transactionHash']);
-        }
-        if (log.topics[0] === MARKET_UPDATE_EVENT) {
-          const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
-          const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
+      });
 
-          const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
-          const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
+      setTimeout(() => {
+        updatePopup(notificationId, {
+          title,
+          subtitle,
+          variant: 'success',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: trade.tokenIcon,
+          walletAddress: trackedWallet.address,
+          timestamp: trade.timestamp || Date.now(),
+          isClickable: true,
+          actionType: trade.type,
+          onClick: () => {
+            if (trade.tokenAddress) {
+              navigate(`/meme/${trade.tokenAddress}`);
+            }
+          }
+        });
+      }, 50);
+    });
 
-          const isBuy = word(0) !== 0n;
-          const inputAmountWei = word(1);
-          const outputAmountWei = word(2);
-          const vNativeWei = word(3);
-          const vTokenWei = word(4);
+    if (shownTradeIds.current.size > 1000) {
+      const idsArray = Array.from(shownTradeIds.current);
+      shownTradeIds.current = new Set(idsArray.slice(-1000));
+    }
+  }, [trackedWalletTrades, trackedWallets, monUsdPrice]);
 
-          const toNum = (x: bigint) => Number(x) / 1e18;
-          const amountIn = toNum(inputAmountWei);
-          const amountOut = toNum(outputAmountWei);
-          const vNative = Number(vNativeWei);
-          const vToken = Number(vTokenWei);
+  const handleExplorerFilterInputChange = useCallback((field: string, value: string | boolean) => {
+    setExplorerFilters((prev: any) => ({
+      ...prev,
+      [explorerFiltersActiveTab]: {
+        ...prev[explorerFiltersActiveTab],
+        [field]: value
+      }
+    }));
+  }, [explorerFiltersActiveTab]);
 
-          const price = vToken === 0 ? 0 : vNative / vToken;
-          const tradePrice = (isBuy ? amountIn / amountOut : amountOut / amountIn) || 0;
-          if (token.id && tokenAddr === token.id.toLowerCase()) {
-            setTokenData(p => ({
-              ...p,
-              price,
-              marketCap: price * TOTAL_SUPPLY,
-              buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
-              sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
-              volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
+  const handleExplorerFiltersReset = useCallback(() => {
+    setExplorerFilters({
+      new: initialExplorerFilters,
+      graduating: initialExplorerFilters,
+      graduated: initialExplorerFilters
+    });
+    setAppliedExplorerFilters({
+      new: null,
+      graduating: null,
+      graduated: null
+    });
+    setExplorerFiltersActiveTab('new');
+    setExplorerFiltersActiveSection('audit');
+    localStorage.removeItem('crystal_explorer_filters');
+    localStorage.removeItem('crystal_applied_explorer_filters');
+    localStorage.setItem('crystal_explorer_active_tab', 'new');
+    localStorage.setItem('crystal_explorer_active_section', 'audit');
+  }, []);
+
+  const handleExplorerFiltersImport = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const importedFilters = JSON.parse(e.target?.result as string);
+            setExplorerFilters((prev: any) => ({
+              ...prev,
+              [explorerFiltersActiveTab]: importedFilters
             }));
-
-            setMemeTrades(prev => [
-              {
-                id: `${log.transactionHash}-${log.logIndex}`,
-                timestamp: Date.now() / 1000,
-                isBuy,
-                price: tradePrice,
-                nativeAmount: isBuy ? amountIn : amountOut,
-                tokenAmount: isBuy ? amountOut : amountIn,
-                caller: `0x${log.topics[2].slice(26)}`,
-              },
-              ...prev.slice(0, 99),
-            ]);
-
-            const sel = memeSelectedInterval;
-            const RESOLUTION_SECS: Record<string, number> = {
-              '1s': 1,
-              '5s': 5,
-              '15s': 15,
-              '1m': 60,
-              '5m': 300,
-              '15m': 900,
-              '1h': 3600,
-              '4h': 14400,
-              '1d': 86400,
-            };
-            const resSecs = RESOLUTION_SECS[sel] ?? 60;
-            const now = Date.now();
-            const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
-            const volNative = isBuy ? amountIn : amountOut;
-
-            setChartData((prev: any) => {
-              if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
-
-              const [bars, key, flag] = prev as [any[], string, boolean];
-              const updated = bars.slice();
-              const last = updated[updated.length - 1];
-
-              if (!last || last.time < bucket) {
-                const open = last?.close ?? tradePrice;
-                updated.push({
-                  time: bucket,
-                  open,
-                  high: Math.max(open, tradePrice),
-                  low: Math.min(open, tradePrice),
-                  close: tradePrice,
-                  volume: volNative || 0,
-                });
-              } else {
-                const cur = { ...last };
-                cur.high = Math.max(cur.high, tradePrice);
-                cur.low = Math.min(cur.low, tradePrice);
-                cur.close = tradePrice;
-                cur.volume = (cur.volume || 0) + (volNative || 0);
-                updated[updated.length - 1] = cur;
-              }
-
-              if (updated.length > 1200) updated.splice(0, updated.length - 1200);
-              return [updated, key, flag];
-            });
-
-            memePriceTickRef.current?.(tradePrice, isBuy ? amountIn : amountOut);
-
-            setMemeHolders(prev => {
-              const arr = prev.slice();
-              let idx = memeHoldersMapRef.current.get?.(callerAddr);
-              if (idx == undefined) {
-                const fresh: Holder = {
-                  address: `0x${log.topics[2].slice(26)}`,
-                  balance: 0,
-                  amountBought: 0,
-                  amountSold: 0,
-                  valueBought: 0,
-                  valueSold: 0,
-                  valueNet: 0,
-                  tokenNet: 0,
-                };
-                arr.push(fresh);
-                idx = arr.length - 1;
-                memeHoldersMapRef.current.set(callerAddr, idx);
-              }
-              const h = { ...arr[idx] };
-              if (isBuy) {
-                h.amountBought = (h.amountBought || 0) + amountOut;
-                h.valueBought = (h.valueBought || 0) + amountIn;
-                h.balance = (h.balance || 0) + amountOut;
-              } else {
-                h.amountSold = (h.amountSold || 0) + amountIn;
-                h.valueSold = (h.valueSold || 0) + amountOut;
-                h.balance = Math.max(0, (h.balance || 0) - amountIn);
-              }
-              arr[idx] = h;
-
-              for (let i = 0; i < arr.length; i++) {
-                const h = arr[i];
-                const realized = (h.valueSold || 0) - (h.valueBought || 0);
-                const bal = Math.max(0, h.balance || 0);
-                arr[i] = { ...h, valueNet: realized + bal * price };
-              }
-              const topSum = arr.map(h => Math.max(0, h.balance || 0)).sort((a, b) => b - a).slice(0, 10).reduce((s, n) => s + n, 0);
-              setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
-              return arr;
-            });
-
-            setMemeTopTraders(prev => {
-              const copy = Array.isArray(prev) ? [...prev] : [];
-              const key = callerAddr;
-              let idx = memeTopTradersMapRef.current.get(key) ?? -1;
-
-              if (idx === -1) {
-                const row: Holder = {
-                  address: `0x${log.topics[2].slice(26)}`,
-                  balance: 0, tokenNet: 0, valueNet: 0,
-                  amountBought: 0, amountSold: 0,
-                  valueBought: 0, valueSold: 0,
-                };
-                copy.push(row);
-                idx = copy.length - 1;
-                memeTopTradersMapRef.current.set(key, idx);
-              }
-
-              const row = { ...copy[idx] };
-              const curBal = Math.max(0, (row.balance ?? row.amountBought - row.amountSold) || 0);
-              if (isBuy) {
-                row.amountBought = (row.amountBought || 0) + amountOut;
-                row.valueBought = (row.valueBought || 0) + amountIn;
-                row.balance = curBal + amountOut;
-              } else {
-                row.amountSold = (row.amountSold || 0) + amountIn;
-                row.valueSold = (row.valueSold || 0) + amountOut;
-                row.balance = Math.max(0, curBal - amountIn);
-              }
-              row.tokenNet = (row.amountBought || 0) - (row.amountSold || 0);
-              copy[idx] = row;
-
-              for (let i = 0; i < copy.length; i++) {
-                const r = copy[i];
-                const bal = Math.max(0, (r.balance ?? r.amountBought - r.amountSold) || 0);
-                const realized = (r.valueSold || 0) - (r.valueBought || 0);
-                copy[i] = { ...r, valueNet: realized + bal * price };
-              }
-
-              copy.sort((a, b) => b.valueNet - a.valueNet);
-              if (copy.length > 300) {
-                const removed = copy.splice(300);
-                for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
-              }
-              copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
-              return copy;
-            });
-
-            setMemePositions(prev => {
-              const copy = Array.isArray(prev) ? [...prev] : [];
-              const allUserAddresses = [
-                (address || '').toLowerCase(),
-                ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
-              ];
-              const isUserTrade = allUserAddresses.includes(callerAddr);
-              let idx = memePositionsMapRef.current.get(tokenAddr);
-
-              if (idx === undefined && isUserTrade) {
-                const newPos = {
-                  tokenId: token.id?.toLowerCase(),
-                  symbol: tokenData?.symbol || '',
-                  name: tokenData?.name || '',
-                  imageUrl: tokenData?.image || '',
-                  metadataCID: '',
-                  boughtTokens: 0,
-                  soldTokens: 0,
-                  spentNative: 0,
-                  receivedNative: 0,
-                  remainingTokens: 0,
-                  remainingPct: 0,
-                  pnlNative: 0,
-                  lastPrice: price,
-                };
-                copy.push(newPos);
-                idx = copy.length - 1;
-                memePositionsMapRef.current.set(tokenAddr, idx);
-              }
-              if (idx === undefined) return prev;
-
-              const pos = { ...copy[idx] };
-              pos.lastPrice = price;
-              if (isUserTrade) {
-                if (isBuy) {
-                  pos.boughtTokens += amountOut;
-                  pos.spentNative += amountIn;
-                  pos.remainingTokens += amountOut;
-                } else {
-                  pos.soldTokens += amountIn;
-                  pos.receivedNative += amountOut;
-                  pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
-                }
-              }
-              pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
-
-              const balance = Math.max(0, pos.remainingTokens);
-              const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
-              const unrealized = balance * (pos.lastPrice || 0);
-              pos.pnlNative = realized + unrealized;
-
-              copy[idx] = pos;
-
-              if (token.id && tokenAddr === token.id.toLowerCase()) {
-                const markToMarket = balance * (pos.lastPrice || 0);
-                const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
-                setMemeUserStats({
-                  balance,
-                  amountBought: pos.boughtTokens || 0,
-                  amountSold: pos.soldTokens || 0,
-                  valueBought: pos.spentNative || 0,
-                  valueSold: pos.receivedNative || 0,
-                  valueNet: totalPnL,
-                });
-              }
-              return copy;
-            });
-
-            if (memeDevTokenIdsRef.current.has(tokenAddr)) {
-              setMemeDevTokens(prev => {
-                const updated = prev.map(t => {
-                  if ((t.id || '').toLowerCase() !== tokenAddr) return t;
-                  return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
-                });
-                memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
-                return updated;
-              });
-            }
+          } catch (error) {
+            alert('Invalid JSON file');
           }
-          return tempset;
-        }
-
-        if (log.topics[0] === MARKET_CREATED_EVENT) {
-          addDevTokenFromEvent(log, currentTokenDev);
-          return tempset;
-        }
-
-        if (log.topics[0] === TRADE_EVENT) {
-          const marketAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
-          const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
-
-          const mcfg = settings?.chainConfig?.[activechain]?.markets?.[marketAddr];
-          if (!mcfg || !mcfg.baseAddress) return tempset;
-          const tokenAddrFromMarket = (mcfg.baseAddress || '').toLowerCase();
-
-          if (!token.id || tokenAddrFromMarket !== token.id.toLowerCase()) return tempset;
-
-          const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
-          const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
-
-          const isBuy = word(0) !== 0n;
-          const amountInWei = word(1);
-          const amountOutWei = word(2);
-          const endPrice = word(4);
-
-          const amountIn = Number(amountInWei)  / 1e18;
-          const amountOut = Number(amountOutWei) / 1e18;
-
-          const priceFactor = Number(mcfg.priceFactor || 1);
-          const price = priceFactor ? (Number(endPrice) / priceFactor) : 0;
-
-          const tradePrice = price;
-
-          setTokenData(p => ({
-            ...p,
-            price,
-            marketCap: price * TOTAL_SUPPLY,
-            buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
-            sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
-            volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
-          }));
-
-          setMemeTrades(prev => [
-            {
-              id: `${log.transactionHash}-${log.logIndex}`,
-              timestamp: Date.now() / 1000,
-              isBuy,
-              price: tradePrice,
-              nativeAmount: isBuy ? amountIn : amountOut,
-              tokenAmount:  isBuy ? amountOut : amountIn,
-              caller: `0x${log.topics[2].slice(26)}`,
-            },
-            ...prev.slice(0, 99),
-          ]);
-
-          setTokenData((prev: any) => ({ ...prev, price, marketCap: price * TOTAL_SUPPLY }));
-
-          {
-            const sel = memeSelectedInterval;
-            const RESOLUTION_SECS: Record<string, number> = {
-              '1s': 1, '5s': 5, '15s': 15, '1m': 60, '5m': 300, '15m': 900,
-              '1h': 3600, '4h': 14400, '1d': 86400,
-            };
-            const resSecs = RESOLUTION_SECS[sel] ?? 60;
-            const now = Date.now();
-            const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
-            const volNative = isBuy ? amountIn : amountOut;
-
-            setChartData((prev: any) => {
-              if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
-              const [bars, key, flag] = prev as [any[], string, boolean];
-              const updated = bars.slice();
-              const last = updated[updated.length - 1];
-
-              if (!last || last.time < bucket) {
-                const open = last?.close ?? tradePrice;
-                updated.push({
-                  time: bucket,
-                  open,
-                  high: Math.max(open, tradePrice),
-                  low: Math.min(open, tradePrice),
-                  close: tradePrice,
-                  volume: volNative || 0,
-                });
-              } else {
-                const cur = { ...last };
-                cur.high = Math.max(cur.high, tradePrice);
-                cur.low = Math.min(cur.low,  tradePrice);
-                cur.close = tradePrice;
-                cur.volume = (cur.volume || 0) + (volNative || 0);
-                updated[updated.length - 1] = cur;
-              }
-
-              if (updated.length > 1200) updated.splice(0, updated.length - 1200);
-              return [updated, key, flag];
-            });
-
-            memePriceTickRef.current?.(tradePrice, isBuy ? amountIn : amountOut);
-          }
-
-          setMemeHolders(prev => {
-            const arr = prev.slice();
-            let idx = memeHoldersMapRef.current.get?.(callerAddr);
-            if (idx == undefined) {
-              const fresh: Holder = {
-                address: `0x${log.topics[2].slice(26)}`,
-                balance: 0,
-                amountBought: 0,
-                amountSold: 0,
-                valueBought: 0,
-                valueSold: 0,
-                valueNet: 0,
-                tokenNet: 0,
-              };
-              arr.push(fresh);
-              idx = arr.length - 1;
-              memeHoldersMapRef.current.set(callerAddr, idx);
-            }
-            const h = { ...arr[idx] };
-            if (isBuy) {
-              h.amountBought = (h.amountBought || 0) + amountOut;
-              h.valueBought = (h.valueBought || 0) + amountIn;
-              h.balance = (h.balance || 0) + amountOut;
-            } else {
-              h.amountSold = (h.amountSold || 0) + amountIn;
-              h.valueSold = (h.valueSold || 0) + amountOut;
-              h.balance = Math.max(0, (h.balance || 0) - amountIn);
-            }
-            arr[idx] = h;
-
-            for (let i = 0; i < arr.length; i++) {
-              const hh = arr[i];
-              const realized = (hh.valueSold || 0) - (hh.valueBought || 0);
-              const bal = Math.max(0, hh.balance || 0);
-              arr[i] = { ...hh, valueNet: realized + bal * price };
-            }
-
-            const topSum = arr
-              .map(hh => Math.max(0, hh.balance || 0))
-              .sort((a, b) => b - a)
-              .slice(0, 10)
-              .reduce((s, n) => s + n, 0);
-            setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
-            return arr;
-          });
-
-          setMemeTopTraders(prev => {
-            const copy = Array.isArray(prev) ? [...prev] : [];
-            const key = callerAddr;
-            let idx = memeTopTradersMapRef.current.get(key) ?? -1;
-
-            if (idx === -1) {
-              const row: Holder = {
-                address: `0x${log.topics[2].slice(26)}`,
-                balance: 0, tokenNet: 0, valueNet: 0,
-                amountBought: 0, amountSold: 0,
-                valueBought: 0, valueSold: 0,
-              };
-              copy.push(row);
-              idx = copy.length - 1;
-              memeTopTradersMapRef.current.set(key, idx);
-            }
-
-            const row = { ...copy[idx] };
-            const curBal = Math.max(0, (row.balance ?? row.amountBought - row.amountSold) || 0);
-            if (isBuy) {
-              row.amountBought = (row.amountBought || 0) + amountOut;
-              row.valueBought = (row.valueBought || 0) + amountIn;
-              row.balance = curBal + amountOut;
-            } else {
-              row.amountSold = (row.amountSold || 0) + amountIn;
-              row.valueSold = (row.valueSold || 0) + amountOut;
-              row.balance = Math.max(0, curBal - amountIn);
-            }
-            row.tokenNet = (row.amountBought || 0) - (row.amountSold || 0);
-            copy[idx] = row;
-
-            for (let i = 0; i < copy.length; i++) {
-              const r = copy[i];
-              const bal = Math.max(0, (r.balance ?? r.amountBought - r.amountSold) || 0);
-              const realized = (r.valueSold || 0) - (r.valueBought || 0);
-              copy[i] = { ...r, valueNet: realized + bal * price };
-            }
-
-            copy.sort((a, b) => b.valueNet - a.valueNet);
-            if (copy.length > 300) {
-              const removed = copy.splice(300);
-              for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
-            }
-            copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
-            return copy;
-          });
-
-          setMemePositions(prev => {
-            const copy = Array.isArray(prev) ? [...prev] : [];
-            const allUserAddresses = [
-              (address || '').toLowerCase(),
-              ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
-            ];
-            const isUserTrade = allUserAddresses.includes(callerAddr);
-
-            let idx = memePositionsMapRef.current.get(tokenAddrFromMarket);
-            if (idx === undefined && isUserTrade) {
-              const newPos = {
-                tokenId: token.id?.toLowerCase(),
-                symbol: tokenData?.symbol || '',
-                name: tokenData?.name   || '',
-                imageUrl: tokenData?.image || '',
-                metadataCID: '',
-                boughtTokens: 0,
-                soldTokens: 0,
-                spentNative: 0,
-                receivedNative: 0,
-                remainingTokens: 0,
-                remainingPct: 0,
-                pnlNative: 0,
-                lastPrice: price,
-              };
-              copy.push(newPos);
-              idx = copy.length - 1;
-              memePositionsMapRef.current.set(tokenAddrFromMarket, idx);
-            }
-            if (idx === undefined) return prev;
-
-            const pos = { ...copy[idx] };
-            pos.lastPrice = price;
-            if (isUserTrade) {
-              if (isBuy) {
-                pos.boughtTokens += amountOut;
-                pos.spentNative += amountIn;
-                pos.remainingTokens = (pos.remainingTokens || 0) + amountOut;
-              } else {
-                pos.soldTokens += amountIn;
-                pos.receivedNative += amountOut;
-                pos.remainingTokens = Math.max(0, (pos.remainingTokens || 0) - amountIn);
-              }
-            }
-            pos.remainingPct = pos.boughtTokens > 0
-              ? (pos.remainingTokens / pos.boughtTokens) * 100
-              : 0;
-
-            const balance = Math.max(0, pos.remainingTokens);
-            const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
-            const unrealized = balance * (pos.lastPrice || 0);
-            pos.pnlNative = realized + unrealized;
-
-            copy[idx] = pos;
-
-            if (token.id && tokenAddrFromMarket === token.id.toLowerCase()) {
-              const markToMarket = balance * (pos.lastPrice || 0);
-              const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
-              setMemeUserStats({
-                balance,
-                amountBought: pos.boughtTokens || 0,
-                amountSold: pos.soldTokens   || 0,
-                valueBought: pos.spentNative  || 0,
-                valueSold: pos.receivedNative || 0,
-                valueNet: totalPnL,
-              });
-            }
-            return copy;
-          });
-
-          if (memeDevTokenIdsRef.current.has(tokenAddrFromMarket)) {
-            setMemeDevTokens(prev => {
-              const updated = prev.map(t => {
-                if ((t.id || '').toLowerCase() !== tokenAddrFromMarket) return t;
-                return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
-              });
-              memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
-              return updated;
-            });
-          }
-
-          return tempset;
-        }
-
-        if (log.topics[0] == '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098') {
-
-        }
-
-        if (
-          token.id &&
-          log.address?.toLowerCase() === token.id.toLowerCase() &&
-          log.topics[0] === TRANSFER_TOPIC &&
-          address
-        ) {
-          const allWalletTopics = [
-            '0x' + address.slice(2).padStart(64, '0'),
-            ...(subWallets || []).map(w => '0x' + w.address.slice(2).padStart(64, '0')),
-          ];
-          const involvesWallet = allWalletTopics.some(t => log.topics[1] === t || log.topics[2] === t);
-          if (involvesWallet) {
-            const now = Date.now();
-            if (now - memeLastInvalidateRef.current > 800) {
-              memeLastInvalidateRef.current = now;
-              try { terminalRefetch?.(); } catch { }
-            }
-          }
-        }
-        return tempset;
-      })
+        };
+        reader.readAsText(file);
+      }
     };
+    input.click();
+  }, [explorerFiltersActiveTab]);
 
-    ws.onerror = (ev) => {
-      console.error('memeinterface ws error', ev);
-    };
+  const handleExplorerFiltersExport = useCallback(() => {
+    const dataStr = JSON.stringify(explorerFilters[explorerFiltersActiveTab], null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `explorer-filters-${explorerFiltersActiveTab}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [explorerFilters, explorerFiltersActiveTab]);
 
-    ws.onclose = (ev) => {
-      console.warn('memeinterface ws closed', ev.code, ev.reason);
-    };
+  const handleExplorerFiltersApply = useCallback(() => {
+    const newAppliedFilters = { ...appliedExplorerFilters };
+    (['new', 'graduating', 'graduated'] as const).forEach(tab => {
+      const tabFilters = explorerFilters[tab];
+      const hasActiveFilters = Object.values(tabFilters).some(value =>
+        value !== '' && value !== false && value !== null && value !== undefined
+      );
 
-    return () => {
-      try {
-        console.log("ws closing");
-        ws.close();
-      } catch { }
-    };
-  }, [activechain, token.id, initialMemeFetchDone, address, subWallets]); */
+      newAppliedFilters[tab] = hasActiveFilters ? tabFilters : null;
+    });
+
+    setAppliedExplorerFilters(newAppliedFilters);
+    setpopup(0);
+  }, [explorerFilters, appliedExplorerFilters]);
+
+  const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
+    setExplorerFiltersActiveTab(newTab);
+  }, []);
+
+  const handleTokenClick = (token: any) => {
+    if (setTokenData) {
+      setTokenData(token);
+    }
+    navigate(`/meme/${token.tokenAddress}`);
+    setpopup(0);
+  };
+
+  const handleQuickBuy = useCallback(async (token: any, amt: string) => {
+    const val = BigInt(amt || '0') * 10n ** 18n;
+    if (val === 0n) return;
+
+    const routerAddress = settings.chainConfig[activechain]?.launchpadRouter?.toLowerCase();
+    if (!routerAddress) {
+      console.error('Router address not found');
+      return;
+    }
+
+    const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    try {
+      if (showLoadingPopup) {
+        showLoadingPopup(txId, {
+          title: 'Sending transaction...',
+          subtitle: `${amt} MON worth of ${token.symbol}`,
+          amount: amt,
+          amountUnit: 'MON',
+          tokenImage: token.image
+        });
+      }
+
+      const uo = {
+        target: routerAddress,
+        data: encodeFunctionData({
+          abi: CrystalRouterAbi,
+          functionName: 'buy',
+          args: [true, token.tokenAddress as `0x${string}`, val, 0n]
+        }),
+        value: val,
+      };
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Confirming transaction...',
+          subtitle: `${amt} MON worth of ${token.symbol}`,
+          variant: 'info',
+          tokenImage: token.image
+        });
+      }
+
+      await sendUserOperationAsync({ uo });
+
+      if (terminalRefetch) {
+        terminalRefetch();
+      }
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Quick Buy Complete',
+          subtitle: `Successfully bought ${token.symbol} with ${amt} MON`,
+          variant: 'success',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: token.image
+        });
+      }
+    } catch (e: any) {
+      console.error('Quick buy failed', e);
+      const msg = String(e?.message ?? '');
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
+          subtitle: msg || 'Please try again.',
+          variant: 'error',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: token.image
+        });
+      }
+    }
+  }, [sendUserOperationAsync, activechain, terminalRefetch]);
 
   useEffect(() => {
     const cleaned = deduplicateWallets(subWallets);
     if (cleaned.length !== subWallets.length) {
-      console.log(`Removed ${subWallets.length - cleaned.length} duplicate wallets on startup`);
       saveSubWallets(cleaned);
     }
   }, []);
@@ -7686,7 +7352,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         break;
       case location.pathname.startsWith('/meme'):
         if (tokenData && tokenData.symbol && tokenData.price !== undefined) {
-          title = `${tokenData.symbol} ${formatUSDDisplay(tokenData.price * 1e9 * monUsdPrice)} | Crystal`;
+          title = `${tokenData.symbol} ${formatUSDDisplay(tokenData.price * 1e9 * monUsdPrice, true)} | Crystal`;
         }
         break;
       case location.pathname.startsWith('/earn/vaults'):
@@ -7792,7 +7458,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             ),
           )
           : 1 / (activeMarket?.marketType != 0 && (Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)) ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(prevOrderData[0]) * Number(activeMarket.scaleFactor) / Number(prevOrderData[1]) / Number(activeMarket.priceFactor)))) - 1) : Number(activeMarket.priceFactor))
-        const { bids, asks } = v2ToOrderbook(prevOrderData[1], prevOrderData[0], interval * 10, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
+        const { bids, asks } = v2ToOrderbook(prevOrderData[1], prevOrderData[0], Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
 
         setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
         setRoundedSellOrders({ orders: roundedSell.concat(asks as any), key: activeMarketKey, amountsQuote });
@@ -8062,7 +7728,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               )
               : 1 / (activeMarket?.marketType != 0 && spread?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor))
 
-            const { bids, asks } = v2ToOrderbook(orderdata[1], orderdata[0], interval * 10, Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
+            const { bids, asks } = v2ToOrderbook(orderdata[1], orderdata[0], Number(activeMarket.baseDecimals), Number(activeMarket.quoteDecimals), amountsQuote);
 
             setSpreadData({ spread: `${((spread?.spread / spread?.averagePrice) * 100).toFixed(2)}%`, averagePrice: formatSubscript(formatSig(spread?.averagePrice.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket?.marketType != 0)) });
             setRoundedBuyOrders({ orders: roundedBuy.concat(bids as any), key: activeMarketKey, amountsQuote });
@@ -13131,271 +12797,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     </div>
   );
 
-  const [explorerFiltersActiveTab, setExplorerFiltersActiveTab] = useState<'new' | 'graduating' | 'graduated'>(() => {
-    const saved = localStorage.getItem('crystal_explorer_active_tab');
-    return (saved as 'new' | 'graduating' | 'graduated') || 'new';
-  });
-
-  const [explorerFiltersActiveSection, setExplorerFiltersActiveSection] = useState<'audit' | 'metrics' | 'socials'>(() => {
-    const saved = localStorage.getItem('crystal_explorer_active_section');
-    return (saved as 'audit' | 'metrics' | 'socials') || 'audit';
-  });
-
-  const handleOpenFiltersForColumn = useCallback((columnType: 'new' | 'graduating' | 'graduated') => {
-    setExplorerFiltersActiveTab(columnType);
-    setpopup(24);
-  }, []);
-
-  const initialExplorerFilters = {
-    ageMin: '', ageMax: '',
-    holdersMin: '', holdersMax: '',
-    proTradersMin: '', proTradersMax: '',
-    top10HoldingMin: '', top10HoldingMax: '',
-    devHoldingMin: '', devHoldingMax: '',
-    sniperHoldingMin: '', sniperHoldingMax: '',
-    insiderHoldingMin: '', insiderHoldingMax: '',
-    marketCapMin: '', marketCapMax: '',
-    volume24hMin: '', volume24hMax: '',
-    globalFeesMin: '', globalFeesMax: '',
-    buyTransactionsMin: '', buyTransactionsMax: '',
-    sellTransactionsMin: '', sellTransactionsMax: '',
-    priceMin: '', priceMax: '',
-    searchKeywords: '',
-    excludeKeywords: '',
-    hasWebsite: false,
-    hasTwitter: false,
-    hasTelegram: false
-  };
-
-  const [explorerFilters, setExplorerFilters] = useState(() => {
-    const saved = localStorage.getItem('crystal_explorer_filters');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Handle migration from old single filter to per-tab filters
-      if (!parsed.new && !parsed.graduating && !parsed.graduated) {
-        return {
-          new: parsed,
-          graduating: initialExplorerFilters,
-          graduated: initialExplorerFilters
-        };
-      }
-      return parsed;
-    }
-    return {
-      new: initialExplorerFilters,
-      graduating: initialExplorerFilters,
-      graduated: initialExplorerFilters
-    };
-  });
-
-  const [appliedExplorerFilters, setAppliedExplorerFilters] = useState(() => {
-    const saved = localStorage.getItem('crystal_applied_explorer_filters');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Handle migration from old single filter to per-tab filters
-      if (!parsed.new && !parsed.graduating && !parsed.graduated) {
-        return {
-          new: null,
-          graduating: null,
-          graduated: null
-        };
-      }
-      return parsed;
-    }
-    return {
-      new: null,
-      graduating: null,
-      graduated: null
-    };
-  });
-
-  useEffect(() => {
-    localStorage.setItem('crystal_explorer_active_tab', explorerFiltersActiveTab);
-  }, [explorerFiltersActiveTab]);
-
-  useEffect(() => {
-    localStorage.setItem('crystal_explorer_active_section', explorerFiltersActiveSection);
-  }, [explorerFiltersActiveSection]);
-
-  useEffect(() => {
-    localStorage.setItem('crystal_explorer_filters', JSON.stringify(explorerFilters));
-  }, [explorerFilters]);
-
-  useEffect(() => {
-    const hasAnyFilters = Object.values(appliedExplorerFilters).some(tabFilters => tabFilters !== null);
-    if (hasAnyFilters) {
-      localStorage.setItem('crystal_applied_explorer_filters', JSON.stringify(appliedExplorerFilters));
-    } else {
-      localStorage.removeItem('crystal_applied_explorer_filters');
-    }
-  }, [appliedExplorerFilters]);
-
-  const handleExplorerFilterInputChange = useCallback((field: string, value: string | boolean) => {
-    setExplorerFilters((prev: any) => ({
-      ...prev,
-      [explorerFiltersActiveTab]: {
-        ...prev[explorerFiltersActiveTab],
-        [field]: value
-      }
-    }));
-  }, [explorerFiltersActiveTab]);
-
-  const handleExplorerFiltersReset = useCallback(() => {
-    setExplorerFilters({
-      new: initialExplorerFilters,
-      graduating: initialExplorerFilters,
-      graduated: initialExplorerFilters
-    });
-    setAppliedExplorerFilters({
-      new: null,
-      graduating: null,
-      graduated: null
-    });
-    setExplorerFiltersActiveTab('new');
-    setExplorerFiltersActiveSection('audit');
-    localStorage.removeItem('crystal_explorer_filters');
-    localStorage.removeItem('crystal_applied_explorer_filters');
-    localStorage.setItem('crystal_explorer_active_tab', 'new');
-    localStorage.setItem('crystal_explorer_active_section', 'audit');
-  }, []);
-
-  const handleExplorerFiltersImport = useCallback(() => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const importedFilters = JSON.parse(e.target?.result as string);
-            setExplorerFilters((prev: any) => ({
-              ...prev,
-              [explorerFiltersActiveTab]: importedFilters
-            }));
-          } catch (error) {
-            alert('Invalid JSON file');
-          }
-        };
-        reader.readAsText(file);
-      }
-    };
-    input.click();
-  }, [explorerFiltersActiveTab]);
-
-  const handleExplorerFiltersExport = useCallback(() => {
-    const dataStr = JSON.stringify(explorerFilters[explorerFiltersActiveTab], null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `explorer-filters-${explorerFiltersActiveTab}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }, [explorerFilters, explorerFiltersActiveTab]);
-
-  const handleExplorerFiltersApply = useCallback(() => {
-    const newAppliedFilters = { ...appliedExplorerFilters };
-    (['new', 'graduating', 'graduated'] as const).forEach(tab => {
-      const tabFilters = explorerFilters[tab];
-      const hasActiveFilters = Object.values(tabFilters).some(value =>
-        value !== '' && value !== false && value !== null && value !== undefined
-      );
-
-      newAppliedFilters[tab] = hasActiveFilters ? tabFilters : null;
-    });
-
-    setAppliedExplorerFilters(newAppliedFilters);
-    setpopup(0);
-  }, [explorerFilters, appliedExplorerFilters]);
-
-  const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
-    setExplorerFiltersActiveTab(newTab);
-  }, []);
-
-  const handleTokenClick = (token: any) => {
-    if (setTokenData) {
-      setTokenData(token);
-    }
-    navigate(`/meme/${token.tokenAddress}`);
-    setpopup(0);
-  };
-
-  const handleQuickBuy = useCallback(async (token: any, amt: string) => {
-    const val = BigInt(amt || '0') * 10n ** 18n;
-    if (val === 0n) return;
-
-    const routerAddress = settings.chainConfig[activechain]?.launchpadRouter?.toLowerCase();
-    if (!routerAddress) {
-      console.error('Router address not found');
-      return;
-    }
-
-    const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-    try {
-      if (showLoadingPopup) {
-        showLoadingPopup(txId, {
-          title: 'Sending transaction...',
-          subtitle: `${amt} MON worth of ${token.symbol}`,
-          amount: amt,
-          amountUnit: 'MON',
-          tokenImage: token.image
-        });
-      }
-
-      const uo = {
-        target: routerAddress,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: 'buy',
-          args: [true, token.tokenAddress as `0x${string}`, val, 0n]
-        }),
-        value: val,
-      };
-
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Confirming transaction...',
-          subtitle: `${amt} MON worth of ${token.symbol}`,
-          variant: 'info',
-          tokenImage: token.image
-        });
-      }
-
-      await sendUserOperationAsync({ uo });
-
-      if (terminalRefetch) {
-        terminalRefetch();
-      }
-
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Quick Buy Complete',
-          subtitle: `Successfully bought ${token.symbol} with ${amt} MON`,
-          variant: 'success',
-          confirmed: true,
-          isLoading: false,
-          tokenImage: token.image
-        });
-      }
-    } catch (e: any) {
-      console.error('Quick buy failed', e);
-      const msg = String(e?.message ?? '');
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
-          subtitle: msg || 'Please try again.',
-          variant: 'error',
-          confirmed: true,
-          isLoading: false,
-          tokenImage: token.image
-        });
-      }
-    }
-  }, [sendUserOperationAsync, activechain, terminalRefetch]);
-
   // popup modals
   const Modals = (
     <>
@@ -17060,127 +16461,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   className={`vault-confirm-button ${(depositVaultStep === 'idle' && (!isVaultDepositEnabled() || isVaultDepositSigning)) ? 'disabled' : ''
                     } ${depositVaultStep === 'success' ? 'success' : ''}`}
                   disabled={(!isVaultDepositEnabled() || isVaultDepositSigning || depositVaultStep === 'success')}
-                  onClick={async () => {
-                    if (!isVaultDepositEnabled()) return;
-
-                    try {
-                      setIsVaultDepositSigning(true);
-                      setDepositVaultError('');
-
-                      // Step 1: Validating
-                      setDepositVaultStep('validating');
-                      await new Promise(resolve => setTimeout(resolve, 500));
-
-                      await handleSetChain();
-
-                      const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
-                      const quoteTokenAddress = selectedVault.quoteAsset;
-                      const baseTokenAddress = selectedVault.baseAsset;
-
-                      const amountQuoteDesired = vaultDepositAmounts.quote;
-                      const amountBaseDesired = vaultDepositAmounts.base;
-
-                      const amountQuoteMin = (amountQuoteDesired * 50n) / 100n;
-                      const amountBaseMin = (amountBaseDesired * 50n) / 100n;
-
-                      // Step 2: Approve Quote Token if needed
-                      if (quoteTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' && vaultDepositAmounts.quote > 0n) {
-                        setDepositVaultStep('approve-quote');
-                        const approveQuoteUo = {
-                          target: quoteTokenAddress as `0x${string}`,
-                          data: encodeFunctionData({
-                            abi: [{
-                              inputs: [
-                                { name: "spender", type: "address" },
-                                { name: "amount", type: "uint256" }
-                              ],
-                              name: "approve",
-                              outputs: [{ name: "", type: "bool" }],
-                              stateMutability: "nonpayable",
-                              type: "function",
-                            }],
-                            functionName: "approve",
-                            args: [crystalVaultsAddress as `0x${string}`, maxUint256],
-                          }),
-                          value: 0n,
-                        };
-                        await sendUserOperationAsync({ uo: approveQuoteUo });
-                      }
-
-                      // Step 3: Approve Base Token if needed
-                      if (baseTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' && vaultDepositAmounts.base > 0n) {
-                        setDepositVaultStep('approve-base');
-                        const approveBaseUo = {
-                          target: baseTokenAddress as `0x${string}`,
-                          data: encodeFunctionData({
-                            abi: [{
-                              inputs: [
-                                { name: "spender", type: "address" },
-                                { name: "amount", type: "uint256" }
-                              ],
-                              name: "approve",
-                              outputs: [{ name: "", type: "bool" }],
-                              stateMutability: "nonpayable",
-                              type: "function",
-                            }],
-                            functionName: "approve",
-                            args: [crystalVaultsAddress as `0x${string}`, maxUint256],
-                          }),
-                          value: 0n,
-                        };
-                        await sendUserOperationAsync({ uo: approveBaseUo });
-                      }
-
-                      // Step 4: Deposit
-                      setDepositVaultStep('depositing');
-
-                      const ethValue =
-                        quoteTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountQuoteDesired :
-                          baseTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountBaseDesired : 0n;
-
-                      const depositUo = {
-                        target: crystalVaultsAddress as `0x${string}`,
-                        data: encodeFunctionData({
-                          abi: CrystalVaultsAbi,
-                          functionName: "deposit",
-                          args: [
-                            selectedVault.address as `0x${string}`,
-                            quoteTokenAddress as `0x${string}`,
-                            baseTokenAddress as `0x${string}`,
-                            amountQuoteDesired,
-                            amountBaseDesired,
-                            amountQuoteMin,
-                            amountBaseMin,
-                          ],
-                        }),
-                        value: ethValue,
-                      };
-
-                      await sendUserOperationAsync({ uo: depositUo });
-
-                      // Step 5: Success
-                      setDepositVaultStep('success');
-
-                      setTimeout(() => {
-                        setpopup(0);
-                        setselectedVault(null);
-                        setVaultDepositAmounts({ shares: 0n, quote: 0n, base: 0n });
-                        setVaultInputStrings({ quote: '', base: '' });
-                        setVaultQuoteExceedsBalance(false);
-                        setVaultBaseExceedsBalance(false);
-                        setDepositVaultStep('idle');
-                        setDepositVaultError('');
-                        refetch?.();
-                      }, 2000);
-
-                    } catch (e: any) {
-                      console.error('Vault deposit error:', e);
-                      setDepositVaultError(e?.message || 'An error occurred while depositing. Please try again.');
-                      setDepositVaultStep('idle');
-                    } finally {
-                      setIsVaultDepositSigning(false);
-                    }
-                  }}
+                  onClick={handleVaultDeposit}
                 >
                   {depositVaultStep === 'success' ? (
                     <div className="button-content">
@@ -17380,68 +16661,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     } ${withdrawVaultStep === 'success' ? 'success' : ''}`}
                   disabled={withdrawVaultStep == 'success' || (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
                     withdrawExceedsBalance || !withdrawPreview || isVaultWithdrawSigning)}
-                  onClick={async () => {
-                    if (withdrawShares == '' || parseFloat(withdrawShares) == 0 ||
-                      withdrawExceedsBalance || !withdrawPreview) return;
-
-                    try {
-                      setIsVaultWithdrawSigning(true);
-                      setWithdrawVaultError('');
-
-                      setWithdrawVaultStep('validating');
-                      await new Promise(resolve => setTimeout(resolve, 500));
-
-                      await handleSetChain();
-
-                      const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
-
-                      const amountQuoteMin = (withdrawPreview.amountQuote * 50n) / 100n;
-                      const amountBaseMin = (withdrawPreview.amountBase * 50n) / 100n;
-
-                      // Step 2: Withdrawing
-                      setWithdrawVaultStep('withdrawing');
-
-                      const withdrawUo = {
-                        target: crystalVaultsAddress as `0x${string}`,
-                        data: encodeFunctionData({
-                          abi: CrystalVaultsAbi,
-                          functionName: "withdraw",
-                          args: [
-                            selectedVault.address as `0x${string}`,
-                            selectedVault.quoteAsset as `0x${string}`,
-                            selectedVault.baseAsset as `0x${string}`,
-                            BigInt(withdrawShares),
-                            amountQuoteMin,
-                            amountBaseMin,
-                          ],
-                        }),
-                        value: 0n,
-                      };
-
-                      await sendUserOperationAsync({ uo: withdrawUo });
-
-                      // Step 3: Success
-                      setWithdrawVaultStep('success');
-
-                      setTimeout(() => {
-                        setpopup(0);
-                        setselectedVault(null);
-                        setWithdrawPercentage('');
-                        setWithdrawExceedsBalance(false);
-                        setWithdrawPreview(null);
-                        setWithdrawVaultStep('idle');
-                        setWithdrawVaultError('');
-                        refetch?.();
-                      }, 2000);
-
-                    } catch (e: any) {
-                      console.error('Vault withdrawal error:', e);
-                      setWithdrawVaultError(e?.message || 'An error occurred while withdrawing. Please try again.');
-                      setWithdrawVaultStep('idle');
-                    } finally {
-                      setIsVaultWithdrawSigning(false);
-                    }
-                  }}
+                  onClick={handleVaultWithdraw}
                 >
                   {withdrawVaultStep === 'success' ? (
                     <div className="button-content">
@@ -25912,7 +25132,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   return (
     <div className="app-wrapper" key={language}>
       <NavigationProgress location={location} />
-      <MemeTransactionPopupManager />
+      <MemeTransactionPopupManager trackedWallets={trackedWallets} />
 
       {Modals}
       <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} />
@@ -26035,7 +25255,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           if (spectraWidgetSnap === 'left') total += spectraWidgetWidth;
           if (pnlWidgetSnap === 'left') total += pnlWidgetWidth;
           if (walletTrackerWidgetSnap === 'left') total += walletTrackerWidgetWidth;
-          return total > 0 ? `${total}px` : undefined;
+          return total > 0 ? `${total}px` : '';
         })(),
         marginRight: (() => {
           let total = 0;
@@ -26043,7 +25263,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           if (spectraWidgetSnap === 'right') total += spectraWidgetWidth;
           if (pnlWidgetSnap === 'right') total += pnlWidgetWidth;
           if (walletTrackerWidgetSnap === 'right') total += walletTrackerWidgetWidth;
-          return total > 0 ? `${total}px` : undefined;
+          return total > 0 ? `${total}px` : '';
         })(),
       }}>
         <Routes>
@@ -26128,7 +25348,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 wethticker={wethticker}
                 ethticker={ethticker}
                 terminalRefetch={terminalRefetch}
-                tokenData={token}
                 setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
                 buyPresets={buyPresetsWithAmount}

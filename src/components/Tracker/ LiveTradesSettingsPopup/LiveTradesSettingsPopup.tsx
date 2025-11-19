@@ -27,26 +27,22 @@ const LiveTradesSettingsPopup: React.FC<LiveTradesSettingsPopupProps> = ({ onClo
             <div className="live-trades-settings-section">
               <div className="live-trades-settings-row">
                 <span className="live-trades-settings-label">Open toast alerts in new tab</span>
-                <label className="live-trades-settings-toggle">
-                  <input
-                    type="checkbox"
-                    checked={openToastInNewTab}
-                    onChange={(e) => setOpenToastInNewTab(e.target.checked)}
-                  />
-                  <span className="live-trades-settings-toggle-slider"></span>
-                </label>
+                <div
+                  className={`live-trades-settings-toggle ${openToastInNewTab ? 'active' : ''}`}
+                  onClick={() => setOpenToastInNewTab(!openToastInNewTab)}
+                >
+                  <div className="live-trades-settings-toggle-slider" />
+                </div>
               </div>
 
               <div className="live-trades-settings-row">
                 <span className="live-trades-settings-label">Pause live feed on hover</span>
-                <label className="live-trades-settings-toggle">
-                  <input
-                    type="checkbox"
-                    checked={pauseFeedOnHover}
-                    onChange={(e) => setPauseFeedOnHover(e.target.checked)}
-                  />
-                  <span className="live-trades-settings-toggle-slider"></span>
-                </label>
+                <div
+                  className={`live-trades-settings-toggle ${pauseFeedOnHover ? 'active' : ''}`}
+                  onClick={() => setPauseFeedOnHover(!pauseFeedOnHover)}
+                >
+                  <div className="live-trades-settings-toggle-slider" />
+                </div>
               </div>
 
               <div className="live-trades-settings-divider"></div>
@@ -56,14 +52,12 @@ const LiveTradesSettingsPopup: React.FC<LiveTradesSettingsPopupProps> = ({ onClo
                   <div className="live-trades-settings-label">Sound alerts</div>
                   <div className="live-trades-settings-sublabel">Play sound alerts for alerted wallets</div>
                 </div>
-                <label className="live-trades-settings-toggle">
-                  <input
-                    type="checkbox"
-                    checked={soundAlerts}
-                    onChange={(e) => setSoundAlerts(e.target.checked)}
-                  />
-                  <span className="live-trades-settings-toggle-slider"></span>
-                </label>
+                <div
+                  className={`live-trades-settings-toggle ${soundAlerts ? 'active' : ''}`}
+                  onClick={() => setSoundAlerts(!soundAlerts)}
+                >
+                  <div className="live-trades-settings-toggle-slider" />
+                </div>
               </div>
 
               <div className="live-trades-settings-volume">
@@ -81,11 +75,11 @@ const LiveTradesSettingsPopup: React.FC<LiveTradesSettingsPopupProps> = ({ onClo
                   style={{ '--slider-percent': `${volume}%` } as React.CSSProperties}
                 />
                 <div className="live-trades-settings-slider-labels">
-                  <span>0</span>
-                  <span>25</span>
-                  <span>50</span>
-                  <span>75</span>
-                  <span>100</span>
+                  <span className="live-trades-settings-slider-label">0</span>
+                  <span className="live-trades-settings-slider-label">25</span>
+                  <span className="live-trades-settings-slider-label">50</span>
+                  <span className="live-trades-settings-slider-label">75</span>
+                  <span className="live-trades-settings-slider-label">100</span>
                 </div>
               </div>
             </div>

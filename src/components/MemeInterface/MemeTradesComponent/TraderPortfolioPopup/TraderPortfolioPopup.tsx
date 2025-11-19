@@ -151,10 +151,11 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
         <div className="trader-popup-header">
           <div className="trader-popup-title">
             <div className="trader-address-container">
+              <span className="rename-track-button">Rename to track</span>
               <span className="trader-address">
                 {shortenAddress(traderAddress)}
               </span>
-              <button
+              {/* <button
                 className="trader-action-btn"
                 onClick={() => copyToClipboard(traderAddress)}
                 title="Copy Address"
@@ -167,7 +168,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                 title="View on Explorer"
               >
                 <ExternalLink size={11} />
-              </button>
+              </button> */}
             </div>
           </div>
           <button className="trader-popup-close" onClick={onClose}>
@@ -180,7 +181,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
             <div
               className={`trader-account-summary ${percentage >= 0 ? 'positive' : 'negative'}`}
             >
-              <span className="trader-balance-title">BALANCE</span>
+              <span className="trader-balance-title">Balance</span>
 
               <div className="trader-total-value">
                 <div className="trader-balance-row">
@@ -197,7 +198,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                 </div>
                 <div>
                   <div className="trader-balance-row">
-                    <span className="trader-balance-label">7d Change</span>
+                    <span className="trader-balance-label">Unrealized PNL</span>
                     <div className="trader-percentage-container">
                       <span
                         className={`trader-percentage ${isBlurred ? 'blurred' : ''} ${percentage >= 0 ? 'positive' : 'negative'}`}
@@ -248,7 +249,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
 
             <div className="trader-performance-container">
               <div className="trader-performance-header">
-                <h4 className="trader-graph-label">PERFORMANCE</h4>
+                <h4 className="trader-graph-label">Performance</h4>
                 <div className="trader-performance-row">
                   <span className="trader-performance-label">24h PNL</span>
                   <span className="trader-performance-value positive">
@@ -285,31 +286,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
             </div>
 
             <div className="trader-assets-list">
-              {balancesLoading ? (
-                <div className="trader-loading-assets">
-                  {[...Array(3)].map((_, index) => (
-                    <div key={index} className="trader-loading-asset-row">
-                      <div className="trader-skeleton trader-loading-asset-icon"></div>
-                      <div className="trader-loading-asset-info">
-                        <div className="trader-skeleton trader-loading-asset-name"></div>
-                        <div className="trader-skeleton trader-loading-asset-symbol"></div>
-                      </div>
-                      <div className="trader-skeleton trader-loading-asset-balance"></div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <BalancesContent
-                  tokenList={tokenList}
-                  onMarketSelect={onMarketSelect}
-                  setSendTokenIn={setSendTokenIn}
-                  setpopup={setpopup}
-                  sortConfig={sortConfig}
-                  tokenBalances={tokenBalances}
-                  marketsData={marketsData}
-                  isBlurred={isBlurred}
-                />
-              )}
+            
             </div>
           </div>
         </div>

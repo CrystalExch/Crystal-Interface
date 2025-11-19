@@ -32,7 +32,7 @@ import monadicon from '../../assets/monadlogo.svg';
 import slippage from '../../assets/slippage.svg';
 import trash from '../../assets/trash.svg';
 import walleticon from '../../assets/wallet_icon.svg';
-import { loadBuyPresets, loadSellPresets, updateBuyPreset, updateSellPreset } from '../../utils/presetManager';
+import { updateBuyPreset, updateSellPreset } from '../../utils/presetManager';
 
 import './MemeInterface.css';
 
@@ -86,15 +86,12 @@ interface MemeInterfaceProps {
   refetch?: () => void;
   isBlurred?: boolean;
   terminalRefetch: any;
-  tokenData?: any;
   setTokenData: any;
   monUsdPrice: number;
-  buyPresets?: {
-    [key: number]: { slippage: string; priority: string; amount: string };
-  };
-  sellPresets?: { [key: number]: { slippage: string; priority: string } };
+  buyPresets: { [key: number]: { slippage: string; priority: string; amount: string } };
+  sellPresets: { [key: number]: { slippage: string; priority: string } };
   monPresets?: number[];
-  setMonPresets?: (presets: number[]) => void;
+  setMonPresets: (presets: number[]) => void;
   onTokenDataChange?: (tokenData: {
     address: string;
     symbol: string;
@@ -833,9 +830,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [isWidgetOpen, setIsWidgetOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('crystal_quickbuy_widget_open');
-      return saved ? JSON.parse(saved) : false;
+      return saved ? JSON.parse(saved) : true;
     } catch (error) {
-      return false;
+      return true;
     }
   });
   const [tradeAmount, setTradeAmount] = useState('');
@@ -848,8 +845,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [settingsExpanded, setSettingsExpanded] = useState(false);
   const sliderRef = useRef<HTMLInputElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
-  const [slippageValue, _setSlippageValue] = useState('20');
-  const [priorityFee, _setPriorityFee] = useState('0.01');
   const [orderCenterHeight, setOrderCenterHeight] = useState<number>(() => {
     const savedHeight = localStorage.getItem('orderCenterHeight');
     if (savedHeight !== null) {
@@ -937,22 +932,22 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   );
   const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
   const [buySlippageValue, setBuySlippageValue] = useState(() => {
-    const presets = loadBuyPresets();
+    const presets = buyPresets;
     return presets[1]?.slippage;
   });
 
   const [buyPriorityFee, setBuyPriorityFee] = useState(() => {
-    const presets = loadBuyPresets();
+    const presets = buyPresets;
     return presets[1]?.priority;
   });
 
   const [sellSlippageValue, setSellSlippageValue] = useState(() => {
-    const presets = loadSellPresets();
+    const presets = sellPresets;
     return presets[1]?.slippage;
   });
 
   const [sellPriorityFee, setSellPriorityFee] = useState(() => {
-    const presets = loadSellPresets();
+    const presets = sellPresets;
     return presets[1]?.priority;
   });
   const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');
@@ -1108,7 +1103,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     (preset: number) => {
       setSelectedBuyPreset(preset);
       setMobileQuickBuyPreset(preset);
-      const presets = loadBuyPresets();
+      const presets = buyPresets;
       if (presets[preset]) {
         setBuySlippageValue(presets[preset].slippage);
         setBuyPriorityFee(presets[preset].priority);
@@ -1120,7 +1115,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const handleSellPresetSelect = useCallback(
     (preset: number) => {
       setSelectedSellPreset(preset);
-      const presets = loadSellPresets();
+      const presets = sellPresets;
       if (presets[preset]) {
         setSellSlippageValue(presets[preset].slippage);
         setSellPriorityFee(presets[preset].priority);
@@ -1837,10 +1832,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     const newPresets = [...monPresets];
     newPresets[editingPresetIndex] = newValue;
     setMonPresets(newPresets);
+    localStorage.setItem('crystal_mon_presets', JSON.stringify(newPresets));
 
     setEditingPresetIndex(null);
     setTempPresetValue('');
-  }, [editingPresetIndex, tempPresetValue, monPresets, setMonPresets]);
+  }, [editingPresetIndex, tempPresetValue, monPresets]);
 
   const handlePresetInputKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -1923,7 +1919,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           const walletsArray = Array.from(selectedWallets);
           const amountPerWallet = parseFloat(tradeAmount) / walletsArray.length;
           const totalAmount = parseFloat(tradeAmount);
-          const estimatedTokens = totalAmount / currentPrice;
+          const fee = 99000n;
+          const iva = BigInt(Math.round(totalAmount * 1e18)) * fee / 100000n;
+          const vNative = token.reserveQuote + iva;
+          const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+          const estimatedTokens = Number(token.reserveBase - vToken) / 1e18;
 
           const isNadFun = token.launchpad === 'nadfun';
           const contractAddress = isNadFun
@@ -1964,12 +1964,18 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   value,
                 };
               } else {
+                const fee = 99000n;
+                const iva = value * fee / 100000n;
+                const vNative = token.reserveQuote + iva;
+                const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+                const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+
                 uo = {
                   target: contractAddress as `0x${string}`,
                   data: encodeFunctionData({
                     abi: CrystalRouterAbi,
                     functionName: 'buy',
-                    args: [true, token.tokenAddress as `0x${string}`, value, 0n],
+                    args: [true, token.tokenAddress as `0x${string}`, value, BigInt(output)],
                   }),
                   value,
                 };
@@ -3504,13 +3510,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               <Tooltip content="Slippage">
                 <div className="meme-settings-item">
                   <img src={slippage} className="meme-settings-icon1" />
-                  <span className="meme-settings-value">{slippageValue}%</span>
+                  <span className="meme-settings-value">{activeTradeType === 'buy' ? buySlippageValue : sellSlippageValue}%</span>
                 </div>
               </Tooltip>
               <Tooltip content="Priority Fee">
                 <div className="meme-settings-item">
                   <img src={gas} className="meme-settings-icon2" />
-                  <span className="meme-settings-value">{priorityFee}</span>
+                  <span className="meme-settings-value">{activeTradeType === 'buy' ? buyPriorityFee : sellPriorityFee}</span>
                 </div>
               </Tooltip>
             </div>
