@@ -245,8 +245,6 @@
 }
 
 .pause-indicator {
-  background-color: rgb(6, 6, 6);
-  border-top: 1px solid rgba(179, 184, 249, 0.1);
   bottom: -1px;
   left: 0;
   padding: 12px;
@@ -256,6 +254,7 @@
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 9;
   pointer-events: none;
+  backdrop-filter: blur(20px);
 }
 
 .pause-indicator.visible {

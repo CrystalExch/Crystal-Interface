@@ -203,6 +203,8 @@ const HEADER_HEIGHT = 53;
 const SIDEBAR_WIDTH = 50;
 const SNAP_THRESHOLD = 10;
 const SNAP_HOVER_TIME = 300;
+const MIN_WIDGET_WIDTH = 380;
+const MIN_WIDGET_HEIGHT = 300;
 
 const formatPrice = (p: number, noDecimals = false) => {
   if (p >= 1e6) {
@@ -2574,20 +2576,26 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
     graduating: parseInt(localStorage.getItem('spectra-preset-graduating') ?? '1'),
     graduated: parseInt(localStorage.getItem('spectra-preset-graduated') ?? '1'),
   }));
-  useEffect(() => {
-    localStorage.setItem('spectra-widget-position', JSON.stringify(position));
-    localStorage.setItem('spectra-widget-size', JSON.stringify(size));
+useEffect(() => {
+  localStorage.setItem('spectra-widget-position', JSON.stringify(position));
+  localStorage.setItem('spectra-widget-size', JSON.stringify(size));
 
-    if (isSnapped) {
-      localStorage.setItem('spectra-widget-snapped', isSnapped);
-    } else {
-      localStorage.removeItem('spectra-widget-snapped');
-    }
+  if (isSnapped) {
+    localStorage.setItem('spectra-widget-snapped', isSnapped);
+  } else {
+    localStorage.removeItem('spectra-widget-snapped');
+  }
+}, [position, size, isSnapped]);
 
-    if (isOpen && onSnapChange) {
+useEffect(() => {
+  if (onSnapChange) {
+    if (isOpen) {
       onSnapChange(isSnapped, isSnapped ? size.width : 0);
+    } else {
+      onSnapChange(null, 0);
     }
-  }, [position, size, isSnapped, isOpen, onSnapChange]);
+  }
+}, [isOpen, isSnapped, size.width, onSnapChange]);
   const dragStartPos = useRef({ x: 0, y: 0 });
   const resizeStartPos = useRef({ x: 0, y: 0 });
   const resizeStartSize = useRef({ width: 0, height: 0 });
