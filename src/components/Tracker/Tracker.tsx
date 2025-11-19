@@ -4244,10 +4244,66 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     });
 
     // Get graduated tokens for orderbook column (bondingCurveProgress === 100 but not already marked as orderbook from migration)
-    const graduatedPositions = allPositions.filter(pos => {
+    const graduatedPositionsRaw = allPositions.filter(pos => {
       if (pos.isOrderbook) return false; // These are already in orderbook via migration
       const market = marketsRef.current.get(pos.tokenId.toLowerCase());
       return market && market.bondingCurveProgress === 100;
+    });
+
+    const graduatedPositions: GqlPosition[] = [];
+    const graduatedTokenMap = new Map<string, { position: GqlPosition, wallets: any[] }>();
+
+    graduatedPositionsRaw.forEach(pos => {
+      const tokenId = pos.tokenId.toLowerCase();
+      if (!graduatedTokenMap.has(tokenId)) {
+        graduatedTokenMap.set(tokenId, {
+          position: {
+            tokenId: pos.tokenId,
+            symbol: pos.symbol,
+            name: pos.name,
+            imageUrl: pos.imageUrl,
+            boughtTokens: 0,
+            soldTokens: 0,
+            spentNative: 0,
+            receivedNative: 0,
+            remainingTokens: 0,
+            remainingPct: 0,
+            pnlNative: 0,
+            lastPrice: pos.lastPrice,
+            isOrderbook: false
+          },
+          wallets: []
+        });
+      }
+
+      const entry = graduatedTokenMap.get(tokenId)!;
+      entry.position.boughtTokens += pos.boughtTokens;
+      entry.position.soldTokens += pos.soldTokens;
+      entry.position.spentNative += pos.spentNative;
+      entry.position.receivedNative += pos.receivedNative;
+      entry.position.remainingTokens += pos.remainingTokens;
+      entry.position.pnlNative += pos.pnlNative;
+      if (pos.lastPrice > entry.position.lastPrice) {
+        entry.position.lastPrice = pos.lastPrice;
+      }
+      if (pos.imageUrl && !entry.position.imageUrl) {
+        entry.position.imageUrl = pos.imageUrl;
+      }
+
+      entry.wallets.push({
+        name: (pos as any).walletName,
+        emoji: (pos as any).walletEmoji,
+        address: (pos as any).walletAddress,
+        balance: pos.remainingTokens,
+        pnl: pos.pnlNative,
+        spent: pos.spentNative,
+        received: pos.receivedNative
+      });
+    });
+
+    graduatedTokenMap.forEach((entry, tokenId) => {
+      (entry.position as any).wallets = entry.wallets;
+      graduatedPositions.push(entry.position);
     });
 
     // Get migrated orderbook positions from GraphQL (these have isOrderbook: true)
@@ -4362,15 +4418,20 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       aggregatedOrderbookPositions.push(entry.position);
     });
 
-    // Deduplicate: Keep launchpad versions (graduatedPositions) over orderbook versions
-    // Graduated tokens have actual trade data, while migrated orderbook positions may just have balance info
-    const graduatedTokenIds = new Set(graduatedPositions.map(p => p.tokenId.toLowerCase()));
+    const spotTokenIds = new Set(aggregatedOrderbookPositions.map(p => p.tokenId.toLowerCase()));
+    const dedupedGraduatedPositions = graduatedPositions.filter(
+      pos => !spotTokenIds.has(pos.tokenId.toLowerCase())
+    );
     const dedupedMigratedPositions = migratedOrderbookPositions.filter(
+      pos => !spotTokenIds.has(pos.tokenId.toLowerCase())
+    );
+
+    const graduatedTokenIds = new Set(dedupedGraduatedPositions.map(p => p.tokenId.toLowerCase()));
+    const finalMigratedPositions = dedupedMigratedPositions.filter(
       pos => !graduatedTokenIds.has(pos.tokenId.toLowerCase())
     );
 
-    // Combine spot tokens, graduated tokens, and deduplicated migrated orderbook tokens for orderbook column
-    const orderbookPositions = [...aggregatedOrderbookPositions, ...graduatedPositions, ...dedupedMigratedPositions];
+    const orderbookPositions = [...aggregatedOrderbookPositions, ...dedupedGraduatedPositions, ...finalMigratedPositions];
 
     const formatTimeAgo = (timestamp: number | undefined): string => {
       if (!timestamp) return '—';
