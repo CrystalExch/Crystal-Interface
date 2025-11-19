@@ -3157,7 +3157,7 @@ const TokenRow = React.memo<{
                   <span className="mc-label">V</span>
                   <span className="mc-value">
                     {formatPrice(
-                      token.volume24h * monUsdPrice,
+                      token.volume24h,
                       displaySettings.noDecimals,
                     )}
                   </span>
@@ -3170,7 +3170,7 @@ const TokenRow = React.memo<{
                   <span className="mc-label">MC</span>
                   <span className="mc-value">
                     {formatPrice(
-                      token.marketCap * monUsdPrice,
+                      token.marketCap,
                       displaySettings.noDecimals,
                     )}
                   </span>
@@ -3186,7 +3186,7 @@ const TokenRow = React.memo<{
                   <span className="explorer-fee-label">F</span>
                   <span className="explorer-fee-total">
                     {formatPrice(
-                      (token.volume24h * monUsdPrice) / 100,
+                      (token.volume24h) / 100,
                       displaySettings.noDecimals,
                     )}
                   </span>
