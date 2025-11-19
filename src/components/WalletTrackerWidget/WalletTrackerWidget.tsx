@@ -1224,7 +1224,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
               <div className="wtw-empty-state">
                 <div className="wtw-empty-content">
                   <h4>No Trades Found</h4>
-                  <p>No trades match your search criteria.</p>
                 </div>
               </div>
             ) : (
