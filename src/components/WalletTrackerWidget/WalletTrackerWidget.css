@@ -752,14 +752,6 @@
   border-bottom: none;
 }
 
-.wtw-detail-trades-row.buy {
-  background-color: rgba(67, 254, 154, 0.04);
-}
-
-.wtw-detail-trades-row.sell {
-  background-color: rgba(235, 112, 112, 0.04);
-}
-
 .wtw-detail-trades-col {
   padding: 0;
   font-size: 0.8rem;
