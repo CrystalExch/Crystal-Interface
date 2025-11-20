@@ -4827,7 +4827,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
                         {alertSettings.soundAlertsEnabled && (
                           <Tooltip content="Alerts">
-
                             <button
                               className="alerts-popup-trigger"
                               onClick={() => setShowAlertsPopup(true)}

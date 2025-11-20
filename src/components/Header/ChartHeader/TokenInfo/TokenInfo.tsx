@@ -1470,7 +1470,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   <Tooltip content="crystal.fun">
                     <img src={crystal} className="header-launchpad-logo" />
                   </Tooltip>
-
                 </div>
               </div>
 
