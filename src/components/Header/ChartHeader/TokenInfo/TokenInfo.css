@@ -1865,3 +1865,17 @@
 .low-liquidity-icon {
   flex-shrink: 0;
 }
+
+
+.meme-interface-token-info-container-meme.nadfun-token .meme-interface-token-icon-wrapper{
+  background: conic-gradient(from 0deg,
+      #AD5FFB 0deg,
+      #AD5FFB var(--progress-angle, 0deg),
+      rgba(173, 95, 251, 0.2) var(--progress-angle, 0deg),
+      rgba(173, 95, 251, 0.2) 360deg);
+}
+
+
+.meme-interface-token-info-container-meme.nadfun-token .header-launchpad-logo-container{
+  border-color: #AD5FFB;
+}

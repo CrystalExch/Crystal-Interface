@@ -88,7 +88,7 @@ export interface Token {
   discordHandle: string;
   graduatedTokens: number;
   launchedTokens: number;
-  launchpad?: 'crystal' | 'nadfun';
+  source: string;
 }
 
 type ColumnKey = 'new' | 'graduating' | 'graduated';
@@ -2479,7 +2479,7 @@ const TokenRow = React.memo<{
     <>
       <div
         ref={tokenRowRef}
-        className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${isBlacklisted ? 'blacklisted-token' : ''} ${token.launchpad === 'nadfun' ? 'nadfun-token' : ''} ${displaySettings.colorRows && token.status !== 'graduated'
+        className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${isBlacklisted ? 'blacklisted-token' : ''} ${token.source === 'nadfun' ? 'nadfun-token' : ''} ${displaySettings.colorRows && token.status !== 'graduated'
           ? `colored-row ${getBondingColorClass(bondingPercentage)}`
           : ''
           } ${metricData ? `metric-colored ${metricData.classes}` : ''} ${token.status === 'graduated' ? 'graduated' : ''}`}
@@ -2591,7 +2591,7 @@ const TokenRow = React.memo<{
                   <img className="camera-icon" src={camera} />
                 </div>
                 <div className="token-explorer-launchpad-logo-container">
-                  {token.launchpad === 'nadfun' ? (
+                  {token.source === 'nadfun' ? (
                     <Tooltip content="nad.fun">
                       <svg width="10" height="10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <defs>
@@ -3930,7 +3930,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           });
         }
 
-        const isNadFun = token.launchpad === 'nadfun';
+        const isNadFun = token.source === 'nadfun';
         const contractAddress = isNadFun
           ? appSettings.chainConfig[activechain].nadFunRouter
           : routerAddress;
