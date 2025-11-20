@@ -239,8 +239,8 @@ interface Token {
   discordHandle: string;
   graduatedTokens: number;
   launchedTokens: number;
-  launchpad?: 'crystal' | 'nadfun';
   trades?: any;
+  source?: 'crystal' | 'nadfun';
 }
 
 type AudioGroups = 'swap' | 'order' | 'transfer' | 'approve';
@@ -4609,7 +4609,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               holders: holdersRaw,
               devHolding: devHoldingRaw / 1e27,
               top10Holding: top10HoldingRaw / 1e25,
-              launchpad: launchpad,
+              source: launchpad,
             };
 
             tokens.push(token);
@@ -5769,7 +5769,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       telegramHandle: "",
       discordHandle: "",
       graduatedTokens: 0,
-      launchedTokens: 0
+      launchedTokens: 0,
+      source: "nadfun"
     };
 
     const snapshot: Partial<Token> = (tokenData ?? {}) as Partial<Token>;
