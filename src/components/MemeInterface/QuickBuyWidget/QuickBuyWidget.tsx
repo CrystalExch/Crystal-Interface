@@ -41,8 +41,7 @@ interface UserStats {
 interface QuickBuyWidgetProps {
   isOpen: boolean;
   onClose: () => void;
-  tokenSymbol?: string;
-  tokenAddress?: string;
+  token: any;
   tokenPrice?: number;
   buySlippageValue: string;
   buyPriorityFee: string;
@@ -66,13 +65,10 @@ interface QuickBuyWidgetProps {
   onToggleCurrency?: () => void;
   showLoadingPopup?: (id: string, config: any) => void;
   updatePopup?: (id: string, config: any) => void;
-  tokenImage?: string;
   nonces: any;
   selectedWallets: Set<string>;
   setSelectedWallets: React.Dispatch<React.SetStateAction<Set<string>>>;
-  isTerminalDataFetching: any;
-    tokenLaunchpad?: string;  
-  tokenDev?: string;    
+  isTerminalDataFetching: any; 
 }
 
 const Tooltip: React.FC<{
@@ -230,8 +226,7 @@ const Tooltip: React.FC<{
 const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   isOpen,
   onClose,
-  tokenSymbol = 'TOKEN',
-  tokenAddress,
+  token,
   tokenPrice = 0,
   buySlippageValue,
   buyPriorityFee,
@@ -260,13 +255,10 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   monUsdPrice = 0,
   showUSD = false,
   onToggleCurrency,
-  tokenImage,
   nonces,
   selectedWallets,
   setSelectedWallets,
   isTerminalDataFetching,
-    tokenLaunchpad,  
-  tokenDev,   
 }) => {
   const [position, setPosition] = useState(() => {
     try {
@@ -409,7 +401,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const currentTokenBalance =
-    walletTokenBalances?.[account?.address || '']?.[tokenAddress || ''] ?? 0n;
+    walletTokenBalances?.[account?.address || '']?.[token.id || ''] ?? 0n;
   const currentSellValues =
     sellMode === 'percent' ? sellPercents : sellMONAmounts;
 
@@ -564,12 +556,12 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
   const getWalletTokenBalance = (address: string) => {
     const balances = walletTokenBalances[address];
-    if (!balances || !tokenAddress) return 0;
+    if (!balances || !token.id) return 0;
 
-    const balance = balances[tokenAddress];
+    const balance = balances[token.id];
     if (!balance || balance <= 0n) return 0;
 
-    const tokenInfo = tokenList.find((t) => t.address === tokenAddress);
+    const tokenInfo = tokenList.find((t) => t.address === token.id);
     const decimals = tokenInfo?.decimals || 18;
     return Number(balance) / 10 ** Number(decimals);
   };
@@ -617,7 +609,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   };
 
   const handleConsolidateTokens = async () => {
-    if (!tokenAddress) return;
+    if (!token.id) return;
 
     if (selectedWallets.size !== 1) {
       const txId = `consolidate-error-${Date.now()}`;
@@ -641,18 +633,18 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const sourceWallets = subWallets
       .map((w) => w.address)
       .filter((addr) => addr !== destinationAddr)
-      .filter((addr) => (walletTokenBalances[addr]?.[tokenAddress] ?? 0n) > 0n);
+      .filter((addr) => (walletTokenBalances[addr]?.[token.id] ?? 0n) > 0n);
 
     if (sourceWallets.length === 0) {
       const txId = `consolidate-error-${Date.now()}`;
       showLoadingPopup?.(txId, {
         title: 'Nothing to consolidate',
-        subtitle: `No other wallets hold ${tokenSymbol}`,
+        subtitle: `No other wallets hold ${token.symbol}`,
       });
       setTimeout(() => {
         updatePopup?.(txId, {
           title: 'Nothing to consolidate',
-          subtitle: `No other wallets hold ${tokenSymbol}`,
+          subtitle: `No other wallets hold ${token.symbol}`,
           variant: 'error',
           isLoading: false,
         });
@@ -664,8 +656,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const txId = `consolidate-${Date.now()}`;
     showLoadingPopup?.(txId, {
       title: 'Consolidating Tokens',
-      subtitle: `Sending ${tokenSymbol} from ${sourceWallets.length} wallets to selected wallet`,
-      tokenImage,
+      subtitle: `Sending ${token.symbol} from ${sourceWallets.length} wallets to selected wallet`,
+      tokenImage: token.image,
     });
 
     try {
@@ -674,12 +666,12 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         const sourceWallet = subWallets.find((w) => w.address === sourceAddr);
         if (!sourceWallet) continue;
 
-        const balance = walletTokenBalances[sourceAddr]?.[tokenAddress];
+        const balance = walletTokenBalances[sourceAddr]?.[token.id];
         if (!balance || balance <= 0n) continue;
 
         try {
           const uo = {
-            target: tokenAddress as `0x${string}`,
+            target: token.id as `0x${string}`,
             data: encodeFunctionData({
               abi: CrystalLaunchpadToken,
               functionName: 'transfer',
@@ -725,7 +717,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       terminalRefetch();
       updatePopup?.(txId, {
         title: 'Consolidation Complete',
-        subtitle: `Consolidated ${tokenSymbol} from ${successfulTransfers}/${sourceWallets.length} wallets`,
+        subtitle: `Consolidated ${token.symbol} from ${successfulTransfers}/${sourceWallets.length} wallets`,
         variant: 'success',
         isLoading: false,
       });
@@ -770,12 +762,12 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   }, [subWallets, setSelectedWallets, getWalletTokenBalance, getWalletBalance]);
 
   const handleSplitTokens = async () => {
-    if (selectedWallets.size === 0 || !tokenAddress) return;
+    if (selectedWallets.size === 0 || !token.id) return;
 
     const selected = Array.from(selectedWallets);
 
     const sourceAddr = selected.find(
-      (addr) => (walletTokenBalances[addr]?.[tokenAddress] ?? 0n) > 0n,
+      (addr) => (walletTokenBalances[addr]?.[token.id] ?? 0n) > 0n,
     );
     if (!sourceAddr) {
       const txId = `split-error-${Date.now()}`;
@@ -797,7 +789,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     }
 
     const sourceBalance: bigint =
-      walletTokenBalances[sourceAddr]?.[tokenAddress] ?? 0n;
+      walletTokenBalances[sourceAddr]?.[token.id] ?? 0n;
     if (sourceBalance <= 0n) {
       const txId = `split-error-${Date.now()}`;
       showLoadingPopup?.(txId, {
@@ -840,8 +832,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const txId = `split-${Date.now()}`;
     showLoadingPopup?.(txId, {
       title: 'Splitting Tokens',
-      subtitle: `Redistributing ${tokenSymbol} across ${selected.length} wallets (±20%)`,
-      tokenImage,
+      subtitle: `Redistributing ${token.symbol} across ${selected.length} wallets (±20%)`,
+      tokenImage: token.image,
     });
 
     try {
@@ -907,7 +899,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       for (const { to, amount } of plan) {
         try {
           const uo = {
-            target: tokenAddress as `0x${string}`,
+            target: token.id as `0x${string}`,
             data: encodeFunctionData({
               abi: CrystalLaunchpadToken,
               functionName: 'transfer',
@@ -956,7 +948,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       terminalRefetch();
       updatePopup?.(txId, {
         title: 'Split Complete',
-        subtitle: `Sent ${tokenSymbol} to ${successfulTransfers}/${plan.length} wallets`,
+        subtitle: `Sent ${token.symbol} to ${successfulTransfers}/${plan.length} wallets`,
         variant: 'success',
         isLoading: false,
       });
@@ -1029,7 +1021,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   };
 
   const handleBuyTrade = async (amount: string) => {
-    if (!sendUserOperationAsync || !tokenAddress || !routerAddress) {
+    if (!sendUserOperationAsync || !token.id || !routerAddress) {
       setpopup?.(4);
       return;
     }
@@ -1105,10 +1097,10 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const txId = `quickbuy-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     showLoadingPopup?.(txId, {
       title: 'Sending batch buy...',
-      subtitle: `Buying ${amount} MON of ${tokenSymbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
+      subtitle: `Buying ${amount} MON of ${token.symbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
       amount,
       amountUnit: 'MON',
-      tokenImage,
+      tokenImage: token.image,
     });
 
     let remaining = totalWei;
@@ -1156,45 +1148,44 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     try {
       const transferPromises: Promise<boolean>[] = [];
 
-for (const { addr, amount: partWei } of plan) {
-  if (partWei <= 0n) continue;
+      for (const { addr, amount: partWei } of plan) {
+        if (partWei <= 0n) continue;
 
-  const wally = subWallets.find((w) => w.address === addr);
-  const pk = wally?.privateKey ?? activeWalletPrivateKey;
-  if (!pk) continue;
+        const wally = subWallets.find((w) => w.address === addr);
+        const pk = wally?.privateKey ?? activeWalletPrivateKey;
+        if (!pk) continue;
+        const isNadFun = token.launchpad === 'nadfun';
+        const contractAddress = isNadFun
+          ? settings.chainConfig[activechain].nadFunRouter
+          : routerAddress;
 
-  const isNadFun = tokenLaunchpad === 'nadfun';
-  const contractAddress = isNadFun
-    ? settings.chainConfig[activechain].nadFunRouter
-    : routerAddress;
-
-  let uo;
-  if (isNadFun) {
-    uo = {
-      target: contractAddress as `0x${string}`,
-      data: encodeFunctionData({
-        abi: NadFunAbi,
-        functionName: 'buy',
-        args: [{
-          amountOutMin: 0n,
-          token: tokenDev as `0x${string}`,
-          to: addr as `0x${string}`,
-          deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
-        }],
-      }),
-      value: partWei,
-    };
-  } else {
-    uo = {
-      target: contractAddress as `0x${string}`,
-      data: encodeFunctionData({
-        abi: CrystalRouterAbi,
-        functionName: 'buy',
-        args: [true, tokenAddress as `0x${string}`, partWei, 0n],
-      }),
-      value: partWei,
-    };
-  }
+        let uo;
+        if (isNadFun) {
+          uo = {
+            target: contractAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: NadFunAbi,
+              functionName: 'buy',
+              args: [{
+                amountOutMin: 0n,
+                token: token.id as `0x${string}`,
+                to: addr as `0x${string}`,
+                deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
+              }],
+            }),
+            value: partWei,
+          };
+        } else {
+          uo = {
+            target: contractAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: CrystalRouterAbi,
+              functionName: 'buy',
+              args: [true, token.id as `0x${string}`, partWei, 0n],
+            }),
+            value: partWei,
+          };
+        }
 
 
         const wallet = nonces.current.get(addr);
@@ -1261,7 +1252,7 @@ for (const { addr, amount: partWei } of plan) {
   };
 
   const handleSellTrade = async (value: string) => {
-    if (!sendUserOperationAsync || !tokenAddress || !routerAddress) {
+    if (!sendUserOperationAsync || !token.id || !routerAddress) {
       setpopup?.(4);
       return;
     }
@@ -1285,7 +1276,7 @@ for (const { addr, amount: partWei } of plan) {
 
     const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
     targets = targets.filter(addr => {
-      const tokenBalance = walletTokenBalances[addr]?.[tokenAddress] ?? 0n;
+      const tokenBalance = walletTokenBalances[addr]?.[token.id] ?? 0n;
       if (tokenBalance <= 0n) return false;
       
       const balances = walletTokenBalances[addr];
@@ -1313,10 +1304,10 @@ for (const { addr, amount: partWei } of plan) {
     const txId = `quicksell-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     showLoadingPopup?.(txId, {
       title: 'Sending batch sell...',
-      subtitle: `Selling ${sellMode === 'percent' ? value + '' : value + ' MON'} of ${tokenSymbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
+      subtitle: `Selling ${sellMode === 'percent' ? value + '' : value + ' MON'} of ${token.symbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
       amount: value,
       amountUnit: sellMode === 'percent' ? '%' : 'MON',
-      tokenImage,
+      tokenImage: token.image,
     });
 
     try {
@@ -1327,7 +1318,7 @@ for (const { addr, amount: partWei } of plan) {
         const pct = BigInt(parseInt(value.replace('%', ''), 10));
         for (const addr of targets) {
           const balWei: bigint =
-            walletTokenBalances[addr]?.[tokenAddress] ?? 0n;
+            walletTokenBalances[addr]?.[token.id] ?? 0n;
           const amountWei = pct >= 100n ? balWei : (balWei * pct) / 100n;
 
           if (amountWei <= 0n) {
@@ -1347,7 +1338,7 @@ for (const { addr, amount: partWei } of plan) {
             data: encodeFunctionData({
               abi: CrystalRouterAbi,
               functionName: 'sell',
-              args: [true, tokenAddress as `0x${string}`, amountWei, 0n],
+              args: [true, token.id as `0x${string}`, amountWei, 0n],
             }),
             value: 0n,
           };
@@ -1396,7 +1387,7 @@ for (const { addr, amount: partWei } of plan) {
           }
 
           const balWei: bigint =
-            walletTokenBalances[addr]?.[tokenAddress] ?? 0n;
+            walletTokenBalances[addr]?.[token.id] ?? 0n;
           let reqTokenWei = 0n;
           if (tokenPrice > 0) {
             const partMon = Number(partMonWei) / 1e18;
@@ -1421,7 +1412,7 @@ for (const { addr, amount: partWei } of plan) {
             data: encodeFunctionData({
               abi: CrystalRouterAbi,
               functionName: 'sell',
-              args: [false, tokenAddress as `0x${string}`, amountWei * 2n, partMonWei],
+              args: [false, token.id as `0x${string}`, amountWei * 2n, partMonWei],
             }),
             value: 0n,
           };
@@ -1703,11 +1694,11 @@ useEffect(() => {
 
   const getSellButtonStatus = (value: string) => {
     if (!account?.connected) return true;
-    if (!tokenAddress) return true;
+    if (!token.id) return true;
 
     if (selectedWallets.size > 0) {
       const anySelectedHasTokens = Array.from(selectedWallets).some(
-        (a) => (walletTokenBalances[a]?.[tokenAddress] ?? 0n) > 0n,
+        (a) => (walletTokenBalances[a]?.[token.id] ?? 0n) > 0n,
       );
       return !anySelectedHasTokens;
     }
@@ -1938,7 +1929,7 @@ useEffect(() => {
                     {formatNumberWithCommas(Array.from(selectedWallets).reduce(
                     (sum, addr) => sum + getWalletTokenBalance(addr),
                     0,
-                  ), 2)} {tokenSymbol}
+                  ), 2)} {token.symbol}
                   </span>
                   •
                   <span className="quickbuy-usd-value">
@@ -2175,7 +2166,7 @@ useEffect(() => {
               subWallets.some(
                 (w) =>
                   w.address !== destinationAddr &&
-                  (walletTokenBalances[w.address]?.[tokenAddress!] ?? 0n) > 0n,
+                  (walletTokenBalances[w.address]?.[token.id!] ?? 0n) > 0n,
               );
 
             return (
@@ -2357,9 +2348,9 @@ useEffect(() => {
                                       <div
                                         className={`quickbuy-wallet-token-amount ${isBlurred ? 'blurred' : ''}`}
                                       >
-                                        {tokenImage && (
+                                        {token.image && (
                                           <img
-                                            src={tokenImage}
+                                            src={token.image}
                                             className="quickbuy-wallet-token-icon"
                                             onError={(e) => {
                                               e.currentTarget.style.display =
