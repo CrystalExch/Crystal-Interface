@@ -259,16 +259,16 @@ type State = {
 };
 
 type Action =
-| { type: 'INIT'; tokens: Token[] }
-| { type: 'ADD_MARKET'; token: Partial<Token> }
-| { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
-| { type: 'UPDATE_MARKET_BY_ADDRESS'; tokenAddress: string; updates: Partial<Token> }  // NEW
-| { type: 'GRADUATE_MARKET'; id: string }
-| { type: 'GRADUATE_MARKET_BY_ADDRESS'; tokenAddress: string }  // NEW
-| { type: 'HIDE_TOKEN'; id: string }
-| { type: 'SHOW_TOKEN'; id: string }
-| { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' }
-| { type: 'ADD_QUEUED_TOKENS'; payload: { status: Token['status']; tokens: Token[] } };
+  | { type: 'INIT'; tokens: Token[] }
+  | { type: 'ADD_MARKET'; token: Partial<Token> }
+  | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
+  | { type: 'UPDATE_MARKET_BY_ADDRESS'; tokenAddress: string; updates: Partial<Token> }  // NEW
+  | { type: 'GRADUATE_MARKET'; id: string }
+  | { type: 'GRADUATE_MARKET_BY_ADDRESS'; tokenAddress: string }  // NEW
+  | { type: 'HIDE_TOKEN'; id: string }
+  | { type: 'SHOW_TOKEN'; id: string }
+  | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' }
+  | { type: 'ADD_QUEUED_TOKENS'; payload: { status: Token['status']; tokens: Token[] } };
 
 interface AlertSettings {
   soundAlertsEnabled: boolean;
@@ -4544,7 +4544,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         startBlockNumber = '0x' + (parseInt(result[0].result, 16) - 30).toString(16);
         endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 10).toString(16);
         const tradelogs = result[1].result;
-      } catch {}
+      } catch { }
     };
 
     (async () => {
@@ -4582,7 +4582,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             const holdersRaw = Number(m.holders ?? 0);
             const devHoldingRaw = Number(m.developer_holding ?? 0);
             const top10HoldingRaw = Number(m.top10_holding ?? 0);
-
+            const launchpad = m.source === 1 ? 'nadfun' : 'crystal';
             const token: Token = {
               ...defaultMetrics,
               id: (m.token as string).toLowerCase(),
@@ -4609,6 +4609,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               holders: holdersRaw,
               devHolding: devHoldingRaw / 1e27,
               top10Holding: top10HoldingRaw / 1e25,
+              launchpad: launchpad,
             };
 
             tokens.push(token);
