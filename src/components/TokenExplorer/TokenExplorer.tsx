@@ -88,7 +88,7 @@ export interface Token {
   discordHandle: string;
   graduatedTokens: number;
   launchedTokens: number;
-  launchpad?: 'crystal' | 'nadfun';
+  source?: 'crystal' | 'nadfun';
 }
 
 type ColumnKey = 'new' | 'graduating' | 'graduated';
@@ -2479,7 +2479,7 @@ const TokenRow = React.memo<{
     <>
       <div
         ref={tokenRowRef}
-        className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${isBlacklisted ? 'blacklisted-token' : ''} ${token.launchpad === 'nadfun' ? 'nadfun-token' : ''} ${displaySettings.colorRows && token.status !== 'graduated'
+        className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${isBlacklisted ? 'blacklisted-token' : ''} ${token.source === 'nadfun' ? 'nadfun-token' : ''} ${displaySettings.colorRows && token.status !== 'graduated'
           ? `colored-row ${getBondingColorClass(bondingPercentage)}`
           : ''
           } ${metricData ? `metric-colored ${metricData.classes}` : ''} ${token.status === 'graduated' ? 'graduated' : ''}`}
@@ -2591,7 +2591,7 @@ const TokenRow = React.memo<{
                   <img className="camera-icon" src={camera} />
                 </div>
                 <div className="token-explorer-launchpad-logo-container">
-                  {token.launchpad === 'nadfun' ? (
+                  {token.source === 'nadfun' ? (
                     <Tooltip content="nad.fun">
                       <svg width="10" height="10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <defs>
@@ -2688,7 +2688,7 @@ const TokenRow = React.memo<{
           )}
 
           <span className="explorer-contract-address">
-            {token.tokenAddress.slice(0, 6)}…{token.tokenAddress.slice(-4)}
+            {token.id.slice(0, 6)}…{token.id.slice(-4)}
           </span>
         </div>
 
@@ -2699,7 +2699,7 @@ const TokenRow = React.memo<{
                 <h3 className="explorer-token-symbol">{token.symbol}</h3>
                 <div className="explorer-token-name-container" onClick={(e) => {
                   e.stopPropagation();
-                  onCopyToClipboard(token.tokenAddress);
+                  onCopyToClipboard(token.id);
                 }}
                   style={{ cursor: 'pointer' }}>
                   <Tooltip content="Click to copy address">
@@ -2707,7 +2707,7 @@ const TokenRow = React.memo<{
                       className="explorer-token-name"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onCopyToClipboard(token.tokenAddress);
+                        onCopyToClipboard(token.id);
                       }}
                       style={{ cursor: 'pointer' }}
                     >
@@ -2717,7 +2717,7 @@ const TokenRow = React.memo<{
                       className="explorer-copy-btn"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onCopyToClipboard(token.tokenAddress);
+                        onCopyToClipboard(token.id);
                       }}
                     >
                       <svg
@@ -2826,7 +2826,7 @@ const TokenRow = React.memo<{
 
                     <a
                       className="explorer-telegram-btn"
-                      href={`https://twitter.com/search?q=${token.tokenAddress}`}
+                      href={`https://twitter.com/search?q=${token.id}`}
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
@@ -3135,7 +3135,7 @@ const TokenRow = React.memo<{
             } else if (
               displaySettings.quickBuyClickBehavior === 'openNewTab'
             ) {
-              window.open(`/meme/${token.tokenAddress}`, '_blank');
+              window.open(`/meme/${token.id}`, '_blank');
             }
           }}
           onMouseMove={
@@ -3292,7 +3292,7 @@ const TokenRow = React.memo<{
                     } else if (
                       displaySettings.quickBuyClickBehavior === 'openNewTab'
                     ) {
-                      window.open(`/meme/${token.tokenAddress}`, '_blank');
+                      window.open(`/meme/${token.id}`, '_blank');
                     }
                   }}
                   disabled={isLoadingPrimary}
@@ -3357,7 +3357,6 @@ interface TokenExplorerProps {
   walletTokenBalances?: { [address: string]: any };
   activeWalletPrivateKey?: string;
   refetch: () => void;
-  tokenList?: any[];
   activechain: number;
   logout: () => void;
   lastRefGroupFetch: any;
@@ -3404,7 +3403,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   walletTokenBalances = {},
   activeWalletPrivateKey,
   // refetch,
-  tokenList = [],
   activechain,
   // logout,
   // lastRefGroupFetch,
@@ -3434,12 +3432,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       const balances = walletTokenBalances[addr];
       if (!balances) return 0n;
 
-      const ethToken = tokenList.find(
-        (t) => t.address === appSettings.chainConfig[activechain].eth,
-      );
-      if (!ethToken || !balances[ethToken.address]) return 0n;
+      if (!appSettings.chainConfig[activechain].eth || !balances[appSettings.chainConfig[activechain].eth]) return 0n;
 
-      let raw = balances[ethToken.address];
+      let raw = balances[appSettings.chainConfig[activechain].eth];
       if (raw <= 0n) return 0n;
 
       const gasReserve = BigInt(appSettings.chainConfig[activechain].gasamount ?? 0);
@@ -3447,7 +3442,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
       return safe;
     },
-    [walletTokenBalances, tokenList, activechain],
+    [walletTokenBalances, activechain],
   );
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [quickAmountsSecond, setQuickAmountsSecond] = useState<
@@ -3578,14 +3573,11 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const getWalletBalance = (address: string) => {
     const balances = walletTokenBalances[address];
-    if (!balances || !tokenList.length) return 0;
+    if (!balances) return 0;
 
-    const ethToken = tokenList.find(
-      (t) => t.address === appSettings.chainConfig[activechain]?.eth,
-    );
-    if (ethToken && balances[ethToken.address]) {
+    if (appSettings.chainConfig[activechain].eth && balances[appSettings.chainConfig[activechain].eth]) {
       return (
-        Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals)
+        Number(balances[appSettings.chainConfig[activechain].eth]) / 10 ** 18
       );
     }
     return 0;
@@ -3655,11 +3647,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       total += getWalletBalance(address);
     });
     return total;
-  }, [selectedWallets, walletTokenBalances, tokenList]);
+  }, [selectedWallets, walletTokenBalances]);
 
   const navigate = useNavigate();
-  const routerAddress =
-    appSettings.chainConfig[activechain].launchpadRouter.toLowerCase();
 
   const [activeMobileTab, setActiveMobileTab] =
     useState<Token['status']>('new');
@@ -3938,10 +3928,10 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           });
         }
 
-        const isNadFun = token.launchpad === 'nadfun';
+        const isNadFun = token.source === 'nadfun';
         const contractAddress = isNadFun
           ? appSettings.chainConfig[activechain].nadFunRouter
-          : routerAddress;
+          : appSettings.chainConfig[activechain].router;
 
         let remaining = val;
         const plan: { addr: string; amount: bigint }[] = [];
@@ -3989,7 +3979,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           }
           for (const { addr, amount: partWei } of plan) {
             if (partWei <= 0n) continue;
-
             const wally = subWallets.find((w) => w.address === addr);
             const pk = wally?.privateKey ?? activeWalletPrivateKey;
             if (!pk) continue;
@@ -4004,21 +3993,20 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                   functionName: 'buy',
                   args: [{
                     amountOutMin: 0n,
-                    token: token.dev as `0x${string}`,
+                    token: token.id as `0x${string}`,
                     to: account.address as `0x${string}`,
                     deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
                   }],
                 }),
                 value: partWei,
               };
-              console.log(uo);
             } else {
               uo = {
                 target: contractAddress as `0x${string}`,
                 data: encodeFunctionData({
                   abi: CrystalRouterAbi,
                   functionName: 'buy',
-                  args: [true, token.tokenAddress as `0x${string}`, partWei, 0n],
+                  args: [true, token.id as `0x${string}`, partWei, 0n],
                 }),
                 value: partWei,
               };
@@ -4047,12 +4035,10 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             transferPromises.push(transferPromise);
           }
         } else {
-          // Single wallet buy (account.address)
           if (account?.address) {
             let uo;
 
             if (isNadFun) {
-              // nad.fun buy
               uo = {
                 target: contractAddress as `0x${string}`,
                 data: encodeFunctionData({
@@ -4060,7 +4046,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                   functionName: 'buy',
                   args: [{
                     amountOutMin: 0n,
-                    token: token.dev as `0x${string}`,
+                    token: token.id as `0x${string}`,
                     to: account.address as `0x${string}`,
                     deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
                   }],
@@ -4068,13 +4054,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 value: val,
               };
             } else {
-              // Crystal buy
               uo = {
                 target: contractAddress as `0x${string}`,
                 data: encodeFunctionData({
                   abi: CrystalRouterAbi,
                   functionName: 'buy',
-                  args: [true, token.tokenAddress as `0x${string}`, val, 0n],
+                  args: [true, token.id as `0x${string}`, val, 0n],
                 }),
                 value: val,
               };
@@ -4127,7 +4112,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       }
     },
     [
-      routerAddress,
       sendUserOperationAsync,
       selectedWallets,
       subWallets,
@@ -4135,15 +4119,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       getMaxSpendableWei,
       account,
       nonces,
-      terminalRefetch,
-      activechain, // ADD THIS to dependencies
+      activechain,
     ],
   );
 
   const handleTokenClick = useCallback(
     (t: Token) => {
       setTokenData(t);
-      navigate(`/meme/${t.tokenAddress}`);
+      navigate(`/meme/${t.id}`);
     },
     [navigate],
   );
@@ -4337,7 +4320,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             case 'dev':
               return token.dev.toLowerCase() === itemText;
             case 'ca':
-              return token.tokenAddress.toLowerCase() === itemText;
+              return token.id.toLowerCase() === itemText;
             case 'keyword':
               const searchText =
                 `${token.name} ${token.symbol} ${token.description}`.toLowerCase();
@@ -4835,7 +4818,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
                         {alertSettings.soundAlertsEnabled && (
                           <Tooltip content="Alerts">
-
                             <button
                               className="alerts-popup-trigger"
                               onClick={() => setShowAlertsPopup(true)}

@@ -358,6 +358,7 @@ interface TokenInfoProps {
     developerAddress?: string;
     reserveQuote?: bigint;
     reserveBase?: bigint;
+    source?: 'nadfun' | 'crystal' | string;
   };
   isPerpsToken?: boolean;
   perpsActiveMarketKey: string;
@@ -1283,12 +1284,12 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       return <MemeTokenSkeleton />;
     }
     return (
-      <div className={`meme-interface-token-info-container-meme ${memeTokenData.status === 'graduated' ? 'graduated' : ''}`}>
+      <div className={`meme-interface-token-info-container-meme ${memeTokenData.status === 'graduated' ? 'graduated' : ''} ${memeTokenData.source === 'nadfun' ? 'nadfun-token' : ''} `}>
         <div className="meme-interface-token-header-info">
           <div className="meme-interface-token-header-left">
             <div className="meme-interface-token-icon-container">
               <div
-                className={`meme-interface-token-icon-wrapper ${memeTokenData.status === 'graduated' ? 'graduated' : ''}`}
+                className={`meme-interface-token-icon-wrapper ${memeTokenData.status === 'graduated' ? 'graduated' : ''} `}
                 ref={imageContainerRef}
                 style={
                   memeTokenData.status !== 'graduated'
@@ -1467,10 +1468,22 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     document.body,
                   )}
                 <div className="header-launchpad-logo-container">
-                  <Tooltip content="crystal.fun">
-                    <img src={crystal} className="header-launchpad-logo" />
-                  </Tooltip>
-
+                  {memeTokenData.source === 'nadfun' ? (
+                    <Tooltip content="nad.fun">
+                      <svg width="10" height="10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                          <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#7C55FF" stopOpacity="1" />
+                            <stop offset="100%" stopColor="#AD5FFB" stopOpacity="1" />
+                          </linearGradient>
+                        </defs>
+                        <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
+                      </svg>    </Tooltip>
+                  ) : (
+                    <Tooltip content="crystal.fun">
+                      <img src={crystal} className="header-launchpad-logo" />
+                    </Tooltip>
+                  )}
                 </div>
               </div>
 

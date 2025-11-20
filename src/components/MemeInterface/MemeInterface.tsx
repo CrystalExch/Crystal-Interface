@@ -99,7 +99,6 @@ interface MemeInterfaceProps {
     price: number;
   }) => void;
   nonces: any;
-  tokenAddress?: string;
   trades: Trade[];
   setTrades: React.Dispatch<React.SetStateAction<Trade[]>>;
   holders: Holder[];
@@ -338,7 +337,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   onTokenDataChange,
   nonces,
   marketsData,
-  tokenAddress,
   trades,
   setTrades,
   holders,
@@ -397,12 +395,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const getWalletTokenBalance = (address: string) => {
     const balances = walletTokenBalances[address];
-    if (!balances || !tokenAddress) return 0;
+    if (!balances || !token.id) return 0;
 
-    const balance = balances[tokenAddress];
+    const balance = balances[token.id];
     if (!balance || balance <= 0n) return 0;
 
-    const tokenInfo = tokenList.find((t) => t.address === tokenAddress);
+    const tokenInfo = tokenList.find((t) => t.address === token.id);
     const decimals = tokenInfo?.decimals || 18;
     return Number(balance) / 10 ** Number(decimals);
   };
@@ -473,7 +471,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   }, [subWallets, setSelectedWallets]);
 
   const handleConsolidateTokens = async () => {
-    if (!tokenAddress) return;
+    if (!token.id) return;
 
     if (selectedWallets.size !== 1) {
       const txId = `consolidate-error-${Date.now()}`;
@@ -497,7 +495,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     const sourceWallets = subWallets
       .map((w) => w.address)
       .filter((addr) => addr !== destinationAddr)
-      .filter((addr) => (walletTokenBalances[addr]?.[tokenAddress] ?? 0n) > 0n);
+      .filter((addr) => (walletTokenBalances[addr]?.[token.id] ?? 0n) > 0n);
 
     if (sourceWallets.length === 0) {
       const txId = `consolidate-error-${Date.now()}`;
@@ -530,12 +528,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         const sourceWallet = subWallets.find((w) => w.address === sourceAddr);
         if (!sourceWallet) continue;
 
-        const balance = walletTokenBalances[sourceAddr]?.[tokenAddress];
+        const balance = walletTokenBalances[sourceAddr]?.[token.id];
         if (!balance || balance <= 0n) continue;
 
         try {
           const uo = {
-            target: tokenAddress as `0x${string}`,
+            target: token.id as `0x${string}`,
             data: encodeFunctionData({
               abi: CrystalLaunchpadToken,
               functionName: 'transfer',
@@ -600,12 +598,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   };
 
   const handleSplitTokens = async () => {
-    if (selectedWallets.size === 0 || !tokenAddress) return;
+    if (selectedWallets.size === 0 || !token.id) return;
 
     const selected = Array.from(selectedWallets);
 
     const sourceAddr = selected.find(
-      (addr) => (walletTokenBalances[addr]?.[tokenAddress!] ?? 0n) > 0n,
+      (addr) => (walletTokenBalances[addr]?.[token.id!] ?? 0n) > 0n,
     );
     if (!sourceAddr) {
       const txId = `split-error-${Date.now()}`;
@@ -626,7 +624,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       return;
     }
     const sourceBalance: bigint =
-      walletTokenBalances[sourceAddr]?.[tokenAddress] ?? 0n;
+      walletTokenBalances[sourceAddr]?.[token.id] ?? 0n;
     if (sourceBalance <= 0n) {
       const txId = `split-error-${Date.now()}`;
       showLoadingPopup?.(txId, {
@@ -731,7 +729,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       for (const { to, amount } of plan) {
         try {
           const uo = {
-            target: tokenAddress as `0x${string}`,
+            target: token.id as `0x${string}`,
             data: encodeFunctionData({
               abi: CrystalLaunchpadToken,
               functionName: 'transfer',
@@ -1002,7 +1000,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const { activechain } = useSharedContext();
 
-  const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
+  const routerAddress = settings.chainConfig[activechain]?.router;
   const explorer = settings.chainConfig[activechain]?.explorer;
   const userAddr = address ?? account?.address ?? '';
   const [dragStart, setDragStart] = useState<{ y: number; height: number } | null>(null);
@@ -1527,7 +1525,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     if (
       !account?.connected ||
       !sendUserOperationAsync ||
-      !tokenAddress ||
+      !token.id ||
       !routerAddress
     ) {
       walletPopup.showConnectionError();
@@ -1598,7 +1596,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   }, [selectedWallets, walletTokenBalances, tokenList, activechain]);
 
   const getTotalSelectedWalletsTokenBalance = useCallback(() => {
-    if (!tokenAddress) return 0;
+    if (!token.id) return 0;
     if (selectedWallets.size == 0) {
       return (Number(walletTokenBalances?.[userAddr]?.[token.id] ?? 0) / 10 ** Number(token.decimals))
     }
@@ -1735,13 +1733,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   // backend stats
   useEffect(() => {
-    if (!tokenAddress) return;
+    if (!token.id) return;
 
     let disposed = false;
     let inFlight: AbortController | null = null;
 
     const origin = STATS_HTTP_BASE.replace(/\/$/, '');
-    const url = `${origin}/stats/${tokenAddress.toLowerCase()}`;
+    const url = `${origin}/stats/${token.id.toLowerCase()}`;
 
     const tick = async () => {
       if (disposed) return;
@@ -1778,7 +1776,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       inFlight?.abort();
       clearInterval(handle);
     };
-  }, [tokenAddress]);
+  }, [token.id]);
 
   const handlePresetEditToggle = useCallback(() => {
     setIsPresetEditMode(!isPresetEditMode);
@@ -1925,7 +1923,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
           const estimatedTokens = Number(token.reserveBase - vToken) / 1e18;
 
-          const isNadFun = token.launchpad === 'nadfun';
+          const isNadFun = token.source === 'nadfun';
           const contractAddress = isNadFun
             ? settings.chainConfig[activechain].nadFunRouter
             : routerAddress;
@@ -1956,7 +1954,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     functionName: 'buy',
                     args: [{
                       amountOutMin: 0n,
-                      token: token.dev as `0x${string}`,
+                      token: token.id as `0x${string}`,
                       to: walletAddr as `0x${string}`,
                       deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
                     }],
@@ -1975,7 +1973,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   data: encodeFunctionData({
                     abi: CrystalRouterAbi,
                     functionName: 'buy',
-                    args: [true, token.tokenAddress as `0x${string}`, value, BigInt(output)],
+                    args: [true, token.id as `0x${string}`, value, BigInt(output)],
                   }),
                   value,
                 };
@@ -2034,7 +2032,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           }
         } else {
           // Single wallet buy logic
-          const isNadFun = token.launchpad === 'nadfun';
+          const isNadFun = token.source === 'nadfun';
           const contractAddress = isNadFun
             ? settings.chainConfig[activechain].nadFunRouter
             : routerAddress;
@@ -2058,7 +2056,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 functionName: 'buy',
                 args: [{
                   amountOutMin: 0n,
-                  token: token.dev as `0x${string}`,
+                  token: token.id as `0x${string}`,
                   to: account.address as `0x${string}`,
                   deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
                 }],
@@ -2071,7 +2069,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               data: encodeFunctionData({
                 abi: CrystalRouterAbi,
                 functionName: 'buy',
-                args: [true, token.tokenAddress as `0x${string}`, value, 0n],
+                args: [true, token.id as `0x${string}`, value, 0n],
               }),
               value,
             };
@@ -2109,7 +2107,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             throw new Error('No selected wallets have tokens to sell');
           }
 
-          const isNadFun = token.launchpad === 'nadfun';
+          const isNadFun = token.source === 'nadfun';
           const sellContractAddress = isNadFun
             ? settings.chainConfig[activechain].nadFunRouter
             : routerAddress;
@@ -2197,7 +2195,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     functionName: 'sell',
                     args: [
                       true,
-                      tokenAddress as `0x${string}`,
+                      token.id as `0x${string}`,
                       amountTokenWei,
                       0n,
                     ],
@@ -2283,7 +2281,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     functionName: 'sell',
                     args: [
                       true,
-                      tokenAddress as `0x${string}`,
+                      token.id as `0x${string}`,
                       amountTokenWei,
                       0n,
                     ],
@@ -2375,7 +2373,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             throw new Error(walletPopup.texts.INSUFFICIENT_TOKEN_BALANCE);
           }
 
-          const isNadFun = token.launchpad === 'nadfun';
+          const isNadFun = token.source === 'nadfun';
           const sellContractAddress = isNadFun
             ? settings.chainConfig[activechain].nadFunRouter
             : routerAddress;
@@ -2410,7 +2408,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 functionName: 'sell',
                 args: [
                   isExactInput,
-                  tokenAddress as `0x${string}`,
+                  token.id as `0x${string}`,
                   amountTokenWei,
                   monAmountWei,
                 ],
@@ -2875,7 +2873,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 subWallets.some(
                   (w) =>
                     w.address !== destinationAddr &&
-                    (walletTokenBalances[w.address]?.[tokenAddress!] ?? 0n) > 0n,
+                    (walletTokenBalances[w.address]?.[token.id!] ?? 0n) > 0n,
                 );
 
               return (
@@ -4866,8 +4864,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           );
           setIsWidgetOpen(false);
         }}
-        tokenSymbol={token.symbol}
-        tokenAddress={tokenAddress}
+        token={token}
         tokenPrice={currentPrice}
         buySlippageValue={buySlippageValue}
         buyPriorityFee={buyPriorityFee}
@@ -4889,13 +4886,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         monUsdPrice={monUsdPrice}
         showUSD={showUSD}
         onToggleCurrency={handleToggleCurrency}
-        tokenImage={token.image}
         nonces={nonces}
         selectedWallets={selectedWallets}
         setSelectedWallets={setSelectedWallets}
         isTerminalDataFetching={isTerminalDataFetching}
-        tokenLaunchpad={token.launchpad}
-        tokenDev={token.dev}
       />
 
       {hoveredSimilarTokenImage &&
