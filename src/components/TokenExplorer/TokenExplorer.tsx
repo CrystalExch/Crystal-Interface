@@ -2688,7 +2688,7 @@ const TokenRow = React.memo<{
           )}
 
           <span className="explorer-contract-address">
-            {token.tokenAddress.slice(0, 6)}…{token.tokenAddress.slice(-4)}
+            {token.id.slice(0, 6)}…{token.id.slice(-4)}
           </span>
         </div>
 
@@ -2699,7 +2699,7 @@ const TokenRow = React.memo<{
                 <h3 className="explorer-token-symbol">{token.symbol}</h3>
                 <div className="explorer-token-name-container" onClick={(e) => {
                   e.stopPropagation();
-                  onCopyToClipboard(token.tokenAddress);
+                  onCopyToClipboard(token.id);
                 }}
                   style={{ cursor: 'pointer' }}>
                   <Tooltip content="Click to copy address">
@@ -2707,7 +2707,7 @@ const TokenRow = React.memo<{
                       className="explorer-token-name"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onCopyToClipboard(token.tokenAddress);
+                        onCopyToClipboard(token.id);
                       }}
                       style={{ cursor: 'pointer' }}
                     >
@@ -2717,7 +2717,7 @@ const TokenRow = React.memo<{
                       className="explorer-copy-btn"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onCopyToClipboard(token.tokenAddress);
+                        onCopyToClipboard(token.id);
                       }}
                     >
                       <svg
@@ -2826,7 +2826,7 @@ const TokenRow = React.memo<{
 
                     <a
                       className="explorer-telegram-btn"
-                      href={`https://twitter.com/search?q=${token.tokenAddress}`}
+                      href={`https://twitter.com/search?q=${token.id}`}
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
@@ -3135,7 +3135,7 @@ const TokenRow = React.memo<{
             } else if (
               displaySettings.quickBuyClickBehavior === 'openNewTab'
             ) {
-              window.open(`/meme/${token.tokenAddress}`, '_blank');
+              window.open(`/meme/${token.id}`, '_blank');
             }
           }}
           onMouseMove={
@@ -3292,7 +3292,7 @@ const TokenRow = React.memo<{
                     } else if (
                       displaySettings.quickBuyClickBehavior === 'openNewTab'
                     ) {
-                      window.open(`/meme/${token.tokenAddress}`, '_blank');
+                      window.open(`/meme/${token.id}`, '_blank');
                     }
                   }}
                   disabled={isLoadingPrimary}
@@ -3357,7 +3357,6 @@ interface TokenExplorerProps {
   walletTokenBalances?: { [address: string]: any };
   activeWalletPrivateKey?: string;
   refetch: () => void;
-  tokenList?: any[];
   activechain: number;
   logout: () => void;
   lastRefGroupFetch: any;
@@ -3404,7 +3403,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   walletTokenBalances = {},
   activeWalletPrivateKey,
   // refetch,
-  tokenList = [],
   activechain,
   // logout,
   // lastRefGroupFetch,
@@ -3434,12 +3432,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       const balances = walletTokenBalances[addr];
       if (!balances) return 0n;
 
-      const ethToken = tokenList.find(
-        (t) => t.address === appSettings.chainConfig[activechain].eth,
-      );
-      if (!ethToken || !balances[ethToken.address]) return 0n;
+      if (!appSettings.chainConfig[activechain].eth || !balances[appSettings.chainConfig[activechain].eth]) return 0n;
 
-      let raw = balances[ethToken.address];
+      let raw = balances[appSettings.chainConfig[activechain].eth];
       if (raw <= 0n) return 0n;
 
       const gasReserve = BigInt(appSettings.chainConfig[activechain].gasamount ?? 0);
@@ -3447,7 +3442,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
       return safe;
     },
-    [walletTokenBalances, tokenList, activechain],
+    [walletTokenBalances, activechain],
   );
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [quickAmountsSecond, setQuickAmountsSecond] = useState<
@@ -3578,14 +3573,11 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const getWalletBalance = (address: string) => {
     const balances = walletTokenBalances[address];
-    if (!balances || !tokenList.length) return 0;
+    if (!balances) return 0;
 
-    const ethToken = tokenList.find(
-      (t) => t.address === appSettings.chainConfig[activechain]?.eth,
-    );
-    if (ethToken && balances[ethToken.address]) {
+    if (appSettings.chainConfig[activechain].eth && balances[appSettings.chainConfig[activechain].eth]) {
       return (
-        Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals)
+        Number(balances[appSettings.chainConfig[activechain].eth]) / 10 ** 18
       );
     }
     return 0;
@@ -3655,7 +3647,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       total += getWalletBalance(address);
     });
     return total;
-  }, [selectedWallets, walletTokenBalances, tokenList]);
+  }, [selectedWallets, walletTokenBalances]);
 
   const navigate = useNavigate();
   const routerAddress =
@@ -4018,7 +4010,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 data: encodeFunctionData({
                   abi: CrystalRouterAbi,
                   functionName: 'buy',
-                  args: [true, token.tokenAddress as `0x${string}`, partWei, 0n],
+                  args: [true, token.id as `0x${string}`, partWei, 0n],
                 }),
                 value: partWei,
               };
@@ -4074,7 +4066,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 data: encodeFunctionData({
                   abi: CrystalRouterAbi,
                   functionName: 'buy',
-                  args: [true, token.tokenAddress as `0x${string}`, val, 0n],
+                  args: [true, token.id as `0x${string}`, val, 0n],
                 }),
                 value: val,
               };
@@ -4143,7 +4135,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const handleTokenClick = useCallback(
     (t: Token) => {
       setTokenData(t);
-      navigate(`/meme/${t.tokenAddress}`);
+      navigate(`/meme/${t.id}`);
     },
     [navigate],
   );
@@ -4337,7 +4329,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             case 'dev':
               return token.dev.toLowerCase() === itemText;
             case 'ca':
-              return token.tokenAddress.toLowerCase() === itemText;
+              return token.id.toLowerCase() === itemText;
             case 'keyword':
               const searchText =
                 `${token.name} ${token.symbol} ${token.description}`.toLowerCase();

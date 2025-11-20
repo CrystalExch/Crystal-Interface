@@ -290,6 +290,14 @@ interface TrackedWallet {
   lastActiveAt?: number | null;
 }
 
+interface TokenMetadata {
+  address: string;
+  symbol: string;
+  name: string;
+  icon?: string;
+  lastUpdated: number;
+}
+
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 const crystal = '/CrystalLogo.png';
 
@@ -5562,14 +5570,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     () => localStorage.getItem('meme_chart_timeframe') || '15s',
   );
   const memeSelectedIntervalRef = useRef<string>(memeSelectedInterval);
-
-  interface TokenMetadata {
-    address: string;
-    symbol: string;
-    name: string;
-    icon?: string;
-    lastUpdated: number;
-  }
 
   const tokenMetadataCache = useRef<Map<string, TokenMetadata>>(new Map());
   const pendingMetadataFetches = useRef<Map<string, Promise<TokenMetadata | null>>>(new Map());
@@ -25286,7 +25286,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 walletTokenBalances={walletTokenBalances}
                 activeWalletPrivateKey={oneCTSigner}
                 refetch={refetch}
-                tokenList={memoizedTokenList}
                 activechain={activechain}
                 logout={logout}
                 lastRefGroupFetch={lastRefGroupFetch}
@@ -25358,7 +25357,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setMonPresets={setMonPresets}
                 onTokenDataChange={setCurrentTokenData}
                 nonces={nonces}
-                tokenAddress={token.id}
                 trades={memeTrades}
                 setTrades={setMemeTrades}
                 holders={memeHolders}
