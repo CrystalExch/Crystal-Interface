@@ -26,10 +26,14 @@ interface WalletOperationPopupProps {
   walletName?: string;
   timestamp?: number;
   actionType?: 'buy' | 'sell';
+  walletAddress?: string;
+  onToggleNotifications?: (address: string) => void;
+  notificationsEnabled?: boolean;
 }
 
 const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
   isVisible,
+  type,
   title,
   subtitle,
   tokenImage,
@@ -43,6 +47,9 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
   walletName,
   timestamp,
   actionType,
+  walletAddress,
+  onToggleNotifications,
+  notificationsEnabled = true,
 }) => {
   const [shouldRender, setShouldRender] = useState(false);
   const [exiting, setExiting] = useState(false);
@@ -79,7 +86,12 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
       onClose();
     }, 300);
   };
-
+  const handleToggleNotifications = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (walletAddress && onToggleNotifications) {
+      onToggleNotifications(walletAddress);
+    }
+  };
   const renderSubtitleWithImage = () => {
     if (!subtitle) return null;
 
@@ -173,7 +185,7 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
                     {timestamp && (
                       <span className={`tracker-wallet-popup-timestamp ${actionType === 'buy' ? 'action-buy' : actionType === 'sell' ? 'action-sell' : ''}`}>{formatTimestamp(timestamp)}</span>
                     )}
-                    <div className="crystal-launchpad-tracker-noti"><img className="tracker-noti-crystal-icon" src={crystal}/></div>
+                    <div className="crystal-launchpad-tracker-noti"><img className="tracker-noti-crystal-icon" src={crystal} /></div>
                     <div className="wallet-popup-wallet-name-row">
                       <span className="wallet-popup-wallet-name">{walletEmoji} {walletName}</span>
                       {isLoading ? 'Confirming transaction' : (
@@ -261,6 +273,26 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
 
           </div>
         </div>
+
+        {type === 'wallet_trade' && walletEmoji && walletName && !isLoading && (
+          <button
+            className="wallet-popup-notification-toggle"
+            onClick={handleToggleNotifications}
+            title={notificationsEnabled ? "Disable notifications" : "Enable notifications"}
+          >
+            {notificationsEnabled ? (
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="rgb(235, 112, 112)" stroke="rgb(235, 112, 112)" strokeWidth="1.5">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="rgba(255, 255, 255, 0.5)" strokeWidth="1.5">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            )}
+          </button>
+        )}
 
         <button className="wallet-popup-close" onClick={(e) => {
           e.stopPropagation();

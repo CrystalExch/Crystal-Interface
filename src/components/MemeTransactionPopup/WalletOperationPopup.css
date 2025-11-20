@@ -432,3 +432,26 @@
   border: 1px solid #aaaecf;
   background-color: black;
 }
+
+
+.wallet-popup-notification-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  padding: 0;
+  margin-right: 8px;
+  margin-top: -15px;
+  flex-shrink: 0;
+}
+
+.wallet-popup-notification-toggle:hover {
+  opacity: 0.8;
+}
+
+.wallet-popup-notification-toggle svg {
+  pointer-events: none;
+}

@@ -1578,3 +1578,22 @@
   width: 220px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
+
+.wtw-master-notification-toggle {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.wtw-master-notification-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wtw-master-notification-btn svg {
+  pointer-events: none;
+}
