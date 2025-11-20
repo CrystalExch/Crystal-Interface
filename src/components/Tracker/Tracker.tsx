@@ -1695,8 +1695,8 @@ const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveT
 }, [account?.address]);
 
   // Quick buy
-  const handleQuickBuy = useCallback(async (tokenAddress: string, tokenSymbol: string, tokenImage?: string) => {
-    const amt = '1'; // Always buy 1 MON worth
+  const handleQuickBuy = useCallback(async (tokenAddress: string, tokenSymbol: string, tokenImage?: string, amount?: string) => {
+    const amt = amount || '1';
     const val = BigInt(amt || '0') * 10n ** 18n;
     if (val === 0n) return;
 
@@ -1834,7 +1834,7 @@ const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveT
   const [walletCurrency, setWalletCurrency] = useState<'USD' | 'MON'>('USD');
 
   // Monitor column state
-  const [quickAmounts, setQuickAmounts] = useState({ launchpad: '', orderbook: '' });
+  const [quickAmounts, setQuickAmounts] = useState({ launchpad: '1', orderbook: '1' });
   const [activePresets, setActivePresets] = useState<Record<string, number>>({ launchpad: 1, orderbook: 1 });
   const [pausedColumn, setPausedColumn] = useState<string | null>(null);
   const [mobileActiveColumn, setMobileActiveColumn] = useState<'launchpad' | 'orderbook'>('launchpad');
@@ -1940,7 +1940,8 @@ const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveT
   };
 
   const setQuickAmount = (column: string, value: string) => {
-    setQuickAmounts(prev => ({ ...prev, [column]: value }));
+    const clean = value.replace(/[^0-9.]/g, '');
+    setQuickAmounts(prev => ({ ...prev, [column]: clean }));
   };
 
   const setActivePreset = (column: string, preset: number) => {
@@ -4244,10 +4245,66 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
     });
 
     // Get graduated tokens for orderbook column (bondingCurveProgress === 100 but not already marked as orderbook from migration)
-    const graduatedPositions = allPositions.filter(pos => {
+    const graduatedPositionsRaw = allPositions.filter(pos => {
       if (pos.isOrderbook) return false; // These are already in orderbook via migration
       const market = marketsRef.current.get(pos.tokenId.toLowerCase());
       return market && market.bondingCurveProgress === 100;
+    });
+
+    const graduatedPositions: GqlPosition[] = [];
+    const graduatedTokenMap = new Map<string, { position: GqlPosition, wallets: any[] }>();
+
+    graduatedPositionsRaw.forEach(pos => {
+      const tokenId = pos.tokenId.toLowerCase();
+      if (!graduatedTokenMap.has(tokenId)) {
+        graduatedTokenMap.set(tokenId, {
+          position: {
+            tokenId: pos.tokenId,
+            symbol: pos.symbol,
+            name: pos.name,
+            imageUrl: pos.imageUrl,
+            boughtTokens: 0,
+            soldTokens: 0,
+            spentNative: 0,
+            receivedNative: 0,
+            remainingTokens: 0,
+            remainingPct: 0,
+            pnlNative: 0,
+            lastPrice: pos.lastPrice,
+            isOrderbook: false
+          },
+          wallets: []
+        });
+      }
+
+      const entry = graduatedTokenMap.get(tokenId)!;
+      entry.position.boughtTokens += pos.boughtTokens;
+      entry.position.soldTokens += pos.soldTokens;
+      entry.position.spentNative += pos.spentNative;
+      entry.position.receivedNative += pos.receivedNative;
+      entry.position.remainingTokens += pos.remainingTokens;
+      entry.position.pnlNative += pos.pnlNative;
+      if (pos.lastPrice > entry.position.lastPrice) {
+        entry.position.lastPrice = pos.lastPrice;
+      }
+      if (pos.imageUrl && !entry.position.imageUrl) {
+        entry.position.imageUrl = pos.imageUrl;
+      }
+
+      entry.wallets.push({
+        name: (pos as any).walletName,
+        emoji: (pos as any).walletEmoji,
+        address: (pos as any).walletAddress,
+        balance: pos.remainingTokens,
+        pnl: pos.pnlNative,
+        spent: pos.spentNative,
+        received: pos.receivedNative
+      });
+    });
+
+    graduatedTokenMap.forEach((entry, tokenId) => {
+      (entry.position as any).wallets = entry.wallets;
+      graduatedPositions.push(entry.position);
     });
 
     // Get migrated orderbook positions from GraphQL (these have isOrderbook: true)
@@ -4362,15 +4419,20 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
       aggregatedOrderbookPositions.push(entry.position);
     });
 
-    // Deduplicate: Keep launchpad versions (graduatedPositions) over orderbook versions
-    // Graduated tokens have actual trade data, while migrated orderbook positions may just have balance info
-    const graduatedTokenIds = new Set(graduatedPositions.map(p => p.tokenId.toLowerCase()));
+    const spotTokenIds = new Set(aggregatedOrderbookPositions.map(p => p.tokenId.toLowerCase()));
+    const dedupedGraduatedPositions = graduatedPositions.filter(
+      pos => !spotTokenIds.has(pos.tokenId.toLowerCase())
+    );
     const dedupedMigratedPositions = migratedOrderbookPositions.filter(
+      pos => !spotTokenIds.has(pos.tokenId.toLowerCase())
+    );
+
+    const graduatedTokenIds = new Set(dedupedGraduatedPositions.map(p => p.tokenId.toLowerCase()));
+    const finalMigratedPositions = dedupedMigratedPositions.filter(
       pos => !graduatedTokenIds.has(pos.tokenId.toLowerCase())
     );
 
-    // Combine spot tokens, graduated tokens, and deduplicated migrated orderbook tokens for orderbook column
-    const orderbookPositions = [...aggregatedOrderbookPositions, ...graduatedPositions, ...dedupedMigratedPositions];
+    const orderbookPositions = [...aggregatedOrderbookPositions, ...dedupedGraduatedPositions, ...finalMigratedPositions];
 
     const formatTimeAgo = (timestamp: number | undefined): string => {
       if (!timestamp) return '—';
@@ -5040,13 +5102,15 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                   ? `style-${displaySettings.quickBuyStyle}`
                   : `ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`;
                 const buttonClass = `tracker-monitor-quickbuy-btn ${sizeClass} ${modeClass}`;
+                const columnType = pos.isOrderbook ? 'orderbook' : 'launchpad';
+                const amount = quickAmounts[columnType] || '1';
 
                 return (
                   <button
                     className={buttonClass}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleQuickBuy(pos.tokenId, tokenSymbol, pos.imageUrl);
+                      handleQuickBuy(pos.tokenId, tokenSymbol, pos.imageUrl, amount);
                     }}
                   >
                     <svg
@@ -5056,7 +5120,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                     >
                       <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86 c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833 c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86 c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18 c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
                     </svg>
-                    1 MON
+                    {amount} MON
                   </button>
                 );
               })()}
