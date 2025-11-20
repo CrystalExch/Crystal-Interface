@@ -1135,7 +1135,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       return;
     }
 
-    // ✅ Reserve pending funds
     setPendingSpend((prev) => {
       const updated = new Map(prev);
       for (const { addr, amount } of plan) {
@@ -1239,7 +1238,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         isLoading: false,
       });
     } finally {
-      // ✅ Release pending funds
       setPendingSpend((prev) => {
         const updated = new Map(prev);
         for (const { addr, amount } of plan) {

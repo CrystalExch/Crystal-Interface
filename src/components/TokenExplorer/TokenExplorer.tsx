@@ -3981,7 +3981,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           }
           for (const { addr, amount: partWei } of plan) {
             if (partWei <= 0n) continue;
-
             const wally = subWallets.find((w) => w.address === addr);
             const pk = wally?.privateKey ?? activeWalletPrivateKey;
             if (!pk) continue;
@@ -3996,14 +3995,13 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                   functionName: 'buy',
                   args: [{
                     amountOutMin: 0n,
-                    token: token.dev as `0x${string}`,
+                    token: token.id as `0x${string}`,
                     to: account.address as `0x${string}`,
                     deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
                   }],
                 }),
                 value: partWei,
               };
-              console.log(uo);
             } else {
               uo = {
                 target: contractAddress as `0x${string}`,
@@ -4039,12 +4037,10 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             transferPromises.push(transferPromise);
           }
         } else {
-          // Single wallet buy (account.address)
           if (account?.address) {
             let uo;
 
             if (isNadFun) {
-              // nad.fun buy
               uo = {
                 target: contractAddress as `0x${string}`,
                 data: encodeFunctionData({
@@ -4052,7 +4048,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                   functionName: 'buy',
                   args: [{
                     amountOutMin: 0n,
-                    token: token.dev as `0x${string}`,
+                    token: token.id as `0x${string}`,
                     to: account.address as `0x${string}`,
                     deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
                   }],
@@ -4060,7 +4056,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 value: val,
               };
             } else {
-              // Crystal buy
               uo = {
                 target: contractAddress as `0x${string}`,
                 data: encodeFunctionData({
@@ -4127,8 +4122,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       getMaxSpendableWei,
       account,
       nonces,
-      terminalRefetch,
-      activechain, // ADD THIS to dependencies
+      activechain,
     ],
   );
 

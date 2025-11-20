@@ -595,7 +595,7 @@ export const settings: any = {
         },
       },
       nadFunBondingCurve: '0x52D34d8536350Cd997bCBD0b9E9d722452f341F5' as `0x${string}`,
-      nadFunRouter: '0x4F5A3518F082275edf59026f72B66AC2838c0414' as `0x${string}`,
+      nadFunRouter: '0xF57F14335e9670ed2C0CeF4A59fB707Cf2eB3FAC' as `0x${string}`,
       nadFunDexRouter: '0x4FBDC27FAE5f99E7B09590bEc8Bf20481FCf9551' as `0x${string}`,
       nadFunFactory: '0x961235a9020B05C44DF1026D956D1F4D78014276' as `0x${string}`,
     },

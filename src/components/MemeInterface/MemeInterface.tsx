@@ -1954,7 +1954,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     functionName: 'buy',
                     args: [{
                       amountOutMin: 0n,
-                      token: token.dev as `0x${string}`,
+                      token: token.id as `0x${string}`,
                       to: walletAddr as `0x${string}`,
                       deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
                     }],
@@ -2056,7 +2056,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 functionName: 'buy',
                 args: [{
                   amountOutMin: 0n,
-                  token: token.dev as `0x${string}`,
+                  token: token.id as `0x${string}`,
                   to: account.address as `0x${string}`,
                   deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
                 }],
