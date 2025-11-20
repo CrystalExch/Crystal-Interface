@@ -3651,7 +3651,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const navigate = useNavigate();
   const routerAddress =
-    appSettings.chainConfig[activechain].launchpadRouter.toLowerCase();
+    appSettings.chainConfig[activechain].sourceRouter.toLowerCase();
 
   const [activeMobileTab, setActiveMobileTab] =
     useState<Token['status']>('new');

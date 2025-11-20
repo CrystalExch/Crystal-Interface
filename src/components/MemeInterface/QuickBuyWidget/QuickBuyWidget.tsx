@@ -1153,7 +1153,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         const wally = subWallets.find((w) => w.address === addr);
         const pk = wally?.privateKey ?? activeWalletPrivateKey;
         if (!pk) continue;
-        const isNadFun = token.launchpad === 'nadfun';
+        const isNadFun = token.source === 'nadfun';
         const contractAddress = isNadFun
           ? settings.chainConfig[activechain].nadFunRouter
           : routerAddress;

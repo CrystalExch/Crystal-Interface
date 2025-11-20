@@ -1000,7 +1000,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const { activechain } = useSharedContext();
 
-  const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
+  const routerAddress = settings.chainConfig[activechain]?.sourceRouter;
   const explorer = settings.chainConfig[activechain]?.explorer;
   const userAddr = address ?? account?.address ?? '';
   const [dragStart, setDragStart] = useState<{ y: number; height: number } | null>(null);
@@ -1923,7 +1923,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
           const estimatedTokens = Number(token.reserveBase - vToken) / 1e18;
 
-          const isNadFun = token.launchpad === 'nadfun';
+          const isNadFun = token.source === 'nadfun';
           const contractAddress = isNadFun
             ? settings.chainConfig[activechain].nadFunRouter
             : routerAddress;
@@ -2032,7 +2032,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           }
         } else {
           // Single wallet buy logic
-          const isNadFun = token.launchpad === 'nadfun';
+          const isNadFun = token.source === 'nadfun';
           const contractAddress = isNadFun
             ? settings.chainConfig[activechain].nadFunRouter
             : routerAddress;
@@ -2107,7 +2107,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             throw new Error('No selected wallets have tokens to sell');
           }
 
-          const isNadFun = token.launchpad === 'nadfun';
+          const isNadFun = token.source === 'nadfun';
           const sellContractAddress = isNadFun
             ? settings.chainConfig[activechain].nadFunRouter
             : routerAddress;
@@ -2373,7 +2373,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             throw new Error(walletPopup.texts.INSUFFICIENT_TOKEN_BALANCE);
           }
 
-          const isNadFun = token.launchpad === 'nadfun';
+          const isNadFun = token.source === 'nadfun';
           const sellContractAddress = isNadFun
             ? settings.chainConfig[activechain].nadFunRouter
             : routerAddress;
