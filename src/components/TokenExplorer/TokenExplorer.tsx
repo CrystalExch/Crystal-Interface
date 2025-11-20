@@ -88,7 +88,7 @@ export interface Token {
   discordHandle: string;
   graduatedTokens: number;
   launchedTokens: number;
-  source: string;
+  source?: 'crystal' | 'nadfun';
 }
 
 type ColumnKey = 'new' | 'graduating' | 'graduated';
@@ -3650,8 +3650,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   }, [selectedWallets, walletTokenBalances]);
 
   const navigate = useNavigate();
-  const routerAddress =
-    appSettings.chainConfig[activechain].sourceRouter.toLowerCase();
 
   const [activeMobileTab, setActiveMobileTab] =
     useState<Token['status']>('new');
@@ -3933,7 +3931,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         const isNadFun = token.source === 'nadfun';
         const contractAddress = isNadFun
           ? appSettings.chainConfig[activechain].nadFunRouter
-          : routerAddress;
+          : appSettings.chainConfig[activechain].router;
 
         let remaining = val;
         const plan: { addr: string; amount: bigint }[] = [];
@@ -4114,7 +4112,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       }
     },
     [
-      routerAddress,
       sendUserOperationAsync,
       selectedWallets,
       subWallets,

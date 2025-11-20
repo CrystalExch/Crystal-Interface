@@ -4631,928 +4631,929 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (!cancelled) setIsTokenExplorerLoading(false);
       }
     })();
-    // const connectWebSocket = () => {
-    //   if (cancelled) return;
-    //   explorerWsRef.current = new WebSocket(WS_URL);
-
-    //   explorerWsRef.current.onopen = () => {
-    //     const subscriptionMessages = [
-    //       JSON.stringify({
-    //         jsonrpc: '2.0',
-    //         id: 'sub1',
-    //         method: 'eth_subscribe',
-    //         params: [
-    //           'monadLogs',
-    //           {
-    //             address: settings.chainConfig[activechain].router,
-    //             topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT, '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']],
-    //           },
-    //         ],
-    //       }),
-    //       JSON.stringify({
-    //         jsonrpc: '2.0',
-    //         id: 'sub_nadfun',
-    //         method: 'eth_subscribe',
-    //         params: [
-    //           'monadLogs',
-    //           {
-    //             address: nadFunBondingCurve,
-    //             topics: [
-    //               [
-    //                 NAD_FUN_EVENTS.CurveCreate,
-    //                 NAD_FUN_EVENTS.CurveBuy,
-    //                 NAD_FUN_EVENTS.CurveSell,
-    //                 NAD_FUN_EVENTS.CurveTokenListed,
-    //               ]
-    //             ],
-    //           },
-    //         ],
-    //       }),
-    //       ...(address?.slice(2) ? [
-    //         JSON.stringify({
-    //           jsonrpc: '2.0',
-    //           id: 'sub2',
-    //           method: 'eth_subscribe',
-    //           params: [
-    //             'monadLogs',
-    //             {
-    //               address: settings.chainConfig[activechain].router,
-    //               topics: [
-    //                 [
-    //                   '0xa195980963150be5fcca4acd6a80bf5a9de7f9c862258501b7c705e7d2c2d2f4',
-    //                   '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c'
-    //                 ],
-    //                 null,
-    //                 '0x000000000000000000000000' + address?.slice(2),
-    //               ],
-    //             },
-    //           ],
-    //         })] : [])
-    //     ];
-
-    //     explorerPingIntervalRef.current = setInterval(() => {
-    //       if (explorerWsRef.current?.readyState === WebSocket.OPEN) {
-    //         explorerWsRef.current.send(JSON.stringify({
-    //           jsonrpc: '2.0',
-    //           id: 'ping',
-    //           method: 'eth_syncing'
-    //         }));
-    //       }
-    //     }, 15000);
-
-    //     subscriptionMessages.forEach((message) => {
-    //       explorerWsRef.current?.send(message);
-    //     });
-    //   };
-
-    //   explorerWsRef.current.onmessage = ({ data }) => {
-    //     try {
-    //       const msg = JSON.parse(data);
-    //       if (msg.method !== 'eth_subscription' || !msg.params?.result)
-    //         return;
-    //       const log = msg.params?.result;
-
-    //       if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
-
-    //       setProcessedLogs(prev => {
-    //         let tempset = new Set(prev);
-    //         const resolve = txReceiptResolvers.current.get(log['transactionHash']);
-    //         if (resolve) {
-    //           resolve();
-    //           txReceiptResolvers.current.delete(log['transactionHash']);
-    //         }
-
-    //         if (log.topics?.[0] === TRADE_EVENT) {
-    //           const marketAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
-    //           const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
-
-    //           const mcfg = markets[addresstoMarket[marketAddr]];
-    //           if (!mcfg || !mcfg.baseAddress) return tempset;
-    //           const tokenAddrFromMarket = (mcfg.baseAddress || '').toLowerCase();
-
-    //           const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
-    //           const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
-
-    //           const isBuy = word(0) !== 0n;
-    //           const amountInWei = word(1);
-    //           const amountOutWei = word(2);
-
-    //           const amountIn = Number(amountInWei) / (10 ** Number(isBuy ? mcfg.quoteDecimals : mcfg.baseDecimals));
-    //           const amountOut = Number(amountOutWei) / (10 ** Number(isBuy ? mcfg.baseDecimals : mcfg.quoteDecimals));
-
-    //           const priceFactor = Number(mcfg.priceFactor || 1);
-
-    //           const startPrice = priceFactor ? (Number(word(3)) / priceFactor) : 0
-    //           const endPrice = priceFactor ? (Number(word(4)) / priceFactor) : 0
-
-    //           dispatch({
-    //             type: 'UPDATE_MARKET',
-    //             id: tokenAddrFromMarket,
-    //             updates: {
-    //               price: endPrice,
-    //               marketCap: endPrice * TOTAL_SUPPLY,
-    //               buyTransactions: isBuy ? 1 : 0,
-    //               sellTransactions: isBuy ? 0 : 1,
-    //               volumeDelta:
-    //                 isBuy == true ? Number(amountIn) / 1e18 : Number(amountOut) / 1e18,
-    //             },
-    //           });
-
-    //           if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
-    //             const mcfg = markets[addresstoMarket[marketAddr]];
-
-    //             const tradeId = `${log.transactionHash}-${log.logIndex}`;
-
-    //             if (processedTradeIds.current.has(tradeId)) {
-    //               console.log('[TrackedTrade] Skipping duplicate orderbook trade:', tradeId);
-    //               return tempset;
-    //             }
-
-    //             const cachedMetadata = getCachedTokenMetadata(tokenAddrFromMarket);
-    //             const symbol = cachedMetadata?.symbol || mcfg?.baseAsset || 'TKN';
-    //             const name = cachedMetadata?.name || mcfg?.baseAsset || 'Unknown';
-    //             const icon = cachedMetadata?.icon || mcfg?.icon || undefined;
-
-    //             const normalized = normalizeTrade({
-    //               caller: callerAddr,
-    //               id: tradeId,  
-    //               isBuy: isBuy,
-    //               price: endPrice,
-    //               symbol: symbol,
-    //               name: name,
-    //               tokenAddress: tokenAddrFromMarket,
-    //               tokenIcon: icon,
-    //               amountIn,
-    //               amountOut,
-    //               timestamp: Date.now(),
-    //             }, trackedWalletsRef.current);
-
-    //             processedTradeIds.current.add(tradeId);
-
-    //             setTrackedWalletTrades(prev => {
-    //               if (prev.some(t => t.id === tradeId)) {
-    //                 return prev;
-    //               }
-
-    //               const updated = [normalized, ...prev];
-    //               const kept = updated.slice(0, 50);
-    //               const keptIds = new Set(kept.map(t => t.id));
-
-    //               processedTradeIds.current = new Set(
-    //                 Array.from(processedTradeIds.current).filter(id => keptIds.has(id))
-    //               );
-
-    //               return kept;
-    //             });
-
-    //             if (!cachedMetadata) {
-    //               getTokenMetadata(tokenAddrFromMarket, {
-    //                 symbol: mcfg?.baseAsset,
-    //                 name: mcfg?.baseAsset,
-    //                 icon: mcfg?.icon,
-    //               }).then(metadata => {
-    //                 if (metadata) {
-    //                   setTrackedWalletTrades(prev =>
-    //                     prev.map(t =>
-    //                       t.id === tradeId  
-    //                         ? { ...t, token: metadata.symbol, tokenName: metadata.name, tokenIcon: metadata.icon }
-    //                         : t
-    //                     )
-    //                   );
-    //                 }
-    //               });
-    //             }
-    //           }
-    //           if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
-    //           setTokenData(p => ({
-    //             ...p,
-    //             price: endPrice,
-    //             marketCap: endPrice * TOTAL_SUPPLY,
-    //             change24h: p?.mini?.[0]?.open ? ((endPrice * 1e9 - p?.mini?.[0]?.open) / (p?.mini?.[0]?.open) * 100) : p?.change24h,
-    //             buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
-    //             sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
-    //             volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
-    //           }));
-
-    //           setMemeTrades(prev => [
-    //             {
-    //               id: `${log.transactionHash}-${log.logIndex}`,
-    //               timestamp: Date.now() / 1000,
-    //               isBuy,
-    //               price: endPrice,
-    //               nativeAmount: isBuy ? amountIn : amountOut,
-    //               tokenAmount: isBuy ? amountOut : amountIn,
-    //               caller: `0x${log.topics[2].slice(26)}`,
-    //             },
-    //             ...prev.slice(0, 99),
-    //           ]);
-
-    //           setChartData((prev: any) => {
-    //             if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
-    //             const [bars, key, flag] = prev;
-    //             const sel = key?.split('MON').pop() || ''
-    //             const RESOLUTION_SECS: Record<string, number> = {
-    //               '1S': 1, '5S': 5, '15S': 15, '1m': 60, '5m': 300, '15m': 900,
-    //               '1h': 3600, '4h': 14400, '1d': 86400,
-    //             };
-    //             const resSecs = RESOLUTION_SECS[sel] ?? 60;
-    //             const now = Date.now();
-    //             const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
-    //             const volNative = isBuy ? amountIn : amountOut;
-    //             const updated = [...bars];
-    //             const last = updated[updated.length - 1];
-    //             if (!last || last.time < bucket) {
-    //               const prevClose = last?.close ?? startPrice;
-    //               const open = prevClose;
-    //               const high = Math.max(open, Math.max(startPrice, endPrice));
-    //               const low = Math.min(open, Math.min(startPrice, endPrice));
-    //               const newBar = {
-    //                 time: bucket,
-    //                 open,
-    //                 high,
-    //                 low,
-    //                 close: endPrice,
-    //                 volume: volNative || 0,
-    //               };
-    //               updated.push(newBar);
-    //               const cb =
-    //                 memeRealtimeCallbackRef.current?.[key];
-    //               if (cb) cb(newBar);
-    //             } else {
-    //               const cur = { ...last };
-    //               cur.high = Math.max(cur.high, Math.max(startPrice, endPrice));
-    //               cur.low = Math.min(cur.low, Math.min(startPrice, endPrice));
-    //               cur.close = endPrice;
-    //               cur.volume = (cur.volume || 0) + (volNative || 0);
-    //               updated[updated.length - 1] = cur;
-    //               const cb =
-    //                 memeRealtimeCallbackRef.current?.[key];
-    //               if (cb) cb(cur);
-    //             }
-    //             if (updated.length > 1200) updated.splice(0, updated.length - 1200);
-    //             return [updated, key, flag];
-    //           });
-
-    //           setMemeHolders(prev => {
-    //             const arr = prev.slice();
-    //             let idx = memeHoldersMapRef.current.get?.(callerAddr);
-    //             if (idx == undefined) {
-    //               const fresh: Holder = {
-    //                 address: `0x${log.topics[2].slice(26)}`,
-    //                 balance: 0,
-    //                 amountBought: 0,
-    //                 amountSold: 0,
-    //                 valueBought: 0,
-    //                 valueSold: 0,
-    //                 valueNet: 0,
-    //                 tokenNet: 0,
-    //               };
-    //               arr.push(fresh);
-    //               idx = arr.length - 1;
-    //               memeHoldersMapRef.current.set(callerAddr, idx);
-    //             }
-    //             const h = { ...arr[idx] };
-    //             if (isBuy) {
-    //               h.amountBought = (h.amountBought || 0) + amountOut;
-    //               h.valueBought = (h.valueBought || 0) + amountIn;
-    //               h.balance = (h.balance || 0) + amountOut;
-    //             } else {
-    //               h.amountSold = (h.amountSold || 0) + amountIn;
-    //               h.valueSold = (h.valueSold || 0) + amountOut;
-    //               h.balance = Math.max(0, (h.balance || 0) - amountIn);
-    //             }
-    //             arr[idx] = h;
-
-    //             for (let i = 0; i < arr.length; i++) {
-    //               const hh = arr[i];
-    //               const realized = (hh.valueSold || 0) - (hh.valueBought || 0);
-    //               const bal = Math.max(0, hh.balance || 0);
-    //               arr[i] = { ...hh, valueNet: realized + bal * endPrice };
-    //             }
-
-    //             const topSum = arr
-    //               .map(hh => Math.max(0, hh.balance || 0))
-    //               .sort((a, b) => b - a)
-    //               .slice(0, 10)
-    //               .reduce((s, n) => s + n, 0);
-    //             setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
-    //             return arr;
-    //           });
-
-    //           setMemeTopTraders(prev => {
-    //             const copy = Array.isArray(prev) ? [...prev] : [];
-    //             const key = callerAddr;
-    //             let idx = memeTopTradersMapRef.current.get(key) ?? -1;
-
-    //             if (idx === -1) {
-    //               const row: Holder = {
-    //                 address: `0x${log.topics[2].slice(26)}`,
-    //                 balance: 0, tokenNet: 0, valueNet: 0,
-    //                 amountBought: 0, amountSold: 0,
-    //                 valueBought: 0, valueSold: 0,
-    //               };
-    //               copy.push(row);
-    //               idx = copy.length - 1;
-    //               memeTopTradersMapRef.current.set(key, idx);
-    //             }
-
-    //             const row = { ...copy[idx] };
-    //             const curBal = Math.max(0, (row.balance ?? row.amountBought - row.amountSold) || 0);
-    //             if (isBuy) {
-    //               row.amountBought = (row.amountBought || 0) + amountOut;
-    //               row.valueBought = (row.valueBought || 0) + amountIn;
-    //               row.balance = curBal + amountOut;
-    //             } else {
-    //               row.amountSold = (row.amountSold || 0) + amountIn;
-    //               row.valueSold = (row.valueSold || 0) + amountOut;
-    //               row.balance = Math.max(0, curBal - amountIn);
-    //             }
-    //             row.tokenNet = (row.amountBought || 0) - (row.amountSold || 0);
-    //             copy[idx] = row;
-
-    //             for (let i = 0; i < copy.length; i++) {
-    //               const r = copy[i];
-    //               const bal = Math.max(0, (r.balance ?? r.amountBought - r.amountSold) || 0);
-    //               const realized = (r.valueSold || 0) - (r.valueBought || 0);
-    //               copy[i] = { ...r, valueNet: realized + bal * endPrice };
-    //             }
-
-    //             copy.sort((a, b) => b.valueNet - a.valueNet);
-    //             if (copy.length > 300) {
-    //               const removed = copy.splice(300);
-    //               for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
-    //             }
-    //             copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
-    //             return copy;
-    //           });
-
-    //           setMemePositions(prev => {
-    //             const copy = Array.isArray(prev) ? [...prev] : [];
-    //             const allUserAddresses = [
-    //               (address || '').toLowerCase(),
-    //               ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
-    //             ];
-    //             const isUserTrade = allUserAddresses.includes(callerAddr);
-
-    //             let idx = memePositionsMapRef.current.get(tokenAddrFromMarket);
-    //             if (idx === undefined && isUserTrade) {
-    //               const newPos = {
-    //                 tokenId: memeRef.current.id?.toLowerCase(),
-    //                 symbol: memeRef.current?.symbol || '',
-    //                 name: memeRef.current?.name || '',
-    //                 imageUrl: memeRef.current?.image || '',
-    //                 metadataCID: '',
-    //                 boughtTokens: 0,
-    //                 soldTokens: 0,
-    //                 spentNative: 0,
-    //                 receivedNative: 0,
-    //                 remainingTokens: 0,
-    //                 remainingPct: 0,
-    //                 pnlNative: 0,
-    //                 lastPrice: endPrice,
-    //               };
-    //               copy.push(newPos);
-    //               idx = copy.length - 1;
-    //               memePositionsMapRef.current.set(tokenAddrFromMarket, idx);
-    //             }
-    //             if (idx === undefined) return prev;
-
-    //             const pos = { ...copy[idx] };
-    //             pos.lastPrice = endPrice;
-    //             if (isUserTrade) {
-    //               if (isBuy) {
-    //                 pos.boughtTokens += amountOut;
-    //                 pos.spentNative += amountIn;
-    //                 pos.remainingTokens = (pos.remainingTokens || 0) + amountOut;
-    //               } else {
-    //                 pos.soldTokens += amountIn;
-    //                 pos.receivedNative += amountOut;
-    //                 pos.remainingTokens = Math.max(0, (pos.remainingTokens || 0) - amountIn);
-    //               }
-    //             }
-    //             pos.remainingPct = pos.boughtTokens > 0
-    //               ? (pos.remainingTokens / pos.boughtTokens) * 100
-    //               : 0;
-
-    //             const balance = Math.max(0, pos.remainingTokens);
-    //             const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
-    //             const unrealized = balance * (pos.lastPrice || 0);
-    //             pos.pnlNative = realized + unrealized;
-
-    //             copy[idx] = pos;
-
-    //             if (memeRef.current.id && tokenAddrFromMarket === memeRef.current.id.toLowerCase()) {
-    //               const markToMarket = balance * (pos.lastPrice || 0);
-    //               const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
-    //               setMemeUserStats({
-    //                 balance,
-    //                 amountBought: pos.boughtTokens || 0,
-    //                 amountSold: pos.soldTokens || 0,
-    //                 valueBought: pos.spentNative || 0,
-    //                 valueSold: pos.receivedNative || 0,
-    //                 valueNet: totalPnL,
-    //               });
-    //             }
-    //             return copy;
-    //           });
-
-    //           if (memeDevTokenIdsRef.current.has(tokenAddrFromMarket)) {
-    //             setMemeDevTokens(prev => {
-    //               const updated = prev.map(t => {
-    //                 if ((t.id || '').toLowerCase() !== tokenAddrFromMarket) return t;
-    //                 return { ...t, endPrice, marketCap: endPrice * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
-    //               });
-    //               memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
-    //               return updated;
-    //             });
-    //           }
-
-    //           return tempset;
-    //         }
-    //         else if (log.topics?.[0] === MARKET_CREATED_EVENT) {
-    //           addMarket(log);
-    //         }
-    //         else if (log.topics?.[0] === MARKET_UPDATE_EVENT) {
-    //           updateMarket(log);
-    //           const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
-    //           const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
-
-    //           const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
-    //           const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
-
-    //           const isBuy = word(0) !== 0n;
-    //           const inputAmountWei = word(1);
-    //           const outputAmountWei = word(2);
-    //           const vNativeWei = word(3);
-    //           const vTokenWei = word(4);
-
-    //           const toNum = (x: bigint) => Number(x) / 1e18;
-    //           const amountIn = toNum(inputAmountWei);
-    //           const amountOut = toNum(outputAmountWei);
-    //           const vNative = Number(vNativeWei);
-    //           const vToken = Number(vTokenWei);
-
-    //           const price = vToken === 0 ? 0 : vNative / vToken;
-
-    //           if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
-    //             const tradeId = `${log.transactionHash}-${log.logIndex}`;
-
-    //             if (processedTradeIds.current.has(tradeId)) {
-    //               return tempset;
-    //             }
-    //             const cachedMetadata = getCachedTokenMetadata(tokenAddr);
-
-    //             let tokenInfo: any = null;
-    //             if (!cachedMetadata) {
-    //               Object.values(tokensByStatus).forEach((tokens: any[]) => {
-    //                 const found = tokens.find(t => t.tokenAddress?.toLowerCase() === tokenAddr);
-    //                 if (found) tokenInfo = found;
-    //               });
-    //             }
-
-    //             const symbol = cachedMetadata?.symbol || tokenInfo?.symbol || 'TKN';
-    //             const name = cachedMetadata?.name || tokenInfo?.name || 'Unknown';
-    //             const icon = cachedMetadata?.icon || tokenInfo?.image || undefined;
-
-    //             const normalized = normalizeTrade({
-    //               caller: callerAddr,
-    //               id: tradeId,  
-    //               isBuy: isBuy,
-    //               price: price,
-    //               symbol: symbol,
-    //               name: name,
-    //               tokenAddress: tokenAddr,
-    //               tokenIcon: icon,
-    //               amountIn: amountIn,
-    //               amountOut: amountOut,
-    //               timestamp: Date.now(),
-    //             }, trackedWalletsRef.current);
-
-    //             processedTradeIds.current.add(tradeId);
-
-    //             setTrackedWalletTrades(prev => {
-    //               if (prev.some(t => t.id === tradeId)) {
-    //                 return prev;
-    //               }
-
-    //               const updated = [normalized, ...prev];
-    //               const kept = updated.slice(0, 50);
-    //               const keptIds = new Set(kept.map(t => t.id));
-    //               processedTradeIds.current = new Set(
-    //                 Array.from(processedTradeIds.current).filter(id => keptIds.has(id))
-    //               );
-
-    //               return kept;
-    //             });
-
-    //             if (!cachedMetadata && !tokenInfo) {
-    //               getTokenMetadata(tokenAddr).then(metadata => {
-    //                 if (metadata) {
-    //                   setTrackedWalletTrades(prev =>
-    //                     prev.map(t =>
-    //                       t.id === tradeId 
-    //                         ? { ...t, token: metadata.symbol, tokenName: metadata.name, tokenIcon: metadata.icon }
-    //                         : t
-    //                     )
-    //                   );
-    //                 }
-    //               });
-    //             }
-    //           }
-
-
-    //           if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
-    //             setTokenData(p => ({
-    //               ...p,
-    //               price,
-    //               marketCap: price * TOTAL_SUPPLY,
-    //               change24h: p?.mini?.[0]?.open ? ((price * 1e9 - p?.mini?.[0]?.open) / (p?.mini?.[0]?.open) * 100) : p?.change24h,
-    //               buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
-    //               sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
-    //               volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
-    //             }));
-
-    //             setMemeTrades(prev => [
-    //               {
-    //                 id: `${log.transactionHash}-${log.logIndex}`,
-    //                 timestamp: Date.now() / 1000,
-    //                 isBuy,
-    //                 price: price,
-    //                 nativeAmount: isBuy ? amountIn : amountOut,
-    //                 tokenAmount: isBuy ? amountOut : amountIn,
-    //                 caller: `0x${log.topics[2].slice(26)}`,
-    //               },
-    //               ...prev.slice(0, 99),
-    //             ]);
-
-    //             setChartData((prev: any) => {
-    //               if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
-    //               const [bars, key, flag] = prev;
-    //               const sel = key?.split('MON').pop() || ''
-    //               const RESOLUTION_SECS: Record<string, number> = {
-    //                 '1S': 1, '5S': 5, '15S': 15, '1m': 60, '5m': 300, '15m': 900,
-    //                 '1h': 3600, '4h': 14400, '1d': 86400,
-    //               };
-    //               const resSecs = RESOLUTION_SECS[sel] ?? 60;
-    //               const now = Date.now();
-    //               const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
-    //               const volNative = isBuy ? amountIn : amountOut;
-
-    //               const updated = [...bars];
-    //               const last = updated[updated.length - 1];
-
-    //               if (!last || last.time < bucket) {
-    //                 const prevClose = last?.close ?? price;
-    //                 const open = prevClose;
-    //                 const high = Math.max(open, price);
-    //                 const low = Math.min(open, price);
-    //                 const newBar = {
-    //                   time: bucket,
-    //                   open,
-    //                   high,
-    //                   low,
-    //                   close: price,
-    //                   volume: volNative || 0,
-    //                 };
-    //                 updated.push(newBar);
-    //                 const cb =
-    //                   memeRealtimeCallbackRef.current?.[key];
-    //                 if (cb) cb(newBar);
-    //               } else {
-    //                 const cur = { ...last };
-    //                 cur.high = Math.max(cur.high, price);
-    //                 cur.low = Math.min(cur.low, price);
-    //                 cur.close = price;
-    //                 cur.volume = (cur.volume || 0) + (volNative || 0);
-    //                 updated[updated.length - 1] = cur;
-    //                 const cb =
-    //                   memeRealtimeCallbackRef.current?.[key];
-    //                 if (cb) cb(cur);
-    //               }
-    //               if (updated.length > 1200) updated.splice(0, updated.length - 1200);
-    //               return [updated, key, flag];
-    //             });
-
-    //             setMemeHolders(prev => {
-    //               const arr = prev.slice();
-    //               let idx = memeHoldersMapRef.current.get?.(callerAddr);
-    //               if (idx == undefined) {
-    //                 const fresh: Holder = {
-    //                   address: `0x${log.topics[2].slice(26)}`,
-    //                   balance: 0,
-    //                   amountBought: 0,
-    //                   amountSold: 0,
-    //                   valueBought: 0,
-    //                   valueSold: 0,
-    //                   valueNet: 0,
-    //                   tokenNet: 0,
-    //                 };
-    //                 arr.push(fresh);
-    //                 idx = arr.length - 1;
-    //                 memeHoldersMapRef.current.set(callerAddr, idx);
-    //               }
-    //               const h = { ...arr[idx] };
-    //               if (isBuy) {
-    //                 h.amountBought = (h.amountBought || 0) + amountOut;
-    //                 h.valueBought = (h.valueBought || 0) + amountIn;
-    //                 h.balance = (h.balance || 0) + amountOut;
-    //               } else {
-    //                 h.amountSold = (h.amountSold || 0) + amountIn;
-    //                 h.valueSold = (h.valueSold || 0) + amountOut;
-    //                 h.balance = Math.max(0, (h.balance || 0) - amountIn);
-    //               }
-    //               arr[idx] = h;
-
-    //               for (let i = 0; i < arr.length; i++) {
-    //                 const h = arr[i];
-    //                 const realized = (h.valueSold || 0) - (h.valueBought || 0);
-    //                 const bal = Math.max(0, h.balance || 0);
-    //                 arr[i] = { ...h, valueNet: realized + bal * price };
-    //               }
-    //               const topSum = arr.map(h => Math.max(0, h.balance || 0)).sort((a, b) => b - a).slice(0, 10).reduce((s, n) => s + n, 0);
-    //               setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
-    //               return arr;
-    //             });
-
-    //             setMemeTopTraders(prev => {
-    //               const copy = Array.isArray(prev) ? [...prev] : [];
-    //               const key = callerAddr;
-    //               let idx = memeTopTradersMapRef.current.get(key) ?? -1;
-
-    //               if (idx === -1) {
-    //                 const row: Holder = {
-    //                   address: `0x${log.topics[2].slice(26)}`,
-    //                   balance: 0, tokenNet: 0, valueNet: 0,
-    //                   amountBought: 0, amountSold: 0,
-    //                   valueBought: 0, valueSold: 0,
-    //                 };
-    //                 copy.push(row);
-    //                 idx = copy.length - 1;
-    //                 memeTopTradersMapRef.current.set(key, idx);
-    //               }
-
-    //               const row = { ...copy[idx] };
-    //               const curBal = Math.max(0, (row.balance ?? row.amountBought - row.amountSold) || 0);
-    //               if (isBuy) {
-    //                 row.amountBought = (row.amountBought || 0) + amountOut;
-    //                 row.valueBought = (row.valueBought || 0) + amountIn;
-    //                 row.balance = curBal + amountOut;
-    //               } else {
-    //                 row.amountSold = (row.amountSold || 0) + amountIn;
-    //                 row.valueSold = (row.valueSold || 0) + amountOut;
-    //                 row.balance = Math.max(0, curBal - amountIn);
-    //               }
-    //               row.tokenNet = (row.amountBought || 0) - (row.amountSold || 0);
-    //               copy[idx] = row;
-
-    //               for (let i = 0; i < copy.length; i++) {
-    //                 const r = copy[i];
-    //                 const bal = Math.max(0, (r.balance ?? r.amountBought - r.amountSold) || 0);
-    //                 const realized = (r.valueSold || 0) - (r.valueBought || 0);
-    //                 copy[i] = { ...r, valueNet: realized + bal * price };
-    //               }
-
-    //               copy.sort((a, b) => b.valueNet - a.valueNet);
-    //               if (copy.length > 300) {
-    //                 const removed = copy.splice(300);
-    //                 for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
-    //               }
-    //               copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
-    //               return copy;
-    //             });
-
-    //             setMemePositions(prev => {
-    //               const copy = Array.isArray(prev) ? [...prev] : [];
-    //               const allUserAddresses = [
-    //                 (address || '').toLowerCase(),
-    //                 ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
-    //               ];
-    //               const isUserTrade = allUserAddresses.includes(callerAddr);
-    //               let idx = memePositionsMapRef.current.get(tokenAddr);
-
-    //               if (idx === undefined && isUserTrade) {
-    //                 const newPos = {
-    //                   tokenId: memeRef.current.id?.toLowerCase(),
-    //                   symbol: memeRef.current?.symbol || '',
-    //                   name: memeRef.current?.name || '',
-    //                   imageUrl: memeRef.current?.image || '',
-    //                   metadataCID: '',
-    //                   boughtTokens: 0,
-    //                   soldTokens: 0,
-    //                   spentNative: 0,
-    //                   receivedNative: 0,
-    //                   remainingTokens: 0,
-    //                   remainingPct: 0,
-    //                   pnlNative: 0,
-    //                   lastPrice: price,
-    //                 };
-    //                 copy.push(newPos);
-    //                 idx = copy.length - 1;
-    //                 memePositionsMapRef.current.set(tokenAddr, idx);
-    //               }
-    //               if (idx === undefined) return prev;
-
-    //               const pos = { ...copy[idx] };
-    //               pos.lastPrice = price;
-    //               if (isUserTrade) {
-    //                 if (isBuy) {
-    //                   pos.boughtTokens += amountOut;
-    //                   pos.spentNative += amountIn;
-    //                   pos.remainingTokens += amountOut;
-    //                 } else {
-    //                   pos.soldTokens += amountIn;
-    //                   pos.receivedNative += amountOut;
-    //                   pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
-    //                 }
-    //               }
-    //               pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
-
-    //               const balance = Math.max(0, pos.remainingTokens);
-    //               const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
-    //               const unrealized = balance * (pos.lastPrice || 0);
-    //               pos.pnlNative = realized + unrealized;
-
-    //               copy[idx] = pos;
-
-    //               if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
-    //                 const markToMarket = balance * (pos.lastPrice || 0);
-    //                 const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
-    //                 setMemeUserStats({
-    //                   balance,
-    //                   amountBought: pos.boughtTokens || 0,
-    //                   amountSold: pos.soldTokens || 0,
-    //                   valueBought: pos.spentNative || 0,
-    //                   valueSold: pos.receivedNative || 0,
-    //                   valueNet: totalPnL,
-    //                 });
-    //               }
-    //               return copy;
-    //             });
-
-    //             if (memeDevTokenIdsRef.current.has(tokenAddr)) {
-    //               setMemeDevTokens(prev => {
-    //                 const updated = prev.map(t => {
-    //                   if ((t.id || '').toLowerCase() !== tokenAddr) return t;
-    //                   return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
-    //                 });
-    //                 memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
-    //                 return updated;
-    //               });
-    //             }
-    //           }
-    //           return tempset;
-    //         }
-    //         else if (log.topics?.[0] == '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098') {
-    //           const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
-    //           dispatch({
-    //             type: 'GRADUATE_MARKET',
-    //             id: tokenAddr,
-    //           });
-    //           if (!memeRef.current.id || tokenAddr !== memeRef.current.id.toLowerCase()) return tempset;
-    //           setTokenData(p => ({
-    //             ...p,
-    //             status: 'graduated'
-    //           }));
-    //         }
-    //         else if (log.topics?.[0] === NAD_FUN_EVENTS.CurveCreate) {
-    //           const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
-    //           const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
-
-    //           const metadataOffset = Number(word(2)) * 2;
-    //           const metadataLength = Number(BigInt('0x' + hex.slice(metadataOffset, metadataOffset + 64)));
-    //           const metadataStart = metadataOffset + 64;
-    //           const metadataHex = hex.slice(metadataStart, metadataStart + metadataLength * 2);
-
-    //           let metadataURI = '';
-    //           try {
-    //             metadataURI = decodeURIComponent(metadataHex.match(/.{1,2}/g)?.map((byte: string) => '%' + byte).join('') || '');
-    //           } catch {
-    //             const bytes = metadataHex.match(/.{1,2}/g) || [];
-    //             metadataURI = bytes.map((byte: string) => String.fromCharCode(parseInt(byte, 16))).join('');
-    //           }
-
-    //           const tokenAddress = `0x${log.topics[1].slice(26)}`.toLowerCase();
-    //           const creatorAddress = `0x${log.topics[2].slice(26)}`.toLowerCase();
-
-    //           console.log('nad.fun Token Created:', tokenAddress);
-
-    //           fetch(metadataURI)
-    //             .then(response => response.json())
-    //             .then(metadata => {
-    //               const newToken: Token = {
-    //                 ...defaultMetrics,
-    //                 id: tokenAddress,
-    //                 tokenAddress: tokenAddress,
-    //                 dev: creatorAddress,
-    //                 name: metadata.name || 'Unknown',
-    //                 symbol: metadata.symbol || 'UNKNOWN',
-    //                 image: metadata.image_uri || '',
-    //                 description: metadata.description || '',
-    //                 twitterHandle: metadata.twitter || '',
-    //                 telegramHandle: metadata.telegram || '',
-    //                 discordHandle: '',
-    //                 website: metadata.website || '',
-    //                 status: 'new',
-    //                 created: Date.now() / 1000,
-    //                 price: 0,
-    //                 marketCap: 0,
-    //                 volumeDelta: 0,
-    //                 graduatedTokens: 0,
-    //                 launchedTokens: 0,
-    //                 launchpad: 'nadfun',
-    //               };
-
-    //               if (pausedColumnRef.current === 'new') {
-    //                 console.log('Column paused, queueing token:', tokenAddress);
-    //                 pausedTokenQueueRef.current['new'].push(newToken);
-    //               } else {
-    //                 console.log('Adding token directly:', tokenAddress);
-    //                 dispatch({
-    //                   type: 'ADD_QUEUED_TOKENS',
-    //                   payload: {
-    //                     status: 'new',
-    //                     tokens: [newToken]
-    //                   }
-    //                 });
-    //               }
-    //             })
-    //             .catch(err => {
-    //               console.error('Failed to fetch nad.fun metadata:', err);
-    //               const newToken: Token = {
-    //                 ...defaultMetrics,
-    //                 id: tokenAddress,
-    //                 tokenAddress: tokenAddress,
-    //                 dev: creatorAddress,
-    //                 name: tokenAddress.slice(0, 8) + '...',
-    //                 symbol: 'NAD',
-    //                 image: '',
-    //                 description: '',
-    //                 twitterHandle: '',
-    //                 telegramHandle: '',
-    //                 discordHandle: '',
-    //                 website: '',
-    //                 status: 'new',
-    //                 created: Date.now() / 1000,
-    //                 price: 0,
-    //                 marketCap: 0,
-    //                 volumeDelta: 0,
-    //                 graduatedTokens: 0,
-    //                 launchedTokens: 0,
-    //                 launchpad: 'nadfun',
-    //               };
-
-    //               if (pausedColumnRef.current === 'new') {
-    //                 pausedTokenQueueRef.current['new'].push(newToken);
-    //               } else {
-    //                 dispatch({
-    //                   type: 'ADD_QUEUED_TOKENS',
-    //                   payload: {
-    //                     status: 'new',
-    //                     tokens: [newToken]
-    //                   }
-    //                 });
-    //               }
-    //             });
-    //         }
-    //         return tempset;
-    //       })
-    //     } catch (parseError) {
-    //       console.warn('Failed to parse WebSocket message:', parseError);
-    //     }
-    //   };
-
-    //   explorerWsRef.current.onclose = () => {
-    //     if (explorerPingIntervalRef.current) {
-    //       clearInterval(explorerPingIntervalRef.current);
-    //       explorerPingIntervalRef.current = null;
-    //     }
-    //     explorerReconnectIntervalRef.current = setTimeout(() => {
-    //       connectWebSocket();
-    //     }, 500);
-    //   };
-
-    //   explorerWsRef.current.onerror = (error) => {
-    //     console.error(error)
-    //   };
-    // };
-
-    // connectWebSocket();
-
-    // return () => {
-    //   cancelled = true;
-    //   if (explorerPingIntervalRef.current) {
-    //     clearInterval(explorerPingIntervalRef.current);
-    //     explorerPingIntervalRef.current = null;
-    //   }
-    //   if (explorerReconnectIntervalRef.current) {
-    //     clearTimeout(explorerReconnectIntervalRef.current);
-    //     explorerReconnectIntervalRef.current = null;
-    //   }
-    //   if (explorerWsRef.current) {
-    //     explorerWsRef.current.close();
-    //     explorerWsRef.current = null;
-    //   }
-    // };
+
+    const connectWebSocket = () => {
+      if (cancelled) return;
+      explorerWsRef.current = new WebSocket(WS_URL);
+
+      explorerWsRef.current.onopen = () => {
+        const subscriptionMessages = [
+          JSON.stringify({
+            jsonrpc: '2.0',
+            id: 'sub1',
+            method: 'eth_subscribe',
+            params: [
+              'monadLogs',
+              {
+                address: settings.chainConfig[activechain].router,
+                topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT, '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']],
+              },
+            ],
+          }),
+          JSON.stringify({
+            jsonrpc: '2.0',
+            id: 'sub_nadfun',
+            method: 'eth_subscribe',
+            params: [
+              'monadLogs',
+              {
+                address: nadFunBondingCurve,
+                topics: [
+                  [
+                    NAD_FUN_EVENTS.CurveCreate,
+                    NAD_FUN_EVENTS.CurveBuy,
+                    NAD_FUN_EVENTS.CurveSell,
+                    NAD_FUN_EVENTS.CurveTokenListed,
+                  ]
+                ],
+              },
+            ],
+          }),
+          ...(address?.slice(2) ? [
+            JSON.stringify({
+              jsonrpc: '2.0',
+              id: 'sub2',
+              method: 'eth_subscribe',
+              params: [
+                'monadLogs',
+                {
+                  address: settings.chainConfig[activechain].router,
+                  topics: [
+                    [
+                      '0xa195980963150be5fcca4acd6a80bf5a9de7f9c862258501b7c705e7d2c2d2f4',
+                      '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c'
+                    ],
+                    null,
+                    '0x000000000000000000000000' + address?.slice(2),
+                  ],
+                },
+              ],
+            })] : [])
+        ];
+
+        explorerPingIntervalRef.current = setInterval(() => {
+          if (explorerWsRef.current?.readyState === WebSocket.OPEN) {
+            explorerWsRef.current.send(JSON.stringify({
+              jsonrpc: '2.0',
+              id: 'ping',
+              method: 'eth_syncing'
+            }));
+          }
+        }, 15000);
+
+        subscriptionMessages.forEach((message) => {
+          explorerWsRef.current?.send(message);
+        });
+      };
+
+      explorerWsRef.current.onmessage = ({ data }) => {
+        try {
+          const msg = JSON.parse(data);
+          if (msg.method !== 'eth_subscription' || !msg.params?.result)
+            return;
+          const log = msg.params?.result;
+
+          if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
+
+          setProcessedLogs(prev => {
+            let tempset = new Set(prev);
+            const resolve = txReceiptResolvers.current.get(log['transactionHash']);
+            if (resolve) {
+              resolve();
+              txReceiptResolvers.current.delete(log['transactionHash']);
+            }
+
+            if (log.topics?.[0] === TRADE_EVENT) {
+              const marketAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+              const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
+
+              const mcfg = markets[addresstoMarket[marketAddr]];
+              if (!mcfg || !mcfg.baseAddress) return tempset;
+              const tokenAddrFromMarket = (mcfg.baseAddress || '').toLowerCase();
+
+              const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+              const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
+
+              const isBuy = word(0) !== 0n;
+              const amountInWei = word(1);
+              const amountOutWei = word(2);
+
+              const amountIn = Number(amountInWei) / (10 ** Number(isBuy ? mcfg.quoteDecimals : mcfg.baseDecimals));
+              const amountOut = Number(amountOutWei) / (10 ** Number(isBuy ? mcfg.baseDecimals : mcfg.quoteDecimals));
+
+              const priceFactor = Number(mcfg.priceFactor || 1);
+
+              const startPrice = priceFactor ? (Number(word(3)) / priceFactor) : 0
+              const endPrice = priceFactor ? (Number(word(4)) / priceFactor) : 0
+
+              dispatch({
+                type: 'UPDATE_MARKET',
+                id: tokenAddrFromMarket,
+                updates: {
+                  price: endPrice,
+                  marketCap: endPrice * TOTAL_SUPPLY,
+                  buyTransactions: isBuy ? 1 : 0,
+                  sellTransactions: isBuy ? 0 : 1,
+                  volumeDelta:
+                    isBuy == true ? Number(amountIn) / 1e18 : Number(amountOut) / 1e18,
+                },
+              });
+
+              if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
+                const mcfg = markets[addresstoMarket[marketAddr]];
+
+                const tradeId = `${log.transactionHash}-${log.logIndex}`;
+
+                if (processedTradeIds.current.has(tradeId)) {
+                  console.log('[TrackedTrade] Skipping duplicate orderbook trade:', tradeId);
+                  return tempset;
+                }
+
+                const cachedMetadata = getCachedTokenMetadata(tokenAddrFromMarket);
+                const symbol = cachedMetadata?.symbol || mcfg?.baseAsset || 'TKN';
+                const name = cachedMetadata?.name || mcfg?.baseAsset || 'Unknown';
+                const icon = cachedMetadata?.icon || mcfg?.icon || undefined;
+
+                const normalized = normalizeTrade({
+                  caller: callerAddr,
+                  id: tradeId,  
+                  isBuy: isBuy,
+                  price: endPrice,
+                  symbol: symbol,
+                  name: name,
+                  tokenAddress: tokenAddrFromMarket,
+                  tokenIcon: icon,
+                  amountIn,
+                  amountOut,
+                  timestamp: Date.now(),
+                }, trackedWalletsRef.current);
+
+                processedTradeIds.current.add(tradeId);
+
+                setTrackedWalletTrades(prev => {
+                  if (prev.some(t => t.id === tradeId)) {
+                    return prev;
+                  }
+
+                  const updated = [normalized, ...prev];
+                  const kept = updated.slice(0, 50);
+                  const keptIds = new Set(kept.map(t => t.id));
+
+                  processedTradeIds.current = new Set(
+                    Array.from(processedTradeIds.current).filter(id => keptIds.has(id))
+                  );
+
+                  return kept;
+                });
+
+                if (!cachedMetadata) {
+                  getTokenMetadata(tokenAddrFromMarket, {
+                    symbol: mcfg?.baseAsset,
+                    name: mcfg?.baseAsset,
+                    icon: mcfg?.icon,
+                  }).then(metadata => {
+                    if (metadata) {
+                      setTrackedWalletTrades(prev =>
+                        prev.map(t =>
+                          t.id === tradeId  
+                            ? { ...t, token: metadata.symbol, tokenName: metadata.name, tokenIcon: metadata.icon }
+                            : t
+                        )
+                      );
+                    }
+                  });
+                }
+              }
+              if (!memeRef.current.id || tokenAddrFromMarket !== memeRef.current.id.toLowerCase()) return tempset;
+              setTokenData(p => ({
+                ...p,
+                price: endPrice,
+                marketCap: endPrice * TOTAL_SUPPLY,
+                change24h: p?.mini?.[0]?.open ? ((endPrice * 1e9 - p?.mini?.[0]?.open) / (p?.mini?.[0]?.open) * 100) : p?.change24h,
+                buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
+                sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
+                volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
+              }));
+
+              setMemeTrades(prev => [
+                {
+                  id: `${log.transactionHash}-${log.logIndex}`,
+                  timestamp: Date.now() / 1000,
+                  isBuy,
+                  price: endPrice,
+                  nativeAmount: isBuy ? amountIn : amountOut,
+                  tokenAmount: isBuy ? amountOut : amountIn,
+                  caller: `0x${log.topics[2].slice(26)}`,
+                },
+                ...prev.slice(0, 99),
+              ]);
+
+              setChartData((prev: any) => {
+                if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
+                const [bars, key, flag] = prev;
+                const sel = key?.split('MON').pop() || ''
+                const RESOLUTION_SECS: Record<string, number> = {
+                  '1S': 1, '5S': 5, '15S': 15, '1m': 60, '5m': 300, '15m': 900,
+                  '1h': 3600, '4h': 14400, '1d': 86400,
+                };
+                const resSecs = RESOLUTION_SECS[sel] ?? 60;
+                const now = Date.now();
+                const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
+                const volNative = isBuy ? amountIn : amountOut;
+                const updated = [...bars];
+                const last = updated[updated.length - 1];
+                if (!last || last.time < bucket) {
+                  const prevClose = last?.close ?? startPrice;
+                  const open = prevClose;
+                  const high = Math.max(open, Math.max(startPrice, endPrice));
+                  const low = Math.min(open, Math.min(startPrice, endPrice));
+                  const newBar = {
+                    time: bucket,
+                    open,
+                    high,
+                    low,
+                    close: endPrice,
+                    volume: volNative || 0,
+                  };
+                  updated.push(newBar);
+                  const cb =
+                    memeRealtimeCallbackRef.current?.[key];
+                  if (cb) cb(newBar);
+                } else {
+                  const cur = { ...last };
+                  cur.high = Math.max(cur.high, Math.max(startPrice, endPrice));
+                  cur.low = Math.min(cur.low, Math.min(startPrice, endPrice));
+                  cur.close = endPrice;
+                  cur.volume = (cur.volume || 0) + (volNative || 0);
+                  updated[updated.length - 1] = cur;
+                  const cb =
+                    memeRealtimeCallbackRef.current?.[key];
+                  if (cb) cb(cur);
+                }
+                if (updated.length > 1200) updated.splice(0, updated.length - 1200);
+                return [updated, key, flag];
+              });
+
+              setMemeHolders(prev => {
+                const arr = prev.slice();
+                let idx = memeHoldersMapRef.current.get?.(callerAddr);
+                if (idx == undefined) {
+                  const fresh: Holder = {
+                    address: `0x${log.topics[2].slice(26)}`,
+                    balance: 0,
+                    amountBought: 0,
+                    amountSold: 0,
+                    valueBought: 0,
+                    valueSold: 0,
+                    valueNet: 0,
+                    tokenNet: 0,
+                  };
+                  arr.push(fresh);
+                  idx = arr.length - 1;
+                  memeHoldersMapRef.current.set(callerAddr, idx);
+                }
+                const h = { ...arr[idx] };
+                if (isBuy) {
+                  h.amountBought = (h.amountBought || 0) + amountOut;
+                  h.valueBought = (h.valueBought || 0) + amountIn;
+                  h.balance = (h.balance || 0) + amountOut;
+                } else {
+                  h.amountSold = (h.amountSold || 0) + amountIn;
+                  h.valueSold = (h.valueSold || 0) + amountOut;
+                  h.balance = Math.max(0, (h.balance || 0) - amountIn);
+                }
+                arr[idx] = h;
+
+                for (let i = 0; i < arr.length; i++) {
+                  const hh = arr[i];
+                  const realized = (hh.valueSold || 0) - (hh.valueBought || 0);
+                  const bal = Math.max(0, hh.balance || 0);
+                  arr[i] = { ...hh, valueNet: realized + bal * endPrice };
+                }
+
+                const topSum = arr
+                  .map(hh => Math.max(0, hh.balance || 0))
+                  .sort((a, b) => b - a)
+                  .slice(0, 10)
+                  .reduce((s, n) => s + n, 0);
+                setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
+                return arr;
+              });
+
+              setMemeTopTraders(prev => {
+                const copy = Array.isArray(prev) ? [...prev] : [];
+                const key = callerAddr;
+                let idx = memeTopTradersMapRef.current.get(key) ?? -1;
+
+                if (idx === -1) {
+                  const row: Holder = {
+                    address: `0x${log.topics[2].slice(26)}`,
+                    balance: 0, tokenNet: 0, valueNet: 0,
+                    amountBought: 0, amountSold: 0,
+                    valueBought: 0, valueSold: 0,
+                  };
+                  copy.push(row);
+                  idx = copy.length - 1;
+                  memeTopTradersMapRef.current.set(key, idx);
+                }
+
+                const row = { ...copy[idx] };
+                const curBal = Math.max(0, (row.balance ?? row.amountBought - row.amountSold) || 0);
+                if (isBuy) {
+                  row.amountBought = (row.amountBought || 0) + amountOut;
+                  row.valueBought = (row.valueBought || 0) + amountIn;
+                  row.balance = curBal + amountOut;
+                } else {
+                  row.amountSold = (row.amountSold || 0) + amountIn;
+                  row.valueSold = (row.valueSold || 0) + amountOut;
+                  row.balance = Math.max(0, curBal - amountIn);
+                }
+                row.tokenNet = (row.amountBought || 0) - (row.amountSold || 0);
+                copy[idx] = row;
+
+                for (let i = 0; i < copy.length; i++) {
+                  const r = copy[i];
+                  const bal = Math.max(0, (r.balance ?? r.amountBought - r.amountSold) || 0);
+                  const realized = (r.valueSold || 0) - (r.valueBought || 0);
+                  copy[i] = { ...r, valueNet: realized + bal * endPrice };
+                }
+
+                copy.sort((a, b) => b.valueNet - a.valueNet);
+                if (copy.length > 300) {
+                  const removed = copy.splice(300);
+                  for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
+                }
+                copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
+                return copy;
+              });
+
+              setMemePositions(prev => {
+                const copy = Array.isArray(prev) ? [...prev] : [];
+                const allUserAddresses = [
+                  (address || '').toLowerCase(),
+                  ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
+                ];
+                const isUserTrade = allUserAddresses.includes(callerAddr);
+
+                let idx = memePositionsMapRef.current.get(tokenAddrFromMarket);
+                if (idx === undefined && isUserTrade) {
+                  const newPos = {
+                    tokenId: memeRef.current.id?.toLowerCase(),
+                    symbol: memeRef.current?.symbol || '',
+                    name: memeRef.current?.name || '',
+                    imageUrl: memeRef.current?.image || '',
+                    metadataCID: '',
+                    boughtTokens: 0,
+                    soldTokens: 0,
+                    spentNative: 0,
+                    receivedNative: 0,
+                    remainingTokens: 0,
+                    remainingPct: 0,
+                    pnlNative: 0,
+                    lastPrice: endPrice,
+                  };
+                  copy.push(newPos);
+                  idx = copy.length - 1;
+                  memePositionsMapRef.current.set(tokenAddrFromMarket, idx);
+                }
+                if (idx === undefined) return prev;
+
+                const pos = { ...copy[idx] };
+                pos.lastPrice = endPrice;
+                if (isUserTrade) {
+                  if (isBuy) {
+                    pos.boughtTokens += amountOut;
+                    pos.spentNative += amountIn;
+                    pos.remainingTokens = (pos.remainingTokens || 0) + amountOut;
+                  } else {
+                    pos.soldTokens += amountIn;
+                    pos.receivedNative += amountOut;
+                    pos.remainingTokens = Math.max(0, (pos.remainingTokens || 0) - amountIn);
+                  }
+                }
+                pos.remainingPct = pos.boughtTokens > 0
+                  ? (pos.remainingTokens / pos.boughtTokens) * 100
+                  : 0;
+
+                const balance = Math.max(0, pos.remainingTokens);
+                const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
+                const unrealized = balance * (pos.lastPrice || 0);
+                pos.pnlNative = realized + unrealized;
+
+                copy[idx] = pos;
+
+                if (memeRef.current.id && tokenAddrFromMarket === memeRef.current.id.toLowerCase()) {
+                  const markToMarket = balance * (pos.lastPrice || 0);
+                  const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
+                  setMemeUserStats({
+                    balance,
+                    amountBought: pos.boughtTokens || 0,
+                    amountSold: pos.soldTokens || 0,
+                    valueBought: pos.spentNative || 0,
+                    valueSold: pos.receivedNative || 0,
+                    valueNet: totalPnL,
+                  });
+                }
+                return copy;
+              });
+
+              if (memeDevTokenIdsRef.current.has(tokenAddrFromMarket)) {
+                setMemeDevTokens(prev => {
+                  const updated = prev.map(t => {
+                    if ((t.id || '').toLowerCase() !== tokenAddrFromMarket) return t;
+                    return { ...t, endPrice, marketCap: endPrice * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
+                  });
+                  memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
+                  return updated;
+                });
+              }
+
+              return tempset;
+            }
+            else if (log.topics?.[0] === MARKET_CREATED_EVENT) {
+              addMarket(log);
+            }
+            else if (log.topics?.[0] === MARKET_UPDATE_EVENT) {
+              updateMarket(log);
+              const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+              const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
+
+              const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+              const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
+
+              const isBuy = word(0) !== 0n;
+              const inputAmountWei = word(1);
+              const outputAmountWei = word(2);
+              const vNativeWei = word(3);
+              const vTokenWei = word(4);
+
+              const toNum = (x: bigint) => Number(x) / 1e18;
+              const amountIn = toNum(inputAmountWei);
+              const amountOut = toNum(outputAmountWei);
+              const vNative = Number(vNativeWei);
+              const vToken = Number(vTokenWei);
+
+              const price = vToken === 0 ? 0 : vNative / vToken;
+
+              if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
+                const tradeId = `${log.transactionHash}-${log.logIndex}`;
+
+                if (processedTradeIds.current.has(tradeId)) {
+                  return tempset;
+                }
+                const cachedMetadata = getCachedTokenMetadata(tokenAddr);
+
+                let tokenInfo: any = null;
+                if (!cachedMetadata) {
+                  Object.values(tokensByStatus).forEach((tokens: any[]) => {
+                    const found = tokens.find(t => t.tokenAddress?.toLowerCase() === tokenAddr);
+                    if (found) tokenInfo = found;
+                  });
+                }
+
+                const symbol = cachedMetadata?.symbol || tokenInfo?.symbol || 'TKN';
+                const name = cachedMetadata?.name || tokenInfo?.name || 'Unknown';
+                const icon = cachedMetadata?.icon || tokenInfo?.image || undefined;
+
+                const normalized = normalizeTrade({
+                  caller: callerAddr,
+                  id: tradeId,  
+                  isBuy: isBuy,
+                  price: price,
+                  symbol: symbol,
+                  name: name,
+                  tokenAddress: tokenAddr,
+                  tokenIcon: icon,
+                  amountIn: amountIn,
+                  amountOut: amountOut,
+                  timestamp: Date.now(),
+                }, trackedWalletsRef.current);
+
+                processedTradeIds.current.add(tradeId);
+
+                setTrackedWalletTrades(prev => {
+                  if (prev.some(t => t.id === tradeId)) {
+                    return prev;
+                  }
+
+                  const updated = [normalized, ...prev];
+                  const kept = updated.slice(0, 50);
+                  const keptIds = new Set(kept.map(t => t.id));
+                  processedTradeIds.current = new Set(
+                    Array.from(processedTradeIds.current).filter(id => keptIds.has(id))
+                  );
+
+                  return kept;
+                });
+
+                if (!cachedMetadata && !tokenInfo) {
+                  getTokenMetadata(tokenAddr).then(metadata => {
+                    if (metadata) {
+                      setTrackedWalletTrades(prev =>
+                        prev.map(t =>
+                          t.id === tradeId 
+                            ? { ...t, token: metadata.symbol, tokenName: metadata.name, tokenIcon: metadata.icon }
+                            : t
+                        )
+                      );
+                    }
+                  });
+                }
+              }
+
+
+              if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
+                setTokenData(p => ({
+                  ...p,
+                  price,
+                  marketCap: price * TOTAL_SUPPLY,
+                  change24h: p?.mini?.[0]?.open ? ((price * 1e9 - p?.mini?.[0]?.open) / (p?.mini?.[0]?.open) * 100) : p?.change24h,
+                  buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
+                  sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
+                  volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
+                }));
+
+                setMemeTrades(prev => [
+                  {
+                    id: `${log.transactionHash}-${log.logIndex}`,
+                    timestamp: Date.now() / 1000,
+                    isBuy,
+                    price: price,
+                    nativeAmount: isBuy ? amountIn : amountOut,
+                    tokenAmount: isBuy ? amountOut : amountIn,
+                    caller: `0x${log.topics[2].slice(26)}`,
+                  },
+                  ...prev.slice(0, 99),
+                ]);
+
+                setChartData((prev: any) => {
+                  if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
+                  const [bars, key, flag] = prev;
+                  const sel = key?.split('MON').pop() || ''
+                  const RESOLUTION_SECS: Record<string, number> = {
+                    '1S': 1, '5S': 5, '15S': 15, '1m': 60, '5m': 300, '15m': 900,
+                    '1h': 3600, '4h': 14400, '1d': 86400,
+                  };
+                  const resSecs = RESOLUTION_SECS[sel] ?? 60;
+                  const now = Date.now();
+                  const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
+                  const volNative = isBuy ? amountIn : amountOut;
+
+                  const updated = [...bars];
+                  const last = updated[updated.length - 1];
+
+                  if (!last || last.time < bucket) {
+                    const prevClose = last?.close ?? price;
+                    const open = prevClose;
+                    const high = Math.max(open, price);
+                    const low = Math.min(open, price);
+                    const newBar = {
+                      time: bucket,
+                      open,
+                      high,
+                      low,
+                      close: price,
+                      volume: volNative || 0,
+                    };
+                    updated.push(newBar);
+                    const cb =
+                      memeRealtimeCallbackRef.current?.[key];
+                    if (cb) cb(newBar);
+                  } else {
+                    const cur = { ...last };
+                    cur.high = Math.max(cur.high, price);
+                    cur.low = Math.min(cur.low, price);
+                    cur.close = price;
+                    cur.volume = (cur.volume || 0) + (volNative || 0);
+                    updated[updated.length - 1] = cur;
+                    const cb =
+                      memeRealtimeCallbackRef.current?.[key];
+                    if (cb) cb(cur);
+                  }
+                  if (updated.length > 1200) updated.splice(0, updated.length - 1200);
+                  return [updated, key, flag];
+                });
+
+                setMemeHolders(prev => {
+                  const arr = prev.slice();
+                  let idx = memeHoldersMapRef.current.get?.(callerAddr);
+                  if (idx == undefined) {
+                    const fresh: Holder = {
+                      address: `0x${log.topics[2].slice(26)}`,
+                      balance: 0,
+                      amountBought: 0,
+                      amountSold: 0,
+                      valueBought: 0,
+                      valueSold: 0,
+                      valueNet: 0,
+                      tokenNet: 0,
+                    };
+                    arr.push(fresh);
+                    idx = arr.length - 1;
+                    memeHoldersMapRef.current.set(callerAddr, idx);
+                  }
+                  const h = { ...arr[idx] };
+                  if (isBuy) {
+                    h.amountBought = (h.amountBought || 0) + amountOut;
+                    h.valueBought = (h.valueBought || 0) + amountIn;
+                    h.balance = (h.balance || 0) + amountOut;
+                  } else {
+                    h.amountSold = (h.amountSold || 0) + amountIn;
+                    h.valueSold = (h.valueSold || 0) + amountOut;
+                    h.balance = Math.max(0, (h.balance || 0) - amountIn);
+                  }
+                  arr[idx] = h;
+
+                  for (let i = 0; i < arr.length; i++) {
+                    const h = arr[i];
+                    const realized = (h.valueSold || 0) - (h.valueBought || 0);
+                    const bal = Math.max(0, h.balance || 0);
+                    arr[i] = { ...h, valueNet: realized + bal * price };
+                  }
+                  const topSum = arr.map(h => Math.max(0, h.balance || 0)).sort((a, b) => b - a).slice(0, 10).reduce((s, n) => s + n, 0);
+                  setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
+                  return arr;
+                });
+
+                setMemeTopTraders(prev => {
+                  const copy = Array.isArray(prev) ? [...prev] : [];
+                  const key = callerAddr;
+                  let idx = memeTopTradersMapRef.current.get(key) ?? -1;
+
+                  if (idx === -1) {
+                    const row: Holder = {
+                      address: `0x${log.topics[2].slice(26)}`,
+                      balance: 0, tokenNet: 0, valueNet: 0,
+                      amountBought: 0, amountSold: 0,
+                      valueBought: 0, valueSold: 0,
+                    };
+                    copy.push(row);
+                    idx = copy.length - 1;
+                    memeTopTradersMapRef.current.set(key, idx);
+                  }
+
+                  const row = { ...copy[idx] };
+                  const curBal = Math.max(0, (row.balance ?? row.amountBought - row.amountSold) || 0);
+                  if (isBuy) {
+                    row.amountBought = (row.amountBought || 0) + amountOut;
+                    row.valueBought = (row.valueBought || 0) + amountIn;
+                    row.balance = curBal + amountOut;
+                  } else {
+                    row.amountSold = (row.amountSold || 0) + amountIn;
+                    row.valueSold = (row.valueSold || 0) + amountOut;
+                    row.balance = Math.max(0, curBal - amountIn);
+                  }
+                  row.tokenNet = (row.amountBought || 0) - (row.amountSold || 0);
+                  copy[idx] = row;
+
+                  for (let i = 0; i < copy.length; i++) {
+                    const r = copy[i];
+                    const bal = Math.max(0, (r.balance ?? r.amountBought - r.amountSold) || 0);
+                    const realized = (r.valueSold || 0) - (r.valueBought || 0);
+                    copy[i] = { ...r, valueNet: realized + bal * price };
+                  }
+
+                  copy.sort((a, b) => b.valueNet - a.valueNet);
+                  if (copy.length > 300) {
+                    const removed = copy.splice(300);
+                    for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
+                  }
+                  copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
+                  return copy;
+                });
+
+                setMemePositions(prev => {
+                  const copy = Array.isArray(prev) ? [...prev] : [];
+                  const allUserAddresses = [
+                    (address || '').toLowerCase(),
+                    ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
+                  ];
+                  const isUserTrade = allUserAddresses.includes(callerAddr);
+                  let idx = memePositionsMapRef.current.get(tokenAddr);
+
+                  if (idx === undefined && isUserTrade) {
+                    const newPos = {
+                      tokenId: memeRef.current.id?.toLowerCase(),
+                      symbol: memeRef.current?.symbol || '',
+                      name: memeRef.current?.name || '',
+                      imageUrl: memeRef.current?.image || '',
+                      metadataCID: '',
+                      boughtTokens: 0,
+                      soldTokens: 0,
+                      spentNative: 0,
+                      receivedNative: 0,
+                      remainingTokens: 0,
+                      remainingPct: 0,
+                      pnlNative: 0,
+                      lastPrice: price,
+                    };
+                    copy.push(newPos);
+                    idx = copy.length - 1;
+                    memePositionsMapRef.current.set(tokenAddr, idx);
+                  }
+                  if (idx === undefined) return prev;
+
+                  const pos = { ...copy[idx] };
+                  pos.lastPrice = price;
+                  if (isUserTrade) {
+                    if (isBuy) {
+                      pos.boughtTokens += amountOut;
+                      pos.spentNative += amountIn;
+                      pos.remainingTokens += amountOut;
+                    } else {
+                      pos.soldTokens += amountIn;
+                      pos.receivedNative += amountOut;
+                      pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
+                    }
+                  }
+                  pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
+
+                  const balance = Math.max(0, pos.remainingTokens);
+                  const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
+                  const unrealized = balance * (pos.lastPrice || 0);
+                  pos.pnlNative = realized + unrealized;
+
+                  copy[idx] = pos;
+
+                  if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
+                    const markToMarket = balance * (pos.lastPrice || 0);
+                    const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
+                    setMemeUserStats({
+                      balance,
+                      amountBought: pos.boughtTokens || 0,
+                      amountSold: pos.soldTokens || 0,
+                      valueBought: pos.spentNative || 0,
+                      valueSold: pos.receivedNative || 0,
+                      valueNet: totalPnL,
+                    });
+                  }
+                  return copy;
+                });
+
+                if (memeDevTokenIdsRef.current.has(tokenAddr)) {
+                  setMemeDevTokens(prev => {
+                    const updated = prev.map(t => {
+                      if ((t.id || '').toLowerCase() !== tokenAddr) return t;
+                      return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
+                    });
+                    memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
+                    return updated;
+                  });
+                }
+              }
+              return tempset;
+            }
+            else if (log.topics?.[0] == '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098') {
+              const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+              dispatch({
+                type: 'GRADUATE_MARKET',
+                id: tokenAddr,
+              });
+              if (!memeRef.current.id || tokenAddr !== memeRef.current.id.toLowerCase()) return tempset;
+              setTokenData(p => ({
+                ...p,
+                status: 'graduated'
+              }));
+            }
+            else if (log.topics?.[0] === NAD_FUN_EVENTS.CurveCreate) {
+              const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+              const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
+
+              const metadataOffset = Number(word(2)) * 2;
+              const metadataLength = Number(BigInt('0x' + hex.slice(metadataOffset, metadataOffset + 64)));
+              const metadataStart = metadataOffset + 64;
+              const metadataHex = hex.slice(metadataStart, metadataStart + metadataLength * 2);
+
+              let metadataURI = '';
+              try {
+                metadataURI = decodeURIComponent(metadataHex.match(/.{1,2}/g)?.map((byte: string) => '%' + byte).join('') || '');
+              } catch {
+                const bytes = metadataHex.match(/.{1,2}/g) || [];
+                metadataURI = bytes.map((byte: string) => String.fromCharCode(parseInt(byte, 16))).join('');
+              }
+
+              const tokenAddress = `0x${log.topics[1].slice(26)}`.toLowerCase();
+              const creatorAddress = `0x${log.topics[2].slice(26)}`.toLowerCase();
+
+              console.log('nad.fun Token Created:', tokenAddress);
+
+              fetch(metadataURI)
+                .then(response => response.json())
+                .then(metadata => {
+                  const newToken: Token = {
+                    ...defaultMetrics,
+                    id: tokenAddress,
+                    tokenAddress: tokenAddress,
+                    dev: creatorAddress,
+                    name: metadata.name || 'Unknown',
+                    symbol: metadata.symbol || 'UNKNOWN',
+                    image: metadata.image_uri || '',
+                    description: metadata.description || '',
+                    twitterHandle: metadata.twitter || '',
+                    telegramHandle: metadata.telegram || '',
+                    discordHandle: '',
+                    website: metadata.website || '',
+                    status: 'new',
+                    created: Date.now() / 1000,
+                    price: 0,
+                    marketCap: 0,
+                    volumeDelta: 0,
+                    graduatedTokens: 0,
+                    launchedTokens: 0,
+                    source: 'nadfun',
+                  };
+
+                  if (pausedColumnRef.current === 'new') {
+                    console.log('Column paused, queueing token:', tokenAddress);
+                    pausedTokenQueueRef.current['new'].push(newToken);
+                  } else {
+                    console.log('Adding token directly:', tokenAddress);
+                    dispatch({
+                      type: 'ADD_QUEUED_TOKENS',
+                      payload: {
+                        status: 'new',
+                        tokens: [newToken]
+                      }
+                    });
+                  }
+                })
+                .catch(err => {
+                  console.error('Failed to fetch nad.fun metadata:', err);
+                  const newToken: Token = {
+                    ...defaultMetrics,
+                    id: tokenAddress,
+                    tokenAddress: tokenAddress,
+                    dev: creatorAddress,
+                    name: tokenAddress.slice(0, 8) + '...',
+                    symbol: 'NAD',
+                    image: '',
+                    description: '',
+                    twitterHandle: '',
+                    telegramHandle: '',
+                    discordHandle: '',
+                    website: '',
+                    status: 'new',
+                    created: Date.now() / 1000,
+                    price: 0,
+                    marketCap: 0,
+                    volumeDelta: 0,
+                    graduatedTokens: 0,
+                    launchedTokens: 0,
+                    source: 'nadfun',
+                  };
+
+                  if (pausedColumnRef.current === 'new') {
+                    pausedTokenQueueRef.current['new'].push(newToken);
+                  } else {
+                    dispatch({
+                      type: 'ADD_QUEUED_TOKENS',
+                      payload: {
+                        status: 'new',
+                        tokens: [newToken]
+                      }
+                    });
+                  }
+                });
+            }
+            return tempset;
+          })
+        } catch (parseError) {
+          console.warn('Failed to parse WebSocket message:', parseError);
+        }
+      };
+
+      explorerWsRef.current.onclose = () => {
+        if (explorerPingIntervalRef.current) {
+          clearInterval(explorerPingIntervalRef.current);
+          explorerPingIntervalRef.current = null;
+        }
+        explorerReconnectIntervalRef.current = setTimeout(() => {
+          connectWebSocket();
+        }, 500);
+      };
+
+      explorerWsRef.current.onerror = (error) => {
+        console.error(error)
+      };
+    };
+
+    connectWebSocket();
+
+    return () => {
+      cancelled = true;
+      if (explorerPingIntervalRef.current) {
+        clearInterval(explorerPingIntervalRef.current);
+        explorerPingIntervalRef.current = null;
+      }
+      if (explorerReconnectIntervalRef.current) {
+        clearTimeout(explorerReconnectIntervalRef.current);
+        explorerReconnectIntervalRef.current = null;
+      }
+      if (explorerWsRef.current) {
+        explorerWsRef.current.close();
+        explorerWsRef.current = null;
+      }
+    };
   }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
 
   // memeinterface
@@ -25269,8 +25270,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         })(),
       }}>
         <Routes>
-          <Route path="/" element={<Navigate to="/market" replace />} />
-          <Route path="*" element={<Navigate to="/market" replace />} />
+          <Route path="/" element={<Navigate to="/spectra" replace />} />
+          <Route path="*" element={<Navigate to="/spectra" replace />} />
           <Route path="/spectra"
             element={
               <TokenExplorer
@@ -25384,7 +25385,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               />
             }
           />
-          <Route path="/board"
+          <Route path="/sneakyboard"
             element={
               <TokenBoard
                 sendUserOperationAsync={sendUserOperationAsync}
@@ -25403,7 +25404,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               />
             }
           />
-          <Route path="/board/:tokenAddress"
+          <Route path="/sneakyboard/:tokenAddress"
             element={
               <TokenDetail
                 sendUserOperationAsync={sendUserOperationAsync}
@@ -25429,8 +25430,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               />
             }
           />
-          <Route path="/earn" element={<Navigate to="/earn/vaults" replace />} />
-          <Route path="/earn/*"
+          <Route path="/sneakyearn" element={<Navigate to="/earn/vaults" replace />} />
+          <Route path="/sneakyearn/*"
             element={
               <Earn
                 setpopup={setpopup}
@@ -25490,7 +25491,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 chartData={vaultChartData}
               />
             } />
-          <Route path="/earn/vaults/:vaultAddress"
+          <Route path="/sneakyearn/vaults/:vaultAddress"
             element={
               <Earn
                 setpopup={setpopup}
@@ -25726,7 +25727,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setTransitionDirection={setTransitionDirection}
               />
             } />
-          <Route path="/launchpad"
+          <Route path="/sneakylaunchpad"
             element={
               <Launchpad
                 address={address}
@@ -25741,7 +25742,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setpopup={setpopup}
               />
             } />
-          <Route path="/lending"
+          <Route path="/sneakylending"
             element={
               <EarnVaults
                 setpopup={setpopup}
@@ -25772,10 +25773,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               />
             } />
           <Route path="/swap" element={TradeLayout(swap)} />
-          <Route path="/market" element={TradeLayout(swap)} />
-          <Route path="/limit" element={TradeLayout(limit)} />
+          <Route path="/sneakymarket" element={TradeLayout(swap)} />
+          <Route path="/sneakylimit" element={TradeLayout(limit)} />
           <Route path="/send" element={TradeLayout(send)} />
-          <Route path="/scale" element={TradeLayout(scale)} />
+          <Route path="/sneakyscale" element={TradeLayout(scale)} />
         </Routes>
         <TransactionPopupManager
           transactions={transactions}

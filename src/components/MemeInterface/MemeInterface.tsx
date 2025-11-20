@@ -1000,7 +1000,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const { activechain } = useSharedContext();
 
-  const routerAddress = settings.chainConfig[activechain]?.sourceRouter;
+  const routerAddress = settings.chainConfig[activechain]?.router;
   const explorer = settings.chainConfig[activechain]?.explorer;
   const userAddr = address ?? account?.address ?? '';
   const [dragStart, setDragStart] = useState<{ y: number; height: number } | null>(null);
