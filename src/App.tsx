@@ -4460,8 +4460,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     const timestamp = trade.timestamp
       ? (trade.timestamp > 1e12 ? Number(trade.timestamp) / 1000 : Number(trade.timestamp))
-      : Date.now() / 1000;
-    const now = Date.now() / 1000;
+      : Math.floor(Date.now() / 1000);
+    const now = Math.floor(Date.now() / 1000);
     const secondsAgo = Math.max(0, now - timestamp);
     let timeAgo = 'now';
     if (secondsAgo < 60) timeAgo = `${Math.floor(secondsAgo)}s`;
@@ -4579,7 +4579,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         for (const bucket of buckets) {
           for (const m of bucket.list) {
-            const marketCapNativeRaw = Number(m.marketcap_usd ?? 0);
+            const marketCapNativeRaw = Number(m.marketcap_native_raw ?? 0);
             const price = marketCapNativeRaw / TOTAL_SUPPLY || defaultMetrics.price;
 
             let createdTimestamp = Number(m.created_ts ?? 0);
@@ -4828,7 +4828,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               setMemeTrades(prev => [
                 {
                   id: `${log.transactionHash}-${log.logIndex}`,
-                  timestamp: Date.now() / 1000,
+                  timestamp: Math.floor(Date.now() / 1000),
                   isBuy,
                   price: endPrice,
                   nativeAmount: isBuy ? amountIn : amountOut,
@@ -5051,7 +5051,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setMemeDevTokens(prev => {
                   const updated = prev.map(t => {
                     if ((t.id || '').toLowerCase() !== tokenAddrFromMarket) return t;
-                    return { ...t, endPrice, marketCap: endPrice * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
+                    return { ...t, endPrice, marketCap: endPrice * TOTAL_SUPPLY, timestamp: Math.floor(Date.now() / 1000) };
                   });
                   memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
                   return updated;
@@ -5156,7 +5156,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setMemeTrades(prev => [
                   {
                     id: `${log.transactionHash}-${log.logIndex}`,
-                    timestamp: Date.now() / 1000,
+                    timestamp: Math.floor(Date.now() / 1000),
                     isBuy,
                     price: price,
                     nativeAmount: isBuy ? amountIn : amountOut,
@@ -5374,7 +5374,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   setMemeDevTokens(prev => {
                     const updated = prev.map(t => {
                       if ((t.id || '').toLowerCase() !== tokenAddr) return t;
-                      return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Date.now() / 1000 };
+                      return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Math.floor(Date.now() / 1000) };
                     });
                     memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
                     return updated;
@@ -5395,7 +5395,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 status: 'graduated'
               }));
             }
-            else if (log.topics?.[0] === NAD_FUN_EVENTS.CurveCreate) {
+            else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveCreate) {
               const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
               const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
 
@@ -5432,7 +5432,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     discordHandle: '',
                     website: metadata.website || '',
                     status: 'new',
-                    created: Date.now() / 1000,
+                    created: Math.floor(Date.now() / 1000),
                     price: 0,
                     marketCap: 0,
                     volumeDelta: 0,
@@ -5471,7 +5471,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     discordHandle: '',
                     website: '',
                     status: 'new',
-                    created: Date.now() / 1000,
+                    created: Math.floor(Date.now() / 1000),
                     price: 0,
                     marketCap: 0,
                     volumeDelta: 0,
@@ -5492,6 +5492,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     });
                   }
                 });
+            }
+            else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveBuy) {
+
+            }
+            else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveSell) {
+              
             }
             return tempset;
           })

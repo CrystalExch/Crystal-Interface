@@ -3157,7 +3157,7 @@ const TokenRow = React.memo<{
                   <span className="mc-label">V</span>
                   <span className="mc-value">
                     {formatPrice(
-                      token.volume24h,
+                      token.volume24h * monUsdPrice,
                       displaySettings.noDecimals,
                     )}
                   </span>
@@ -3170,7 +3170,7 @@ const TokenRow = React.memo<{
                   <span className="mc-label">MC</span>
                   <span className="mc-value">
                     {formatPrice(
-                      token.marketCap,
+                      token.marketCap * monUsdPrice,
                       displaySettings.noDecimals,
                     )}
                   </span>
@@ -3186,7 +3186,7 @@ const TokenRow = React.memo<{
                   <span className="explorer-fee-label">F</span>
                   <span className="explorer-fee-total">
                     {formatPrice(
-                      (token.volume24h) / 100,
+                      (token.volume24h * monUsdPrice) / 100,
                       displaySettings.noDecimals,
                     )}
                   </span>
@@ -3986,13 +3986,19 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             let uo;
 
             if (isNadFun) {
+              const fee = 99000n;
+              const iva = partWei * fee / 100000n;
+              const vNative = token.reserveQuote + iva;
+              const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+              const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+
               uo = {
                 target: contractAddress as `0x${string}`,
                 data: encodeFunctionData({
                   abi: NadFunAbi,
                   functionName: 'buy',
                   args: [{
-                    amountOutMin: 0n,
+                    amountOutMin: BigInt(output),
                     token: token.id as `0x${string}`,
                     to: account.address as `0x${string}`,
                     deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
@@ -4001,12 +4007,18 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 value: partWei,
               };
             } else {
+              const fee = 99000n;
+              const iva = partWei * fee / 100000n;
+              const vNative = token.reserveQuote + iva;
+              const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+              const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+
               uo = {
                 target: contractAddress as `0x${string}`,
                 data: encodeFunctionData({
                   abi: CrystalRouterAbi,
                   functionName: 'buy',
-                  args: [true, token.id as `0x${string}`, partWei, 0n],
+                  args: [true, token.id as `0x${string}`, partWei, BigInt(output)],
                 }),
                 value: partWei,
               };
