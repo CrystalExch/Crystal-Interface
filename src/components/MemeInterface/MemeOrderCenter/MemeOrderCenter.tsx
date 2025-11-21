@@ -144,7 +144,7 @@ const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
 
 interface SellPopupProps {
   showSellPopup: boolean;
-  selectedPosition: Position | null;
+  selectedPosition: Position;
   sellAmount: string;
   sellSliderPercent: number;
   onClose: () => void;
@@ -158,7 +158,6 @@ interface SellPopupProps {
   subWallets: Array<{ address: string; privateKey: string }>;
   walletTokenBalances: { [address: string]: any };
   tokendict: { [key: string]: any };
-  getTotalTokenBalance: (tokenId: string) => number;
 }
 
 const SellPopup: React.FC<SellPopupProps> = ({
@@ -176,7 +175,6 @@ const SellPopup: React.FC<SellPopupProps> = ({
   subWallets,
   walletTokenBalances,
   tokendict,
-  getTotalTokenBalance,
 }) => {
   const [sliderDragging, setSliderDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -239,8 +237,6 @@ const SellPopup: React.FC<SellPopupProps> = ({
     } as React.ChangeEvent<HTMLInputElement>);
   };
 
-  if (!showSellPopup || !selectedPosition) return null;
-
   return (
     <div className="alerts-popup-overlay" onClick={onClose}>
       <div className="alerts-popup" onClick={(e) => e.stopPropagation()}>
@@ -263,11 +259,11 @@ const SellPopup: React.FC<SellPopupProps> = ({
                 <div className="meme-balance-display">
                   <img src={walleticon} className="meme-wallet-icon" />
                   {(() => {
-                    const totalTokenBalance = getTotalTokenBalance(selectedPosition.tokenId);
+                    const totalTokenBalance = selectedPosition.remainingTokens;
                     return (
                       totalTokenBalance *
                       (selectedPosition.lastPrice || currentPrice)
-                    ).toFixed(4);
+                    ).toFixed(2);
                   })()}{' '}
                   MON
                 </div>
@@ -349,7 +345,7 @@ const SellPopup: React.FC<SellPopupProps> = ({
               !sellAmount ||
               parseFloat(sellAmount) <= 0 ||
               (() => {
-                const totalTokenBalance = getTotalTokenBalance(selectedPosition.tokenId);
+                const totalTokenBalance = selectedPosition.remainingTokens;
                 return (
                   parseFloat(sellAmount) >
                   totalTokenBalance *
@@ -425,32 +421,20 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     setSellAmount('');
     setSellSliderPercent(0);
   }, []);
-  const getTotalTokenBalance = useCallback((tokenId: string) => {
-    const allWalletAddresses = [
-      userAddr,
-      ...subWallets.map((w) => w.address),
-    ].filter(Boolean);
 
-    return allWalletAddresses.reduce((sum, addr) => {
-      const balance = walletTokenBalances?.[addr]?.[tokenId];
-      if (!balance || balance <= 0n) return sum;
-      const decimals = tokendict?.[tokenId]?.decimals || 18;
-      return sum + Number(balance) / 10 ** Number(decimals);
-    }, 0);
-  }, [userAddr, subWallets, walletTokenBalances, tokendict]);
   const handleSellMaxClick = useCallback(() => {
     if (selectedPosition) {
-      const totalTokenBalance = getTotalTokenBalance(selectedPosition.tokenId);
+      const totalTokenBalance = selectedPosition.remainingTokens;
       const maxMonAmount =
         totalTokenBalance * (selectedPosition.lastPrice || currentPrice);
-      setSellAmount(maxMonAmount.toFixed(4));
+      setSellAmount(maxMonAmount.toFixed(2));
       setSellSliderPercent(100);
     }
   }, [
     selectedPosition,
     currentPrice,
-    getTotalTokenBalance,
   ]);
+
   useEffect(() => {
     const loadTrackedWallets = () => {
       try {
@@ -508,6 +492,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     });
     return addresses;
   }, [userAddr, subWallets]);
+  
   useEffect(() => {
     const handleResize = () => {
       if (window.innerHeight > 1080) {
@@ -624,11 +609,13 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     { key: 'topTraders', label: `Top Traders (${topTraderRows.length})` },
     { key: 'devTokens', label: `Dev Tokens (${devTokensToShow.length})` },
   ];
+
   useEffect(() => {
     if (isDragging && !isVertDragging) {
       setIsDragging(false);
     }
   }, [isVertDragging, isDragging]);
+
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
@@ -729,16 +716,17 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       }
     }
   };
+
   const handleSellSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const percent = parseInt(e.target.value);
     setSellSliderPercent(percent);
     if (selectedPosition) {
-      const totalTokenBalance = getTotalTokenBalance(selectedPosition.tokenId);
+      const totalTokenBalance = selectedPosition.remainingTokens;
       const maxMonAmount =
         totalTokenBalance *
         (selectedPosition.lastPrice || currentPrice);
       const newAmount = (maxMonAmount * percent) / 100;
-      setSellAmount(newAmount.toFixed(4));
+      setSellAmount(newAmount.toFixed(2));
     }
   };
 
@@ -746,7 +734,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     const value = e.target.value;
     setSellAmount(value);
     if (selectedPosition) {
-      const totalTokenBalance = getTotalTokenBalance(selectedPosition.tokenId);
+      const totalTokenBalance = selectedPosition.remainingTokens;
       const maxMonAmount =
         totalTokenBalance *
         (selectedPosition.lastPrice || currentPrice);
@@ -1790,24 +1778,25 @@ case 'topTraders':
           <span className="meme-oc-no-data">{noDataMessage}</span>
         </div>
       )}
-      <SellPopup
-        showSellPopup={showSellPopup}
-        selectedPosition={selectedPosition}
-        sellAmount={sellAmount}
-        sellSliderPercent={sellSliderPercent}
-        onClose={handleSellClose}
-        onSellAmountChange={handleSellAmountChange}
-        onSellSliderChange={handleSellSliderChange}
-        onSellConfirm={handleSellConfirm}
-        onMaxClick={handleSellMaxClick}
-        fmt={fmt}
-        currentPrice={currentPrice}
-        userAddr={userAddr}
-        subWallets={subWallets}
-        walletTokenBalances={walletTokenBalances}
-        tokendict={tokendict}
-        getTotalTokenBalance={getTotalTokenBalance}
-      />
+      {selectedPosition && showSellPopup && 
+        (<SellPopup
+          showSellPopup={showSellPopup}
+          selectedPosition={selectedPosition}
+          sellAmount={sellAmount}
+          sellSliderPercent={sellSliderPercent}
+          onClose={handleSellClose}
+          onSellAmountChange={handleSellAmountChange}
+          onSellSliderChange={handleSellSliderChange}
+          onSellConfirm={handleSellConfirm}
+          onMaxClick={handleSellMaxClick}
+          fmt={fmt}
+          currentPrice={currentPrice}
+          userAddr={userAddr}
+          subWallets={subWallets}
+          walletTokenBalances={walletTokenBalances}
+          tokendict={tokendict}
+        />)
+      }
     </div>
   );
 };
