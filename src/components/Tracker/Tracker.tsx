@@ -1840,7 +1840,6 @@ const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveT
   const [mobileActiveColumn, setMobileActiveColumn] = useState<'launchpad' | 'orderbook'>('launchpad');
   const [showColumnDropdown, setShowColumnDropdown] = useState(false);
   const [buyPresets, setBuyPresets] = useState<Record<number, any>>({});
-  const [showTradingPresetsPopup, setShowTradingPresetsPopup] = useState(false);
 
   // Display settings state
   const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(() => {
@@ -1933,11 +1932,6 @@ const normalizeTrade = useCallback((trade: any, wallets: TrackedWallet[]): LiveT
       window.removeEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
     };
   }, []);
-
-  const handleSavePresets = (presets: Record<number, any>) => {
-    saveBuyPresets(presets);
-    setBuyPresets(presets);
-  };
 
   const setQuickAmount = (column: string, value: string) => {
     setQuickAmounts(prev => ({ ...prev, [column]: value }));
@@ -5967,26 +5961,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
             >
               {monitorCurrency === 'USD' ? 'USD' : 'MON'}
             </button>
-            <button className="tracker-header-button" onClick={() => setShowTradingPresetsPopup(true)}>P1</button>
-            <div className="tracker-combined-flash-input">
-              <button className="tracker-combined-flash-btn" onClick={() => setpopup(33)}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                </svg>
-              </button>
-              <input
-                type="text"
-                className="tracker-combined-input"
-                placeholder="0.0"
-                onFocus={(e) => e.target.placeholder = ''}
-                onBlur={(e) => {
-                  if (e.target.value === '') {
-                    e.target.placeholder = '0.0';
-                  }
-                }}
-              />
-              <img src={monadicon} className="tracker-combined-mon-icon" alt="MON" />
-            </div>
           </div>
         )}
 
@@ -6016,26 +5990,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
             >
               {monitorCurrency === 'USD' ? 'USD' : 'MON'}
             </button>
-            <button className="tracker-header-button" onClick={() => setShowTradingPresetsPopup(true)}>P1</button>
-            <div className="tracker-combined-flash-input">
-              <button className="tracker-combined-flash-btn" onClick={() => setpopup(33)}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                </svg>
-              </button>
-              <input
-                type="text"
-                className="tracker-combined-input"
-                placeholder="0.0"
-                onFocus={(e) => e.target.placeholder = ''}
-                onBlur={(e) => {
-                  if (e.target.value === '') {
-                    e.target.placeholder = '0.0';
-                  }
-                }}
-              />
-              <img src={monadicon} className="tracker-combined-mon-icon" alt="MON" />
-            </div>
           </div>
         )}
       </div>
@@ -6123,14 +6077,6 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
           onApply={handleApplyMonitorFilters}
           onSimpleSort={setSelectedSimpleFilter}
           initialFilters={monitorFilters}
-        />
-      )}
-
-      {showTradingPresetsPopup && (
-        <TradingPresetsPopup
-          onClose={() => setShowTradingPresetsPopup(false)}
-          buyPresets={buyPresets}
-          onSavePresets={handleSavePresets}
         />
       )}
     </div>
