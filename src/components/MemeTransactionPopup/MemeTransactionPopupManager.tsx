@@ -176,11 +176,27 @@ export const updatePopup = (id: string, data: {
     globalSetPopups(prev =>
       prev.map(p => {
         if (p.id === id) {
+          const isZeroWallets = data.subtitle && (
+            /across 0 wallets/i.test(data.subtitle) ||
+            /bought.* 0 /i.test(data.subtitle) ||
+            /sold.* 0 /i.test(data.subtitle)
+          );
+
+          let finalVariant = data.variant;
+          let finalTitle = data.title;
+          let finalSubtitle = data.subtitle;
+          
+          if (isZeroWallets && data.variant === 'success') {
+            finalVariant = 'error';
+            finalTitle = 'Transaction failed';
+            finalSubtitle = 'No wallets were able to complete the transaction';
+          }
+
           const updatedPopup = {
             ...p,
-            title: data.title,
-            subtitle: data.subtitle,
-            variant: data.variant,
+            title: finalTitle,
+            subtitle: finalSubtitle,
+            variant: finalVariant,
             isLoading: data.isLoading ?? p.isLoading,
             visible: true,
             confirmed: data.confirmed ?? true,
@@ -192,9 +208,9 @@ export const updatePopup = (id: string, data: {
             actionType: data.actionType || p.actionType,
           };
 
-          if (data.variant === 'success' && data.confirmed !== false) {
-            const titleLower = data.title.toLowerCase();
-            const subtitleLower = (data.subtitle || '').toLowerCase();
+          if (finalVariant === 'success' && data.confirmed !== false) {
+            const titleLower = finalTitle.toLowerCase();
+            const subtitleLower = (finalSubtitle || '').toLowerCase();
 
             const isBuyOrSell =
               titleLower.includes('buy completed') ||

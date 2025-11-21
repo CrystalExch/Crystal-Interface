@@ -114,7 +114,7 @@
   width: 74px;
   height: 74px;
   border-radius: 8px;
-  background: conic-gradient(from 0deg,
+  background: conic-gradient(from 135deg,
       var(--progress-color-start) 0deg,
       var(--progress-color-mid) calc(var(--progress-angle) / 2),
       var(--progress-color-end) var(--progress-angle),
@@ -132,7 +132,7 @@
   position: absolute;
   inset: 0; 
   border-radius: 3px;
-  background: conic-gradient(from 0deg,
+  background: conic-gradient(from 135deg,
       #ffd700 0deg,
       #ffed4e 90deg,
       #ffc107 180deg,
@@ -814,7 +814,7 @@
   border-radius: 3px;
   align-items: center;
   justify-content: center;
-  background: conic-gradient(from 0deg,
+  background: conic-gradient(from 135deg,
       #aaaecf 0deg,
       #aaaecf var(--progress-angle, 0deg),
       rgba(157, 169, 240, 0.1) var(--progress-angle, 0deg),
@@ -826,7 +826,7 @@
   position: absolute;
   inset: 0; 
   border-radius: 3px;
-  background: conic-gradient(from 0deg,
+  background: conic-gradient(from 135deg,
       #aaaecf 0deg,
       #aaaecf var(--progress-angle),
       rgba(157, 169, 240, 0.2) var(--progress-angle),
@@ -1868,7 +1868,7 @@
 
 
 .meme-interface-token-info-container-meme.nadfun-token .meme-interface-token-icon-wrapper{
-  background: conic-gradient(from 0deg,
+  background: conic-gradient(from 135deg,
       #AD5FFB 0deg,
       #AD5FFB var(--progress-angle, 0deg),
       rgba(173, 95, 251, 0.2) var(--progress-angle, 0deg),

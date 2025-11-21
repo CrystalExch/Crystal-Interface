@@ -15,6 +15,7 @@
   position: relative;
   width: 100%;
   max-width: 100%;
+  
 }
 
 @media(max-width: 1020px) {
@@ -55,9 +56,9 @@
   color: #e0e8fd73;
   cursor: pointer;
   flex: 1;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 300;
-  letter-spacing: -0.1px;
+  letter-spacing: -0.3px;
   outline: none;
   padding: 8px 20px;
   text-align: flex-start;
@@ -176,7 +177,8 @@
 .meme-oc-item {
   align-items: center;
   display: grid;
-  height: 42.2px;
+  min-height: 42.2px;
+  max-height: 42.2px;
   padding: 4px 15px;
   transition: background-color 0.2s ease;
   width: 100%;
@@ -209,13 +211,9 @@
 .meme-oc-section-content[data-section="devTokens"] .meme-oc-header,
 .meme-oc-section-content[data-section="devTokens"] .meme-oc-item {
   gap: 15px;
-  grid-template-columns: 1.2fr 1fr 1fr 1fr ;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr 1fr ;
 }
 
-.meme-oc-section-content[data-section="devTokens"] .meme-oc-header{
-    gap: 15px;
-  grid-template-columns: 1.15fr .95fr .95fr 1fr ;
-}
 
 .meme-oc-header-cell {
   color: #e0e3f473;
@@ -801,7 +799,6 @@
   display: flex;
   gap: 8px;
   height: 100%;
-  margin-left: 16px;
 }
 
 .meme-oc-quickbuy-button.active {
@@ -1459,7 +1456,6 @@
 
 .meme-oc-highlight-item span:last-child {
   color: rgb(206, 208, 223);
-  font-weight: 500;
 }
 
 .oc-meme-wallet-address.current-user {
@@ -1478,3 +1474,4 @@
   color: #fff485;
   text-decoration: underline;
 }
+

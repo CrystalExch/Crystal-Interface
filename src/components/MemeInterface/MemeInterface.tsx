@@ -2821,7 +2821,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           <div className="meme-order-type-container">
             <span style={{ fontSize: 17 }}>Market</span>
             <Tooltip content="Limit orders coming soon">
-              <span style={{ opacity: 0.4, fontSize: 17, cursor: 'not-allowed' }}>Limit</span>
+              <span style={{ color: '#e0e8fd73', fontSize: 17, cursor: 'not-allowed' }}>Limit</span>
             </Tooltip>
           </div>
           {subWallets.length > 0 && (

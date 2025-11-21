@@ -1489,6 +1489,8 @@ case 'topTraders':
                 <div className="meme-oc-header-cell">Token</div>
                 <div className="meme-oc-header-cell">Market Cap (MON)</div>
                 <div className="meme-oc-header-cell">Migrated</div>
+                <div className="meme-oc-header-cell">Liquidity</div>
+                <div className="meme-oc-header-cell">1hr Vol</div>
                 <div className="meme-oc-header-cell">Holders</div>
               </div>
 
@@ -1597,6 +1599,12 @@ case 'topTraders':
                               <path d="m9 9 6 6" />
                             </svg>
                           )}
+                        </div>
+                        <div className="meme-oc-cell">
+                          $0
+                        </div>
+                       <div className="meme-oc-cell 1hr-vol-cell">
+                          $0
                         </div>
                         <div className="meme-oc-cell">
                           <span>{liveHolders.length}</span>
@@ -1746,11 +1754,6 @@ case 'topTraders':
               <button
                 onClick={onToggleWidget}
                 className={`meme-oc-quickbuy-button ${isWidgetOpen ? 'active' : ''}`}
-                title={
-                  isWidgetOpen
-                    ? 'Close QuickBuy Widget'
-                    : 'Open QuickBuy Widget'
-                }
               >
                 <img className="memeordercenter-lightning" src={lightning} />
 
