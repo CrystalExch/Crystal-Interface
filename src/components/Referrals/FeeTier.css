@@ -1,0 +1,278 @@
+/* Fee Tier Section */
+.fee-tier-section {
+  background: rgb(6, 6, 6);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.fee-tier-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.fee-tier-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.fee-tier-next-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.fee-tier-next-label {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.fee-tier-next-name {
+  color: #aaaecf;
+  font-weight: 500;
+}
+
+.fee-tier-title {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1rem;
+  font-weight: 400;
+  margin: 0;
+}
+
+.fee-tier-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.fee-tier-badge-name {
+  font-weight: 600;
+}
+
+.view-schedule-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: rgba(170, 174, 207, 0.1);
+  border: 1px solid rgba(170, 174, 207, 0.2);
+  border-radius: 6px;
+  color: #aaaecf;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.5rem 0.9rem;
+  transition: all 0.2s;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.view-schedule-button:hover {
+  background: rgba(170, 174, 207, 0.15);
+  border-color: rgba(170, 174, 207, 0.3);
+}
+
+.fee-tier-volume-value {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* Progress Bar */
+.fee-tier-progress {
+  margin-bottom: 1.5rem;
+}
+
+.fee-tier-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.fee-tier-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.fee-tier-progress-text {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  text-align: right;
+  margin: 0;
+}
+
+/* Max Tier Message */
+.fee-tier-max-message {
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(170, 174, 207, 0.1) 0%, rgba(127, 130, 161, 0.05) 100%);
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+}
+
+.fee-tier-max-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  text-align: center;
+  margin: 0;
+}
+
+/* Benefits Grid */
+.fee-tier-benefits {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.fee-tier-benefit-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.fee-tier-benefit-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  font-weight: 400;
+  margin-bottom: 0.5rem;
+}
+
+.fee-tier-benefit-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.fee-tier-benefit-description {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+  font-weight: 300;
+}
+
+/* Requirements Section */
+.fee-tier-requirements {
+  margin-top: 1.5rem;
+}
+
+.fee-tier-requirements-title {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0 0 1rem 0;
+}
+
+.fee-tier-requirements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fee-tier-requirement-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  opacity: 0.5;
+  transition: all 0.2s;
+}
+
+.fee-tier-requirement-item.achieved {
+  opacity: 1;
+  border-color: rgba(170, 174, 207, 0.2);
+  background: rgba(170, 174, 207, 0.05);
+}
+
+.fee-tier-requirement-badge {
+  padding: 0.3rem 0.7rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #000;
+  white-space: nowrap;
+}
+
+.fee-tier-requirement-badge.tier-1 {
+  background: #CD7F32;
+}
+
+.fee-tier-requirement-badge.tier-2 {
+  background: #C0C0C0;
+}
+
+.fee-tier-requirement-badge.tier-3 {
+  background: #FFD700;
+}
+
+.fee-tier-requirement-badge.tier-4 {
+  background: #E5E4E2;
+}
+
+.fee-tier-requirement-badge.tier-5 {
+  background: #B9F2FF;
+}
+
+.fee-tier-requirement-badge.tier-6 {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+}
+
+.fee-tier-requirement-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.fee-tier-requirement-volume {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.fee-tier-requirement-benefits {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.7rem;
+  font-weight: 300;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .fee-tier-section {
+    padding: 1rem;
+  }
+
+  .fee-tier-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .fee-tier-benefits {
+    grid-template-columns: 1fr;
+  }
+
+  .fee-tier-requirement-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

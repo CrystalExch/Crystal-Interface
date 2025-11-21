@@ -1,0 +1,144 @@
+.stats-bar-container {
+  bottom: 2rem;
+  padding: 0 2rem;
+  position: absolute;
+  width: 100%;
+}
+
+.stats-bar-wrapper {
+  align-items: center;
+  -webkit-backdrop-filter: blur(5px);
+          backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  display: flex;
+  padding: 0.5rem 1rem;
+}
+
+.stats-bar-grid {
+  display: grid;
+  flex: 1;
+  gap: 1rem;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.stats-bar-item {
+  padding: 0.5rem;
+  position: relative;
+}
+
+.stats-bar-item,
+.stats-token-info {
+  align-items: center;
+  display: flex;
+}
+
+.stats-token-info {
+  gap: 0.7rem;
+  width: 100%;
+}
+
+.stats-token-icon {
+  border-radius: 50%;
+  height: 30px;
+  width: 30px;
+}
+
+.stats-token-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-token-value {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+}
+
+.stats-token-name {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+  margin-top: -3px;
+}
+
+.stats-divider {
+  background: rgba(255, 255, 255, 0.1);
+  height: 70%;
+  position: absolute;
+  right: -0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+}
+
+.stats-bar-total {
+  min-width: 120px;
+  text-align: right;
+}
+
+.stats-total-info {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-total-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
+  font-weight: 100;
+  margin-bottom: -3px;
+}
+
+.stats-total-value {
+  background: linear-gradient(135deg, #aaaecf 0%, #a5aaf0 100%);
+  -webkit-background-clip: text;
+          background-clip: text;
+  font-size: 1.2rem;
+  font-weight: 500;
+  -webkit-text-fill-color: transparent;
+}
+
+.mobile-total {
+  display: none;
+}
+
+@media (max-width: 630px) {
+  .stats-bar-wrapper {
+    height: auto;
+  }
+  .stats-bar-container {
+    bottom: 1rem;
+    padding: 0 1rem;
+  }
+  .stats-bar-item {
+    padding: 0;
+  }
+
+  .stats-bar-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 30px);
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-total {
+    display: flex;
+    font-size: 0.8rem;
+  }
+
+  .mobile-total .stats-total-info {
+    align-items: flex-start;
+    width: 100%;
+  }
+  .stats-token-value {
+    font-size: 0.8rem;
+  }
+  .stats-token-icon {
+    height: 24px;
+    width: 24px;
+  }
+  .stats-total-value {
+    font-size: 1rem;
+  }
+}

@@ -151,6 +151,7 @@ import TooltipLabel from './components/TooltipLabel/TooltipLabel.tsx';
 import TransactionPopupManager from './components/TransactionPopupManager/TransactionPopupManager';
 import MiniChart from './components/Header/ChartHeader/TokenInfo/MiniChart/MiniChart.tsx';
 import Leaderboard from './components/Leaderboard/Leaderboard.tsx';
+import Referrals from './components/Referrals/Referrals.tsx';
 import SimpleOrdersContainer from './components/SimpleOrdersContainer/SimpleOrdersContainer';
 import SidebarNav from './components/SidebarNav/SidebarNav';
 import EarnVaults from './components/EarnVaults/EarnVaults.tsx';
@@ -1133,6 +1134,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [showHoverTooltip, setShowHoverTooltip] = useState(false);
   const [currentProText, setCurrentProText] = useState(location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market' || location.pathname.slice(1) == 'limit' ? 'pro' : t(location.pathname.slice(1).toLowerCase()));
   const [refLink, setRefLink] = useState('');
+  const [showModal, setShowModal] = useState(false);
   const [totalClaimableFees, setTotalClaimableFees] = useState(0);
   const [switched, setswitched] = useState(false);
   const [orderSizePercent, setOrderSizePercent] = useState(100);
@@ -25623,6 +25625,37 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 username={username}
                 setIsTransitioning={setIsTransitioning}
                 setTransitionDirection={setTransitionDirection}
+              />
+            } />
+          <Route path="/referrals"
+            element={
+              <Referrals
+                tokenList={memoizedTokenList}
+                markets={markets}
+                router={router}
+                address={address}
+                usedRefLink={usedRefLink}
+                setUsedRefLink={setUsedRefLink}
+                usedRefAddress={usedRefAddress}
+                setUsedRefAddress={setUsedRefAddress}
+                totalClaimableFees={totalClaimableFees}
+                claimableFees={claimableFees || {}}
+                refLink={refLink}
+                setRefLink={setRefLink}
+                showModal={showModal}
+                setShowModal={setShowModal}
+                setChain={handleSetChain}
+                setpopup={setpopup}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: userchain,
+                  logout: logout,
+                }}
+                refetch={refetch}
+                sendUserOperationAsync={sendUserOperationAsync}
+                waitForTxReceipt={(hash: string) => waitForTransactionReceipt(config, { hash: hash as `0x${string}` })}
+                client={client}
               />
             } />
           <Route path="/sneakylaunchpad"
