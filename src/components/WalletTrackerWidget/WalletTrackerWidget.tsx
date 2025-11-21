@@ -26,6 +26,9 @@ import { settings as appSettings } from '../../settings';
 import {
   showLoadingPopup,
   updatePopup,
+  isWalletNotificationsEnabled,
+  toggleWalletNotifications,
+  setWalletNotificationPreferences
 } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 
 interface GqlPosition {
@@ -149,6 +152,7 @@ const Tooltip: React.FC<{
   offset?: number;
 }> = ({ content, children, position = 'top', offset = 10 }) => {
   const [shouldRender, setShouldRender] = useState(false);
+
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
@@ -328,10 +332,29 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   account,
   selectedWallets,
 }) => {
+  const getWalletNotificationPreferences = (): Record<string, boolean> => {
+    try {
+      const stored = localStorage.getItem('wallet_notifications_preferences');
+      return stored ? JSON.parse(stored) : {};
+    } catch (error) {
+      console.error('Error loading wallet notification preferences:', error);
+      return {};
+    }
+  };
+  const [notificationPrefs, setNotificationPrefs] = useState<Record<string, boolean>>(() => {
+    try {
+      const stored = localStorage.getItem('wallet_notifications_preferences');
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
   const crystal = '/CrystalLogo.png';
   const widgetRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 100, y: 100 });
   const [size, setSize] = useState({ width: 600, height: 700 });
+
+
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState('');
@@ -372,7 +395,23 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     setHoveredImage(null);
     setShowPreview(false);
   }, []);
+  const [masterNotificationsEnabled, setMasterNotificationsEnabled] = useState<boolean>(() => {
+    const prefs = notificationPrefs;
+    const walletAddresses = localWallets.map(w => w.address.toLowerCase());
+    return !walletAddresses.some(addr => prefs[addr] === false);
+  });
+  const handleToggleAllNotifications = useCallback(() => {
+    const newValue = !masterNotificationsEnabled;
+    setMasterNotificationsEnabled(newValue);
 
+    const preferences = getWalletNotificationPreferences();
+    localWallets.forEach(wallet => {
+      preferences[wallet.address.toLowerCase()] = newValue;
+    });
+
+    setWalletNotificationPreferences(preferences);
+    setNotificationPrefs(preferences);
+  }, [masterNotificationsEnabled, localWallets]);
   const updatePreviewPosition = useCallback((containerElement: HTMLElement) => {
     if (!containerElement) return;
 
@@ -726,6 +765,22 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       onSnapChange(isSnapped, size.width);
     }
   }, [isSnapped, size.width, onSnapChange]);
+
+  useEffect(() => {
+    const walletAddresses = localWallets.map(w => w.address.toLowerCase());
+    const allEnabled = !walletAddresses.some(addr => notificationPrefs[addr] === false);
+    setMasterNotificationsEnabled(allEnabled);
+  }, [notificationPrefs, localWallets]);
+
+  useEffect(() => {
+    const handleNotificationUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setNotificationPrefs(customEvent.detail || {});
+    };
+
+    window.addEventListener('wallet-notifications-updated', handleNotificationUpdate);
+    return () => window.removeEventListener('wallet-notifications-updated', handleNotificationUpdate);
+  }, []);
 
   useEffect(() => {
     const handleWindowResize = () => {
@@ -1172,6 +1227,18 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     setPausedTrades(true);
     lastTradeCount.current = allTrades.length;
   }, [allTrades.length]);
+  const handleToggleWalletNotifications = useCallback((walletAddress: string) => {
+    const normalizedAddress = walletAddress.toLowerCase();
+    const newValue = toggleWalletNotifications(walletAddress);
+    setNotificationPrefs(prev => ({ ...prev, [normalizedAddress]: newValue }));
+
+    const walletAddresses = localWallets.map(w => w.address.toLowerCase());
+    const allEnabled = !walletAddresses.some(addr => {
+      if (addr === normalizedAddress) return !newValue;
+      return notificationPrefs[addr] === false;
+    });
+    setMasterNotificationsEnabled(allEnabled);
+  }, [localWallets, notificationPrefs]);
 
   const handleTradesBodyLeave = useCallback(() => {
     setPausedTrades(false);
@@ -1416,6 +1483,31 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
               Trades
             </button>
           </div>
+          {activeTab === 'wallets' && (
+            <div className="wtw-master-notification-toggle">
+              <Tooltip content={masterNotificationsEnabled ? "Disable all notifications" : "Enable all notifications"}>
+                <button
+                  className="wtw-master-notification-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleAllNotifications();
+                  }}
+                >
+                  {masterNotificationsEnabled ? (
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="rgb(235, 112, 112)" stroke="rgb(235, 112, 112)" strokeWidth="1.5">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(255, 255, 255, 0.5)" strokeWidth="1.5">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                  )}
+                </button>
+              </Tooltip>
+            </div>
+          )}
           <div className="wtw-widget-header-right">
             {activeTab === 'trades' && (
               <div className="wtw-header-actions">
@@ -1653,6 +1745,28 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                       </div>
 
                       <div className="wtw-wallet-actions">
+                        <Tooltip content={notificationPrefs[wallet.address.toLowerCase()] !== false ? "Disable notifications" : "Enable notifications"}>
+                          <button
+                            className="wtw-wallet-action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleWalletNotifications(wallet.address);
+                            }}
+                          >
+                            {notificationPrefs[wallet.address.toLowerCase()] !== false ? (
+                              <svg viewBox="0 0 24 24" width="16" height="16" fill="rgb(235, 112, 112)" stroke="rgb(235, 112, 112)" strokeWidth="1.5">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                              </svg>
+                            ) : (
+                              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="rgba(255, 255, 255, 0.5)" strokeWidth="1.5">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                              </svg>
+                            )}
+                          </button>
+                        </Tooltip>
+
                         <Tooltip content="View on Explorer">
                           <a
                             href={`${chainCfg?.explorer}/address/${wallet.address}`}

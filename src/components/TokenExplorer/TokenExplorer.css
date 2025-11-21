@@ -803,7 +803,7 @@
 
 .explorer-token-image-container {
   align-items: center;
-  background: conic-gradient(from 0deg,
+  background: conic-gradient(from 135deg,
       #aaaecf 0deg,
       #aaaecf var(--progress-angle),
       rgba(157, 169, 240, 0.2) var(--progress-angle),
@@ -835,7 +835,7 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
 }
 
 .explorer-token-image-container.graduated {
-  background: conic-gradient(from 0deg,
+  background: conic-gradient(from 135deg,
       #ffd700 0deg,
       #ffed4e 90deg,
       #ffc107 180deg,
@@ -4729,7 +4729,7 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
 }
 
 .explorer-token-row.nadfun-token .explorer-token-image-container {
-  background: conic-gradient(from 0deg,
+  background: conic-gradient(from 135deg,
     #AD5FFB 0deg,
     #AD5FFB var(--progress-angle),
     rgba(173, 95, 251, 0.2) var(--progress-angle),

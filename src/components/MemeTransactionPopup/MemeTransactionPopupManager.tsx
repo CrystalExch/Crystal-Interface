@@ -39,7 +39,42 @@ interface TrackedWallet {
   balance?: number;
   lastActiveAt?: number | null;
 }
+const WALLET_NOTIFICATIONS_KEY = 'wallet_notifications_preferences';
 
+const getWalletNotificationPreferences = (): Record<string, boolean> => {
+  try {
+    const stored = localStorage.getItem(WALLET_NOTIFICATIONS_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch (error) {
+    console.error('Error loading wallet notification preferences:', error);
+    return {};
+  }
+};
+
+export const setWalletNotificationPreferences = (preferences: Record<string, boolean>) => {
+  try {
+    localStorage.setItem(WALLET_NOTIFICATIONS_KEY, JSON.stringify(preferences));
+    window.dispatchEvent(new CustomEvent('wallet-notifications-updated', { detail: preferences }));
+  } catch (error) {
+    console.error('Error saving wallet notification preferences:', error);
+  }
+};
+export const isWalletNotificationsEnabled = (address: string): boolean => {
+  const preferences = getWalletNotificationPreferences();
+  return preferences[address.toLowerCase()] !== false;
+};
+
+export const toggleWalletNotifications = (address: string): boolean => {
+  const preferences = getWalletNotificationPreferences();
+  const normalizedAddress = address.toLowerCase();
+  const currentValue = preferences[normalizedAddress] !== false;
+  const newValue = !currentValue;
+
+  preferences[normalizedAddress] = newValue;
+  setWalletNotificationPreferences(preferences);
+
+  return newValue;
+};
 const TRACKED_WALLETS_KEY = 'tracked_wallets_data';
 interface AudioGroups {
   swap: boolean;
@@ -99,6 +134,9 @@ export const showLoadingPopup = (id: string, data: {
   timestamp?: number;
   actionType?: 'buy' | 'sell';
 }) => {
+  if (data.walletAddress && !isWalletNotificationsEnabled(data.walletAddress)) {
+    return;
+  }
   const newPopup: PopupData = {
     id,
     title: data.title,
@@ -225,7 +263,31 @@ const MemeTransactionPopupManager: React.FC<MemeTransactionPopupManagerProps> = 
   const [transactionPopups, setTransactionPopups] = useState<PopupData[]>([]);
   const [newPopupIds, setNewPopupIds] = useState<Set<string>>(new Set());
   const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
+ const [notificationPrefs, setNotificationPrefs] = useState<Record<string, boolean>>(() => 
+    getWalletNotificationPreferences()
+  );
 
+  useEffect(() => {
+    const handleUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setNotificationPrefs(customEvent.detail || getWalletNotificationPreferences());
+    };
+    
+    window.addEventListener('wallet-notifications-updated', handleUpdate);
+    return () => window.removeEventListener('wallet-notifications-updated', handleUpdate);
+  }, []);
+
+  const handleToggleNotifications = useCallback((address: string) => {
+    const normalizedAddress = address.toLowerCase();
+    const currentValue = notificationPrefs[normalizedAddress] !== false;
+    const newValue = !currentValue;
+    
+    setNotificationPrefs(prev => ({ ...prev, [normalizedAddress]: newValue }));
+    
+    const preferences = getWalletNotificationPreferences();
+    preferences[normalizedAddress] = newValue;
+    setWalletNotificationPreferences(preferences);
+  }, [notificationPrefs]);
   useEffect(() => {
     if (externalTrackedWallets && externalTrackedWallets.length > 0) {
       setTrackedWallets(externalTrackedWallets);
@@ -349,6 +411,9 @@ const MemeTransactionPopupManager: React.FC<MemeTransactionPopupManagerProps> = 
                     walletName={trackedWallet?.name}
                     timestamp={popup.timestamp}
                     actionType={popup.actionType}
+                    walletAddress={popup.walletAddress}
+                    onToggleNotifications={handleToggleNotifications}
+                    notificationsEnabled={popup.walletAddress ? (notificationPrefs[popup.walletAddress.toLowerCase()] !== false) : true}
                   />
                 );
               })()}
