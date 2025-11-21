@@ -693,25 +693,6 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
                   Wallet
                 </div>
               </Tooltip>
-              <Tooltip content="Twitter Tracker">
-                <div
-                  className={`footer-widget-button ${isTrackerWidgetOpen ? 'active' : ''}`}
-                  onClick={() => onToggleTrackerWidget(!isTrackerWidgetOpen)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <img src={twittericon} className="footer-widget-icon" />
-                  Twitter
-                </div>
-              </Tooltip>
-              <Tooltip content="Coming Soon!">
-                <div
-                  className="footer-widget-button"
-                  style={{ cursor: 'pointer' }}
-                >
-                  <img src={discovericon} className="footer-widget-icon" />
-                  Discover
-                </div>
-              </Tooltip>
               <Tooltip content="Spectra Tracker">
                 <div
                   className={`footer-widget-button ${isSpectraWidgetOpen ? 'active' : ''}`}
@@ -730,6 +711,25 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
                 >
                   <img src={charticon} className="footer-widget-icon" />
                   PnL
+                </div>
+              </Tooltip>
+              <Tooltip content="Coming Soon!">
+                <div
+                  className={`footer-widget-button ${isTrackerWidgetOpen ? 'active' : ''}`}
+                  // onClick={() => onToggleTrackerWidget(!isTrackerWidgetOpen)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <img src={twittericon} className="footer-widget-icon" />
+                  Twitter
+                </div>
+              </Tooltip>
+              <Tooltip content="Coming Soon!">
+                <div
+                  className="footer-widget-button"
+                  style={{ cursor: 'pointer' }}
+                >
+                  <img src={discovericon} className="footer-widget-icon" />
+                  Discover
                 </div>
               </Tooltip>
             </div>

@@ -28,6 +28,7 @@ import gas from '../../assets/gas.svg';
 import reset from '../../assets/reset.svg';
 import { TwitterHover } from '../TwitterHover/TwitterHover';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
+import { NadFunAbi } from '../../abis/NadFun';
 import { encodeFunctionData } from 'viem';
 import './SpectraWidget.css';
 import { HexColorPicker } from 'react-colorful';
@@ -37,7 +38,7 @@ import { settings } from '../../settings';
 
 const crystal = '/CrystalLogo.png';
 
-export interface Token {
+interface Token {
   id: string;
   tokenAddress: string;
   dev: string;
@@ -48,6 +49,7 @@ export interface Token {
   marketCap: number;
   change24h: number;
   volume24h: number;
+  mini: any;
   holders: number;
   proTraders: number;
   sniperHolding: number;
@@ -70,6 +72,8 @@ export interface Token {
   discordHandle: string;
   graduatedTokens: number;
   launchedTokens: number;
+  trades?: any;
+  source?: 'crystal' | 'nadfun';
 }
 
 type ColumnKey = 'new' | 'graduating' | 'graduated';
@@ -3075,36 +3079,37 @@ useEffect(() => {
     [walletTokenBalances, tokenList, activechain],
   );
 
-  // Replace the entire handleQuickBuy function with this:
   const handleQuickBuy = useCallback(
-    async (token: any, amount: string, buttonType: 'primary' | 'secondary') => {
-      const val = BigInt(amount || '0') * 10n ** 18n;
+    async (token: Token, amt: string, buttonType: 'primary' | 'secondary') => {
+      const val = BigInt(amt || '0') * 10n ** 18n;
       if (val === 0n) return;
 
       const targets: string[] = Array.from(selectedWallets);
       const txId = `spectra-quickbuy-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const tokenId = token.id || token.tokenAddress;
 
-      setLoadingTokens((prev) => new Set(prev).add(`${tokenId}-${buttonType}`));
-
+      setLoadingTokens((prev) => new Set(prev).add(`${token.id}-${buttonType}`));
+      
       try {
         if (showLoadingPopup) {
           showLoadingPopup(txId, {
             title: 'Sending batch buy...',
-            subtitle: `Buying ${amount} MON of ${token.symbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
-            amount: amount,
+            subtitle: `Buying ${amt} MON of ${token.symbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
+            amount: amt,
             amountUnit: 'MON',
             tokenImage: token.image,
           });
         }
 
-        // Build distribution plan with redistribution
+        const isNadFun = token.source === 'nadfun';
+        const contractAddress = isNadFun
+          ? settings.chainConfig[activechain].nadFunRouter
+          : settings.chainConfig[activechain].router;
+
         let remaining = val;
         const plan: { addr: string; amount: bigint }[] = [];
         const transferPromises = [];
 
         if (targets.length > 0) {
-          // First pass: allocate fair share capped by wallet balance
           for (const addr of targets) {
             const maxWei = getMaxSpendableWei(addr);
             const fairShare = val / BigInt(targets.length);
@@ -3116,8 +3121,6 @@ useEffect(() => {
               plan.push({ addr, amount: 0n });
             }
           }
-
-          // Second pass: redistribute remaining among wallets with spare balance
           for (const entry of plan) {
             if (remaining <= 0n) break;
             const maxWei = getMaxSpendableWei(entry.addr);
@@ -3140,29 +3143,58 @@ useEffect(() => {
             }
             setLoadingTokens((prev) => {
               const newSet = new Set(prev);
-              newSet.delete(`${tokenId}-${buttonType}`);
+              newSet.delete(`${token.id}-${buttonType}`);
               return newSet;
             });
             return;
           }
-
-          // Execute transfers
           for (const { addr, amount: partWei } of plan) {
             if (partWei <= 0n) continue;
-
             const wally = subWallets.find((w) => w.address === addr);
             const pk = wally?.privateKey ?? activeWalletPrivateKey;
             if (!pk) continue;
 
-            const uo = {
-              target: routerAddress as `0x${string}`,
-              data: encodeFunctionData({
-                abi: CrystalRouterAbi,
-                functionName: 'buy',
-                args: [true, token.tokenAddress as `0x${string}`, partWei, 0n],
-              }),
-              value: partWei,
-            };
+            let uo;
+
+            if (isNadFun) {
+              // need to calculate reservequote and reservebase based on price
+              // const fee = 99000n;
+              // const iva = partWei * fee / 100000n;
+              // const vNative = token.reserveQuote + iva;
+              // const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+              // const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buyPresets[buttonType == 'primary' ? (token.status == 'new' ? activePresets.new : token.status == 'graduating' ? activePresets.graduating : activePresets.graduated) : (token.status == 'new' ? activePresetsSecond.new : token.status == 'graduating' ? activePresetsSecond.graduating : activePresetsSecond.graduated)]?.slippage) / 100)));
+
+              uo = {
+                target: contractAddress as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: NadFunAbi,
+                  functionName: 'buy',
+                  args: [{
+                    amountOutMin: BigInt(0),
+                    token: token.id as `0x${string}`,
+                    to: account?.address as `0x${string}`,
+                    deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
+                  }],
+                }),
+                value: partWei,
+              };
+            } else {
+              // const fee = 99000n;
+              // const iva = partWei * fee / 100000n;
+              // const vNative = token.reserveQuote + iva;
+              // const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+              // const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buyPresets[buttonType == 'primary' ? (token.status == 'new' ? activePresets.new : token.status == 'graduating' ? activePresets.graduating : activePresets.graduated) : (token.status == 'new' ? activePresetsSecond.new : token.status == 'graduating' ? activePresetsSecond.graduating : activePresetsSecond.graduated)]?.slippage) / 100)));
+
+              uo = {
+                target: contractAddress as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: CrystalRouterAbi,
+                  functionName: 'buy',
+                  args: [true, token.id as `0x${string}`, partWei, BigInt(0)],
+                }),
+                value: partWei,
+              };
+            }
 
             const wallet = nonces.current.get(addr);
             const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
@@ -3188,15 +3220,35 @@ useEffect(() => {
           }
         } else {
           if (account?.address) {
-            const uo = {
-              target: routerAddress as `0x${string}`,
-              data: encodeFunctionData({
-                abi: CrystalRouterAbi,
-                functionName: 'buy',
-                args: [true, token.tokenAddress as `0x${string}`, val, 0n],
-              }),
-              value: val,
-            };
+            let uo;
+
+            if (isNadFun) {
+              uo = {
+                target: contractAddress as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: NadFunAbi,
+                  functionName: 'buy',
+                  args: [{
+                    amountOutMin: 0n,
+                    token: token.id as `0x${string}`,
+                    to: account.address as `0x${string}`,
+                    deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
+                  }],
+                }),
+                value: val,
+              };
+            } else {
+              uo = {
+                target: contractAddress as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: CrystalRouterAbi,
+                  functionName: 'buy',
+                  args: [true, token.id as `0x${string}`, val, 0n],
+                }),
+                value: val,
+              };
+            }
+
             const transferPromise = sendUserOperationAsync({ uo });
             transferPromises.push(transferPromise);
           }
@@ -3207,13 +3259,11 @@ useEffect(() => {
           (result) => result.status === 'fulfilled' && result.value === true,
         ).length;
 
-        if (terminalRefetch) {
-          terminalRefetch();
-        }
+        terminalRefetch();
 
         if (updatePopup) {
           updatePopup(txId, {
-            title: `Bought ${amount} MON Worth`,
+            title: `Bought ${amt} MON Worth`,
             subtitle: `Distributed across ${successfulTransfers} wallet${successfulTransfers !== 1 ? 's' : ''}`,
             variant: 'success',
             confirmed: true,
@@ -3237,15 +3287,14 @@ useEffect(() => {
           });
         }
       } finally {
-        setLoadingTokens((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(`${tokenId}-${buttonType}`);
-          return newSet;
-        });
+          setLoadingTokens((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(`${token.id}-${buttonType}`);
+            return newSet;
+          });
       }
     },
     [
-      routerAddress,
       sendUserOperationAsync,
       selectedWallets,
       subWallets,
@@ -3253,9 +3302,7 @@ useEffect(() => {
       getMaxSpendableWei,
       account,
       nonces,
-      terminalRefetch,
-      showLoadingPopup,
-      updatePopup,
+      activechain,
     ],
   );
 
