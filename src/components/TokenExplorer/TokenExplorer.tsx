@@ -55,7 +55,7 @@ import { TwitterHover } from '../TwitterHover/TwitterHover';
 
 import './TokenExplorer.css';
 
-export interface Token {
+interface Token {
   id: string;
   tokenAddress: string;
   dev: string;
@@ -66,6 +66,7 @@ export interface Token {
   marketCap: number;
   change24h: number;
   volume24h: number;
+  mini: any;
   holders: number;
   proTraders: number;
   sniperHolding: number;
@@ -88,6 +89,7 @@ export interface Token {
   discordHandle: string;
   graduatedTokens: number;
   launchedTokens: number;
+  trades?: any;
   source?: 'crystal' | 'nadfun';
 }
 
@@ -3986,11 +3988,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             let uo;
 
             if (isNadFun) {
-              const fee = 99000n;
-              const iva = partWei * fee / 100000n;
-              const vNative = token.reserveQuote + iva;
-              const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
-              const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+              // need to calculate reservequote and reservebase based on price
+              // const fee = 99000n;
+              // const iva = partWei * fee / 100000n;
+              // const vNative = token.reserveQuote + iva;
+              // const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+              // const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buyPresets[buttonType == 'primary' ? (token.status == 'new' ? activePresets.new : token.status == 'graduating' ? activePresets.graduating : activePresets.graduated) : (token.status == 'new' ? activePresetsSecond.new : token.status == 'graduating' ? activePresetsSecond.graduating : activePresetsSecond.graduated)]?.slippage) / 100)));
 
               uo = {
                 target: contractAddress as `0x${string}`,
@@ -3998,7 +4001,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                   abi: NadFunAbi,
                   functionName: 'buy',
                   args: [{
-                    amountOutMin: BigInt(output),
+                    amountOutMin: BigInt(0),
                     token: token.id as `0x${string}`,
                     to: account.address as `0x${string}`,
                     deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
@@ -4007,18 +4010,18 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 value: partWei,
               };
             } else {
-              const fee = 99000n;
-              const iva = partWei * fee / 100000n;
-              const vNative = token.reserveQuote + iva;
-              const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
-              const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+              // const fee = 99000n;
+              // const iva = partWei * fee / 100000n;
+              // const vNative = token.reserveQuote + iva;
+              // const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+              // const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buyPresets[buttonType == 'primary' ? (token.status == 'new' ? activePresets.new : token.status == 'graduating' ? activePresets.graduating : activePresets.graduated) : (token.status == 'new' ? activePresetsSecond.new : token.status == 'graduating' ? activePresetsSecond.graduating : activePresetsSecond.graduated)]?.slippage) / 100)));
 
               uo = {
                 target: contractAddress as `0x${string}`,
                 data: encodeFunctionData({
                   abi: CrystalRouterAbi,
                   functionName: 'buy',
-                  args: [true, token.id as `0x${string}`, partWei, BigInt(output)],
+                  args: [true, token.id as `0x${string}`, partWei, BigInt(0)],
                 }),
                 value: partWei,
               };

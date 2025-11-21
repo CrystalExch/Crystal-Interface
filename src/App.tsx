@@ -5740,6 +5740,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     if (trackedAddresses.length > 0) setTrackedAddresses([])
     setIsLoadingTrades(true)
     const fetchMemeTokenData = async () => {
+      const res = await fetch('https://api.crystal.exchange/tokens', {
+        method: 'GET',
+        headers: { 'content-type': 'application/json' },
+      });
+
+      if (!res.ok) {
+        throw new Error(`launchpad api returned ${res.status}`);
+      }
+
+      const json = await res.json();
+      console.log(json)
       try {
         let response = await fetch(SUBGRAPH_URL, {
           method: 'POST',
