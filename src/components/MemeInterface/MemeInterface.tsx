@@ -1794,7 +1794,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       } catch { }
     };
 
-    const handle = setInterval(tick, 1000);
+    const handle = setInterval(tick, 3000);
     tick();
 
     return () => {

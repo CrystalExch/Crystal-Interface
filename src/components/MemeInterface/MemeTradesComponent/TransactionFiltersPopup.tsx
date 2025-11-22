@@ -71,12 +71,12 @@ const TransactionFiltersPopup: React.FC<TransactionFiltersPopupProps> = ({
 
         <div className="trades-filters-content">
           <div className="filter-row">
-            <div className="filter-label">Maker Address</div>
+            <div className="filter-label">User Address</div>
             <div className="filter-inputs">
               <input
                 type="text"
                 className="filter-input"
-                placeholder="Enter Maker Address"
+                placeholder="Enter User Address"
                 value={filters.makerAddress}
                 onChange={(e) =>
                   handleInputChange('makerAddress', e.target.value)

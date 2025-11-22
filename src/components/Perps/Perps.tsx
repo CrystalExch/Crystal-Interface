@@ -1923,7 +1923,7 @@ const Perps: React.FC<PerpsProps> = ({
                       inputMode="decimal"
                       className="scale-input"
                       placeholder="0.00"
-                      value={0.00}
+                      value={''}
                     />
                   </div>
                 </div>
@@ -1936,7 +1936,7 @@ const Perps: React.FC<PerpsProps> = ({
                       inputMode="decimal"
                       className="scale-input"
                       placeholder="0.00"
-                      value={0.00}
+                      value={''}
                     />
                   </div>
                 </div>
@@ -1951,7 +1951,7 @@ const Perps: React.FC<PerpsProps> = ({
                       inputMode="numeric" pattern="[0-9]*"
                       className="scale-bottom-input"
                       placeholder="0"
-                      value={0.00}
+                      value={''}
                     />
                   </div>
                 </div>
@@ -1964,7 +1964,7 @@ const Perps: React.FC<PerpsProps> = ({
                       inputMode="decimal"
                       className={`scale-bottom-input`}
                       placeholder="0.00"
-                      value={0.00}
+                      value={''}
                     />
                   </div>
                 </div>

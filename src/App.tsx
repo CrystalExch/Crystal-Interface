@@ -4399,6 +4399,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         dev: args.creator,
         launchedTokens: 0,
         graduatedTokens: 0,
+        bondingPercentage: 0,
       };
 
       if (token.status && pausedColumnRef.current == token.status) {
@@ -4642,6 +4643,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     NAD_FUN_EVENTS.CurveCreate,
                     NAD_FUN_EVENTS.CurveBuy,
                     NAD_FUN_EVENTS.CurveSell,
+                    NAD_FUN_EVENTS.CurveSync,
                     NAD_FUN_EVENTS.CurveTokenListed,
                   ]
                 ],
@@ -4691,7 +4693,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           if (msg.method !== 'eth_subscription' || !msg.params?.result)
             return;
           const log = msg.params?.result;
-
           if (!log?.topics?.length || msg?.params?.result?.commitState != "Voted") return;
 
           setProcessedLogs(prev => {
@@ -5377,21 +5378,38 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
               const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
 
-              const metadataOffset = Number(word(2)) * 2;
-              const metadataLength = Number(BigInt('0x' + hex.slice(metadataOffset, metadataOffset + 64)));
-              const metadataStart = metadataOffset + 64;
-              const metadataHex = hex.slice(metadataStart, metadataStart + metadataLength * 2);
+              let metadataOffset = Number(word(0)) * 2;
+              let metadataLength = Number(BigInt('0x' + hex.slice(metadataOffset, metadataOffset + 64)));
+              let metadataStart = metadataOffset + 64;
+              let metadataHex = hex.slice(metadataStart, metadataStart + metadataLength * 2);
+
+              let bytes = metadataHex.match(/.{1,2}/g) || [];
+              const name = bytes.map((byte: string) => String.fromCharCode(parseInt(byte, 16))).join('');
+
+              metadataOffset = Number(word(1)) * 2;
+              metadataLength = Number(BigInt('0x' + hex.slice(metadataOffset, metadataOffset + 64)));
+              metadataStart = metadataOffset + 64;
+              metadataHex = hex.slice(metadataStart, metadataStart + metadataLength * 2);
+
+              bytes = metadataHex.match(/.{1,2}/g) || [];
+              const symbol = bytes.map((byte: string) => String.fromCharCode(parseInt(byte, 16))).join('');
+
+              metadataOffset = Number(word(2)) * 2;
+              metadataLength = Number(BigInt('0x' + hex.slice(metadataOffset, metadataOffset + 64)));
+              metadataStart = metadataOffset + 64;
+              metadataHex = hex.slice(metadataStart, metadataStart + metadataLength * 2);
 
               let metadataURI = '';
               try {
                 metadataURI = decodeURIComponent(metadataHex.match(/.{1,2}/g)?.map((byte: string) => '%' + byte).join('') || '');
               } catch {
-                const bytes = metadataHex.match(/.{1,2}/g) || [];
+                bytes = metadataHex.match(/.{1,2}/g) || [];
                 metadataURI = bytes.map((byte: string) => String.fromCharCode(parseInt(byte, 16))).join('');
               }
 
               const creatorAddress = `0x${log.topics[1].slice(26)}`.toLowerCase();
               const tokenAddress = `0x${log.topics[2].slice(26)}`.toLowerCase();
+              const poolAddress = `0x${log.topics[3].slice(26)}`.toLowerCase();
 
               fetch(metadataURI)
                 .then(response => response.json())
@@ -5401,8 +5419,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     id: tokenAddress,
                     tokenAddress: tokenAddress,
                     dev: creatorAddress,
-                    name: metadata.name || 'Unknown',
-                    symbol: metadata.symbol || 'UNKNOWN',
+                    name: name || 'Unknown',
+                    symbol: symbol || 'UNKNOWN',
                     image: metadata.image_uri || '',
                     description: metadata.description || '',
                     twitterHandle: metadata.twitter || '',
@@ -5411,20 +5429,19 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     website: metadata.website || '',
                     status: 'new',
                     created: Math.floor(Date.now() / 1000),
-                    price: 0,
-                    marketCap: 0,
+                    price: 0.000083878,
+                    marketCap: 0.000083878 * TOTAL_SUPPLY,
                     volumeDelta: 0,
                     graduatedTokens: 0,
                     launchedTokens: 0,
                     bondingPercentage: 0,
                     source: 'nadfun',
+                    market: poolAddress,
                   };
 
                   if (pausedColumnRef.current === 'new') {
-                    console.log('Column paused, queueing token:', tokenAddress);
                     pausedTokenQueueRef.current['new'].push(newToken);
                   } else {
-                    console.log('Adding token directly:', tokenAddress);
                     dispatch({
                       type: 'ADD_QUEUED_TOKENS',
                       payload: {
@@ -5441,9 +5458,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     id: tokenAddress,
                     tokenAddress: tokenAddress,
                     dev: creatorAddress,
-                    name: tokenAddress.slice(0, 8) + '...',
-                    symbol: 'NAD',
-                    image: '',
+                    name: name || 'Unknown',
+                    symbol: symbol || 'UNKNOWN',
                     description: '',
                     twitterHandle: '',
                     telegramHandle: '',
@@ -5451,13 +5467,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     website: '',
                     status: 'new',
                     created: Math.floor(Date.now() / 1000),
-                    price: 0,
-                    marketCap: 0,
+                    price: 0.000083878,
+                    marketCap: 0.000083878 * TOTAL_SUPPLY,
                     volumeDelta: 0,
                     graduatedTokens: 0,
                     launchedTokens: 0,
                     bondingPercentage: 0,
                     source: 'nadfun',
+                    market: poolAddress,
                   };
 
                   if (pausedColumnRef.current === 'new') {
@@ -5474,10 +5491,75 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 });
             }
             else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveBuy) {
+              const userAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+              const tokenAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
 
+              const hex = log.data.replace(/^0x/, '');
+              const words: string[] = [];
+              for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
+        
+              const amountIn = BigInt('0x' + words[0]);
+              const amountOut = BigInt('0x' + words[1]);
+        
+              dispatch({
+                type: 'UPDATE_MARKET',
+                id: tokenAddr,
+                updates: {
+                  buyTransactions: 1,
+                  sellTransactions: 0,
+                  volumeDelta:
+                    Number(amountIn) / 1e18,
+                },
+              });
+              if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
+              }
             }
             else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveSell) {
-              
+              const userAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+              const tokenAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
+
+              const hex = log.data.replace(/^0x/, '');
+              const words: string[] = [];
+              for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
+        
+              const amountIn = BigInt('0x' + words[0]);
+              const amountOut = BigInt('0x' + words[1]);
+        
+              dispatch({
+                type: 'UPDATE_MARKET',
+                id: tokenAddr,
+                updates: {
+                  buyTransactions: 0,
+                  sellTransactions: 1,
+                  volumeDelta:
+                    Number(amountOut) / 1e18,
+                },
+              });
+              if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
+              }
+            }
+            else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveSync) {
+              const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+
+              const hex = log.data.replace(/^0x/, '');
+              const words: string[] = [];
+              for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
+        
+              const reserveQuote = BigInt('0x' + words[2]);
+              const reserveBase = BigInt('0x' + words[3]);
+              const price =
+              reserveBase == 0n
+                ? 0
+                : Number(reserveQuote) / Number(reserveBase);
+
+              dispatch({
+                type: 'UPDATE_MARKET',
+                id: tokenAddr,
+                updates: {
+                  price: price,
+                  marketCap: price * TOTAL_SUPPLY,
+                },
+              });
             }
             return tempset;
           })
@@ -6458,21 +6540,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     gcTime: 0,
   });
 
-  const [explorerFiltersActiveTab, setExplorerFiltersActiveTab] = useState<'new' | 'graduating' | 'graduated'>(() => {
-    const saved = localStorage.getItem('crystal_explorer_active_tab');
-    return (saved as 'new' | 'graduating' | 'graduated') || 'new';
-  });
-
-  const [explorerFiltersActiveSection, setExplorerFiltersActiveSection] = useState<'audit' | 'metrics' | 'socials'>(() => {
-    const saved = localStorage.getItem('crystal_explorer_active_section');
-    return (saved as 'audit' | 'metrics' | 'socials') || 'audit';
-  });
-
-  const handleOpenFiltersForColumn = useCallback((columnType: 'new' | 'graduating' | 'graduated') => {
-    setExplorerFiltersActiveTab(columnType);
-    setpopup(24);
-  }, []);
-
   const initialExplorerFilters = {
     ageMin: '', ageMax: '',
     holdersMin: '', holdersMax: '',
@@ -6494,6 +6561,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     hasTelegram: false
   };
 
+  const [explorerFiltersActiveTab, setExplorerFiltersActiveTab] = useState<'new' | 'graduating' | 'graduated'>(() => {
+    const saved = localStorage.getItem('crystal_explorer_active_tab');
+    return (saved as 'new' | 'graduating' | 'graduated') || 'new';
+  });
+  const [explorerFiltersActiveSection, setExplorerFiltersActiveSection] = useState<'audit' | 'metrics' | 'socials'>(() => {
+    const saved = localStorage.getItem('crystal_explorer_active_section');
+    return (saved as 'audit' | 'metrics' | 'socials') || 'audit';
+  });
   const [explorerFilters, setExplorerFilters] = useState(() => {
     const saved = localStorage.getItem('crystal_explorer_filters');
     if (saved) {
@@ -6514,7 +6589,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       graduated: initialExplorerFilters
     };
   });
-
   const [appliedExplorerFilters, setAppliedExplorerFilters] = useState(() => {
     const saved = localStorage.getItem('crystal_applied_explorer_filters');
     if (saved) {
@@ -6535,27 +6609,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       graduated: null
     };
   });
-
-  useEffect(() => {
-    localStorage.setItem('crystal_explorer_active_tab', explorerFiltersActiveTab);
-  }, [explorerFiltersActiveTab]);
-
-  useEffect(() => {
-    localStorage.setItem('crystal_explorer_active_section', explorerFiltersActiveSection);
-  }, [explorerFiltersActiveSection]);
-
-  useEffect(() => {
-    localStorage.setItem('crystal_explorer_filters', JSON.stringify(explorerFilters));
-  }, [explorerFilters]);
-
-  useEffect(() => {
-    const hasAnyFilters = Object.values(appliedExplorerFilters).some(tabFilters => tabFilters !== null);
-    if (hasAnyFilters) {
-      localStorage.setItem('crystal_applied_explorer_filters', JSON.stringify(appliedExplorerFilters));
-    } else {
-      localStorage.removeItem('crystal_applied_explorer_filters');
-    }
-  }, [appliedExplorerFilters]);
 
   useEffect(() => {
     if (!trackedWalletTrades || trackedWalletTrades.length === 0 || trackedWallets.length === 0) {
@@ -6647,14 +6700,24 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     }
   }, [trackedWalletTrades, trackedWallets, monUsdPrice]);
 
+  const handleOpenFiltersForColumn = useCallback((columnType: 'new' | 'graduating' | 'graduated') => {
+    setExplorerFiltersActiveTab(columnType);
+    localStorage.setItem('crystal_explorer_active_tab', columnType);
+    setpopup(24);
+  }, []);
+
   const handleExplorerFilterInputChange = useCallback((field: string, value: string | boolean) => {
-    setExplorerFilters((prev: any) => ({
-      ...prev,
-      [explorerFiltersActiveTab]: {
-        ...prev[explorerFiltersActiveTab],
-        [field]: value
+    setExplorerFilters((prev: any) => {
+      const updated = {
+        ...prev,
+        [explorerFiltersActiveTab]: {
+          ...prev[explorerFiltersActiveTab],
+          [field]: value
+        }
       }
-    }));
+      localStorage.setItem('crystal_explorer_filters', JSON.stringify(updated));
+      return updated;
+    });
   }, [explorerFiltersActiveTab]);
 
   const handleExplorerFiltersReset = useCallback(() => {
@@ -6663,13 +6726,21 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       graduating: initialExplorerFilters,
       graduated: initialExplorerFilters
     });
+    localStorage.setItem('crystal_explorer_filters', JSON.stringify({
+      new: initialExplorerFilters,
+      graduating: initialExplorerFilters,
+      graduated: initialExplorerFilters
+    }));
     setAppliedExplorerFilters({
       new: null,
       graduating: null,
       graduated: null
     });
+    localStorage.removeItem('crystal_applied_explorer_filters');
     setExplorerFiltersActiveTab('new');
+    localStorage.setItem('crystal_explorer_active_tab', 'new');
     setExplorerFiltersActiveSection('audit');
+    localStorage.setItem('crystal_explorer_active_section', 'audit');
     localStorage.removeItem('crystal_explorer_filters');
     localStorage.removeItem('crystal_applied_explorer_filters');
     localStorage.setItem('crystal_explorer_active_tab', 'new');
@@ -6687,10 +6758,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         reader.onload = (e) => {
           try {
             const importedFilters = JSON.parse(e.target?.result as string);
-            setExplorerFilters((prev: any) => ({
-              ...prev,
-              [explorerFiltersActiveTab]: importedFilters
-            }));
+            setExplorerFilters((prev: any) => {
+              const updated = {
+                ...prev,
+                [explorerFiltersActiveTab]: importedFilters
+              };
+              localStorage.setItem('crystal_explorer_filters', JSON.stringify(updated));
+              return updated;
+            });
           } catch (error) {
             alert('Invalid JSON file');
           }
@@ -6722,13 +6797,19 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
       newAppliedFilters[tab] = hasActiveFilters ? tabFilters : null;
     });
-
+    const hasAnyFilters = Object.values(newAppliedFilters).some(tabFilters => tabFilters !== null);
+    if (hasAnyFilters) {
+      localStorage.setItem('crystal_applied_explorer_filters', JSON.stringify(newAppliedFilters));
+    } else {
+      localStorage.removeItem('crystal_applied_explorer_filters');
+    }
     setAppliedExplorerFilters(newAppliedFilters);
     setpopup(0);
   }, [explorerFilters, appliedExplorerFilters]);
 
   const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(newTab);
+    localStorage.setItem('crystal_explorer_active_tab', newTab);
   }, []);
 
   const handleTokenClick = (token: any) => {
@@ -6812,13 +6893,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
     }
   }, [sendUserOperationAsync, activechain, terminalRefetch]);
-
-  useEffect(() => {
-    const cleaned = deduplicateWallets(subWallets);
-    if (cleaned.length !== subWallets.length) {
-      saveSubWallets(cleaned);
-    }
-  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -6982,7 +7056,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     document.title = title;
   }, [trades, location.pathname, activeMarket, perpsMarketsData, perpsActiveMarketKey]);
-
+  
+  // process ob on orders or amountsquote change
   useEffect(() => {
     if (prevOrderData && Array.isArray(prevOrderData) && prevOrderData.length >= 4) {
       try {
@@ -16361,19 +16436,28 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             <div className="section-tabs">
               <button
                 className={`section-tab ${explorerFiltersActiveSection === 'audit' ? 'active' : ''}`}
-                onClick={() => setExplorerFiltersActiveSection('audit')}
+                onClick={() => {
+                  setExplorerFiltersActiveSection('audit')
+                  localStorage.setItem('crystal_explorer_active_section', 'audit');
+                }}
               >
                 Audit
               </button>
               <button
                 className={`section-tab ${explorerFiltersActiveSection === 'metrics' ? 'active' : ''}`}
-                onClick={() => setExplorerFiltersActiveSection('metrics')}
+                onClick={() => {
+                  setExplorerFiltersActiveSection('metrics')
+                  localStorage.setItem('crystal_explorer_active_section', 'metrics');
+                }}
               >
                 Metrics
               </button>
               <button
                 className={`section-tab ${explorerFiltersActiveSection === 'socials' ? 'active' : ''}`}
-                onClick={() => setExplorerFiltersActiveSection('socials')}
+                onClick={() => {
+                  setExplorerFiltersActiveSection('socials')
+                  localStorage.setItem('crystal_explorer_active_section', 'socials');
+                }}
               >
                 Socials
               </button>

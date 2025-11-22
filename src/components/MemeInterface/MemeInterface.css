@@ -2917,6 +2917,8 @@
     white-space: nowrap;
     line-height: 1.2;
     margin-top: 2px;
+    display: flex;
+    align-items: center;
 }
 
 .meme-wallet-item.active .meme-wallet-name {
