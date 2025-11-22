@@ -136,7 +136,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, onViewFeeSchedule }) =
     <div className="fee-tier-section">
       <div className="fee-tier-header">
         <div className="fee-tier-header-left">
-          <h3 className="fee-tier-title">Your Fee Tier</h3>
+          <h3 className="referrals-fee-tier-title">Your Fee Tier</h3>
           <div className="fee-tier-badge" style={{ backgroundColor: tier.color }}>
             <TrendingDown size={16} />
             <span className="fee-tier-badge-name">Tier {tier.tier}</span>
