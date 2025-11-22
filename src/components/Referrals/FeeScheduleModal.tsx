@@ -12,52 +12,46 @@ const FeeScheduleModal: React.FC<FeeScheduleModalProps> = ({ isOpen, onClose }) 
 
   const feeTiers = [
     {
+      name: 'Bronze',
       tier: 1,
       volume: '$0+',
-      perpsTaker: '0.050%',
-      perpsMaker: '0.020%',
-      spotTaker: '0.075%',
-      spotMaker: '0.025%',
+      spotTaker: '0.050%',
+      spotMaker: '0.020%',
     },
     {
+      name: 'Silver',
       tier: 2,
       volume: '$100K+',
-      perpsTaker: '0.040%',
-      perpsMaker: '0.010%',
-      spotTaker: '0.060%',
-      spotMaker: '0.015%',
-    },
-    {
-      tier: 3,
-      volume: '$500K+',
-      perpsTaker: '0.035%',
-      perpsMaker: '0.005%',
-      spotTaker: '0.050%',
+      spotTaker: '0.040%',
       spotMaker: '0.010%',
     },
     {
-      tier: 4,
-      volume: '$1M+',
-      perpsTaker: '0.030%',
-      perpsMaker: '0.000%',
-      spotTaker: '0.040%',
+      name: 'Gold',
+      tier: 3,
+      volume: '$500K+',
+      spotTaker: '0.035%',
       spotMaker: '0.005%',
     },
     {
-      tier: 5,
-      volume: '$5M+',
-      perpsTaker: '0.025%',
-      perpsMaker: '-0.003%',
+      name: 'Diamond',
+      tier: 4,
+      volume: '$1M+',
       spotTaker: '0.030%',
       spotMaker: '0.000%',
     },
     {
+      name: 'Netherite',
+      tier: 5,
+      volume: '$5M+',
+      spotTaker: '0.025%',
+      spotMaker: '-0.003%',
+    },
+    {
+      name: 'Enchanted Netherite',
       tier: 6,
       volume: '$10M+',
-      perpsTaker: '0.020%',
-      perpsMaker: '-0.005%',
-      spotTaker: '0.025%',
-      spotMaker: '-0.002%',
+      spotTaker: '0.020%',
+      spotMaker: '-0.005%',
     },
   ];
 
@@ -102,40 +96,30 @@ const FeeScheduleModal: React.FC<FeeScheduleModalProps> = ({ isOpen, onClose }) 
 
           {/* Main Fee Tiers Table */}
           <div className="fee-schedule-section">
-            <h3 className="fee-schedule-section-title">Trading Fee Tiers</h3>
             <div className="fee-schedule-table-wrapper">
               <table className="fee-schedule-table">
                 <thead>
                   <tr>
                     <th>Tier</th>
                     <th>14D Volume</th>
-                    <th>Perps Taker</th>
-                    <th>Perps Maker</th>
-                    <th>Spot Taker</th>
-                    <th>Spot Maker</th>
+                    <th>Taker</th>
+                    <th>Maker</th>
                   </tr>
                 </thead>
                 <tbody>
                   {feeTiers.map((tier) => (
                     <tr key={tier.tier}>
-                      <td className="tier-cell">
-                        <span className={`tier-badge tier-${tier.tier}`}>
-                          Tier {tier.tier}
+                      <td className="modal-tier-cell">
+                        <span className={`modal-tier-badge tier-${tier.tier}`}>
+                          {tier.name}
                         </span>
                       </td>
-                      <td className="volume-cell">{tier.volume}</td>
-                      <td className="fee-cell">{tier.perpsTaker}</td>
-                      <td className="fee-cell maker-fee">
-                        {tier.perpsMaker}
-                        {tier.perpsMaker.startsWith('-') && (
-                          <span className="rebate-indicator">rebate</span>
-                        )}
-                      </td>
-                      <td className="fee-cell">{tier.spotTaker}</td>
-                      <td className="fee-cell maker-fee">
+                      <td className="modal-volume-cell">{tier.volume}</td>
+                      <td className="modal-fee-cell">{tier.spotTaker}</td>
+                      <td className="modal-fee-cell modal-maker-fee">
                         {tier.spotMaker}
                         {tier.spotMaker.startsWith('-') && (
-                          <span className="rebate-indicator">rebate</span>
+                          <span className="modal-rebate-indicator">rebate</span>
                         )}
                       </td>
                     </tr>
@@ -147,7 +131,6 @@ const FeeScheduleModal: React.FC<FeeScheduleModalProps> = ({ isOpen, onClose }) 
 
           {/* Maker Rebate Tiers */}
           <div className="fee-schedule-section">
-            <h3 className="fee-schedule-section-title">Maker Rebate Tiers</h3>
             <p className="fee-schedule-subsection-description">
               Based on your share of total platform volume over 14 days
             </p>
@@ -162,36 +145,6 @@ const FeeScheduleModal: React.FC<FeeScheduleModalProps> = ({ isOpen, onClose }) 
                   <div className="rebate-tier-description">{rebate.description}</div>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Staking Discount */}
-          <div className="fee-schedule-section">
-            <h3 className="fee-schedule-section-title">Staking Discount</h3>
-            <div className="staking-discount-card">
-              <div className="staking-discount-header">
-                <div className="staking-discount-icon">🔒</div>
-                <div className="staking-discount-content">
-                  <h4 className="staking-discount-title">Stake CRYSTAL for Additional Fee Reduction</h4>
-                  <p className="staking-discount-description">
-                    Staking CRYSTAL tokens provides an additional 5-10% discount on all trading fees, stackable with your volume tier.
-                  </p>
-                </div>
-              </div>
-              <div className="staking-discount-tiers">
-                <div className="staking-discount-item">
-                  <span className="staking-amount">10,000 CRYSTAL</span>
-                  <span className="staking-benefit">5% discount</span>
-                </div>
-                <div className="staking-discount-item">
-                  <span className="staking-amount">50,000 CRYSTAL</span>
-                  <span className="staking-benefit">7.5% discount</span>
-                </div>
-                <div className="staking-discount-item">
-                  <span className="staking-amount">100,000+ CRYSTAL</span>
-                  <span className="staking-benefit">10% discount</span>
-                </div>
-              </div>
             </div>
           </div>
 
