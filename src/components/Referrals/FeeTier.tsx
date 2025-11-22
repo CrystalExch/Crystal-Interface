@@ -4,6 +4,7 @@ import './FeeTier.css';
 
 interface FeeTierProps {
   tradingVolume: number; // 14-day trading volume in USD
+  commissionBonus: number; // Crystals from referrals
   onViewFeeSchedule: () => void;
 }
 
@@ -22,13 +23,13 @@ interface TierInfo {
   } | null;
 }
 
-const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, onViewFeeSchedule }) => {
+const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onViewFeeSchedule }) => {
   const getTierInfo = (volume: number): TierInfo => {
     if (volume >= 10000000) {
       return {
-        name: 'VIP',
+        name: 'Enchanted Netherite',
         tier: 6,
-        color: '#FFD700',
+        color: '#9D4EDD',
         takerFee: '0.020%',
         makerFee: '-0.005%',
         minVolume: 10000000,
@@ -37,14 +38,14 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, onViewFeeSchedule }) =
     }
     if (volume >= 5000000) {
       return {
-        name: 'Diamond',
+        name: 'Netherite',
         tier: 5,
-        color: '#B9F2FF',
+        color: '#4A4A4A',
         takerFee: '0.025%',
         makerFee: '-0.003%',
         minVolume: 5000000,
         next: {
-          name: 'VIP',
+          name: 'Enchanted Netherite',
           tier: 6,
           needed: 10000000 - volume,
           minVolume: 10000000,
@@ -53,14 +54,14 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, onViewFeeSchedule }) =
     }
     if (volume >= 1000000) {
       return {
-        name: 'Platinum',
+        name: 'Diamond',
         tier: 4,
-        color: '#E5E4E2',
+        color: '#B9F2FF',
         takerFee: '0.030%',
         makerFee: '0.000%',
         minVolume: 1000000,
         next: {
-          name: 'Diamond',
+          name: 'Netherite',
           tier: 5,
           needed: 5000000 - volume,
           minVolume: 5000000,
@@ -76,7 +77,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, onViewFeeSchedule }) =
         makerFee: '0.005%',
         minVolume: 500000,
         next: {
-          name: 'Platinum',
+          name: 'Diamond',
           tier: 4,
           needed: 1000000 - volume,
           minVolume: 1000000,
@@ -133,19 +134,21 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, onViewFeeSchedule }) =
   };
 
   return (
-    <div className="fee-tier-section">
-      <div className="fee-tier-header">
+    <>
+      {/* Fee Tier Section */}
+      <div className="fee-tier-section">
+        <div className="fee-tier-header">
         <div className="fee-tier-header-left">
           <h3 className="referrals-fee-tier-title">Your Fee Tier</h3>
           <div className="fee-tier-badge" style={{ backgroundColor: tier.color }}>
             <TrendingDown size={16} />
-            <span className="fee-tier-badge-name">Tier {tier.tier}</span>
+            <span className="fee-tier-badge-name">{tier.name}</span>
           </div>
         </div>
         {tier.next && (
           <div className="fee-tier-next-info">
             <span className="fee-tier-next-label">Next Tier:</span>
-            <span className="fee-tier-next-name">Tier {tier.next.tier}</span>
+            <span className="fee-tier-next-name">{tier.next.name}</span>
           </div>
         )}
       </div>
@@ -200,7 +203,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, onViewFeeSchedule }) =
           </span>
         </div>
         <div className="fee-tier-benefit-card">
-          <span className="fee-tier-benefit-label">Savings vs Tier 1</span>
+          <span className="fee-tier-benefit-label">Savings vs Bronze</span>
           <span className="fee-tier-benefit-value" style={{ color: tier.color }}>
             {tier.tier === 1 ? '0%' : `${((0.050 - parseFloat(tier.takerFee.replace('%', ''))) / 0.050 * 100).toFixed(0)}%`}
           </span>
@@ -218,7 +221,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, onViewFeeSchedule }) =
               tradingVolume >= 0 ? 'achieved' : ''
             }`}
           >
-            <div className="fee-tier-requirement-badge tier-1">Tier 1</div>
+            <div className="tier-requirement-badge bronze">Bronze</div>
             <div className="fee-tier-requirement-details">
               <span className="fee-tier-requirement-volume">$0+ volume</span>
               <span className="fee-tier-requirement-benefits">
@@ -231,7 +234,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, onViewFeeSchedule }) =
               tradingVolume >= 100000 ? 'achieved' : ''
             }`}
           >
-            <div className="fee-tier-requirement-badge tier-2">Tier 2</div>
+            <div className="tier-requirement-badge silver">Silver</div>
             <div className="fee-tier-requirement-details">
               <span className="fee-tier-requirement-volume">$100K+ volume</span>
               <span className="fee-tier-requirement-benefits">
@@ -244,7 +247,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, onViewFeeSchedule }) =
               tradingVolume >= 500000 ? 'achieved' : ''
             }`}
           >
-            <div className="fee-tier-requirement-badge tier-3">Tier 3</div>
+            <div className="tier-requirement-badge gold">Gold</div>
             <div className="fee-tier-requirement-details">
               <span className="fee-tier-requirement-volume">$500K+ volume</span>
               <span className="fee-tier-requirement-benefits">
@@ -257,7 +260,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, onViewFeeSchedule }) =
               tradingVolume >= 1000000 ? 'achieved' : ''
             }`}
           >
-            <div className="fee-tier-requirement-badge tier-4">Tier 4</div>
+            <div className="tier-requirement-badge diamond">Diamond</div>
             <div className="fee-tier-requirement-details">
               <span className="fee-tier-requirement-volume">$1M+ volume</span>
               <span className="fee-tier-requirement-benefits">
@@ -270,7 +273,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, onViewFeeSchedule }) =
               tradingVolume >= 5000000 ? 'achieved' : ''
             }`}
           >
-            <div className="fee-tier-requirement-badge tier-5">Tier 5</div>
+            <div className="tier-requirement-badge netherite">Netherite</div>
             <div className="fee-tier-requirement-details">
               <span className="fee-tier-requirement-volume">$5M+ volume</span>
               <span className="fee-tier-requirement-benefits">
@@ -283,7 +286,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, onViewFeeSchedule }) =
               tradingVolume >= 10000000 ? 'achieved' : ''
             }`}
           >
-            <div className="fee-tier-requirement-badge tier-6">Tier 6</div>
+            <div className="tier-requirement-badge enchanted-netherite">Enchanted Netherite</div>
             <div className="fee-tier-requirement-details">
               <span className="fee-tier-requirement-volume">$10M+ volume</span>
               <span className="fee-tier-requirement-benefits">
@@ -294,6 +297,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, onViewFeeSchedule }) =
         </div>
       </div>
     </div>
+    </>
   );
 };
 

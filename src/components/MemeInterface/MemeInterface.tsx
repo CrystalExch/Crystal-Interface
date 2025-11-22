@@ -3781,7 +3781,7 @@ const userAddr = address ?? account?.address ?? '';
 
                     {advancedOrders.length < 5 && (
                       <div className="meme-advanced-add-container">
-                        <Tooltip content="Advanced Orders are currently disabled">
+                        <Tooltip content="Advanced Orders are coming soon!">
                           <button
                             className="meme-advanced-add-button"
                           // onClick={() =>

@@ -316,7 +316,7 @@
   height: 19px;
   width: 19px;
   margin-right: 4px;
-  filter: brightness(0) saturate(100%) invert(79%) sepia(11%) saturate(337%) hue-rotate(185deg) brightness(92%) contrast(89%);
+  filter: brightness(0) saturate(100%) invert(79%) sepia(11%) saturate(337%) hue-rotate(185deg) brightness(100%) contrast(89%);
 }
 .transparent-button-container,
 .left-header,
@@ -426,7 +426,6 @@
   padding: 10px 20px;
   padding-top: 15px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-  margin-bottom: 12px;
 }
 
 .wallet-dropdown-title {
@@ -554,12 +553,16 @@
   color: #d8dcff;
 }
 
-.wallet-dropdown-address {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.75rem;
-  letter-spacing: -0.2px;
-  line-height: 1;
-  margin-top: 2px;
+.header-wallet-dropdown-address {
+  font-size: 0.85rem;
+  color: #c9cbddde;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+
+.header-wallet-dropdown-address:hover {
+  color: #d8dcff;
 }
 
 .wallet-dropdown-balance {
@@ -940,8 +943,8 @@
   align-items: center;
   justify-content: center;
   gap: 15px;
-  padding-top: 5px;
-  padding-bottom: 15px;
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .header-action-row{

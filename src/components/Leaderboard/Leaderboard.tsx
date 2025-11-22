@@ -228,6 +228,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     }
 
     const fetchOverview = () => {
+      return;
       fetch(
         `https://api.crystal.exchange/points/${address}?index=${currentPage}`
       )
@@ -371,6 +372,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           <img src={LeaderboardImage} className="leaderboard-image" />
           <div className="view-rules-button" onClick={() => 
             {
+              return;
               setIsTransitioning(true);
               setTransitionDirection('forward');
               setTimeout(() => {
