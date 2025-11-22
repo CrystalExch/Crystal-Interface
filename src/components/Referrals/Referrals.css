@@ -1691,7 +1691,7 @@
    CHARTS STYLES
    =================================== */
 
-.referral-charts-container {
+/* .referral-charts-container {
   background: rgb(6, 6, 6);
   border: 1px solid rgba(170, 174, 207, 0.1);
   border-radius: 12px;
@@ -1805,7 +1805,7 @@
 .chart-tooltip-number {
   color: #aaaecf;
   font-weight: 500;
-}
+} */
 
 /* ===================================
    TIER SYSTEM STYLES
@@ -2180,9 +2180,9 @@
 
 /* Mobile responsiveness for new components */
 @media (max-width: 730px) {
-  .charts-grid {
+  /* .charts-grid {
     grid-template-columns: 1fr;
-  }
+  } */
 
   .tier-benefits {
     grid-template-columns: 1fr;
@@ -2197,7 +2197,7 @@
     align-items: flex-start;
   }
 
-  .date-range-selector {
+  /* .date-range-selector {
     width: 100%;
     justify-content: space-between;
   }
@@ -2205,7 +2205,7 @@
   .date-range-button {
     flex: 1;
     padding: 0.5rem;
-  }
+  } */
 }
 
 .leaderboard-container {
