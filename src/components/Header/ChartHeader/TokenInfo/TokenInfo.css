@@ -808,7 +808,7 @@
 
 .meme-interface-token-icon-wrapper {
   position: relative;
-  width: 42px;
+  width: 43px;
   height: 43px;
   display: flex;
   border-radius: 3px;
@@ -978,13 +978,13 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
   flex-shrink: 0;
+  padding-right: 20px;
 }
 
 .meme-interface-token-metrics::-webkit-scrollbar {
   display: none;
 }
 
-/* Horizontal scroll gradients for meme metrics */
 .meme-interface-token-metrics::before,
 .meme-interface-token-metrics::after {
   content: '';
@@ -997,7 +997,7 @@
   opacity: 0;
   transition: opacity 0.3s ease;
 }
-
+/* 
 .meme-interface-token-metrics::before {
   left: 0;
   background: linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
@@ -1006,7 +1006,7 @@
 .meme-interface-token-metrics::after {
   right: 0;
   background: linear-gradient(270deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
-}
+} */
 
 .meme-interface-token-metrics.show-left-gradient::before {
   opacity: 1;

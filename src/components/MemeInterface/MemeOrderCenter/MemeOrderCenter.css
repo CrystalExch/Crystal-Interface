@@ -188,6 +188,7 @@
 .meme-oc-section-content[data-section="positions"] .meme-oc-item {
   gap: 15px;
   grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr 100px;
+  min-width: 800px;
 }
 
 .meme-oc-section-content[data-section="orders"] .meme-oc-header,
