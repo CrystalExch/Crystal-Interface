@@ -1,9 +1,54 @@
 import React from 'react';
 import { Package, FileText, Image } from 'lucide-react';
 
+interface ReferredUser {
+  address: string;
+  username?: string;
+  joinedAt: number; // timestamp
+  tradingVolume: number;
+  crystalsEarned: number;
+}
+
 const ReferralResources: React.FC = () => {
+  // Mock data - 1 sample user who just joined but hasn't traded yet
+  const referredUsers: ReferredUser[] = [
+    {
+      address: '0x1234...5678',
+      username: 'User123',
+      joinedAt: Date.now() - (5 * 24 * 60 * 60 * 1000), // 5 days ago
+      tradingVolume: 0,
+      crystalsEarned: 0,
+    },
+  ];
+
+  const formatTimeAgo = (timestamp: number): string => {
+    const days = Math.floor((Date.now() - timestamp) / (24 * 60 * 60 * 1000));
+    if (days === 0) return 'Today';
+    if (days === 1) return '1 day ago';
+    return `${days} days ago`;
+  };
+
+  const formatVolume = (volume: number): string => {
+    if (volume === 0) return '$0';
+    if (volume >= 1000000) {
+      return `$${(volume / 1000000).toFixed(1)}M`;
+    }
+    if (volume >= 1000) {
+      return `$${(volume / 1000).toFixed(1)}K`;
+    }
+    return `$${volume.toFixed(0)}`;
+  };
+
+  const formatCount = (count: number): string => {
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}k`;
+    }
+    return count.toString();
+  };
+
   return (
     <div className="resources-section">
+      {/* Commented out old resources section
       <h3 className="resources-title">Marketing Resources</h3>
       <p className="resources-subtitle">
         Tools to help you promote your referral link
@@ -48,6 +93,48 @@ const ReferralResources: React.FC = () => {
             Coming Soon
           </button>
         </div>
+      </div>
+      */}
+
+      {/* New section with tracker-wallets styling structure */}
+      <h3 className="resources-title">Referral Activity</h3>
+      <div className="resources-wallets-container">
+        <div className="resources-wallets-header">
+          <div className="resources-wallet-header-cell" style={{ flex: '0 0 150px', textAlign: 'left' }}>
+            User ({formatCount(referredUsers.length)})
+          </div>
+          <div style={{ flex: '1 1 auto' }}></div>
+          <div className="resources-wallet-header-cell" style={{ flex: '0 0 120px', textAlign: 'right' }}>Date Joined</div>
+          <div className="resources-wallet-header-cell" style={{ flex: '0 0 120px', textAlign: 'right' }}>Trading Volume</div>
+          <div className="resources-wallet-header-cell" style={{ flex: '0 0 140px', textAlign: 'right' }}>Crystals Earned</div>
+        </div>
+
+        {referredUsers.length === 0 ? (
+          <div className="resources-empty-state">
+            <p>No referral activity yet</p>
+            <p className="resources-empty-subtitle">Share your referral link to start earning</p>
+          </div>
+        ) : (
+          <>
+            {referredUsers.map((user, index) => (
+              <div key={user.address} className="resources-wallet-item">
+                <div className="resources-wallet-cell" style={{ flex: '0 0 150px' }}>
+                  {user.username || user.address}
+                </div>
+                <div style={{ flex: '1 1 auto' }}></div>
+                <div className="resources-wallet-cell" style={{ flex: '0 0 120px', textAlign: 'right' }}>
+                  {formatTimeAgo(user.joinedAt)}
+                </div>
+                <div className="resources-wallet-cell" style={{ flex: '0 0 120px', textAlign: 'right' }}>
+                  {formatVolume(user.tradingVolume)}
+                </div>
+                <div className="resources-wallet-cell" style={{ flex: '0 0 140px', textAlign: 'right' }}>
+                  {user.crystalsEarned}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );

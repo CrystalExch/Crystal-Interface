@@ -317,7 +317,7 @@ export const translations: any = {
     editAccount: "Edit Account",
     createAccount: "Create Account",
     user: "User",
-    totalXP: "Total XP",
+    totalXP: "Total Crystals",
     choosePhoto: "Choose Photo",
     next: "Next",
     skip: "Skip",

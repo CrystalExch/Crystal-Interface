@@ -6,6 +6,7 @@ import ReferralTier from './ReferralTier';
 import ReferralResources from './ReferralResources';
 import FeeTier from './FeeTier';
 import FeeScheduleModal from './FeeScheduleModal';
+import Leaderboard from './Leaderboard';
 import customRound from '../../utils/customRound';
 import ReferralBackground from '../../assets/referrals_bg.png';
 import defaultPfp from '../../assets/leaderboard_default.png';
@@ -63,6 +64,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
   isSigning,
 }) => {
   const [showFeeSchedule, setShowFeeSchedule] = useState(false);
+  const [activeTab, setActiveTab] = useState<'rewards' | 'leaderboard'>('rewards');
 
   // TODO: Get actual trading volume from backend/blockchain
   const tradingVolume = 0; // Default: $0, starts at 0 until manually tracked
@@ -70,6 +72,22 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
   return (
     <div className="referral-scroll-wrapper">
       <div className="referral-content">
+        {/* Navigation Tabs */}
+        <div className="referral-nav-tabs">
+          <button
+            className={`referral-nav-tab ${activeTab === 'rewards' ? 'active' : ''}`}
+            onClick={() => setActiveTab('rewards')}
+          >
+            Rewards
+          </button>
+          <button
+            className={`referral-nav-tab ${activeTab === 'leaderboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('leaderboard')}
+          >
+            Leaderboard
+          </button>
+        </div>
+
         <div className="referral-header">
           <div className="referred-count">
             <img src={defaultPfp} className="referral-pfp" />
@@ -97,6 +115,15 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Conditional rendering based on active tab */}
+        {activeTab === 'leaderboard' ? (
+          <Leaderboard
+            address={address}
+            displayName={displayName}
+            isLoading={isLoading}
+          />
+        ) : (
         <div className="referral-body-section">
           <div className="referral-top-section">
             <div className="referral-background-wrapper">
@@ -153,47 +180,32 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
                 <h2 className="earnings-title">Earnings Dashboard</h2>
                 <p className="earnings-subtitle">Track your referral earnings</p>
               </div>
+
+              <div className="referrals-stats-section">
+                <div className="referrals-stat-item">
+                  <span className="referrals-stat-label">Users Referred:</span>
+                  <span className="stat-value">{referredCount}</span>
+                </div>
+                <div className="referralsstat-item">
+                  <span className="referrals-stat-label">Crystals Earned:</span>
+                  <span className="referrals-stat-value">{commissionBonus}</span>
+                </div>
+              </div>
+
               <div className="total-earnings-box">
                 <div className="total-earnings-header">
                   <span className="total-earnings-label">Total Claimable</span>
                 </div>
                 <div className="total-earnings-amount">
-                  $0.00
+                  ${totalClaimableFees.toFixed(2)}
                 </div>
-              </div>
-              <div className="token-breakdown">
-                {Object.entries(claimableFees).map(([token, value]) => (
-                  <div key={token} className="token-item">
-                    <div className="token-info">
-                      <div className="token-logo">
-                        <img
-                          className="referral-token-image"
-                          src={
-                            tokenList.find((t: any) => t.ticker === token)
-                              ?.image || ''
-                          }
-                        />
-                      </div>
-                      <div className="referrals-token-details">
-                        <span className="token-symbol">{token}</span>
-                        <span className="token-label">Available to Claim</span>
-                      </div>
-                    </div>
-                    <div className="token-amount">
-                      <div className="token-value">
-                        0.00
-                      </div>
-                      <div className="token-currency">{token}</div>
-                    </div>
-                  </div>
-                ))}
               </div>
               <button
                 className="claim-button"
                 onClick={handleClaimFees}
-                disabled={true}
+                disabled={totalClaimableFees === 0}
               >
-                Nothing to Claim
+                {totalClaimableFees > 0 ? 'Claim Fees' : 'Nothing to Claim'}
               </button>
               <div className="help-text">
                 Claim your referral earnings from trading fees
@@ -304,18 +316,19 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
           </div>
 
           {/* Performance Charts */}
-          <ReferralCharts
+          {/* <ReferralCharts
             referredCount={referredCount}
             commissionBonus={commissionBonus}
             totalClaimableFees={totalClaimableFees}
-          />
+          /> */}
 
           {/* Tier System */}
-          <ReferralTier commissionBonus={commissionBonus} />
+          {/* <ReferralTier commissionBonus={commissionBonus} /> */}
 
           {/* Fee Tier System */}
           <FeeTier
             tradingVolume={tradingVolume}
+            commissionBonus={commissionBonus}
             onViewFeeSchedule={() => setShowFeeSchedule(true)}
           />
 
@@ -328,6 +341,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
             onClose={() => setShowFeeSchedule(false)}
           />
         </div>
+        )}
       </div>
     </div>
   );

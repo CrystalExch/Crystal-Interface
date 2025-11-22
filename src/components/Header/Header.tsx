@@ -793,7 +793,7 @@ const Header: React.FC<HeaderProps> = ({
                         ), 2)}
                     </span>
                   </div>
-                        <div className="wallet-dropdown-address"              
+                        <div className="header-wallet-dropdown-address"              
                                    onClick={(e) => {
                                       e.stopPropagation();
                                       if (displayAddress) {

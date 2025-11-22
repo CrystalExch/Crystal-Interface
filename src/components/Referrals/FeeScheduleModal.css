@@ -15,7 +15,7 @@
   background-color: rgb(8, 8, 8);
   border: 1px solid rgba(179, 184, 249, 0.15);
   border-radius: 6px;
-  width: 900px;
+  width: 600px;
   max-width: 95vw;
   max-height: 90vh;
   overflow-y: auto;
@@ -29,8 +29,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 25px 20px;
-  border-bottom: 1px solid rgba(170, 174, 207, 0.1);
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   position: sticky;
   top: 0;
   background-color: rgb(8, 8, 8);
@@ -38,9 +38,9 @@
 }
 
 .fee-schedule-title {
-  color: #ffffffc8;
-  font-size: 1.1rem;
-  font-weight: 400;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 500;
   margin: 0;
 }
 
@@ -128,11 +128,11 @@
 }
 
 /* Table Cell Styling */
-.tier-cell {
+.modal-tier-cell {
   font-weight: 600;
 }
 
-.tier-badge {
+.modal-tier-badge {
   display: inline-block;
   padding: 0.3rem 0.6rem;
   border-radius: 4px;
@@ -141,45 +141,45 @@
   color: #000;
 }
 
-.tier-badge.tier-1 {
+.modal-tier-badge.tier-1 {
   background: #CD7F32;
 }
 
-.tier-badge.tier-2 {
+.modal-tier-badge.tier-2 {
   background: #C0C0C0;
 }
 
-.tier-badge.tier-3 {
+.modal-tier-badge.tier-3 {
   background: #FFD700;
 }
 
-.tier-badge.tier-4 {
-  background: #E5E4E2;
-}
-
-.tier-badge.tier-5 {
+.modal-tier-badge.tier-4 {
   background: #B9F2FF;
 }
 
-.tier-badge.tier-6 {
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+.modal-tier-badge.tier-5 {
+  background: #4A4A4A;
 }
 
-.volume-cell {
+.modal-tier-badge.tier-6 {
+  background: linear-gradient(135deg, #9D4EDD 0%, #7B2CBF 100%);
+}
+
+.modal-volume-cell {
   color: rgba(255, 255, 255, 0.8);
   font-weight: 500;
 }
 
-.fee-cell {
+.modal-fee-cell {
   font-weight: 500;
   font-family: 'Courier New', monospace;
 }
 
-.maker-fee {
+.modal-maker-fee {
   position: relative;
 }
 
-.rebate-indicator {
+.modal-rebate-indicator {
   display: inline-block;
   margin-left: 0.3rem;
   padding: 0.1rem 0.4rem;

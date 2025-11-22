@@ -134,7 +134,6 @@ interface MemeInterfaceProps {
   backlogCount?: number;
 }
 
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 const STATS_HTTP_BASE = 'https://api.crystal.exchange';
 const PAGE_SIZE = 100;
 
@@ -2499,23 +2498,24 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const readTf = (tf: '5m' | '1h' | '6h' | '24h') => {
     const s = statsRaw || {};
-    const g = s[tf];
-    if (g == null) {
-      return {
-        change: 0,
-        volume: 0,
-        buyTransactions: 0,
-        sellTransactions: 0,
-        buyVolume: 0,
-        sellVolume: 0,
-      };
-    }
 
-    const volume = (g.buy_vol_native + g.sell_vol_native) / 1e18;
-    const buyTransactions = g.buy_cnt;
-    const sellTransactions = g.sell_cnt;
-    const buyVolume = g.buy_vol_native / 1e18;
-    const sellVolume = g.sell_vol_native / 1e18;
+    const getNum = (base: string) =>
+      Number((s as any)[`${base}_${tf}`] ?? 0);
+
+    const volume = getNum('volume_usd');
+    const buyVolume = getNum('buy_volume_usd');
+    const sellVolume = getNum('sell_volume_usd');
+
+    const buyTransactions = Number(
+      (s as any)[`buy_tx_count_${tf}`] ??
+        (s as any)[`buy_count_${tf}`] ??
+        0,
+    );
+    const sellTransactions = Number(
+      (s as any)[`sell_tx_count_${tf}`] ??
+        (s as any)[`sell_count_${tf}`] ??
+        0,
+    );
 
     return {
       change: buyVolume - sellVolume,
@@ -2533,18 +2533,27 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const pctForTf = useCallback(
     (tf: '5m' | '1h' | '6h' | '24h') => {
-      const g = (statsRaw as any)?.[tf];
-      if (!g) return '—';
-      let pct: number | null =
-        typeof g.change_pct === 'number'
-          ? g.change_pct
-          : g.start_price_native != null &&
-            g.last_price_native != null &&
-            g.start_price_native !== 0
-            ? ((g.last_price_native - g.start_price_native) /
-              g.start_price_native) *
-            100
-            : null;
+      const s = statsRaw as any;
+      if (!s) return '—';
+
+      const keyChange = `change_pct_${tf}`;
+      const keyStart = `start_price_native_${tf}`;
+      const keyLast = `last_price_native_${tf}`;
+
+      let pct: number | null = null;
+
+      if (typeof s[keyChange] === 'number') {
+        pct = s[keyChange];
+      } else if (
+        typeof s[keyStart] === 'number' &&
+        typeof s[keyLast] === 'number' &&
+        s[keyStart] !== 0
+      ) {
+        pct =
+          ((s[keyLast] - s[keyStart]) / s[keyStart]) *
+          100;
+      }
+
       if (pct == null || !isFinite(pct)) return '0%';
       const sign = pct > 0 ? '+' : '';
       return `${sign}${pct.toFixed(2)}%`;
@@ -2751,7 +2760,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             <div className="stat-group-vol">
               <span className="stat-label">{selectedStatsTimeframe} Vol</span>
               <span className="stat-value">
-                ${fmt(currentStats.volume * monUsdPrice, 1)}
+                ${fmt(currentStats.volume, 1)}
               </span>
             </div>
 
@@ -2759,7 +2768,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               <span className="stat-label">Buys</span>
               <span className="stat-value green">
                 {fmt(currentStats.buyTransactions, 0)} / $
-                {fmt(currentStats.buyVolume * monUsdPrice, 1)}
+                {fmt(currentStats.buyVolume, 1)}
               </span>
             </div>
 
@@ -2767,7 +2776,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               <span className="stat-label">Sells</span>
               <span className="stat-value red">
                 {fmt(currentStats.sellTransactions, 0)} / $
-                {fmt(currentStats.sellVolume * monUsdPrice, 1)}
+                {fmt(currentStats.sellVolume, 1)}
               </span>
             </div>
 
@@ -2790,8 +2799,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 $
                 {fmt(
                   Math.abs(
-                    (currentStats.buyVolume - currentStats.sellVolume) *
-                    monUsdPrice,
+                    (currentStats.buyVolume - currentStats.sellVolume)
                   ),
                   1,
                 )}
@@ -2825,9 +2833,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                           );
 
                           if (!isFinite(num)) return 'var(--muted, #9a9ba4)';
-                          if (num === 0) return 'rgb(235 112 112)';
 
-                          return num > 0
+                          return num >= 0
                             ? 'rgb(67 254 154)'
                             : 'rgb(235 112 112)';
                         })(),
@@ -3791,7 +3798,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
                     {advancedOrders.length < 5 && (
                       <div className="meme-advanced-add-container">
-                        <Tooltip content="Advanced Orders are currently disabled">
+                        <Tooltip content="Advanced Orders are coming soon!">
                           <button
                             className="meme-advanced-add-button"
                           // onClick={() =>

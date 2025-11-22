@@ -2019,7 +2019,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       tradesloading ||
       addressinfoloading);
 
-  const monUsdPrice = (Number(tradesByMarket[ethticker + 'USDC']?.[0]?.[3]) / Number(markets[ethticker + 'USDC']?.priceFactor) || 1)
+  const monUsdPrice = (Number(tradesByMarket[ethticker + 'USDC']?.[0]?.[3]) / Number(markets[ethticker + 'USDC']?.priceFactor) || 1);
 
   const [walletTokenBalances, setWalletTokenBalances] = useState({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
@@ -5670,642 +5670,343 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return merged;
   }, [tokenAddress, tokenData]);
 
-  useEffect(() => {
-    let cancelled = false;
-    if (trackedAddresses.length == 0) {
-      setMemeTrades(token?.trades ?? [])
-    }
-    else {
-      (async () => {
-        try {
-          const res = await fetch(SUBGRAPH_URL, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              query: `query ($id: ID!, $accounts: [Bytes!], $first: Int!) {
-                launchpadTokens(where: { id: $id }) {
-                  trades(
-                    where: { account_in: $accounts }
-                    orderBy: block
-                    orderDirection: desc
-                    first: $first
-                  ) {
-                    id
-                    account { id }
-                    block
-                    isBuy
-                    priceNativePerTokenWad
-                    amountIn
-                    amountOut
-                  }
-                }
-              }
-              `,
-              variables: {
-                id: token.id.toLowerCase(),
-                accounts: trackedAddresses.map((a) => a.toLowerCase()),
-                first: 1000,
-              },
-            }),
-          });
-          const json = await res.json();
-          const t = json?.data?.launchpadTokens?.[0]?.trades ?? [];
-          const mapped: any[] = t.map((tt: any) => ({
-            id: tt.id,
-            timestamp: Number(tt.block),
-            isBuy: !!tt.isBuy,
-            price: Number(tt.priceNativePerTokenWad) / 1e9,
-            tokenAmount: Number(tt.isBuy ? tt.amountOut : tt.amountIn) / 1e18,
-            nativeAmount: Number(tt.isBuy ? tt.amountIn : tt.amountOut) / 1e18,
-            caller: tt.account.id,
-          }));
-          if (!cancelled) setMemeTrades(mapped);
-        } catch (e) {
-          console.error('filtered trades fetch failed', e);
-        }
-      })();
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [trackedAddresses])
-
   // metadata n klines
   useEffect(() => {
     if (!token.id) return;
     let isCancelled = false;
 
-    const id = (token.id || '').toLowerCase();
+    const id = (token.id || "").toLowerCase();
     let tempTokenData: any = {};
     let price = 0;
-    if (trackedAddresses.length > 0) setTrackedAddresses([])
-    setIsLoadingTrades(true)
+
+    setIsLoadingTrades(true);
+
     const fetchMemeTokenData = async () => {
-      const res = await fetch('https://api.crystal.exchange/tokens', {
-        method: 'GET',
-        headers: { 'content-type': 'application/json' },
-      });
-
-      if (!res.ok) {
-        throw new Error(`launchpad api returned ${res.status}`);
-      }
-
-      const json = await res.json();
-      console.log(json)
       try {
-        let response = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-              query ($id: ID!) {
-                launchpadTokens: launchpadTokens(where: { id: $id }) {
-                  id
-                  creator {
-                    id
-                    tokensLaunched
-                    tokensGraduated
-                  }
-                  name
-                  symbol
-                  metadataCID
-                  description
-                  social1
-                  social2
-                  social3	
-                  social4
-                  decimals
-                  initialSupply
-                  timestamp
-                  migrated
-                  migratedAt
-                  migratedMarket {
-                    id
-                  }
-                  volumeNative
-                  volumeToken
-                  buyTxs
-                  sellTxs
-                  distinctBuyers
-                  distinctSellers
-                  lastPriceNativePerTokenWad
-                  lastUpdatedAt
-                  mini: ${'series' + '3600'} { 
-                    klines(first: 1000, orderBy: time, orderDirection: desc) {
-                      time open high low close baseVolume
-                    } 
-                  }
-                  trades: trades(first: 100, orderBy: id, orderDirection: desc) {
-                    trade {
-                      id account {id} block isBuy priceNativePerTokenWad amountIn amountOut
-                    }
-                  }
-                  trackedtrades: trades(first: 1000, orderBy: id, orderDirection: desc, ${trackedAddresses.length == 0 ? '' : `where:{account_in: [${[...new Set(trackedAddresses)].map(a => `"${a.toLowerCase()}"`).join(",")}]}`}) {
-                    trade {
-                      id account {id} block isBuy priceNativePerTokenWad amountIn amountOut
-                    }
-                  }
-                  totalHolders
-                  devHoldingAmount
-                  holders(first:11, orderBy: tokens, orderDirection: desc, where:{tokens_gt:0}) {
-                    account { id }
-                    tokens
-                  }
-                  series: ${'series' + (
-                memeSelectedInterval === '1s' ? '1' :
-                  memeSelectedInterval === '5s' ? '5' :
-                    memeSelectedInterval === '15s' ? '15' :
-                      memeSelectedInterval === '1m' ? '60' :
-                        memeSelectedInterval === '5m' ? '300' :
-                          memeSelectedInterval === '15m' ? '900' :
-                            memeSelectedInterval === '1h' ? '3600' :
-                              memeSelectedInterval === '4h' ? '14400' : '86400'
-              )
-              } { 
-                    klines(first: 1000, orderBy: time, orderDirection: desc) {
-                      time open high low close baseVolume
-                    } 
-                  }
-                }
-              }`,
-            variables: { id },
-          }),
-        });
+        const chartRes =
+          memeSelectedInterval === "1s"
+            ? 1
+            : memeSelectedInterval === "5s"
+            ? 5
+            : memeSelectedInterval === "15s"
+            ? 15
+            : memeSelectedInterval === "1m"
+            ? 60
+            : memeSelectedInterval === "5m"
+            ? 300
+            : memeSelectedInterval === "15m"
+            ? 900
+            : memeSelectedInterval === "1h"
+            ? 3600
+            : memeSelectedInterval === "4h"
+            ? 14400
+            : 86400;
 
-        let data = (await response.json())?.data;
-        if (isCancelled || !data) return;
-        if (data.launchpadTokens?.length) {
-          const m = data.launchpadTokens[0];
-          let mapped: any;
-          if (m?.trades?.length) {
-            mapped = data.launchpadTokens[0].trades.map((t: any) => ({
-              id: t.trade.id,
-              timestamp: Number(t.trade.block),
-              isBuy: t.trade.isBuy,
-              price: Number(t.trade.priceNativePerTokenWad) / 1e9,
-              tokenAmount: Number(t.trade.isBuy ? t.trade.amountOut : t.trade.amountIn) / 1e18,
-              nativeAmount: Number(t.trade.isBuy ? t.trade.amountIn : t.trade.amountOut) / 1e18,
-              caller: t.trade.account.id,
-            }));
-            setMemeTrades(mapped);
-          } else {
-            setMemeTrades([]);
-          }
+        const trackedParam =
+          trackedAddresses.length > 0
+            ? `?tracked=${[...new Set(trackedAddresses)]
+                .map((a) => a.toLowerCase())
+                .join(",")}`
+            : "";
 
-          if (m?.series?.klines) {
-            const bars = data.launchpadTokens[0].series.klines
-              .slice()
-              .reverse()
-              .map((c: any) => ({
-                time: Number(c.time) * 1000,
-                open: Number(c.open) / 1e9,
-                high: Number(c.high) / 1e9,
-                low: Number(c.low) / 1e9,
-                close: Number(c.close) / 1e9,
-                volume: Number(c.baseVolume) / 1e18,
-              }));
+        const res = await fetch(
+          `https://api.crystal.exchange/token/${id}/${chartRes}${trackedParam}`,
+          {
+            method: "GET",
+            headers: { "content-type": "application/json" },
+          },
+        );
 
-            const resForChart =
-              memeSelectedInterval === '1d'
-                ? '1D'
-                : memeSelectedInterval === '4h'
-                  ? '240'
-                  : memeSelectedInterval === '1h'
-                    ? '60'
-                    : memeSelectedInterval.endsWith('s')
-                      ? memeSelectedInterval.slice(0, -1).toUpperCase() + 'S'
-                      : memeSelectedInterval.slice(0, -1);
-
-            setChartData([bars, data.launchpadTokens[0].symbol + 'MON' + resForChart, true]);
-          }
-          let imageUrl = m.metadataCID || '';
-
-          price = Number(m.lastPriceNativePerTokenWad || 0) / 1e9;
-          const socials = [m.social1, m.social2, m.social3, m.social4].map((s) =>
-            s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
-          );
-          const twitter = socials.find(
-            (s) =>
-              s?.startsWith('https://x.com') ||
-              s?.startsWith('https://twitter.com'),
-          );
-          if (twitter) {
-            socials.splice(socials.indexOf(twitter), 1);
-          }
-          const telegram = socials.find((s) => s?.startsWith('https://t.me'));
-          if (telegram) {
-            socials.splice(socials.indexOf(telegram), 1);
-          }
-          const discord = socials.find(
-            (s) =>
-              s?.startsWith('https://discord.gg') ||
-              s?.startsWith('https://discord.com'),
-          );
-          if (discord) {
-            socials.splice(socials.indexOf(discord), 1);
-          }
-          const website = socials[0];
-          const change24h = (price * 1e9 - m?.mini?.klines[0].open) / (m?.mini?.klines[0].open) * 100
-          tempTokenData = {
-            ...tokenData,
-            ...data.launchpadTokens[0],
-            id: m.id.toLowerCase(),
-            tokenAddress: m.id.toLowerCase(),
-            dev: m.creator.id,
-            name: m.name,
-            symbol: m.symbol,
-            image: imageUrl,
-            twitterHandle: twitter ?? '',
-            website: website ?? '',
-            created: m.timestamp,
-            status: m.migrated
-              ? 'graduated'
-              : price * TOTAL_SUPPLY > 12500
-                ? 'graduating'
-                : 'new',
-            price,
-            marketCap: price * TOTAL_SUPPLY,
-            buyTransactions: Number(m.buyTxs),
-            sellTransactions: Number(m.sellTxs),
-            mini: m?.mini?.klines ?? '',
-            change24h,
-            volume24h: Number(m.volumeNative) / 1e18,
-            volumeDelta: 0,
-            discordHandle: discord ?? '',
-            telegramHandle: telegram ?? '',
-            launchedTokens: m.creator.tokensLaunched ?? '',
-            graduatedTokens: m.creator.tokensGraduated ?? '',
-            holders: m.totalHolders - 1,
-            devHolding: m.devHoldingAmount / 1e27,
-            top10Holding: Number(
-              (m.holders ?? [])
-                .filter((h: { account?: { id?: string } }) => (h.account?.id?.toLowerCase() ?? '') !== (settings.chainConfig[activechain].router ?? '').toLowerCase())
-                .slice(0, 10)
-                .reduce((sum: bigint, h: { tokens: string }) => sum + BigInt(h.tokens || '0'), 0n)
-            ) / 1e25,
-            trades: mapped,
-            source: 'crystal',
-          }
-          setTokenData(tempTokenData);
+        if (!res.ok) {
+          throw new Error(`token api returned ${res.status}`);
         }
 
-        const first = 100;
-        const skip = page * 100;
-        const m = (tempTokenData.id || '').toLowerCase();
+        const m = await res.json();
+        if (isCancelled || !m) return;
 
-        const d = tempTokenData.dev ? tempTokenData.dev.toLowerCase() : '';
-        if (!d) {
-          setMemeDevTokens([]);
-          memeDevTokenIdsRef.current = new Set();
-          return;
-        }
+        const tradesSource =
+          trackedAddresses.length > 0 &&
+          (Array.isArray(m.trackedTrades) || Array.isArray(m.trackedtrades))
+            ? (Array.isArray(m.trackedTrades) ? m.trackedTrades : m.trackedtrades)
+            : (Array.isArray(m.trades) ? m.trades : []);
 
-        const baseName = String(tempTokenData.name || '').trim();
-        const baseSymbol = String(tempTokenData.symbol || '').trim();
-
-        if (!baseName && !baseSymbol) {
-          setMemeSimilarTokens([]);
-          return;
-        }
-
-        const normalize = (s: string) =>
-          s.toLowerCase().replace(/\s+/g, ' ').trim();
-        const tokenize = (s: string) =>
-          normalize(s)
-            .split(/[^a-z0-9]+/i)
-            .filter((w) => w.length >= 3 && !STOPWORDS.has(w))
-            .slice(0, 8);
-        const acronym = (s: string) =>
-          (s.match(/\b([a-zA-Z0-9])/g) || []).join('').toLowerCase();
-        const trigrams = (s: string) => {
-          const t: string[] = [];
-          const x = ` ${normalize(s)} `;
-          for (let i = 0; i < x.length - 2; i++) t.push(x.slice(i, i + 3));
-          return t;
-        };
-        const jaccard = (a: string[], b: string[]) => {
-          const A = new Set(a);
-          const B = new Set(b);
-          let inter = 0;
-          for (const v of A) if (B.has(v)) inter++;
-          const uni = A.size + B.size - inter || 1;
-          return inter / uni;
-        };
-
-        const edit = (a: string, b: string) => {
-          const m = a.length,
-            n = b.length;
-          const dp = Array.from({ length: m + 1 }, (_, _i) =>
-            new Array(n + 1).fill(0),
-          );
-          for (let i = 0; i <= m; i++) dp[i][0] = i;
-          for (let j = 0; j <= n; j++) dp[0][j] = j;
-          for (let i = 1; i <= m; i++) {
-            for (let j = 1; j <= n; j++) {
-              const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-              dp[i][j] = Math.min(
-                dp[i - 1][j] + 1,
-                dp[i][j - 1] + 1,
-                dp[i - 1][j - 1] + cost,
-              );
-            }
-          }
-          return dp[m][n];
-        };
-
-        const scoreSimilarity = (
-          qName: string,
-          qSymbol: string,
-          candName: string,
-          candSymbol: string,
-        ) => {
-          const qs = normalize(qName);
-          const cs = normalize(candName);
-          const qTok = tokenize(qs);
-          const cTok = tokenize(cs);
-
-          let score = 0;
-
-          score += 400 * jaccard(qTok, cTok);
-          score += 300 * jaccard(trigrams(qs), trigrams(cs));
-
-          if (cs.startsWith(qs) && qs.length >= 3) score += 200;
-          if (qs.startsWith(cs) && cs.length >= 3) score += 120;
-          if (cs.includes(qs) && qs.length >= 3) score += 120;
-
-          const qa = acronym(qName);
-          const ca = acronym(candName);
-          if (qa && ca && qa === ca) score += 180;
-
-          if (qs && cs) {
-            const dist = edit(qs, cs);
-            const norm = 1 - Math.min(1, dist / Math.max(qs.length, cs.length));
-            score += 200 * norm;
-          }
-
-          const qSym = qSymbol.toLowerCase();
-          const cSym = (candSymbol || '').toLowerCase();
-          if (qSym && cSym) {
-            if (qSym === cSym) score += 350;
-            if (cSym.startsWith(qSym)) score += 220;
-            else if (qSym.startsWith(cSym)) score += 160;
-            else if (cSym.includes(qSym)) score += 140;
-          }
-
-          return score;
-        };
-
-        const STOPWORDS = new Set([
-          'the',
-          'a',
-          'an',
-          'token',
-          'coin',
-          'inu',
-          'doge',
-          'baby',
-          'new',
-          'of',
-          'and',
-          'for',
-          'with',
-          'club',
-          'project',
-        ]);
-        const exclude = tempTokenData.id?.toLowerCase();
-        const nameTerms = tokenize(baseName);
-        const terms = Array.from(new Set(nameTerms)).slice(0, 4);
-        const sym = baseSymbol.trim();
-        const symTerms = sym.length >= 2 ? [sym, sym.slice(0, 3)].filter(Boolean) : [];
-
-        const parts: string[] = [];
-        let alias = 0;
-
-        for (const q of terms) {
-          parts.push(`
-            q${alias++}: launchpadTokens(
-              where: { id_not: "${exclude}", name_contains_nocase: "${q}" }
-              orderBy: timestamp
-              orderDirection: desc
-              first: 100
-            ) {
-              id name symbol metadataCID lastPriceNativePerTokenWad volumeNative timestamp lastUpdatedAt
-            }`)
-        }
-
-        for (const q of symTerms) {
-          parts.push(`
-            q${alias++}: launchpadTokens(
-              where: { id_not: "${exclude}", symbol_contains_nocase: "${q}" }
-              orderBy: timestamp
-              orderDirection: desc
-              first: 50
-            ) {
-              id name symbol metadataCID lastPriceNativePerTokenWad volumeNative timestamp lastUpdatedAt
-            }`)
-        }
-
-        if (parts.length === 0 && baseName) {
-          parts.push(`
-            q${alias++}: launchpadTokens(
-              where: { id_not: "${exclude}", name_contains_nocase: "${baseName}" }
-              orderBy: timestamp
-              orderDirection: desc
-              first: 100
-            ) {
-              id name symbol metadataCID lastPriceNativePerTokenWad volumeNative timestamp lastUpdatedAt
-            }`)
-        }
-
-        parts.push(`
-          holders: launchpadPositions(
-            where: { token: "${m}", tokens_gt: 0 }
-            orderBy: tokens
-            orderDirection: desc
-            skip: ${skip}
-            first: ${first}
-          ) {
-            account { id }
-            tokenBought tokenSold nativeSpent nativeReceived tokens lastUpdatedAt
-          }
-        
-          topTraders: launchpadPositions(
-            where: { token: "${m}" }
-            orderBy: realized
-            orderDirection: desc
-            skip: ${skip}
-            first: ${first}
-          ) {
-            account { id }
-            tokenBought tokenSold nativeSpent nativeReceived realized tokens lastUpdatedAt
-          }
-        
-          devTokens: launchpadTokens(
-            where: { creator: "${d}" }
-            orderBy: timestamp
-            orderDirection: desc
-            skip: ${skip}
-            first: ${first}
-          ) {
-            id name symbol metadataCID lastPriceNativePerTokenWad timestamp migrated
-          }
-        `)
-
-        const query = `query { ${parts.join('\n')} }`
-
-        response = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ query }),
-        })
-
-        data = (await response.json())?.data
-        if (isCancelled || !data) return;
-        // holders
-        const positions: any[] = data?.holders ?? [];
-        const mapped: Holder[] = positions
-          .filter(
-            (p: any) =>
-              p.account?.id.toLowerCase() !== settings.chainConfig[activechain].router.toLowerCase(),
-          )
-          .map((p: any) => {
-            const amountBought = Number(p.tokenBought) / 1e18;
-            const amountSold = Number(p.tokenSold) / 1e18;
-            const valueBought = Number(p.nativeSpent) / 1e18;
-            const valueSold = Number(p.nativeReceived) / 1e18;
-            const balance = Number(p.tokens) / 1e18;
-            const realized = valueSold - valueBought;
-            const unrealized = balance * price;
-            const totalPnl = realized + unrealized;
+        if (tradesSource.length) {
+          const mapped = tradesSource.map((t: any) => {
+            const isBuy = t.trade.isBuy;
+            const priceWad = Number(
+              t.trade.priceNativePerTokenWad ?? 0,
+            );
+            const amountIn = Number(t.trade.amountIn ?? 0);
+            const amountOut = Number(t.trade.amountOut ?? 0);
 
             return {
-              address: p.account.id,
-              balance,
-              amountBought,
-              amountSold,
-              valueBought,
-              valueSold,
-              tokenNet: balance,
-              valueNet: totalPnl,
+              id: t.trade.id.split("-")[0],
+              timestamp: Number(t.trade.block ?? 0),
+              isBuy,
+              price: priceWad / 1e9,
+              tokenAmount: (isBuy ? amountOut : amountIn) / 1e18,
+              nativeAmount: (isBuy ? amountIn : amountOut) / 1e18,
+              caller: t.trade.account?.id ?? t.user ?? "",
+            };
+          });
+          setMemeTrades(mapped);
+        } else {
+          setMemeTrades([]);
+        }
+
+        if (m.series?.klines && Array.isArray(m.series.klines)) {
+          const bars = m.series.klines
+            .slice()
+            .reverse()
+            .map((c: any) => ({
+              time: Number(c.time) * 1000,
+              open: Number(c.open) / 1e9,
+              high: Number(c.high) / 1e9,
+              low: Number(c.low) / 1e9,
+              close: Number(c.close) / 1e9,
+              volume: Number(c.baseVolume) / 1e18,
+            }));
+
+          const resForChart =
+            memeSelectedInterval === "1d"
+              ? "1D"
+              : memeSelectedInterval === "4h"
+              ? "240"
+              : memeSelectedInterval === "1h"
+              ? "60"
+              : memeSelectedInterval.endsWith("s")
+              ? memeSelectedInterval.slice(0, -1).toUpperCase() + "S"
+              : memeSelectedInterval.slice(0, -1);
+
+          setChartData([bars, m.symbol + "MON" + resForChart, true]);
+        }
+
+        price = Number(m.lastPriceNativePerTokenWad || 0) / 1e9;
+        const socialsRaw = [m.social1, m.social2, m.social3, m.social4];
+        const socials = socialsRaw.map((s) =>
+          s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
+        );
+
+        const twitter = socials.find(
+          (s) =>
+            s?.startsWith("https://x.com") ||
+            s?.startsWith("https://twitter.com"),
+        );
+        if (twitter) socials.splice(socials.indexOf(twitter), 1);
+
+        const telegram = socials.find((s) => s?.startsWith("https://t.me"));
+        if (telegram) socials.splice(socials.indexOf(telegram), 1);
+
+        const discord = socials.find(
+          (s) =>
+            s?.startsWith("https://discord.gg") ||
+            s?.startsWith("https://discord.com"),
+        );
+        if (discord) socials.splice(socials.indexOf(discord), 1);
+
+        const website = socials[0];
+        const imageUrl = m.metadataCID || "";
+
+        let change24h = 0;
+        if (typeof m.change24h === "number") {
+          change24h = m.change24h;
+        } else if (m.mini?.klines?.length) {
+          const open = Number(m.mini.klines[0].open || 0);
+          if (open > 0) {
+            change24h = ((price * 1e9 - open) / open) * 100;
+          }
+        }
+
+        tempTokenData = {
+          ...tokenData,
+          ...m,
+          id: m.id.toLowerCase(),
+          tokenAddress: m.id.toLowerCase(),
+          dev: m.creator?.id?.toLowerCase() ?? "",
+          name: m.name,
+          symbol: m.symbol,
+          image: imageUrl,
+          twitterHandle: twitter ?? "",
+          website: website ?? "",
+          created: m.timestamp,
+          status: m.migrated
+            ? "graduated"
+            : price * TOTAL_SUPPLY > 12500
+            ? "graduating"
+            : "new",
+          price,
+          marketCap: price * TOTAL_SUPPLY,
+          buyTransactions: Number(m.buyTxs ?? 0),
+          sellTransactions: Number(m.sellTxs ?? 0),
+          mini: m.mini?.klines ?? "",
+          change24h,
+          volume24h: Number(m.volumeNative ?? 0) / 1e18,
+          volumeDelta: 0,
+          discordHandle: discord ?? "",
+          telegramHandle: telegram ?? "",
+          launchedTokens: m.creator?.tokensLaunched ?? "",
+          graduatedTokens: m.creator?.tokensGraduated ?? "",
+          holders: (m.totalHolders ?? 0) - 1,
+          devHolding: Number(m.devHoldingAmount ?? 0) / 1e27,
+          trades: m.trades,
+          source: "nadfun",
+        };
+
+        setTokenData(tempTokenData);
+
+        if (Array.isArray(m.holders)) {
+          const mappedHolders: Holder[] = m.holders
+            .filter(
+              (p: any) =>
+                p.account?.id?.toLowerCase() !==
+                settings.chainConfig[activechain].router.toLowerCase(),
+            )
+            .map((p: any) => {
+              const amountBought = Number(p.tokenBought ?? 0) / 1e18;
+              const amountSold = Number(p.tokenSold ?? 0) / 1e18;
+              const valueBought = Number(p.nativeSpent ?? 0) / 1e18;
+              const valueSold = Number(p.nativeReceived ?? 0) / 1e18;
+              const balance = Number(p.tokens ?? 0) / 1e18;
+              const realized = valueSold - valueBought;
+              const unrealized = balance * price;
+              const totalPnl = realized + unrealized;
+
+              return {
+                address: p.account.id,
+                balance,
+                amountBought,
+                amountSold,
+                valueBought,
+                valueSold,
+                tokenNet: balance,
+                valueNet: totalPnl,
+              };
+            });
+
+          const top10Pct =
+            (mappedHolders
+              .map((h) => Math.max(0, h.balance))
+              .sort((a, b) => b - a)
+              .slice(0, 10)
+              .reduce((s, n) => s + n, 0) /
+              1e9) *
+            100;
+
+          setMemeTop10HoldingPct(top10Pct);
+
+          const devPct = calcDevHoldingPct(mappedHolders, tempTokenData.dev);
+          setTokenData((p: any) => ({ ...p, devHolding: devPct }));
+          setMemeHolders(mappedHolders);
+          memeHoldersMapRef.current = new Map(
+            mappedHolders.map((h: Holder, i: number) => [
+              h.address.toLowerCase(),
+              i,
+            ]),
+          );
+        } else {
+          setMemeHolders([]);
+          memeHoldersMapRef.current = new Map();
+        }
+        
+        if (Array.isArray(m.topTraders)) {
+          const rows: any[] = m.topTraders;
+          const out: Holder[] = [];
+
+          for (const p of rows) {
+            if (
+              p.account?.id?.toLowerCase() !==
+              settings.chainConfig[activechain].router.toLowerCase()
+            ) {
+              const amountBought = Number(p.tokenBought ?? 0) / 1e18;
+              const amountSold = Number(p.tokenSold ?? 0) / 1e18;
+              const valueBought = Number(p.nativeSpent ?? 0) / 1e18;
+              const valueSold = Number(p.nativeReceived ?? 0) / 1e18;
+              const balance = Number(p.tokens ?? 0) / 1e18;
+              const realized = valueSold - valueBought;
+              const unrealized = balance * price;
+              const pnl = realized + unrealized;
+
+              out.push({
+                address: p.account.id,
+                balance,
+                tokenNet: balance,
+                valueNet: pnl,
+                amountBought,
+                amountSold,
+                valueBought,
+                valueSold,
+              });
+            }
+          }
+
+          out.sort((a, b) => b.valueNet - a.valueNet);
+          const trimmed = out.slice(0, 100);
+          setMemeTopTraders(trimmed);
+          memeTopTradersMapRef.current = new Map(
+            trimmed.map((t, i) => [t.address.toLowerCase(), i]),
+          );
+        } else {
+          setMemeTopTraders([]);
+          memeTopTradersMapRef.current = new Map();
+        }
+
+        if (Array.isArray(m.devTokens)) {
+          const devtokenout = m.devTokens.map((t: any) => {
+            const imageUrl = t.metadataCID || "";
+            const devPrice = Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
+            return {
+              id: t.id,
+              symbol: t.symbol,
+              name: t.name,
+              imageUrl,
+              price: devPrice,
+              marketCap: devPrice * TOTAL_SUPPLY,
+              timestamp: Number(t.timestamp ?? 0),
+              status: t.migrated,
             };
           });
 
-        const top10Pct = (mapped
-          .map((h) => Math.max(0, h.balance))
-          .sort((a, b) => b - a)
-          .slice(0, 10)
-          .reduce((s, n) => s + n, 0) / 1e9) * 100
-
-        setMemeTop10HoldingPct(top10Pct);
-        const devPct = calcDevHoldingPct(mapped, tempTokenData.dev);
-        setTokenData((p: any) => ({ ...p, devHolding: devPct }));
-        setMemeHolders(mapped);
-        memeHoldersMapRef.current = new Map(
-          mapped.map((h: Holder, i: number) => [h.address.toLowerCase(), i]),
-        );
-        // toptraders
-        const rows: any[] = data?.topTraders ?? [];
-        const out: Holder[] = [];
-
-        for (const p of rows) {
-          if (p.account.id.toLowerCase() != settings.chainConfig[activechain].router.toLowerCase()) {
-            const amountBought = Number(p.tokenBought) / 1e18;
-            const amountSold = Number(p.tokenSold) / 1e18;
-            const valueBought = Number(p.nativeSpent) / 1e18;
-            const valueSold = Number(p.nativeReceived) / 1e18;
-            const balance = Number(p.tokens) / 1e18;
-            const realized = valueSold - valueBought;
-            const unrealized = balance * price;
-            const pnl = realized + unrealized;
-
-            out.push({
-              address: p.account.id,
-              balance: amountBought - amountSold,
-              tokenNet: amountBought - amountSold,
-              valueNet: pnl,
-              amountBought,
-              amountSold,
-              valueBought,
-              valueSold,
-            });
-          }
+          setMemeDevTokens(devtokenout);
+          memeDevTokenIdsRef.current = new Set(
+            devtokenout.map((t: any) => String(t.id || "").toLowerCase()),
+          );
+        } else {
+          setMemeDevTokens([]);
+          memeDevTokenIdsRef.current = new Set();
         }
 
-        out.sort((a, b) => b.valueNet - a.valueNet);
-        const trimmed = out.slice(0, 100);
-        setMemeTopTraders(trimmed);
-        memeTopTradersMapRef.current = new Map(
-          trimmed.map((t, i) => [t.address.toLowerCase(), i]),
-        );
-        // devtoken
-        const devtokenrows: any[] = data?.devTokens ?? [];
-        const devtokenout = [];
-
-        for (const t of devtokenrows) {
-          let imageUrl = t.metadataCID || '';
-          const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
-          devtokenout.push({
-            id: t.id,
-            symbol: t.symbol,
-            name: t.name,
-            imageUrl,
-            price,
-            marketCap: price * TOTAL_SUPPLY,
-            timestamp: Number(t.timestamp ?? 0),
-            status: t.migrated,
-          });
-        }
-
-        setMemeDevTokens(devtokenout);
-        memeDevTokenIdsRef.current = new Set(
-          devtokenout.map((t) => String(t.id || '').toLowerCase()),
-        );
-
-        const candidates: any[] = Object.entries(data || {}).filter(([k]) => k.startsWith('q')).flatMap(([, v]) => v);
-
-        const mergedMap = new Map<string, any>();
-        for (const r of candidates)
-          mergedMap.set(String(r.id).toLowerCase(), r);
-        const merged = Array.from(mergedMap.values());
-
-        const scored = merged
-          .map((t: any) => ({
-            ...t,
-            _score: scoreSimilarity(
-              baseName,
-              baseSymbol,
-              t.name || '',
-              t.symbol || '',
-            ),
-          }))
-          .sort((a: any, b: any) => b._score - a._score)
-          .slice(0, 5);
-
-        const finalWithImages = await Promise.all(
-          scored.map(async (t: any) => {
-            let imageUrl = t.metadataCID || '';
-            const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
+        if (Array.isArray(m.similarTokens)) {
+          const similar = m.similarTokens.map((t: any) => {
+            const imageUrl = t.metadataCID || "";
+            const simPrice =
+              Number(t.lastPriceNativePerTokenWad || 0) / 1e9;
+            const lastUpdatedAt = Number(t.lastUpdatedAt ?? 0);
+            const volumeNativeRaw = Number(t.volumeNative ?? 0);
+            const volume24h =
+              (Date.now() / 1000 - lastUpdatedAt > 86400
+                ? 0
+                : volumeNativeRaw) / 1e18;
 
             return {
               id: t.id,
               name: t.name,
               symbol: t.symbol,
               imageUrl,
-              price,
-              marketCap: price * TOTAL_SUPPLY,
-              volume24h: Number((Date.now() / 1000 - t.lastUpdatedAt > 86400) ? 0 : (t.volumeNative || 0)) / 1e18,
+              price: simPrice,
+              marketCap: simPrice * TOTAL_SUPPLY,
+              volume24h,
               timestamp: Number(t.timestamp ?? 0),
-              lastUpdatedAt: Number(t.lastUpdatedAt),
+              lastUpdatedAt,
             };
-          }),
-        );
+          });
 
-        setMemeSimilarTokens(finalWithImages);
-
+          setMemeSimilarTokens(similar);
+        } else {
+          setMemeSimilarTokens([]);
+        }
       } catch (e) {
-        console.error('Error fetching token data:', e);
-        setTokenData(p => ({
+        console.error("Error fetching token data:", e);
+        setTokenData((p: any) => ({
           ...p,
           price: 0,
           marketCap: 0,
@@ -6314,12 +6015,22 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           sellTransactions: 0,
         }));
         setMemeTrades([]);
+        setMemeHolders([]);
+        setMemeTopTraders([]);
+        setMemeDevTokens([]);
+        setMemeSimilarTokens([]);
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingTrades(false);
+        }
       }
     };
 
     fetchMemeTokenData();
-    return () => { isCancelled = true; };
-  }, [token.id, memeSelectedInterval]);
+    return () => {
+      isCancelled = true;
+    };
+  }, [token.id, memeSelectedInterval, trackedAddresses]);
 
   // positions aggregated across all wallets
   useEffect(() => {
@@ -6345,118 +6056,113 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
       const aggregatedMap = new Map<string, any>();
 
-      const response = await fetch(SUBGRAPH_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            query ($addrs: [Bytes!]!) {
-              launchpadPositions(
-                where: { account_in: $addrs, tokens_gt: "0" }
-                orderBy: tokens
-                orderDirection: desc
-                first: 1000
-              ) {
-                token { id symbol name lastPriceNativePerTokenWad metadataCID }
-                account { id }
-                tokenBought
-                tokenSold
-                nativeSpent
-                nativeReceived
-                tokens
-                lastUpdatedAt
-              }
+      try {
+        const responses = await Promise.all(
+          allAddresses.map((addr) =>
+            fetch(`https://api.crystal.exchange/user/${addr}`, {
+              method: 'GET',
+              headers: { 'content-type': 'application/json' },
+            }),
+          ),
+        );
+
+        const payloads = await Promise.all(
+          responses.map((res) => (res.ok ? res.json() : null)),
+        );
+
+        for (const payload of payloads) {
+          if (!payload) continue;
+          const rows: any[] = payload.positions ?? [];
+
+          for (const p of rows) {
+            const tokenId = String(p.token || '').toLowerCase();
+            if (!tokenId) continue;
+
+            const boughtTokens = Number(p.token_bought ?? 0) / 1e18;
+            const soldTokens = Number(p.token_sold ?? 0) / 1e18;
+            const spentNative = Number(p.native_spent ?? 0) / 1e18;
+            const receivedNative = Number(p.native_received ?? 0) / 1e18;
+            const balance = Number(p.balance_token ?? 0) / 1e18;
+            const balanceNative = Number(p.balance_native ?? 0) / 1e18;
+
+            const lastPrice =
+              balance > 0 ? balanceNative / balance : 0;
+
+            if (!aggregatedMap.has(tokenId)) {
+              const imageUrl = p.metadata_cid || '';
+
+              aggregatedMap.set(tokenId, {
+                tokenId: p.token,
+                symbol: p.symbol,
+                name: p.name,
+                metadataCID: p.metadata_cid,
+                imageUrl,
+                boughtTokens: 0,
+                soldTokens: 0,
+                spentNative: 0,
+                receivedNative: 0,
+                remainingTokens: 0,
+                lastPrice: 0,
+              });
             }
-          `,
-          variables: { addrs: allAddresses },
-        }),
-      });
 
-      const { data } = await response.json();
-      const rows: any[] = data?.launchpadPositions ?? [];
+            const existing = aggregatedMap.get(tokenId);
+            existing.boughtTokens += boughtTokens;
+            existing.soldTokens += soldTokens;
+            existing.spentNative += spentNative;
+            existing.receivedNative += receivedNative;
+            existing.remainingTokens += balance;
+            if (lastPrice) existing.lastPrice = lastPrice;
 
-      for (const p of rows) {
-        const tokenId = p.token.id.toLowerCase();
-        const boughtTokens = Number(p.tokenBought) / 1e18;
-        const soldTokens = Number(p.tokenSold) / 1e18;
-        const spentNative = Number(p.nativeSpent) / 1e18;
-        const receivedNative = Number(p.nativeReceived) / 1e18;
-        const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e9;
-        const balance = Number(p.tokens) / 1e18;
-
-        if (!aggregatedMap.has(tokenId)) {
-          let imageUrl = p.token.metadataCID || '';
-
-          aggregatedMap.set(tokenId, {
-            tokenId: p.token.id,
-            symbol: p.token.symbol,
-            name: p.token.name,
-            metadataCID: p.token.metadataCID,
-            imageUrl: imageUrl,
-            boughtTokens: 0,
-            soldTokens: 0,
-            spentNative: 0,
-            receivedNative: 0,
-            remainingTokens: 0,
-            remainingPct: 0,
-            pnlNative: 0,
-            lastPrice: lastPrice,
-          });
+            if (tokenId === (token.id || '').toLowerCase()) {
+              totals.amountBought += boughtTokens;
+              totals.amountSold += soldTokens;
+              totals.valueBought += spentNative;
+              totals.valueSold += receivedNative;
+              totals.balance += balance;
+              if (lastPrice) totals.lastPriceNative = lastPrice;
+            }
+          }
         }
 
-        const existing = aggregatedMap.get(tokenId);
-        existing.boughtTokens += boughtTokens;
-        existing.soldTokens += soldTokens;
-        existing.spentNative += spentNative;
-        existing.receivedNative += receivedNative;
-        existing.remainingTokens += balance;
-        existing.lastPrice = lastPrice || existing.lastPrice;
+        if (cancelled) return;
 
-        if (p.token.id.toLowerCase() === token.id?.toLowerCase()) {
-          totals.amountBought += boughtTokens;
-          totals.amountSold += soldTokens;
-          totals.valueBought += spentNative;
-          totals.valueSold += receivedNative;
-          totals.balance += balance;
-          totals.lastPriceNative = lastPrice || totals.lastPriceNative;
-        }
+        const all = Array.from(aggregatedMap.values()).map((pos) => {
+          const realized = pos.receivedNative - pos.spentNative;
+          const unrealized = pos.remainingTokens * pos.lastPrice;
+          const pnlNative = realized + unrealized;
+          const remainingPct =
+            pos.boughtTokens > 0
+              ? (pos.remainingTokens / pos.boughtTokens) * 100
+              : 100;
+
+          return {
+            ...pos,
+            remainingPct,
+            pnlNative,
+          };
+        });
+
+        const markToMarket = totals.balance * (totals.lastPriceNative || 0);
+        const totalPnL = totals.valueSold + markToMarket - totals.valueBought;
+
+        const sorted = all.sort((a, b) => b.remainingTokens - a.remainingTokens);
+        setMemePositions(sorted);
+        memePositionsMapRef.current = new Map(
+          sorted.map((p, i) => [String(p.tokenId).toLowerCase(), i]),
+        );
+
+        setMemeUserStats({
+          balance: totals.balance,
+          amountBought: totals.amountBought,
+          amountSold: totals.amountSold,
+          valueBought: totals.valueBought,
+          valueSold: totals.valueSold,
+          valueNet: totalPnL,
+        });
+      } catch (e) {
+        console.error('aggregated user positions failed', e);
       }
-
-      if (cancelled) return;
-
-      const all = Array.from(aggregatedMap.values()).map((pos) => {
-        const realized = pos.receivedNative - pos.spentNative;
-        const unrealized = pos.remainingTokens * pos.lastPrice;
-        const pnlNative = realized + unrealized;
-        const remainingPct =
-          pos.boughtTokens > 0
-            ? (pos.remainingTokens / pos.boughtTokens) * 100
-            : 0;
-
-        return {
-          ...pos,
-          remainingPct,
-          pnlNative,
-        };
-      });
-
-      const markToMarket = totals.balance * (totals.lastPriceNative || 0);
-      const totalPnL = totals.valueSold + markToMarket - totals.valueBought;
-
-      const sorted = all.sort((a, b) => b.remainingTokens - a.remainingTokens);
-      setMemePositions(sorted);
-      memePositionsMapRef.current = new Map(
-        sorted.map((p, i) => [String(p.tokenId).toLowerCase(), i]),
-      );
-
-      setMemeUserStats({
-        balance: totals.balance,
-        amountBought: totals.amountBought,
-        amountSold: totals.amountSold,
-        valueBought: totals.valueBought,
-        valueSold: totals.valueSold,
-        valueNet: totalPnL,
-      });
     })();
 
     return () => {
