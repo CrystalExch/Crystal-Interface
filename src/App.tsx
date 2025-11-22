@@ -5851,7 +5851,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           holders: (m.totalHolders ?? 0) - 1,
           devHolding: Number(m.devHoldingAmount ?? 0) / 1e27,
           trades: m.trades,
-          source: "crystal",
+          source: "nadfun",
         };
 
         setTokenData(tempTokenData);
