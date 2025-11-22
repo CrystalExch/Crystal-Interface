@@ -2020,7 +2020,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       tradesloading ||
       addressinfoloading);
 
-  const monUsdPrice = (Number(tradesByMarket[ethticker + 'USDC']?.[0]?.[3]) / Number(markets[ethticker + 'USDC']?.priceFactor) || 1);
+  const monUsdPrice = 0.05;
 
   const [walletTokenBalances, setWalletTokenBalances] = useState({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
@@ -4667,7 +4667,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             return;
           const log = msg.params?.result;
 
-          if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
+          if (!log?.topics?.length || msg?.params?.result?.commitState != "Voted") return;
 
           setProcessedLogs(prev => {
             let tempset = new Set(prev);
@@ -5677,7 +5677,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         const m = await res.json();
         if (isCancelled || !m) return;
-
+        console.log(m)
         const tradesSource =
           trackedAddresses.length > 0 &&
           (Array.isArray(m.trackedTrades) || Array.isArray(m.trackedtrades))
@@ -5718,7 +5718,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               high: Number(c.high) / 1e9,
               low: Number(c.low) / 1e9,
               close: Number(c.close) / 1e9,
-              volume: Number(c.baseVolume) / 1e18,
+              volume: Number(c.quoteVolume) / 1e18,
             }));
 
           const resForChart =
@@ -6917,7 +6917,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         break;
       case location.pathname.startsWith('/meme'):
         if (tokenData && tokenData.symbol && tokenData.price !== undefined) {
-          title = `${tokenData.symbol} ${formatUSDDisplay(tokenData.price * 1e9 * monUsdPrice, true)} | Crystal`;
+          title = `${formatUSDDisplay(tokenData.price * TOTAL_SUPPLY * monUsdPrice, true)?.slice(1)} - ${tokenData.symbol} | Crystal`;
         }
         break;
       case location.pathname.startsWith('/earn/vaults'):
@@ -8779,7 +8779,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
       wsRef.current.onmessage = (event) => {
         const message = JSON.parse(event.data);
-        if (message?.params?.result && message?.params?.result?.commitState == "Proposed") {
+        if (message?.params?.result && message?.params?.result?.commitState == "Voted") {
           const log = message?.params?.result;
           let ordersChanged = false;
           let canceledOrdersChanged = false;
@@ -25470,6 +25470,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         onToggleWalletTrackerWidget={setIsWalletTrackerWidgetOpen}
         setpopup={setpopup}
         createSubWallet={createSubWallet}
+        activeWalletPrivateKey={oneCTSigner}
       />
     </div>
   );

@@ -1650,7 +1650,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               </div>
               <Tooltip content="Dev Migrations">
                 <div className="meme-interface-token-metric"
-                  onClick={() => window.open(`https://testnet.monadscan.com/address/${memeTokenData.developerAddress}`, '_blank', 'noopener,noreferrer')
+                  onClick={() => window.open(`${settings.chainConfig[activechain].explorer}/address/${memeTokenData.developerAddress}`, '_blank', 'noopener,noreferrer')
                   }
                 >
                   <span className="meme-interface-dev-migrations-value" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: "pointer", marginLeft: "4px" }}>

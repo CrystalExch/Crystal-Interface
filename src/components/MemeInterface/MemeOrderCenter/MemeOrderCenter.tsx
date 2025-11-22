@@ -22,6 +22,7 @@ import lightning from '../../../assets/flash.png';
 import monadicon from '../../../assets/monadlogo.svg';
 import switchicon from '../../../assets/switch.svg';
 import walleticon from '../../../assets/wallet_icon.svg';
+import { settings } from '../../../settings';
 import filter from '../../../assets/filter.svg';
 import TransactionFiltersPopup from '../MemeTradesComponent/TransactionFiltersPopup';
 
@@ -1147,7 +1148,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                               fill="rgb(206, 208, 223)"
                               onClick={() =>
                                 window.open(
-                                  `https://testnet.monadscan.com/address/${row.wallet}`,
+                                  `${settings.chainConfig[activechain].explorer}/address/${row.wallet}`,
                                   '_blank',
                                   'noopener noreferrer',
                                 )
@@ -1383,7 +1384,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                               fill="rgb(206, 208, 223)"
                               onClick={() =>
                                 window.open(
-                                  `https://testnet.monadscan.com/address/${row.address}`,
+                                  `${settings.chainConfig[activechain].explorer}/address/${row.address}`,
                                   '_blank',
                                   'noopener noreferrer',
                                 )
@@ -1871,7 +1872,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                             fill="rgb(206, 208, 223)"
                             onClick={() =>
                               window.open(
-                                `https://testnet.monadscan.com/tx/${trade.hash || trade.transactionHash || trade.id}`,
+                                `${settings.chainConfig[activechain].explorer}/tx/${trade.hash || trade.transactionHash || trade.id}`,
                                 '_blank',
                                 'noopener noreferrer',
                               )

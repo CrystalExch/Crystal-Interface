@@ -15,7 +15,7 @@ import {
 
 import { CrystalLaunchpadToken } from '../../../abis/CrystalLaunchpadToken';
 import { CrystalRouterAbi } from '../../../abis/CrystalRouterAbi';
-import { NadFunAbi } from '../../../abis/NadFun'; 
+import { NadFunAbi } from '../../../abis/NadFun';
 import circle from '../../../assets/circle_handle.png';
 import closebutton from '../../../assets/close_button.png';
 import editicon from '../../../assets/edit.svg';
@@ -68,7 +68,7 @@ interface QuickBuyWidgetProps {
   nonces: any;
   selectedWallets: Set<string>;
   setSelectedWallets: React.Dispatch<React.SetStateAction<Set<string>>>;
-  isTerminalDataFetching: any; 
+  isTerminalDataFetching: any;
 }
 
 const Tooltip: React.FC<{
@@ -1000,7 +1000,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       return () => window.removeEventListener('resize', handleResize);
     }
   }, [isOpen]);
-  
+
   const getMaxSpendableWei = (addr: string): bigint => {
     const balances = walletTokenBalances[addr];
     if (!balances) return 0n;
@@ -1050,7 +1050,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
     // Filter out wallets that don't have enough balance to cover gas
     const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-    
+
     // First pass: check if wallets have minimum balance for gas
     targets = targets.filter(addr => {
       const balances = walletTokenBalances[addr];
@@ -1082,7 +1082,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       const maxWei = getMaxSpendableWei(addr);
       totalAvailable += maxWei;
     }
-    
+
     if (totalAvailable < totalWei) {
       const txId = `quickbuy-error-${Date.now()}`;
       updatePopup?.(txId, {
@@ -1288,7 +1288,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     targets = targets.filter(addr => {
       const tokenBalance = walletTokenBalances[addr]?.[token.id] ?? 0n;
       if (tokenBalance <= 0n) return false;
-      
+
       const balances = walletTokenBalances[addr];
       if (!balances) return false;
 
@@ -1520,37 +1520,37 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     handleSellTrade,
   ]);
 
-const handleMouseDown = useCallback(
-  (e: React.MouseEvent) => {
-    if (!widgetRef.current || isEditMode) return;
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (!widgetRef.current || isEditMode) return;
 
-    const target = e.target as HTMLElement;
-    if (
-      target.tagName === 'BUTTON' ||
-      target.tagName === 'IMG' ||
-      target.closest('button') ||
-      target.closest('.quickbuy-edit-icon') ||
-      target.closest('.close-btn') ||
-      target.closest('.quickbuy-settings-display') ||
-      target.closest('.quickbuy-preset-controls')
-    ) {
-      return;
-    }
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'BUTTON' ||
+        target.tagName === 'IMG' ||
+        target.closest('button') ||
+        target.closest('.quickbuy-edit-icon') ||
+        target.closest('.close-btn') ||
+        target.closest('.quickbuy-settings-display') ||
+        target.closest('.quickbuy-preset-controls')
+      ) {
+        return;
+      }
 
-    const rect = widgetRef.current.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-    setIsDragging(true);
-    e.preventDefault();
+      const rect = widgetRef.current.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+      setIsDragging(true);
+      e.preventDefault();
 
-    if (e.target && 'setPointerCapture' in e.target) {
-      (e.target as HTMLElement).setPointerCapture((e.nativeEvent as PointerEvent).pointerId);
-    }
-  },
-  [isEditMode],
-);
+      if (e.target && 'setPointerCapture' in e.target) {
+        (e.target as HTMLElement).setPointerCapture((e.nativeEvent as PointerEvent).pointerId);
+      }
+    },
+    [isEditMode],
+  );
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
@@ -1570,39 +1570,39 @@ const handleMouseDown = useCallback(
     [isDragging, dragOffset, widgetDimensions],
   );
 
-useEffect(() => {
-  if (isDragging) {
-    const handleMouseUp = (e: MouseEvent) => {
-      if (e.target && 'releasePointerCapture' in e.target) {
-        const target = e.target as HTMLElement;
-        target.releasePointerCapture((e as any).pointerId);
-      }
+  useEffect(() => {
+    if (isDragging) {
+      const handleMouseUp = (e: MouseEvent) => {
+        if (e.target && 'releasePointerCapture' in e.target) {
+          const target = e.target as HTMLElement;
+          target.releasePointerCapture((e as any).pointerId);
+        }
 
-      setIsDragging(false);
-      localStorage.setItem(
-        'crystal_quickbuy_widget_position',
-        JSON.stringify(position),
-      );
-    };
+        setIsDragging(false);
+        localStorage.setItem(
+          'crystal_quickbuy_widget_position',
+          JSON.stringify(position),
+        );
+      };
 
-    document.addEventListener('mousemove', handleMouseMove, true);
-    document.addEventListener('mouseup', handleMouseUp, true);
-    document.addEventListener('mouseleave', handleMouseUp, true);
+      document.addEventListener('mousemove', handleMouseMove, true);
+      document.addEventListener('mouseup', handleMouseUp, true);
+      document.addEventListener('mouseleave', handleMouseUp, true);
 
-    document.addEventListener('pointermove', handleMouseMove as any, true);
-    document.addEventListener('pointerup', handleMouseUp as any, true);
-    document.addEventListener('pointercancel', handleMouseUp as any, true);
+      document.addEventListener('pointermove', handleMouseMove as any, true);
+      document.addEventListener('pointerup', handleMouseUp as any, true);
+      document.addEventListener('pointercancel', handleMouseUp as any, true);
 
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove, true);
-      document.removeEventListener('mouseup', handleMouseUp, true);
-      document.removeEventListener('mouseleave', handleMouseUp, true);
-      document.removeEventListener('pointermove', handleMouseMove as any, true);
-      document.removeEventListener('pointerup', handleMouseUp as any, true);
-      document.removeEventListener('pointercancel', handleMouseUp as any, true);
-    };
-  }
-}, [isDragging, position, handleMouseMove]);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove, true);
+        document.removeEventListener('mouseup', handleMouseUp, true);
+        document.removeEventListener('mouseleave', handleMouseUp, true);
+        document.removeEventListener('pointermove', handleMouseMove as any, true);
+        document.removeEventListener('pointerup', handleMouseUp as any, true);
+        document.removeEventListener('pointercancel', handleMouseUp as any, true);
+      };
+    }
+  }, [isDragging, position, handleMouseMove]);
 
   useEffect(() => {
     if (editingIndex !== null && inputRef.current) {
@@ -1724,7 +1724,7 @@ useEffect(() => {
 
   return (
     <>
-     {(isDragging) && (
+      {(isDragging) && (
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
@@ -1937,9 +1937,9 @@ useEffect(() => {
                 <div className="quickbuy-token-balance">
                   <span className="quickbuy-token-amount">
                     {formatNumberWithCommas(Array.from(selectedWallets).reduce(
-                    (sum, addr) => sum + getWalletTokenBalance(addr),
-                    0,
-                  ), 2)} {token.symbol}
+                      (sum, addr) => sum + getWalletTokenBalance(addr),
+                      0,
+                    ), 2)} {token.symbol}
                   </span>
                   •
                   <span className="quickbuy-usd-value">
@@ -1959,9 +1959,9 @@ useEffect(() => {
                       src={monadicon}
                     />
                     {formatNumberWithCommas(Array.from(selectedWallets).reduce(
-                    (sum, addr) => sum + getWalletTokenBalance(addr),
-                    0,
-                  ) * tokenPrice, 2)}
+                      (sum, addr) => sum + getWalletTokenBalance(addr),
+                      0,
+                    ) * tokenPrice, 2)}
                   </span>
                 </div>
               </div>
@@ -2303,6 +2303,20 @@ useEffect(() => {
                             >
                               <div className="quickbuy-wallet-name">
                                 {getWalletName(wallet.address, index)}
+                                <Tooltip content="Primary Wallet">
+                                  {isActive && (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                      <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                      <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                      <path d="m20 9-3 9" />
+                                      <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                      <path d="M7 18 4 9" />
+                                      <circle cx="12" cy="4" r="2" />
+                                      <circle cx="20" cy="7" r="2" />
+                                      <circle cx="4" cy="7" r="2" />
+                                    </svg>
+                                  )}
+                                </Tooltip>
                               </div>
                               <div
                                 className="quickbuy-wallet-address"
@@ -2331,7 +2345,7 @@ useEffect(() => {
                                   tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth)?.address || ''
                                 ] || 0n;
                                 const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
-                                
+
                                 return (
                                   <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
                                     <div
@@ -2458,10 +2472,21 @@ useEffect(() => {
                               className="quickbuy-wallet-info"
                             >
                               <div className="quickbuy-wallet-name">
-                                {getWalletName(
-                                  wallet.address,
-                                  index + walletsWithToken.length,
-                                )}
+                                {getWalletName(wallet.address, index + walletsWithToken.length)}
+                                <Tooltip content="Primary Wallet">
+                                  {isActive && (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                      <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                      <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                      <path d="m20 9-3 9" />
+                                      <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                      <path d="M7 18 4 9" />
+                                      <circle cx="12" cy="4" r="2" />
+                                      <circle cx="20" cy="7" r="2" />
+                                      <circle cx="4" cy="7" r="2" />
+                                    </svg>
+                                  )}
+                                </Tooltip>
                               </div>
                               <div
                                 className="quickbuy-wallet-address"
@@ -2484,30 +2509,30 @@ useEffect(() => {
                               </div>
                             </div>
 
-                           <div className="quickbuy-wallet-balance">
-                            {(() => {
-                              const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-                              const balanceWei = walletTokenBalances[wallet.address]?.[
-                                tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth)?.address || ''
-                              ] || 0n;
-                              const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
-                              
-                              return (
-                                <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
-                                  <div
-                                    className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
-                                  >
-                                    <img
-                                      src={monadicon}
-                                      className="quickbuy-wallet-mon-icon"
-                                      alt="MON"
-                                    />
-                                    {formatNumberWithCommas(balance, 2)}
-                                  </div>
-                                </Tooltip>
-                              );
-                            })()}
-                          </div>
+                            <div className="quickbuy-wallet-balance">
+                              {(() => {
+                                const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                                const balanceWei = walletTokenBalances[wallet.address]?.[
+                                  tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth)?.address || ''
+                                ] || 0n;
+                                const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+
+                                return (
+                                  <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                    <div
+                                      className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                    >
+                                      <img
+                                        src={monadicon}
+                                        className="quickbuy-wallet-mon-icon"
+                                        alt="MON"
+                                      />
+                                      {formatNumberWithCommas(balance, 2)}
+                                    </div>
+                                  </Tooltip>
+                                );
+                              })()}
+                            </div>
                             <div className="quickbuy-wallet-tokens">
                               {(() => {
                                 const tokenCount = getWalletTokenCount(
@@ -2551,10 +2576,10 @@ useEffect(() => {
                       })}
                     </>
                   )}
-                  
+
                   {/* Add Wallet button - shown only when there's exactly 1 subwallet */}
                   {subWallets.length === 1 && (
-                    <div 
+                    <div
                       className="quickbuy-add-wallet-button"
                       onClick={() => {
                         window.location.href = '/portfolio?tab=wallets';

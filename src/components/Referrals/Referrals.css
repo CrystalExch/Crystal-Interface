@@ -372,15 +372,16 @@
 
 .referrals-stats-section {
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
   margin-bottom: 1.5rem;
+  align-items: flex-start;
 }
 
 .referrals-stat-item {
   display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  flex: 1;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
 .referrals-stat-label {
@@ -391,7 +392,7 @@
 
 .referrals-stat-value {
   color: #aaaecf;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   font-weight: 600;
 }
 
@@ -2267,13 +2268,13 @@
 .leaderboard-username {
   color: #aaaecf;
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .leaderboard-user-rank {
   color: #7f82ac;
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .leaderboard-username-skeleton {
@@ -2297,9 +2298,9 @@
 }
 
 .leaderboard-title {
-  color: #aaaecf;
+  color: #fff;
   font-size: 1.3rem;
-  font-weight: 600;
+  font-weight: 400;
   margin-bottom: 20px;
 }
 
@@ -2318,9 +2319,9 @@
 }
 
 .leaderboard-table th {
-  color: #7f82ac;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 400;
   padding: 12px 16px;
   text-align: left;
   text-transform: uppercase;
@@ -2346,7 +2347,7 @@
 }
 
 .leaderboard-table td {
-  color: #aaaecf;
+  color: #fff;
   font-size: 0.95rem;
   padding: 14px 16px;
 }
@@ -2356,12 +2357,12 @@
 }
 
 .rank-number {
-  color: #7f82ac;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 400;
 }
 
 .user-row .rank-number {
-  color: #aaaecf;
+  color: #fff;
 }
 
 .user-id-cell {
@@ -2370,25 +2371,25 @@
 }
 
 .user-highlight {
-  color: #aaaecf;
-  font-weight: 600;
+  color: #fff;
+  font-weight: 400;
   font-family: inherit;
 }
 
 .points-cell {
-  font-weight: 600;
-  color: #9a9ec7;
+  font-weight: 400;
+  color: #fff;
 }
 
 .trading-cell,
 .referrals-cell {
-  color: #7f82ac;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .user-row .points-cell,
 .user-row .trading-cell,
 .user-row .referrals-cell {
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .leaderboard-pagination {
@@ -2405,7 +2406,7 @@
   color: #aaaecf;
   cursor: pointer;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 400;
   padding: 8px 14px;
   transition: all 0.2s;
   min-width: 40px;
@@ -2425,18 +2426,9 @@
       #7f82a1 100%);
   border-color: transparent;
   color: #0f0f12;
-  font-weight: 600;
+  font-weight: 400;
 }
 
-.pagination-btn.you-btn {
-  background: rgba(170, 174, 207, 0.1);
-  border-color: #aaaecf;
-  font-weight: 600;
-}
-
-.pagination-btn.you-btn:hover {
-  background: rgba(170, 174, 207, 0.15);
-}
 
 /* Responsive Design */
 @media (max-width: 730px) {
