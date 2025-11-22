@@ -88,33 +88,6 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
           </button>
         </div>
 
-        <div className="referral-header">
-          <div className="referred-count">
-            <img src={defaultPfp} className="referral-pfp" />
-            <div className="referral-user-right-side">
-              {isLoading ? (
-                <>
-                  <div className="referrals-skeleton referrals-username-skeleton"></div>
-                  <div className="referrals-skeleton referrals-multiplier-skeleton"></div>
-                </>
-              ) : (
-                <>
-                  <span className="referral-username">{displayName}</span>
-                  <div className="user-points-subtitle">
-                    {client && usedRefLink
-                      ? 1.375
-                      : client
-                      ? 1.25
-                      : usedRefLink
-                      ? 1.1
-                      : 1}
-                    x Point Multiplier
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
 
         {/* Conditional rendering based on active tab */}
         {activeTab === 'leaderboard' ? (
@@ -176,6 +149,32 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
               </div>
             </div>
             <div className="earnings-section">
+              <div className="referred-count">
+                <img src={defaultPfp} className="referral-pfp" />
+                <div className="referral-user-right-side">
+                  {isLoading ? (
+                    <>
+                      <div className="referrals-skeleton referrals-username-skeleton"></div>
+                      <div className="referrals-skeleton referrals-multiplier-skeleton"></div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="referral-username">{displayName}</span>
+                      <div className="user-points-subtitle">
+                        {client && usedRefLink
+                          ? 1.375
+                          : client
+                          ? 1.25
+                          : usedRefLink
+                          ? 1.1
+                          : 1}
+                        x Point Multiplier
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
               <div className="earnings-dashboard">
                 <h2 className="earnings-title">Earnings Dashboard</h2>
                 <p className="earnings-subtitle">Track your referral earnings</p>
@@ -184,9 +183,9 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
               <div className="referrals-stats-section">
                 <div className="referrals-stat-item">
                   <span className="referrals-stat-label">Users Referred:</span>
-                  <span className="stat-value">{referredCount}</span>
+                  <span className="referrals-stat-value">{referredCount}</span>
                 </div>
-                <div className="referralsstat-item">
+                <div className="referrals-stat-item">
                   <span className="referrals-stat-label">Crystals Earned:</span>
                   <span className="referrals-stat-value">{commissionBonus}</span>
                 </div>
