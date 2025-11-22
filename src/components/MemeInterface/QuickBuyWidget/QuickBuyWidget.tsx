@@ -1200,7 +1200,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
 
         const wallet = nonces.current.get(addr);
-        const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, true];
+        const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, true, false, 1, addr];
         if (wallet) wallet.nonce += 1;
         wallet?.pendingtxs.push(params);
 
@@ -1354,7 +1354,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           };
 
           const wallet = nonces.current.get(addr);
-          const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, true];
+          const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, true, false, 1, addr];
           if (wallet) wallet.nonce += 1;
           wallet?.pendingtxs.push(params);
           const transferPromise = sendUserOperationAsync(...params)
@@ -1427,7 +1427,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             value: 0n,
           };
           const wallet = nonces.current.get(addr);
-          const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, true];
+          const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, true, false, 1, addr];
           if (wallet) wallet.nonce += 1;
           wallet?.pendingtxs.push(params);
           const transferPromise = sendUserOperationAsync(...params)

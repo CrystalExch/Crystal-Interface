@@ -4028,7 +4028,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             }
 
             const wallet = nonces.current.get(addr);
-            const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
+            const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, false, false, 1, addr];
             if (wallet) wallet.nonce += 1;
             wallet?.pendingtxs.push(params);
 
@@ -4459,10 +4459,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               type="button"
               className="explorer-transparent-button"
               onClick={handleWalletButtonClick}
-              style={{
-                opacity: !activeWalletPrivateKey ? 0.3 : 1,
-                transition: 'all 0.2s ease'
-              }}
             >
               <div className="connect-content">
                 <span className="transparent-button-container">

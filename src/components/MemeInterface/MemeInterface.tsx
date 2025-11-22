@@ -1497,7 +1497,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         };
 
         const wallet = nonces.current.get(addr);
-        const params = [{ uo: sellUo }, 0n, 0n, false, pk, wallet?.nonce];
+        const params = [{ uo: sellUo }, 0n, 0n, false, pk, wallet?.nonce, false, false, 1, addr];
         if (wallet) wallet.nonce += 1;
         wallet?.pendingtxs.push(params);
 
@@ -2018,7 +2018,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 0n,
                 false,
                 wallet.privateKey,
-                walletNonce?.nonce,
+                walletNonce?.nonce, false, false, 1, walletAddr
               ];
               if (walletNonce) walletNonce.nonce += 1;
               walletNonce?.pendingtxs.push(params);
@@ -2247,7 +2247,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 0n,
                 false,
                 wallet.privateKey,
-                walletNonce?.nonce,
+                walletNonce?.nonce, false, false, 1, walletAddr
               ];
               if (walletNonce) walletNonce.nonce += 1;
               walletNonce?.pendingtxs.push(params);
@@ -2331,7 +2331,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 0n,
                 false,
                 wallet.privateKey,
-                walletNonce?.nonce,
+                walletNonce?.nonce, false, false, 1, walletAddr
               ];
               if (walletNonce) walletNonce.nonce += 1;
               walletNonce?.pendingtxs.push(params);
@@ -2925,7 +2925,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     w.address !== destinationAddr &&
                     (walletTokenBalances[w.address]?.[token.id!] ?? 0n) > 0n,
                 );
-                        const isActive = isWalletActive(wallet.privateKey);
 
               return (
                 <>
@@ -3038,6 +3037,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                           const balance = getWalletBalance(wallet.address);
                           const isSelected = selectedWallets.has(wallet.address);
                           const tokenBalance = getWalletTokenBalance(wallet.address);
+                          const isActive = isWalletActive(wallet.privateKey);
 
                           return (
                             <div

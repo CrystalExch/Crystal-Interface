@@ -979,16 +979,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   };
 
   const sendUserOperationAsync = useCallback(
-    async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n, mainWallet: boolean = false, pk: string = '', nonce: number = 0, noReceipt: boolean = false, returnReceipt: boolean = false) => {
+    async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n, mainWallet: boolean = false, pk: string = '', nonce: number = 0, noReceipt: boolean = false, returnReceipt: boolean = false, retryCount: number = 0, addr: string = '') => {
       let hash: `0x${string}`;
       let receipt: any;
       let err: any;
       if (!!pk) {
+        gasLimit = gasLimit > 0n ? gasLimit : 500000n;
         const tx = {
           to: params.uo.target,
           value: params.uo.value,
           data: params.uo.data,
-          gasLimit: gasLimit > 0n ? gasLimit : 500000n,
+          gasLimit: gasLimit,
           maxFeePerGas: 120000000000n + (prioFee > 0n ? prioFee : 13000000000n),
           maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
           nonce: nonce,
@@ -1019,13 +1020,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         });
       }
       else if (validOneCT && !mainWallet) {
+        gasLimit = gasLimit > 0n ? gasLimit : 500000n;
         const wallet = nonces.current.get(onectclient.address);
         nonce = wallet.nonce
         const tx = {
           to: params.uo.target,
           value: params.uo.value,
           data: params.uo.data,
-          gasLimit: gasLimit > 0n ? gasLimit : 500000n,
+          gasLimit: gasLimit,
           maxFeePerGas: 120000000000n + (prioFee > 0n ? prioFee : 13000000000n),
           maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
           nonce: nonce,
@@ -1075,8 +1077,31 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           ),
         ]);
       }
-      catch (e) {
+      catch (e: any) {
         err = e
+        if (retryCount > 0 && e?.message.includes("execution reverted")) {
+          const wallet = nonces.current.get(addr);
+          const retryParams = [params, gasLimit * 10n, prioFee, mainWallet, pk, wallet.nonce, noReceipt, returnReceipt, retryCount - 1, addr] as [
+            any,
+            bigint,
+            bigint,
+            boolean,
+            string,
+            number,
+            boolean,
+            boolean,
+            number,
+            string
+          ];
+          if (wallet) wallet.nonce += 1;
+          wallet?.pendingtxs.push(retryParams);
+          const res: any = await sendUserOperationAsync(...retryParams)
+          if (wallet)
+            wallet.pendingtxs = wallet.pendingtxs.filter(
+              (p: any) => p[5] != retryParams[5],
+            );
+          return { hash: res.hash, receipt: res.receipt }
+        }
       } finally {
         if (!pk && validOneCT && !mainWallet) {
           const wallet = nonces.current.get(onectclient.address);
