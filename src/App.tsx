@@ -242,6 +242,7 @@ interface Token {
   graduatedTokens: number;
   launchedTokens: number;
   trades?: any;
+  bondingPercentage: number;
   source?: 'crystal' | 'nadfun';
 }
 
@@ -4507,57 +4508,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     let startBlockNumber = '';
     let endBlockNumber = '';
 
-    const fetchData = async () => {
-      try {
-        const req = await fetch(HTTP_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify([{
-            jsonrpc: '2.0',
-            id: 0,
-            method: 'eth_blockNumber',
-          }, {
-            jsonrpc: '2.0',
-            id: 0,
-            method: 'eth_getLogs',
-            params: [
-              {
-                fromBlock: startBlockNumber,
-                toBlock: endBlockNumber,
-                address: router,
-                topics: [
-                  '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982',
-                ],
-              },
-            ],
-          }, ...(address?.slice(2) ? [{
-            jsonrpc: '2.0',
-            id: 0,
-            method: 'eth_getLogs',
-            params: [
-              {
-                fromBlock: startBlockNumber,
-                toBlock: endBlockNumber,
-                address: router,
-                topics: [
-                  '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c',
-                  null,
-                  '0x000000000000000000000000' + address?.slice(2),
-                ],
-              },
-            ],
-          }] : [])]),
-        });
-        const result = await req.json();
-        if (cancelled) return;
-        startBlockNumber = '0x' + (parseInt(result[0].result, 16) - 30).toString(16);
-        endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 10).toString(16);
-        const tradelogs = result[1].result;
-      } catch { }
-    };
-
     (async () => {
       try {
         const res = await fetch('https://api.crystal.exchange/tokens', {
@@ -4620,6 +4570,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               holders: holdersRaw,
               devHolding: devHoldingRaw / 1e27,
               top10Holding: top10HoldingRaw / 1e25,
+              bondingPercentage: m.graduationPercentageBps,
               source: launchpad,
             };
 
@@ -5440,6 +5391,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     volumeDelta: 0,
                     graduatedTokens: 0,
                     launchedTokens: 0,
+                    bondingPercentage: 0,
                     source: 'nadfun',
                   };
 
@@ -5479,6 +5431,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     volumeDelta: 0,
                     graduatedTokens: 0,
                     launchedTokens: 0,
+                    bondingPercentage: 0,
                     source: 'nadfun',
                   };
 
@@ -5652,6 +5605,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       discordHandle: "",
       graduatedTokens: 0,
       launchedTokens: 0,
+      bondingPercentage: 0,
       source: "nadfun"
     };
 
@@ -5849,6 +5803,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           holders: (m.totalHolders ?? 0) - 1,
           devHolding: Number(m.devHoldingAmount ?? 0) / 1e27,
           trades: m.trades,
+          bondingPercentage: m.graduationPercentageBps,
           source: "nadfun",
         };
 
@@ -5907,6 +5862,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           setMemeHolders([]);
           memeHoldersMapRef.current = new Map();
         }
+        
         
         if (Array.isArray(m.topTraders)) {
           const rows: any[] = m.topTraders;

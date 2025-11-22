@@ -2,7 +2,6 @@ import {
   BarChart3,
   Bell,
   ChevronDown,
-  Eye,
   EyeOff,
   Hash,
   Image,
@@ -90,6 +89,7 @@ interface Token {
   graduatedTokens: number;
   launchedTokens: number;
   trades?: any;
+  bondingPercentage: number;
   source?: 'crystal' | 'nadfun';
 }
 
@@ -1228,11 +1228,6 @@ const formatPrice = (p: number, noDecimals = false) => {
   return `$${noDecimals ? Math.round(p) : p.toFixed(2)}`;
 };
 
-const calculateBondingPercentage = (marketCap: number) => {
-  const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
-  return bondingPercentage;
-};
-
 const DisplayDropdown: React.FC<{
   settings: DisplaySettings;
   onSettingsChange: (settings: DisplaySettings) => void;
@@ -2302,10 +2297,7 @@ const TokenRow = React.memo<{
     left: 0,
   });
   type CSSVars = React.CSSProperties & Record<string, string>;
-  const bondingPercentage = useMemo(
-    () => calculateBondingPercentage(token.marketCap),
-    [token.marketCap],
-  );
+  const bondingPercentage = token.bondingPercentage / 100;
   const gradient = useMemo(
     () => createColorGradient(getBondingColor(bondingPercentage)),
     [bondingPercentage],
@@ -3473,7 +3465,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     [],
   );
 
-
   const [activePresetsSecond, setActivePresetsSecond] = useState<
     Record<Token['status'], number>
   >(() => ({
@@ -4325,7 +4316,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   }, []);
 
   const visibleTokens = useMemo(() => {
-    // First mark all tokens with blacklist status
     const markBlacklistStatus = (tokens: Token[]) => {
       return tokens.map((token) => {
         const isBlacklisted = blacklistSettings.items.some((item) => {
@@ -4352,14 +4342,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       });
     };
 
-    // Mark blacklist status for all tokens first
     const allTokensWithBlacklist = {
       new: markBlacklistStatus(tokensByStatus.new),
       graduating: markBlacklistStatus(tokensByStatus.graduating),
       graduated: markBlacklistStatus(tokensByStatus.graduated),
     };
 
-    // Then apply hideHiddenTokens filter if enabled
     const filtered = {
       new: displaySettings.hideHiddenTokens
         ? allTokensWithBlacklist.new.filter((t: any) => !hidden.has(t.id) && !t.isBlacklisted)
@@ -4372,7 +4360,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         : allTokensWithBlacklist.graduated,
     };
 
-    // Apply additional filters if they exist
     if (!appliedFilters) return filtered;
 
     return (['new', 'graduating', 'graduated'] as Token['status'][]).reduce(

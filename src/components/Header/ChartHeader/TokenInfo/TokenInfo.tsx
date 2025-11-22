@@ -358,6 +358,7 @@ interface TokenInfoProps {
     developerAddress?: string;
     reserveQuote?: bigint;
     reserveBase?: bigint;
+    bondingPercentage: number;
     source?: 'nadfun' | 'crystal' | string;
   };
   isPerpsToken?: boolean;
@@ -770,12 +771,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  const bondingPercentage = useMemo(() => {
-    if (!isMemeToken || !activeMarket) return 0;
-    const TOTAL_SUPPLY = 1e9;
-    const marketCap = parseFloat(price.replace(/,/g, '')) * TOTAL_SUPPLY;
-    return calculateBondingPercentage(marketCap || 0);
-  }, [activeMarket, price, isMemeToken]);
+  const bondingPercentage = memeTokenData?.bondingPercentage ? memeTokenData?.bondingPercentage / 100 : 0;
 
   const getBondingColorMeme = (percentage: number): string => {
     if (percentage < 25) return 'rgb(235, 112, 112)';

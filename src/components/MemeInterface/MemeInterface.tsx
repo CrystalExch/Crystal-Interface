@@ -22,7 +22,6 @@ import { CrystalLaunchpadToken } from '../../abis/CrystalLaunchpadToken';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { useSharedContext } from '../../contexts/SharedContext';
 import { settings } from '../../settings';
-import customRound from '../../utils/customRound';
 import closebutton from '../../assets/close_button.png';
 import contract from '../../assets/contract.svg';
 import editicon from '../../assets/edit.svg';
@@ -362,7 +361,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   isLoadingTrades,
   setIsLoadingTrades,
   trackedWalletsRef,
-    isPaused,
+  isPaused,
   backlogCount,
 }) => {
   const getSliderPosition = (
