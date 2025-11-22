@@ -20,12 +20,13 @@ const ReferralLandingPage: React.FC<ReferralLandingPageProps> = ({
   setShowModal,
 }) => {
   const { t } = useLanguage();
+  const [showRequestModal, setShowRequestModal] = React.useState(false);
 
   const handleGetStarted = () => {
     if (!connected) {
       setpopup(4); // Open wallet connection modal
     } else {
-      setShowModal(true); // Open create referral code modal
+      setShowRequestModal(true); // Open request access modal
     }
   };
 
@@ -46,9 +47,6 @@ const ReferralLandingPage: React.FC<ReferralLandingPageProps> = ({
               className="referral-cta-button primary"
               onClick={handleGetStarted}
             >
-              {!connected
-                ? 'Connect Wallet to Start'
-                : 'Create Your Referral Code'}
             </button>
             <button
               className="referral-cta-button secondary"
@@ -89,9 +87,6 @@ const ReferralLandingPage: React.FC<ReferralLandingPageProps> = ({
           className="referral-cta-button primary large"
           onClick={handleGetStarted}
         >
-          {!connected
-            ? 'Connect Wallet'
-            : 'Create Your Referral Code'}
         </button>
       </div>
     </div>

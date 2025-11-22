@@ -299,6 +299,7 @@ const Referrals: React.FC<ReferralProps> = ({
               abi: CrystalRouterAbi,
               functionName: 'claimFees',
               args: [
+                address as `0x${string}`,
                 Array.from(
                   new Set(
                     Object.values(markets).map(
@@ -310,10 +311,17 @@ const Referrals: React.FC<ReferralProps> = ({
             }),
             value: 0n,
           },
-        });
-        await waitForTxReceipt(hash.hash);
+        }, 10000000n);
+        console.log('Claim fees transaction hash:', hash);
+
+        // Wait for transaction to be mined before refetching
+        if (hash.hash) {
+          await waitForTxReceipt(hash.hash);
+        }
+
         refetch();
       } catch (error) {
+        console.error('Claim fees error:', error);
       } finally {
         setIsSigning(false);
       }

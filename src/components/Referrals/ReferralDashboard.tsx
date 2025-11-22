@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Share2, TrendingUp, Users, Zap, Gem } from 'lucide-react';
 import EnterCode from './EnterACode';
 import ReferralCharts from './ReferralCharts';
@@ -13,6 +13,45 @@ import defaultPfp from '../../assets/leaderboard_default.png';
 
 // TODO: Get activechain from context or props
 const activechain = 10143; // Monad testnet - temporary hardcoded value
+
+// Fetch trading volume from API
+const fetchTradingVolume = async (address: string): Promise<number> => {
+  try {
+    const url = `https://api.crystal.exchange/volume/${address}`;
+    console.log('[volumeApi] Fetching volume for address:', address);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.error('[volumeApi] HTTP error:', response.status, response.statusText);
+      throw new Error(`HTTP ${response.status}: Failed to fetch volume`);
+    }
+
+    const data = await response.json();
+    console.log('[volumeApi] API response:', data);
+
+    // Parse volume_native from string to number (it's in MON with 18 decimals)
+    const volumeMON = parseFloat(data.volume_native);
+    console.log('[volumeApi] Parsed volume (MON raw):', volumeMON);
+
+    // Convert from MON (18 decimals) to regular units (divide by 10^18)
+    const volume = volumeMON / 1e18;
+    console.log('[volumeApi] Converted volume (MON):', volume);
+
+    // Return 0 if parsing fails or volume is NaN
+    return isNaN(volume) ? 0 : volume;
+
+  } catch (error) {
+    console.error('[volumeApi] Error fetching trading volume:', error);
+    // Gracefully return 0 if API fails
+    return 0;
+  }
+};
 
 interface ReferralDashboardProps {
   tokenList: any;
@@ -65,9 +104,24 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
 }) => {
   const [showFeeSchedule, setShowFeeSchedule] = useState(false);
   const [activeTab, setActiveTab] = useState<'rewards' | 'leaderboard'>('rewards');
+  const [tradingVolume, setTradingVolume] = useState<number>(0);
 
-  // TODO: Get actual trading volume from backend/blockchain
-  const tradingVolume = 0; // Default: $0, starts at 0 until manually tracked
+  // Fetch trading volume when address changes
+  useEffect(() => {
+    if (!address) {
+      setTradingVolume(0);
+      return;
+    }
+
+    fetchTradingVolume(address)
+      .then(volume => {
+        setTradingVolume(volume);
+      })
+      .catch(err => {
+        console.error('Failed to fetch trading volume:', err);
+        setTradingVolume(0); // Fallback to 0 on error
+      });
+  }, [address]);
 
   return (
     <div className="referral-scroll-wrapper">
@@ -182,12 +236,12 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
 
               <div className="referrals-stats-section">
                 <div className="referrals-stat-item">
-                  <span className="referrals-stat-label">Users Referred:</span>
                   <span className="referrals-stat-value">{referredCount}</span>
+                  <span className="referrals-stat-label">Users Referred</span>
                 </div>
                 <div className="referrals-stat-item">
-                  <span className="referrals-stat-label">Crystals Earned:</span>
                   <span className="referrals-stat-value">{commissionBonus}</span>
+                  <span className="referrals-stat-label">Crystals Earned</span>
                 </div>
               </div>
 
@@ -202,7 +256,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
               <button
                 className="claim-button"
                 onClick={handleClaimFees}
-                disabled={totalClaimableFees === 0}
+                disabled={isSigning || totalClaimableFees === 0 || claimableFees == undefined}
               >
                 {totalClaimableFees > 0 ? 'Claim Fees' : 'Nothing to Claim'}
               </button>
