@@ -128,9 +128,10 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
       return `$${(vol / 1000000).toFixed(2)}M`;
     }
     if (vol >= 1000) {
-      return `$${(vol / 1000).toFixed(0)}K`;
+      return `$${(vol / 1000).toFixed(1)}K`;
     }
-    return `$${vol.toFixed(0)}`;
+    // Add commas for numbers less than 1000
+    return `$${vol.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
   };
 
   return (
@@ -176,39 +177,37 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
       )}
 
       {tier.next === null && (
-        <div className="fee-tier-max-message">
-          <p className="fee-tier-max-text">
-            You've reached the highest fee tier! Enjoy maximum benefits.
-          </p>
-        </div>
+        <>
+          <div className="fee-tier-progress">
+            <p className="fee-tier-progress-text">
+              Trading Volume: {formatVolume(tradingVolume)}
+            </p>
+          </div>
+          <div className="fee-tier-max-message">
+            <p className="fee-tier-max-text">
+              You've reached the highest fee tier! Enjoy maximum benefits.
+            </p>
+          </div>
+        </>
       )}
 
       <div className="fee-tier-benefits">
         <div className="fee-tier-benefit-card">
-          <span className="fee-tier-benefit-label">Taker Fee</span>
+          <span className="fee-tier-benefit-label">Cashback Commissions</span>
           <span className="fee-tier-benefit-value" style={{ color: tier.color }}>
-            {tier.takerFee}
+            {commissionBonus}
           </span>
           <span className="fee-tier-benefit-description">
-            on market orders
+            crystals earned
           </span>
         </div>
         <div className="fee-tier-benefit-card">
-          <span className="fee-tier-benefit-label">Maker Fee</span>
+          <span className="fee-tier-benefit-label">Referral Commissions</span>
           <span className="fee-tier-benefit-value" style={{ color: tier.color }}>
-            {tier.makerFee}
+            10%
           </span>
           <span className="fee-tier-benefit-description">
-            {tier.makerFee.startsWith('-') ? 'rebate on limit orders' : 'on limit orders'}
-          </span>
-        </div>
-        <div className="fee-tier-benefit-card">
-          <span className="fee-tier-benefit-label">Savings vs Bronze</span>
-          <span className="fee-tier-benefit-value" style={{ color: tier.color }}>
-            {tier.tier === 1 ? '0%' : `${((0.050 - parseFloat(tier.takerFee.replace('%', ''))) / 0.050 * 100).toFixed(0)}%`}
-          </span>
-          <span className="fee-tier-benefit-description">
-            on taker fees
+            of referral fees
           </span>
         </div>
       </div>
