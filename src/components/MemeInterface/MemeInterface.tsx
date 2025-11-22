@@ -134,7 +134,6 @@ interface MemeInterfaceProps {
   backlogCount?: number;
 }
 
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 const STATS_HTTP_BASE = 'https://api.crystal.exchange';
 const PAGE_SIZE = 100;
 
@@ -1756,52 +1755,52 @@ const userAddr = address ?? account?.address ?? '';
     setTimeout(() => setNotif(null), 300);
   }, []);
 
-  // backend stats
-  useEffect(() => {
-    if (!token.id) return;
+  // // backend stats
+  // useEffect(() => {
+  //   if (!token.id) return;
 
-    let disposed = false;
-    let inFlight: AbortController | null = null;
+  //   let disposed = false;
+  //   let inFlight: AbortController | null = null;
 
-    const origin = STATS_HTTP_BASE.replace(/\/$/, '');
-    const url = `${origin}/stats/${token.id.toLowerCase()}`;
+  //   const origin = STATS_HTTP_BASE.replace(/\/$/, '');
+  //   const url = `${origin}/stats/${token.id.toLowerCase()}`;
 
-    const tick = async () => {
-      if (disposed) return;
-      try {
-        inFlight?.abort();
-        inFlight = new AbortController();
+  //   const tick = async () => {
+  //     if (disposed) return;
+  //     try {
+  //       inFlight?.abort();
+  //       inFlight = new AbortController();
 
-        const res = await fetch(url, {
-          signal: inFlight.signal,
-          cache: 'no-store',
-        });
+  //       const res = await fetch(url, {
+  //         signal: inFlight.signal,
+  //         cache: 'no-store',
+  //       });
 
-        if (!res.ok) return;
+  //       if (!res.ok) return;
 
-        const msg = await res.json();
+  //       const msg = await res.json();
 
-        const src: any = msg?.type === 'stats' ? msg : msg;
+  //       const src: any = msg?.type === 'stats' ? msg : msg;
 
-        const normalized: Record<string, any> = {};
-        for (const [k, v] of Object.entries(src)) {
-          normalized[k] =
-            typeof v === 'number' && /volume/i.test(k) ? (v as number) / 1e18 : v;
-        }
+  //       const normalized: Record<string, any> = {};
+  //       for (const [k, v] of Object.entries(src)) {
+  //         normalized[k] =
+  //           typeof v === 'number' && /volume/i.test(k) ? (v as number) / 1e18 : v;
+  //       }
 
-        setStatsRaw(normalized);
-      } catch { }
-    };
+  //       setStatsRaw(normalized);
+  //     } catch { }
+  //   };
 
-    const handle = setInterval(tick, 1000);
-    tick();
+  //   const handle = setInterval(tick, 1000);
+  //   tick();
 
-    return () => {
-      disposed = true;
-      inFlight?.abort();
-      clearInterval(handle);
-    };
-  }, [token.id]);
+  //   return () => {
+  //     disposed = true;
+  //     inFlight?.abort();
+  //     clearInterval(handle);
+  //   };
+  // }, [token.id]);
 
   const handlePresetEditToggle = useCallback(() => {
     setIsPresetEditMode(!isPresetEditMode);

@@ -331,11 +331,11 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
           </div>
 
           {/* Performance Charts */}
-          <ReferralCharts
+          {/* <ReferralCharts
             referredCount={referredCount}
             commissionBonus={commissionBonus}
             totalClaimableFees={totalClaimableFees}
-          />
+          /> */}
 
           {/* Tier System */}
           <ReferralTier commissionBonus={commissionBonus} />

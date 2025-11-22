@@ -302,13 +302,13 @@ export default function MemeTradesComponent({
   const tradesBacklogRef = useRef<RawTrade[]>([]);
   const lastProcessedTradesRef = useRef<RawTrade[]>([]);
 
-const trackedWalletsMap = useMemo(() => {
-  const map = new Map<string, TrackedWallet>();
-  trackedWalletsRef.current.forEach((wallet: any) => {
-    map.set(wallet.address.toLowerCase(), wallet);
-  });
-  return map;
-}, [trackedWalletsRef.current]);
+  const trackedWalletsMap = useMemo(() => {
+    const map = new Map<string, TrackedWallet>();
+    trackedWalletsRef.current.forEach((wallet: any) => {
+      map.set(wallet.address.toLowerCase(), wallet);
+    });
+    return map;
+  }, [trackedWalletsRef.current]);
 
   const norm = (s?: string) => (s || '').toLowerCase();
   const trackedSet = new Set((trackedAddresses || []).map(norm));
@@ -615,13 +615,15 @@ const trackedWalletsMap = useMemo(() => {
         tags.push('topHolder');
       }
 
+      console.log(r);
+
       return {
         id: r.id,
         timestamp: r.timestamp,
         amountUSD,
         amountMON,
-        mcUSD: r.price * monUsdPrice * 1_000_000_000,
-        priceUSD: r.price * quoteUsd * monUsdPrice,
+        mcUSD: r.price * 1_000_000_000_000_000_000,
+        priceUSD: r.price * 1_000_000_000,
         trader: short,
         emoji: emoji,
         fullAddress: r.caller,
@@ -983,7 +985,8 @@ const trackedWalletsMap = useMemo(() => {
                     </div>
                     <span className="meme-trade-age">
                       <a
-                          href={`${settings.chainConfig[activechain].explorer}/tx/${t.id.split('-')[0]}`}
+                          // href={`${settings.chainConfig[activechain].explorer}/tx/${t.id.split('-')[0]}`}
+                          href={`${settings.chainConfig[activechain].explorer}/tx/`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
