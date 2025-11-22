@@ -520,7 +520,6 @@
   background: rgb(6, 6, 6);
   border-radius: 8px;
   width: 50%;
-  padding: 0 1rem;
   gap: 4px;
 }
 
@@ -588,9 +587,6 @@
   left: 50px;
   flex: 1;
   height: 78px;
-  border: 1.5px solid #1c1c23;
-  background: #0f0f1277;
-  border-radius: 12px; 
 }
 
 
@@ -650,7 +646,7 @@
   letter-spacing: -0.5px;
   font-size: 0.75rem;
   color: #bcc0ea;
-  width: 45%;
+  width: 20%;
   min-width: 130px;
   margin-top: -4px;
 }
@@ -720,9 +716,10 @@
 
 @media (max-width: 1020px) {
   .referral-scroll-wrapper {
-    height: auto;
+    height: 100%;
     margin: 0 0 5px 0;
-    overflow: visible;
+    overflow-y: auto;
+    overflow-x: hidden;
     padding: 0 5px;
   }
 
