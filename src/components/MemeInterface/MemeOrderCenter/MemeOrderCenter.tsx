@@ -1891,7 +1891,7 @@ case 'trades':
             ? '0px'
             : `${orderCenterHeight}px`,
         transition: (isVertDragging || isDragging) ? 'none' : 'height 0.1s ease',
-        overflow: 'visible',
+        overflow: 'hidden',
       }}
     >
       <div
