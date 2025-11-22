@@ -2019,7 +2019,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       tradesloading ||
       addressinfoloading);
 
-  const monUsdPrice = 0.05
+  const monUsdPrice = (Number(tradesByMarket[ethticker + 'USDC']?.[0]?.[3]) / Number(markets[ethticker + 'USDC']?.priceFactor) || 1);
 
   const [walletTokenBalances, setWalletTokenBalances] = useState({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
@@ -5722,7 +5722,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
 
         const m = await res.json();
-        console.log(m);
         if (isCancelled || !m) return;
 
         const tradesSource =
@@ -5750,7 +5749,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               caller: t.trade.account?.id ?? t.user ?? "",
             };
           });
-          console.log(mapped)
           setMemeTrades(mapped);
         } else {
           setMemeTrades([]);
@@ -5930,8 +5928,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               out.push({
                 address: p.account.id,
-                balance: amountBought - amountSold,
-                tokenNet: amountBought - amountSold,
+                balance,
+                tokenNet: balance,
                 valueNet: pnl,
                 amountBought,
                 amountSold,
@@ -6058,118 +6056,113 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
       const aggregatedMap = new Map<string, any>();
 
-      const response = await fetch(SUBGRAPH_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            query ($addrs: [Bytes!]!) {
-              launchpadPositions(
-                where: { account_in: $addrs, tokens_gt: "0" }
-                orderBy: tokens
-                orderDirection: desc
-                first: 1000
-              ) {
-                token { id symbol name lastPriceNativePerTokenWad metadataCID }
-                account { id }
-                tokenBought
-                tokenSold
-                nativeSpent
-                nativeReceived
-                tokens
-                lastUpdatedAt
-              }
+      try {
+        const responses = await Promise.all(
+          allAddresses.map((addr) =>
+            fetch(`https://api.crystal.exchange/user/${addr}`, {
+              method: 'GET',
+              headers: { 'content-type': 'application/json' },
+            }),
+          ),
+        );
+
+        const payloads = await Promise.all(
+          responses.map((res) => (res.ok ? res.json() : null)),
+        );
+
+        for (const payload of payloads) {
+          if (!payload) continue;
+          const rows: any[] = payload.positions ?? [];
+
+          for (const p of rows) {
+            const tokenId = String(p.token || '').toLowerCase();
+            if (!tokenId) continue;
+
+            const boughtTokens = Number(p.token_bought ?? 0) / 1e18;
+            const soldTokens = Number(p.token_sold ?? 0) / 1e18;
+            const spentNative = Number(p.native_spent ?? 0) / 1e18;
+            const receivedNative = Number(p.native_received ?? 0) / 1e18;
+            const balance = Number(p.balance_token ?? 0) / 1e18;
+            const balanceNative = Number(p.balance_native ?? 0) / 1e18;
+
+            const lastPrice =
+              balance > 0 ? balanceNative / balance : 0;
+
+            if (!aggregatedMap.has(tokenId)) {
+              const imageUrl = p.metadata_cid || '';
+
+              aggregatedMap.set(tokenId, {
+                tokenId: p.token,
+                symbol: p.symbol,
+                name: p.name,
+                metadataCID: p.metadata_cid,
+                imageUrl,
+                boughtTokens: 0,
+                soldTokens: 0,
+                spentNative: 0,
+                receivedNative: 0,
+                remainingTokens: 0,
+                lastPrice: 0,
+              });
             }
-          `,
-          variables: { addrs: allAddresses },
-        }),
-      });
 
-      const { data } = await response.json();
-      const rows: any[] = data?.launchpadPositions ?? [];
+            const existing = aggregatedMap.get(tokenId);
+            existing.boughtTokens += boughtTokens;
+            existing.soldTokens += soldTokens;
+            existing.spentNative += spentNative;
+            existing.receivedNative += receivedNative;
+            existing.remainingTokens += balance;
+            if (lastPrice) existing.lastPrice = lastPrice;
 
-      for (const p of rows) {
-        const tokenId = p.token.id.toLowerCase();
-        const boughtTokens = Number(p.tokenBought) / 1e18;
-        const soldTokens = Number(p.tokenSold) / 1e18;
-        const spentNative = Number(p.nativeSpent) / 1e18;
-        const receivedNative = Number(p.nativeReceived) / 1e18;
-        const lastPrice = Number(p.token.lastPriceNativePerTokenWad) / 1e9;
-        const balance = Number(p.tokens) / 1e18;
-
-        if (!aggregatedMap.has(tokenId)) {
-          let imageUrl = p.token.metadataCID || '';
-
-          aggregatedMap.set(tokenId, {
-            tokenId: p.token.id,
-            symbol: p.token.symbol,
-            name: p.token.name,
-            metadataCID: p.token.metadataCID,
-            imageUrl: imageUrl,
-            boughtTokens: 0,
-            soldTokens: 0,
-            spentNative: 0,
-            receivedNative: 0,
-            remainingTokens: 0,
-            remainingPct: 0,
-            pnlNative: 0,
-            lastPrice: lastPrice,
-          });
+            if (tokenId === (token.id || '').toLowerCase()) {
+              totals.amountBought += boughtTokens;
+              totals.amountSold += soldTokens;
+              totals.valueBought += spentNative;
+              totals.valueSold += receivedNative;
+              totals.balance += balance;
+              if (lastPrice) totals.lastPriceNative = lastPrice;
+            }
+          }
         }
 
-        const existing = aggregatedMap.get(tokenId);
-        existing.boughtTokens += boughtTokens;
-        existing.soldTokens += soldTokens;
-        existing.spentNative += spentNative;
-        existing.receivedNative += receivedNative;
-        existing.remainingTokens += balance;
-        existing.lastPrice = lastPrice || existing.lastPrice;
+        if (cancelled) return;
 
-        if (p.token.id.toLowerCase() === token.id?.toLowerCase()) {
-          totals.amountBought += boughtTokens;
-          totals.amountSold += soldTokens;
-          totals.valueBought += spentNative;
-          totals.valueSold += receivedNative;
-          totals.balance += balance;
-          totals.lastPriceNative = lastPrice || totals.lastPriceNative;
-        }
+        const all = Array.from(aggregatedMap.values()).map((pos) => {
+          const realized = pos.receivedNative - pos.spentNative;
+          const unrealized = pos.remainingTokens * pos.lastPrice;
+          const pnlNative = realized + unrealized;
+          const remainingPct =
+            pos.boughtTokens > 0
+              ? (pos.remainingTokens / pos.boughtTokens) * 100
+              : 100;
+
+          return {
+            ...pos,
+            remainingPct,
+            pnlNative,
+          };
+        });
+
+        const markToMarket = totals.balance * (totals.lastPriceNative || 0);
+        const totalPnL = totals.valueSold + markToMarket - totals.valueBought;
+
+        const sorted = all.sort((a, b) => b.remainingTokens - a.remainingTokens);
+        setMemePositions(sorted);
+        memePositionsMapRef.current = new Map(
+          sorted.map((p, i) => [String(p.tokenId).toLowerCase(), i]),
+        );
+
+        setMemeUserStats({
+          balance: totals.balance,
+          amountBought: totals.amountBought,
+          amountSold: totals.amountSold,
+          valueBought: totals.valueBought,
+          valueSold: totals.valueSold,
+          valueNet: totalPnL,
+        });
+      } catch (e) {
+        console.error('aggregated user positions failed', e);
       }
-
-      if (cancelled) return;
-
-      const all = Array.from(aggregatedMap.values()).map((pos) => {
-        const realized = pos.receivedNative - pos.spentNative;
-        const unrealized = pos.remainingTokens * pos.lastPrice;
-        const pnlNative = realized + unrealized;
-        const remainingPct =
-          pos.boughtTokens > 0
-            ? (pos.remainingTokens / pos.boughtTokens) * 100
-            : 0;
-
-        return {
-          ...pos,
-          remainingPct,
-          pnlNative,
-        };
-      });
-
-      const markToMarket = totals.balance * (totals.lastPriceNative || 0);
-      const totalPnL = totals.valueSold + markToMarket - totals.valueBought;
-
-      const sorted = all.sort((a, b) => b.remainingTokens - a.remainingTokens);
-      setMemePositions(sorted);
-      memePositionsMapRef.current = new Map(
-        sorted.map((p, i) => [String(p.tokenId).toLowerCase(), i]),
-      );
-
-      setMemeUserStats({
-        balance: totals.balance,
-        amountBought: totals.amountBought,
-        amountSold: totals.amountSold,
-        valueBought: totals.valueBought,
-        valueSold: totals.valueSold,
-        valueNet: totalPnL,
-      });
     })();
 
     return () => {

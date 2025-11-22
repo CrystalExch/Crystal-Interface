@@ -615,15 +615,13 @@ export default function MemeTradesComponent({
         tags.push('topHolder');
       }
 
-      console.log(r);
-
       return {
         id: r.id,
         timestamp: r.timestamp,
         amountUSD,
         amountMON,
-        mcUSD: r.price * 1_000_000_000_000_000_000,
-        priceUSD: r.price * 1_000_000_000,
+        mcUSD: r.price * 1_000_000_000_000_000_000 * monUsdPrice,
+        priceUSD: r.price * 1_000_000_000 * monUsdPrice,
         trader: short,
         emoji: emoji,
         fullAddress: r.caller,

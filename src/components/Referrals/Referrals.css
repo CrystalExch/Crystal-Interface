@@ -259,6 +259,8 @@
 
 .enter-code-container{
   width: 50%;
+  padding-right: 0;
+  margin-right: 0;
 }
 .feature-icon {
   align-items: center;
@@ -366,6 +368,31 @@
   font-size: 1.05rem;
   font-weight: 300;
   margin: 0;
+}
+
+.referrals-stats-section {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.referrals-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+}
+
+.referrals-stat-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.referrals-stat-value {
+  color: #aaaecf;
+  font-size: 1.3rem;
+  font-weight: 600;
 }
 
 .earnings-subtitle {

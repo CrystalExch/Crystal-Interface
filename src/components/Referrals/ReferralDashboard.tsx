@@ -180,47 +180,32 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
                 <h2 className="earnings-title">Earnings Dashboard</h2>
                 <p className="earnings-subtitle">Track your referral earnings</p>
               </div>
+
+              <div className="referrals-stats-section">
+                <div className="referrals-stat-item">
+                  <span className="referrals-stat-label">Users Referred:</span>
+                  <span className="stat-value">{referredCount}</span>
+                </div>
+                <div className="referralsstat-item">
+                  <span className="referrals-stat-label">Crystals Earned:</span>
+                  <span className="referrals-stat-value">{commissionBonus}</span>
+                </div>
+              </div>
+
               <div className="total-earnings-box">
                 <div className="total-earnings-header">
                   <span className="total-earnings-label">Total Claimable</span>
                 </div>
                 <div className="total-earnings-amount">
-                  $0.00
+                  ${totalClaimableFees.toFixed(2)}
                 </div>
-              </div>
-              <div className="token-breakdown">
-                {Object.entries(claimableFees).map(([token, value]) => (
-                  <div key={token} className="token-item">
-                    <div className="token-info">
-                      <div className="token-logo">
-                        <img
-                          className="referral-token-image"
-                          src={
-                            tokenList.find((t: any) => t.ticker === token)
-                              ?.image || ''
-                          }
-                        />
-                      </div>
-                      <div className="referrals-token-details">
-                        <span className="token-symbol">{token}</span>
-                        <span className="token-label">Available to Claim</span>
-                      </div>
-                    </div>
-                    <div className="token-amount">
-                      <div className="token-value">
-                        0.00
-                      </div>
-                      <div className="token-currency">{token}</div>
-                    </div>
-                  </div>
-                ))}
               </div>
               <button
                 className="claim-button"
                 onClick={handleClaimFees}
-                disabled={true}
+                disabled={totalClaimableFees === 0}
               >
-                Nothing to Claim
+                {totalClaimableFees > 0 ? 'Claim Fees' : 'Nothing to Claim'}
               </button>
               <div className="help-text">
                 Claim your referral earnings from trading fees
@@ -338,11 +323,12 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
           /> */}
 
           {/* Tier System */}
-          <ReferralTier commissionBonus={commissionBonus} />
+          {/* <ReferralTier commissionBonus={commissionBonus} /> */}
 
           {/* Fee Tier System */}
           <FeeTier
             tradingVolume={tradingVolume}
+            commissionBonus={commissionBonus}
             onViewFeeSchedule={() => setShowFeeSchedule(true)}
           />
 

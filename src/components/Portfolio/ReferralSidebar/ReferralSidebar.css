@@ -90,12 +90,12 @@
   text-align: center;
 }
 
-.stats-section {
+.referrals-side-stats-section {
   display: flex;
   gap: 12px;
 }
 
-.stat-item {
+.referrals-side-stat-item {
   align-items: center;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -107,7 +107,7 @@
 
 }
 
-.stat-icon {
+.referrals-side-stat-icon {
   align-items: center;
   background: rgba(170, 174, 207, 0.15);
   border-radius: 6px;
@@ -118,13 +118,13 @@
   width: 28px;
 }
 
-.stat-content {
+.referrals-side-stat-content {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.stat-value {
+.referrals-side-stat-value {
   color: rgba(255, 255, 255, 0.9);
   font-size: 1rem;
   font-weight: 500;
@@ -703,12 +703,12 @@
     overflow-y: auto;
   }
 
-  .stats-section {
+  .referrals-side-stats-section {
     flex-direction: row;
     gap: 8px;
   }
 
-  .stat-item {
+  .referrals-side-stat-item {
     flex: 1;
   }
 }

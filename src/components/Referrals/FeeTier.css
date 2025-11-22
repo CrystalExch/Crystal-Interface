@@ -230,15 +230,39 @@
 }
 
 .fee-tier-requirement-badge.tier-4 {
-  background: #E5E4E2;
-}
-
-.fee-tier-requirement-badge.tier-5 {
   background: #B9F2FF;
 }
 
+.fee-tier-requirement-badge.tier-5 {
+  background: #4A4A4A;
+}
+
 .fee-tier-requirement-badge.tier-6 {
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  background: linear-gradient(135deg, #9D4EDD 0%, #7B2CBF 100%);
+}
+
+.tier-requirement-badge.bronze {
+  background: #CD7F32;
+}
+
+.tier-requirement-badge.silver {
+  background: #C0C0C0;
+}
+
+.tier-requirement-badge.gold {
+  background: #FFD700;
+}
+
+.tier-requirement-badge.diamond {
+  background: #B9F2FF;
+}
+
+.tier-requirement-badge.netherite {
+  background: #4A4A4A;
+}
+
+.tier-requirement-badge.enchanted-netherite {
+  background: linear-gradient(135deg, #9D4EDD 0%, #7B2CBF 100%);
 }
 
 .fee-tier-requirement-details {
