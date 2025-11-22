@@ -244,6 +244,7 @@ interface Token {
   trades?: any;
   bondingPercentage: number;
   source?: 'crystal' | 'nadfun';
+  market?: string;
 }
 
 type AudioGroups = 'swap' | 'order' | 'transfer' | 'approve';
@@ -2040,14 +2041,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     (tokenIn == eth && tokenOut == weth) ||
     (tokenIn == weth && tokenOut == eth);
 
-  const loading =
-    (stateloading ||
-      tradesloading ||
-      addressinfoloading);
+  const loading = stateloading
+    // (stateloading ||
+    //   tradesloading ||
+    //   addressinfoloading);
 
   const monUsdPrice = 0.05;
 
-  const [walletTokenBalances, setWalletTokenBalances] = useState({});
+  const [walletTokenBalances, setWalletTokenBalances] = useState<any>({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
   const [walletsLoading, _setWalletsLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -3303,7 +3304,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   };
 
   // data loop, reuse to have every single rpc call method in this loop
-  const { data: rpcQueryData, isLoading, dataUpdatedAt, refetch } = useQuery({
+  /* const { data: rpcQueryData, isLoading, dataUpdatedAt, refetch } = useQuery({
     queryKey: [
       'crystal_rpc_reads',
       switched,
@@ -3640,7 +3641,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     enabled: !!activeMarket && !!tokendict && !!markets,
     refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 300 : 5000,
     gcTime: 0,
-  })
+  }) */
 
   const handleImportWallets = (walletsText: string, addToSingleGroup: boolean) => {
     try {
@@ -4609,6 +4610,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         console.error('initial launchpad api fetch failed', err);
       } finally {
         if (!cancelled) setIsTokenExplorerLoading(false);
+        setstateloading(false)
+        setaddressinfoloading(false)
       }
     })();
 
@@ -6518,7 +6521,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
         });
 
-        setWalletTokenBalances(prev => ({
+        setWalletTokenBalances((prev: any) => ({
           ...prev,
           [wallet.address]: balanceMap
         }));
@@ -7135,7 +7138,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [amountsQuote, orders.length > 0]);
 
   // process data
-  useLayoutEffect(() => {
+  /* useLayoutEffect(() => {
     const data = rpcQueryData?.readContractData?.mainGroup;
     const refData = rpcQueryData?.readContractData?.refGroup;
     const oneCTDepositData = rpcQueryData?.readContractData?.oneCTDepositGroup;
@@ -7463,10 +7466,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
     } else {
     }
-  }, [rpcQueryData?.readContractData, activechain, isLoading, dataUpdatedAt, location.pathname.slice(1)]);
+  }, [rpcQueryData?.readContractData, activechain, isLoading, dataUpdatedAt, location.pathname.slice(1)]); */
 
   // update display values when loading is finished
-  useLayoutEffect(() => {
+  /* useLayoutEffect(() => {
     if (!isLoading && !stateIsLoading && Object.keys(mids).length > 0) {
       setDisplayValuesLoading(false);
       if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
@@ -7828,2078 +7831,2083 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     scaleEnd,
     scaleOrders,
     scaleSkew,
-  ]);
-
-  // trades processing
-  useEffect(() => {
-    const temp: Trade[] | undefined = tradesByMarket[activeMarketKey];
-
-    let processed: [boolean, string, string, string, string][] = [];
-
-    if (temp) {
-      processed = temp.slice(0, 100).map((trade: Trade) => {
-        const isBuy = trade[2] === 1;
-        const tradeValue = (trade[2] === 1 ? trade[1] : trade[0]) / 10 ** Number(activeMarket.baseDecimals);
-        const price = trade[3] / Number(activeMarket.priceFactor) || 0;
-        const time = formatTime(trade[6]);
-        const hash = trade[5];
-        return [
-          isBuy,
-          formatSubscript(formatSig(
-            price.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket.marketType != 0
-          )),
-          formatSubscript(customRound(tradeValue, 3)),
-          time,
-          hash,
-        ];
-      });
-    }
-
-    setTrades(processed);
-  }, [tradesByMarket?.[activeMarketKey]?.[0]])
-
-  // fetch initial address info and event stream
-  useEffect(() => {
-    let liveStreamCancelled = false;
-    let isAddressInfoFetching = false;
-    let startBlockNumber = '';
-    let endBlockNumber = '';
-
-    const fetchData = async () => {
-      try {
-        const req = await fetch(HTTP_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify([{
-            jsonrpc: '2.0',
-            id: 0,
-            method: 'eth_blockNumber',
-          }, {
-            jsonrpc: '2.0',
-            id: 0,
-            method: 'eth_getLogs',
-            params: [
-              {
-                fromBlock: startBlockNumber,
-                toBlock: endBlockNumber,
-                address: router,
-                topics: [
-                  '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982',
-                ],
-              },
-            ],
-          }, ...(address?.slice(2) ? [{
-            jsonrpc: '2.0',
-            id: 0,
-            method: 'eth_getLogs',
-            params: [
-              {
-                fromBlock: startBlockNumber,
-                toBlock: endBlockNumber,
-                address: router,
-                topics: [
-                  '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c',
-                  null,
-                  '0x000000000000000000000000' + address?.slice(2),
-                ],
-              },
-            ],
-          }] : [])]),
-        });
-        const result = await req.json();
-        if (liveStreamCancelled) return;
-        startBlockNumber = '0x' + (parseInt(result[0].result, 16) - 30).toString(16);
-        endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 10).toString(16);
-        const tradelogs = result[1].result;
-        const orderlogs = result?.[2]?.result;
-        const filllogs = result?.[3]?.result;
-        let ordersChanged = false;
-        let canceledOrdersChanged = false;
-        let tradesByMarketChanged = false;
-        let tradeHistoryChanged = false;
-        let temporders: any;
-        let tempcanceledorders: any;
-        let temptradesByMarket: any;
-        let temptradehistory: any;
-        setorders((orders) => {
-          temporders = [...orders];
-          return orders;
-        })
-        setcanceledorders((canceledorders) => {
-          tempcanceledorders = [...canceledorders];
-          return canceledorders;
-        })
-        settradesByMarket((tradesByMarket: any) => {
-          temptradesByMarket = { ...tradesByMarket };
-          return tradesByMarket;
-        })
-        settradehistory((tradehistory: any) => {
-          temptradehistory = [...tradehistory];
-          return tradehistory;
-        })
-        setProcessedLogs(prev => {
-          let tempset = new Set(prev);
-          let temptrades: any = {};
-          if (Array.isArray(tradelogs)) {
-            for (const log of tradelogs) {
-              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
-              if (!tempset.has(logIdentifier) && marketKey && !temptradesByMarket[marketKey]?.some((trade: any) =>
-                trade[0] == parseInt(log['data'].slice(66, 130), 16) &&
-                trade[1] == parseInt(log['data'].slice(130, 194), 16) &&
-                trade[5] == log['transactionHash'])) {
-                if (tempset.size >= 10000) {
-                  const first = tempset.values().next().value;
-                  if (first !== undefined) {
-                    tempset.delete(first);
-                  }
-                }
-                tempset.add(logIdentifier);
-                const resolve = txReceiptResolvers.current.get(log['transactionHash']);
-                if (resolve) {
-                  resolve();
-                  txReceiptResolvers.current.delete(log['transactionHash']);
-                }
-                let _timestamp = parseInt(log['blockTimestamp'], 16);
-                let _orderdata = log['data'].slice(258);
-                for (let i = 0; i < _orderdata.length; i += 64) {
-                  let chunk = _orderdata.slice(i, i + 64);
-                  let price = parseInt(chunk.slice(1, 20), 16);
-                  let id = parseInt(chunk.slice(20, 32), 16);
-                  let size = parseInt(chunk.slice(32, 64), 16);
-                  let orderIndex = temporders.findIndex(
-                    (sublist: any) =>
-                      sublist[0] ==
-                      price &&
-                      sublist[1] ==
-                      id &&
-                      sublist[4] == marketKey,
-                  );
-                  let canceledOrderIndex = tempcanceledorders.findIndex(
-                    (sublist: any) =>
-                      sublist[0] ==
-                      price &&
-                      sublist[1] ==
-                      id &&
-                      sublist[4] == marketKey,
-                  );
-                  if (orderIndex != -1 && canceledOrderIndex != -1) {
-                    ordersChanged = true;
-                    canceledOrdersChanged = true;
-                    temporders[orderIndex] = [...temporders[orderIndex]]
-                    tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
-                    let order = [...temporders[orderIndex]];
-                    let buy = order[3];
-                    let quoteasset =
-                      markets[marketKey]
-                        .quoteAddress;
-                    let baseasset =
-                      markets[marketKey]
-                        .baseAddress;
-                    let amountquote = (
-                      ((order[2] - order[7] - size / order[0]) *
-                        order[0]) /
-                      (Number(
-                        markets[marketKey]
-                          .scaleFactor,
-                      ) *
-                        10 **
-                        Number(
-                          markets[marketKey]
-                            .quoteDecimals,
-                        ))
-                    ).toFixed(2);
-                    let amountbase = customRound(
-                      (order[2] - order[7] - size / order[0]) /
-                      10 **
-                      Number(
-                        markets[marketKey]
-                          .baseDecimals,
-                      ),
-                      3,
-                    );
-                    newTxPopup(
-                      log['transactionHash'],
-                      'fill',
-                      buy ? quoteasset : baseasset,
-                      buy ? baseasset : quoteasset,
-                      buy ? amountquote : amountbase,
-                      buy ? amountbase : amountquote,
-                      `${order[0] / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                      '',
-                    );
-                    if (size == 0) {
-                      tradeHistoryChanged = true;
-                      temptradehistory.push([
-                        order[3] == 1
-                          ? (order[2] * order[0]) /
-                          Number(markets[order[4]].scaleFactor)
-                          : order[2],
-                        order[3] == 1
-                          ? order[2]
-                          : (order[2] * order[0]) /
-                          Number(markets[order[4]].scaleFactor),
-                        order[3],
-                        order[0],
-                        order[4],
-                        order[5],
-                        _timestamp,
-                        0,
-                      ]);
-                      if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
-                        try {
-                          temporders[orderIndex][10].remove();
-                        }
-                        catch { }
-                        temporders[orderIndex].splice(10, 1)
-                      }
-                      temporders.splice(orderIndex, 1);
-                      tempcanceledorders[canceledOrderIndex][9] =
-                        1;
-                      tempcanceledorders[canceledOrderIndex][7] = order[2]
-                      tempcanceledorders[canceledOrderIndex][8] = order[8];
-                    } else {
-                      if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
-                        try {
-                          temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
-                        }
-                        catch { }
-                      }
-                      temporders[orderIndex][7] =
-                        order[2] - size / order[0];
-                      tempcanceledorders[canceledOrderIndex][7] =
-                        order[2] - size / order[0];
-                    }
-                  }
-                }
-                tradesByMarketChanged = true;
-                if (!Array.isArray(temptradesByMarket[marketKey])) {
-                  temptradesByMarket[marketKey] = [];
-                }
-                let amountIn = parseInt(log['data'].slice(66, 130), 16);
-                let amountOut = parseInt(log['data'].slice(130, 194), 16);
-                let buy = parseInt(log['data'].slice(65, 66), 16);
-                let price = parseInt(log['data'].slice(258, 322), 16);
-                temptradesByMarket[marketKey].unshift([
-                  amountIn,
-                  amountOut,
-                  buy,
-                  price,
-                  marketKey,
-                  log['transactionHash'],
-                  _timestamp,
-                ]);
-                if (!Array.isArray(temptrades[marketKey])) {
-                  temptrades[marketKey] = [];
-                }
-                temptrades[marketKey].unshift([
-                  amountIn,
-                  amountOut,
-                  buy,
-                  price,
-                  marketKey,
-                  log['transactionHash'],
-                  _timestamp,
-                  parseInt(log['data'].slice(194, 258), 16),
-                ])
-                if (
-                  log['topics'][2].slice(26) ==
-                  address?.slice(2).toLowerCase()
-                ) {
-                  tradeHistoryChanged = true;
-                  temptradehistory.push([
-                    amountIn,
-                    amountOut,
-                    buy,
-                    price,
-                    marketKey,
-                    log['transactionHash'],
-                    _timestamp,
-                    1,
-                  ])
-                  let quoteasset =
-                    markets[marketKey].quoteAddress;
-                  let baseasset =
-                    markets[marketKey].baseAddress;
-                  let popupAmountIn = customRound(
-                    amountIn /
-                    10 **
-                    Number(
-                      buy
-                        ? markets[marketKey]
-                          .quoteDecimals
-                        : markets[marketKey]
-                          .baseDecimals,
-                    ),
-                    3,
-                  );
-                  let popupAmountOut = customRound(
-                    amountOut /
-                    10 **
-                    Number(
-                      buy
-                        ? markets[marketKey]
-                          .baseDecimals
-                        : markets[marketKey]
-                          .quoteDecimals,
-                    ),
-                    3,
-                  );
-                  newTxPopup(
-                    log['transactionHash'],
-                    'swap',
-                    buy ? quoteasset : baseasset,
-                    buy ? baseasset : quoteasset,
-                    popupAmountIn,
-                    popupAmountOut,
-                    '',
-                    '',
-                  );
-                }
-              }
-            }
-            if (tradesByMarketChanged) {
-              setChartData(([existingBars, existingIntervalLabel, existingShowOutliers]) => {
-                const marketKey = existingIntervalLabel?.match(/^\D*/)?.[0];
-                const updatedBars = [...existingBars];
-                let rawVolume;
-                if (marketKey && Array.isArray(temptrades?.[marketKey])) {
-                  const barSizeSec =
-                    existingIntervalLabel?.match(/\d.*/)?.[0] === '1' ? 60 :
-                      existingIntervalLabel?.match(/\d.*/)?.[0] === '5' ? 5 * 60 :
-                        existingIntervalLabel?.match(/\d.*/)?.[0] === '15' ? 15 * 60 :
-                          existingIntervalLabel?.match(/\d.*/)?.[0] === '30' ? 30 * 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '60' ? 60 * 60 :
-                              existingIntervalLabel?.match(/\d.*/)?.[0] === '240' ? 4 * 60 * 60 :
-                                existingIntervalLabel?.match(/\d.*/)?.[0] === '1D' ? 24 * 60 * 60 :
-                                  5 * 60;
-                  const priceFactor = Number(markets[marketKey].priceFactor);
-                  for (const lastTrade of temptrades[marketKey]) {
-                    const lastBarIndex = updatedBars.length - 1;
-                    const lastBar = updatedBars[lastBarIndex];
-
-                    let openPrice = parseFloat((lastTrade[7] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
-                    let closePrice = parseFloat((lastTrade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
-                    rawVolume =
-                      (lastTrade[2] == 0 ? lastTrade[0] : lastTrade[1]) /
-                      10 ** Number(markets[marketKey].baseDecimals);
-
-                    const tradeTimeSec = lastTrade[6];
-                    const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
-                    const lastBarTimeSec = Math.floor(new Date(lastBar?.time).getTime() / 1000);
-                    if (flooredTradeTimeSec === lastBarTimeSec) {
-                      updatedBars[lastBarIndex] = {
-                        ...lastBar,
-                        high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
-                        low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
-                        close: closePrice,
-                        volume: lastBar.volume + rawVolume,
-                      };
-                      if (realtimeCallbackRef.current[existingIntervalLabel]) {
-                        realtimeCallbackRef.current[existingIntervalLabel]({
-                          ...lastBar,
-                          high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
-                          low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
-                          close: closePrice,
-                          volume: lastBar.volume + rawVolume,
-                        });
-                      }
-                    } else {
-                      updatedBars.push({
-                        time: flooredTradeTimeSec * 1000,
-                        open: lastBar?.close ?? openPrice,
-                        high: Math.max(lastBar?.close ?? openPrice, closePrice),
-                        low: Math.min(lastBar?.close ?? openPrice, closePrice),
-                        close: closePrice,
-                        volume: rawVolume,
-                      });
-                      if (realtimeCallbackRef.current[existingIntervalLabel]) {
-                        realtimeCallbackRef.current[existingIntervalLabel]({
-                          time: flooredTradeTimeSec * 1000,
-                          open: lastBar?.close ?? openPrice,
-                          high: Math.max(lastBar?.close ?? openPrice, closePrice),
-                          low: Math.min(lastBar?.close ?? openPrice, closePrice),
-                          close: closePrice,
-                          volume: rawVolume,
-                        });
-                      }
-                    }
-                  }
-                }
-                setMarketsData((marketsData) =>
-                  marketsData.map((market) => {
-                    if (!market) return;
-                    const marketKey = market?.marketKey.replace(
-                      new RegExp(`^${wethticker}|${wethticker}$`, 'g'),
-                      ethticker
-                    );
-                    const newTrades = temptrades?.[marketKey]
-                    if (!Array.isArray(newTrades) || newTrades.length < 1) return market;
-                    const firstKlineOpen: number =
-                      market?.mini && Array.isArray(market?.mini) && market?.mini.length > 0
-                        ? Number(market?.mini[0].value * Number(market.priceFactor))
-                        : 0;
-                    const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
-                    const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
-                    const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
-                      / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
-                    let high = market.high24h ? Number(market.high24h.replace(/,/g, '')) : null;
-                    let low = market.low24h ? Number(market.low24h.replace(/,/g, '')) : null;
-                    const volume = newTrades.reduce((sum: number, trade: any) => {
-                      if (high && trade[3] / Number(market.priceFactor) > high) {
-                        high = trade[3] / Number(market.priceFactor)
-                      }
-                      if (low && trade[3] / Number(market.priceFactor) < low) {
-                        low = trade[3] / Number(market.priceFactor)
-                      }
-                      const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
-                      return sum + amount;
-                    }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
-
-                    return {
-                      ...market,
-                      volume: formatCommas(
-                        (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
-                      ),
-                      currentPrice: formatSig(
-                        (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
-                      ),
-                      priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-                      priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(formatSig(
-                        (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
-                      ).split('.')[1]?.length || 0)),
-                      ...(high != null && {
-                        high24h: formatSig(
-                          high.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
-                        )
-                      }),
-                      ...(low != null && {
-                        low24h: formatSig(
-                          low.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
-                        )
-                      })
-                    };
-                  })
-                );
-                return [updatedBars, existingIntervalLabel, existingShowOutliers];
-              });
-            }
-          }
-          if (Array.isArray(orderlogs)) {
-            for (const log of orderlogs) {
-              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
-              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
-                address?.slice(2).toLowerCase()) {
-                if (tempset.size >= 10000) {
-                  const first = tempset.values().next().value;
-                  if (first !== undefined) {
-                    tempset.delete(first);
-                  }
-                }
-                tempset.add(logIdentifier);
-                const resolve = txReceiptResolvers.current.get(log['transactionHash']);
-                if (resolve) {
-                  resolve();
-                  txReceiptResolvers.current.delete(log['transactionHash']);
-                }
-                let _timestamp = parseInt(log['blockTimestamp'], 16);
-                let _orderdata = log['data'].slice(130);
-                for (let i = 0; i < _orderdata.length; i += 64) {
-                  let chunk = _orderdata.slice(i, i + 64);
-                  let _isplace = parseInt(chunk.slice(0, 1), 16) >= 2;
-                  if (_isplace) {
-                    let buy = 3 - parseInt(chunk.slice(0, 1), 16);
-                    let price = parseInt(chunk.slice(2, 22), 16);
-                    let id = parseInt(chunk.slice(22, 36), 16);
-                    let size = parseInt(chunk.slice(36, 64), 16);
-                    let alreadyExist = tempcanceledorders.some(
-                      (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
-                    );
-                    buy ? size *= Number(markets[marketKey].scaleFactor) : size *= price
-                    if (!alreadyExist) {
-                      ordersChanged = true;
-                      canceledOrdersChanged = true;
-                      let order = [
-                        price,
-                        id,
-                        size /
-                        price,
-                        buy,
-                        marketKey,
-                        log['transactionHash'],
-                        _timestamp,
-                        0,
-                        size,
-                        2,
-                      ];
-                      temporders.push(order)
-                      tempcanceledorders.push([
-                        price,
-                        id,
-                        size /
-                        price,
-                        buy,
-                        marketKey,
-                        log['transactionHash'],
-                        _timestamp,
-                        0,
-                        size,
-                        2,
-                      ])
-                      let quoteasset =
-                        markets[marketKey].quoteAddress;
-                      let baseasset =
-                        markets[marketKey].baseAddress;
-                      let amountquote = (
-                        size /
-                        (Number(
-                          markets[marketKey].scaleFactor,
-                        ) *
-                          10 **
-                          Number(
-                            markets[marketKey]
-                              .quoteDecimals,
-                          ))
-                      ).toFixed(2);
-                      let amountbase = customRound(
-                        size /
-                        price /
-                        10 **
-                        Number(
-                          markets[marketKey]
-                            .baseDecimals,
-                        ),
-                        3,
-                      );
-                      newTxPopup(
-                        log['transactionHash'],
-                        'limit',
-                        buy ? quoteasset : baseasset,
-                        buy ? baseasset : quoteasset,
-                        buy ? amountquote : amountbase,
-                        buy ? amountbase : amountquote,
-                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                        '',
-                      );
-                    }
-                  } else {
-                    let buy = parseInt(chunk.slice(0, 1), 16) == 0;
-                    let price = parseInt(chunk.slice(2, 22), 16);
-                    let id = parseInt(chunk.slice(22, 36), 16);
-                    let size = parseInt(chunk.slice(36, 64), 16);
-                    let index = temporders.findIndex(
-                      (o: any) =>
-                        o[0] == price &&
-                        o[1] == id &&
-                        o[4] == marketKey,
-                    );
-                    if (index != -1) {
-                      ordersChanged = true;
-                      canceledOrdersChanged = true;
-                      let canceledOrderIndex: number;
-                      canceledOrderIndex = tempcanceledorders.findIndex(
-                        (canceledOrder: any) =>
-                          canceledOrder[0] ==
-                          price &&
-                          canceledOrder[1] ==
-                          id &&
-                          canceledOrder[4] ==
-                          marketKey,
-                      );
-                      if (canceledOrderIndex !== -1 && tempcanceledorders[canceledOrderIndex][9] != 0) {
-                        tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
-                        tempcanceledorders[canceledOrderIndex][9] = 0;
-                        tempcanceledorders[canceledOrderIndex][8] =
-                          tempcanceledorders[canceledOrderIndex][8] -
-                          size;
-                        tempcanceledorders[canceledOrderIndex][6] =
-                          _timestamp;
-                      }
-                      if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
-                        temporders[index] = [...temporders[index]]
-                        try {
-                          temporders[index][10].remove();
-                        }
-                        catch { }
-                        temporders[index].splice(10, 1)
-                      }
-                      temporders.splice(index, 1);
-                      let quoteasset =
-                        markets[marketKey].quoteAddress;
-                      let baseasset =
-                        markets[marketKey].baseAddress;
-                      let amountquote = (
-                        (buy ? size : size * price / Number(
-                          markets[marketKey].scaleFactor
-                        )) /
-                        (10 **
-                          Number(
-                            markets[marketKey]
-                              .quoteDecimals,
-                          ))
-                      ).toFixed(2);
-                      let amountbase = customRound(
-                        (buy ? size * Number(
-                          markets[marketKey].scaleFactor
-                        ) / price : size) /
-                        10 **
-                        Number(
-                          markets[marketKey]
-                            .baseDecimals,
-                        ),
-                        3,
-                      );
-                      newTxPopup(
-                        log['transactionHash'],
-                        'cancel',
-                        buy ? quoteasset : baseasset,
-                        buy ? baseasset : quoteasset,
-                        buy ? amountquote : amountbase,
-                        buy ? amountbase : amountquote,
-                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                        '',
-                      );
-                    }
-                  }
-                }
-              }
-            }
-          }
-          if (Array.isArray(filllogs)) {
-            for (const log of filllogs) {
-              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
-              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
-                address?.slice(2).toLowerCase()) {
-                if (tempset.size >= 10000) {
-                  const first = tempset.values().next().value;
-                  if (first !== undefined) {
-                    tempset.delete(first);
-                  }
-                }
-                tempset.add(logIdentifier);
-                let _timestamp = Math.floor(Date.now() / 1000);
-                let _orderdata = log['data'].slice(2);
-                let buy = 1 - parseInt(_orderdata.slice(0, 1), 16);
-                let price = parseInt(_orderdata.slice(1, 22), 16);
-                let id = parseInt(_orderdata.slice(22, 36), 16);
-                let size = parseInt(_orderdata.slice(36, 64), 16);
-                buy ? size *= price : size *= Number(markets[marketKey].scaleFactor)
-                let orderIndex = temporders.findIndex(
-                  (sublist: any) =>
-                    sublist[0] ==
-                    price &&
-                    sublist[1] ==
-                    id &&
-                    sublist[4] == marketKey,
-                );
-                let canceledOrderIndex = tempcanceledorders.findIndex(
-                  (sublist: any) =>
-                    sublist[0] ==
-                    price &&
-                    sublist[1] ==
-                    id &&
-                    sublist[4] == marketKey,
-                );
-                if (orderIndex != -1 && canceledOrderIndex != -1) {
-                  ordersChanged = true;
-                  temporders[orderIndex] = [...temporders[orderIndex]]
-                  let order = [...temporders[orderIndex]];
-                  let buy = order[3];
-                  let quoteasset =
-                    markets[marketKey]
-                      .quoteAddress;
-                  let baseasset =
-                    markets[marketKey]
-                      .baseAddress;
-                  let amountquote = (
-                    ((order[2] - order[7] - size / order[0]) *
-                      order[0]) /
-                    (Number(
-                      markets[marketKey]
-                        .scaleFactor,
-                    ) *
-                      10 **
-                      Number(
-                        markets[marketKey]
-                          .quoteDecimals,
-                      ))
-                  ).toFixed(2);
-                  let amountbase = customRound(
-                    (order[2] - order[7] - size / order[0]) /
-                    10 **
-                    Number(
-                      markets[marketKey]
-                        .baseDecimals,
-                    ),
-                    3,
-                  );
-                  newTxPopup(
-                    log['transactionHash'],
-                    'fill',
-                    buy ? quoteasset : baseasset,
-                    buy ? baseasset : quoteasset,
-                    buy ? amountquote : amountbase,
-                    buy ? amountbase : amountquote,
-                    `${order[0] / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                    '',
-                  );
-                  if (size == 0) {
-                    tradeHistoryChanged = true;
-                    temptradehistory.push([
-                      order[3] == 1
-                        ? (order[2] * order[0]) /
-                        Number(markets[order[4]].scaleFactor)
-                        : order[2],
-                      order[3] == 1
-                        ? order[2]
-                        : (order[2] * order[0]) /
-                        Number(markets[order[4]].scaleFactor),
-                      order[3],
-                      order[0],
-                      order[4],
-                      order[5],
-                      _timestamp,
-                      0,
-                    ]);
-                    if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
-                      try {
-                        temporders[orderIndex][10].remove();
-                      }
-                      catch { }
-                      temporders[orderIndex].splice(10, 1)
-                    }
-                    temporders.splice(orderIndex, 1);
-                    tempcanceledorders[canceledOrderIndex][9] =
-                      1;
-                    tempcanceledorders[canceledOrderIndex][7] = order[2]
-                    tempcanceledorders[canceledOrderIndex][8] = order[8];
-                  } else {
-                    if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
-                      try {
-                        temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
-                      }
-                      catch { }
-                    }
-                    temporders[orderIndex][7] =
-                      order[2] - size / order[0];
-                  }
-                  if (canceledOrderIndex != -1) {
-                    canceledOrdersChanged = true;
-                    tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
-                    if (size == 0) {
-                      tempcanceledorders[canceledOrderIndex][9] =
-                        1;
-                      tempcanceledorders[canceledOrderIndex][7] = order[2]
-                      tempcanceledorders[canceledOrderIndex][8] = order[8];
-                    }
-                    else {
-                      tempcanceledorders[canceledOrderIndex][7] =
-                        order[2] - size / order[0];
-                    }
-                  }
-                }
-              }
-            }
-          }
-          if (tradeHistoryChanged) {
-            settradehistory(temptradehistory)
-          }
-          if (tradesByMarketChanged) {
-            settradesByMarket(temptradesByMarket)
-          }
-          if (canceledOrdersChanged) {
-            setcanceledorders(tempcanceledorders)
-          }
-          if (ordersChanged) {
-            setorders(temporders)
-          }
-          return tempset;
-        })
-      } catch {
-      }
-    };
-
-    (async () => {
-      if (address) {
-        setTransactions([]);
-        settradehistory([]);
-        setorders([]);
-        setcanceledorders([]);
-        setrecipient('');
-        isAddressInfoFetching = true;
-        try {
-          ;
-          const query = `
-            query {
-              account(id: "${address}") {
-                id
-                userIds {
-                  id
-                }
-                openOrderMap {
-                  shards(first: 1000) { batches(first: 1000) { orders(first: 1000) {
-                    id
-                    market { id baseAsset quoteAsset }
-                    isBuy
-                    price
-                    originalSize
-                    remainingSize
-                    status
-                    placedAt
-                    updatedAt
-                    txHash
-                  }}}
-                }
-                orderMap {
-                  shards(first: 1000) { batches(first: 1000) { orders(first: 1000) {
-                    id
-                    market { id baseAsset quoteAsset }
-                    isBuy
-                    price
-                    originalSize
-                    remainingSize
-                    status
-                    placedAt
-                    updatedAt
-                    txHash
-                  }}}
-                }
-                tradeMap {
-                  shards(first: 1000) { batches(first: 1000) { trades(first: 1000) {
-                    id
-                    market { id baseAsset quoteAsset }
-                    amountIn
-                    amountOut
-                    startPrice
-                    endPrice
-                    isBuy
-                    timestamp
-                    tx
-                  }}}
-                }
-              }
-            }
-          `;
-
-          const response = await fetch(SUBGRAPH_URL, {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ query }),
-          });
-          if (!response.ok) throw new Error(`http ${response.status} ${response.statusText}`);
-
-          const result = await response.json();
-          if (result?.errors?.length) throw new Error(result.errors[0]?.message || "graphql error");
-
-          if (!isAddressInfoFetching) return;
-
-          const flatten = (map: any, key: "orders" | "trades") =>
-            (map?.shards ?? [])
-              .flatMap((s: any) => s?.batches ?? [])
-              .flatMap((b: any) => b?.[key] ?? []);
-
-          const statusCode = (s: any) => {
-            if (typeof s === "number") return s;
-            const m: Record<string, number> = { open: 0, filled: 1, cancelled: 2, canceled: 2, expired: 3 };
-            return m[(s ?? "").toString().toLowerCase()] ?? -1;
-          };
-
-          const getMarketKey = (m: any) => {
-            if (m?.id && addresstoMarket?.[m.id]) return addresstoMarket[m.id];
-            return ''
-          };
-
-          const acct = result?.data?.account;
-          let temptradehistory: any[] = [];
-          let temporders: any[] = [];
-          let tempcanceledorders: any[] = [];
-
-          if (acct) {
-            const trades = flatten(acct.tradeMap, "trades") || [];
-            for (const t of trades) {
-              const marketKey = getMarketKey(t.market);
-              if (marketKey) {
-                temptradehistory.push([
-                  Number(t.amountIn ?? 0),
-                  Number(t.amountOut ?? 0),
-                  t.isBuy ? 1 : 0,
-                  Number((t.endPrice ?? t.startPrice) ?? 0),
-                  marketKey,
-                  t.tx,
-                  Number(t.timestamp ?? 0),
-                  1,
-                ]);
-              }
-            }
-
-            const openOrders = flatten(acct.openOrderMap, "orders") || [];
-            for (const o of openOrders) {
-              const marketKey = getMarketKey(o.market);
-              if (marketKey) {
-                const idParts = (o.id ?? "").split(":");
-                const price = Number(o.price);
-                const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
-                const original = Number(o.originalSize ?? 0);
-                const remaining = Number(o.remainingSize ?? 0);
-                const filled = Math.max(0, original - remaining);
-
-                temporders.push([
-                  price,
-                  tail,
-                  o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
-                  o.isBuy ? 1 : 0,
-                  marketKey,
-                  o.txHash,
-                  Number(o.placedAt ?? o.updatedAt ?? 0),
-                  o.isBuy ? filled * Number(markets[marketKey].scaleFactor) / price : filled,
-                  o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
-                  statusCode(o.status),
-                ]);
-              }
-            }
-
-            const allOrders = flatten(acct.orderMap, "orders") || [];
-            for (const o of allOrders) {
-              const marketKey = getMarketKey(o.market);
-              if (marketKey) {
-                const idParts = (o.id ?? "").split(":");
-                const price = Number(o.price);
-                const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
-                const original = Number(o.originalSize ?? 0);
-                const remaining = Number(o.remainingSize ?? 0);
-                const filled = Math.max(0, original - remaining);
-
-                tempcanceledorders.push([
-                  price,
-                  tail,
-                  o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
-                  o.isBuy ? 1 : 0,
-                  marketKey,
-                  o.txHash,
-                  Number(o.updatedAt ?? o.placedAt ?? 0),
-                  o.isBuy ? filled * Number(markets[marketKey].scaleFactor) / price : filled,
-                  o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
-                  statusCode(o.status),
-                ]);
-              }
-            }
-          }
-
-          settradehistory(temptradehistory);
-          setorders(temporders);
-          setcanceledorders(tempcanceledorders);
-          setaddressinfoloading(false);
-          isAddressInfoFetching = false;
-        } catch (error) {
-          console.error("Error fetching logs:", error);
-          setaddressinfoloading(false);
-          isAddressInfoFetching = false;
-        }
-      }
-      else if (!user) {
-        setSliderPercent(0)
-        const slider = document.querySelector('.balance-amount-slider');
-        const popup = document.querySelector('.slider-percentage-popup');
-        if (slider && popup) {
-          (popup as HTMLElement).style.left = `${15 / 2}px`;
-        }
-        setTransactions([]);
-        settradehistory([]);
-        setorders([]);
-        setcanceledorders([]);
-        setaddressinfoloading(false);
-      }
-    })();
-
-    const connectWebSocket = () => {
-      if (liveStreamCancelled) return;
-      wsRef.current = new WebSocket(WS_URL);
-
-      wsRef.current.onopen = async () => {
-        const subscriptionMessages = [
-          JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'sub1',
-            method: 'eth_subscribe',
-            params: [
-              'monadLogs',
-              {
-                address: router,
-                topics: [
-                  '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982',
-                ],
-              },
-            ],
-          }), ...(address?.slice(2) ? [JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'sub2',
-            method: 'eth_subscribe',
-            params: [
-              'monadLogs',
-              {
-                address: router,
-                topics: [
-                  ['0xa195980963150be5fcca4acd6a80bf5a9de7f9c862258501b7c705e7d2c2d2f4', '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c'],
-                  null,
-                  '0x000000000000000000000000' + address?.slice(2),
-                ],
-              },
-            ],
-          })] : [])
-        ];
-
-        pingIntervalRef.current = setInterval(() => {
-          if (wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify({
-              jsonrpc: '2.0',
-              id: 'ping',
-              method: 'eth_syncing'
-            }));
-          }
-        }, 15000);
-
-        subscriptionMessages.forEach((message) => {
-          wsRef.current?.send(message);
-        });
-
-        if (blockNumber.current) {
-          startBlockNumber = '0x' + (blockNumber.current - BigInt(80)).toString(16)
-          endBlockNumber = '0x' + (blockNumber.current + BigInt(10)).toString(16)
-        } else {
-          let firstBlockNumber = await getBlockNumber(config);
-          startBlockNumber = '0x' + (firstBlockNumber - BigInt(80)).toString(16)
-          endBlockNumber = '0x' + (firstBlockNumber + BigInt(10)).toString(16)
-        }
-        fetchData();
-      };
-
-      wsRef.current.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        if (message?.params?.result && message?.params?.result?.commitState == "Voted") {
-          const log = message?.params?.result;
-          let ordersChanged = false;
-          let canceledOrdersChanged = false;
-          let tradesByMarketChanged = false;
-          let tradeHistoryChanged = false;
-          let temporders: any;
-          let tempcanceledorders: any;
-          let temptradesByMarket: any;
-          let temptradehistory: any;
-          setorders((orders) => {
-            temporders = [...orders];
-            return orders;
-          })
-          setcanceledorders((canceledorders) => {
-            tempcanceledorders = [...canceledorders];
-            return canceledorders;
-          })
-          settradesByMarket((tradesByMarket: any) => {
-            temptradesByMarket = { ...tradesByMarket };
-            return tradesByMarket;
-          })
-          settradehistory((tradehistory: any) => {
-            temptradehistory = [...tradehistory];
-            return tradehistory;
-          })
-          setProcessedLogs(prev => {
-            let tempset = new Set(prev);
-            let temptrades: any = {};
-            if (log['topics']?.[0] == '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982') {
-              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
-              if (!tempset.has(logIdentifier) && marketKey && !temptradesByMarket[marketKey]?.some((trade: any) =>
-                trade[0] == parseInt(log['data'].slice(66, 130), 16) &&
-                trade[1] == parseInt(log['data'].slice(130, 194), 16) &&
-                trade[5] == log['transactionHash'])) {
-                if (tempset.size >= 10000) {
-                  const first = tempset.values().next().value;
-                  if (first !== undefined) {
-                    tempset.delete(first);
-                  }
-                }
-                tempset.add(logIdentifier);
-                const resolve = txReceiptResolvers.current.get(log['transactionHash']);
-                if (resolve) {
-                  resolve();
-                  txReceiptResolvers.current.delete(log['transactionHash']);
-                }
-                let _timestamp = Math.floor(Date.now() / 1000);
-                tradesByMarketChanged = true;
-                if (!Array.isArray(temptradesByMarket[marketKey])) {
-                  temptradesByMarket[marketKey] = [];
-                }
-                let amountIn = parseInt(log['data'].slice(66, 130), 16);
-                let amountOut = parseInt(log['data'].slice(130, 194), 16);
-                let buy = parseInt(log['data'].slice(65, 66), 16);
-                let price = parseInt(log['data'].slice(258, 322), 16);
-                temptradesByMarket[marketKey].unshift([
-                  amountIn,
-                  amountOut,
-                  buy,
-                  price,
-                  marketKey,
-                  log['transactionHash'],
-                  _timestamp,
-                ]);
-                if (!Array.isArray(temptrades[marketKey])) {
-                  temptrades[marketKey] = [];
-                }
-                temptrades[marketKey].unshift([
-                  amountIn,
-                  amountOut,
-                  buy,
-                  price,
-                  marketKey,
-                  log['transactionHash'],
-                  _timestamp,
-                  parseInt(log['data'].slice(194, 258), 16),
-                ])
-                if (
-                  log['topics'][2].slice(26) ==
-                  address?.slice(2).toLowerCase()
-                ) {
-                  tradeHistoryChanged = true;
-                  temptradehistory.push([
-                    amountIn,
-                    amountOut,
-                    buy,
-                    price,
-                    marketKey,
-                    log['transactionHash'],
-                    _timestamp,
-                    1,
-                  ])
-                  let quoteasset =
-                    markets[marketKey].quoteAddress;
-                  let baseasset =
-                    markets[marketKey].baseAddress;
-                  let popupAmountIn = customRound(
-                    amountIn /
-                    10 **
-                    Number(
-                      buy
-                        ? markets[marketKey]
-                          .quoteDecimals
-                        : markets[marketKey]
-                          .baseDecimals,
-                    ),
-                    3,
-                  );
-                  let popupAmountOut = customRound(
-                    amountOut /
-                    10 **
-                    Number(
-                      buy
-                        ? markets[marketKey]
-                          .baseDecimals
-                        : markets[marketKey]
-                          .quoteDecimals,
-                    ),
-                    3,
-                  );
-                  newTxPopup(
-                    log['transactionHash'],
-                    'swap',
-                    buy ? quoteasset : baseasset,
-                    buy ? baseasset : quoteasset,
-                    popupAmountIn,
-                    popupAmountOut,
-                    '',
-                    '',
-                  );
-                }
-              }
-              if (tradesByMarketChanged) {
-                setChartData(([existingBars, existingIntervalLabel, existingShowOutliers]) => {
-                  const marketKey = existingIntervalLabel?.match(/^\D*/)?.[0];
-                  const updatedBars = [...existingBars];
-                  let rawVolume;
-                  if (marketKey && Array.isArray(temptrades?.[marketKey])) {
-                    const barSizeSec =
-                      existingIntervalLabel?.match(/\d.*/)?.[0] === '1' ? 60 :
-                        existingIntervalLabel?.match(/\d.*/)?.[0] === '5' ? 5 * 60 :
-                          existingIntervalLabel?.match(/\d.*/)?.[0] === '15' ? 15 * 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '30' ? 30 * 60 :
-                              existingIntervalLabel?.match(/\d.*/)?.[0] === '60' ? 60 * 60 :
-                                existingIntervalLabel?.match(/\d.*/)?.[0] === '240' ? 4 * 60 * 60 :
-                                  existingIntervalLabel?.match(/\d.*/)?.[0] === '1D' ? 24 * 60 * 60 :
-                                    5 * 60;
-                    const priceFactor = Number(markets[marketKey].priceFactor);
-                    for (const lastTrade of temptrades[marketKey]) {
-                      const lastBarIndex = updatedBars.length - 1;
-                      const lastBar = updatedBars[lastBarIndex];
-
-                      let openPrice = parseFloat((lastTrade[7] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
-                      let closePrice = parseFloat((lastTrade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
-                      rawVolume =
-                        (lastTrade[2] == 0 ? lastTrade[0] : lastTrade[1]) /
-                        10 ** Number(markets[marketKey].baseDecimals);
-
-                      const tradeTimeSec = lastTrade[6];
-                      const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
-                      const lastBarTimeSec = Math.floor(new Date(lastBar?.time).getTime() / 1000);
-                      if (flooredTradeTimeSec === lastBarTimeSec) {
-                        updatedBars[lastBarIndex] = {
-                          ...lastBar,
-                          high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
-                          low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
-                          close: closePrice,
-                          volume: lastBar.volume + rawVolume,
-                        };
-                        if (realtimeCallbackRef.current[existingIntervalLabel]) {
-                          realtimeCallbackRef.current[existingIntervalLabel]({
-                            ...lastBar,
-                            high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
-                            low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
-                            close: closePrice,
-                            volume: lastBar.volume + rawVolume,
-                          });
-                        }
-                      } else {
-                        updatedBars.push({
-                          time: flooredTradeTimeSec * 1000,
-                          open: lastBar?.close ?? openPrice,
-                          high: Math.max(lastBar?.close ?? openPrice, closePrice),
-                          low: Math.min(lastBar?.close ?? openPrice, closePrice),
-                          close: closePrice,
-                          volume: rawVolume,
-                        });
-                        if (realtimeCallbackRef.current[existingIntervalLabel]) {
-                          realtimeCallbackRef.current[existingIntervalLabel]({
-                            time: flooredTradeTimeSec * 1000,
-                            open: lastBar?.close ?? openPrice,
-                            high: Math.max(lastBar?.close ?? openPrice, closePrice),
-                            low: Math.min(lastBar?.close ?? openPrice, closePrice),
-                            close: closePrice,
-                            volume: rawVolume,
-                          });
-                        }
-                      }
-                    }
-                  }
-                  setMarketsData((marketsData) =>
-                    marketsData.map((market) => {
-                      if (!market) return;
-                      const marketKey = market?.marketKey.replace(
-                        new RegExp(`^${wethticker}|${wethticker}$`, 'g'),
-                        ethticker
-                      );
-                      const newTrades = temptrades?.[marketKey]
-                      if (!Array.isArray(newTrades) || newTrades.length < 1) return market;
-                      const firstKlineOpen: number =
-                        market?.mini && Array.isArray(market?.mini) && market?.mini.length > 0
-                          ? Number(market?.mini[0].value * Number(market.priceFactor))
-                          : 0;
-                      const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
-                      const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
-                      const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
-                        / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
-                      let high = market.high24h ? Number(market.high24h.replace(/,/g, '')) : null;
-                      let low = market.low24h ? Number(market.low24h.replace(/,/g, '')) : null;
-                      const volume = newTrades.reduce((sum: number, trade: any) => {
-                        if (high && trade[3] / Number(market.priceFactor) > high) {
-                          high = trade[3] / Number(market.priceFactor)
-                        }
-                        if (low && trade[3] / Number(market.priceFactor) < low) {
-                          low = trade[3] / Number(market.priceFactor)
-                        }
-                        const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
-                        return sum + amount;
-                      }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
-
-                      return {
-                        ...market,
-                        volume: formatCommas(
-                          (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
-                        ),
-                        currentPrice: formatSig(
-                          (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
-                        ),
-                        priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-                        priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(formatSig(
-                          (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
-                        ).split('.')[1]?.length || 0)),
-                        ...(high != null && {
-                          high24h: formatSig(
-                            high.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
-                          )
-                        }),
-                        ...(low != null && {
-                          low24h: formatSig(
-                            low.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
-                          )
-                        })
-                      };
-                    })
-                  );
-                  return [updatedBars, existingIntervalLabel, existingShowOutliers];
-                });
-              }
-            }
-            else if (log['topics']?.[0] == '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c') {
-              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
-              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
-                address?.slice(2).toLowerCase()) {
-                if (tempset.size >= 10000) {
-                  const first = tempset.values().next().value;
-                  if (first !== undefined) {
-                    tempset.delete(first);
-                  }
-                }
-                tempset.add(logIdentifier);
-                const resolve = txReceiptResolvers.current.get(log['transactionHash']);
-                if (resolve) {
-                  resolve();
-                  txReceiptResolvers.current.delete(log['transactionHash']);
-                }
-                let _timestamp = Math.floor(Date.now() / 1000);
-                let _orderdata = log['data'].slice(130);
-                for (let i = 0; i < _orderdata.length; i += 64) {
-                  let chunk = _orderdata.slice(i, i + 64);
-                  let _isplace = parseInt(chunk.slice(0, 1), 16) >= 2;
-                  if (_isplace) {
-                    let buy = 3 - parseInt(chunk.slice(0, 1), 16);
-                    let price = parseInt(chunk.slice(2, 22), 16);
-                    let id = parseInt(chunk.slice(22, 36), 16);
-                    let size = parseInt(chunk.slice(36, 64), 16);
-                    let alreadyExist = tempcanceledorders.some(
-                      (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
-                    );
-                    buy ? size *= Number(markets[marketKey].scaleFactor) : size *= price
-                    if (!alreadyExist) {
-                      ordersChanged = true;
-                      canceledOrdersChanged = true;
-                      let order = [
-                        price,
-                        id,
-                        size /
-                        price,
-                        buy,
-                        marketKey,
-                        log['transactionHash'],
-                        _timestamp,
-                        0,
-                        size,
-                        2,
-                      ];
-                      temporders.push(order)
-                      tempcanceledorders.push([
-                        price,
-                        id,
-                        size /
-                        price,
-                        buy,
-                        marketKey,
-                        log['transactionHash'],
-                        _timestamp,
-                        0,
-                        size,
-                        2,
-                      ])
-                      let quoteasset =
-                        markets[marketKey].quoteAddress;
-                      let baseasset =
-                        markets[marketKey].baseAddress;
-                      let amountquote = (
-                        size /
-                        (Number(
-                          markets[marketKey].scaleFactor,
-                        ) *
-                          10 **
-                          Number(
-                            markets[marketKey]
-                              .quoteDecimals,
-                          ))
-                      ).toFixed(2);
-                      let amountbase = customRound(
-                        size /
-                        price /
-                        10 **
-                        Number(
-                          markets[marketKey]
-                            .baseDecimals,
-                        ),
-                        3,
-                      );
-                      newTxPopup(
-                        log['transactionHash'],
-                        'limit',
-                        buy ? quoteasset : baseasset,
-                        buy ? baseasset : quoteasset,
-                        buy ? amountquote : amountbase,
-                        buy ? amountbase : amountquote,
-                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                        '',
-                      );
-                    }
-                  } else {
-                    let buy = parseInt(chunk.slice(0, 1), 16) == 0;
-                    let price = parseInt(chunk.slice(2, 22), 16);
-                    let id = parseInt(chunk.slice(22, 36), 16);
-                    let size = parseInt(chunk.slice(36, 64), 16);
-                    let index = temporders.findIndex(
-                      (o: any) =>
-                        o[0] == price &&
-                        o[1] == id &&
-                        o[4] == marketKey,
-                    );
-                    if (index != -1) {
-                      ordersChanged = true;
-                      canceledOrdersChanged = true;
-                      let canceledOrderIndex: number;
-                      canceledOrderIndex = tempcanceledorders.findIndex(
-                        (canceledOrder: any) =>
-                          canceledOrder[0] ==
-                          price &&
-                          canceledOrder[1] ==
-                          id &&
-                          canceledOrder[4] ==
-                          marketKey,
-                      );
-                      if (canceledOrderIndex !== -1 && tempcanceledorders[canceledOrderIndex][9] != 0) {
-                        tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
-                        tempcanceledorders[canceledOrderIndex][9] = 0;
-                        tempcanceledorders[canceledOrderIndex][8] =
-                          tempcanceledorders[canceledOrderIndex][8] -
-                          size;
-                        tempcanceledorders[canceledOrderIndex][6] =
-                          _timestamp;
-                      }
-                      if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
-                        temporders[index] = [...temporders[index]]
-                        try {
-                          temporders[index][10].remove();
-                        }
-                        catch { }
-                        temporders[index].splice(10, 1)
-                      }
-                      temporders.splice(index, 1);
-                      let quoteasset =
-                        markets[marketKey].quoteAddress;
-                      let baseasset =
-                        markets[marketKey].baseAddress;
-                      let amountquote = (
-                        (buy ? size : size * price / Number(
-                          markets[marketKey].scaleFactor
-                        )) /
-                        (10 **
-                          Number(
-                            markets[marketKey]
-                              .quoteDecimals,
-                          ))
-                      ).toFixed(2);
-                      let amountbase = customRound(
-                        (buy ? size * Number(
-                          markets[marketKey].scaleFactor
-                        ) / price : size) /
-                        10 **
-                        Number(
-                          markets[marketKey]
-                            .baseDecimals,
-                        ),
-                        3,
-                      );
-                      newTxPopup(
-                        log['transactionHash'],
-                        'cancel',
-                        buy ? quoteasset : baseasset,
-                        buy ? baseasset : quoteasset,
-                        buy ? amountquote : amountbase,
-                        buy ? amountbase : amountquote,
-                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                        '',
-                      );
-                    }
-                  }
-                }
-              }
-            }
-            else {
-              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
-              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
-                address?.slice(2).toLowerCase()) {
-                if (tempset.size >= 10000) {
-                  const first = tempset.values().next().value;
-                  if (first !== undefined) {
-                    tempset.delete(first);
-                  }
-                }
-                tempset.add(logIdentifier);
-                let _timestamp = Math.floor(Date.now() / 1000);
-                let _orderdata = log['data'].slice(2);
-                let buy = 1 - parseInt(_orderdata.slice(0, 1), 16);
-                let price = parseInt(_orderdata.slice(1, 22), 16);
-                let id = parseInt(_orderdata.slice(22, 36), 16);
-                let size = parseInt(_orderdata.slice(36, 64), 16);
-                buy ? size *= price : size *= Number(markets[marketKey].scaleFactor)
-                let orderIndex = temporders.findIndex(
-                  (sublist: any) =>
-                    sublist[0] ==
-                    price &&
-                    sublist[1] ==
-                    id &&
-                    sublist[4] == marketKey,
-                );
-                let canceledOrderIndex = tempcanceledorders.findIndex(
-                  (sublist: any) =>
-                    sublist[0] ==
-                    price &&
-                    sublist[1] ==
-                    id &&
-                    sublist[4] == marketKey,
-                );
-                if (orderIndex != -1 && canceledOrderIndex != -1) {
-                  ordersChanged = true;
-                  temporders[orderIndex] = [...temporders[orderIndex]]
-                  let order = [...temporders[orderIndex]];
-                  let buy = order[3];
-                  let quoteasset =
-                    markets[marketKey]
-                      .quoteAddress;
-                  let baseasset =
-                    markets[marketKey]
-                      .baseAddress;
-                  let amountquote = (
-                    ((order[2] - order[7] - size / order[0]) *
-                      order[0]) /
-                    (Number(
-                      markets[marketKey]
-                        .scaleFactor,
-                    ) *
-                      10 **
-                      Number(
-                        markets[marketKey]
-                          .quoteDecimals,
-                      ))
-                  ).toFixed(2);
-                  let amountbase = customRound(
-                    (order[2] - order[7] - size / order[0]) /
-                    10 **
-                    Number(
-                      markets[marketKey]
-                        .baseDecimals,
-                    ),
-                    3,
-                  );
-                  newTxPopup(
-                    log['transactionHash'],
-                    'fill',
-                    buy ? quoteasset : baseasset,
-                    buy ? baseasset : quoteasset,
-                    buy ? amountquote : amountbase,
-                    buy ? amountbase : amountquote,
-                    `${order[0] / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                    '',
-                  );
-                  if (size == 0) {
-                    tradeHistoryChanged = true;
-                    temptradehistory.push([
-                      order[3] == 1
-                        ? (order[2] * order[0]) /
-                        Number(markets[order[4]].scaleFactor)
-                        : order[2],
-                      order[3] == 1
-                        ? order[2]
-                        : (order[2] * order[0]) /
-                        Number(markets[order[4]].scaleFactor),
-                      order[3],
-                      order[0],
-                      order[4],
-                      order[5],
-                      _timestamp,
-                      0,
-                    ]);
-                    if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
-                      try {
-                        temporders[orderIndex][10].remove();
-                      }
-                      catch { }
-                      temporders[orderIndex].splice(10, 1)
-                    }
-                    temporders.splice(orderIndex, 1);
-                    tempcanceledorders[canceledOrderIndex][9] =
-                      1;
-                    tempcanceledorders[canceledOrderIndex][7] = order[2]
-                    tempcanceledorders[canceledOrderIndex][8] = order[8];
-                  } else {
-                    if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
-                      try {
-                        temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
-                      }
-                      catch { }
-                    }
-                    temporders[orderIndex][7] =
-                      order[2] - size / order[0];
-                  }
-                  if (canceledOrderIndex != -1) {
-                    canceledOrdersChanged = true;
-                    tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
-                    if (size == 0) {
-                      tempcanceledorders[canceledOrderIndex][9] =
-                        1;
-                      tempcanceledorders[canceledOrderIndex][7] = order[2]
-                      tempcanceledorders[canceledOrderIndex][8] = order[8];
-                    }
-                    else {
-                      tempcanceledorders[canceledOrderIndex][7] =
-                        order[2] - size / order[0];
-                    }
-                  }
-                }
-              }
-            }
-            if (tradeHistoryChanged) {
-              settradehistory(temptradehistory)
-            }
-            if (tradesByMarketChanged) {
-              settradesByMarket(temptradesByMarket)
-            }
-            if (canceledOrdersChanged) {
-              setcanceledorders(tempcanceledorders)
-            }
-            if (ordersChanged) {
-              setorders(temporders)
-            }
-            return tempset;
-          })
-        }
-      }
-
-      wsRef.current.onclose = () => {
-        if (pingIntervalRef.current) {
-          clearInterval(pingIntervalRef.current);
-          pingIntervalRef.current = null;
-        }
-        reconnectIntervalRef.current = setTimeout(() => {
-          connectWebSocket();
-        }, 500);
-      };
-
-      wsRef.current.onerror = (error) => {
-        console.error(error);
-      };
-    };
-
-    connectWebSocket();
-
-    return () => {
-      liveStreamCancelled = true;
-      isAddressInfoFetching = false;
-      if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
-        pingIntervalRef.current = null;
-      }
-      if (reconnectIntervalRef.current) {
-        clearTimeout(reconnectIntervalRef.current);
-        reconnectIntervalRef.current = null;
-      }
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
-    };
-  }, [activechain, address]);
-
-  // klines + trades
-  useEffect(() => {
-    (async () => {
-      try {
-        settradesloading(true);
-
-        const query = `
-          query {
-            markets(first: 100, orderBy: volume, orderDirection: desc, where: {isCanonical:true}) {
-              id
-              baseAsset
-              quoteAsset
-              baseDecimals
-              quoteDecimals
-              baseTicker
-              quoteTicker
-              baseName
-              quoteName
-              marketType
-              scaleFactor
-              tickSize
-              minSize
-              maxPrice
-              takerFee
-              makerRebate
-              volume
-              latestPrice
-              series(where:{intervalSeconds:3600}) {
-                intervalSeconds
-                klines(first: 24, orderBy:time, orderDirection: desc) {
-                  time
-                  open
-                  high
-                  low
-                  close
-                  usdVolume
-                }
-              }
-              trades(first: 50, orderBy: id, orderDirection: desc) {
-                trade {
-                  id
-                  amountIn
-                  amountOut
-                  isBuy
-                  timestamp
-                  tx
-                  endPrice
-                }
-              }
-            }
-          }
-        `;
-        const res = await fetch(SUBGRAPH_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query }),
-        });
-        const json = await res.json();
-        const list = Array.isArray(json?.data?.markets) ? [...json.data.markets].reverse() : []
-
-        const ETH_ADDR = settings.chainConfig[activechain].eth;
-        const WETH_ADDR = settings.chainConfig[activechain].weth;
-        const ETH_TICKER = settings.chainConfig[activechain].ethticker;
-        const WETH_TICKER = settings.chainConfig[activechain].wethticker;
-        const newMarkets: Record<string, any> = settings.chainConfig[activechain].markets;
-        for (const m of list) {
-          const baseAddr0 = getAddress(String(m.baseAsset || ''));
-          const quoteAddr0 = getAddress(String(m.quoteAsset || ''));
-          if (!tokendict[baseAddr0]) {
-            tokendict[baseAddr0] = {
-              address: baseAddr0,
-              decimals: BigInt(Number(m.baseDecimals ?? 18)),
-              image: '',
-              name: m.baseName,
-              ticker: m.baseTicker,
-              website: '',
-              autofetched: true,
-            }
-          }
-          if (!tokendict[quoteAddr0]) {
-            tokendict[quoteAddr0] = {
-              address: quoteAddr0,
-              decimals: BigInt(Number(m.quoteDecimals ?? 18)),
-              image: '',
-              name: m.quoteName,
-              ticker: m.quoteTicker,
-              website: '',
-              autofetched: true,
-            }
-          }
-          const scaleExp = Number(m.scaleFactor ?? 0);
-          const scaleFactor = (BigInt(10) ** BigInt(scaleExp));
-          const baseDec = Number(m.baseDecimals ?? 18);
-          const quoteDec = Number(m.quoteDecimals ?? 18);
-          const pfExp = Math.max(0, quoteDec + scaleExp - baseDec);
-          const priceFactor = (BigInt(10) ** BigInt(pfExp));
-
-          const common = {
-            address: String(m.id ?? '').toLowerCase(),
-            marketType: Number(m.marketType ?? 0),
-            precision: 5,
-            scaleFactor,
-            priceFactor,
-            tickSize: BigInt(m.tickSize ?? 1),
-            minSize: BigInt(m.minSize ?? 0),
-            maxPrice: BigInt(m.maxPrice ?? 0),
-            fee: BigInt(m.takerFee ?? 100000),
-            makerRebate: BigInt(m.makerRebate ?? 100000),
-            baseDecimals: BigInt(baseDec),
-            quoteDecimals: BigInt(quoteDec),
-          };
-
-          const baseIsEthish = baseAddr0 === ETH_ADDR || baseAddr0 === WETH_ADDR;
-          const quoteIsEthish = quoteAddr0 === ETH_ADDR || quoteAddr0 === WETH_ADDR;
-
-          const variants: Array<{ baseAddr: string; quoteAddr: string, baseAsset: string, quoteAsset: string }> = [];
-          if (baseIsEthish) {
-            variants.push({ baseAddr: ETH_ADDR, quoteAddr: quoteAddr0, baseAsset: ETH_TICKER, quoteAsset: m.quoteTicker });
-            variants.push({ baseAddr: WETH_ADDR, quoteAddr: quoteAddr0, baseAsset: WETH_TICKER, quoteAsset: m.quoteTicker });
-          } else if (quoteIsEthish) {
-            variants.push({ baseAddr: baseAddr0, quoteAddr: ETH_ADDR, baseAsset: m.baseTicker, quoteAsset: ETH_TICKER });
-            variants.push({ baseAddr: baseAddr0, quoteAddr: WETH_ADDR, baseAsset: m.baseTicker, quoteAsset: WETH_TICKER });
-          } else {
-            variants.push({ baseAddr: baseAddr0, quoteAddr: quoteAddr0, baseAsset: m.baseTicker, quoteAsset: m.quoteTicker });
-          }
-
-          for (const v of variants) {
-            const bTok = tokendict[v.baseAddr];
-
-            const marketKey = `${v.baseAsset}${v.quoteAsset}`;
-            const image = (bTok?.image ?? settings.chainConfig[activechain].image ?? null);
-            const website = (bTok?.website ?? '');
-            newMarkets[marketKey] = {
-              baseAsset: v.baseAsset,
-              quoteAsset: v.quoteAsset,
-              baseAddress: v.baseAddr,
-              quoteAddress: v.quoteAddr,
-              path: [v.quoteAddr, v.baseAddr],
-              image,
-              website,
-              marketKey,
-              ...common,
-            };
-          }
-        }
-        settings.chainConfig[activechain].markets = newMarkets;
-        const newAddrToMarket: Record<string, string> = {};
-        Object.values(newMarkets).reverse().forEach((m: any) => {
-          if (m?.address) newAddrToMarket[String(m.address).toLowerCase()] = m.marketKey;
-        });
-        settings.chainConfig[activechain].addresstomarket = newAddrToMarket;
-
-        const temptradesByMarket: Record<string, any[]> = {};
-        Object.keys(newMarkets).forEach((k) => { temptradesByMarket[k] = []; });
-
-        const addrToKey: Record<string, string> = {};
-        Object.values(newMarkets).forEach((m: any) => {
-          if (m?.address) addrToKey[String(m.address).toLowerCase()] = m.marketKey;
-        });
-
-        const rows: any[] = [];
-        const buildMiniPointsDesc = (mkt: any): Array<any> => {
-          const oneHourSeries = Array.isArray(mkt.series)
-            ? mkt.series.find((s: any) => Number(s?.intervalSeconds) === 3600)
-            : null;
-
-          const klinesDesc = Array.isArray(oneHourSeries?.klines) ? oneHourSeries.klines : [];
-
-          const nowSec = Math.floor(Date.now() / 1000);
-          const endBucket = Math.floor(nowSec / 3600) * 3600;
-          const startCutoff = endBucket - 24 * 3600;
-
-          return klinesDesc
-            .filter((k: any) => {
-              const t = Number(k.time ?? 0);
-              return t >= startCutoff && t <= endBucket;
-            })
-            .map((k: any) => ({
-              time: Number(k.time ?? 0),
-              open: Number(k.open ?? 0),
-              close: Number(k.close ?? 0),
-              high: Number(k.high ?? 0),
-              low: Number(k.low ?? 0),
-              usdVolume: String(k.usdVolume ?? "0"),
-            }));
-        };
-        for (const m of list) {
-          const mk = addrToKey[String(m.id ?? '').toLowerCase()];
-          if (!mk) continue;
-
-          const cfg = newMarkets[mk];
-          if (!cfg) continue;
-          const isWMON = cfg.baseAsset === WETH_TICKER || cfg.quoteAsset === WETH_TICKER;
-
-          const pf = Number(cfg.priceFactor);
-          const decs = Math.max(0, Math.floor(Math.log10(pf)));
-          const lastRaw = Number(m.latestPrice ?? 0);
-          const last = pf ? lastRaw / pf : 0;
-
-          const miniDesc = buildMiniPointsDesc(m);
-          const r = [...miniDesc].reverse()
-          const miniAsc = r[0]
-            ? [{ time: Number(r[0].time) * 1000, value: Number(r[0].open) / pf, high: Number(r[0].high) / pf, low: Number(r[0].low) / pf },
-            ...r.map((p: any) => ({
-              time: Number(p.time) * 1000,
-              value: Number(p.close) / pf,
-              high: Number(p.high) / pf,
-              low: Number(p.low) / pf,
-              open: Number(p.open) / pf
-            }))]
-            : []
-          const open24 = miniAsc.length ? miniAsc[0].value : last;
-          const highs = miniAsc.length ? miniAsc.map((p) => p.high) : [last];
-          const lows = miniAsc.length ? miniAsc.map((p) => p.low) : [last];
-          const high24 = Math.max(...highs);
-          const low24 = Math.min(...lows);
-          const pct = open24 === 0 ? 0 : ((last - open24) / open24) * 100;
-          const deltaRaw = last - open24;
-
-          const volQ = miniAsc.length == 0 ? 0 : Number((m.volume ?? 0) / 10 ** Number(6));
-          const volumeDisplay = formatCommas(volQ.toFixed(2));
-
-          const trades = Array.isArray(m.trades) ? m.trades : [];
-          if (trades.length) {
-            for (const t of trades) {
-              if (temptradesByMarket[mk]) {
-                temptradesByMarket[mk].push([
-                  Number(t.trade.amountIn ?? 0),
-                  Number(t.trade.amountOut ?? 0),
-                  t.trade.isBuy ? 1 : 0,
-                  t.trade.endPrice,
-                  mk,
-                  t.trade.tx,
-                  Number(t.trade.timestamp ?? 0),
-                ]);
-              }
-            }
-          }
-
-          if (!isWMON) {
-            rows.push({
-              ...cfg,
-              pair: `${cfg.baseAsset}/${cfg.quoteAsset}`,
-              mini: miniAsc,
-              currentPrice: formatSig(last.toFixed(decs), m.marketType != 0),
-              high24h: formatSig(high24.toFixed(decs), m.marketType != 0),
-              low24h: formatSig(low24.toFixed(decs), m.marketType != 0),
-              volume: volumeDisplay,
-              priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
-              priceChangeAmount: formatSig(deltaRaw.toFixed(formatSig(last.toFixed(decs), m.marketType != 0).split('.')[1]?.length || 0)),
-            });
-          }
-
-
-          const bIsEthish = cfg.baseAddress === ETH_ADDR || cfg.baseAddress === WETH_ADDR;
-          const qIsEthish = cfg.quoteAddress === ETH_ADDR || cfg.quoteAddress === WETH_ADDR;
-
-          if (bIsEthish || qIsEthish) {
-            const sibBaseTicker = bIsEthish
-              ? (cfg.baseAsset === ETH_TICKER ? WETH_TICKER : ETH_TICKER)
-              : cfg.baseAsset;
-            const sibQuoteTicker = qIsEthish
-              ? (cfg.quoteAsset === ETH_TICKER ? WETH_TICKER : ETH_TICKER)
-              : cfg.quoteAsset;
-            const siblingKey = `${sibBaseTicker}${sibQuoteTicker}`;
-            const siblingCfg = newMarkets[siblingKey];
-
-            if (siblingCfg) {
-              const isSiblingWMON =
-                siblingCfg.baseAsset === wethticker || siblingCfg.quoteAsset === wethticker;
-
-              if (!isSiblingWMON) {
-                if (trades.length && temptradesByMarket[siblingKey]) {
-                  for (const t of trades) {
-                    temptradesByMarket[siblingKey].push([
-                      Number(t.trade.amountIn ?? 0),
-                      Number(t.trade.amountOut ?? 0),
-                      t.trade.isBuy ? 1 : 0,
-                      t.trade.endPrice,
-                      siblingKey,
-                      t.trade.tx,
-                      Number(t.trade.timestamp ?? 0),
-                    ]);
-                  }
-                }
-
-                rows.push({
-                  ...siblingCfg,
-                  pair: `${siblingCfg.baseAsset}/${siblingCfg.quoteAsset}`,
-                  mini: miniAsc,
-                  currentPrice: formatSig(last.toFixed(decs), m.marketType != 0),
-                  high24h: formatSig(high24.toFixed(decs), m.marketType != 0),
-                  low24h: formatSig(low24.toFixed(decs), m.marketType != 0),
-                  volume: volumeDisplay,
-                  priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
-                  priceChangeAmount: formatSig(deltaRaw.toFixed(formatSig(last.toFixed(decs), m.marketType != 0).split('.')[1]?.length || 0)),
-                });
-              }
-            }
-          }
-        }
-
-        settradesByMarket(temptradesByMarket);
-        setMarketsData(rows);
-        settradesloading(false);
-
-        if (
-          sendInputString === '' &&
-          location.pathname.slice(1) === 'send' &&
-          amountIn &&
-          BigInt(amountIn) !== BigInt(0)
-        ) {
-          const mkObj = getMarket(activeMarket.path.at(0), activeMarket.path.at(1));
-          const wethticker = settings.chainConfig[activechain].wethticker;
-          const ethticker = settings.chainConfig[activechain].ethticker;
-          const mkKey = (({ baseAsset, quoteAsset }: any) =>
-            (baseAsset === wethticker ? ethticker : baseAsset) +
-            (quoteAsset === wethticker ? ethticker : quoteAsset)
-          )(mkObj);
-
-          setsendInputString(
-            `$${calculateUSDValue(
-              BigInt(amountIn),
-              temptradesByMarket[mkKey],
-              tokenIn,
-              mkObj
-            ).toFixed(2)}`
-          );
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        settradesloading(false);
-      }
-    })();
-  }, [activechain]);
-
-  // mobile trade
-  useEffect(() => {
-    const handleEscapeKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && popup != 11) {
-        setpopup(0);
-        setSendUsdValue('');
-        setSendInputAmount('');
-        setSendAmountIn(BigInt(0));
-        settokenString('');
-        window.dispatchEvent(new Event('high-impact-cancel'));
-        setSelectedConnector(null);
-
-        if (showTrade && !simpleView) {
-          document.body.style.overflow = 'auto'
-          document.querySelector('.right-column')?.classList.add('hide');
-          document.querySelector('.right-column')?.classList.remove('show');
-          document.querySelector('.trade-mobile-switch')?.classList.remove('open');
-          setShowTrade(false);
-        }
-      }
-    };
-    const handleMouseDown = (e: MouseEvent) => {
-      setpopup((popup) => {
-        if (showTrade && popup == 0 && !simpleView) {
-          const rectangleElement = document.querySelector('.rectangle');
-          if (
-            rectangleElement &&
-            !rectangleElement.contains(e.target as Node)
-          ) {
-            document.body.style.overflow = 'auto'
-            document.querySelector('.right-column')?.classList.add('hide');
-            document.querySelector('.right-column')?.classList.remove('show');
-            document.querySelector('.trade-mobile-switch')?.classList.remove('open');
-            setShowTrade(false);
-          }
-        }
-
-        if (!popupref.current?.contains(e.target as Node) && popup != 11) {
-          setSendUsdValue('');
-          setSendInputAmount('');
-          setSendAmountIn(BigInt(0));
-          settokenString('');
-          window.dispatchEvent(new Event('high-impact-cancel'));
-          return 0;
-        }
-        return popup;
-      });
-    };
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    document.addEventListener('keydown', handleEscapeKey);
-    document.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('resize', handleResize);
-    return () => {
-      document.removeEventListener('keydown', handleEscapeKey);
-      document.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [showTrade]);
+  ]); */
+
+  // temp vars
+  const refetch = () => {};
+  const isLoading = false;
+  const rpcQueryData = {gasEstimate: 0n};
+
+  // // trades processing
+  // useEffect(() => {
+  //   const temp: Trade[] | undefined = tradesByMarket[activeMarketKey];
+
+  //   let processed: [boolean, string, string, string, string][] = [];
+
+  //   if (temp) {
+  //     processed = temp.slice(0, 100).map((trade: Trade) => {
+  //       const isBuy = trade[2] === 1;
+  //       const tradeValue = (trade[2] === 1 ? trade[1] : trade[0]) / 10 ** Number(activeMarket.baseDecimals);
+  //       const price = trade[3] / Number(activeMarket.priceFactor) || 0;
+  //       const time = formatTime(trade[6]);
+  //       const hash = trade[5];
+  //       return [
+  //         isBuy,
+  //         formatSubscript(formatSig(
+  //           price.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket.marketType != 0
+  //         )),
+  //         formatSubscript(customRound(tradeValue, 3)),
+  //         time,
+  //         hash,
+  //       ];
+  //     });
+  //   }
+
+  //   setTrades(processed);
+  // }, [tradesByMarket?.[activeMarketKey]?.[0]])
+
+  // // fetch initial address info and event stream
+  // useEffect(() => {
+  //   let liveStreamCancelled = false;
+  //   let isAddressInfoFetching = false;
+  //   let startBlockNumber = '';
+  //   let endBlockNumber = '';
+
+  //   const fetchData = async () => {
+  //     try {
+  //       const req = await fetch(HTTP_URL, {
+  //         method: 'POST',
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //         },
+  //         body: JSON.stringify([{
+  //           jsonrpc: '2.0',
+  //           id: 0,
+  //           method: 'eth_blockNumber',
+  //         }, {
+  //           jsonrpc: '2.0',
+  //           id: 0,
+  //           method: 'eth_getLogs',
+  //           params: [
+  //             {
+  //               fromBlock: startBlockNumber,
+  //               toBlock: endBlockNumber,
+  //               address: router,
+  //               topics: [
+  //                 '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982',
+  //               ],
+  //             },
+  //           ],
+  //         }, ...(address?.slice(2) ? [{
+  //           jsonrpc: '2.0',
+  //           id: 0,
+  //           method: 'eth_getLogs',
+  //           params: [
+  //             {
+  //               fromBlock: startBlockNumber,
+  //               toBlock: endBlockNumber,
+  //               address: router,
+  //               topics: [
+  //                 '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c',
+  //                 null,
+  //                 '0x000000000000000000000000' + address?.slice(2),
+  //               ],
+  //             },
+  //           ],
+  //         }] : [])]),
+  //       });
+  //       const result = await req.json();
+  //       if (liveStreamCancelled) return;
+  //       startBlockNumber = '0x' + (parseInt(result[0].result, 16) - 30).toString(16);
+  //       endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 10).toString(16);
+  //       const tradelogs = result[1].result;
+  //       const orderlogs = result?.[2]?.result;
+  //       const filllogs = result?.[3]?.result;
+  //       let ordersChanged = false;
+  //       let canceledOrdersChanged = false;
+  //       let tradesByMarketChanged = false;
+  //       let tradeHistoryChanged = false;
+  //       let temporders: any;
+  //       let tempcanceledorders: any;
+  //       let temptradesByMarket: any;
+  //       let temptradehistory: any;
+  //       setorders((orders) => {
+  //         temporders = [...orders];
+  //         return orders;
+  //       })
+  //       setcanceledorders((canceledorders) => {
+  //         tempcanceledorders = [...canceledorders];
+  //         return canceledorders;
+  //       })
+  //       settradesByMarket((tradesByMarket: any) => {
+  //         temptradesByMarket = { ...tradesByMarket };
+  //         return tradesByMarket;
+  //       })
+  //       settradehistory((tradehistory: any) => {
+  //         temptradehistory = [...tradehistory];
+  //         return tradehistory;
+  //       })
+  //       setProcessedLogs(prev => {
+  //         let tempset = new Set(prev);
+  //         let temptrades: any = {};
+  //         if (Array.isArray(tradelogs)) {
+  //           for (const log of tradelogs) {
+  //             const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+  //             const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
+  //             if (!tempset.has(logIdentifier) && marketKey && !temptradesByMarket[marketKey]?.some((trade: any) =>
+  //               trade[0] == parseInt(log['data'].slice(66, 130), 16) &&
+  //               trade[1] == parseInt(log['data'].slice(130, 194), 16) &&
+  //               trade[5] == log['transactionHash'])) {
+  //               if (tempset.size >= 10000) {
+  //                 const first = tempset.values().next().value;
+  //                 if (first !== undefined) {
+  //                   tempset.delete(first);
+  //                 }
+  //               }
+  //               tempset.add(logIdentifier);
+  //               const resolve = txReceiptResolvers.current.get(log['transactionHash']);
+  //               if (resolve) {
+  //                 resolve();
+  //                 txReceiptResolvers.current.delete(log['transactionHash']);
+  //               }
+  //               let _timestamp = parseInt(log['blockTimestamp'], 16);
+  //               let _orderdata = log['data'].slice(258);
+  //               for (let i = 0; i < _orderdata.length; i += 64) {
+  //                 let chunk = _orderdata.slice(i, i + 64);
+  //                 let price = parseInt(chunk.slice(1, 20), 16);
+  //                 let id = parseInt(chunk.slice(20, 32), 16);
+  //                 let size = parseInt(chunk.slice(32, 64), 16);
+  //                 let orderIndex = temporders.findIndex(
+  //                   (sublist: any) =>
+  //                     sublist[0] ==
+  //                     price &&
+  //                     sublist[1] ==
+  //                     id &&
+  //                     sublist[4] == marketKey,
+  //                 );
+  //                 let canceledOrderIndex = tempcanceledorders.findIndex(
+  //                   (sublist: any) =>
+  //                     sublist[0] ==
+  //                     price &&
+  //                     sublist[1] ==
+  //                     id &&
+  //                     sublist[4] == marketKey,
+  //                 );
+  //                 if (orderIndex != -1 && canceledOrderIndex != -1) {
+  //                   ordersChanged = true;
+  //                   canceledOrdersChanged = true;
+  //                   temporders[orderIndex] = [...temporders[orderIndex]]
+  //                   tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+  //                   let order = [...temporders[orderIndex]];
+  //                   let buy = order[3];
+  //                   let quoteasset =
+  //                     markets[marketKey]
+  //                       .quoteAddress;
+  //                   let baseasset =
+  //                     markets[marketKey]
+  //                       .baseAddress;
+  //                   let amountquote = (
+  //                     ((order[2] - order[7] - size / order[0]) *
+  //                       order[0]) /
+  //                     (Number(
+  //                       markets[marketKey]
+  //                         .scaleFactor,
+  //                     ) *
+  //                       10 **
+  //                       Number(
+  //                         markets[marketKey]
+  //                           .quoteDecimals,
+  //                       ))
+  //                   ).toFixed(2);
+  //                   let amountbase = customRound(
+  //                     (order[2] - order[7] - size / order[0]) /
+  //                     10 **
+  //                     Number(
+  //                       markets[marketKey]
+  //                         .baseDecimals,
+  //                     ),
+  //                     3,
+  //                   );
+  //                   newTxPopup(
+  //                     log['transactionHash'],
+  //                     'fill',
+  //                     buy ? quoteasset : baseasset,
+  //                     buy ? baseasset : quoteasset,
+  //                     buy ? amountquote : amountbase,
+  //                     buy ? amountbase : amountquote,
+  //                     `${order[0] / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+  //                     '',
+  //                   );
+  //                   if (size == 0) {
+  //                     tradeHistoryChanged = true;
+  //                     temptradehistory.push([
+  //                       order[3] == 1
+  //                         ? (order[2] * order[0]) /
+  //                         Number(markets[order[4]].scaleFactor)
+  //                         : order[2],
+  //                       order[3] == 1
+  //                         ? order[2]
+  //                         : (order[2] * order[0]) /
+  //                         Number(markets[order[4]].scaleFactor),
+  //                       order[3],
+  //                       order[0],
+  //                       order[4],
+  //                       order[5],
+  //                       _timestamp,
+  //                       0,
+  //                     ]);
+  //                     if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
+  //                       try {
+  //                         temporders[orderIndex][10].remove();
+  //                       }
+  //                       catch { }
+  //                       temporders[orderIndex].splice(10, 1)
+  //                     }
+  //                     temporders.splice(orderIndex, 1);
+  //                     tempcanceledorders[canceledOrderIndex][9] =
+  //                       1;
+  //                     tempcanceledorders[canceledOrderIndex][7] = order[2]
+  //                     tempcanceledorders[canceledOrderIndex][8] = order[8];
+  //                   } else {
+  //                     if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
+  //                       try {
+  //                         temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+  //                       }
+  //                       catch { }
+  //                     }
+  //                     temporders[orderIndex][7] =
+  //                       order[2] - size / order[0];
+  //                     tempcanceledorders[canceledOrderIndex][7] =
+  //                       order[2] - size / order[0];
+  //                   }
+  //                 }
+  //               }
+  //               tradesByMarketChanged = true;
+  //               if (!Array.isArray(temptradesByMarket[marketKey])) {
+  //                 temptradesByMarket[marketKey] = [];
+  //               }
+  //               let amountIn = parseInt(log['data'].slice(66, 130), 16);
+  //               let amountOut = parseInt(log['data'].slice(130, 194), 16);
+  //               let buy = parseInt(log['data'].slice(65, 66), 16);
+  //               let price = parseInt(log['data'].slice(258, 322), 16);
+  //               temptradesByMarket[marketKey].unshift([
+  //                 amountIn,
+  //                 amountOut,
+  //                 buy,
+  //                 price,
+  //                 marketKey,
+  //                 log['transactionHash'],
+  //                 _timestamp,
+  //               ]);
+  //               if (!Array.isArray(temptrades[marketKey])) {
+  //                 temptrades[marketKey] = [];
+  //               }
+  //               temptrades[marketKey].unshift([
+  //                 amountIn,
+  //                 amountOut,
+  //                 buy,
+  //                 price,
+  //                 marketKey,
+  //                 log['transactionHash'],
+  //                 _timestamp,
+  //                 parseInt(log['data'].slice(194, 258), 16),
+  //               ])
+  //               if (
+  //                 log['topics'][2].slice(26) ==
+  //                 address?.slice(2).toLowerCase()
+  //               ) {
+  //                 tradeHistoryChanged = true;
+  //                 temptradehistory.push([
+  //                   amountIn,
+  //                   amountOut,
+  //                   buy,
+  //                   price,
+  //                   marketKey,
+  //                   log['transactionHash'],
+  //                   _timestamp,
+  //                   1,
+  //                 ])
+  //                 let quoteasset =
+  //                   markets[marketKey].quoteAddress;
+  //                 let baseasset =
+  //                   markets[marketKey].baseAddress;
+  //                 let popupAmountIn = customRound(
+  //                   amountIn /
+  //                   10 **
+  //                   Number(
+  //                     buy
+  //                       ? markets[marketKey]
+  //                         .quoteDecimals
+  //                       : markets[marketKey]
+  //                         .baseDecimals,
+  //                   ),
+  //                   3,
+  //                 );
+  //                 let popupAmountOut = customRound(
+  //                   amountOut /
+  //                   10 **
+  //                   Number(
+  //                     buy
+  //                       ? markets[marketKey]
+  //                         .baseDecimals
+  //                       : markets[marketKey]
+  //                         .quoteDecimals,
+  //                   ),
+  //                   3,
+  //                 );
+  //                 newTxPopup(
+  //                   log['transactionHash'],
+  //                   'swap',
+  //                   buy ? quoteasset : baseasset,
+  //                   buy ? baseasset : quoteasset,
+  //                   popupAmountIn,
+  //                   popupAmountOut,
+  //                   '',
+  //                   '',
+  //                 );
+  //               }
+  //             }
+  //           }
+  //           if (tradesByMarketChanged) {
+  //             setChartData(([existingBars, existingIntervalLabel, existingShowOutliers]) => {
+  //               const marketKey = existingIntervalLabel?.match(/^\D*/)?.[0];
+  //               const updatedBars = [...existingBars];
+  //               let rawVolume;
+  //               if (marketKey && Array.isArray(temptrades?.[marketKey])) {
+  //                 const barSizeSec =
+  //                   existingIntervalLabel?.match(/\d.*/)?.[0] === '1' ? 60 :
+  //                     existingIntervalLabel?.match(/\d.*/)?.[0] === '5' ? 5 * 60 :
+  //                       existingIntervalLabel?.match(/\d.*/)?.[0] === '15' ? 15 * 60 :
+  //                         existingIntervalLabel?.match(/\d.*/)?.[0] === '30' ? 30 * 60 :
+  //                           existingIntervalLabel?.match(/\d.*/)?.[0] === '60' ? 60 * 60 :
+  //                             existingIntervalLabel?.match(/\d.*/)?.[0] === '240' ? 4 * 60 * 60 :
+  //                               existingIntervalLabel?.match(/\d.*/)?.[0] === '1D' ? 24 * 60 * 60 :
+  //                                 5 * 60;
+  //                 const priceFactor = Number(markets[marketKey].priceFactor);
+  //                 for (const lastTrade of temptrades[marketKey]) {
+  //                   const lastBarIndex = updatedBars.length - 1;
+  //                   const lastBar = updatedBars[lastBarIndex];
+
+  //                   let openPrice = parseFloat((lastTrade[7] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
+  //                   let closePrice = parseFloat((lastTrade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
+  //                   rawVolume =
+  //                     (lastTrade[2] == 0 ? lastTrade[0] : lastTrade[1]) /
+  //                     10 ** Number(markets[marketKey].baseDecimals);
+
+  //                   const tradeTimeSec = lastTrade[6];
+  //                   const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
+  //                   const lastBarTimeSec = Math.floor(new Date(lastBar?.time).getTime() / 1000);
+  //                   if (flooredTradeTimeSec === lastBarTimeSec) {
+  //                     updatedBars[lastBarIndex] = {
+  //                       ...lastBar,
+  //                       high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
+  //                       low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
+  //                       close: closePrice,
+  //                       volume: lastBar.volume + rawVolume,
+  //                     };
+  //                     if (realtimeCallbackRef.current[existingIntervalLabel]) {
+  //                       realtimeCallbackRef.current[existingIntervalLabel]({
+  //                         ...lastBar,
+  //                         high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
+  //                         low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
+  //                         close: closePrice,
+  //                         volume: lastBar.volume + rawVolume,
+  //                       });
+  //                     }
+  //                   } else {
+  //                     updatedBars.push({
+  //                       time: flooredTradeTimeSec * 1000,
+  //                       open: lastBar?.close ?? openPrice,
+  //                       high: Math.max(lastBar?.close ?? openPrice, closePrice),
+  //                       low: Math.min(lastBar?.close ?? openPrice, closePrice),
+  //                       close: closePrice,
+  //                       volume: rawVolume,
+  //                     });
+  //                     if (realtimeCallbackRef.current[existingIntervalLabel]) {
+  //                       realtimeCallbackRef.current[existingIntervalLabel]({
+  //                         time: flooredTradeTimeSec * 1000,
+  //                         open: lastBar?.close ?? openPrice,
+  //                         high: Math.max(lastBar?.close ?? openPrice, closePrice),
+  //                         low: Math.min(lastBar?.close ?? openPrice, closePrice),
+  //                         close: closePrice,
+  //                         volume: rawVolume,
+  //                       });
+  //                     }
+  //                   }
+  //                 }
+  //               }
+  //               setMarketsData((marketsData) =>
+  //                 marketsData.map((market) => {
+  //                   if (!market) return;
+  //                   const marketKey = market?.marketKey.replace(
+  //                     new RegExp(`^${wethticker}|${wethticker}$`, 'g'),
+  //                     ethticker
+  //                   );
+  //                   const newTrades = temptrades?.[marketKey]
+  //                   if (!Array.isArray(newTrades) || newTrades.length < 1) return market;
+  //                   const firstKlineOpen: number =
+  //                     market?.mini && Array.isArray(market?.mini) && market?.mini.length > 0
+  //                       ? Number(market?.mini[0].value * Number(market.priceFactor))
+  //                       : 0;
+  //                   const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
+  //                   const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
+  //                   const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+  //                     / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+  //                   let high = market.high24h ? Number(market.high24h.replace(/,/g, '')) : null;
+  //                   let low = market.low24h ? Number(market.low24h.replace(/,/g, '')) : null;
+  //                   const volume = newTrades.reduce((sum: number, trade: any) => {
+  //                     if (high && trade[3] / Number(market.priceFactor) > high) {
+  //                       high = trade[3] / Number(market.priceFactor)
+  //                     }
+  //                     if (low && trade[3] / Number(market.priceFactor) < low) {
+  //                       low = trade[3] / Number(market.priceFactor)
+  //                     }
+  //                     const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
+  //                     return sum + amount;
+  //                   }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
+
+  //                   return {
+  //                     ...market,
+  //                     volume: formatCommas(
+  //                       (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
+  //                     ),
+  //                     currentPrice: formatSig(
+  //                       (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+  //                     ),
+  //                     priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
+  //                     priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(formatSig(
+  //                       (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+  //                     ).split('.')[1]?.length || 0)),
+  //                     ...(high != null && {
+  //                       high24h: formatSig(
+  //                         high.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+  //                       )
+  //                     }),
+  //                     ...(low != null && {
+  //                       low24h: formatSig(
+  //                         low.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+  //                       )
+  //                     })
+  //                   };
+  //                 })
+  //               );
+  //               return [updatedBars, existingIntervalLabel, existingShowOutliers];
+  //             });
+  //           }
+  //         }
+  //         if (Array.isArray(orderlogs)) {
+  //           for (const log of orderlogs) {
+  //             const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+  //             const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
+  //             if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
+  //               address?.slice(2).toLowerCase()) {
+  //               if (tempset.size >= 10000) {
+  //                 const first = tempset.values().next().value;
+  //                 if (first !== undefined) {
+  //                   tempset.delete(first);
+  //                 }
+  //               }
+  //               tempset.add(logIdentifier);
+  //               const resolve = txReceiptResolvers.current.get(log['transactionHash']);
+  //               if (resolve) {
+  //                 resolve();
+  //                 txReceiptResolvers.current.delete(log['transactionHash']);
+  //               }
+  //               let _timestamp = parseInt(log['blockTimestamp'], 16);
+  //               let _orderdata = log['data'].slice(130);
+  //               for (let i = 0; i < _orderdata.length; i += 64) {
+  //                 let chunk = _orderdata.slice(i, i + 64);
+  //                 let _isplace = parseInt(chunk.slice(0, 1), 16) >= 2;
+  //                 if (_isplace) {
+  //                   let buy = 3 - parseInt(chunk.slice(0, 1), 16);
+  //                   let price = parseInt(chunk.slice(2, 22), 16);
+  //                   let id = parseInt(chunk.slice(22, 36), 16);
+  //                   let size = parseInt(chunk.slice(36, 64), 16);
+  //                   let alreadyExist = tempcanceledorders.some(
+  //                     (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
+  //                   );
+  //                   buy ? size *= Number(markets[marketKey].scaleFactor) : size *= price
+  //                   if (!alreadyExist) {
+  //                     ordersChanged = true;
+  //                     canceledOrdersChanged = true;
+  //                     let order = [
+  //                       price,
+  //                       id,
+  //                       size /
+  //                       price,
+  //                       buy,
+  //                       marketKey,
+  //                       log['transactionHash'],
+  //                       _timestamp,
+  //                       0,
+  //                       size,
+  //                       2,
+  //                     ];
+  //                     temporders.push(order)
+  //                     tempcanceledorders.push([
+  //                       price,
+  //                       id,
+  //                       size /
+  //                       price,
+  //                       buy,
+  //                       marketKey,
+  //                       log['transactionHash'],
+  //                       _timestamp,
+  //                       0,
+  //                       size,
+  //                       2,
+  //                     ])
+  //                     let quoteasset =
+  //                       markets[marketKey].quoteAddress;
+  //                     let baseasset =
+  //                       markets[marketKey].baseAddress;
+  //                     let amountquote = (
+  //                       size /
+  //                       (Number(
+  //                         markets[marketKey].scaleFactor,
+  //                       ) *
+  //                         10 **
+  //                         Number(
+  //                           markets[marketKey]
+  //                             .quoteDecimals,
+  //                         ))
+  //                     ).toFixed(2);
+  //                     let amountbase = customRound(
+  //                       size /
+  //                       price /
+  //                       10 **
+  //                       Number(
+  //                         markets[marketKey]
+  //                           .baseDecimals,
+  //                       ),
+  //                       3,
+  //                     );
+  //                     newTxPopup(
+  //                       log['transactionHash'],
+  //                       'limit',
+  //                       buy ? quoteasset : baseasset,
+  //                       buy ? baseasset : quoteasset,
+  //                       buy ? amountquote : amountbase,
+  //                       buy ? amountbase : amountquote,
+  //                       `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+  //                       '',
+  //                     );
+  //                   }
+  //                 } else {
+  //                   let buy = parseInt(chunk.slice(0, 1), 16) == 0;
+  //                   let price = parseInt(chunk.slice(2, 22), 16);
+  //                   let id = parseInt(chunk.slice(22, 36), 16);
+  //                   let size = parseInt(chunk.slice(36, 64), 16);
+  //                   let index = temporders.findIndex(
+  //                     (o: any) =>
+  //                       o[0] == price &&
+  //                       o[1] == id &&
+  //                       o[4] == marketKey,
+  //                   );
+  //                   if (index != -1) {
+  //                     ordersChanged = true;
+  //                     canceledOrdersChanged = true;
+  //                     let canceledOrderIndex: number;
+  //                     canceledOrderIndex = tempcanceledorders.findIndex(
+  //                       (canceledOrder: any) =>
+  //                         canceledOrder[0] ==
+  //                         price &&
+  //                         canceledOrder[1] ==
+  //                         id &&
+  //                         canceledOrder[4] ==
+  //                         marketKey,
+  //                     );
+  //                     if (canceledOrderIndex !== -1 && tempcanceledorders[canceledOrderIndex][9] != 0) {
+  //                       tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+  //                       tempcanceledorders[canceledOrderIndex][9] = 0;
+  //                       tempcanceledorders[canceledOrderIndex][8] =
+  //                         tempcanceledorders[canceledOrderIndex][8] -
+  //                         size;
+  //                       tempcanceledorders[canceledOrderIndex][6] =
+  //                         _timestamp;
+  //                     }
+  //                     if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
+  //                       temporders[index] = [...temporders[index]]
+  //                       try {
+  //                         temporders[index][10].remove();
+  //                       }
+  //                       catch { }
+  //                       temporders[index].splice(10, 1)
+  //                     }
+  //                     temporders.splice(index, 1);
+  //                     let quoteasset =
+  //                       markets[marketKey].quoteAddress;
+  //                     let baseasset =
+  //                       markets[marketKey].baseAddress;
+  //                     let amountquote = (
+  //                       (buy ? size : size * price / Number(
+  //                         markets[marketKey].scaleFactor
+  //                       )) /
+  //                       (10 **
+  //                         Number(
+  //                           markets[marketKey]
+  //                             .quoteDecimals,
+  //                         ))
+  //                     ).toFixed(2);
+  //                     let amountbase = customRound(
+  //                       (buy ? size * Number(
+  //                         markets[marketKey].scaleFactor
+  //                       ) / price : size) /
+  //                       10 **
+  //                       Number(
+  //                         markets[marketKey]
+  //                           .baseDecimals,
+  //                       ),
+  //                       3,
+  //                     );
+  //                     newTxPopup(
+  //                       log['transactionHash'],
+  //                       'cancel',
+  //                       buy ? quoteasset : baseasset,
+  //                       buy ? baseasset : quoteasset,
+  //                       buy ? amountquote : amountbase,
+  //                       buy ? amountbase : amountquote,
+  //                       `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+  //                       '',
+  //                     );
+  //                   }
+  //                 }
+  //               }
+  //             }
+  //           }
+  //         }
+  //         if (Array.isArray(filllogs)) {
+  //           for (const log of filllogs) {
+  //             const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+  //             const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
+  //             if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
+  //               address?.slice(2).toLowerCase()) {
+  //               if (tempset.size >= 10000) {
+  //                 const first = tempset.values().next().value;
+  //                 if (first !== undefined) {
+  //                   tempset.delete(first);
+  //                 }
+  //               }
+  //               tempset.add(logIdentifier);
+  //               let _timestamp = Math.floor(Date.now() / 1000);
+  //               let _orderdata = log['data'].slice(2);
+  //               let buy = 1 - parseInt(_orderdata.slice(0, 1), 16);
+  //               let price = parseInt(_orderdata.slice(1, 22), 16);
+  //               let id = parseInt(_orderdata.slice(22, 36), 16);
+  //               let size = parseInt(_orderdata.slice(36, 64), 16);
+  //               buy ? size *= price : size *= Number(markets[marketKey].scaleFactor)
+  //               let orderIndex = temporders.findIndex(
+  //                 (sublist: any) =>
+  //                   sublist[0] ==
+  //                   price &&
+  //                   sublist[1] ==
+  //                   id &&
+  //                   sublist[4] == marketKey,
+  //               );
+  //               let canceledOrderIndex = tempcanceledorders.findIndex(
+  //                 (sublist: any) =>
+  //                   sublist[0] ==
+  //                   price &&
+  //                   sublist[1] ==
+  //                   id &&
+  //                   sublist[4] == marketKey,
+  //               );
+  //               if (orderIndex != -1 && canceledOrderIndex != -1) {
+  //                 ordersChanged = true;
+  //                 temporders[orderIndex] = [...temporders[orderIndex]]
+  //                 let order = [...temporders[orderIndex]];
+  //                 let buy = order[3];
+  //                 let quoteasset =
+  //                   markets[marketKey]
+  //                     .quoteAddress;
+  //                 let baseasset =
+  //                   markets[marketKey]
+  //                     .baseAddress;
+  //                 let amountquote = (
+  //                   ((order[2] - order[7] - size / order[0]) *
+  //                     order[0]) /
+  //                   (Number(
+  //                     markets[marketKey]
+  //                       .scaleFactor,
+  //                   ) *
+  //                     10 **
+  //                     Number(
+  //                       markets[marketKey]
+  //                         .quoteDecimals,
+  //                     ))
+  //                 ).toFixed(2);
+  //                 let amountbase = customRound(
+  //                   (order[2] - order[7] - size / order[0]) /
+  //                   10 **
+  //                   Number(
+  //                     markets[marketKey]
+  //                       .baseDecimals,
+  //                   ),
+  //                   3,
+  //                 );
+  //                 newTxPopup(
+  //                   log['transactionHash'],
+  //                   'fill',
+  //                   buy ? quoteasset : baseasset,
+  //                   buy ? baseasset : quoteasset,
+  //                   buy ? amountquote : amountbase,
+  //                   buy ? amountbase : amountquote,
+  //                   `${order[0] / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+  //                   '',
+  //                 );
+  //                 if (size == 0) {
+  //                   tradeHistoryChanged = true;
+  //                   temptradehistory.push([
+  //                     order[3] == 1
+  //                       ? (order[2] * order[0]) /
+  //                       Number(markets[order[4]].scaleFactor)
+  //                       : order[2],
+  //                     order[3] == 1
+  //                       ? order[2]
+  //                       : (order[2] * order[0]) /
+  //                       Number(markets[order[4]].scaleFactor),
+  //                     order[3],
+  //                     order[0],
+  //                     order[4],
+  //                     order[5],
+  //                     _timestamp,
+  //                     0,
+  //                   ]);
+  //                   if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
+  //                     try {
+  //                       temporders[orderIndex][10].remove();
+  //                     }
+  //                     catch { }
+  //                     temporders[orderIndex].splice(10, 1)
+  //                   }
+  //                   temporders.splice(orderIndex, 1);
+  //                   tempcanceledorders[canceledOrderIndex][9] =
+  //                     1;
+  //                   tempcanceledorders[canceledOrderIndex][7] = order[2]
+  //                   tempcanceledorders[canceledOrderIndex][8] = order[8];
+  //                 } else {
+  //                   if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
+  //                     try {
+  //                       temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+  //                     }
+  //                     catch { }
+  //                   }
+  //                   temporders[orderIndex][7] =
+  //                     order[2] - size / order[0];
+  //                 }
+  //                 if (canceledOrderIndex != -1) {
+  //                   canceledOrdersChanged = true;
+  //                   tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+  //                   if (size == 0) {
+  //                     tempcanceledorders[canceledOrderIndex][9] =
+  //                       1;
+  //                     tempcanceledorders[canceledOrderIndex][7] = order[2]
+  //                     tempcanceledorders[canceledOrderIndex][8] = order[8];
+  //                   }
+  //                   else {
+  //                     tempcanceledorders[canceledOrderIndex][7] =
+  //                       order[2] - size / order[0];
+  //                   }
+  //                 }
+  //               }
+  //             }
+  //           }
+  //         }
+  //         if (tradeHistoryChanged) {
+  //           settradehistory(temptradehistory)
+  //         }
+  //         if (tradesByMarketChanged) {
+  //           settradesByMarket(temptradesByMarket)
+  //         }
+  //         if (canceledOrdersChanged) {
+  //           setcanceledorders(tempcanceledorders)
+  //         }
+  //         if (ordersChanged) {
+  //           setorders(temporders)
+  //         }
+  //         return tempset;
+  //       })
+  //     } catch {
+  //     }
+  //   };
+
+  //   (async () => {
+  //     if (address) {
+  //       setTransactions([]);
+  //       settradehistory([]);
+  //       setorders([]);
+  //       setcanceledorders([]);
+  //       setrecipient('');
+  //       isAddressInfoFetching = true;
+  //       try {
+  //         ;
+  //         const query = `
+  //           query {
+  //             account(id: "${address}") {
+  //               id
+  //               userIds {
+  //                 id
+  //               }
+  //               openOrderMap {
+  //                 shards(first: 1000) { batches(first: 1000) { orders(first: 1000) {
+  //                   id
+  //                   market { id baseAsset quoteAsset }
+  //                   isBuy
+  //                   price
+  //                   originalSize
+  //                   remainingSize
+  //                   status
+  //                   placedAt
+  //                   updatedAt
+  //                   txHash
+  //                 }}}
+  //               }
+  //               orderMap {
+  //                 shards(first: 1000) { batches(first: 1000) { orders(first: 1000) {
+  //                   id
+  //                   market { id baseAsset quoteAsset }
+  //                   isBuy
+  //                   price
+  //                   originalSize
+  //                   remainingSize
+  //                   status
+  //                   placedAt
+  //                   updatedAt
+  //                   txHash
+  //                 }}}
+  //               }
+  //               tradeMap {
+  //                 shards(first: 1000) { batches(first: 1000) { trades(first: 1000) {
+  //                   id
+  //                   market { id baseAsset quoteAsset }
+  //                   amountIn
+  //                   amountOut
+  //                   startPrice
+  //                   endPrice
+  //                   isBuy
+  //                   timestamp
+  //                   tx
+  //                 }}}
+  //               }
+  //             }
+  //           }
+  //         `;
+
+  //         const response = await fetch(SUBGRAPH_URL, {
+  //           method: "POST",
+  //           headers: { "content-type": "application/json" },
+  //           body: JSON.stringify({ query }),
+  //         });
+  //         if (!response.ok) throw new Error(`http ${response.status} ${response.statusText}`);
+
+  //         const result = await response.json();
+  //         if (result?.errors?.length) throw new Error(result.errors[0]?.message || "graphql error");
+
+  //         if (!isAddressInfoFetching) return;
+
+  //         const flatten = (map: any, key: "orders" | "trades") =>
+  //           (map?.shards ?? [])
+  //             .flatMap((s: any) => s?.batches ?? [])
+  //             .flatMap((b: any) => b?.[key] ?? []);
+
+  //         const statusCode = (s: any) => {
+  //           if (typeof s === "number") return s;
+  //           const m: Record<string, number> = { open: 0, filled: 1, cancelled: 2, canceled: 2, expired: 3 };
+  //           return m[(s ?? "").toString().toLowerCase()] ?? -1;
+  //         };
+
+  //         const getMarketKey = (m: any) => {
+  //           if (m?.id && addresstoMarket?.[m.id]) return addresstoMarket[m.id];
+  //           return ''
+  //         };
+
+  //         const acct = result?.data?.account;
+  //         let temptradehistory: any[] = [];
+  //         let temporders: any[] = [];
+  //         let tempcanceledorders: any[] = [];
+
+  //         if (acct) {
+  //           const trades = flatten(acct.tradeMap, "trades") || [];
+  //           for (const t of trades) {
+  //             const marketKey = getMarketKey(t.market);
+  //             if (marketKey) {
+  //               temptradehistory.push([
+  //                 Number(t.amountIn ?? 0),
+  //                 Number(t.amountOut ?? 0),
+  //                 t.isBuy ? 1 : 0,
+  //                 Number((t.endPrice ?? t.startPrice) ?? 0),
+  //                 marketKey,
+  //                 t.tx,
+  //                 Number(t.timestamp ?? 0),
+  //                 1,
+  //               ]);
+  //             }
+  //           }
+
+  //           const openOrders = flatten(acct.openOrderMap, "orders") || [];
+  //           for (const o of openOrders) {
+  //             const marketKey = getMarketKey(o.market);
+  //             if (marketKey) {
+  //               const idParts = (o.id ?? "").split(":");
+  //               const price = Number(o.price);
+  //               const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
+  //               const original = Number(o.originalSize ?? 0);
+  //               const remaining = Number(o.remainingSize ?? 0);
+  //               const filled = Math.max(0, original - remaining);
+
+  //               temporders.push([
+  //                 price,
+  //                 tail,
+  //                 o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
+  //                 o.isBuy ? 1 : 0,
+  //                 marketKey,
+  //                 o.txHash,
+  //                 Number(o.placedAt ?? o.updatedAt ?? 0),
+  //                 o.isBuy ? filled * Number(markets[marketKey].scaleFactor) / price : filled,
+  //                 o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
+  //                 statusCode(o.status),
+  //               ]);
+  //             }
+  //           }
+
+  //           const allOrders = flatten(acct.orderMap, "orders") || [];
+  //           for (const o of allOrders) {
+  //             const marketKey = getMarketKey(o.market);
+  //             if (marketKey) {
+  //               const idParts = (o.id ?? "").split(":");
+  //               const price = Number(o.price);
+  //               const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
+  //               const original = Number(o.originalSize ?? 0);
+  //               const remaining = Number(o.remainingSize ?? 0);
+  //               const filled = Math.max(0, original - remaining);
+
+  //               tempcanceledorders.push([
+  //                 price,
+  //                 tail,
+  //                 o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
+  //                 o.isBuy ? 1 : 0,
+  //                 marketKey,
+  //                 o.txHash,
+  //                 Number(o.updatedAt ?? o.placedAt ?? 0),
+  //                 o.isBuy ? filled * Number(markets[marketKey].scaleFactor) / price : filled,
+  //                 o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
+  //                 statusCode(o.status),
+  //               ]);
+  //             }
+  //           }
+  //         }
+
+  //         settradehistory(temptradehistory);
+  //         setorders(temporders);
+  //         setcanceledorders(tempcanceledorders);
+  //         setaddressinfoloading(false);
+  //         isAddressInfoFetching = false;
+  //       } catch (error) {
+  //         console.error("Error fetching logs:", error);
+  //         setaddressinfoloading(false);
+  //         isAddressInfoFetching = false;
+  //       }
+  //     }
+  //     else if (!user) {
+  //       setSliderPercent(0)
+  //       const slider = document.querySelector('.balance-amount-slider');
+  //       const popup = document.querySelector('.slider-percentage-popup');
+  //       if (slider && popup) {
+  //         (popup as HTMLElement).style.left = `${15 / 2}px`;
+  //       }
+  //       setTransactions([]);
+  //       settradehistory([]);
+  //       setorders([]);
+  //       setcanceledorders([]);
+  //       setaddressinfoloading(false);
+  //     }
+  //   })();
+
+  //   const connectWebSocket = () => {
+  //     if (liveStreamCancelled) return;
+  //     wsRef.current = new WebSocket(WS_URL);
+
+  //     wsRef.current.onopen = async () => {
+  //       const subscriptionMessages = [
+  //         JSON.stringify({
+  //           jsonrpc: '2.0',
+  //           id: 'sub1',
+  //           method: 'eth_subscribe',
+  //           params: [
+  //             'monadLogs',
+  //             {
+  //               address: router,
+  //               topics: [
+  //                 '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982',
+  //               ],
+  //             },
+  //           ],
+  //         }), ...(address?.slice(2) ? [JSON.stringify({
+  //           jsonrpc: '2.0',
+  //           id: 'sub2',
+  //           method: 'eth_subscribe',
+  //           params: [
+  //             'monadLogs',
+  //             {
+  //               address: router,
+  //               topics: [
+  //                 ['0xa195980963150be5fcca4acd6a80bf5a9de7f9c862258501b7c705e7d2c2d2f4', '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c'],
+  //                 null,
+  //                 '0x000000000000000000000000' + address?.slice(2),
+  //               ],
+  //             },
+  //           ],
+  //         })] : [])
+  //       ];
+
+  //       pingIntervalRef.current = setInterval(() => {
+  //         if (wsRef.current?.readyState === WebSocket.OPEN) {
+  //           wsRef.current.send(JSON.stringify({
+  //             jsonrpc: '2.0',
+  //             id: 'ping',
+  //             method: 'eth_syncing'
+  //           }));
+  //         }
+  //       }, 15000);
+
+  //       subscriptionMessages.forEach((message) => {
+  //         wsRef.current?.send(message);
+  //       });
+
+  //       if (blockNumber.current) {
+  //         startBlockNumber = '0x' + (blockNumber.current - BigInt(80)).toString(16)
+  //         endBlockNumber = '0x' + (blockNumber.current + BigInt(10)).toString(16)
+  //       } else {
+  //         let firstBlockNumber = await getBlockNumber(config);
+  //         startBlockNumber = '0x' + (firstBlockNumber - BigInt(80)).toString(16)
+  //         endBlockNumber = '0x' + (firstBlockNumber + BigInt(10)).toString(16)
+  //       }
+  //       fetchData();
+  //     };
+
+  //     wsRef.current.onmessage = (event) => {
+  //       const message = JSON.parse(event.data);
+  //       if (message?.params?.result && message?.params?.result?.commitState == "Voted") {
+  //         const log = message?.params?.result;
+  //         let ordersChanged = false;
+  //         let canceledOrdersChanged = false;
+  //         let tradesByMarketChanged = false;
+  //         let tradeHistoryChanged = false;
+  //         let temporders: any;
+  //         let tempcanceledorders: any;
+  //         let temptradesByMarket: any;
+  //         let temptradehistory: any;
+  //         setorders((orders) => {
+  //           temporders = [...orders];
+  //           return orders;
+  //         })
+  //         setcanceledorders((canceledorders) => {
+  //           tempcanceledorders = [...canceledorders];
+  //           return canceledorders;
+  //         })
+  //         settradesByMarket((tradesByMarket: any) => {
+  //           temptradesByMarket = { ...tradesByMarket };
+  //           return tradesByMarket;
+  //         })
+  //         settradehistory((tradehistory: any) => {
+  //           temptradehistory = [...tradehistory];
+  //           return tradehistory;
+  //         })
+  //         setProcessedLogs(prev => {
+  //           let tempset = new Set(prev);
+  //           let temptrades: any = {};
+  //           if (log['topics']?.[0] == '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982') {
+  //             const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+  //             const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
+  //             if (!tempset.has(logIdentifier) && marketKey && !temptradesByMarket[marketKey]?.some((trade: any) =>
+  //               trade[0] == parseInt(log['data'].slice(66, 130), 16) &&
+  //               trade[1] == parseInt(log['data'].slice(130, 194), 16) &&
+  //               trade[5] == log['transactionHash'])) {
+  //               if (tempset.size >= 10000) {
+  //                 const first = tempset.values().next().value;
+  //                 if (first !== undefined) {
+  //                   tempset.delete(first);
+  //                 }
+  //               }
+  //               tempset.add(logIdentifier);
+  //               const resolve = txReceiptResolvers.current.get(log['transactionHash']);
+  //               if (resolve) {
+  //                 resolve();
+  //                 txReceiptResolvers.current.delete(log['transactionHash']);
+  //               }
+  //               let _timestamp = Math.floor(Date.now() / 1000);
+  //               tradesByMarketChanged = true;
+  //               if (!Array.isArray(temptradesByMarket[marketKey])) {
+  //                 temptradesByMarket[marketKey] = [];
+  //               }
+  //               let amountIn = parseInt(log['data'].slice(66, 130), 16);
+  //               let amountOut = parseInt(log['data'].slice(130, 194), 16);
+  //               let buy = parseInt(log['data'].slice(65, 66), 16);
+  //               let price = parseInt(log['data'].slice(258, 322), 16);
+  //               temptradesByMarket[marketKey].unshift([
+  //                 amountIn,
+  //                 amountOut,
+  //                 buy,
+  //                 price,
+  //                 marketKey,
+  //                 log['transactionHash'],
+  //                 _timestamp,
+  //               ]);
+  //               if (!Array.isArray(temptrades[marketKey])) {
+  //                 temptrades[marketKey] = [];
+  //               }
+  //               temptrades[marketKey].unshift([
+  //                 amountIn,
+  //                 amountOut,
+  //                 buy,
+  //                 price,
+  //                 marketKey,
+  //                 log['transactionHash'],
+  //                 _timestamp,
+  //                 parseInt(log['data'].slice(194, 258), 16),
+  //               ])
+  //               if (
+  //                 log['topics'][2].slice(26) ==
+  //                 address?.slice(2).toLowerCase()
+  //               ) {
+  //                 tradeHistoryChanged = true;
+  //                 temptradehistory.push([
+  //                   amountIn,
+  //                   amountOut,
+  //                   buy,
+  //                   price,
+  //                   marketKey,
+  //                   log['transactionHash'],
+  //                   _timestamp,
+  //                   1,
+  //                 ])
+  //                 let quoteasset =
+  //                   markets[marketKey].quoteAddress;
+  //                 let baseasset =
+  //                   markets[marketKey].baseAddress;
+  //                 let popupAmountIn = customRound(
+  //                   amountIn /
+  //                   10 **
+  //                   Number(
+  //                     buy
+  //                       ? markets[marketKey]
+  //                         .quoteDecimals
+  //                       : markets[marketKey]
+  //                         .baseDecimals,
+  //                   ),
+  //                   3,
+  //                 );
+  //                 let popupAmountOut = customRound(
+  //                   amountOut /
+  //                   10 **
+  //                   Number(
+  //                     buy
+  //                       ? markets[marketKey]
+  //                         .baseDecimals
+  //                       : markets[marketKey]
+  //                         .quoteDecimals,
+  //                   ),
+  //                   3,
+  //                 );
+  //                 newTxPopup(
+  //                   log['transactionHash'],
+  //                   'swap',
+  //                   buy ? quoteasset : baseasset,
+  //                   buy ? baseasset : quoteasset,
+  //                   popupAmountIn,
+  //                   popupAmountOut,
+  //                   '',
+  //                   '',
+  //                 );
+  //               }
+  //             }
+  //             if (tradesByMarketChanged) {
+  //               setChartData(([existingBars, existingIntervalLabel, existingShowOutliers]) => {
+  //                 const marketKey = existingIntervalLabel?.match(/^\D*/)?.[0];
+  //                 const updatedBars = [...existingBars];
+  //                 let rawVolume;
+  //                 if (marketKey && Array.isArray(temptrades?.[marketKey])) {
+  //                   const barSizeSec =
+  //                     existingIntervalLabel?.match(/\d.*/)?.[0] === '1' ? 60 :
+  //                       existingIntervalLabel?.match(/\d.*/)?.[0] === '5' ? 5 * 60 :
+  //                         existingIntervalLabel?.match(/\d.*/)?.[0] === '15' ? 15 * 60 :
+  //                           existingIntervalLabel?.match(/\d.*/)?.[0] === '30' ? 30 * 60 :
+  //                             existingIntervalLabel?.match(/\d.*/)?.[0] === '60' ? 60 * 60 :
+  //                               existingIntervalLabel?.match(/\d.*/)?.[0] === '240' ? 4 * 60 * 60 :
+  //                                 existingIntervalLabel?.match(/\d.*/)?.[0] === '1D' ? 24 * 60 * 60 :
+  //                                   5 * 60;
+  //                   const priceFactor = Number(markets[marketKey].priceFactor);
+  //                   for (const lastTrade of temptrades[marketKey]) {
+  //                     const lastBarIndex = updatedBars.length - 1;
+  //                     const lastBar = updatedBars[lastBarIndex];
+
+  //                     let openPrice = parseFloat((lastTrade[7] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
+  //                     let closePrice = parseFloat((lastTrade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
+  //                     rawVolume =
+  //                       (lastTrade[2] == 0 ? lastTrade[0] : lastTrade[1]) /
+  //                       10 ** Number(markets[marketKey].baseDecimals);
+
+  //                     const tradeTimeSec = lastTrade[6];
+  //                     const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
+  //                     const lastBarTimeSec = Math.floor(new Date(lastBar?.time).getTime() / 1000);
+  //                     if (flooredTradeTimeSec === lastBarTimeSec) {
+  //                       updatedBars[lastBarIndex] = {
+  //                         ...lastBar,
+  //                         high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
+  //                         low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
+  //                         close: closePrice,
+  //                         volume: lastBar.volume + rawVolume,
+  //                       };
+  //                       if (realtimeCallbackRef.current[existingIntervalLabel]) {
+  //                         realtimeCallbackRef.current[existingIntervalLabel]({
+  //                           ...lastBar,
+  //                           high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
+  //                           low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
+  //                           close: closePrice,
+  //                           volume: lastBar.volume + rawVolume,
+  //                         });
+  //                       }
+  //                     } else {
+  //                       updatedBars.push({
+  //                         time: flooredTradeTimeSec * 1000,
+  //                         open: lastBar?.close ?? openPrice,
+  //                         high: Math.max(lastBar?.close ?? openPrice, closePrice),
+  //                         low: Math.min(lastBar?.close ?? openPrice, closePrice),
+  //                         close: closePrice,
+  //                         volume: rawVolume,
+  //                       });
+  //                       if (realtimeCallbackRef.current[existingIntervalLabel]) {
+  //                         realtimeCallbackRef.current[existingIntervalLabel]({
+  //                           time: flooredTradeTimeSec * 1000,
+  //                           open: lastBar?.close ?? openPrice,
+  //                           high: Math.max(lastBar?.close ?? openPrice, closePrice),
+  //                           low: Math.min(lastBar?.close ?? openPrice, closePrice),
+  //                           close: closePrice,
+  //                           volume: rawVolume,
+  //                         });
+  //                       }
+  //                     }
+  //                   }
+  //                 }
+  //                 setMarketsData((marketsData) =>
+  //                   marketsData.map((market) => {
+  //                     if (!market) return;
+  //                     const marketKey = market?.marketKey.replace(
+  //                       new RegExp(`^${wethticker}|${wethticker}$`, 'g'),
+  //                       ethticker
+  //                     );
+  //                     const newTrades = temptrades?.[marketKey]
+  //                     if (!Array.isArray(newTrades) || newTrades.length < 1) return market;
+  //                     const firstKlineOpen: number =
+  //                       market?.mini && Array.isArray(market?.mini) && market?.mini.length > 0
+  //                         ? Number(market?.mini[0].value * Number(market.priceFactor))
+  //                         : 0;
+  //                     const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
+  //                     const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
+  //                     const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+  //                       / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+  //                     let high = market.high24h ? Number(market.high24h.replace(/,/g, '')) : null;
+  //                     let low = market.low24h ? Number(market.low24h.replace(/,/g, '')) : null;
+  //                     const volume = newTrades.reduce((sum: number, trade: any) => {
+  //                       if (high && trade[3] / Number(market.priceFactor) > high) {
+  //                         high = trade[3] / Number(market.priceFactor)
+  //                       }
+  //                       if (low && trade[3] / Number(market.priceFactor) < low) {
+  //                         low = trade[3] / Number(market.priceFactor)
+  //                       }
+  //                       const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
+  //                       return sum + amount;
+  //                     }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
+
+  //                     return {
+  //                       ...market,
+  //                       volume: formatCommas(
+  //                         (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
+  //                       ),
+  //                       currentPrice: formatSig(
+  //                         (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+  //                       ),
+  //                       priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
+  //                       priceChangeAmount: formatSig(((currentPriceRaw - firstKlineOpen) / Number(market.priceFactor)).toFixed(formatSig(
+  //                         (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+  //                       ).split('.')[1]?.length || 0)),
+  //                       ...(high != null && {
+  //                         high24h: formatSig(
+  //                           high.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+  //                         )
+  //                       }),
+  //                       ...(low != null && {
+  //                         low24h: formatSig(
+  //                           low.toFixed(Math.floor(Math.log10(Number(market.priceFactor)))), market.marketType != 0
+  //                         )
+  //                       })
+  //                     };
+  //                   })
+  //                 );
+  //                 return [updatedBars, existingIntervalLabel, existingShowOutliers];
+  //               });
+  //             }
+  //           }
+  //           else if (log['topics']?.[0] == '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c') {
+  //             const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+  //             const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
+  //             if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
+  //               address?.slice(2).toLowerCase()) {
+  //               if (tempset.size >= 10000) {
+  //                 const first = tempset.values().next().value;
+  //                 if (first !== undefined) {
+  //                   tempset.delete(first);
+  //                 }
+  //               }
+  //               tempset.add(logIdentifier);
+  //               const resolve = txReceiptResolvers.current.get(log['transactionHash']);
+  //               if (resolve) {
+  //                 resolve();
+  //                 txReceiptResolvers.current.delete(log['transactionHash']);
+  //               }
+  //               let _timestamp = Math.floor(Date.now() / 1000);
+  //               let _orderdata = log['data'].slice(130);
+  //               for (let i = 0; i < _orderdata.length; i += 64) {
+  //                 let chunk = _orderdata.slice(i, i + 64);
+  //                 let _isplace = parseInt(chunk.slice(0, 1), 16) >= 2;
+  //                 if (_isplace) {
+  //                   let buy = 3 - parseInt(chunk.slice(0, 1), 16);
+  //                   let price = parseInt(chunk.slice(2, 22), 16);
+  //                   let id = parseInt(chunk.slice(22, 36), 16);
+  //                   let size = parseInt(chunk.slice(36, 64), 16);
+  //                   let alreadyExist = tempcanceledorders.some(
+  //                     (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
+  //                   );
+  //                   buy ? size *= Number(markets[marketKey].scaleFactor) : size *= price
+  //                   if (!alreadyExist) {
+  //                     ordersChanged = true;
+  //                     canceledOrdersChanged = true;
+  //                     let order = [
+  //                       price,
+  //                       id,
+  //                       size /
+  //                       price,
+  //                       buy,
+  //                       marketKey,
+  //                       log['transactionHash'],
+  //                       _timestamp,
+  //                       0,
+  //                       size,
+  //                       2,
+  //                     ];
+  //                     temporders.push(order)
+  //                     tempcanceledorders.push([
+  //                       price,
+  //                       id,
+  //                       size /
+  //                       price,
+  //                       buy,
+  //                       marketKey,
+  //                       log['transactionHash'],
+  //                       _timestamp,
+  //                       0,
+  //                       size,
+  //                       2,
+  //                     ])
+  //                     let quoteasset =
+  //                       markets[marketKey].quoteAddress;
+  //                     let baseasset =
+  //                       markets[marketKey].baseAddress;
+  //                     let amountquote = (
+  //                       size /
+  //                       (Number(
+  //                         markets[marketKey].scaleFactor,
+  //                       ) *
+  //                         10 **
+  //                         Number(
+  //                           markets[marketKey]
+  //                             .quoteDecimals,
+  //                         ))
+  //                     ).toFixed(2);
+  //                     let amountbase = customRound(
+  //                       size /
+  //                       price /
+  //                       10 **
+  //                       Number(
+  //                         markets[marketKey]
+  //                           .baseDecimals,
+  //                       ),
+  //                       3,
+  //                     );
+  //                     newTxPopup(
+  //                       log['transactionHash'],
+  //                       'limit',
+  //                       buy ? quoteasset : baseasset,
+  //                       buy ? baseasset : quoteasset,
+  //                       buy ? amountquote : amountbase,
+  //                       buy ? amountbase : amountquote,
+  //                       `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+  //                       '',
+  //                     );
+  //                   }
+  //                 } else {
+  //                   let buy = parseInt(chunk.slice(0, 1), 16) == 0;
+  //                   let price = parseInt(chunk.slice(2, 22), 16);
+  //                   let id = parseInt(chunk.slice(22, 36), 16);
+  //                   let size = parseInt(chunk.slice(36, 64), 16);
+  //                   let index = temporders.findIndex(
+  //                     (o: any) =>
+  //                       o[0] == price &&
+  //                       o[1] == id &&
+  //                       o[4] == marketKey,
+  //                   );
+  //                   if (index != -1) {
+  //                     ordersChanged = true;
+  //                     canceledOrdersChanged = true;
+  //                     let canceledOrderIndex: number;
+  //                     canceledOrderIndex = tempcanceledorders.findIndex(
+  //                       (canceledOrder: any) =>
+  //                         canceledOrder[0] ==
+  //                         price &&
+  //                         canceledOrder[1] ==
+  //                         id &&
+  //                         canceledOrder[4] ==
+  //                         marketKey,
+  //                     );
+  //                     if (canceledOrderIndex !== -1 && tempcanceledorders[canceledOrderIndex][9] != 0) {
+  //                       tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+  //                       tempcanceledorders[canceledOrderIndex][9] = 0;
+  //                       tempcanceledorders[canceledOrderIndex][8] =
+  //                         tempcanceledorders[canceledOrderIndex][8] -
+  //                         size;
+  //                       tempcanceledorders[canceledOrderIndex][6] =
+  //                         _timestamp;
+  //                     }
+  //                     if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
+  //                       temporders[index] = [...temporders[index]]
+  //                       try {
+  //                         temporders[index][10].remove();
+  //                       }
+  //                       catch { }
+  //                       temporders[index].splice(10, 1)
+  //                     }
+  //                     temporders.splice(index, 1);
+  //                     let quoteasset =
+  //                       markets[marketKey].quoteAddress;
+  //                     let baseasset =
+  //                       markets[marketKey].baseAddress;
+  //                     let amountquote = (
+  //                       (buy ? size : size * price / Number(
+  //                         markets[marketKey].scaleFactor
+  //                       )) /
+  //                       (10 **
+  //                         Number(
+  //                           markets[marketKey]
+  //                             .quoteDecimals,
+  //                         ))
+  //                     ).toFixed(2);
+  //                     let amountbase = customRound(
+  //                       (buy ? size * Number(
+  //                         markets[marketKey].scaleFactor
+  //                       ) / price : size) /
+  //                       10 **
+  //                       Number(
+  //                         markets[marketKey]
+  //                           .baseDecimals,
+  //                       ),
+  //                       3,
+  //                     );
+  //                     newTxPopup(
+  //                       log['transactionHash'],
+  //                       'cancel',
+  //                       buy ? quoteasset : baseasset,
+  //                       buy ? baseasset : quoteasset,
+  //                       buy ? amountquote : amountbase,
+  //                       buy ? amountbase : amountquote,
+  //                       `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+  //                       '',
+  //                     );
+  //                   }
+  //                 }
+  //               }
+  //             }
+  //           }
+  //           else {
+  //             const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+  //             const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
+  //             if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
+  //               address?.slice(2).toLowerCase()) {
+  //               if (tempset.size >= 10000) {
+  //                 const first = tempset.values().next().value;
+  //                 if (first !== undefined) {
+  //                   tempset.delete(first);
+  //                 }
+  //               }
+  //               tempset.add(logIdentifier);
+  //               let _timestamp = Math.floor(Date.now() / 1000);
+  //               let _orderdata = log['data'].slice(2);
+  //               let buy = 1 - parseInt(_orderdata.slice(0, 1), 16);
+  //               let price = parseInt(_orderdata.slice(1, 22), 16);
+  //               let id = parseInt(_orderdata.slice(22, 36), 16);
+  //               let size = parseInt(_orderdata.slice(36, 64), 16);
+  //               buy ? size *= price : size *= Number(markets[marketKey].scaleFactor)
+  //               let orderIndex = temporders.findIndex(
+  //                 (sublist: any) =>
+  //                   sublist[0] ==
+  //                   price &&
+  //                   sublist[1] ==
+  //                   id &&
+  //                   sublist[4] == marketKey,
+  //               );
+  //               let canceledOrderIndex = tempcanceledorders.findIndex(
+  //                 (sublist: any) =>
+  //                   sublist[0] ==
+  //                   price &&
+  //                   sublist[1] ==
+  //                   id &&
+  //                   sublist[4] == marketKey,
+  //               );
+  //               if (orderIndex != -1 && canceledOrderIndex != -1) {
+  //                 ordersChanged = true;
+  //                 temporders[orderIndex] = [...temporders[orderIndex]]
+  //                 let order = [...temporders[orderIndex]];
+  //                 let buy = order[3];
+  //                 let quoteasset =
+  //                   markets[marketKey]
+  //                     .quoteAddress;
+  //                 let baseasset =
+  //                   markets[marketKey]
+  //                     .baseAddress;
+  //                 let amountquote = (
+  //                   ((order[2] - order[7] - size / order[0]) *
+  //                     order[0]) /
+  //                   (Number(
+  //                     markets[marketKey]
+  //                       .scaleFactor,
+  //                   ) *
+  //                     10 **
+  //                     Number(
+  //                       markets[marketKey]
+  //                         .quoteDecimals,
+  //                     ))
+  //                 ).toFixed(2);
+  //                 let amountbase = customRound(
+  //                   (order[2] - order[7] - size / order[0]) /
+  //                   10 **
+  //                   Number(
+  //                     markets[marketKey]
+  //                       .baseDecimals,
+  //                   ),
+  //                   3,
+  //                 );
+  //                 newTxPopup(
+  //                   log['transactionHash'],
+  //                   'fill',
+  //                   buy ? quoteasset : baseasset,
+  //                   buy ? baseasset : quoteasset,
+  //                   buy ? amountquote : amountbase,
+  //                   buy ? amountbase : amountquote,
+  //                   `${order[0] / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+  //                   '',
+  //                 );
+  //                 if (size == 0) {
+  //                   tradeHistoryChanged = true;
+  //                   temptradehistory.push([
+  //                     order[3] == 1
+  //                       ? (order[2] * order[0]) /
+  //                       Number(markets[order[4]].scaleFactor)
+  //                       : order[2],
+  //                     order[3] == 1
+  //                       ? order[2]
+  //                       : (order[2] * order[0]) /
+  //                       Number(markets[order[4]].scaleFactor),
+  //                     order[3],
+  //                     order[0],
+  //                     order[4],
+  //                     order[5],
+  //                     _timestamp,
+  //                     0,
+  //                   ]);
+  //                   if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
+  //                     try {
+  //                       temporders[orderIndex][10].remove();
+  //                     }
+  //                     catch { }
+  //                     temporders[orderIndex].splice(10, 1)
+  //                   }
+  //                   temporders.splice(orderIndex, 1);
+  //                   tempcanceledorders[canceledOrderIndex][9] =
+  //                     1;
+  //                   tempcanceledorders[canceledOrderIndex][7] = order[2]
+  //                   tempcanceledorders[canceledOrderIndex][8] = order[8];
+  //                 } else {
+  //                   if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
+  //                     try {
+  //                       temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+  //                     }
+  //                     catch { }
+  //                   }
+  //                   temporders[orderIndex][7] =
+  //                     order[2] - size / order[0];
+  //                 }
+  //                 if (canceledOrderIndex != -1) {
+  //                   canceledOrdersChanged = true;
+  //                   tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+  //                   if (size == 0) {
+  //                     tempcanceledorders[canceledOrderIndex][9] =
+  //                       1;
+  //                     tempcanceledorders[canceledOrderIndex][7] = order[2]
+  //                     tempcanceledorders[canceledOrderIndex][8] = order[8];
+  //                   }
+  //                   else {
+  //                     tempcanceledorders[canceledOrderIndex][7] =
+  //                       order[2] - size / order[0];
+  //                   }
+  //                 }
+  //               }
+  //             }
+  //           }
+  //           if (tradeHistoryChanged) {
+  //             settradehistory(temptradehistory)
+  //           }
+  //           if (tradesByMarketChanged) {
+  //             settradesByMarket(temptradesByMarket)
+  //           }
+  //           if (canceledOrdersChanged) {
+  //             setcanceledorders(tempcanceledorders)
+  //           }
+  //           if (ordersChanged) {
+  //             setorders(temporders)
+  //           }
+  //           return tempset;
+  //         })
+  //       }
+  //     }
+
+  //     wsRef.current.onclose = () => {
+  //       if (pingIntervalRef.current) {
+  //         clearInterval(pingIntervalRef.current);
+  //         pingIntervalRef.current = null;
+  //       }
+  //       reconnectIntervalRef.current = setTimeout(() => {
+  //         connectWebSocket();
+  //       }, 500);
+  //     };
+
+  //     wsRef.current.onerror = (error) => {
+  //       console.error(error);
+  //     };
+  //   };
+
+  //   connectWebSocket();
+
+  //   return () => {
+  //     liveStreamCancelled = true;
+  //     isAddressInfoFetching = false;
+  //     if (pingIntervalRef.current) {
+  //       clearInterval(pingIntervalRef.current);
+  //       pingIntervalRef.current = null;
+  //     }
+  //     if (reconnectIntervalRef.current) {
+  //       clearTimeout(reconnectIntervalRef.current);
+  //       reconnectIntervalRef.current = null;
+  //     }
+  //     if (wsRef.current) {
+  //       wsRef.current.close();
+  //       wsRef.current = null;
+  //     }
+  //   };
+  // }, [activechain, address]);
+
+  // // klines + trades
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       settradesloading(true);
+
+  //       const query = `
+  //         query {
+  //           markets(first: 100, orderBy: volume, orderDirection: desc, where: {isCanonical:true}) {
+  //             id
+  //             baseAsset
+  //             quoteAsset
+  //             baseDecimals
+  //             quoteDecimals
+  //             baseTicker
+  //             quoteTicker
+  //             baseName
+  //             quoteName
+  //             marketType
+  //             scaleFactor
+  //             tickSize
+  //             minSize
+  //             maxPrice
+  //             takerFee
+  //             makerRebate
+  //             volume
+  //             latestPrice
+  //             series(where:{intervalSeconds:3600}) {
+  //               intervalSeconds
+  //               klines(first: 24, orderBy:time, orderDirection: desc) {
+  //                 time
+  //                 open
+  //                 high
+  //                 low
+  //                 close
+  //                 usdVolume
+  //               }
+  //             }
+  //             trades(first: 50, orderBy: id, orderDirection: desc) {
+  //               trade {
+  //                 id
+  //                 amountIn
+  //                 amountOut
+  //                 isBuy
+  //                 timestamp
+  //                 tx
+  //                 endPrice
+  //               }
+  //             }
+  //           }
+  //         }
+  //       `;
+  //       const res = await fetch(SUBGRAPH_URL, {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ query }),
+  //       });
+  //       const json = await res.json();
+  //       const list = Array.isArray(json?.data?.markets) ? [...json.data.markets].reverse() : []
+
+  //       const ETH_ADDR = settings.chainConfig[activechain].eth;
+  //       const WETH_ADDR = settings.chainConfig[activechain].weth;
+  //       const ETH_TICKER = settings.chainConfig[activechain].ethticker;
+  //       const WETH_TICKER = settings.chainConfig[activechain].wethticker;
+  //       const newMarkets: Record<string, any> = settings.chainConfig[activechain].markets;
+  //       for (const m of list) {
+  //         const baseAddr0 = getAddress(String(m.baseAsset || ''));
+  //         const quoteAddr0 = getAddress(String(m.quoteAsset || ''));
+  //         if (!tokendict[baseAddr0]) {
+  //           tokendict[baseAddr0] = {
+  //             address: baseAddr0,
+  //             decimals: BigInt(Number(m.baseDecimals ?? 18)),
+  //             image: '',
+  //             name: m.baseName,
+  //             ticker: m.baseTicker,
+  //             website: '',
+  //             autofetched: true,
+  //           }
+  //         }
+  //         if (!tokendict[quoteAddr0]) {
+  //           tokendict[quoteAddr0] = {
+  //             address: quoteAddr0,
+  //             decimals: BigInt(Number(m.quoteDecimals ?? 18)),
+  //             image: '',
+  //             name: m.quoteName,
+  //             ticker: m.quoteTicker,
+  //             website: '',
+  //             autofetched: true,
+  //           }
+  //         }
+  //         const scaleExp = Number(m.scaleFactor ?? 0);
+  //         const scaleFactor = (BigInt(10) ** BigInt(scaleExp));
+  //         const baseDec = Number(m.baseDecimals ?? 18);
+  //         const quoteDec = Number(m.quoteDecimals ?? 18);
+  //         const pfExp = Math.max(0, quoteDec + scaleExp - baseDec);
+  //         const priceFactor = (BigInt(10) ** BigInt(pfExp));
+
+  //         const common = {
+  //           address: String(m.id ?? '').toLowerCase(),
+  //           marketType: Number(m.marketType ?? 0),
+  //           precision: 5,
+  //           scaleFactor,
+  //           priceFactor,
+  //           tickSize: BigInt(m.tickSize ?? 1),
+  //           minSize: BigInt(m.minSize ?? 0),
+  //           maxPrice: BigInt(m.maxPrice ?? 0),
+  //           fee: BigInt(m.takerFee ?? 100000),
+  //           makerRebate: BigInt(m.makerRebate ?? 100000),
+  //           baseDecimals: BigInt(baseDec),
+  //           quoteDecimals: BigInt(quoteDec),
+  //         };
+
+  //         const baseIsEthish = baseAddr0 === ETH_ADDR || baseAddr0 === WETH_ADDR;
+  //         const quoteIsEthish = quoteAddr0 === ETH_ADDR || quoteAddr0 === WETH_ADDR;
+
+  //         const variants: Array<{ baseAddr: string; quoteAddr: string, baseAsset: string, quoteAsset: string }> = [];
+  //         if (baseIsEthish) {
+  //           variants.push({ baseAddr: ETH_ADDR, quoteAddr: quoteAddr0, baseAsset: ETH_TICKER, quoteAsset: m.quoteTicker });
+  //           variants.push({ baseAddr: WETH_ADDR, quoteAddr: quoteAddr0, baseAsset: WETH_TICKER, quoteAsset: m.quoteTicker });
+  //         } else if (quoteIsEthish) {
+  //           variants.push({ baseAddr: baseAddr0, quoteAddr: ETH_ADDR, baseAsset: m.baseTicker, quoteAsset: ETH_TICKER });
+  //           variants.push({ baseAddr: baseAddr0, quoteAddr: WETH_ADDR, baseAsset: m.baseTicker, quoteAsset: WETH_TICKER });
+  //         } else {
+  //           variants.push({ baseAddr: baseAddr0, quoteAddr: quoteAddr0, baseAsset: m.baseTicker, quoteAsset: m.quoteTicker });
+  //         }
+
+  //         for (const v of variants) {
+  //           const bTok = tokendict[v.baseAddr];
+
+  //           const marketKey = `${v.baseAsset}${v.quoteAsset}`;
+  //           const image = (bTok?.image ?? settings.chainConfig[activechain].image ?? null);
+  //           const website = (bTok?.website ?? '');
+  //           newMarkets[marketKey] = {
+  //             baseAsset: v.baseAsset,
+  //             quoteAsset: v.quoteAsset,
+  //             baseAddress: v.baseAddr,
+  //             quoteAddress: v.quoteAddr,
+  //             path: [v.quoteAddr, v.baseAddr],
+  //             image,
+  //             website,
+  //             marketKey,
+  //             ...common,
+  //           };
+  //         }
+  //       }
+  //       settings.chainConfig[activechain].markets = newMarkets;
+  //       const newAddrToMarket: Record<string, string> = {};
+  //       Object.values(newMarkets).reverse().forEach((m: any) => {
+  //         if (m?.address) newAddrToMarket[String(m.address).toLowerCase()] = m.marketKey;
+  //       });
+  //       settings.chainConfig[activechain].addresstomarket = newAddrToMarket;
+
+  //       const temptradesByMarket: Record<string, any[]> = {};
+  //       Object.keys(newMarkets).forEach((k) => { temptradesByMarket[k] = []; });
+
+  //       const addrToKey: Record<string, string> = {};
+  //       Object.values(newMarkets).forEach((m: any) => {
+  //         if (m?.address) addrToKey[String(m.address).toLowerCase()] = m.marketKey;
+  //       });
+
+  //       const rows: any[] = [];
+  //       const buildMiniPointsDesc = (mkt: any): Array<any> => {
+  //         const oneHourSeries = Array.isArray(mkt.series)
+  //           ? mkt.series.find((s: any) => Number(s?.intervalSeconds) === 3600)
+  //           : null;
+
+  //         const klinesDesc = Array.isArray(oneHourSeries?.klines) ? oneHourSeries.klines : [];
+
+  //         const nowSec = Math.floor(Date.now() / 1000);
+  //         const endBucket = Math.floor(nowSec / 3600) * 3600;
+  //         const startCutoff = endBucket - 24 * 3600;
+
+  //         return klinesDesc
+  //           .filter((k: any) => {
+  //             const t = Number(k.time ?? 0);
+  //             return t >= startCutoff && t <= endBucket;
+  //           })
+  //           .map((k: any) => ({
+  //             time: Number(k.time ?? 0),
+  //             open: Number(k.open ?? 0),
+  //             close: Number(k.close ?? 0),
+  //             high: Number(k.high ?? 0),
+  //             low: Number(k.low ?? 0),
+  //             usdVolume: String(k.usdVolume ?? "0"),
+  //           }));
+  //       };
+  //       for (const m of list) {
+  //         const mk = addrToKey[String(m.id ?? '').toLowerCase()];
+  //         if (!mk) continue;
+
+  //         const cfg = newMarkets[mk];
+  //         if (!cfg) continue;
+  //         const isWMON = cfg.baseAsset === WETH_TICKER || cfg.quoteAsset === WETH_TICKER;
+
+  //         const pf = Number(cfg.priceFactor);
+  //         const decs = Math.max(0, Math.floor(Math.log10(pf)));
+  //         const lastRaw = Number(m.latestPrice ?? 0);
+  //         const last = pf ? lastRaw / pf : 0;
+
+  //         const miniDesc = buildMiniPointsDesc(m);
+  //         const r = [...miniDesc].reverse()
+  //         const miniAsc = r[0]
+  //           ? [{ time: Number(r[0].time) * 1000, value: Number(r[0].open) / pf, high: Number(r[0].high) / pf, low: Number(r[0].low) / pf },
+  //           ...r.map((p: any) => ({
+  //             time: Number(p.time) * 1000,
+  //             value: Number(p.close) / pf,
+  //             high: Number(p.high) / pf,
+  //             low: Number(p.low) / pf,
+  //             open: Number(p.open) / pf
+  //           }))]
+  //           : []
+  //         const open24 = miniAsc.length ? miniAsc[0].value : last;
+  //         const highs = miniAsc.length ? miniAsc.map((p) => p.high) : [last];
+  //         const lows = miniAsc.length ? miniAsc.map((p) => p.low) : [last];
+  //         const high24 = Math.max(...highs);
+  //         const low24 = Math.min(...lows);
+  //         const pct = open24 === 0 ? 0 : ((last - open24) / open24) * 100;
+  //         const deltaRaw = last - open24;
+
+  //         const volQ = miniAsc.length == 0 ? 0 : Number((m.volume ?? 0) / 10 ** Number(6));
+  //         const volumeDisplay = formatCommas(volQ.toFixed(2));
+
+  //         const trades = Array.isArray(m.trades) ? m.trades : [];
+  //         if (trades.length) {
+  //           for (const t of trades) {
+  //             if (temptradesByMarket[mk]) {
+  //               temptradesByMarket[mk].push([
+  //                 Number(t.trade.amountIn ?? 0),
+  //                 Number(t.trade.amountOut ?? 0),
+  //                 t.trade.isBuy ? 1 : 0,
+  //                 t.trade.endPrice,
+  //                 mk,
+  //                 t.trade.tx,
+  //                 Number(t.trade.timestamp ?? 0),
+  //               ]);
+  //             }
+  //           }
+  //         }
+
+  //         if (!isWMON) {
+  //           rows.push({
+  //             ...cfg,
+  //             pair: `${cfg.baseAsset}/${cfg.quoteAsset}`,
+  //             mini: miniAsc,
+  //             currentPrice: formatSig(last.toFixed(decs), m.marketType != 0),
+  //             high24h: formatSig(high24.toFixed(decs), m.marketType != 0),
+  //             low24h: formatSig(low24.toFixed(decs), m.marketType != 0),
+  //             volume: volumeDisplay,
+  //             priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
+  //             priceChangeAmount: formatSig(deltaRaw.toFixed(formatSig(last.toFixed(decs), m.marketType != 0).split('.')[1]?.length || 0)),
+  //           });
+  //         }
+
+
+  //         const bIsEthish = cfg.baseAddress === ETH_ADDR || cfg.baseAddress === WETH_ADDR;
+  //         const qIsEthish = cfg.quoteAddress === ETH_ADDR || cfg.quoteAddress === WETH_ADDR;
+
+  //         if (bIsEthish || qIsEthish) {
+  //           const sibBaseTicker = bIsEthish
+  //             ? (cfg.baseAsset === ETH_TICKER ? WETH_TICKER : ETH_TICKER)
+  //             : cfg.baseAsset;
+  //           const sibQuoteTicker = qIsEthish
+  //             ? (cfg.quoteAsset === ETH_TICKER ? WETH_TICKER : ETH_TICKER)
+  //             : cfg.quoteAsset;
+  //           const siblingKey = `${sibBaseTicker}${sibQuoteTicker}`;
+  //           const siblingCfg = newMarkets[siblingKey];
+
+  //           if (siblingCfg) {
+  //             const isSiblingWMON =
+  //               siblingCfg.baseAsset === wethticker || siblingCfg.quoteAsset === wethticker;
+
+  //             if (!isSiblingWMON) {
+  //               if (trades.length && temptradesByMarket[siblingKey]) {
+  //                 for (const t of trades) {
+  //                   temptradesByMarket[siblingKey].push([
+  //                     Number(t.trade.amountIn ?? 0),
+  //                     Number(t.trade.amountOut ?? 0),
+  //                     t.trade.isBuy ? 1 : 0,
+  //                     t.trade.endPrice,
+  //                     siblingKey,
+  //                     t.trade.tx,
+  //                     Number(t.trade.timestamp ?? 0),
+  //                   ]);
+  //                 }
+  //               }
+
+  //               rows.push({
+  //                 ...siblingCfg,
+  //                 pair: `${siblingCfg.baseAsset}/${siblingCfg.quoteAsset}`,
+  //                 mini: miniAsc,
+  //                 currentPrice: formatSig(last.toFixed(decs), m.marketType != 0),
+  //                 high24h: formatSig(high24.toFixed(decs), m.marketType != 0),
+  //                 low24h: formatSig(low24.toFixed(decs), m.marketType != 0),
+  //                 volume: volumeDisplay,
+  //                 priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
+  //                 priceChangeAmount: formatSig(deltaRaw.toFixed(formatSig(last.toFixed(decs), m.marketType != 0).split('.')[1]?.length || 0)),
+  //               });
+  //             }
+  //           }
+  //         }
+  //       }
+
+  //       settradesByMarket(temptradesByMarket);
+  //       setMarketsData(rows);
+  //       settradesloading(false);
+
+  //       if (
+  //         sendInputString === '' &&
+  //         location.pathname.slice(1) === 'send' &&
+  //         amountIn &&
+  //         BigInt(amountIn) !== BigInt(0)
+  //       ) {
+  //         const mkObj = getMarket(activeMarket.path.at(0), activeMarket.path.at(1));
+  //         const wethticker = settings.chainConfig[activechain].wethticker;
+  //         const ethticker = settings.chainConfig[activechain].ethticker;
+  //         const mkKey = (({ baseAsset, quoteAsset }: any) =>
+  //           (baseAsset === wethticker ? ethticker : baseAsset) +
+  //           (quoteAsset === wethticker ? ethticker : quoteAsset)
+  //         )(mkObj);
+
+  //         setsendInputString(
+  //           `$${calculateUSDValue(
+  //             BigInt(amountIn),
+  //             temptradesByMarket[mkKey],
+  //             tokenIn,
+  //             mkObj
+  //           ).toFixed(2)}`
+  //         );
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching data:", error);
+  //       settradesloading(false);
+  //     }
+  //   })();
+  // }, [activechain]);
+
+  // // mobile trade
+  // useEffect(() => {
+  //   const handleEscapeKey = (event: KeyboardEvent) => {
+  //     if (event.key === 'Escape' && popup != 11) {
+  //       setpopup(0);
+  //       setSendUsdValue('');
+  //       setSendInputAmount('');
+  //       setSendAmountIn(BigInt(0));
+  //       settokenString('');
+  //       window.dispatchEvent(new Event('high-impact-cancel'));
+  //       setSelectedConnector(null);
+
+  //       if (showTrade && !simpleView) {
+  //         document.body.style.overflow = 'auto'
+  //         document.querySelector('.right-column')?.classList.add('hide');
+  //         document.querySelector('.right-column')?.classList.remove('show');
+  //         document.querySelector('.trade-mobile-switch')?.classList.remove('open');
+  //         setShowTrade(false);
+  //       }
+  //     }
+  //   };
+  //   const handleMouseDown = (e: MouseEvent) => {
+  //     setpopup((popup) => {
+  //       if (showTrade && popup == 0 && !simpleView) {
+  //         const rectangleElement = document.querySelector('.rectangle');
+  //         if (
+  //           rectangleElement &&
+  //           !rectangleElement.contains(e.target as Node)
+  //         ) {
+  //           document.body.style.overflow = 'auto'
+  //           document.querySelector('.right-column')?.classList.add('hide');
+  //           document.querySelector('.right-column')?.classList.remove('show');
+  //           document.querySelector('.trade-mobile-switch')?.classList.remove('open');
+  //           setShowTrade(false);
+  //         }
+  //       }
+
+  //       if (!popupref.current?.contains(e.target as Node) && popup != 11) {
+  //         setSendUsdValue('');
+  //         setSendInputAmount('');
+  //         setSendAmountIn(BigInt(0));
+  //         settokenString('');
+  //         window.dispatchEvent(new Event('high-impact-cancel'));
+  //         return 0;
+  //       }
+  //       return popup;
+  //     });
+  //   };
+  //   const handleResize = () => setWindowWidth(window.innerWidth);
+  //   document.addEventListener('keydown', handleEscapeKey);
+  //   document.addEventListener('mousedown', handleMouseDown);
+  //   window.addEventListener('resize', handleResize);
+  //   return () => {
+  //     document.removeEventListener('keydown', handleEscapeKey);
+  //     document.removeEventListener('mousedown', handleMouseDown);
+  //     window.removeEventListener('resize', handleResize);
+  //   };
+  // }, [showTrade]);
 
   // url
   useEffect(() => {
@@ -10294,7 +10302,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [location.pathname.slice(1)]);
 
   // limit chase
-  useEffect(() => {
+  /* useEffect(() => {
     if (limitChase && !isLimitEditing) {
       let price = mids?.[activeMarketKey]?.[0] ? (tokenIn === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]) : 0n
       setlimitPrice(price);
@@ -10404,7 +10412,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         );
       }
     }
-  }, [limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey, tokenIn, location.pathname.slice(1), isLimitEditing]);
+  }, [limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey, tokenIn, location.pathname.slice(1), isLimitEditing]); */
 
   // tx popup time
   useEffect(() => {
@@ -12462,6 +12470,1338 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     </div>
   );
 
+  // input tokenlist
+  const tempTokenList1 = (
+    <div className="tokenlistcontainer">
+      <ul className="tokenlist">
+        {Object.values(tokendict).filter(
+          (token) =>
+            token.ticker.toLowerCase().includes(tokenString.toLowerCase()) ||
+            token.name.toLowerCase().includes(tokenString.toLowerCase()) ||
+            token.address.toLowerCase().includes(tokenString.toLowerCase()),
+        ).length === 0 ? (
+          <div className="empty-token-list">
+            <div className="empty-token-list-content">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="empty-token-list-icon"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+              <div className="empty-token-list-text">{t('noTokens')}</div>
+            </div>
+          </div>
+        ) : (
+          Object.values(tokendict)
+            .filter(
+              (token) =>
+                token.ticker.toLowerCase().includes(tokenString.toLowerCase()) ||
+                token.name.toLowerCase().includes(tokenString.toLowerCase()) ||
+                token.address.toLowerCase().includes(tokenString.toLowerCase()),
+            )
+            .sort((a, b) => {
+              return (Number(walletTokenBalances[address]?.[b.address] ?? 0) == 0) !== (Number(walletTokenBalances[address]?.[a.address] ?? 0) == 0)
+                ? (Number(walletTokenBalances[address]?.[a.address] ?? 0) == 0 ? 1 : -1)
+                : a?.autofetched && !b?.autofetched ? 1 : !a?.autofetched && b?.autofetched ? -1 : (Number(walletTokenBalances[address]?.[b.address] ?? 0) / 10 ** Number(b.decimals)) - (Number(walletTokenBalances[address]?.[a.address] ?? 0) / 10 ** Number(a.decimals));
+            })
+            .map((token, index) => (
+              <button
+                className={`tokenbutton ${index === selectedTokenIndex ? 'selected' : ''}`}
+                key={token.address}
+                onMouseEnter={() => setSelectedTokenIndex(index)}
+                onClick={() => {
+                  if ((location.pathname.slice(1) == 'lending' || location.pathname.slice(1) == 'earn/liquidity') && onSelectTokenCallback) {
+                    onSelectTokenCallback({
+                      icon: token.image,
+                      symbol: token.ticker
+                    });
+                    setpopup(0);
+                    settokenString('');
+                    return;
+                  }
+                  let pricefetchmarket;
+                  let newTokenOut;
+                  setpopup(0);
+                  settokenString('');
+                  setTokenIn(token.address);
+                  setStateIsLoading(true);
+                  if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
+                    if (token.address !== tokenOut) {
+                      if (
+                        markets[
+                        `${tokendict[token.address].ticker}${tokendict[tokenOut].ticker}`
+                        ] ||
+                        markets[
+                        `${tokendict[tokenOut].ticker}${tokendict[token.address].ticker}`
+                        ]
+                      ) {
+                        newTokenOut = tokenOut;
+                      } else {
+                        const path = findShortestPath(token.address, tokenOut);
+                        if (path && path.length > 1 && (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market')) {
+                          newTokenOut = tokenOut;
+                        } else {
+                          let found = false;
+                          for (const market in markets) {
+                            if (
+                              markets[market].baseAddress === token.address
+                            ) {
+                              setTokenOut(markets[market].quoteAddress);
+                              newTokenOut = markets[market].quoteAddress;
+                              found = true;
+                              break;
+                            }
+                          }
+                          if (!found) {
+                            for (const market in markets) {
+                              if (
+                                markets[market].quoteAddress === token.address
+                              ) {
+                                setTokenOut(markets[market].baseAddress);
+                                newTokenOut = markets[market].baseAddress;
+                                break;
+                              }
+                            }
+                          }
+                        }
+                      }
+                      if (
+                        (tokenOut == eth && token.address == weth) ||
+                        (tokenOut == weth && token.address == eth)
+                      ) {
+                        if (switched == false) {
+                          setamountIn((amountIn * BigInt(10) ** token.decimals) / BigInt(10) ** tokendict[tokenIn].decimals)
+                          setamountOutSwap((amountIn * BigInt(10) ** token.decimals) / BigInt(10) ** tokendict[tokenIn].decimals);
+                          setoutputString(inputString);
+                          const percentage = !walletTokenBalances[address]?.[token.address]
+                            ? 0
+                            : Math.min(
+                              100,
+                              Math.floor(
+                                Number(
+                                  ((amountIn * BigInt(10) ** token.decimals) /
+                                    BigInt(10) ** tokendict[tokenIn].decimals * BigInt(100)) /
+                                  walletTokenBalances[address]?.[token.address],
+                                ),
+                              ),
+                            );
+                          setSliderPercent(percentage);
+                          const slider = document.querySelector(
+                            '.balance-amount-slider',
+                          );
+                          const popup = document.querySelector(
+                            '.slider-percentage-popup',
+                          );
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            (popup as HTMLElement).style.left =
+                              `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                          }
+                        }
+                        else {
+                          setamountIn(amountOutSwap);
+                          setInputString(outputString);
+                          const percentage = !walletTokenBalances[address]?.[token.address]
+                            ? 0
+                            : Math.min(
+                              100,
+                              Math.floor(
+                                Number(
+                                  (amountOutSwap * BigInt(100)) /
+                                  walletTokenBalances[address]?.[token.address],
+                                ),
+                              ),
+                            );
+                          setSliderPercent(percentage);
+                          const slider = document.querySelector(
+                            '.balance-amount-slider',
+                          );
+                          const popup = document.querySelector(
+                            '.slider-percentage-popup',
+                          );
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            (popup as HTMLElement).style.left =
+                              `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                          }
+                        }
+                      } else {
+                        if (switched === false && token.address != tokenIn) {
+                          setamountIn(
+                            (amountIn * BigInt(10) ** token.decimals) /
+                            BigInt(10) ** tokendict[tokenIn].decimals
+                          );
+                          setamountOutSwap(BigInt(0));
+                          setoutputString('');
+                          const percentage = !walletTokenBalances[address]?.[token.address]
+                            ? 0
+                            : Math.min(
+                              100,
+                              Math.floor(
+                                Number(
+                                  ((amountIn * BigInt(10) ** token.decimals) /
+                                    BigInt(10) ** tokendict[tokenIn].decimals * BigInt(100)) /
+                                  walletTokenBalances[address]?.[token.address],
+                                ),
+                              ),
+                            );
+                          setSliderPercent(percentage);
+                          const slider = document.querySelector(
+                            '.balance-amount-slider',
+                          );
+                          const popup = document.querySelector(
+                            '.slider-percentage-popup',
+                          );
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            (popup as HTMLElement).style.left =
+                              `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                          }
+                        } else if (newTokenOut != tokenOut) {
+                          setamountOutSwap(
+                            (amountOutSwap *
+                              BigInt(10) ** tokendict[newTokenOut].decimals) /
+                            BigInt(10) ** tokendict[tokenOut].decimals,
+                          );
+                          setamountIn(BigInt(0));
+                          setInputString('');
+                        }
+                      }
+                      setlimitChase(true);
+                      setScaleStart(BigInt(0))
+                      setScaleEnd(BigInt(0))
+                      setScaleStartString('')
+                      setScaleEndString('')
+                    } else {
+                      setTokenOut(tokenIn);
+                      if (
+                        (amountIn != BigInt(0) || amountOutSwap != BigInt(0)) &&
+                        !isWrap
+                      ) {
+                        if (switched == false) {
+                          setswitched(true);
+                          setStateIsLoading(true);
+                          setInputString('');
+                          setamountIn(BigInt(0));
+                          setamountOutSwap(amountIn);
+                          setoutputString(
+                            amountIn === BigInt(0)
+                              ? ''
+                              : String(
+                                customRound(
+                                  Number(amountIn) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                ),
+                              ),
+                          );
+                        } else {
+                          setswitched(false);
+                          setStateIsLoading(true);
+                          setoutputString('');
+                          setamountOutSwap(BigInt(0));
+                          setamountIn(amountOutSwap);
+                          setInputString(
+                            amountOutSwap === BigInt(0)
+                              ? ''
+                              : String(
+                                customRound(
+                                  Number(amountOutSwap) /
+                                  10 **
+                                  Number(tokendict[tokenOut].decimals),
+                                  3,
+                                ),
+                              ),
+                          );
+                          const percentage = !walletTokenBalances[address]?.[tokenOut]
+                            ? 0
+                            : Math.min(
+                              100,
+                              Math.floor(
+                                Number(
+                                  (amountOutSwap * BigInt(100)) /
+                                  walletTokenBalances[address]?.[tokenOut],
+                                ),
+                              ),
+                            );
+                          setSliderPercent(percentage);
+                          const slider = document.querySelector(
+                            '.balance-amount-slider',
+                          );
+                          const popup = document.querySelector(
+                            '.slider-percentage-popup',
+                          );
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            (popup as HTMLElement).style.left =
+                              `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                          }
+                        }
+                      }
+                    }
+                  } else if (location.pathname.slice(1) == 'limit') {
+                    if ((token.address == weth ? eth : token.address) != (tokenOut == weth ? eth : tokenOut)) {
+                      if (
+                        markets[
+                        `${tokendict[token.address].ticker}${tokendict[tokenOut].ticker}`
+                        ] ||
+                        markets[
+                        `${tokendict[tokenOut].ticker}${tokendict[token.address].ticker}`
+                        ]
+                      ) {
+                        newTokenOut = tokenOut;
+                      } else {
+                        let found = false;
+                        for (const market in markets) {
+                          if (
+                            markets[market].baseAddress === token.address
+                          ) {
+                            newTokenOut = markets[market].quoteAddress;
+                            setTokenOut(markets[market].quoteAddress);
+                            found = true;
+                            break;
+                          }
+                        }
+                        if (!found) {
+                          for (const market in markets) {
+                            if (markets[market].quoteAddress === token.address) {
+                              newTokenOut = markets[market].baseAddress;
+                              setTokenOut(markets[market].baseAddress);
+                              break;
+                            }
+                          }
+                        }
+                      }
+                      if (switched) {
+                        setamountOutSwap(
+                          (amountOutSwap * BigInt(10) ** tokendict[newTokenOut].decimals) /
+                          BigInt(10) ** tokendict[tokenOut].decimals
+                        )
+                      }
+                      else {
+                        setamountIn(
+                          (amountIn * BigInt(10) ** token.decimals) /
+                          BigInt(10) ** tokendict[tokenIn].decimals
+                        );
+                        const percentage = !walletTokenBalances[address]?.[token.address]
+                          ? 0
+                          : Math.min(
+                            100,
+                            Math.floor(
+                              Number(
+                                ((amountIn * BigInt(10) ** token.decimals) /
+                                  BigInt(10) ** tokendict[tokenIn].decimals * BigInt(100)) /
+                                walletTokenBalances[address]?.[token.address],
+                              ),
+                            ),
+                          );
+                        setSliderPercent(percentage);
+                        const slider = document.querySelector(
+                          '.balance-amount-slider',
+                        );
+                        const popup = document.querySelector(
+                          '.slider-percentage-popup',
+                        );
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          (popup as HTMLElement).style.left =
+                            `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                        }
+                      }
+                      setlimitChase(true);
+                      setScaleStart(BigInt(0))
+                      setScaleEnd(BigInt(0))
+                      setScaleStartString('')
+                      setScaleEndString('')
+                    } else {
+                      setTokenOut(tokenIn);
+                      setswitched((switched) => { return !switched });
+                      if (amountIn != BigInt(0)) {
+                        if (limitChase && mids?.[activeMarketKey]?.[0]) {
+                          const price = tokenOut === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
+                          setlimitPrice(price);
+                          setlimitPriceString(
+                            (
+                              Number(price) / Number(activeMarket.priceFactor)
+                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? Math.min(10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1), Number(activeMarket.priceFactor)) : Number(activeMarket.priceFactor)))),
+                          );
+                          setamountOutSwap(
+                            price != BigInt(0) && amountIn != BigInt(0)
+                              ? tokenOut === activeMarket?.baseAddress
+                                ? (amountIn * price) /
+                                (activeMarket.scaleFactor || BigInt(1))
+                                : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                                price
+                              : BigInt(0),
+                          );
+                          setoutputString(
+                            (price != BigInt(0) && amountIn != BigInt(0)
+                              ? tokenOut === activeMarket?.baseAddress
+                                ? customRound(
+                                  Number(
+                                    (amountIn * price) /
+                                    (activeMarket.scaleFactor || BigInt(1)),
+                                  ) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                )
+                                : customRound(
+                                  Number(
+                                    (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                                    price,
+                                  ) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                )
+                              : ''
+                            ).toString(),
+                          );
+                        }
+                        setInputString(outputString);
+                        setoutputString(inputString);
+                        setamountIn(amountOutSwap);
+                        setamountOutSwap(amountIn);
+                        const percentage = !walletTokenBalances[address]?.[tokenOut]
+                          ? 0
+                          : Math.min(
+                            100,
+                            Math.floor(
+                              Number(
+                                (amountOutSwap * BigInt(100)) /
+                                walletTokenBalances[address]?.[tokenOut],
+                              ),
+                            ),
+                          );
+                        setSliderPercent(percentage);
+                        const slider = document.querySelector(
+                          '.balance-amount-slider',
+                        );
+                        const popup = document.querySelector(
+                          '.slider-percentage-popup',
+                        );
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          (popup as HTMLElement).style.left =
+                            `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                        }
+                      }
+                    }
+                  } else if (location.pathname.slice(1) == 'send') {
+                    if (token.address == tokenIn) return;
+                    setlimitChase(true);
+                    setScaleStart(BigInt(0))
+                    setScaleEnd(BigInt(0))
+                    setScaleStartString('')
+                    setScaleEndString('')
+                    if (((token.address == weth ? eth : token.address) != (tokenOut == weth ? eth : tokenOut)) && multihop == false) {
+                      setTokenOut(tokenIn);
+                      pricefetchmarket = getMarket(token.address, tokenIn);
+                    } else if (
+                      markets[
+                      `${tokendict[token.address].ticker}${tokendict[tokenOut].ticker}`
+                      ] ||
+                      markets[
+                      `${tokendict[tokenOut].ticker}${tokendict[token.address].ticker}`
+                      ]
+                    ) {
+                      pricefetchmarket = getMarket(token.address, tokenOut);
+                    } else {
+                      let found = false;
+                      for (const market in markets) {
+                        if (
+                          markets[market].baseAddress === token.address
+                        ) {
+                          setTokenOut(markets[market].quoteAddress);
+                          pricefetchmarket = getMarket(
+                            token.address,
+                            markets[market].quoteAddress,
+                          );
+                          found = true;
+                          break;
+                        }
+                      }
+                      if (!found) {
+                        for (const market in markets) {
+                          if (markets[market].quoteAddress === token.address) {
+                            setTokenOut(markets[market].baseAddress);
+                            pricefetchmarket = getMarket(
+                              token.address,
+                              markets[market].baseAddress,
+                            );
+                            break;
+                          }
+                        }
+                      }
+                    }
+                    if (displayMode == 'usd') {
+                      setInputString(
+                        customRound(
+                          Number(
+                            calculateTokenAmount(
+                              sendInputString.replace(/^\$|,/g, ''),
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(pricefetchmarket)
+                              ],
+                              token.address,
+                              pricefetchmarket,
+                            ),
+                          ) /
+                          10 ** Number(token.decimals),
+                          3,
+                        ).toString(),
+                      );
+                      setamountIn(
+                        calculateTokenAmount(
+                          sendInputString.replace(/^\$|,/g, ''),
+                          tradesByMarket[
+                          (({ baseAsset, quoteAsset }) =>
+                            (baseAsset === wethticker ? ethticker : baseAsset) +
+                            (quoteAsset === wethticker ? ethticker : quoteAsset)
+                          )(pricefetchmarket)
+                          ],
+                          token.address,
+                          pricefetchmarket,
+                        ),
+                      );
+                      const percentage = !walletTokenBalances[address]?.[token.address]
+                        ? 0
+                        : Math.min(
+                          100,
+                          Math.floor(
+                            Number(
+                              (calculateTokenAmount(
+                                sendInputString.replace(/^\$|,/g, ''),
+                                tradesByMarket[
+                                (({ baseAsset, quoteAsset }) =>
+                                  (baseAsset === wethticker ? ethticker : baseAsset) +
+                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
+                                )(pricefetchmarket)
+                                ],
+                                token.address,
+                                pricefetchmarket,
+                              ) * BigInt(100)) /
+                              walletTokenBalances[address]?.[token.address],
+                            ),
+                          ),
+                        );
+                      setSliderPercent(percentage);
+                      const slider = document.querySelector(
+                        '.balance-amount-slider',
+                      );
+                      const popup = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        (popup as HTMLElement).style.left =
+                          `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                      }
+                    } else {
+                      setamountIn(
+                        (amountIn * BigInt(10) ** token.decimals) /
+                        BigInt(10) ** tokendict[tokenIn].decimals
+                      );
+                      setsendInputString(
+                        `$${calculateUSDValue(
+                          (amountIn * BigInt(10) ** token.decimals) /
+                          BigInt(10) ** tokendict[tokenIn].decimals,
+                          tradesByMarket[
+                          (({ baseAsset, quoteAsset }) =>
+                            (baseAsset === wethticker ? ethticker : baseAsset) +
+                            (quoteAsset === wethticker ? ethticker : quoteAsset)
+                          )(pricefetchmarket)
+                          ],
+                          token.address,
+                          pricefetchmarket,
+                        ).toFixed(2)}`,
+                      );
+                      const percentage = !walletTokenBalances[address]?.[token.address]
+                        ? 0
+                        : Math.min(
+                          100,
+                          Math.floor(
+                            Number(
+                              ((amountIn * BigInt(10) ** token.decimals) /
+                                BigInt(10) ** tokendict[tokenIn].decimals * BigInt(100)) /
+                              walletTokenBalances[address]?.[token.address],
+                            ),
+                          ),
+                        );
+                      setSliderPercent(percentage);
+                      const slider = document.querySelector(
+                        '.balance-amount-slider',
+                      );
+                      const popup = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        (popup as HTMLElement).style.left =
+                          `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                      }
+                    }
+                  } else if (location.pathname.slice(1) == 'scale') {
+                    if ((token.address == weth ? eth : token.address) != (tokenOut == weth ? eth : tokenOut)) {
+                      if (
+                        markets[
+                        `${tokendict[token.address].ticker}${tokendict[tokenOut].ticker}`
+                        ] ||
+                        markets[
+                        `${tokendict[tokenOut].ticker}${tokendict[token.address].ticker}`
+                        ]
+                      ) {
+                      } else {
+                        let found = false;
+                        for (const market in markets) {
+                          if (
+                            markets[market].baseAddress === token.address
+                          ) {
+                            setTokenOut(markets[market].quoteAddress);
+                            found = true;
+                            break;
+                          }
+                        }
+                        if (!found) {
+                          for (const market in markets) {
+                            if (markets[market].quoteAddress === token.address) {
+                              setTokenOut(markets[market].baseAddress);
+                              break;
+                            }
+                          }
+                        }
+                      }
+                      setamountIn(
+                        BigInt(0)
+                      );
+                      setInputString('')
+                      setScaleStart(BigInt(0))
+                      setScaleEnd(BigInt(0))
+                      setScaleStartString('')
+                      setScaleEndString('')
+                      setlimitChase(true);
+                      const percentage = !walletTokenBalances[address]?.[token.address]
+                        ? 0
+                        : Math.min(
+                          100,
+                          Math.floor(
+                            Number(
+                              BigInt(0) /
+                              walletTokenBalances[address]?.[token.address],
+                            ),
+                          ),
+                        );
+                      setSliderPercent(percentage);
+                      const slider = document.querySelector(
+                        '.balance-amount-slider',
+                      );
+                      const popup = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        (popup as HTMLElement).style.left =
+                          `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                      }
+                    } else {
+                      setTokenOut(tokenIn);
+                      setswitched((switched) => { return !switched });
+                      if (amountIn != BigInt(0) && scaleStart && scaleEnd && scaleOrders && scaleSkew) {
+                        setInputString(outputString);
+                        setoutputString(inputString);
+                        setamountIn(amountOutSwap);
+                        setamountOutSwap(amountIn);
+                        const percentage = !walletTokenBalances[address]?.[tokenOut]
+                          ? 0
+                          : Math.min(
+                            100,
+                            Math.floor(
+                              Number(
+                                (amountOutSwap * BigInt(100)) /
+                                walletTokenBalances[address]?.[tokenOut],
+                              ),
+                            ),
+                          );
+                        setSliderPercent(percentage);
+                        const slider = document.querySelector('.balance-amount-slider');
+                        const popup = document.querySelector('.slider-percentage-popup');
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          (popup as HTMLElement).style.left =
+                            `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                        }
+                      }
+                      else {
+                        setamountIn(BigInt(0))
+                        setInputString('')
+                      }
+                    }
+                  }
+                }}
+              >
+                <img className="tokenlistimage" src={token.image} />
+                <div className="tokenlisttext">
+                  <div className="tokenlistname">
+                    {token.ticker}
+                  </div>
+                  <div className="tokenlistticker">{token.name}</div>
+                </div>
+                <div className="token-right-content">
+                  <div className="tokenlistbalance">
+                    {formatSubscript(customRound(
+                      Number(walletTokenBalances[address]?.[token.address] ?? 0) /
+                      10 ** Number(token.decimals ?? 18),
+                      3,
+                    )
+                      .replace(/(\.\d*?[1-9])0+$/g, '$1')
+                      .replace(/\.0+$/, ''))}
+                  </div>
+                  <div className="token-address-container">
+                    <span className="token-address">
+                      {`${token.address.slice(0, 6)}...${token.address.slice(-4)}`}
+                    </span>
+                    <div
+                      className="copy-address-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(token.address);
+                        const copyIcon =
+                          e.currentTarget.querySelector('.copy-icon');
+                        const checkIcon =
+                          e.currentTarget.querySelector('.check-icon');
+                        if (copyIcon && checkIcon) {
+                          copyIcon.classList.add('hidden');
+                          checkIcon.classList.add('visible');
+                          setTimeout(() => {
+                            copyIcon.classList.remove('hidden');
+                            checkIcon.classList.remove('visible');
+                          }, 2000);
+                        }
+                      }}
+                    >
+                      <svg
+                        className="copy-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect
+                          x="9"
+                          y="9"
+                          width="13"
+                          height="13"
+                          rx="2"
+                          ry="2"
+                        ></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      </svg>
+                      <svg
+                        className="check-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M8 12l3 3 6-6" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))
+        )}
+      </ul>
+    </div>
+  );
+
+  // output tokenlist
+  const tempTokenList2 = (
+    <div className="tokenlistcontainer">
+      <ul className="tokenlist">
+        {Object.values(tokendict).filter(
+          (token) =>
+            token.ticker.toLowerCase().includes(tokenString.toLowerCase()) ||
+            token.name.toLowerCase().includes(tokenString.toLowerCase()) ||
+            token.address.toLowerCase().includes(tokenString.toLowerCase()),
+        ).length === 0 ? (
+          <div className="empty-token-list">
+            <div className="empty-token-list-content">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="empty-token-list-icon"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+              <div className="empty-token-list-text">{t('noTokens')}</div>
+            </div>
+          </div>
+        ) : (
+          Object.values(tokendict)
+            .filter(
+              (token) =>
+                token.ticker.toLowerCase().includes(tokenString.toLowerCase()) ||
+                token.name.toLowerCase().includes(tokenString.toLowerCase()) ||
+                token.address.toLowerCase().includes(tokenString.toLowerCase()),
+            )
+            .map((token, index) => (
+              <button
+                className={`tokenbutton ${index === selectedTokenIndex ? 'selected' : ''}`}
+                key={token.address}
+                onMouseEnter={() => setSelectedTokenIndex(index)}
+                onClick={() => {
+                  let newTokenIn;
+                  setpopup(0);
+                  settokenString('');
+                  setTokenOut(token.address);
+                  setStateIsLoading(true);
+                  if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
+                    if (token.address != tokenIn) {
+                      if (
+                        markets[
+                        `${tokendict[token.address].ticker}${tokendict[tokenIn].ticker}`
+                        ] ||
+                        markets[
+                        `${tokendict[tokenIn].ticker}${tokendict[token.address].ticker}`
+                        ]
+                      ) {
+                        newTokenIn = tokenIn;
+                      } else {
+                        const path = findShortestPath(
+                          tokendict[tokenIn].address,
+                          token.address,
+                        );
+                        if (path && path.length > 1) {
+                          newTokenIn = tokenIn;
+                        } else {
+                          let found = false;
+                          for (const market in markets) {
+                            if (
+                              markets[market].baseAddress === token.address
+                            ) {
+                              setTokenIn(markets[market].quoteAddress);
+                              newTokenIn = markets[market].quoteAddress;
+                              found = true;
+                              break;
+                            }
+                          }
+                          if (!found) {
+                            for (const market in markets) {
+                              if (
+                                markets[market].quoteAddress === token.address
+                              ) {
+                                setTokenIn(markets[market].baseAddress);
+                                newTokenIn = markets[market].baseAddress;
+                                break;
+                              }
+                            }
+                          }
+                        }
+                      }
+                      if (
+                        (tokenIn == eth && token.address == weth) ||
+                        (tokenIn == weth && token.address == eth)
+                      ) {
+                        if (switched == false) {
+                          setamountOutSwap(amountIn);
+                          setoutputString(inputString);
+                        }
+                        else {
+                          setamountOutSwap((amountOutSwap * BigInt(10) ** token.decimals) / BigInt(10) ** tokendict[tokenOut].decimals)
+                          setamountIn((amountOutSwap * BigInt(10) ** token.decimals) / BigInt(10) ** tokendict[tokenOut].decimals);
+                          setInputString(outputString);
+                          const percentage = !walletTokenBalances[address]?.[tokenIn]
+                            ? 0
+                            : Math.min(
+                              100,
+                              Math.floor(
+                                Number(
+                                  ((amountOutSwap * BigInt(10) ** token.decimals) / BigInt(10) ** tokendict[tokenOut].decimals * BigInt(100)) /
+                                  walletTokenBalances[address]?.[tokenIn],
+                                ),
+                              ),
+                            );
+                          setSliderPercent(percentage);
+                          const slider = document.querySelector(
+                            '.balance-amount-slider',
+                          );
+                          const popup = document.querySelector(
+                            '.slider-percentage-popup',
+                          );
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            (popup as HTMLElement).style.left =
+                              `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                          }
+                        }
+                      } else {
+                        if (switched == false) {
+                          setamountIn(
+                            (amountIn *
+                              BigInt(10) ** tokendict[newTokenIn].decimals) /
+                            BigInt(10) ** tokendict[tokenIn].decimals
+                          );
+                          setamountOutSwap(BigInt(0));
+                          setoutputString('');
+                          const percentage = !walletTokenBalances[address]?.[newTokenIn]
+                            ? 0
+                            : Math.min(
+                              100,
+                              Math.floor(
+                                Number(
+                                  ((amountIn *
+                                    BigInt(10) ** tokendict[newTokenIn].decimals) /
+                                    BigInt(10) ** tokendict[tokenIn].decimals * BigInt(100)) /
+                                  walletTokenBalances[address]?.[newTokenIn],
+                                ),
+                              ),
+                            );
+                          setSliderPercent(percentage);
+                          const slider = document.querySelector(
+                            '.balance-amount-slider',
+                          );
+                          const popup = document.querySelector(
+                            '.slider-percentage-popup',
+                          );
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            (popup as HTMLElement).style.left =
+                              `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                          }
+                        } else if (token.address != tokenOut) {
+                          setamountOutSwap(
+                            (amountOutSwap * BigInt(10) ** token.decimals) /
+                            BigInt(10) ** tokendict[tokenOut].decimals,
+                          );
+                          setamountIn(BigInt(0));
+                          setInputString('');
+                        }
+                      }
+                      setlimitChase(true);
+                      setScaleStart(BigInt(0))
+                      setScaleEnd(BigInt(0))
+                      setScaleStartString('')
+                      setScaleEndString('')
+                    } else {
+                      setTokenIn(tokenOut);
+                      if (
+                        (amountIn != BigInt(0) || amountOutSwap != BigInt(0)) &&
+                        !isWrap
+                      ) {
+                        if (switched == false) {
+                          setswitched(true);
+                          setStateIsLoading(true);
+                          setInputString('');
+                          setamountIn(BigInt(0));
+                          setamountOutSwap(amountIn);
+                          setoutputString(
+                            amountIn === BigInt(0)
+                              ? ''
+                              : String(
+                                customRound(
+                                  Number(amountIn) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                ),
+                              ),
+                          );
+                        } else {
+                          setswitched(false);
+                          setStateIsLoading(true);
+                          setoutputString('');
+                          setamountOutSwap(BigInt(0));
+                          setamountIn(amountOutSwap);
+                          setInputString(
+                            amountOutSwap === BigInt(0)
+                              ? ''
+                              : String(
+                                customRound(
+                                  Number(amountOutSwap) /
+                                  10 **
+                                  Number(tokendict[tokenOut].decimals),
+                                  3,
+                                ),
+                              ),
+                          );
+                          const percentage = !walletTokenBalances[address]?.[tokenOut]
+                            ? 0
+                            : Math.min(
+                              100,
+                              Math.floor(
+                                Number(
+                                  (amountOutSwap * BigInt(100)) /
+                                  walletTokenBalances[address]?.[tokenOut],
+                                ),
+                              ),
+                            );
+                          setSliderPercent(percentage);
+                          const slider = document.querySelector(
+                            '.balance-amount-slider',
+                          );
+                          const popup = document.querySelector(
+                            '.slider-percentage-popup',
+                          );
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            (popup as HTMLElement).style.left =
+                              `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                          }
+                        }
+                      }
+                    }
+                  } else if (location.pathname.slice(1) == 'limit') {
+                    if ((token.address == weth ? eth : token.address) != (tokenIn == weth ? eth : tokenIn)) {
+                      if (
+                        markets[
+                        `${tokendict[token.address].ticker}${tokendict[tokenIn].ticker}`
+                        ] ||
+                        markets[
+                        `${tokendict[tokenIn].ticker}${tokendict[token.address].ticker}`
+                        ]
+                      ) {
+                        newTokenIn = tokenIn;
+                      } else {
+                        let found = false;
+                        for (const market in markets) {
+                          if (
+                            markets[market].baseAddress === token.address
+                          ) {
+                            setTokenIn(markets[market].quoteAddress);
+                            newTokenIn = markets[market].quoteAddress;
+                            found = true;
+                            break;
+                          }
+                        }
+                        if (!found) {
+                          for (const market in markets) {
+                            if (markets[market].quoteAddress === token.address) {
+                              setTokenIn(markets[market].baseAddress);
+                              newTokenIn = markets[market].baseAddress;
+                              break;
+                            }
+                          }
+                        }
+                      }
+                      if (switched) {
+                        setamountOutSwap(
+                          (amountOutSwap * BigInt(10) ** token.decimals) /
+                          BigInt(10) ** tokendict[tokenOut].decimals
+                        )
+                      }
+                      else {
+                        setamountIn(
+                          (amountIn *
+                            BigInt(10) ** tokendict[newTokenIn].decimals) /
+                          BigInt(10) ** tokendict[tokenIn].decimals,
+                        );
+                        const percentage = !walletTokenBalances[address]?.[newTokenIn]
+                          ? 0
+                          : Math.min(
+                            100,
+                            Math.floor(
+                              Number(
+                                ((amountIn * BigInt(10) ** tokendict[newTokenIn].decimals) /
+                                  BigInt(10) ** tokendict[tokenIn].decimals * BigInt(100)) /
+                                walletTokenBalances[address]?.[newTokenIn],
+                              ),
+                            ),
+                          );
+                        setSliderPercent(percentage);
+                        const slider = document.querySelector(
+                          '.balance-amount-slider',
+                        );
+                        const popup = document.querySelector(
+                          '.slider-percentage-popup',
+                        );
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          (popup as HTMLElement).style.left =
+                            `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                        }
+                      }
+                      setlimitChase(true);
+                      setScaleStart(BigInt(0))
+                      setScaleEnd(BigInt(0))
+                      setScaleStartString('')
+                      setScaleEndString('')
+                    } else {
+                      setTokenIn(tokenOut);
+                      setswitched((switched) => { return !switched });
+                      if (amountIn != BigInt(0)) {
+                        if (limitChase && mids?.[activeMarketKey]?.[0]) {
+                          const price = tokenOut === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
+                          setlimitPrice(price);
+                          setlimitPriceString(
+                            (
+                              Number(price) / Number(activeMarket.priceFactor)
+                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? Math.min(10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1), Number(activeMarket.priceFactor)) : Number(activeMarket.priceFactor)))),
+                          );
+                          setamountOutSwap(
+                            price != BigInt(0) && amountIn != BigInt(0)
+                              ? tokenOut === activeMarket?.baseAddress
+                                ? (amountIn * price) /
+                                (activeMarket.scaleFactor || BigInt(1))
+                                : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                                price
+                              : BigInt(0),
+                          );
+                          setoutputString(
+                            (price != BigInt(0) && amountIn != BigInt(0)
+                              ? tokenOut === activeMarket?.baseAddress
+                                ? customRound(
+                                  Number(
+                                    (amountIn * price) /
+                                    (activeMarket.scaleFactor || BigInt(1)),
+                                  ) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                )
+                                : customRound(
+                                  Number(
+                                    (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                                    price,
+                                  ) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                )
+                              : ''
+                            ).toString(),
+                          );
+                        }
+                        setInputString(outputString);
+                        setoutputString(inputString);
+                        setamountIn(amountOutSwap);
+                        setamountOutSwap(amountIn);
+                        const percentage = !walletTokenBalances[address]?.[tokenOut]
+                          ? 0
+                          : Math.min(
+                            100,
+                            Math.floor(
+                              Number(
+                                (amountOutSwap * BigInt(100)) /
+                                walletTokenBalances[address]?.[tokenOut],
+                              ),
+                            ),
+                          );
+                        setSliderPercent(percentage);
+                        const slider = document.querySelector(
+                          '.balance-amount-slider',
+                        );
+                        const popup = document.querySelector(
+                          '.slider-percentage-popup',
+                        );
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          (popup as HTMLElement).style.left =
+                            `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                        }
+                      }
+                    }
+                  } else if (location.pathname.slice(1) == 'scale') {
+                    if ((token.address == weth ? eth : token.address) != (tokenIn == weth ? eth : tokenIn)) {
+                      if (
+                        markets[
+                        `${tokendict[token.address].ticker}${tokendict[tokenIn].ticker}`
+                        ] ||
+                        markets[
+                        `${tokendict[tokenIn].ticker}${tokendict[token.address].ticker}`
+                        ]
+                      ) {
+                        newTokenIn = tokenIn;
+                      } else {
+                        let found = false;
+                        for (const market in markets) {
+                          if (
+                            markets[market].baseAddress === token.address
+                          ) {
+                            setTokenIn(markets[market].quoteAddress);
+                            newTokenIn = markets[market].quoteAddress;
+                            found = true;
+                            break;
+                          }
+                        }
+                        if (!found) {
+                          for (const market in markets) {
+                            if (markets[market].quoteAddress === token.address) {
+                              setTokenIn(markets[market].baseAddress);
+                              newTokenIn = markets[market].baseAddress;
+                              break;
+                            }
+                          }
+                        }
+                      }
+                      setamountIn(
+                        BigInt(0)
+                      );
+                      setInputString('')
+                      setScaleStart(BigInt(0))
+                      setScaleEnd(BigInt(0))
+                      setScaleStartString('')
+                      setScaleEndString('')
+                      setlimitChase(true);
+                      const percentage = !walletTokenBalances[address]?.[newTokenIn]
+                        ? 0
+                        : Math.min(
+                          100,
+                          Math.floor(
+                            Number(
+                              BigInt(0) /
+                              walletTokenBalances[address]?.[newTokenIn],
+                            ),
+                          ),
+                        );
+                      setSliderPercent(percentage);
+                      const slider = document.querySelector(
+                        '.balance-amount-slider',
+                      );
+                      const popup = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        (popup as HTMLElement).style.left =
+                          `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                      }
+                    } else {
+                      setTokenIn(tokenOut);
+                      setswitched((switched) => { return !switched });
+                      if (amountIn != BigInt(0) && scaleStart && scaleEnd && scaleOrders && scaleSkew) {
+                        setInputString(outputString);
+                        setoutputString(inputString);
+                        setamountIn(amountOutSwap);
+                        setamountOutSwap(amountIn);
+                        const percentage = !walletTokenBalances[address]?.[tokenOut]
+                          ? 0
+                          : Math.min(
+                            100,
+                            Math.floor(
+                              Number(
+                                (amountOutSwap * BigInt(100)) /
+                                walletTokenBalances[address]?.[tokenOut],
+                              ),
+                            ),
+                          );
+                        setSliderPercent(percentage);
+                        const slider = document.querySelector('.balance-amount-slider');
+                        const popup = document.querySelector('.slider-percentage-popup');
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          (popup as HTMLElement).style.left =
+                            `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                        }
+                      }
+                      else {
+                        setamountIn(BigInt(0))
+                        setInputString('')
+                      }
+                    }
+                  }
+                }}
+              >
+                <img className="tokenlistimage" src={token.image} />
+                <div className="tokenlisttext">
+                  <div className="tokenlistname">
+                    {token.ticker}
+                  </div>
+                  <div className="tokenlistticker">{token.name}</div>
+                </div>
+                <div className="token-right-content">
+                  <div className="tokenlistbalance">
+                    {formatSubscript(customRound(
+                      Number(walletTokenBalances[address]?.[token.address] ?? 0) /
+                      10 ** Number(token.decimals ?? 18),
+                      3,
+                    )
+                      .replace(/(\.\d*?[1-9])0+$/g, '$1')
+                      .replace(/\.0+$/, ''))}
+                  </div>
+                  <div className="token-address-container">
+                    <span className="token-address">
+                      {`${token.address.slice(0, 6)}...${token.address.slice(-4)}`}
+                    </span>
+                    <div
+                      className="copy-address-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(token.address);
+                        const copyIcon =
+                          e.currentTarget.querySelector('.copy-icon');
+                        const checkIcon =
+                          e.currentTarget.querySelector('.check-icon');
+                        if (copyIcon && checkIcon) {
+                          copyIcon.classList.add('hidden');
+                          checkIcon.classList.add('visible');
+                          setTimeout(() => {
+                            copyIcon.classList.remove('hidden');
+                            checkIcon.classList.remove('visible');
+                          }, 2000);
+                        }
+                      }}
+                    >
+                      <svg
+                        className="copy-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect
+                          x="9"
+                          y="9"
+                          width="13"
+                          height="13"
+                          rx="2"
+                          ry="2"
+                        ></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      </svg>
+                      <svg
+                        className="check-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M8 12l3 3 6-6" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))
+        )}
+      </ul>
+    </div>
+  );
+
   // popup modals
   const Modals = (
     <>
@@ -12508,7 +13848,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 </button>
               )}
             </div>
-            {TokenList1}
+            {tempTokenList1}
           </div>
         ) : null}
         {popup === 2 ? ( // token select
@@ -12552,7 +13892,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 </button>
               )}
             </div>
-            {TokenList2}
+            {tempTokenList2}
           </div>
         ) : null}
         {popup === 3 ? ( // send popup
@@ -18471,6 +19811,1771 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         ) : null}
       </div>
     </>
+  );
+  
+  const tempswap = (
+    <div className="rectangle">
+      <div className="navlinkwrapper" onClick={() => {
+        if (windowWidth <= 1020 && !simpleView && !showTrade) {
+          setShowTrade(true);
+          document.querySelector('.trade-mobile-switch')?.classList.add('open');
+        }
+      }} data-active={location.pathname.slice(1)}>
+        <div className="innernavlinkwrapper">
+          <Link
+            to={simpleView ? "/swap" : "/market"}
+            className={`navlink ${location.pathname.slice(1) === 'market' || location.pathname.slice(1) === 'swap' ? 'active' : ''}`}
+            onClick={(e) => {
+              if ((location.pathname === '/swap' && simpleView) ||
+                (location.pathname === '/market' && !simpleView)) {
+                e.preventDefault();
+              }
+            }}
+          >
+            {simpleView ? t('swap') : t('market')}
+          </Link>
+          <Link
+            to="/send"
+            className={`navlink ${location.pathname.slice(1) === 'send' || location.pathname.slice(1) === 'scale' ? 'active' : ''}`}
+            onClick={() => {
+              setShowSendDropdown(false);
+              setCurrentProText('send');
+            }}
+          >
+            {t('send')}
+          </Link>
+          <button
+            className={`refresh-quote-button ${isRefreshing ? 'refreshing' : ''}`}
+            onClick={handleRefreshQuote}
+            disabled={isRefreshing}
+          >
+            <img src={reset} className="refresh-quote-icon"></img>
+            <svg className="refresh-timer-circle" viewBox="0 0 24 24">
+              <circle className="timer-circle-border" cx="12" cy="12" r="9" />
+            </svg>
+          </button>
+          {showSendDropdown && (
+            <div className="navlink-dropdown" ref={sendDropdownRef}>
+              <Link
+                to="/send"
+                className="dropdown-item"
+                onClick={() => {
+                  setShowSendDropdown(false);
+                  setCurrentProText('send');
+                }}
+              >
+                {t('send')}
+              </Link>
+              <Link
+                to="/scale"
+                className="dropdown-item"
+                onClick={() => {
+                  setShowSendDropdown(false);
+                  setCurrentProText('scale');
+                }}
+              >
+                <TooltipLabel
+                  label={t('scale')}
+                  tooltipText={
+                    <div>
+                      <div className="tooltip-description">
+                        {t('scaleTooltip')}
+                      </div>
+                    </div>
+                  }
+                  className="impact-label"
+                />
+              </Link>
+
+            </div>
+          )}
+        </div>
+        <div className="sliding-tab-indicator" />
+      </div>
+      <div className="swapmodal">
+        <div
+          className={`inputbg ${connected && amountIn > walletTokenBalances[address]?.[tokenIn] && !txPending.current
+            ? 'exceed-balance'
+            : ''
+            }`}
+        >
+          <div className="Pay">{t('pay')}</div>
+          <div className="inputbutton1container">
+            {displayValuesLoading &&
+              switched == true &&
+              !(inputString == '' && outputString == '') ? (
+              <div className="output-skeleton" />
+            ) : (
+              <input
+                inputMode="decimal"
+                className={`input ${connected &&
+                  amountIn > walletTokenBalances[address]?.[tokenIn] && !txPending.current
+                  ? 'exceed-balance'
+                  : ''
+                  }`}
+                onCompositionStart={() => {
+                  setIsComposing(true);
+                }}
+                onCompositionEnd={(
+                  e: React.CompositionEvent<HTMLInputElement>,
+                ) => {
+                  setIsComposing(false);
+                  if (/^\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
+                    setInputString(e.currentTarget.value);
+                    if (
+                      (inputString.endsWith('.') && e.currentTarget.value === inputString.slice(0, -1)) ||
+                      (e.currentTarget.value.endsWith('.') && e.currentTarget.value.slice(0, -1) === inputString)
+                    ) {
+                      return;
+                    }
+                    const inputValue = BigInt(
+                      Math.round(
+                        (parseFloat(e.currentTarget.value || '0') || 0) *
+                        10 ** Number(tokendict[tokenIn].decimals),
+                      ),
+                    );
+                    debouncedSetAmount(inputValue);
+                    setswitched(false);
+                    if (isWrap) {
+                      setamountOutSwap(inputValue);
+                      setoutputString(e.currentTarget.value);
+                    }
+                    const percentage = !walletTokenBalances[address]?.[tokenIn]
+                      ? 0
+                      : Math.min(
+                        100,
+                        Math.floor(
+                          Number(
+                            (inputValue * BigInt(100)) /
+                            walletTokenBalances[address]?.[tokenIn],
+                          ),
+                        ),
+                      );
+                    setSliderPercent(percentage);
+                    const slider = document.querySelector(
+                      '.balance-amount-slider',
+                    );
+                    const popup = document.querySelector(
+                      '.slider-percentage-popup',
+                    );
+                    if (slider && popup) {
+                      const rect = slider.getBoundingClientRect();
+                      (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+                        }px`;
+                    }
+                  }
+                }}
+                onChange={(e) => {
+                  if (isComposing) {
+                    setInputString(e.target.value);
+                    return;
+                  }
+                  if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
+                    setInputString(e.target.value);
+                    if (
+                      (inputString.endsWith('.') && e.target.value === inputString.slice(0, -1)) ||
+                      (e.target.value.endsWith('.') && e.target.value.slice(0, -1) === inputString)
+                    ) {
+                      return;
+                    }
+                    const inputValue = BigInt(
+                      Math.round(
+                        (parseFloat(e.target.value || '0') || 0) *
+                        10 ** Number(tokendict[tokenIn].decimals),
+                      ),
+                    );
+                    debouncedSetAmount(inputValue);
+                    setswitched(false);
+                    if (isWrap) {
+                      setamountOutSwap(inputValue);
+                      setoutputString(e.target.value);
+                    }
+                    const percentage = !walletTokenBalances[address]?.[tokenIn]
+                      ? 0
+                      : Math.min(
+                        100,
+                        Math.floor(
+                          Number(
+                            (inputValue * BigInt(100)) /
+                            walletTokenBalances[address]?.[tokenIn],
+                          ),
+                        ),
+                      );
+                    setSliderPercent(percentage);
+                    const slider = document.querySelector(
+                      '.balance-amount-slider',
+                    );
+                    const popup = document.querySelector(
+                      '.slider-percentage-popup',
+                    );
+                    if (slider && popup) {
+                      const rect = slider.getBoundingClientRect();
+                      (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+                        }px`;
+                    }
+                  }
+                }}
+                placeholder="0.00"
+                value={inputString}
+                autoFocus={
+                  outputString === '' &&
+                  switched === false &&
+                  !(windowWidth <= 1020)
+                }
+              />
+            )}
+            <button
+              className={`button1 ${connected &&
+                amountIn > walletTokenBalances[address]?.[tokenIn] && !txPending.current
+                ? 'exceed-balance'
+                : ''
+                }`}
+              onClick={() => {
+                setpopup(1);
+              }}
+            >
+              <img className="button1pic" src={tokendict[tokenIn].image} />
+              <span>{tokendict[tokenIn].ticker || '?'}</span>
+              <svg
+                className={`button-arrow ${popup == 1 ? 'open' : ''}`}
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          </div>
+          <div className="balance1maxcontainer">
+            {displayValuesLoading &&
+              switched == true &&
+              !(inputString == '' && outputString == '') ? (
+              <div className="output-usd-skeleton" />
+            ) : (
+              <span className="usd-value">
+                {Math.round(
+                  (parseFloat(inputString || '0') || 0) *
+                  10 ** Number(tokendict[tokenIn].decimals),
+                ) == 0
+                  ? '$0.00'
+                  : formatUSDDisplay(
+                    calculateUSDValue(
+                      BigInt(
+                        Math.round(
+                          (parseFloat(inputString || '0') || 0) *
+                          10 ** Number(tokendict[tokenIn].decimals),
+                        ),
+                      ),
+                      tradesByMarket[
+                      (({ baseAsset, quoteAsset }) =>
+                        (baseAsset === wethticker ? ethticker : baseAsset) +
+                        (quoteAsset === wethticker ? ethticker : quoteAsset)
+                      )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+                      ],
+                      tokenIn,
+                      getMarket(
+                        activeMarket.path.at(0),
+                        activeMarket.path.at(1),
+                      ),
+                    ),
+                  )}
+              </span>
+            )}
+            <div className="balance1">
+              <img src={walleticon} className="balance-wallet-icon" />{' '}
+              {formatSubscript(formatDisplayValue(
+                walletTokenBalances[address]?.[tokenIn],
+                Number(tokendict[tokenIn].decimals),
+              ))}
+            </div>
+            <div
+              className="max-button"
+              onClick={() => {
+                if (walletTokenBalances[address]?.[tokenIn] != BigInt(0)) {
+                  let amount =
+                    (tokenIn == eth && !client)
+                      ? walletTokenBalances[address]?.[tokenIn] -
+                        settings.chainConfig[activechain].gasamount >
+                        BigInt(0)
+                        ? walletTokenBalances[address]?.[tokenIn] -
+                        settings.chainConfig[activechain].gasamount
+                        : BigInt(0)
+                      : walletTokenBalances[address]?.[tokenIn];
+                  debouncedSetAmount(BigInt(amount));
+                  setswitched(false);
+                  setInputString(
+                    customRound(
+                      Number(amount) /
+                      10 ** Number(tokendict[tokenIn].decimals),
+                      3,
+                    ).toString(),
+                  );
+                  if (isWrap) {
+                    setamountOutSwap(BigInt(amount));
+                    setoutputString(
+                      customRound(
+                        Number(amount) /
+                        10 ** Number(tokendict[tokenIn].decimals),
+                        3,
+                      ).toString(),
+                    );
+                  }
+                  setSliderPercent(100);
+                  const slider = document.querySelector(
+                    '.balance-amount-slider',
+                  );
+                  const popup = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (slider && popup) {
+                    const rect = slider.getBoundingClientRect();
+                    const trackWidth = rect.width - 15;
+                    const thumbPosition = trackWidth + 15 / 2;
+                    (popup as HTMLElement).style.left = `${thumbPosition}px`;
+                  }
+                }
+              }}
+            >
+              {t('max')}{' '}
+            </div>
+          </div>
+        </div>
+        <div
+          className="switch-button"
+          onClick={() => {
+            setTokenIn(tokenOut);
+            setTokenOut(tokenIn);
+            if (amountIn != BigInt(0) || amountOutSwap != BigInt(0)) {
+              if (!isWrap) {
+                if (switched == false) {
+                  setswitched(true);
+                  setStateIsLoading(true);
+                  setInputString('');
+                  setamountIn(BigInt(0));
+                  setamountOutSwap(amountIn);
+                  setoutputString(
+                    amountIn == BigInt(0)
+                      ? ''
+                      : String(
+                        customRound(
+                          Number(amountIn) /
+                          10 ** Number(tokendict[tokenIn].decimals),
+                          3,
+                        ),
+                      ),
+                  );
+                } else {
+                  setswitched(false);
+                  setStateIsLoading(true);
+                  setoutputString('');
+                  setamountOutSwap(BigInt(0));
+                  setamountIn(amountOutSwap);
+                  setInputString(
+                    amountOutSwap == BigInt(0)
+                      ? ''
+                      : String(
+                        customRound(
+                          Number(amountOutSwap) /
+                          10 ** Number(tokendict[tokenOut].decimals),
+                          3,
+                        ),
+                      ),
+                  );
+                  const percentage = !walletTokenBalances[address]?.[tokenOut]
+                    ? 0
+                    : Math.min(
+                      100,
+                      Math.floor(
+                        Number(
+                          (amountOutSwap * BigInt(100)) /
+                          walletTokenBalances[address]?.[tokenOut],
+                        ),
+                      ),
+                    );
+                  setSliderPercent(percentage);
+                  const slider = document.querySelector(
+                    '.balance-amount-slider',
+                  );
+                  const popup = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (slider && popup) {
+                    const rect = slider.getBoundingClientRect();
+                    (popup as HTMLElement).style.left =
+                      `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                  }
+                }
+              }
+            }
+          }}
+        >
+          <img src={tradearrow} className="switch-arrow" />
+        </div>
+        <div className="swap-container-divider" />
+        <div className="outputbg">
+          <div className="Recieve">{t('receive')}</div>
+          <div className="outputbutton2container">
+            {displayValuesLoading &&
+              switched == false &&
+              !(inputString == '' && outputString == '') ? (
+              <div className="output-skeleton" />
+            ) : (
+              <input
+                inputMode="decimal"
+                className="output"
+                onCompositionStart={() => {
+                  setIsComposing(true);
+                }}
+                onCompositionEnd={(
+                  e: React.CompositionEvent<HTMLInputElement>,
+                ) => {
+                  setIsComposing(false);
+                  if (/^\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
+                    setoutputString(e.currentTarget.value);
+                    if (
+                      (outputString.endsWith('.') && e.currentTarget.value === outputString.slice(0, -1)) ||
+                      (e.currentTarget.value.endsWith('.') && e.currentTarget.value.slice(0, -1) === outputString)
+                    ) {
+                      return;
+                    }
+                    const outputValue = BigInt(
+                      Math.round(
+                        (parseFloat(e.currentTarget.value || '0') || 0) *
+                        10 ** Number(tokendict[tokenOut].decimals),
+                      ),
+                    );
+                    if (isWrap) {
+                      setamountIn(outputValue);
+                      setInputString(e.currentTarget.value);
+                    }
+                    debouncedSetAmountOut(outputValue);
+                    setswitched(true);
+                  }
+                }}
+                onChange={(e) => {
+                  if (isComposing) {
+                    setoutputString(e.target.value);
+                    return;
+                  }
+                  if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
+                    setoutputString(e.target.value);
+                    if (
+                      (outputString.endsWith('.') && e.target.value === outputString.slice(0, -1)) ||
+                      (e.target.value.endsWith('.') && e.target.value.slice(0, -1) === outputString)
+                    ) {
+                      return;
+                    }
+                    const outputValue = BigInt(
+                      Math.round(
+                        (parseFloat(e.target.value || '0') || 0) *
+                        10 ** Number(tokendict[tokenOut].decimals),
+                      ),
+                    );
+                    if (isWrap) {
+                      setamountIn(outputValue);
+                      setInputString(e.target.value);
+                    }
+                    debouncedSetAmountOut(outputValue);
+                    setswitched(true);
+                  }
+                }}
+                value={outputString}
+                placeholder="0.00"
+              />
+            )}
+            <button
+              className="button2"
+              onClick={() => {
+                setpopup(2);
+              }}
+            >
+              <img className="button2pic" src={tokendict[tokenOut].image} />
+              <span>{tokendict[tokenOut].ticker || '?'}</span>
+              <svg
+                className={`button-arrow ${popup == 2 ? 'open' : ''}`}
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          </div>
+          <div className="balance1maxcontainer">
+            {displayValuesLoading &&
+              switched == false &&
+              !(inputString == '' && outputString == '') ? (
+              <div className="output-usd-skeleton" />
+            ) : (
+              <div className="output-usd-value">
+                {amountOutSwap === BigInt(0)
+                  ? '$0.00'
+                  : (() => {
+                    const outputUSD = calculateUSDValue(
+                      BigInt(
+                        Math.round(
+                          (parseFloat(outputString || '0') || 0) *
+                          10 ** Number(tokendict[tokenOut].decimals),
+                        ),
+                      ),
+                      tradesByMarket[
+                      (({ baseAsset, quoteAsset }) =>
+                        (baseAsset === wethticker ? ethticker : baseAsset) +
+                        (quoteAsset === wethticker ? ethticker : quoteAsset)
+                      )(getMarket(activeMarket.path.at(-2), activeMarket.path.at(-1)))
+                      ],
+                      tokenOut,
+                      getMarket(
+                        activeMarket.path.at(-2),
+                        activeMarket.path.at(-1),
+                      ),
+                    );
+
+                    const inputUSD = calculateUSDValue(
+                      amountIn,
+                      tradesByMarket[
+                      (({ baseAsset, quoteAsset }) =>
+                        (baseAsset === wethticker ? ethticker : baseAsset) +
+                        (quoteAsset === wethticker ? ethticker : quoteAsset)
+                      )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+                      ],
+                      tokenIn,
+                      getMarket(
+                        activeMarket.path.at(0),
+                        activeMarket.path.at(1),
+                      ),
+                    );
+
+                    const percentageDiff =
+                      inputUSD > 0
+                        ? ((outputUSD - inputUSD) / inputUSD) * 100
+                        : 0;
+
+                    return (
+                      <div className="output-usd-container">
+                        <span>{formatUSDDisplay(outputUSD)}</span>
+                        {inputUSD > 0 && !displayValuesLoading && !stateIsLoading && (
+                          <span
+                            className={`output-percentage ${percentageDiff >= 0 ? 'positive' : 'negative'}`}
+                          >
+                            ({percentageDiff >= 0 ? '+' : ''}
+                            {percentageDiff.toFixed(2)}%)
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+              </div>
+            )}
+            <div className="balance2">
+              <img src={walleticon} className="balance-wallet-icon" />{' '}
+              {formatSubscript(formatDisplayValue(
+                walletTokenBalances[address]?.[tokenOut],
+                Number(tokendict[tokenOut].decimals),
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="balance-slider-wrapper">
+          {spotSliderMode === 'presets' ? (
+            <div className="slider-container presets-mode">
+              <div className="preset-buttons">
+                {spotSliderPresets.map((preset: number, index: number) => (
+                  <button
+                    key={index}
+                    className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
+                    onClick={() => {
+                      if (connected) {
+                        const newAmount =
+                          (((tokenIn == eth && !client)
+                            ? walletTokenBalances[address]?.[tokenIn] -
+                              settings.chainConfig[activechain].gasamount >
+                              BigInt(0)
+                              ? walletTokenBalances[address]?.[tokenIn] -
+                              settings.chainConfig[activechain].gasamount
+                              : BigInt(0)
+                            : walletTokenBalances[address]?.[tokenIn]) *
+                            BigInt(preset)) /
+                          100n;
+                        setSliderPercent(preset);
+                        setInputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        debouncedSetAmount(newAmount);
+                        setswitched(false);
+                        if (isWrap) {
+                          setoutputString(
+                            newAmount == BigInt(0)
+                              ? ''
+                              : customRound(
+                                Number(newAmount) /
+                                10 ** Number(tokendict[tokenIn].decimals),
+                                3,
+                              ).toString(),
+                          );
+                          setamountOutSwap(newAmount);
+                        }
+                        if (location.pathname.slice(1) === 'limit') {
+                          setamountOutSwap(
+                            limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                                : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                              : BigInt(0),
+                          );
+                          setoutputString(
+                            (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? customRound(
+                                  Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                                : customRound(
+                                  Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                              : ''
+                            ).toString(),
+                          );
+                        }
+                        const slider = document.querySelector('.balance-amount-slider');
+                        const popup = document.querySelector('.slider-percentage-popup');
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          (popup as HTMLElement).style.left = `${(rect.width - 15) * (preset / 100) + 15 / 2}px`;
+                        }
+                      }
+                    }}
+                    disabled={!connected}
+                  >
+                    {preset}%
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : spotSliderMode === 'increment' ? (
+            <div className="slider-container increment-mode">
+              <button
+                className="increment-button minus"
+                onClick={() => {
+                  if (connected && sliderPercent > 0) {
+                    const newPercent = Math.max(0, sliderPercent - spotSliderIncrement);
+                    const newAmount =
+                      (((tokenIn == eth && !client)
+                        ? walletTokenBalances[address]?.[tokenIn] -
+                          settings.chainConfig[activechain].gasamount >
+                          BigInt(0)
+                          ? walletTokenBalances[address]?.[tokenIn] -
+                          settings.chainConfig[activechain].gasamount
+                          : BigInt(0)
+                        : walletTokenBalances[address]?.[tokenIn]) *
+                        BigInt(newPercent)) /
+                      100n;
+                    setSliderPercent(newPercent);
+                    setInputString(
+                      newAmount == BigInt(0)
+                        ? ''
+                        : customRound(
+                          Number(newAmount) /
+                          10 ** Number(tokendict[tokenIn].decimals),
+                          3,
+                        ).toString(),
+                    );
+                    debouncedSetAmount(newAmount);
+                    setswitched(false);
+                    if (isWrap) {
+                      setoutputString(
+                        newAmount == BigInt(0)
+                          ? ''
+                          : customRound(
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          ).toString(),
+                      );
+                      setamountOutSwap(newAmount);
+                    }
+                    if (location.pathname.slice(1) === 'limit') {
+                      setamountOutSwap(
+                        limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                            : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                          : BigInt(0),
+                      );
+                      setoutputString(
+                        (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? customRound(
+                              Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                            : customRound(
+                              Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                          : ''
+                        ).toString(),
+                      );
+                    }
+                    const slider = document.querySelector('.balance-amount-slider');
+                    const popup = document.querySelector('.slider-percentage-popup');
+                    if (slider && popup) {
+                      const rect = slider.getBoundingClientRect();
+                      (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
+                    }
+                  }
+                }}
+                disabled={!connected || sliderPercent === 0}
+              >
+                −
+              </button>
+              <div className="increment-display">
+                <div className="increment-amount">{spotSliderIncrement}%</div>
+              </div>
+              <button
+                className="increment-button plus"
+                onClick={() => {
+                  if (connected && sliderPercent < 100) {
+                    const newPercent = Math.min(100, sliderPercent + spotSliderIncrement);
+                    const newAmount =
+                      (((tokenIn == eth && !client)
+                        ? walletTokenBalances[address]?.[tokenIn] -
+                          settings.chainConfig[activechain].gasamount >
+                          BigInt(0)
+                          ? walletTokenBalances[address]?.[tokenIn] -
+                          settings.chainConfig[activechain].gasamount
+                          : BigInt(0)
+                        : walletTokenBalances[address]?.[tokenIn]) *
+                        BigInt(newPercent)) /
+                      100n;
+                    setSliderPercent(newPercent);
+                    setInputString(
+                      newAmount == BigInt(0)
+                        ? ''
+                        : customRound(
+                          Number(newAmount) /
+                          10 ** Number(tokendict[tokenIn].decimals),
+                          3,
+                        ).toString(),
+                    );
+                    debouncedSetAmount(newAmount);
+                    setswitched(false);
+                    if (isWrap) {
+                      setoutputString(
+                        newAmount == BigInt(0)
+                          ? ''
+                          : customRound(
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          ).toString(),
+                      );
+                      setamountOutSwap(newAmount);
+                    }
+                    if (location.pathname.slice(1) === 'limit') {
+                      setamountOutSwap(
+                        limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                            : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                          : BigInt(0),
+                      );
+                      setoutputString(
+                        (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? customRound(
+                              Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                            : customRound(
+                              Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                          : ''
+                        ).toString(),
+                      );
+                    }
+                    const slider = document.querySelector('.balance-amount-slider');
+                    const popup = document.querySelector('.slider-percentage-popup');
+                    if (slider && popup) {
+                      const rect = slider.getBoundingClientRect();
+                      (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
+                    }
+                  }
+                }}
+                disabled={!connected || sliderPercent === 100}
+              >
+                +
+              </button>
+            </div>
+          ) : (
+            <div className="slider-container slider-mode">
+              <input
+                type="range"
+                className={`balance-amount-slider ${isDragging ? 'dragging' : ''}`}
+                min="0"
+                max="100"
+                step="1"
+                value={sliderPercent}
+                disabled={!connected}
+                onChange={(e) => {
+                  const percent = parseInt(e.target.value);
+                  const newAmount =
+                    (((tokenIn == eth && !client)
+                      ? walletTokenBalances[address]?.[tokenIn] -
+                        settings.chainConfig[activechain].gasamount >
+                        BigInt(0)
+                        ? walletTokenBalances[address]?.[tokenIn] -
+                        settings.chainConfig[activechain].gasamount
+                        : BigInt(0)
+                      : walletTokenBalances[address]?.[tokenIn]) *
+                      BigInt(percent)) /
+                    100n;
+                  setSliderPercent(percent);
+                  setInputString(
+                    newAmount == BigInt(0)
+                      ? ''
+                      : customRound(
+                        Number(newAmount) /
+                        10 ** Number(tokendict[tokenIn].decimals),
+                        3,
+                      ).toString(),
+                  );
+                  debouncedSetAmount(newAmount);
+                  setswitched(false);
+                  if (isWrap) {
+                    setoutputString(
+                      newAmount == BigInt(0)
+                        ? ''
+                        : customRound(
+                          Number(newAmount) /
+                          10 ** Number(tokendict[tokenIn].decimals),
+                          3,
+                        ).toString(),
+                    );
+                    setamountOutSwap(newAmount);
+                  }
+                  if (location.pathname.slice(1) === 'limit') {
+                    setamountOutSwap(
+                      limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                          : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                        : BigInt(0),
+                    );
+                    setoutputString(
+                      (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? customRound(
+                            Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                            10 ** Number(tokendict[tokenOut].decimals),
+                            3,
+                          )
+                          : customRound(
+                            Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                            10 ** Number(tokendict[tokenOut].decimals),
+                            3,
+                          )
+                        : ''
+                      ).toString(),
+                    );
+                  }
+                  const slider = e.target;
+                  const rect = slider.getBoundingClientRect();
+                  const trackWidth = rect.width - 15;
+                  const thumbPosition = (percent / 100) * trackWidth + 15 / 2;
+                  const popup: HTMLElement | null = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (popup) {
+                    popup.style.left = `${thumbPosition}px`;
+                  }
+                }}
+                onMouseDown={() => {
+                  setIsDragging(true);
+                  const popup: HTMLElement | null = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (popup) popup.classList.add('visible');
+                }}
+                onMouseUp={() => {
+                  setIsDragging(false);
+                  const popup: HTMLElement | null = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (popup) popup.classList.remove('visible');
+                }}
+                style={{
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(21, 21, 27, 1) ${sliderPercent}%)`,
+                }}
+              />
+              <div className="slider-percentage-popup">{sliderPercent}%</div>
+              <div className="balance-slider-marks">
+                {[0, 25, 50, 75, 100].map((markPercent) => (
+                  <span
+                    key={markPercent}
+                    className="balance-slider-mark"
+                    data-active={sliderPercent >= markPercent}
+                    data-percentage={markPercent}
+                    onClick={() => {
+                      if (connected) {
+                        const newAmount =
+                          (((tokenIn == eth && !client)
+                            ? walletTokenBalances[address]?.[tokenIn] -
+                              settings.chainConfig[activechain].gasamount >
+                              BigInt(0)
+                              ? walletTokenBalances[address]?.[tokenIn] -
+                              settings.chainConfig[activechain].gasamount
+                              : BigInt(0)
+                            : walletTokenBalances[address]?.[tokenIn]) *
+                            BigInt(markPercent)) /
+                          100n;
+                        setSliderPercent(markPercent);
+                        setInputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        debouncedSetAmount(newAmount);
+                        setswitched(false);
+                        if (isWrap) {
+                          setoutputString(
+                            newAmount == BigInt(0)
+                              ? ''
+                              : customRound(
+                                Number(newAmount) /
+                                10 ** Number(tokendict[tokenIn].decimals),
+                                3,
+                              ).toString(),
+                          );
+                          setamountOutSwap(newAmount);
+                        }
+                        if (location.pathname.slice(1) === 'limit') {
+                          setamountOutSwap(
+                            limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                                : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                              : BigInt(0),
+                          );
+                          setoutputString(
+                            (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? customRound(
+                                  Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                                : customRound(
+                                  Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                              : ''
+                            ).toString(),
+                          );
+                        }
+                        const slider = document.querySelector(
+                          '.balance-amount-slider',
+                        );
+                        const popup: HTMLElement | null = document.querySelector(
+                          '.slider-percentage-popup',
+                        );
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
+                            }px`;
+                        }
+                      }
+                    }}
+                  >
+                    {markPercent}%
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <button
+          className={`swap-button ${isSigning ? 'signing' : ''}`}
+          onClick={async () => {
+            if (connected && userchain === activechain) {
+              if (warning == 1) {
+                setpopup(13);
+                const confirmed = await new Promise((resolve) => {
+                  const handleConfirm = () => {
+                    cleanup();
+                    resolve(true);
+                  };
+
+                  const handleCancel = () => {
+                    cleanup();
+                    resolve(false);
+                  };
+
+                  const cleanup = () => {
+                    window.removeEventListener('high-impact-confirm', handleConfirm);
+                    window.removeEventListener('high-impact-cancel', handleCancel);
+                  };
+
+                  window.addEventListener('high-impact-confirm', handleConfirm);
+                  window.addEventListener('high-impact-cancel', handleCancel);
+
+                });
+                if (!confirmed) return;
+              }
+              let hash: any;
+              setIsSigning(true);
+              if (client) {
+                txPending.current = true;
+              }
+              try {
+                if (tokenIn == eth && tokenOut == weth) {
+                  hash = await sendUserOperationAsync({ uo: wrapeth(amountIn, weth) }, (rpcQueryData?.gasEstimate ?? 0n));
+                  newTxPopup(
+                    hash,
+                    'wrap',
+                    eth,
+                    weth,
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
+                    '',
+                    ''
+                  );
+                } else if (tokenIn == weth && tokenOut == eth) {
+                  hash = await sendUserOperationAsync({ uo: unwrapeth(amountIn, weth) }, (rpcQueryData?.gasEstimate ?? 0n));
+                  newTxPopup(
+                    hash,
+                    'unwrap',
+                    weth,
+                    eth,
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
+                    '',
+                    ''
+                  );
+                } else if (tokenIn == eth && tokendict[tokenOut]?.lst == true && isStake) {
+                  hash = await sendUserOperationAsync({ uo: stake(tokenOut, address, amountIn) }, (rpcQueryData?.gasEstimate ?? 0n) * 1100n / 1000n);
+                  newTxPopup(
+                    hash,
+                    'stake',
+                    eth,
+                    tokenOut,
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
+                    '',
+                    ''
+                  );
+                } else {
+                  if (switched == false) {
+                    if (tokenIn == eth) {
+                      if (orderType == 1 || multihop) {
+                        hash = await sendUserOperationAsync({
+                          uo: swapExactETHForTokens(
+                            router,
+                            amountIn,
+                            (amountOutSwap * slippage + 5000n) / 10000n,
+                            activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                            address as `0x${string}`,
+                            BigInt(Math.floor(Date.now() / 1000) + 900),
+                            usedRefAddress as `0x${string}`
+                          )
+                        }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
+                      } else {
+                        hash = await sendUserOperationAsync({
+                          uo: _swap(
+                            router,
+                            amountIn,
+                            activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                            activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                            true,
+                            BigInt(0),
+                            amountIn,
+                            tokenIn == activeMarket.quoteAddress
+                              ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                              : (highestBid * slippage + 5000n) / 10000n,
+                            BigInt(Math.floor(Date.now() / 1000) + 900),
+                            usedRefAddress as `0x${string}`
+                          )
+                        }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
+                      }
+                    } else {
+                      if (allowance < amountIn) {
+                        if (client) {
+                          let uo = []
+                          uo.push(approve(
+                            tokenIn as `0x${string}`,
+                            router,
+                            maxUint256
+                          ))
+                          if (tokenOut == eth) {
+                            if (orderType == 1 || multihop) {
+                              uo.push(swapExactTokensForETH(
+                                router,
+                                amountIn,
+                                (amountOutSwap * slippage + 5000n) / 10000n,
+                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                                address as `0x${string}`,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              ))
+                            } else {
+                              uo.push(_swap(
+                                router,
+                                BigInt(0),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                                true,
+                                BigInt(0),
+                                amountIn,
+                                tokenIn == activeMarket.quoteAddress
+                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                  : (highestBid * slippage + 5000n) / 10000n,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              ))
+                            }
+                          } else {
+                            if (orderType == 1 || multihop) {
+                              uo.push(swapExactTokensForTokens(
+                                router,
+                                amountIn,
+                                (amountOutSwap * slippage + 5000n) / 10000n,
+                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                                address as `0x${string}`,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              ))
+                            } else {
+                              uo.push(_swap(
+                                router,
+                                BigInt(0),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                                true,
+                                BigInt(0),
+                                amountIn,
+                                tokenIn == activeMarket.quoteAddress
+                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                  : (highestBid * slippage + 5000n) / 10000n,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              ))
+                            }
+                          }
+                          hash = await sendUserOperationAsync({ uo: uo })
+                          newTxPopup(
+                            hash,
+                            'approve',
+                            tokenIn,
+                            '',
+                            customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
+                            0,
+                            '',
+                            router
+                          );
+                        }
+                        else {
+                          hash = await sendUserOperationAsync({
+                            uo: approve(
+                              tokenIn as `0x${string}`,
+                              router,
+                              maxUint256
+                            )
+                          })
+                          newTxPopup(
+                            hash,
+                            'approve',
+                            tokenIn,
+                            '',
+                            customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
+                            0,
+                            '',
+                            router
+                          );
+                        }
+                      }
+                      if (!client || !(allowance < amountIn)) {
+                        if (tokenOut == eth) {
+                          if (orderType == 1 || multihop) {
+                            hash = await sendUserOperationAsync({
+                              uo: swapExactTokensForETH(
+                                router,
+                                amountIn,
+                                (amountOutSwap * slippage + 5000n) / 10000n,
+                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                                address as `0x${string}`,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              )
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
+                          } else {
+                            hash = await sendUserOperationAsync({
+                              uo: _swap(
+                                router,
+                                BigInt(0),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                                true,
+                                BigInt(0),
+                                amountIn,
+                                tokenIn == activeMarket.quoteAddress
+                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                  : (highestBid * slippage + 5000n) / 10000n,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              )
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
+                          }
+                        } else {
+                          if (orderType == 1 || multihop) {
+                            hash = await sendUserOperationAsync({
+                              uo: swapExactTokensForTokens(
+                                router,
+                                amountIn,
+                                (amountOutSwap * slippage + 5000n) / 10000n,
+                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                                address as `0x${string}`,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              )
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
+                          } else {
+                            hash = await sendUserOperationAsync({
+                              uo: _swap(
+                                router,
+                                BigInt(0),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                                true,
+                                BigInt(0),
+                                amountIn,
+                                tokenIn == activeMarket.quoteAddress
+                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                  : (highestBid * slippage + 5000n) / 10000n,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              )
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
+                          }
+                        }
+                      }
+                    }
+                  } else {
+                    if (tokenIn == eth) {
+                      if (orderType == 1 || multihop) {
+                        hash = await sendUserOperationAsync({
+                          uo: swapETHForExactTokens(
+                            router,
+                            amountOutSwap,
+                            (amountIn * 10000n + slippage / 2n) / slippage,
+                            activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                            address as `0x${string}`,
+                            BigInt(Math.floor(Date.now() / 1000) + 900),
+                            usedRefAddress as `0x${string}`
+                          )
+                        }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
+                      } else {
+                        hash = await sendUserOperationAsync({
+                          uo: _swap(
+                            router,
+                            BigInt((amountIn * 10000n + slippage / 2n) / slippage),
+                            activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                            activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                            false,
+                            BigInt(0),
+                            amountOutSwap,
+                            tokenIn == activeMarket.quoteAddress
+                              ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                              : (highestBid * slippage + 5000n) / 10000n,
+                            BigInt(Math.floor(Date.now() / 1000) + 900),
+                            usedRefAddress as `0x${string}`
+                          )
+                        }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
+                      }
+                    } else {
+                      if (allowance < amountIn) {
+                        if (client) {
+                          let uo = []
+                          uo.push(approve(
+                            tokenIn as `0x${string}`,
+                            router,
+                            maxUint256
+                          ))
+                          if (tokenOut == eth) {
+                            if (orderType == 1 || multihop) {
+                              uo.push(swapTokensForExactETH(
+                                router,
+                                amountOutSwap,
+                                (amountIn * 10000n + slippage / 2n) / slippage,
+                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                                address as `0x${string}`,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              ))
+                            } else {
+                              uo.push(_swap(
+                                router,
+                                BigInt(0),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                                false,
+                                BigInt(0),
+                                amountOutSwap,
+                                tokenIn == activeMarket.quoteAddress
+                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                  : (highestBid * slippage + 5000n) / 10000n,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              ))
+                            }
+                          } else {
+                            if (orderType == 1 || multihop) {
+                              uo.push(swapTokensForExactTokens(
+                                router,
+                                amountOutSwap,
+                                (amountIn * 10000n + slippage / 2n) / slippage,
+                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                                address as `0x${string}`,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              ))
+                            } else {
+                              uo.push(_swap(
+                                router,
+                                BigInt(0),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                                false,
+                                BigInt(0),
+                                amountOutSwap,
+                                tokenIn == activeMarket.quoteAddress
+                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                  : (highestBid * slippage + 5000n) / 10000n,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              ))
+                            }
+                          }
+                          hash = await sendUserOperationAsync({ uo: uo })
+                          newTxPopup(
+                            hash,
+                            'approve',
+                            tokenIn,
+                            '',
+                            customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
+                            0,
+                            '',
+                            router
+                          );
+                        }
+                        else {
+                          hash = await sendUserOperationAsync({
+                            uo: approve(
+                              tokenIn as `0x${string}`,
+                              router,
+                              maxUint256
+                            )
+                          })
+                          newTxPopup(
+                            hash,
+                            'approve',
+                            tokenIn,
+                            '',
+                            customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
+                            0,
+                            '',
+                            router
+                          );
+                        }
+                      }
+                      if (!client || !(allowance < amountIn)) {
+                        if (tokenOut == eth) {
+                          if (orderType == 1 || multihop) {
+                            hash = await sendUserOperationAsync({
+                              uo: swapTokensForExactETH(
+                                router,
+                                amountOutSwap,
+                                (amountIn * 10000n + slippage / 2n) / slippage,
+                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                                address as `0x${string}`,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              )
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
+                          } else {
+                            hash = await sendUserOperationAsync({
+                              uo: _swap(
+                                router,
+                                BigInt(0),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                                false,
+                                BigInt(0),
+                                amountOutSwap,
+                                tokenIn == activeMarket.quoteAddress
+                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                  : (highestBid * slippage + 5000n) / 10000n,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              )
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
+                          }
+                        } else {
+                          if (orderType == 1 || multihop) {
+                            hash = await sendUserOperationAsync({
+                              uo: swapTokensForExactTokens(
+                                router,
+                                amountOutSwap,
+                                (amountIn * 10000n + slippage / 2n) / slippage,
+                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                                address as `0x${string}`,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              )
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
+                          } else {
+                            hash = await sendUserOperationAsync({
+                              uo: _swap(
+                                router,
+                                BigInt(0),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                                false,
+                                BigInt(0),
+                                amountOutSwap,
+                                tokenIn == activeMarket.quoteAddress
+                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                  : (highestBid * slippage + 5000n) / 10000n,
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
+                                usedRefAddress as `0x${string}`
+                              )
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                if (!client) {
+                  txPending.current = true
+                }
+                setswitched(false);
+                setInputString('');
+                setamountIn(BigInt(0));
+                setoutputString('')
+                setamountOutSwap(BigInt(0));
+                setSliderPercent(0);
+                setSwapButtonDisabled(true);
+                setSwapButton(1);
+                setIsSigning(false)
+                const slider = document.querySelector('.balance-amount-slider');
+                const popup = document.querySelector('.slider-percentage-popup');
+                if (slider && popup) {
+                  (popup as HTMLElement).style.left = `${15 / 2}px`;
+                }
+                await refetch()
+                txPending.current = false
+              } catch (error) {
+                if (!(error instanceof TransactionExecutionError)) {
+                  newTxPopup(
+                    hash,
+                    "swapFailed",
+                    tokenIn == eth ? eth : tokenIn,
+                    tokenOut == eth ? eth : tokenOut,
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn == eth ? eth : tokenIn].decimals), 3),
+                    customRound(Number(amountOutSwap) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
+                    "",
+                    "",
+                  );
+                }
+              } finally {
+                txPending.current = false
+                setIsSigning(false)
+              }
+            } else {
+              !connected ? setpopup(4) : handleSetChain();
+            }
+          }}
+          disabled={swapButtonDisabled || displayValuesLoading || isSigning}
+        >
+          {isSigning ? (
+            <div className="button-content">
+              <div className="loading-spinner" />
+              {validOneCT ? t('') : t('signTransaction')}
+            </div>
+          ) : swapButton == 0 ? (
+            t('insufficientLiquidity')
+          ) : swapButton == 1 ? (
+            t('enterAmount')
+          ) : swapButton == 2 ? (
+            t('swap')
+          ) : swapButton == 3 ? (
+            t('insufficient') +
+            (tokendict[tokenIn].ticker || '?') +
+            ' ' +
+            t('bal')
+          ) : swapButton == 4 ? (
+            `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
+          ) : swapButton == 5 ? (
+            t('connectWallet')
+          ) : (
+            client ? t('swap') : t('approve')
+          )}
+        </button>
+      </div>
+      <div className="trade-info-rectangle">
+        {(tokenIn == eth && tokendict[tokenOut]?.lst == true) && <div className="trade-fee">
+          <div className="label-container">
+            <TooltipLabel
+              label={t('stake')}
+              tooltipText={
+                <div>
+                  <div className="tooltip-description">
+                    {t('stakeSubtitle')}
+                  </div>
+                </div>
+              }
+              className="impact-label"
+            />
+          </div>
+          <ToggleSwitch
+            checked={isStake}
+            onChange={() => {
+              const newValue = isStake == true ? false : true;
+              setIsStake(newValue);
+            }}
+          />
+        </div>}
+        {!multihop && !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) && (
+          <div className="trade-fee">
+            <div className="label-container">
+              <TooltipLabel
+                label={t('partialFill')}
+                tooltipText={
+                  <div>
+                    <div className="tooltip-description">
+                      {t('partialFillSubtitle')}
+                    </div>
+                  </div>
+                }
+                className="impact-label"
+              />
+            </div>
+            <ToggleSwitch
+              checked={orderType === 0}
+              onChange={() => {
+                const newValue = orderType === 1 ? 0 : 1;
+                setorderType(newValue);
+                localStorage.setItem(
+                  'crystal_order_type',
+                  JSON.stringify(newValue),
+                );
+              }}
+            />
+          </div>
+        )}
+
+        {!isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) && (
+          <div className="slippage-row">
+            <div className="label-container">
+              <div className="slippage-group">
+                <TooltipLabel
+                  label={t('slippage')}
+                  tooltipText={
+                    <div>
+                      <div className="tooltip-description">
+                        {t('slippageHelp')}
+                      </div>
+                    </div>
+                  }
+                  className="slippage-label"
+                />
+              </div>
+            </div>
+            <div className="slippage-input-container">
+              <input
+                inputMode="decimal"
+                className={`slippage-inline-input ${parseFloat(slippageString) > 5 ? 'red' : ''
+                  }`}
+                type="text"
+                value={slippageString}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    (e.target as HTMLInputElement).blur()
+                    e.stopPropagation()
+                  };
+                }}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  if (
+                    /^(?!0{2})\d*\.?\d{0,2}$/.test(value) &&
+                    !/^\d{2}\.\d{2}$/.test(value)
+                  ) {
+                    if (value === '') {
+                      setSlippageString('');
+                      setSlippage(BigInt(9900));
+                      localStorage.setItem('crystal_slippage_string', '1');
+                      localStorage.setItem('crystal_slippage', '9900');
+                    } else if (parseFloat(value) <= 50) {
+                      setSlippageString(value);
+                      localStorage.setItem('crystal_slippage_string', value);
+
+                      const newSlippage = BigInt(
+                        10000 - parseFloat(value) * 100,
+                      );
+                      setSlippage(newSlippage);
+                      localStorage.setItem(
+                        'crystal_slippage',
+                        newSlippage.toString(),
+                      );
+                    }
+                  }
+                }}
+                onBlur={() => {
+                  if (slippageString === '') {
+                    setSlippageString('1');
+                    localStorage.setItem('crystal_slippage_string', '1');
+
+                    setSlippage(BigInt(9900));
+                    localStorage.setItem('crystal_slippage', '9900');
+                  }
+                }}
+              />
+              <span
+                className={`slippage-symbol ${parseFloat(slippageString) > 5 ? 'red' : ''
+                  }`}
+              >
+                %
+              </span>
+            </div>
+          </div>
+        )}
+
+        {!isWrap && (
+          <div className="average-price">
+            <div className="label-container">
+              <TooltipLabel
+                label={t('averagePrice')}
+                tooltipText={
+                  <div>
+                    <div className="tooltip-description">
+                      {t('averagePriceHelp')}
+                    </div>
+                  </div>
+                }
+                className="impact-label"
+              />
+            </div>
+            <div className="value-container">
+              {displayValuesLoading ? (
+                <div className="limit-fee-skeleton" style={{ width: 80 }} />
+              ) : isWrap ? (
+                `1 ${tokendict[tokenOut].ticker}`
+              ) : (
+                `${formatSubscript(averagePrice)} ${multihop ? tokendict[tokenIn].ticker : activeMarket.quoteAsset}`
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="price-impact">
+          <div className="label-container">
+            <TooltipLabel
+              label={t('priceImpact')}
+              tooltipText={
+                <div>
+                  <div className="tooltip-description">
+                    {t('priceImpactHelp')}
+                  </div>
+                </div>
+              }
+              className="impact-label"
+            />
+          </div>
+          <div className="value-container">
+            {displayValuesLoading ? (
+              <div className="limit-fee-skeleton" style={{ width: 60 }} />
+            ) : isWrap || ((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) ? (
+              `0%`
+            ) : priceImpact ? (
+              formatCommas(priceImpact)
+            ) : (
+              '0.00%'
+            )}
+          </div>
+        </div>
+
+        <div className="trade-fee">
+          <div className="label-container">
+            <TooltipLabel
+              label={`${t('fee')} (0.${isWrap || ((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) ? '00' : String(Number(BigInt(100000) - activeMarket.fee) / 100).replace(/\./g, "")}%)`}
+              tooltipText={
+                <div>
+                  <div className="tooltip-description">
+                    {isWrap ? t('nofeeforwrap') : t('takerfeeexplanation')}
+                  </div>
+                </div>
+              }
+              className="impact-label"
+            />
+          </div>
+          <div className="value-container">
+            {displayValuesLoading ? (
+              <div className="limit-fee-skeleton" style={{ width: 70 }} />
+            ) : isWrap || ((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) ? (
+              `0 ${tokendict[tokenIn].ticker}`
+            ) : (
+              formatCommas(tradeFee)
+            )}
+          </div>
+        </div>
+
+        {(warning == 1 && (
+          <div className="price-impact-warning">{t('Warning')}</div>
+        )) ||
+          (warning == 2 && (
+            <div className="price-impact-warning">
+              {t('insufficientLiquidityWarning')}
+            </div>
+          )) ||
+          (warning == 3 && (
+            <div className="price-impact-warning">
+              {t('insufficientLiquidityWarningMultihop')}
+            </div>
+          ))}
+      </div>
+    </div>
   );
 
   // trade ui component
@@ -25474,7 +28579,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setChain={handleSetChain}
               />
             } />
-          <Route path="/swap" element={TradeLayout(swap)} />
+          <Route path="/swap" element={TradeLayout(tempswap)} />
           <Route path="/sneakymarket" element={TradeLayout(swap)} />
           <Route path="/sneakylimit" element={TradeLayout(limit)} />
           <Route path="/send" element={TradeLayout(send)} />
