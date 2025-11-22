@@ -582,8 +582,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       pnl: h.valueNet,
       remainingPct:
         h.tokenNet === 0
-          ? 0
-          : (h.balance / Math.max(h.amountBought, 1e-9)) * 100,
+          ? 100
+          : Math.min((h.balance / Math.max(h.amountBought, 1e-9)) * 100, 100),
       tags: [],
     }))
     : mockHolders.slice(0, 20).map((h, i) => ({
@@ -1322,7 +1322,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                 .map((row, index) => {
                   const remainingPct =
                     row.amountBought === 0
-                      ? 0
+                      ? 100
                       : (row.balance / Math.max(row.amountBought, 1e-9)) * 100;
                   const pnl = row.valueNet;
                   const avgBuyUSD =
@@ -1539,7 +1539,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                 <div className="meme-oc-header-cell">Market Cap (MON)</div>
                 <div className="meme-oc-header-cell">Migrated</div>
                 <div className="meme-oc-header-cell">Liquidity</div>
-                <div className="meme-oc-header-cell">1hr Vol</div>
                 <div className="meme-oc-header-cell">Holders</div>
               </div>
 
@@ -1650,9 +1649,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                           )}
                         </div>
                         <div className="meme-oc-cell">
-                          $0
-                        </div>
-                        <div className="meme-oc-cell 1hr-vol-cell">
                           $0
                         </div>
                         <div className="meme-oc-cell">
