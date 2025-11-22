@@ -1947,13 +1947,18 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
               let uo;
               if (isNadFun) {
+                const fee = 99000n;
+                const iva = value * fee / 100000n;
+                const vNative = token.reserveQuote + iva;
+                const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+                const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
                 uo = {
                   target: contractAddress as `0x${string}`,
                   data: encodeFunctionData({
                     abi: NadFunAbi,
                     functionName: 'buy',
                     args: [{
-                      amountOutMin: 0n,
+                      amountOutMin: BigInt(output),
                       token: token.id as `0x${string}`,
                       to: walletAddr as `0x${string}`,
                       deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
@@ -2031,7 +2036,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             });
           }
         } else {
-          // Single wallet buy logic
           const isNadFun = token.source === 'nadfun';
           const contractAddress = isNadFun
             ? settings.chainConfig[activechain].nadFunRouter
@@ -2049,13 +2053,19 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
           let uo;
           if (isNadFun) {
+            const fee = 99000n;
+            const iva = value * fee / 100000n;
+            const vNative = token.reserveQuote + iva;
+            const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+            const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+
             uo = {
               target: contractAddress as `0x${string}`,
               data: encodeFunctionData({
                 abi: NadFunAbi,
                 functionName: 'buy',
                 args: [{
-                  amountOutMin: 0n,
+                  amountOutMin: BigInt(output),
                   token: token.id as `0x${string}`,
                   to: account.address as `0x${string}`,
                   deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
@@ -2064,12 +2074,18 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               value,
             };
           } else {
+            const fee = 99000n;
+            const iva = value * fee / 100000n;
+            const vNative = token.reserveQuote + iva;
+            const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+            const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+
             uo = {
               target: contractAddress as `0x${string}`,
               data: encodeFunctionData({
                 abi: CrystalRouterAbi,
                 functionName: 'buy',
-                args: [true, token.id as `0x${string}`, value, 0n],
+                args: [true, token.id as `0x${string}`, value, BigInt(output)],
               }),
               value,
             };
@@ -2092,12 +2108,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           terminalRefetch();
         }
       } else {
-        // Multi-wallet sell logic
         if (selectedWallets.size > 0) {
           const decimals = tokendict?.[token.id]?.decimals || 18;
           const walletsArray = Array.from(selectedWallets);
 
-          // Filter wallets that have tokens
           const walletsWithTokens = walletsArray.filter((addr) => {
             const balance = walletTokenBalances?.[addr]?.[token.id];
             return balance && balance > 0n;
@@ -2117,7 +2131,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           let totalTokensToSell = 0;
           let estimatedMON = 0;
 
-          // Handle percentage mode for sell
           if (sellInputMode === 'percentage') {
             const percentage = parseFloat(tradeAmount);
             const totalAvailable = walletsWithTokens.reduce((sum, addr) => {
@@ -2144,13 +2157,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           const sellPromises = [];
 
           if (sellInputMode === 'percentage' || inputCurrency === 'TOKEN') {
-            // Divide token amount across wallets (works for both percentage and token modes)
             const totalTokenAmount = totalTokensToSell;
             const totalTokenWei = BigInt(
               Math.round(totalTokenAmount * 10 ** Number(decimals)),
             );
 
-            // Calculate total tokens available
             const totalAvailable = walletsWithTokens.reduce((sum, addr) => {
               const balance = walletTokenBalances?.[addr]?.[token.id] || 0n;
               return sum + balance;
@@ -2162,10 +2173,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
               const walletBalance = walletTokenBalances?.[walletAddr]?.[token.id] || 0n;
 
-              // Proportional distribution
               let amountTokenWei = (totalTokenWei * walletBalance) / totalAvailable;
 
-              // Ensure we don't sell more than balance
               if (amountTokenWei > walletBalance) {
                 amountTokenWei = walletBalance > 1n ? walletBalance - 1n : 0n;
               }
@@ -2181,7 +2190,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     functionName: 'sell',
                     args: [
                       account.address as `0x${string}`,
-                      token.dev as `0x${string}`,
+                      token.id as `0x${string}`,
                       amountTokenWei,
                     ],
                   }),
@@ -2234,7 +2243,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               sellPromises.push(sellPromise);
             }
           } else {
-            // MON amount mode - sell proportionally
             const monAmount = parseFloat(tradeAmount);
             const tokensToSell = monAmount / currentPrice;
 
@@ -2245,7 +2253,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               const walletBalance = walletTokenBalances?.[walletAddr]?.[token.id] || 0n;
               const walletTokens = Number(walletBalance) / 10 ** Number(decimals);
 
-              // Each wallet sells proportionally
               const walletShare = tokensToSell / walletsWithTokens.length;
 
               let amountTokenWei = BigInt(
@@ -2267,7 +2274,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     functionName: 'sell',
                     args: [
                       account.address as `0x${string}`,
-                      token.dev as `0x${string}`,
+                      token.id as `0x${string}`,
                       amountTokenWei,
                     ],
                   }),
@@ -2348,18 +2355,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
           const decimals = tokendict?.[token.id]?.decimals || 18;
 
-          if (inputCurrency === 'TOKEN') {
-            amountTokenWei = BigInt(
-              Math.round(parseFloat(tradeAmount) * 10 ** Number(decimals)),
-            );
+          if (sellInputMode === 'percentage') {
+            amountTokenWei = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
             isExactInput = true;
-            monAmountWei = 0n;
+          } else if (inputCurrency === 'TOKEN') {
+            amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
+            isExactInput = false;
           } else {
-            monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
-            const tokensToSell = parseFloat(tradeAmount) / currentPrice;
-            amountTokenWei = BigInt(
-              Math.round(tokensToSell * 10 ** Number(decimals)),
-            );
+            amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
             isExactInput = false;
           }
 
@@ -2394,7 +2397,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 functionName: 'sell',
                 args: [
                   account.address as `0x${string}`,
-                  token.dev as `0x${string}`,
+                  token.id as `0x${string}`,
                   amountTokenWei,
                 ],
               }),
@@ -2410,7 +2413,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   isExactInput,
                   token.id as `0x${string}`,
                   amountTokenWei,
-                  monAmountWei,
+                  0n,
                 ],
               }),
               value: 0n,
@@ -2657,7 +2660,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             isVertDragging={isVertDragging}
             isOrderCenterVisible={true}
             onHeightChange={(h: any) => setOrderCenterHeight(h)}
-            onDragStart={(e) => {
+            onDragStart={(e: any) => {
               initialMousePosRef.current = e.clientY;
               initialHeightRef.current = orderCenterHeight;
               setIsVertDragging(true);

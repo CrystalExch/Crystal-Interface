@@ -1160,13 +1160,19 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
         let uo;
         if (isNadFun) {
+          const fee = 99000n;
+          const iva = partWei * fee / 100000n;
+          const vNative = token.reserveQuote + iva;
+          const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+          const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+
           uo = {
             target: contractAddress as `0x${string}`,
             data: encodeFunctionData({
               abi: NadFunAbi,
               functionName: 'buy',
               args: [{
-                amountOutMin: 0n,
+                amountOutMin: BigInt(output),
                 token: token.id as `0x${string}`,
                 to: addr as `0x${string}`,
                 deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
@@ -1175,12 +1181,18 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             value: partWei,
           };
         } else {
+          const fee = 99000n;
+          const iva = partWei * fee / 100000n;
+          const vNative = token.reserveQuote + iva;
+          const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+          const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+
           uo = {
             target: contractAddress as `0x${string}`,
             data: encodeFunctionData({
               abi: CrystalRouterAbi,
               functionName: 'buy',
-              args: [true, token.id as `0x${string}`, partWei, 0n],
+              args: [true, token.id as `0x${string}`, partWei, BigInt(output)],
             }),
             value: partWei,
           };

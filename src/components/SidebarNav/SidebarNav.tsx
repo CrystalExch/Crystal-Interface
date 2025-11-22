@@ -5,6 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import candlestick from '../../assets/candlestick.png';
 import portfolio from '../../assets/wallet_icon.svg';
 import leaderboard from '../../assets/leaderboard.png';
+import referrals from '../../assets/referrals.png';
 import swap from '../../assets/circulararrow.png';
 import twitter from '../../assets/twitter.png';
 import discord from '../../assets/Discord.svg'
@@ -235,6 +236,16 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('leaderboard')}</span>
               </Link>
             )}
+            {!isMobile && (
+              <Link
+                to="/referrals"
+                className={`page-mode-button ${path === '/referrals' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+                onClick={handleLinkClick}
+              >
+                <img src={referrals} className="sidebar-icon" />
+                <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('referrals')}</span>
+              </Link>
+            )}
             {/* <Link
               to="/lending"
               className={`page-mode-button ${path === '/lending' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -388,6 +399,15 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               >
                 <img src={leaderboard} className="mobile-menu-icon" />
                 <span>{t('leaderboard')}</span>
+              </Link>
+
+              <Link
+                to="/referrals"
+                className="mobile-menu-item"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <img src={referrals} className="mobile-menu-icon" />
+                <span>{t('referrals')}</span>
               </Link>
             </div>
 
