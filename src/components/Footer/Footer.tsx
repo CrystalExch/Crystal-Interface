@@ -45,6 +45,8 @@ interface FooterProps {
   onToggleWalletTrackerWidget?: any;
   setpopup: (value: number) => void;
   createSubWallet: any;
+  activeWalletPrivateKey?: string;
+
 }
 
 const Tooltip: React.FC<{
@@ -216,41 +218,22 @@ const Footer: React.FC<FooterProps> = ({
   isWalletTrackerWidgetOpen = false,
   onToggleWalletTrackerWidget,
   setpopup,
-  createSubWallet
+  createSubWallet,
+  activeWalletPrivateKey,
 }) => {
+  const isWalletActive = (privateKey: string) => {
+    return activeWalletPrivateKey === privateKey;
+  };
+
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [isDiscoverPopupOpen, setIsDiscoverPopupOpen] = useState(false);
   const [discoverActiveTab, setDiscoverActiveTab] = useState<'trending' | 'dex' | 'surge' | 'live' | 'p1'>('surge');
   const [discoverActiveFilter, setDiscoverActiveFilter] = useState<'early' | 'surging'>('early');
   const dropdownRef = useRef<HTMLDivElement>(null);
-const copyToClipboard = async (text: string, label = 'Address copied') => {
-  const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  try {
-    await navigator.clipboard.writeText(text);
-    if (showLoadingPopup && updatePopup) {
-      showLoadingPopup(txId, {
-        title: label,
-        subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
-      });
-      setTimeout(() => {
-        updatePopup(txId, {
-          title: label,
-          subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
-          variant: 'success',
-          confirmed: true,
-          isLoading: false,
-        });
-      }, 100);
-    }
-  } catch {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.left = '-9999px';
-    document.body.appendChild(ta);
-    ta.select();
+  const copyToClipboard = async (text: string, label = 'Address copied') => {
+    const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
-      document.execCommand('copy');
+      await navigator.clipboard.writeText(text);
       if (showLoadingPopup && updatePopup) {
         showLoadingPopup(txId, {
           title: label,
@@ -266,27 +249,51 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
           });
         }, 100);
       }
-    } catch (fallbackErr) {
-      if (showLoadingPopup && updatePopup) {
-        showLoadingPopup(txId, {
-          title: 'Copy Failed',
-          subtitle: 'Unable to copy to clipboard',
-        });
-        setTimeout(() => {
-          updatePopup(txId, {
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        if (showLoadingPopup && updatePopup) {
+          showLoadingPopup(txId, {
+            title: label,
+            subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+          });
+          setTimeout(() => {
+            updatePopup(txId, {
+              title: label,
+              subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+              variant: 'success',
+              confirmed: true,
+              isLoading: false,
+            });
+          }, 100);
+        }
+      } catch (fallbackErr) {
+        if (showLoadingPopup && updatePopup) {
+          showLoadingPopup(txId, {
             title: 'Copy Failed',
             subtitle: 'Unable to copy to clipboard',
-            variant: 'error',
-            confirmed: true,
-            isLoading: false,
           });
-        }, 100);
+          setTimeout(() => {
+            updatePopup(txId, {
+              title: 'Copy Failed',
+              subtitle: 'Unable to copy to clipboard',
+              variant: 'error',
+              confirmed: true,
+              isLoading: false,
+            });
+          }, 100);
+        }
+      } finally {
+        document.body.removeChild(ta);
       }
-    } finally {
-      document.body.removeChild(ta);
     }
-  }
-};
+  };
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -520,7 +527,7 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
                         {subWallets.map((wallet, index) => {
                           const balance = getWalletBalance(wallet.address);
                           const isSelected = selectedWallets.has(wallet.address);
-
+                          const isActive = isWalletActive(wallet.privateKey);
                           return (
                             <React.Fragment key={wallet.address}>
                               <div
@@ -536,8 +543,20 @@ const copyToClipboard = async (text: string, label = 'Address copied') => {
                                   />
                                 </div>
                                 <div className="wallet-dropdown-info">
-                                  <div className="wallet-dropdown-name">
+                                  <div className="quickbuy-wallet-name">
                                     {getWalletName(wallet.address, index)}
+                                    {isActive && (
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                        <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                        <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                        <path d="m20 9-3 9" />
+                                        <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                        <path d="M7 18 4 9" />
+                                        <circle cx="12" cy="4" r="2" />
+                                        <circle cx="20" cy="7" r="2" />
+                                        <circle cx="4" cy="7" r="2" />
+                                      </svg>
+                                    )}
                                   </div>
                                   <div
                                     className="wallet-dropdown-address"

@@ -4459,10 +4459,10 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               type="button"
               className="explorer-transparent-button"
               onClick={handleWalletButtonClick}
-                                style={{
-                  opacity: !activeWalletPrivateKey ? 0.3 : 1,
-                  transition: 'all 0.2s ease'
-                }}
+              style={{
+                opacity: !activeWalletPrivateKey ? 0.3 : 1,
+                transition: 'all 0.2s ease'
+              }}
             >
               <div className="connect-content">
                 <span className="transparent-button-container">
@@ -4498,18 +4498,18 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 </span>
               </div>
             </button>
-{account.connected && (
+            {account.connected && (
               <div
                 className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}
               >
                 {subWallets.length > 0 &&
                   (<>
-                    <div className="footer-wallet-dropdown-header"                                
-                   style={{
-                  opacity: !activeWalletPrivateKey ? 0.3 : 1,
-                  transition: 'all 0.2s ease',
-                  backdropFilter: !activeWalletPrivateKey ? 'blur(3px)' : 'none'
-                }}>
+                    <div className="footer-wallet-dropdown-header"
+                      style={{
+                        opacity: !activeWalletPrivateKey ? 0.3 : 1,
+                        transition: 'all 0.2s ease',
+                        backdropFilter: !activeWalletPrivateKey ? 'blur(3px)' : 'none'
+                      }}>
                       <div className="footer-wallet-dropdown-actions">
                         <button
                           className="wallet-action-btn"
@@ -4575,25 +4575,39 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                               <div className="wallet-dropdown-info">
                                 <div className="wallet-dropdown-name">
                                   {getWalletName(wallet.address, index)}
-                                </div>
-                               <div className="wallet-dropdown-address"              
-                                   onClick={(e) => {
-                                      e.stopPropagation();
-                                      copyToClipboard(wallet.address);
-                                    }}
-                                    style={{ cursor: 'pointer' }}>
-                                    {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                                      <svg
-                                      className="wallet-dropdown-address-copy-icon"
-                                      width="11"
-                                      height="11"
-                                      viewBox="0 0 24 24"
-                                      fill="currentColor"
-                                      style={{ marginLeft: '2px' }}
-                                    >
-                                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                  <Tooltip content="Primary Wallet">
+                                  {isActive && (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                      <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                      <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                      <path d="m20 9-3 9" />
+                                      <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                      <path d="M7 18 4 9" />
+                                      <circle cx="12" cy="4" r="2" />
+                                      <circle cx="20" cy="7" r="2" />
+                                      <circle cx="4" cy="7" r="2" />
                                     </svg>
-                                  </div>
+                                  )}
+                                  </Tooltip>
+                                </div>
+                                <div className="wallet-dropdown-address"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    copyToClipboard(wallet.address);
+                                  }}
+                                  style={{ cursor: 'pointer' }}>
+                                  {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                                  <svg
+                                    className="wallet-dropdown-address-copy-icon"
+                                    width="11"
+                                    height="11"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                    style={{ marginLeft: '2px' }}
+                                  >
+                                    <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                  </svg>
+                                </div>
                               </div>
                               <div className="wallet-dropdown-balance">
                                 {(() => {

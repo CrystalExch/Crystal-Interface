@@ -130,7 +130,7 @@ interface MemeInterfaceProps {
   isLoadingTrades: any;
   setIsLoadingTrades: any;
   trackedWalletsRef: any;
-    isPaused?: boolean;
+  isPaused?: boolean;
   backlogCount?: number;
 }
 
@@ -362,7 +362,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   isLoadingTrades,
   setIsLoadingTrades,
   trackedWalletsRef,
-    isPaused,
+  isPaused,
   backlogCount,
 }) => {
   const getSliderPosition = (
@@ -378,6 +378,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       default:
         return 0;
     }
+  };
+  const isWalletActive = (privateKey: string) => {
+    return activeWalletPrivateKey === privateKey;
   };
 
   const getWalletBalance = (address: string) => {
@@ -828,7 +831,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [tempPresetValue, setTempPresetValue] = useState('');
   const [statsRaw, setStatsRaw] = useState<Record<string, any> | null>(null);
   const presetInputRef = useRef<HTMLInputElement>(null);
-const [isWidgetOpen, setIsWidgetOpen] = useState(() => {
+  const [isWidgetOpen, setIsWidgetOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('crystal_quickbuy_widget_open');
       return saved ? JSON.parse(saved) : true;
@@ -1007,7 +1010,7 @@ const [isWidgetOpen, setIsWidgetOpen] = useState(() => {
 
   const routerAddress = settings.chainConfig[activechain]?.router;
   const explorer = settings.chainConfig[activechain]?.explorer;
-const userAddr = address ?? account?.address ?? '';
+  const userAddr = address ?? account?.address ?? '';
   const [dragStart, setDragStart] = useState<{ y: number; height: number } | null>(null);
   const dragStartRef = useRef<{ y: number; height: number } | null>(null);
 
@@ -2690,7 +2693,7 @@ const userAddr = address ?? account?.address ?? '';
         <div
           className={`meme-ordercenter ${mobileActiveView !== 'ordercenter' ? 'mobile-hidden' : ''}`}
         >
-<MemeOrderCenter
+          <MemeOrderCenter
             orderCenterHeight={orderCenterHeight}
             isVertDragging={isVertDragging}
             isOrderCenterVisible={true}
@@ -2890,6 +2893,7 @@ const userAddr = address ?? account?.address ?? '';
           )}
         </div>
         {isWalletDropdownOpen && account.connected && (
+          
           <div className="meme-wallet-dropdown-panel" ref={walletDropdownPanelRef}>
             {(() => {
               const walletsWithToken = subWallets.filter(
@@ -2921,6 +2925,7 @@ const userAddr = address ?? account?.address ?? '';
                     w.address !== destinationAddr &&
                     (walletTokenBalances[w.address]?.[token.id!] ?? 0n) > 0n,
                 );
+                        const isActive = isWalletActive(wallet.privateKey);
 
               return (
                 <>
@@ -3052,6 +3057,18 @@ const userAddr = address ?? account?.address ?? '';
                               <div className="meme-wallet-info">
                                 <div className="meme-wallet-name">
                                   {getWalletName(wallet.address, index)}
+                                  {isActive && (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                      <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                      <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                      <path d="m20 9-3 9" />
+                                      <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                      <path d="M7 18 4 9" />
+                                      <circle cx="12" cy="4" r="2" />
+                                      <circle cx="20" cy="7" r="2" />
+                                      <circle cx="4" cy="7" r="2" />
+                                    </svg>
+                                  )}
                                 </div>
                                 <div
                                   className="meme-wallet-address"
@@ -5014,7 +5031,7 @@ const userAddr = address ?? account?.address ?? '';
           </div>,
           document.body,
         )}
-        
+
     </div>
   );
 };

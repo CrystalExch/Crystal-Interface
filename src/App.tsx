@@ -25514,6 +25514,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         onToggleWalletTrackerWidget={setIsWalletTrackerWidgetOpen}
         setpopup={setpopup}
         createSubWallet={createSubWallet}
+        activeWalletPrivateKey={oneCTSigner}
       />
     </div>
   );
