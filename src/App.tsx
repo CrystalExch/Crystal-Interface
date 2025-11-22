@@ -5463,6 +5463,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     dev: creatorAddress,
                     name: name || 'Unknown',
                     symbol: symbol || 'UNKNOWN',
+                    image: '',
                     description: '',
                     twitterHandle: '',
                     telegramHandle: '',
