@@ -531,8 +531,11 @@ const Footer: React.FC<FooterProps> = ({
                           return (
                             <React.Fragment key={wallet.address}>
                               <div
-                                className={`quickbuy-wallet-item ${isSelected ? 'selected' : ''}`}
-                                onClick={() => toggleWalletSelection(wallet.address)}
+                                key={wallet.address}
+                                className={`footer-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                                onClick={() =>
+                                  toggleWalletSelection(wallet.address)
+                                }
                               >
                                 <div className="quickbuy-wallet-checkbox-container">
                                   <input

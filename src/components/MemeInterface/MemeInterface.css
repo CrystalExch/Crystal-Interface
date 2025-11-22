@@ -2856,7 +2856,7 @@
 }
 
 .meme-wallet-item.active {
-  border-left: 2px solid #d8dcff;
+  color:#d8dcff;
 }
 
 .meme-wallet-checkbox-container {

@@ -2507,13 +2507,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     const buyTransactions = Number(
       (s as any)[`buy_tx_count_${tf}`] ??
-        (s as any)[`buy_count_${tf}`] ??
-        0,
+      (s as any)[`buy_count_${tf}`] ??
+      0,
     );
     const sellTransactions = Number(
       (s as any)[`sell_tx_count_${tf}`] ??
-        (s as any)[`sell_count_${tf}`] ??
-        0,
+      (s as any)[`sell_count_${tf}`] ??
+      0,
     );
 
     return {
@@ -2892,7 +2892,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           )}
         </div>
         {isWalletDropdownOpen && account.connected && (
-          
+
           <div className="meme-wallet-dropdown-panel" ref={walletDropdownPanelRef}>
             {(() => {
               const walletsWithToken = subWallets.filter(
@@ -3041,7 +3041,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                           return (
                             <div
                               key={wallet.address}
-                              className={`meme-wallet-item ${isSelected ? 'selected' : ''}`}
+                              className={`meme-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
                               onClick={() => toggleWalletSelection(wallet.address)}
                             >
                               <div className="meme-wallet-checkbox-container">
@@ -3056,18 +3056,20 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                               <div className="meme-wallet-info">
                                 <div className="meme-wallet-name">
                                   {getWalletName(wallet.address, index)}
-                                  {isActive && (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
-                                      <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
-                                      <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
-                                      <path d="m20 9-3 9" />
-                                      <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
-                                      <path d="M7 18 4 9" />
-                                      <circle cx="12" cy="4" r="2" />
-                                      <circle cx="20" cy="7" r="2" />
-                                      <circle cx="4" cy="7" r="2" />
-                                    </svg>
-                                  )}
+                                  <Tooltip content="Primary Wallet">
+                                    {isActive && (
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                        <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                        <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                        <path d="m20 9-3 9" />
+                                        <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                        <path d="M7 18 4 9" />
+                                        <circle cx="12" cy="4" r="2" />
+                                        <circle cx="20" cy="7" r="2" />
+                                        <circle cx="4" cy="7" r="2" />
+                                      </svg>
+                                    )}
+                                  </Tooltip>
                                 </div>
                                 <div
                                   className="meme-wallet-address"
@@ -3179,11 +3181,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                           const balance = getWalletBalance(wallet.address);
                           const isSelected = selectedWallets.has(wallet.address);
                           const tokenCount = getWalletTokenCount(wallet.address);
+                          const isActive = isWalletActive(wallet.privateKey);
 
                           return (
                             <div
                               key={wallet.address}
-                              className={`meme-wallet-item ${isSelected ? 'selected' : ''}`}
+                              className={`meme-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
                               onClick={() => toggleWalletSelection(wallet.address)}
                             >
                               <div className="meme-wallet-checkbox-container">
@@ -3201,6 +3204,20 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                                     wallet.address,
                                     index + walletsWithToken.length,
                                   )}
+                                                                    <Tooltip content="Primary Wallet">
+                                    {isActive && (
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                        <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                        <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                        <path d="m20 9-3 9" />
+                                        <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                        <path d="M7 18 4 9" />
+                                        <circle cx="12" cy="4" r="2" />
+                                        <circle cx="20" cy="7" r="2" />
+                                        <circle cx="4" cy="7" r="2" />
+                                      </svg>
+                                    )}
+                                  </Tooltip>
                                 </div>
                                 <div
                                   className="meme-wallet-address"

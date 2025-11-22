@@ -4542,11 +4542,13 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           const isSelected = selectedWallets.has(wallet.address);
 
                           return (
-                            <div
-                              key={index}
-                              className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
-                              onClick={() => toggleWalletSelection(wallet.address)}
-                            >
+                          <div
+                            key={wallet.address}
+                            className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                            onClick={() =>
+                              toggleWalletSelection(wallet.address)
+                            }
+                          >
                               <div className="quickbuy-wallet-checkbox-container">
                                 <input
                                   type="checkbox"
