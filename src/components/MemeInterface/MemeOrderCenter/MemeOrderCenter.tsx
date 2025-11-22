@@ -1968,7 +1968,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               <button
                 onClick={onToggleTradesTab}
                 className={`meme-oc-trades-toggle-button ${isTradesTabVisible ? 'active' : ''}`}
-                title={isTradesTabVisible ? 'Hide Trades Panel' : 'Show Trades Panel'}
               >
                 {isTradesTabVisible ? (
 
@@ -1982,7 +1981,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                     <path d="M3 15h18" />
                   </svg>
                 )}
-                {windowWidth > 768 && <span>Trades Panel</span>}
+                {windowWidth > 768 && <span>{isTradesTabVisible ? 'Trades Panel' : 'Trades Table'}</span>}
               </button>
               {isTradesTabVisible && (
                 <div className="meme-oc-trades-filters">
