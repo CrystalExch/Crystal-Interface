@@ -210,14 +210,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 </span>
               </Link>
             ) */}
-            <Link
-              to="/portfolio"
-              className={`page-mode-button ${path === '/portfolio' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
-              onClick={handleLinkClick}
-            >
-              <img src={portfolio} className="sidebar-icon" />
-              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('portfolio')}</span>
-            </Link>
             {<Link
               to="/trackers"
               className={`page-mode-button ${path === '/trackers' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -226,16 +218,14 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={tracker} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Trackers')}</span>
             </Link>}
-            {!isMobile && (
-              <Link
-                to="/leaderboard"
-                className={`page-mode-button ${path === '/leaderboard' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
-                onClick={handleLinkClick}
-              >
-                <img src={leaderboard} className="sidebar-icon" />
-                <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('leaderboard')}</span>
-              </Link>
-            )}
+            <Link
+              to="/portfolio"
+              className={`page-mode-button ${path === '/portfolio' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              onClick={handleLinkClick}
+            >
+              <img src={portfolio} className="sidebar-icon" />
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('portfolio')}</span>
+            </Link>
             {!isMobile && (
               <Link
                 to="/referrals"
@@ -244,6 +234,16 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               >
                 <img src={referrals} className="sidebar-icon" />
                 <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('referrals')}</span>
+              </Link>
+            )}
+            {!isMobile && (
+              <Link
+                to="/leaderboard"
+                className={`page-mode-button ${path === '/leaderboard' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+                onClick={handleLinkClick}
+              >
+                <img src={leaderboard} className="sidebar-icon" />
+                <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('leaderboard')}</span>
               </Link>
             )}
             {/* <Link

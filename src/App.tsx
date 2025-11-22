@@ -2019,7 +2019,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       tradesloading ||
       addressinfoloading);
 
-  const monUsdPrice = (Number(tradesByMarket[ethticker + 'USDC']?.[0]?.[3]) / Number(markets[ethticker + 'USDC']?.priceFactor) || 1)
+  const monUsdPrice = 0.05
 
   const [walletTokenBalances, setWalletTokenBalances] = useState({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
