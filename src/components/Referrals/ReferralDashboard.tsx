@@ -6,6 +6,7 @@ import ReferralTier from './ReferralTier';
 import ReferralResources from './ReferralResources';
 import FeeTier from './FeeTier';
 import FeeScheduleModal from './FeeScheduleModal';
+import Leaderboard from './Leaderboard';
 import customRound from '../../utils/customRound';
 import ReferralBackground from '../../assets/referrals_bg.png';
 import defaultPfp from '../../assets/leaderboard_default.png';
@@ -63,6 +64,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
   isSigning,
 }) => {
   const [showFeeSchedule, setShowFeeSchedule] = useState(false);
+  const [activeTab, setActiveTab] = useState<'rewards' | 'leaderboard'>('rewards');
 
   // TODO: Get actual trading volume from backend/blockchain
   const tradingVolume = 0; // Default: $0, starts at 0 until manually tracked
@@ -70,6 +72,22 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
   return (
     <div className="referral-scroll-wrapper">
       <div className="referral-content">
+        {/* Navigation Tabs */}
+        <div className="referral-nav-tabs">
+          <button
+            className={`referral-nav-tab ${activeTab === 'rewards' ? 'active' : ''}`}
+            onClick={() => setActiveTab('rewards')}
+          >
+            Rewards
+          </button>
+          <button
+            className={`referral-nav-tab ${activeTab === 'leaderboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('leaderboard')}
+          >
+            Leaderboard
+          </button>
+        </div>
+
         <div className="referral-header">
           <div className="referred-count">
             <img src={defaultPfp} className="referral-pfp" />
@@ -97,6 +115,15 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Conditional rendering based on active tab */}
+        {activeTab === 'leaderboard' ? (
+          <Leaderboard
+            address={address}
+            displayName={displayName}
+            isLoading={isLoading}
+          />
+        ) : (
         <div className="referral-body-section">
           <div className="referral-top-section">
             <div className="referral-background-wrapper">
@@ -328,6 +355,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
             onClose={() => setShowFeeSchedule(false)}
           />
         </div>
+        )}
       </div>
     </div>
   );

@@ -362,7 +362,7 @@ html {
 }
 
 .send-popup-background {
-  height: min(325px, 90vh);
+  height: min(270px, 90vh);
   padding-top: 5px;
 }
 
@@ -1065,7 +1065,6 @@ body {
   gap: 4px;
   justify-content: center;
   margin-right: -12px;
-  padding-bottom: 50px;
 }
 
 .limit-swap-button,
@@ -1456,17 +1455,19 @@ body {
 }
 
 .sendbg {
-  margin: 4px 12px;
+  margin: 4px 12px 10px;
+  padding-bottom: 10px;
 }
 
 .sendaddressbg {
-  margin: 0 12px 5px;
+  margin: 0 12px 10px;
+  padding: 10px 0;
 }
 
 .send-input {
   flex-grow: 1;
   font-size: 1.8rem;
-  padding: 45px 2px 1px 2px;
+  padding: 0px 2px 1px 2px;
   text-align: center;
   width: 0;
   line-height: revert;
