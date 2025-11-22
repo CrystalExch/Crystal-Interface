@@ -10,11 +10,6 @@ import Leaderboard from './Leaderboard';
 import customRound from '../../utils/customRound';
 import ReferralBackground from '../../assets/referrals_bg.png';
 import defaultPfp from '../../assets/leaderboard_default.png';
-
-// TODO: Get activechain from context or props
-const activechain = 10143; // Monad testnet - temporary hardcoded value
-
-// Fetch trading volume from API
 const fetchTradingVolume = async (address: string): Promise<number> => {
   try {
     const url = `https://api.crystal.exchange/volume/${address}`;
@@ -35,20 +30,16 @@ const fetchTradingVolume = async (address: string): Promise<number> => {
     const data = await response.json();
     console.log('[volumeApi] API response:', data);
 
-    // Parse volume_native from string to number (it's in MON with 18 decimals)
-    const volumeMON = parseFloat(data.volume_native);
-    console.log('[volumeApi] Parsed volume (MON raw):', volumeMON);
+    const volumeWei = parseFloat(data.volume_native);
+    console.log('[volumeApi] Parsed volume (wei):', volumeWei);
 
-    // Convert from MON (18 decimals) to regular units (divide by 10^18)
-    const volume = volumeMON / 1e18;
-    console.log('[volumeApi] Converted volume (MON):', volume);
+    const volume = volumeWei / 1e18;
+    console.log('[volumeApi] Converted volume (USD):', volume);
 
-    // Return 0 if parsing fails or volume is NaN
     return isNaN(volume) ? 0 : volume;
 
   } catch (error) {
     console.error('[volumeApi] Error fetching trading volume:', error);
-    // Gracefully return 0 if API fails
     return 0;
   }
 };
@@ -106,7 +97,6 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
   const [activeTab, setActiveTab] = useState<'rewards' | 'leaderboard'>('rewards');
   const [tradingVolume, setTradingVolume] = useState<number>(0);
 
-  // Fetch trading volume when address changes
   useEffect(() => {
     if (!address) {
       setTradingVolume(0);
@@ -119,14 +109,13 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
       })
       .catch(err => {
         console.error('Failed to fetch trading volume:', err);
-        setTradingVolume(0); // Fallback to 0 on error
+        setTradingVolume(0);
       });
   }, [address]);
 
   return (
     <div className="referral-scroll-wrapper">
       <div className="referral-content">
-        {/* Navigation Tabs */}
         <div className="referral-nav-tabs">
           <button
             className={`referral-nav-tab ${activeTab === 'rewards' ? 'active' : ''}`}
@@ -142,8 +131,6 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
           </button>
         </div>
 
-
-        {/* Conditional rendering based on active tab */}
         {activeTab === 'leaderboard' ? (
           <Leaderboard
             address={address}
@@ -256,7 +243,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
               <button
                 className="claim-button"
                 onClick={handleClaimFees}
-                disabled={isSigning || totalClaimableFees === 0 || claimableFees == undefined}
+                disabled={totalClaimableFees === 0}
               >
                 {totalClaimableFees > 0 ? 'Claim Fees' : 'Nothing to Claim'}
               </button>
@@ -332,7 +319,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
                           </svg>
                         </div>
                         <div
-                          className="share-button"
+                          className="referral-share-button"
                           onClick={() => {
                             const tweetText =
                               "Join me on @CrystalExch, the EVM's first fully on-chain orderbook exchange, now live on @monad_xyz.\n\nUse my referral link for a 25% discount on all fees:\n\n";

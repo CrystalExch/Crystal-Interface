@@ -48,7 +48,7 @@ const ReferralResources: React.FC = () => {
 
   return (
     <div className="resources-section">
-      {/* Commented out old resources section
+      {/*
       <h3 className="resources-title">Marketing Resources</h3>
       <p className="resources-subtitle">
         Tools to help you promote your referral link
@@ -94,9 +94,7 @@ const ReferralResources: React.FC = () => {
           </button>
         </div>
       </div>
-      */}
 
-      {/* New section with tracker-wallets styling structure */}
       <h3 className="resources-title">Referral Activity</h3>
       <div className="resources-wallets-container">
         <div className="resources-wallets-header">
@@ -136,6 +134,7 @@ const ReferralResources: React.FC = () => {
           </>
         )}
       </div>
+      */}
     </div>
   );
 };

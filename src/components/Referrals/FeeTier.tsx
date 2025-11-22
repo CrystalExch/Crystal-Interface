@@ -125,26 +125,31 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
 
   const formatVolume = (vol: number): string => {
     if (vol >= 1000000) {
-      return `$${(vol / 1000000).toFixed(2)}M`;
+      const formatted = (vol / 1000000).toFixed(2);
+      return `${parseFloat(formatted)}M MON`;
     }
     if (vol >= 1000) {
-      return `$${(vol / 1000).toFixed(1)}K`;
+      const formatted = (vol / 1000).toFixed(1);
+      return `${parseFloat(formatted)}K MON`;
     }
-    // Add commas for numbers less than 1000
-    return `$${vol.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+    return `${vol.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} MON`;
   };
 
   return (
     <>
-      {/* Fee Tier Section */}
       <div className="fee-tier-section">
         <div className="fee-tier-header">
-        <div className="fee-tier-header-left">
-          <h3 className="referrals-fee-tier-title">Your Fee Tier</h3>
-          <div className="fee-tier-badge" style={{ backgroundColor: tier.color }}>
-            <TrendingDown size={16} />
-            <span className="fee-tier-badge-name">{tier.name}</span>
+          <div className="fee-tier-header-left">
+            <h3 className="referrals-fee-tier-title">Your Fee Tier</h3>
+            <div className="fee-tier-badge" style={{ backgroundColor: tier.color }}>
+              <TrendingDown size={16} />
+              <span className="fee-tier-badge-name">{tier.name}</span>
+            </div>
           </div>
+          <button className="view-schedule-button" onClick={onViewFeeSchedule}>
+            <Info size={14} />
+            Fee Schedule
+          </button>
         </div>
         {tier.next && (
           <div className="fee-tier-next-info">
@@ -152,12 +157,6 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
             <span className="fee-tier-next-name">{tier.next.name}</span>
           </div>
         )}
-      </div>
-
-      <button className="view-schedule-button" onClick={onViewFeeSchedule}>
-        <Info size={14} />
-        View Full Fee Schedule
-      </button>
 
       {tier.next && (
         <div className="fee-tier-progress">
@@ -222,9 +221,9 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
           >
             <div className="tier-requirement-badge bronze">Bronze</div>
             <div className="fee-tier-requirement-details">
-              <span className="fee-tier-requirement-volume">$0+ volume</span>
+              <span className="fee-tier-requirement-volume">0+ MON volume</span>
               <span className="fee-tier-requirement-benefits">
-                0.050% taker • 0.020% maker
+                0.00% Cashback • 0.02% Referral Fees
               </span>
             </div>
           </div>
@@ -235,9 +234,9 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
           >
             <div className="tier-requirement-badge silver">Silver</div>
             <div className="fee-tier-requirement-details">
-              <span className="fee-tier-requirement-volume">$100K+ volume</span>
+              <span className="fee-tier-requirement-volume">100K+ MON volume</span>
               <span className="fee-tier-requirement-benefits">
-                0.040% taker • 0.010% maker
+                0.00% Cashback • 0.01% Referral Fees
               </span>
             </div>
           </div>
@@ -248,9 +247,9 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
           >
             <div className="tier-requirement-badge gold">Gold</div>
             <div className="fee-tier-requirement-details">
-              <span className="fee-tier-requirement-volume">$500K+ volume</span>
+              <span className="fee-tier-requirement-volume">500K+ MON volume</span>
               <span className="fee-tier-requirement-benefits">
-                0.035% taker • 0.005% maker
+                0.00% Cashback • 0.005% Referral Fees
               </span>
             </div>
           </div>
@@ -261,9 +260,9 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
           >
             <div className="tier-requirement-badge diamond">Diamond</div>
             <div className="fee-tier-requirement-details">
-              <span className="fee-tier-requirement-volume">$1M+ volume</span>
+              <span className="fee-tier-requirement-volume">1M+ MON volume</span>
               <span className="fee-tier-requirement-benefits">
-                0.030% taker • 0.000% maker
+                0.00% Cashback • 0.00% Referral Fees
               </span>
             </div>
           </div>
@@ -274,9 +273,9 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
           >
             <div className="tier-requirement-badge netherite">Netherite</div>
             <div className="fee-tier-requirement-details">
-              <span className="fee-tier-requirement-volume">$5M+ volume</span>
+              <span className="fee-tier-requirement-volume">5M+ MON volume</span>
               <span className="fee-tier-requirement-benefits">
-                0.025% taker • -0.003% rebate
+                0.003% Cashback • 0.00% Referral Fees
               </span>
             </div>
           </div>
@@ -287,9 +286,9 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
           >
             <div className="tier-requirement-badge enchanted-netherite">Enchanted Netherite</div>
             <div className="fee-tier-requirement-details">
-              <span className="fee-tier-requirement-volume">$10M+ volume</span>
+              <span className="fee-tier-requirement-volume">10M+ MON volume</span>
               <span className="fee-tier-requirement-benefits">
-                0.020% taker • -0.005% rebate
+                0.005% Cashback • 0.00% Referral Fees
               </span>
             </div>
           </div>

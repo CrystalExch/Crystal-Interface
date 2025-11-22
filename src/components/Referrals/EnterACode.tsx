@@ -79,7 +79,7 @@ const EnterACode: React.FC<EnterACodeProps> = ({
         <p className="referral-subtitle">
           {t('referralSubtitle')}{' '}
           <a
-            href="https://docs.crystal.exchange/community/referral-program"
+            href="https://docs.crystal.exchange/community/referral-campaign"
             target="_blank"
             rel="noopener noreferrer"
             className="learn-more-link"
