@@ -4448,7 +4448,7 @@ const userAddr = address ?? account?.address ?? '';
                           className="funding-location"
                           onClick={() =>
                             window.open(
-                              `https://testnet.monadscan.com/address/${token.dev}`,
+                              `${settings.chainConfig[activechain].explorer}/address/${token.dev}`,
                               '_blank',
                             )
                           }

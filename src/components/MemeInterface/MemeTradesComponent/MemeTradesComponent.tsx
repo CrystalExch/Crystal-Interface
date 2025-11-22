@@ -983,8 +983,7 @@ export default function MemeTradesComponent({
                     </div>
                     <span className="meme-trade-age">
                       <a
-                          // href={`${settings.chainConfig[activechain].explorer}/tx/${t.id.split('-')[0]}`}
-                          href={`${settings.chainConfig[activechain].explorer}/tx/`}
+                          href={`${settings.chainConfig[activechain].explorer}/tx/${t.id.split('-')[0]}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >

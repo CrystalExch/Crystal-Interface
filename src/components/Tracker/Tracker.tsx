@@ -4130,7 +4130,7 @@ const push = useCallback(async (logs: any[], source: 'router' | 'market' | 'laun
                         <div className="asset-ticker">{trade.tokenTicker || trade.token}</div>
                         {trade.tokenAddress && (
                           <a
-                            href={`https://testnet.monadscan.com/token/${trade.tokenAddress}`}
+                            href={`${settings.chainConfig[activechain].explorer}/token/${trade.tokenAddress}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{ color: '#b3b8f9', textDecoration: 'none', fontSize: '0.8em' }}
