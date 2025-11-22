@@ -355,7 +355,7 @@
 
 .meme-token-amount {
   color: #e3e5f39c;
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   margin-top: -2px;
 }
 
@@ -416,21 +416,16 @@
 
 .meme-order-type {
   border-radius: 3px;
-
   display: inline-block;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   padding: 2px 8px;
 }
 
 .meme-order-type.buy {
-  background: rgba(101, 237, 146, 0.1);
-  border: 1px solid rgba(101, 237, 146, 0.3);
   color: rgb(67 254 154);
 }
 
 .meme-order-type.sell {
-  background: rgba(240, 103, 103, 0.1);
-  border: 1px solid rgba(240, 103, 103, 0.3);
   color: rgb(240, 103, 103);
 }
 
@@ -670,9 +665,18 @@
 .meme-oc-section-content[data-section="topTraders"] .meme-oc-header-cell:last-child,
 .meme-oc-section-content[data-section="topTraders"] .meme-oc-cell:last-child,
 .meme-oc-section-content[data-section="positions"] .meme-oc-header-cell:last-child,
-.meme-oc-section-content[data-section="positions"] .meme-oc-cell:last-child {
+.meme-oc-section-content[data-section="positions"] .meme-oc-cell:last-child,
+.meme-oc-section-content[data-section="trades"] .meme-oc-header-cell:last-child,
+.meme-oc-section-content[data-section="trades"] .meme-oc-cell:last-child {
   justify-content: flex-end;
   text-align: right;
+}
+
+
+
+.meme-oc-section-content[data-section="trades"] .meme-oc-header-cell:last-child,
+.meme-oc-section-content[data-section="trades"] .meme-oc-cell:last-child {
+  padding-right: 20px;
 }
 
 .meme-oc-drag-spacer {
@@ -1476,3 +1480,209 @@
   text-decoration: underline;
 }
 
+.meme-oc-section-content[data-section="trades"] .meme-oc-header,
+.meme-oc-section-content[data-section="trades"] .meme-oc-item {
+  gap: 15px;
+  grid-template-columns: 80px 90px 1fr 1.2fr 1.2fr 1.4fr;
+  min-width: 900px;
+  padding-right: 0;
+}
+
+.meme-oc-trade-item {
+  position: relative;
+  transition: background-color 0.2s ease;
+  padding-right: 15px;
+}
+
+.meme-oc-trade-item:hover {
+  background-color: rgba(179, 184, 249, 0.01);
+}
+
+.meme-oc-trade-volume-bar {
+  animation: barSlideIn 0.4s ease-out;
+  height: 100%;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  transition: width 0.3s ease;
+  z-index: 1;
+  right: 0;
+  left: calc(80px + 90px + 60px + ((100% - 245px) * 0.458));
+}
+
+.meme-oc-trade-volume-bar.positive {
+  background: linear-gradient(90deg,
+      rgba(67, 254, 154, 0.02) 0%,
+      rgba(67, 254, 154, 0.06) 40%,
+      rgba(67, 254, 154, 0.12) 100%);
+}
+
+.meme-oc-trade-volume-bar.negative {
+  background: linear-gradient(90deg,
+      rgba(235, 112, 112, 0.02) 0%,
+      rgba(235, 112, 112, 0.06) 40%,
+      rgba(235, 112, 112, 0.12) 100%);
+}
+@keyframes barSlideIn {
+  from {
+    opacity: 0;
+    width: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.meme-oc-trade-item .meme-oc-cell {
+  position: relative;
+  z-index: 2;
+}
+
+.meme-trade-time {
+  color: #e0e8fd73;
+  font-size: 0.75rem;
+  font-weight: 300;
+}
+
+.oc-meme-trade-mc {
+  color: rgba(240, 242, 251, 0.8);
+  font-size: 0.85rem;
+  font-weight: 300;
+}
+
+.meme-trade-amount-info {
+  align-items: center;
+  display: flex;
+  gap: 2px;
+  font-size: 0.9rem;
+}
+
+.meme-trade-amount-info.positive {
+  color: rgb(67, 254, 154);
+}
+
+.meme-trade-amount-info.negative {
+  color: rgb(235, 112, 112);
+}
+
+.meme-trader-info {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.meme-oc-trades-toggle-button {
+  align-items: center;
+  color: rgb(206, 208, 219);
+  cursor: pointer;
+  display: flex;
+  font-size: .8rem;
+  gap: 6px;
+  letter-spacing: -0.5px;
+  padding: 1px 12px;
+  padding-left: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.meme-oc-trades-toggle-button svg {
+  flex-shrink: 0;
+}
+.panel{
+  width: 16px;
+  height: 16px;
+}
+.meme-oc-trades-filters {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  margin-right: 1rem;
+}
+
+.meme-oc-trade-filter-btn {
+  align-items: center;
+  border-radius: 4px;
+  color: rgba(240, 242, 251, 0.8);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.8rem;
+  background: none;
+  border: none;
+  padding: 0;
+  gap: 4px;
+}
+
+.meme-oc-trade-filter-btn:hover,
+.meme-oc-trade-filter-btn.active {
+  color: #d8dcff;
+}
+
+.meme-oc-trade-filter-btn.active .oc-filter-cup,
+.meme-oc-trade-filter-btn:hover .oc-filter-cup {
+  filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%);
+  opacity: 1;
+}
+
+.meme-oc-trade-filter-btn .oc-filter-cup {
+  cursor: pointer;
+  height: 14px;
+  margin-right: 4px;
+  opacity: 0.4;
+  width: 14px;
+}
+
+@media (max-width: 768px) {
+  .meme-oc-trades-toggle-button span {
+    display: none;
+  }
+  
+  .meme-oc-trades-toggle-button {
+    padding: 4px 8px;
+  }
+  
+  .meme-oc-trades-filters {
+    display: none;
+  }
+}
+
+
+.meme-oc-pause-indicator {
+  bottom: 0;
+  left: 0;
+  padding: 12px;
+  position: absolute;
+  right: 0;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 9;
+  pointer-events: none;
+  backdrop-filter: blur(20px);
+}
+
+.meme-oc-pause-indicator.visible {
+  transform: translateY(0);
+}
+
+.meme-oc-pause-content {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.meme-oc-pause-icon {
+  align-items: center;
+  display: flex;
+  gap: 3px;
+}
+
+.meme-oc-pause-icon-svg {
+  color: #aaaecf;
+}
+
+.meme-oc-pause-text {
+  color: #aaaecf;
+  font-size: 0.9rem;
+  font-weight: 400;
+  letter-spacing: -0.5px;
+}

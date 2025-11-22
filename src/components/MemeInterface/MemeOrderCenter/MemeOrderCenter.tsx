@@ -80,6 +80,11 @@ interface MemeOrderCenterProps {
   positions?: Position[];
   topTraders: LiveHolder[];
   devTokens?: DevToken[];
+  trades?: any[];
+  isTradesTabVisible?: boolean;
+  onToggleTradesTab?: () => void;
+  trackedWalletsMap?: Map<string, any>;
+  userAddressesSet?: Set<string>;
   page?: number;
   pageSize?: number;
   currentPrice?: number;
@@ -94,6 +99,12 @@ interface MemeOrderCenterProps {
   tokendict?: { [key: string]: any };
   nonces?: any;
   activeWalletPrivateKey?: string;
+  onFilterDev?: () => void;
+  onFilterYou?: () => void;
+  onFilterTracked?: () => void;
+  devAddress?: string;
+  onTradesHoverChange?: (isHovered: boolean) => void;
+
 }
 
 interface DevToken {
@@ -380,10 +391,15 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   positions = [],
   topTraders = [],
   devTokens = [],
+  trades = [],
+  isTradesTabVisible = false,
+  onToggleTradesTab,
+  monUsdPrice = 0,
+  trackedWalletsMap = new Map(),
+  userAddressesSet = new Set(),
   page = 0,
   pageSize = 100,
   currentPrice = 0,
-  monUsdPrice = 0,
   onSellPosition,
   trackedAddresses = [],
   onToggleTrackedAddress,
@@ -394,10 +410,15 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   tokendict = {},
   nonces,
   activeWalletPrivateKey,
+  onFilterDev,
+  onFilterYou,
+  onFilterTracked,
+  devAddress = '',
+  onTradesHoverChange,
 }) => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<
-    'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens'
+    'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens' | 'trades'
   >('positions');
   const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
   const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
@@ -415,6 +436,35 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   const [sellSliderPercent, setSellSliderPercent] = useState(0);
   const [showTokenBalance, setShowTokenBalance] = useState(false);
   const [tokenImageErrors, setTokenImageErrors] = useState<Record<string, boolean>>({});
+  const [isTradesHovered, setIsTradesHovered] = useState(false);
+
+
+  const norm = (s?: string) => (s || '').toLowerCase();
+  const trackedSet = new Set((trackedAddresses || []).map(norm));
+  const dev = norm(devAddress);
+
+  let devActive = false;
+  let youActive = false;
+  let trackedActive = false;
+
+  if (trackedSet.size === 0) {
+  } else if (trackedSet.size === 1) {
+    const [only] = Array.from(trackedSet);
+    if (userAddressesSet.has(only)) {
+      youActive = true;
+    } else if (only === dev) {
+      devActive = true;
+    } else {
+      trackedActive = true;
+    }
+  } else {
+    const allYou = Array.from(trackedSet).every((addr) => userAddressesSet.has(addr));
+    if (allYou) {
+      youActive = true;
+    } else {
+      trackedActive = true;
+    }
+  }
   const handleSellClose = useCallback(() => {
     setShowSellPopup(false);
     setSelectedPosition(null);
@@ -473,26 +523,15 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       window.removeEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
     };
   }, []);
-
-  const trackedWalletsMap = useMemo(() => {
-    const map = new Map<string, TrackedWallet>();
-    trackedWallets.forEach(wallet => {
-      map.set(wallet.address.toLowerCase(), wallet);
-    });
-    return map;
-  }, [trackedWallets]);
-
-  const userAddressesSet = useMemo(() => {
-    const addresses = new Set<string>();
-    if (userAddr) {
-      addresses.add(userAddr.toLowerCase());
+  useEffect(() => {
+    if (isTradesTabVisible && activeSection !== 'trades') {
+      setActiveSection('trades');
     }
-    subWallets.forEach(w => {
-      addresses.add(w.address.toLowerCase());
-    });
-    return addresses;
-  }, [userAddr, subWallets]);
-  
+    if (!isTradesTabVisible && activeSection === 'trades') {
+      setActiveSection('positions');
+    }
+  }, [isTradesTabVisible]);
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerHeight > 1080) {
@@ -603,6 +642,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   }, [topTraders, currentPrice]);
 
   const availableTabs = [
+    ...(isTradesTabVisible ? [{ key: 'trades', label: `Trades` }] : []),
     { key: 'positions', label: `Positions (${positions.length})` },
     { key: 'orders', label: `Orders (${mockOrders.length})` },
     { key: 'holders', label: `Holders (${holderRows.length})` },
@@ -627,7 +667,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   );
 
   const handleTabChange = (
-    section: 'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens',
+    section: 'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens' | 'trades',
   ) => {
     setActiveSection(section);
     const element = document.getElementsByClassName('meme-oc-content')[0];
@@ -997,478 +1037,478 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             </div>
           </div>
         );
-case 'holders':
-  return (
-    <div className="meme-oc-section-content" data-section="holders">
-      <div className="meme-oc-header">
-        <div className="meme-oc-header-cell">Wallet</div>
-        <div
-          className="meme-oc-header-cell clickable"
-          onClick={() => setShowTokenBalance((v) => !v)}
-          style={{ cursor: 'pointer' }}
-        >
-          {showTokenBalance
-            ? `Balance (${token.symbol})`
-            : 'Balance (MON)'}
-        </div>
-        <div
-          className="meme-oc-header-cell clickable"
-          style={{
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-          }}
-        >
-          Bought (Avg Buy)
-        </div>
-        <div className="meme-oc-header-cell">Sold (Avg Sell)</div>
-        <div className="meme-oc-header-cell">PnL</div>
-        <div className="meme-oc-header-cell">Remaining</div>
-        <div className="meme-oc-header-cell">Filter</div>
-      </div>
-      <div className="meme-oc-items">
-        {[...holderRows]
-          .sort((a, b) => (b.balance ?? 0) - (a.balance ?? 0))
-          .map((row) => {
-            const walletDisplay = formatWalletDisplay(row.wallet);
-            
-            return (
+      case 'holders':
+        return (
+          <div className="meme-oc-section-content" data-section="holders">
+            <div className="meme-oc-header">
+              <div className="meme-oc-header-cell">Wallet</div>
               <div
-                key={`${row.wallet}-${token.id}`}
-                className="meme-oc-item"
+                className="meme-oc-header-cell clickable"
+                onClick={() => setShowTokenBalance((v) => !v)}
+                style={{ cursor: 'pointer' }}
               >
-                <div className="meme-oc-cell">
-                  <div className="oc-meme-wallet-info">
-                    <span className="meme-wallet-index">{row.rank}</span>
-                    {walletDisplay.emoji && (
-                      <span style={{ marginRight: '-4px', fontSize: '14px' }}>
-                        {walletDisplay.emoji}
-                      </span>
-                    )}
-                    <span 
-                      className={`oc-meme-wallet-address ${walletDisplay.isUser ? 'current-user' : walletDisplay.isTracked ? 'tracked-wallet' : ''}`}
-                    >
-                      {walletDisplay.text}
-                    </span>
-                    <div className="meme-wallet-tags">
-                      {row.rank <= 10 && (
-                        <svg
-                          className="meme-top-holder-icon"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 32 32"
-                          fill="#fff27a"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path d="M 15 4 L 15 6 L 13 6 L 13 8 L 15 8 L 15 9.1875 C 14.011719 9.554688 13.25 10.433594 13.0625 11.5 C 12.277344 11.164063 11.40625 11 10.5 11 C 6.921875 11 4 13.921875 4 17.5 C 4 19.792969 5.199219 21.8125 7 22.96875 L 7 27 L 25 27 L 25 22.96875 C 26.800781 21.8125 28 19.792969 28 17.5 C 28 13.921875 25.078125 11 21.5 11 C 20.59375 11 19.722656 11.164063 18.9375 11.5 C 18.75 10.433594 17.988281 9.554688 17 9.1875 L 17 8 L 19 8 L 19 6 L 17 6 L 17 4 Z M 16 11 C 16.5625 11 17 11.4375 17 12 C 17 12.5625 16.5625 13 16 13 C 15.4375 13 15 12.5625 15 12 C 15 11.4375 15.4375 11 16 11 Z M 10.5 13 C 12.996094 13 15 15.003906 15 17.5 L 15 22 L 10.5 22 C 8.003906 22 6 19.996094 6 17.5 C 6 15.003906 8.003906 13 10.5 13 Z M 21.5 13 C 23.996094 13 26 15.003906 26 17.5 C 26 19.996094 23.996094 22 21.5 22 L 17 22 L 17 17.5 C 17 15.003906 19.003906 13 21.5 13 Z M 9 24 L 23 24 L 23 25 L 9 25 Z" />
-                        </svg>
-                      )}
-                      {row.wallet.toLowerCase() ===
-                        (token.dev || '').toLowerCase() && (
-                          <svg
-                            className="meme-dev-icon"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 30 30"
-                            fill="#ffc107"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
-                          </svg>
-                        )}
-                      <svg
-                        className="wallet-address-link"
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="rgb(206, 208, 223)"
-                        onClick={() =>
-                          window.open(
-                            `https://testnet.monadscan.com/address/${row.wallet}`,
-                            '_blank',
-                            'noopener noreferrer',
-                          )
-                        }
-                      >
-                        <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                        <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-                <div className="meme-oc-cell">
-                  {!showTokenBalance && (
-                    <img
-                      src={monadicon}
-                      className="meme-oc-monad-icon"
-                      alt="MONAD"
-                    />
-                  )}
-                  <span className="meme-mon-balance">
-                    {showTokenBalance
-                      ? fmt(row.balance, 3)
-                      : fmt(row.balance * currentPrice, 3)}
-                  </span>
-                </div>
-                <div className="meme-oc-cell">
-                  <div className="meme-trade-info">
-                    <div className="meme-avg-buy-info">
-                      {amountMode === 'MON' && (
-                        <img
-                          src={monadicon}
-                          className="meme-oc-monad-icon"
-                          alt="MONAD"
-                        />
-                      )}
-                      <span className="meme-usd-amount buy">
-                        {fmtAmount(
-                          row.valueBought,
-                          amountMode,
-                          monUsdPrice,
-                        )}
-                      </span>
-                    </div>
-                    <span className="meme-token-amount">
-                      {fmt(row.bought)}
-                    </span>
-                  </div>
-                  <span className="meme-avg-price buy">
-                    ($
-                    {formatNumber(
-                      (row.valueBought * monUsdPrice * 1e9) /
-                      (row.bought || 1),
-                    )}
-                    )
-                  </span>
-                </div>
-                <div className="meme-oc-cell">
-                  <div className="meme-trade-info">
-                    <div className="meme-avg-sell-info">
-                      {amountMode === 'MON' && (
-                        <img
-                          src={monadicon}
-                          className="meme-oc-monad-icon"
-                          alt="MONAD"
-                        />
-                      )}
-                      <span className="meme-usd-amount sell">
-                        {fmtAmount(row.valueSold, amountMode, monUsdPrice)}
-                      </span>
-                    </div>
-                    <span className="meme-token-amount">
-                      {fmt(row.sold)}
-                    </span>
-                  </div>
-                  <span className="meme-avg-price sell">
-                    ($
-                    {formatNumber(
-                      (row.valueSold * monUsdPrice * 1e9) / (row.sold || 1),
-                    )}
-                    )
-                  </span>
-                </div>
-                <div className="meme-oc-cell">
-                  <div className="meme-ordercenter-info">
-                    {amountMode === 'MON' && (
-                      <img
-                        src={monadicon}
-                        className="meme-ordercenter-monad-icon"
-                        alt="MONAD"
-                      />
-                    )}
-                    <span
-                      className={`meme-pnl ${row.pnl >= 0 ? 'positive' : 'negative'}`}
-                    >
-                      {row.pnl >= 0 ? '+' : '-'}
-                      {fmtAmount(
-                        Math.abs(row.pnl),
-                        amountMode,
-                        monUsdPrice,
-                      )}
-                    </span>
-                  </div>
-                </div>
-                <div className="meme-oc-cell">
-                  <div className="meme-remaining-info">
-                    <div>
-                      <span className="meme-remaining">
-                        {row.remainingPct.toFixed(2)}%
-                      </span>
-                    </div>
-                    <div className="meme-remaining-bar">
-                      <div
-                        className="meme-remaining-bar-fill"
-                        style={{ width: `${row.remainingPct.toFixed(0)}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="meme-oc-cell">
-                  <button
-                    className={`meme-filter-action-btn ${trackedAddresses.includes(row.wallet.toLowerCase()) ? 'active' : ''}`}
-                    onClick={() => onToggleTrackedAddress?.(row.wallet)}
-                    title={
-                      trackedAddresses.includes(row.wallet.toLowerCase())
-                        ? 'Untrack'
-                        : 'Track'
-                    }
-                  >
-                    <img
-                      src={
-                        trackedAddresses.includes(row.wallet.toLowerCase())
-                          ? filledcup
-                          : filtercup
-                      }
-                      alt="Filter"
-                      className="oc-filter-cup"
-                    />
-                  </button>
-                </div>
+                {showTokenBalance
+                  ? `Balance (${token.symbol})`
+                  : 'Balance (MON)'}
               </div>
-            );
-          })}
-      </div>
-    </div>
-  );
-
-case 'topTraders':
-  return (
-    <div className="meme-oc-section-content" data-section="topTraders">
-      <div className="meme-oc-header">
-        <div className="meme-oc-header-cell">Wallet</div>
-        <div
-          className="meme-oc-header-cell clickable"
-          onClick={() => setShowTokenBalance((v) => !v)}
-          title="toggle balance view"
-          style={{ cursor: 'pointer' }}
-        >
-          {showTokenBalance
-            ? `Balance (${token.symbol})`
-            : 'Balance (MON)'}
-        </div>
-        <div className="meme-oc-header-cell">Bought (Avg Buy)</div>
-        <div className="meme-oc-header-cell">Sold (Avg Sell)</div>
-        <div className="meme-oc-header-cell">PnL</div>
-        <div className="meme-oc-header-cell">Remaining</div>
-        <div className="meme-oc-header-cell">Filter</div>
-      </div>
-
-      <div className="meme-oc-items">
-        {[...topTraderRows]
-          .sort((a, b) => (b.valueNet ?? 0) - (a.valueNet ?? 0))
-          .map((row, index) => {
-            const remainingPct =
-              row.amountBought === 0
-                ? 0
-                : (row.balance / Math.max(row.amountBought, 1e-9)) * 100;
-            const pnl = row.valueNet;
-            const avgBuyUSD =
-              (row.valueBought * monUsdPrice) / (row.amountBought || 1);
-            const avgSellUSD =
-              (row.valueSold * monUsdPrice) / (row.amountSold || 1);
-            
-            const walletDisplay = formatWalletDisplay(row.address);
-
-            return (
-              <div key={row.address} className="meme-oc-item">
-                <div className="meme-oc-cell">
-                  <div className="oc-meme-wallet-info">
-                    <span className="meme-wallet-index">{index + 1}</span>
-                    {walletDisplay.emoji && (
-                      <span style={{ marginRight: '4px', fontSize: '14px' }}>
-                        {walletDisplay.emoji}
-                      </span>
-                    )}
-                    <span
-                      className={`oc-meme-wallet-address ${walletDisplay.isUser ? 'current-user' : walletDisplay.isTracked ? 'tracked-wallet' : ''}`}
-                      title={row.address}
-                    >
-                      {walletDisplay.text}
-                    </span>
-                    <div className="meme-wallet-tags">
-                      {index < 10 && (
-                        <svg
-                          className="meme-top-holder-icon"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 32 32"
-                          fill="#fff27a"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path d="M 15 4 L 15 6 L 13 6 L 13 8 L 15 8 L 15 9.1875 C 14.011719 9.554688 13.25 10.433594 13.0625 11.5 C 12.277344 11.164063 11.40625 11 10.5 11 C 6.921875 11 4 13.921875 4 17.5 C 4 19.792969 5.199219 21.8125 7 22.96875 L 7 27 L 25 27 L 25 22.96875 C 26.800781 21.8125 28 19.792969 28 17.5 C 28 13.921875 25.078125 11 21.5 11 C 20.59375 11 19.722656 11.164063 18.9375 11.5 C 18.75 10.433594 17.988281 9.554688 17 9.1875 L 17 8 L 19 8 L 19 6 L 17 6 L 17 4 Z M 16 11 C 16.5625 11 17 11.4375 17 12 C 17 12.5625 16.5625 13 16 13 C 15.4375 13 15 12.5625 15 12 C 15 11.4375 15.4375 11 16 11 Z M 10.5 13 C 12.996094 13 15 15.003906 15 17.5 L 15 22 L 10.5 22 C 8.003906 22 6 19.996094 6 17.5 C 6 15.003906 8.003906 13 10.5 13 Z M 21.5 13 C 23.996094 13 26 15.003906 26 17.5 C 26 19.996094 23.996094 22 21.5 22 L 17 22 L 17 17.5 C 17 15.003906 19.003906 13 21.5 13 Z M 9 24 L 23 24 L 23 25 L 9 25 Z" />
-                        </svg>
-                      )}
-                      {row.address.toLowerCase() ===
-                        (token.dev || '').toLowerCase() && (
-                          <svg
-                            className="meme-dev-icon"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 30 30"
-                            fill="#ffc107"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
-                          </svg>
-                        )}
-                      <svg
-                        className="wallet-address-link"
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="rgb(206, 208, 223)"
-                        onClick={() =>
-                          window.open(
-                            `https://testnet.monadscan.com/address/${row.address}`,
-                            '_blank',
-                            'noopener noreferrer',
-                          )
-                        }
-                      >
-                        <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                        <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="meme-oc-cell">
-                  {!showTokenBalance && (
-                    <img
-                      src={monadicon}
-                      className="meme-oc-monad-icon"
-                      alt="MONAD"
-                    />
-                  )}
-                  <span className="meme-mon-balance">
-                    {showTokenBalance
-                      ? `${fmt(row.balance, 3)} ${token.symbol}`
-                      : fmt(row.balance * currentPrice, 3)}
-                  </span>
-                </div>
-
-                <div className="meme-oc-cell">
-                  <div className="meme-trade-info">
-                    <div className="meme-avg-buy-info">
-                      {amountMode === 'MON' && (
-                        <img
-                          src={monadicon}
-                          className="meme-oc-monad-icon"
-                          alt="MONAD"
-                        />
-                      )}
-                      <span className="meme-usd-amount buy">
-                        {fmtAmount(
-                          row.valueBought,
-                          amountMode,
-                          monUsdPrice,
-                        )}
-                      </span>
-                    </div>
-                    <span className="meme-token-amount">
-                      {fmt(row.amountBought)}
-                    </span>
-                  </div>
-                  <span className="meme-avg-price buy">
-                    (${formatNumber(avgBuyUSD * 1e9)})
-                  </span>
-                </div>
-
-                <div className="meme-oc-cell">
-                  <div className="meme-trade-info">
-                    <div className="meme-avg-sell-info">
-                      {amountMode === 'MON' && (
-                        <img
-                          src={monadicon}
-                          className="meme-oc-monad-icon"
-                          alt="MONAD"
-                        />
-                      )}
-                      <span className="meme-usd-amount sell">
-                        {fmtAmount(
-                          row.valueSold,
-                          amountMode,
-                          monUsdPrice,
-                        )}
-                      </span>
-                    </div>
-                    <span className="meme-token-amount">
-                      {fmt(row.amountSold)}
-                    </span>
-                  </div>
-                  <span className="meme-avg-price sell">
-                    (${formatNumber(avgSellUSD * 1e9)})
-                  </span>
-                </div>
-
-                <div className="meme-oc-cell">
-                  <div className="meme-ordercenter-info">
-                    {amountMode === 'MON' && (
-                      <img
-                        className="meme-ordercenter-monad-icon"
-                        src={monadicon}
-                        alt="MONAD"
-                      />
-                    )}
-                    <span
-                      className={`meme-pnl ${pnl >= 0 ? 'positive' : 'negative'}`}
-                    >
-                      {pnl >= 0 ? '+' : '-'}
-                      {fmtAmount(Math.abs(pnl), amountMode, monUsdPrice)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="meme-oc-cell">
-                  <div className="meme-remaining-info">
-                    <div>
-                      <span className="meme-remaining">
-                        {remainingPct.toFixed(2)}%
-                      </span>
-                    </div>
-                    <div className="meme-remaining-bar">
-                      <div
-                        className="meme-remaining-bar-fill"
-                        style={{
-                          width: `${Math.max(0, Math.min(100, remainingPct)).toFixed(0)}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="meme-oc-cell">
-                  <button
-                    className={`meme-filter-action-btn ${trackedAddresses.includes(row.address.toLowerCase()) ? 'active' : ''}`}
-                    onClick={() => onToggleTrackedAddress?.(row.address)}
-                    title={
-                      trackedAddresses.includes(row.address.toLowerCase())
-                        ? 'Untrack'
-                        : 'Track'
-                    }
-                  >
-                    <img
-                      src={
-                        trackedAddresses.includes(
-                          row.address.toLowerCase(),
-                        )
-                          ? filledcup
-                          : filtercup
-                      }
-                      alt="Filter"
-                      className="oc-filter-cup"
-                    />
-                  </button>
-                </div>
+              <div
+                className="meme-oc-header-cell clickable"
+                style={{
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                Bought (Avg Buy)
               </div>
-            );
-          })}
-      </div>
-    </div>
-  );
+              <div className="meme-oc-header-cell">Sold (Avg Sell)</div>
+              <div className="meme-oc-header-cell">PnL</div>
+              <div className="meme-oc-header-cell">Remaining</div>
+              <div className="meme-oc-header-cell">Filter</div>
+            </div>
+            <div className="meme-oc-items">
+              {[...holderRows]
+                .sort((a, b) => (b.balance ?? 0) - (a.balance ?? 0))
+                .map((row) => {
+                  const walletDisplay = formatWalletDisplay(row.wallet);
+
+                  return (
+                    <div
+                      key={`${row.wallet}-${token.id}`}
+                      className="meme-oc-item"
+                    >
+                      <div className="meme-oc-cell">
+                        <div className="oc-meme-wallet-info">
+                          <span className="meme-wallet-index">{row.rank}</span>
+                          {walletDisplay.emoji && (
+                            <span style={{ marginRight: '-4px', fontSize: '14px' }}>
+                              {walletDisplay.emoji}
+                            </span>
+                          )}
+                          <span
+                            className={`oc-meme-wallet-address ${walletDisplay.isUser ? 'current-user' : walletDisplay.isTracked ? 'tracked-wallet' : ''}`}
+                          >
+                            {walletDisplay.text}
+                          </span>
+                          <div className="meme-wallet-tags">
+                            {row.rank <= 10 && (
+                              <svg
+                                className="meme-top-holder-icon"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 32 32"
+                                fill="#fff27a"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path d="M 15 4 L 15 6 L 13 6 L 13 8 L 15 8 L 15 9.1875 C 14.011719 9.554688 13.25 10.433594 13.0625 11.5 C 12.277344 11.164063 11.40625 11 10.5 11 C 6.921875 11 4 13.921875 4 17.5 C 4 19.792969 5.199219 21.8125 7 22.96875 L 7 27 L 25 27 L 25 22.96875 C 26.800781 21.8125 28 19.792969 28 17.5 C 28 13.921875 25.078125 11 21.5 11 C 20.59375 11 19.722656 11.164063 18.9375 11.5 C 18.75 10.433594 17.988281 9.554688 17 9.1875 L 17 8 L 19 8 L 19 6 L 17 6 L 17 4 Z M 16 11 C 16.5625 11 17 11.4375 17 12 C 17 12.5625 16.5625 13 16 13 C 15.4375 13 15 12.5625 15 12 C 15 11.4375 15.4375 11 16 11 Z M 10.5 13 C 12.996094 13 15 15.003906 15 17.5 L 15 22 L 10.5 22 C 8.003906 22 6 19.996094 6 17.5 C 6 15.003906 8.003906 13 10.5 13 Z M 21.5 13 C 23.996094 13 26 15.003906 26 17.5 C 26 19.996094 23.996094 22 21.5 22 L 17 22 L 17 17.5 C 17 15.003906 19.003906 13 21.5 13 Z M 9 24 L 23 24 L 23 25 L 9 25 Z" />
+                              </svg>
+                            )}
+                            {row.wallet.toLowerCase() ===
+                              (token.dev || '').toLowerCase() && (
+                                <svg
+                                  className="meme-dev-icon"
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 30 30"
+                                  fill="#ffc107"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
+                                </svg>
+                              )}
+                            <svg
+                              className="wallet-address-link"
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="rgb(206, 208, 223)"
+                              onClick={() =>
+                                window.open(
+                                  `https://testnet.monadscan.com/address/${row.wallet}`,
+                                  '_blank',
+                                  'noopener noreferrer',
+                                )
+                              }
+                            >
+                              <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                              <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="meme-oc-cell">
+                        {!showTokenBalance && (
+                          <img
+                            src={monadicon}
+                            className="meme-oc-monad-icon"
+                            alt="MONAD"
+                          />
+                        )}
+                        <span className="meme-mon-balance">
+                          {showTokenBalance
+                            ? fmt(row.balance, 3)
+                            : fmt(row.balance * currentPrice, 3)}
+                        </span>
+                      </div>
+                      <div className="meme-oc-cell">
+                        <div className="meme-trade-info">
+                          <div className="meme-avg-buy-info">
+                            {amountMode === 'MON' && (
+                              <img
+                                src={monadicon}
+                                className="meme-oc-monad-icon"
+                                alt="MONAD"
+                              />
+                            )}
+                            <span className="meme-usd-amount buy">
+                              {fmtAmount(
+                                row.valueBought,
+                                amountMode,
+                                monUsdPrice,
+                              )}
+                            </span>
+                          </div>
+                          <span className="meme-token-amount">
+                            {fmt(row.bought)}
+                          </span>
+                        </div>
+                        <span className="meme-avg-price buy">
+                          ($
+                          {formatNumber(
+                            (row.valueBought * monUsdPrice * 1e9) /
+                            (row.bought || 1),
+                          )}
+                          )
+                        </span>
+                      </div>
+                      <div className="meme-oc-cell">
+                        <div className="meme-trade-info">
+                          <div className="meme-avg-sell-info">
+                            {amountMode === 'MON' && (
+                              <img
+                                src={monadicon}
+                                className="meme-oc-monad-icon"
+                                alt="MONAD"
+                              />
+                            )}
+                            <span className="meme-usd-amount sell">
+                              {fmtAmount(row.valueSold, amountMode, monUsdPrice)}
+                            </span>
+                          </div>
+                          <span className="meme-token-amount">
+                            {fmt(row.sold)}
+                          </span>
+                        </div>
+                        <span className="meme-avg-price sell">
+                          ($
+                          {formatNumber(
+                            (row.valueSold * monUsdPrice * 1e9) / (row.sold || 1),
+                          )}
+                          )
+                        </span>
+                      </div>
+                      <div className="meme-oc-cell">
+                        <div className="meme-ordercenter-info">
+                          {amountMode === 'MON' && (
+                            <img
+                              src={monadicon}
+                              className="meme-ordercenter-monad-icon"
+                              alt="MONAD"
+                            />
+                          )}
+                          <span
+                            className={`meme-pnl ${row.pnl >= 0 ? 'positive' : 'negative'}`}
+                          >
+                            {row.pnl >= 0 ? '+' : '-'}
+                            {fmtAmount(
+                              Math.abs(row.pnl),
+                              amountMode,
+                              monUsdPrice,
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="meme-oc-cell">
+                        <div className="meme-remaining-info">
+                          <div>
+                            <span className="meme-remaining">
+                              {row.remainingPct.toFixed(2)}%
+                            </span>
+                          </div>
+                          <div className="meme-remaining-bar">
+                            <div
+                              className="meme-remaining-bar-fill"
+                              style={{ width: `${row.remainingPct.toFixed(0)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="meme-oc-cell">
+                        <button
+                          className={`meme-filter-action-btn ${trackedAddresses.includes(row.wallet.toLowerCase()) ? 'active' : ''}`}
+                          onClick={() => onToggleTrackedAddress?.(row.wallet)}
+                          title={
+                            trackedAddresses.includes(row.wallet.toLowerCase())
+                              ? 'Untrack'
+                              : 'Track'
+                          }
+                        >
+                          <img
+                            src={
+                              trackedAddresses.includes(row.wallet.toLowerCase())
+                                ? filledcup
+                                : filtercup
+                            }
+                            alt="Filter"
+                            className="oc-filter-cup"
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        );
+
+      case 'topTraders':
+        return (
+          <div className="meme-oc-section-content" data-section="topTraders">
+            <div className="meme-oc-header">
+              <div className="meme-oc-header-cell">Wallet</div>
+              <div
+                className="meme-oc-header-cell clickable"
+                onClick={() => setShowTokenBalance((v) => !v)}
+                title="toggle balance view"
+                style={{ cursor: 'pointer' }}
+              >
+                {showTokenBalance
+                  ? `Balance (${token.symbol})`
+                  : 'Balance (MON)'}
+              </div>
+              <div className="meme-oc-header-cell">Bought (Avg Buy)</div>
+              <div className="meme-oc-header-cell">Sold (Avg Sell)</div>
+              <div className="meme-oc-header-cell">PnL</div>
+              <div className="meme-oc-header-cell">Remaining</div>
+              <div className="meme-oc-header-cell">Filter</div>
+            </div>
+
+            <div className="meme-oc-items">
+              {[...topTraderRows]
+                .sort((a, b) => (b.valueNet ?? 0) - (a.valueNet ?? 0))
+                .map((row, index) => {
+                  const remainingPct =
+                    row.amountBought === 0
+                      ? 0
+                      : (row.balance / Math.max(row.amountBought, 1e-9)) * 100;
+                  const pnl = row.valueNet;
+                  const avgBuyUSD =
+                    (row.valueBought * monUsdPrice) / (row.amountBought || 1);
+                  const avgSellUSD =
+                    (row.valueSold * monUsdPrice) / (row.amountSold || 1);
+
+                  const walletDisplay = formatWalletDisplay(row.address);
+
+                  return (
+                    <div key={row.address} className="meme-oc-item">
+                      <div className="meme-oc-cell">
+                        <div className="oc-meme-wallet-info">
+                          <span className="meme-wallet-index">{index + 1}</span>
+                          {walletDisplay.emoji && (
+                            <span style={{ marginRight: '4px', fontSize: '14px' }}>
+                              {walletDisplay.emoji}
+                            </span>
+                          )}
+                          <span
+                            className={`oc-meme-wallet-address ${walletDisplay.isUser ? 'current-user' : walletDisplay.isTracked ? 'tracked-wallet' : ''}`}
+                            title={row.address}
+                          >
+                            {walletDisplay.text}
+                          </span>
+                          <div className="meme-wallet-tags">
+                            {index < 10 && (
+                              <svg
+                                className="meme-top-holder-icon"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 32 32"
+                                fill="#fff27a"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path d="M 15 4 L 15 6 L 13 6 L 13 8 L 15 8 L 15 9.1875 C 14.011719 9.554688 13.25 10.433594 13.0625 11.5 C 12.277344 11.164063 11.40625 11 10.5 11 C 6.921875 11 4 13.921875 4 17.5 C 4 19.792969 5.199219 21.8125 7 22.96875 L 7 27 L 25 27 L 25 22.96875 C 26.800781 21.8125 28 19.792969 28 17.5 C 28 13.921875 25.078125 11 21.5 11 C 20.59375 11 19.722656 11.164063 18.9375 11.5 C 18.75 10.433594 17.988281 9.554688 17 9.1875 L 17 8 L 19 8 L 19 6 L 17 6 L 17 4 Z M 16 11 C 16.5625 11 17 11.4375 17 12 C 17 12.5625 16.5625 13 16 13 C 15.4375 13 15 12.5625 15 12 C 15 11.4375 15.4375 11 16 11 Z M 10.5 13 C 12.996094 13 15 15.003906 15 17.5 L 15 22 L 10.5 22 C 8.003906 22 6 19.996094 6 17.5 C 6 15.003906 8.003906 13 10.5 13 Z M 21.5 13 C 23.996094 13 26 15.003906 26 17.5 C 26 19.996094 23.996094 22 21.5 22 L 17 22 L 17 17.5 C 17 15.003906 19.003906 13 21.5 13 Z M 9 24 L 23 24 L 23 25 L 9 25 Z" />
+                              </svg>
+                            )}
+                            {row.address.toLowerCase() ===
+                              (token.dev || '').toLowerCase() && (
+                                <svg
+                                  className="meme-dev-icon"
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 30 30"
+                                  fill="#ffc107"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
+                                </svg>
+                              )}
+                            <svg
+                              className="wallet-address-link"
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="rgb(206, 208, 223)"
+                              onClick={() =>
+                                window.open(
+                                  `https://testnet.monadscan.com/address/${row.address}`,
+                                  '_blank',
+                                  'noopener noreferrer',
+                                )
+                              }
+                            >
+                              <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                              <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="meme-oc-cell">
+                        {!showTokenBalance && (
+                          <img
+                            src={monadicon}
+                            className="meme-oc-monad-icon"
+                            alt="MONAD"
+                          />
+                        )}
+                        <span className="meme-mon-balance">
+                          {showTokenBalance
+                            ? `${fmt(row.balance, 3)} ${token.symbol}`
+                            : fmt(row.balance * currentPrice, 3)}
+                        </span>
+                      </div>
+
+                      <div className="meme-oc-cell">
+                        <div className="meme-trade-info">
+                          <div className="meme-avg-buy-info">
+                            {amountMode === 'MON' && (
+                              <img
+                                src={monadicon}
+                                className="meme-oc-monad-icon"
+                                alt="MONAD"
+                              />
+                            )}
+                            <span className="meme-usd-amount buy">
+                              {fmtAmount(
+                                row.valueBought,
+                                amountMode,
+                                monUsdPrice,
+                              )}
+                            </span>
+                          </div>
+                          <span className="meme-token-amount">
+                            {fmt(row.amountBought)}
+                          </span>
+                        </div>
+                        <span className="meme-avg-price buy">
+                          (${formatNumber(avgBuyUSD * 1e9)})
+                        </span>
+                      </div>
+
+                      <div className="meme-oc-cell">
+                        <div className="meme-trade-info">
+                          <div className="meme-avg-sell-info">
+                            {amountMode === 'MON' && (
+                              <img
+                                src={monadicon}
+                                className="meme-oc-monad-icon"
+                                alt="MONAD"
+                              />
+                            )}
+                            <span className="meme-usd-amount sell">
+                              {fmtAmount(
+                                row.valueSold,
+                                amountMode,
+                                monUsdPrice,
+                              )}
+                            </span>
+                          </div>
+                          <span className="meme-token-amount">
+                            {fmt(row.amountSold)}
+                          </span>
+                        </div>
+                        <span className="meme-avg-price sell">
+                          (${formatNumber(avgSellUSD * 1e9)})
+                        </span>
+                      </div>
+
+                      <div className="meme-oc-cell">
+                        <div className="meme-ordercenter-info">
+                          {amountMode === 'MON' && (
+                            <img
+                              className="meme-ordercenter-monad-icon"
+                              src={monadicon}
+                              alt="MONAD"
+                            />
+                          )}
+                          <span
+                            className={`meme-pnl ${pnl >= 0 ? 'positive' : 'negative'}`}
+                          >
+                            {pnl >= 0 ? '+' : '-'}
+                            {fmtAmount(Math.abs(pnl), amountMode, monUsdPrice)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="meme-oc-cell">
+                        <div className="meme-remaining-info">
+                          <div>
+                            <span className="meme-remaining">
+                              {remainingPct.toFixed(2)}%
+                            </span>
+                          </div>
+                          <div className="meme-remaining-bar">
+                            <div
+                              className="meme-remaining-bar-fill"
+                              style={{
+                                width: `${Math.max(0, Math.min(100, remainingPct)).toFixed(0)}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="meme-oc-cell">
+                        <button
+                          className={`meme-filter-action-btn ${trackedAddresses.includes(row.address.toLowerCase()) ? 'active' : ''}`}
+                          onClick={() => onToggleTrackedAddress?.(row.address)}
+                          title={
+                            trackedAddresses.includes(row.address.toLowerCase())
+                              ? 'Untrack'
+                              : 'Track'
+                          }
+                        >
+                          <img
+                            src={
+                              trackedAddresses.includes(
+                                row.address.toLowerCase(),
+                              )
+                                ? filledcup
+                                : filtercup
+                            }
+                            alt="Filter"
+                            className="oc-filter-cup"
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        );
       case 'devTokens':
         return (
           <div className="meme-oc-section-content meme-oc-dev-tokens-layout" data-section="devTokens">
@@ -1591,7 +1631,7 @@ case 'topTraders':
                         <div className="meme-oc-cell">
                           $0
                         </div>
-                       <div className="meme-oc-cell 1hr-vol-cell">
+                        <div className="meme-oc-cell 1hr-vol-cell">
                           $0
                         </div>
                         <div className="meme-oc-cell">
@@ -1681,6 +1721,157 @@ case 'topTraders':
             </div>
           </div>
         );
+case 'trades':
+  return (
+    <div className="meme-oc-section-content" data-section="trades">
+      <div 
+        className="meme-oc-header"
+        onMouseEnter={(e) => {
+          e.stopPropagation();
+          setIsTradesHovered(false);
+          onTradesHoverChange?.(false);
+        }}
+      >
+        <div className="meme-oc-header-cell">Age</div>
+        <div className="meme-oc-header-cell">Type</div>
+        <div className="meme-oc-header-cell">MC</div>
+        <div className="meme-oc-header-cell">Amount</div>
+        <div className="meme-oc-header-cell">Total {amountMode}</div>
+        <div className="meme-oc-header-cell">Trader</div>
+      </div>
+      <div
+        className="meme-oc-items"
+        onMouseEnter={() => {
+          setIsTradesHovered(true);
+          onTradesHoverChange?.(true);
+        }}
+        onMouseLeave={() => {
+          setIsTradesHovered(false);
+          onTradesHoverChange?.(false);
+        }}
+      >
+              {trades.slice(0, 100).map((trade: any) => {
+                const callerLower = trade.caller?.toLowerCase() || '';
+                const isCurrentUser = userAddressesSet.has(callerLower);
+                const trackedWallet = trackedWalletsMap.get(callerLower);
+                const isTracked = !!trackedWallet;
+                const isDev = callerLower === devAddress?.toLowerCase();
+                const isTopHolder = holderRows.findIndex(h => h.wallet.toLowerCase() === callerLower) >= 0 && holderRows.findIndex(h => h.wallet.toLowerCase() === callerLower) < 10;
+
+                const walletDisplay = isCurrentUser
+                  ? 'YOU'
+                  : trackedWallet
+                    ? trackedWallet.name
+                    : `${trade.caller?.slice(0, 6) || ''}...${trade.caller?.slice(-4) || ''}`;
+
+                const tradeUSD = trade.nativeAmount * monUsdPrice;
+                const mcUSD = trade.price * monUsdPrice * 1_000_000_000;
+                const positive = trade.isBuy;
+
+                const maxAmount = Math.max(...trades.slice(0, 100).map((t: any) => Math.abs(t.nativeAmount * monUsdPrice)));
+                const barWidth = maxAmount > 0 ? (Math.abs(tradeUSD) / maxAmount) * 40 : 0;
+
+                const timeAgoStr = (ts: number) => {
+                  const now = Date.now() / 1000;
+                  const diff = Math.max(0, Math.floor(now - ts));
+                  if (diff < 60) return `${diff}s`;
+                  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+                  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+                  return `${Math.floor(diff / 86400)}d`;
+                };
+
+                return (
+                  <div key={trade.id} className="meme-oc-item meme-oc-trade-item">
+                    <div
+                      className={`meme-oc-trade-volume-bar ${positive ? 'positive' : 'negative'}`}
+                      style={{ width: `${barWidth}%` }}
+                    />
+
+                    <div className="meme-oc-cell">
+                      <span className="meme-trade-time">{timeAgoStr(trade.timestamp)}</span>
+                    </div>
+                    <div className="meme-oc-cell">
+                      <span className={`meme-order-type ${positive ? 'buy' : 'sell'}`}>
+                        {positive ? 'Buy' : 'Sell'}
+                      </span>
+                    </div>
+                    <div className="meme-oc-cell">
+                      <span className="oc-meme-trade-mc">${fmt(mcUSD, 2)}</span>
+                    </div>
+                    <div className="meme-oc-cell">
+                      <span className="meme-token-amount">{fmt(trade.tokenAmount, 2)}</span>
+                    </div>
+                    <div className="meme-oc-cell">
+                      <div className={`meme-trade-amount-info ${positive ? 'positive' : 'negative'}`}>
+                        {amountMode === 'MON' && (
+                          <img src={monadicon} className="meme-ordercenter-monad-icon" alt="MON" />
+                        )}
+                        <span>
+                          {amountMode === 'USD' 
+                            ? `$${fmt(Math.abs(tradeUSD), 2)}`
+                            : fmt(Math.abs(trade.nativeAmount), 3)
+                          }
+                        </span>
+                      </div>
+                    </div>
+                    <div className="meme-oc-cell">
+                      <div className="meme-trader-info">
+                        {trackedWallet?.emoji && <span>{trackedWallet.emoji}</span>}
+                        <span className={`oc-meme-wallet-address ${isCurrentUser ? 'current-user' : isTracked ? 'tracked-wallet' : ''}`}>
+                          {walletDisplay}
+                        </span>
+                        <div className="meme-wallet-tags">
+                          {isTopHolder && (
+                            <svg
+                              className="meme-top-holder-icon"
+                              width="14"
+                              height="14"
+                              viewBox="0 0 32 32"
+                              fill="#fff27a"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path d="M 15 4 L 15 6 L 13 6 L 13 8 L 15 8 L 15 9.1875 C 14.011719 9.554688 13.25 10.433594 13.0625 11.5 C 12.277344 11.164063 11.40625 11 10.5 11 C 6.921875 11 4 13.921875 4 17.5 C 4 19.792969 5.199219 21.8125 7 22.96875 L 7 27 L 25 27 L 25 22.96875 C 26.800781 21.8125 28 19.792969 28 17.5 C 28 13.921875 25.078125 11 21.5 11 C 20.59375 11 19.722656 11.164063 18.9375 11.5 C 18.75 10.433594 17.988281 9.554688 17 9.1875 L 17 8 L 19 8 L 19 6 L 17 6 L 17 4 Z M 16 11 C 16.5625 11 17 11.4375 17 12 C 17 12.5625 16.5625 13 16 13 C 15.4375 13 15 12.5625 15 12 C 15 11.4375 15.4375 11 16 11 Z M 10.5 13 C 12.996094 13 15 15.003906 15 17.5 L 15 22 L 10.5 22 C 8.003906 22 6 19.996094 6 17.5 C 6 15.003906 8.003906 13 10.5 13 Z M 21.5 13 C 23.996094 13 26 15.003906 26 17.5 C 26 19.996094 23.996094 22 21.5 22 L 17 22 L 17 17.5 C 17 15.003906 19.003906 13 21.5 13 Z M 9 24 L 23 24 L 23 25 L 9 25 Z" />
+                            </svg>
+                          )}
+                          {isDev && (
+                            <svg
+                              className="meme-dev-icon"
+                              width="14"
+                              height="14"
+                              viewBox="0 0 30 30"
+                              fill="#ffc107"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
+                            </svg>
+                          )}
+                        <svg
+  className="wallet-address-link"
+  xmlns="http://www.w3.org/2000/svg"
+  width="14"
+  height="14"
+  viewBox="0 0 24 24"
+  fill="rgb(206, 208, 223)"
+  onClick={() =>
+    window.open(
+      `https://testnet.monadscan.com/tx/${trade.hash || trade.transactionHash || trade.id}`,
+      '_blank',
+      'noopener noreferrer',
+    )
+  }
+>
+                            <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                            <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -1719,6 +1910,7 @@ case 'topTraders':
 
       <div className="meme-oc-top-bar">
         <div className="meme-oc-inner">
+
           <div className="meme-oc-types">
             <>
               <div className="meme-oc-types-rectangle">
@@ -1751,6 +1943,63 @@ case 'topTraders':
                   </span>
                 )}
               </button>
+
+<button
+  onClick={onToggleTradesTab}
+  className={`meme-oc-trades-toggle-button ${isTradesTabVisible ? 'active' : ''}`}
+  title={isTradesTabVisible ? 'Hide Trades Panel' : 'Show Trades Panel'}
+>
+  {isTradesTabVisible ? (
+
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="panel">
+      <rect width="18" height="18" x="3" y="3" rx="2"/>
+      <path d="M15 3v18"/>
+    </svg>
+  ) : (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="panel">
+      <rect width="18" height="18" x="3" y="3" rx="2"/>
+      <path d="M3 15h18"/>
+    </svg>
+  )}
+  {windowWidth > 768 && <span>Trades Panel</span>}
+</button>
+              {isTradesTabVisible && (
+                <div className="meme-oc-trades-filters">
+                  <button
+                    className={`meme-oc-trade-filter-btn ${devActive ? 'active' : ''}`}
+                    onClick={onFilterDev}
+                  >
+                    <img
+                      src={devActive ? filledcup : filtercup}
+                      alt="Filter"
+                      className="oc-filter-cup"
+                    />
+                    DEV
+                  </button>
+                  <button
+                    className={`meme-oc-trade-filter-btn ${trackedActive ? 'active' : ''}`}
+                    onClick={onFilterTracked}
+                  >
+                    <img
+                      src={trackedActive ? filledcup : filtercup}
+                      alt="Filter"
+                      className="oc-filter-cup"
+                    />
+                    TRACKED
+                  </button>
+                  <button
+                    className={`meme-oc-trade-filter-btn ${youActive ? 'active' : ''}`}
+                    onClick={onFilterYou}
+                  >
+                    <img
+                      src={youActive ? filledcup : filtercup}
+                      alt="Filter"
+                      className="oc-filter-cup"
+                    />
+                    YOU
+                  </button>
+                </div>
+              )}
               <button
                 onClick={() =>
                   setAmountMode((prev) => (prev === 'MON' ? 'USD' : 'MON'))
@@ -1781,7 +2030,7 @@ case 'topTraders':
           <span className="meme-oc-no-data">{noDataMessage}</span>
         </div>
       )}
-      {selectedPosition && showSellPopup && 
+      {selectedPosition && showSellPopup &&
         (<SellPopup
           showSellPopup={showSellPopup}
           selectedPosition={selectedPosition}
@@ -1800,6 +2049,25 @@ case 'topTraders':
           tokendict={tokendict}
         />)
       }
+
+      {activeSection === 'trades' && (
+        <div className={`meme-oc-pause-indicator ${isTradesHovered ? 'visible' : ''}`}>
+          <div className="meme-oc-pause-content">
+            <div className="meme-oc-pause-icon">
+              <svg
+                className="meme-oc-pause-icon-svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+              </svg>
+            </div>
+            <span className="meme-oc-pause-text">Paused</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { encodeFunctionData } from 'viem';
@@ -130,6 +130,8 @@ interface MemeInterfaceProps {
   isLoadingTrades: any;
   setIsLoadingTrades: any;
   trackedWalletsRef: any;
+    isPaused?: boolean;
+  backlogCount?: number;
 }
 
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
@@ -360,7 +362,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   setTrackedAddresses,
   isLoadingTrades,
   setIsLoadingTrades,
-  trackedWalletsRef
+  trackedWalletsRef,
+    isPaused,
+  backlogCount,
 }) => {
   const getSliderPosition = (
     activeView: 'chart' | 'trades' | 'ordercenter',
@@ -825,7 +829,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [tempPresetValue, setTempPresetValue] = useState('');
   const [statsRaw, setStatsRaw] = useState<Record<string, any> | null>(null);
   const presetInputRef = useRef<HTMLInputElement>(null);
-  const [isWidgetOpen, setIsWidgetOpen] = useState(() => {
+const [isWidgetOpen, setIsWidgetOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('crystal_quickbuy_widget_open');
       return saved ? JSON.parse(saved) : true;
@@ -833,6 +837,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       return true;
     }
   });
+  const [isTradesTabVisible, setIsTradesTabVisible] = useState(false);
+  const [isOCTradesHovered, setIsOCTradesHovered] = useState(false);
   const [tradeAmount, setTradeAmount] = useState('');
   const [limitPrice, setLimitPrice] = useState('');
   const [quoteValue, setQuoteValue] = useState<number | undefined>(undefined);
@@ -1002,9 +1008,28 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const routerAddress = settings.chainConfig[activechain]?.router;
   const explorer = settings.chainConfig[activechain]?.explorer;
-  const userAddr = address ?? account?.address ?? '';
+const userAddr = address ?? account?.address ?? '';
   const [dragStart, setDragStart] = useState<{ y: number; height: number } | null>(null);
   const dragStartRef = useRef<{ y: number; height: number } | null>(null);
+
+  const trackedWalletsMap = useMemo(() => {
+    const map = new Map<string, any>();
+    trackedWalletsRef.current.forEach((wallet: any) => {
+      map.set(wallet.address.toLowerCase(), wallet);
+    });
+    return map;
+  }, [trackedWalletsRef.current]);
+
+  const userAddressesSet = useMemo(() => {
+    const addresses = new Set<string>();
+    if (userAddr) {
+      addresses.add(userAddr.toLowerCase());
+    }
+    subWallets.forEach(w => {
+      addresses.add(w.address.toLowerCase());
+    });
+    return addresses;
+  }, [userAddr, subWallets]);
 
   const openInExplorer = (addr: string) =>
     window.open(`${explorer}/token/${addr}`, '_blank');
@@ -2616,8 +2641,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               selectedIntervalRef={selectedIntervalRef}
             />
           </div>
-          <div
+<div
             className={`meme-trades-container ${mobileActiveView !== 'trades' ? 'mobile-hidden' : ''}`}
+            style={{ display: isTradesTabVisible ? 'none' : 'flex' }}
           >
             <MemeTradesComponent
               tokenList={tokenList}
@@ -2645,7 +2671,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               onFilterYou={setTrackedToYou}
               onFilterSet={setTrackedToSet}
               onClearTracked={clearTracked}
-              isLoadingTrades={isLoadingTrades}
+              isLoadingTrades={isLoadingTrades || isOCTradesHovered}
               subWallets={subWallets}
               marketsData={marketsData}
               trackedWalletsRef={trackedWalletsRef}
@@ -2655,7 +2681,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         <div
           className={`meme-ordercenter ${mobileActiveView !== 'ordercenter' ? 'mobile-hidden' : ''}`}
         >
-          <MemeOrderCenter
+<MemeOrderCenter
             orderCenterHeight={orderCenterHeight}
             isVertDragging={isVertDragging}
             isOrderCenterVisible={true}
@@ -2684,10 +2710,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             positions={positions}
             topTraders={topTraders}
             devTokens={devTokens}
+            trades={trades}
+            isTradesTabVisible={isTradesTabVisible}
+            onToggleTradesTab={() => setIsTradesTabVisible(!isTradesTabVisible)}
+            monUsdPrice={monUsdPrice}
+            trackedWalletsMap={trackedWalletsMap}
+            userAddressesSet={userAddressesSet}
             page={page}
             pageSize={PAGE_SIZE}
             currentPrice={currentPrice}
-            monUsdPrice={monUsdPrice}
             onSellPosition={handleSellPosition}
             trackedAddresses={trackedAddresses}
             onToggleTrackedAddress={toggleTrackedAddress}
@@ -2698,6 +2729,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             userAddr={address ?? account?.address ?? ''}
             nonces={nonces}
             activeWalletPrivateKey={activeWalletPrivateKey}
+            onFilterDev={setTrackedToDev}
+            onFilterYou={setTrackedToYou}
+            onFilterTracked={setTrackedToSet}
+            onTradesHoverChange={setIsOCTradesHovered}
+            devAddress={token.dev}
           />
         </div>
       </div>
