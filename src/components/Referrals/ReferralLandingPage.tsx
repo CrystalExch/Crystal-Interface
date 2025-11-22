@@ -4,7 +4,6 @@ import HowItWorks from './HowItWorks';
 import CommissionExplainer from './CommissionExplainer';
 import BenefitsGrid from './BenefitsGrid';
 import ReferralFAQ from './ReferralFAQ';
-import RequestAccessModal from './RequestAccessModal';
 import ReferralsBG from '../../assets/ReferralsBG.png';
 
 interface ReferralLandingPageProps {
@@ -12,7 +11,6 @@ interface ReferralLandingPageProps {
   connected: boolean;
   setpopup: (n: number) => void;
   setShowModal: (v: boolean) => void;
-  isApproved: boolean;
 }
 
 const ReferralLandingPage: React.FC<ReferralLandingPageProps> = ({
@@ -20,18 +18,14 @@ const ReferralLandingPage: React.FC<ReferralLandingPageProps> = ({
   connected,
   setpopup,
   setShowModal,
-  isApproved
 }) => {
   const { t } = useLanguage();
-  const [showRequestModal, setShowRequestModal] = React.useState(false);
 
   const handleGetStarted = () => {
     if (!connected) {
       setpopup(4); // Open wallet connection modal
-    } else if (isApproved) {
-      setShowModal(true); // Open create referral code modal
     } else {
-      setShowRequestModal(true); // Open request access modal
+      setShowModal(true); // Open create referral code modal
     }
   };
 
@@ -54,9 +48,7 @@ const ReferralLandingPage: React.FC<ReferralLandingPageProps> = ({
             >
               {!connected
                 ? 'Connect Wallet to Start'
-                : isApproved
-                  ? 'Create Your Referral Code'
-                  : 'Request Access'}
+                : 'Create Your Referral Code'}
             </button>
             <button
               className="referral-cta-button secondary"
@@ -99,18 +91,9 @@ const ReferralLandingPage: React.FC<ReferralLandingPageProps> = ({
         >
           {!connected
             ? 'Connect Wallet'
-            : isApproved
-              ? 'Create Your Referral Code'
-              : 'Request Access'}
+            : 'Create Your Referral Code'}
         </button>
       </div>
-
-      {/* Request Access Modal */}
-      <RequestAccessModal
-        isOpen={showRequestModal}
-        onClose={() => setShowRequestModal(false)}
-        address={address}
-      />
     </div>
   );
 };

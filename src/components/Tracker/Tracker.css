@@ -2302,6 +2302,7 @@
   padding-left: 12px;
   padding-right: 0;
   margin: 0;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .explorer-column-title-with-dropdown {
@@ -2322,7 +2323,7 @@
   padding: 4px;
   border-radius: 4px;
   transition: background-color 0.2s, color 0.2s;
-  color: rgba(255, 255, 255, 0.5);
+  color: #e6e9f6da;
 }
 
 .explorer-column-dropdown-trigger:hover {

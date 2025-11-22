@@ -52,12 +52,6 @@ const CustomLinkModal = ({
 
   const handleCreate = async () => {
     if (account.connected && account.chainId === activechain) {
-      // Check if wallet is approved (security fallback)
-      if (!refLink){
-        setError('Wallet not approved for referral program');
-        return;
-      }
-
       if (!isValidInput(refLinkString)) return;
       setIsSigning(true);
       const isSuccess = await onCreateRef();

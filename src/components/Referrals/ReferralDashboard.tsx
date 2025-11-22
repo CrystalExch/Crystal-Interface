@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Share2, TrendingUp, Users, Zap, Gem, QrCode } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import { Share2, TrendingUp, Users, Zap, Gem } from 'lucide-react';
 import EnterCode from './EnterACode';
 import ReferralCharts from './ReferralCharts';
 import ReferralTier from './ReferralTier';
@@ -63,11 +62,10 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
   setTypedRefCode,
   isSigning,
 }) => {
-  const [showQR, setShowQR] = useState(false);
   const [showFeeSchedule, setShowFeeSchedule] = useState(false);
 
   // TODO: Get actual trading volume from backend/blockchain
-  const tradingVolume = 150000; // Placeholder: $150k 14-day volume
+  const tradingVolume = 0; // Default: $0, starts at 0 until manually tracked
 
   return (
     <div className="referral-scroll-wrapper">
@@ -160,10 +158,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
                   <span className="total-earnings-label">Total Claimable</span>
                 </div>
                 <div className="total-earnings-amount">
-                  $
-                  {totalClaimableFees
-                    ? customRound(totalClaimableFees, 3)
-                    : '0.00'}
+                  $0.00
                 </div>
               </div>
               <div className="token-breakdown">
@@ -186,7 +181,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
                     </div>
                     <div className="token-amount">
                       <div className="token-value">
-                        {value ? customRound(value as number, 3) : '0.00'}
+                        0.00
                       </div>
                       <div className="token-currency">{token}</div>
                     </div>
@@ -196,24 +191,9 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
               <button
                 className="claim-button"
                 onClick={handleClaimFees}
-                disabled={isSigning || totalClaimableFees === 0}
+                disabled={true}
               >
-                {isSigning ? (
-                  <>
-                    <div className="loading-spinner"></div>
-                    Sign Transaction
-                  </>
-                ) : account.connected && account.chainId === activechain ? (
-                  totalClaimableFees === 0 ? (
-                    'Nothing to Claim'
-                  ) : (
-                    'Claim Fees'
-                  )
-                ) : account.connected ? (
-                  'Switch Network'
-                ) : (
-                  'Connect Wallet'
-                )}
+                Nothing to Claim
               </button>
               <div className="help-text">
                 Claim your referral earnings from trading fees
@@ -302,13 +282,6 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
                         >
                           <Share2 size={13} />
                         </div>
-                        <div
-                          className="qr-button"
-                          onClick={() => setShowQR(!showQR)}
-                          title="Generate QR Code"
-                        >
-                          <QrCode size={13} />
-                        </div>
                       </div>
                     </>
                   ) : (
@@ -317,34 +290,6 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
                     </span>
                   )}
                 </div>
-
-                {/* QR Code Modal */}
-                {showQR && refLink && (
-                  <div className="qr-code-overlay" onClick={() => setShowQR(false)}>
-                    <div className="qr-code-container" onClick={(e) => e.stopPropagation()}>
-                      <h3 className="qr-code-title">Referral QR Code</h3>
-                      <div className="qr-code-wrapper">
-                        <QRCodeSVG
-                          value={`https://app.crystal.exchange?ref=${refLink}`}
-                          size={200}
-                          level="H"
-                          includeMargin={true}
-                          bgColor="#ffffff"
-                          fgColor="#000000"
-                        />
-                      </div>
-                      <p className="qr-code-subtitle">
-                        Scan to visit your referral link
-                      </p>
-                      <button
-                        className="qr-close-button"
-                        onClick={() => setShowQR(false)}
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
               <div className="enter-code-container">
                 <EnterCode

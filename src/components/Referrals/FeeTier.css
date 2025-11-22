@@ -37,11 +37,14 @@
   font-weight: 500;
 }
 
-.fee-tier-title {
+.referrals-fee-tier-title {
   color: rgba(255, 255, 255, 0.9);
   font-size: 1.1rem;
   font-weight: 400;
   margin: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
 }
 
 .fee-tier-badge {
