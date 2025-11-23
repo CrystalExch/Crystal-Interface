@@ -207,8 +207,6 @@ const HEADER_HEIGHT = 53;
 const SIDEBAR_WIDTH = 50;
 const SNAP_THRESHOLD = 10;
 const SNAP_HOVER_TIME = 300;
-const MIN_WIDGET_WIDTH = 380;
-const MIN_WIDGET_HEIGHT = 300;
 
 const formatPrice = (p: number, noDecimals = false) => {
   if (p >= 1e6) {
@@ -220,7 +218,7 @@ const formatPrice = (p: number, noDecimals = false) => {
   if (p >= 1) {
     return `$${p.toFixed(noDecimals ? 0 : 2)}`;
   }
-  return `$${p.toFixed(noDecimals ? 4 : 6)}`;
+  return `$${p.toFixed(noDecimals ? 0 : 2)}`;
 };
 
 const formatTimeAgo = (createdTimestamp: number): string => {

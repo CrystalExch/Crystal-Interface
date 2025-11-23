@@ -223,7 +223,6 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
 
   // Tweet tracking state
   const [tweets, setTweets] = useState<TweetData[]>(() => {
-    console.log('🔄 Initializing tweets state');
     return [];
   });
   const [trackedUsers, setTrackedUsers] = useState<string[]>([]);
@@ -231,10 +230,6 @@ const TrackerWidget: React.FC<TrackerWidgetProps> = ({ isOpen, onClose, onSnapCh
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const tweetsEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    console.log('📊 Tweets state changed:', tweets.length, tweets);
-  }, [tweets]);
 
   const scrollToBottom = () => {
     tweetsEndRef.current?.scrollIntoView({ behavior: 'smooth' });

@@ -668,10 +668,10 @@ const Footer: React.FC<FooterProps> = ({
                   Spectra
                 </div>
               </Tooltip>
-              <Tooltip content="PnL Tracker">
+              <Tooltip content="Coming Soon!">
                 <div
                   className={`footer-widget-button ${isPNLWidgetOpen ? 'active' : ''}`}
-                  onClick={() => onTogglePNLWidget?.(!isPNLWidgetOpen)}
+                  // onClick={() => onTogglePNLWidget?.(!isPNLWidgetOpen)}
                   style={{ cursor: 'pointer' }}
                 >
                   <img src={charticon} className="footer-widget-icon" />
@@ -731,7 +731,6 @@ const Footer: React.FC<FooterProps> = ({
         </div>
       </div>
 
-      {/* Discover Popup */}
       {isDiscoverPopupOpen && createPortal(
         <>
           <div className="discover-popup-overlay" onClick={() => setIsDiscoverPopupOpen(false)} />

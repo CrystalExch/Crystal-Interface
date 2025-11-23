@@ -1859,7 +1859,7 @@ body {
 .navlinkwrapper[data-active='scale'] .sliding-tab-indicator,
 .navlinkwrapper[data-active='send'] .trade-sliding-indicator,
 .navlinkwrapper[data-active='scale'] .trade-sliding-indicator {
-  transform: translateX(200%);
+  transform: translateX(100%);
 }
 
 .use-market-button {

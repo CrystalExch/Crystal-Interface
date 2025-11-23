@@ -4198,93 +4198,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         return { ...state, tokensByStatus: buckets };
       }
 
-      // NEW: Update token by address (for nad.fun events)
-      case 'UPDATE_MARKET_BY_ADDRESS': {
-        const buckets = { ...state.tokensByStatus };
-        let movedToken: any;
-        (Object.keys(buckets) as Token['status'][]).forEach((s) => {
-          buckets[s] = buckets[s].flatMap((t) => {
-            if (t.tokenAddress.toLowerCase() !== action.tokenAddress.toLowerCase()) return [t];
-
-            const {
-              volumeDelta = 0,
-              buyTransactions = 0,
-              sellTransactions = 0,
-              ...rest
-            } = action.updates;
-
-            // Calculate new status based on progress or market cap
-            const newProgress = rest?.progress ?? t.progress;
-            const status = s == 'graduated'
-              ? 'graduated'
-              : newProgress >= 75
-                ? 'graduating'
-                : 'new';
-
-            if (status != s) {
-              movedToken = {
-                ...t,
-                ...rest,
-                volume24h: t.volume24h + volumeDelta,
-                buyTransactions: t.buyTransactions + buyTransactions,
-                sellTransactions: t.sellTransactions + sellTransactions,
-                status: status,
-              }
-              return []
-            }
-            return [{
-              ...t,
-              ...rest,
-              volume24h: t.volume24h + volumeDelta,
-              buyTransactions: t.buyTransactions + buyTransactions,
-              sellTransactions: t.sellTransactions + sellTransactions,
-              status: status,
-            }];
-          });
-        });
-        if (movedToken?.status) {
-          buckets[movedToken?.status as Token['status']].unshift(movedToken);
-        }
-        return { ...state, tokensByStatus: buckets };
-      }
-
       case 'GRADUATE_MARKET': {
         const buckets = { ...state.tokensByStatus };
         let movedToken: any;
         (Object.keys(buckets) as Token['status'][]).forEach((s) => {
           buckets[s] = buckets[s].flatMap((t) => {
             if (t.id.toLowerCase() !== action.id.toLowerCase()) return [t];
-
-            const status = 'graduated'
-
-            if (status != s) {
-              movedToken = {
-                ...t,
-                status: status,
-                progress: 100, // Set progress to 100% when graduated
-              }
-              return []
-            }
-            return [{
-              ...t,
-              status: status,
-              progress: 100,
-            }];
-          });
-        });
-        if (movedToken?.status) {
-          buckets[movedToken?.status as Token['status']].unshift(movedToken);
-        }
-        return { ...state, tokensByStatus: buckets };
-      }
-
-      // NEW: Graduate token by address (for nad.fun CurveTokenListed event)
-      case 'GRADUATE_MARKET_BY_ADDRESS': {
-        const buckets = { ...state.tokensByStatus };
-        let movedToken: any;
-        (Object.keys(buckets) as Token['status'][]).forEach((s) => {
-          buckets[s] = buckets[s].flatMap((t) => {
-            if (t.tokenAddress.toLowerCase() !== action.tokenAddress.toLowerCase()) return [t];
 
             const status = 'graduated'
 
@@ -4566,7 +4485,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               createdTimestamp = Math.floor(createdTimestamp / 1000);
             }
 
-            const volume = Number(m.volume_usd ?? 0);
+            const volume = Number(m.native_volume / 1e18 ?? 0);
             const holdersRaw = Number(m.holders ?? 0);
             const devHoldingRaw = Number(m.developer_holding ?? 0);
             const top10HoldingRaw = Number(m.top10_holding ?? 0);
@@ -5436,13 +5355,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   if (pausedColumnRef.current === 'new') {
                     pausedTokenQueueRef.current['new'].push(newToken);
                   } else {
-                    dispatch({
-                      type: 'ADD_QUEUED_TOKENS',
-                      payload: {
-                        status: 'new',
-                        tokens: [newToken]
-                      }
-                    });
+                    dispatch({ type: 'ADD_MARKET', token: newToken });
                   }
                 })
                 .catch(err => {
@@ -5475,13 +5388,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   if (pausedColumnRef.current === 'new') {
                     pausedTokenQueueRef.current['new'].push(newToken);
                   } else {
-                    dispatch({
-                      type: 'ADD_QUEUED_TOKENS',
-                      payload: {
-                        status: 'new',
-                        tokens: [newToken]
-                      }
-                    });
+                    dispatch({ type: 'ADD_MARKET', token: newToken });
                   }
                 });
             }
@@ -5522,7 +5429,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   buyTransactions: isBuy ? 1 : 0,
                   sellTransactions: isBuy ? 0 : 1,
                   volumeDelta: (isBuy ? amountIn : amountOut),
-                },
+                }
               });
 
               if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
@@ -5869,6 +5776,26 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
     };
   }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
+
+  useEffect(() => {
+    let last = Date.now();
+    let triggered = false;
+  
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const delta = now - last;
+      last = now;
+  
+      if (!triggered && delta > 5000) { 
+        // >5s means the tab was backgrounded + throttled
+        triggered = true;
+  
+        window.location.reload();
+      }
+    }, 1000);
+  
+    return () => clearInterval(interval);
+  }, []);  
 
   // memeinterface
   const [memeTrades, setMemeTrades] = useState<LaunchpadTrade[]>([]);
@@ -14213,7 +14140,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         {popup === 3 ? ( // send popup
           <div ref={popupref} className="send-popup-container">
             <div className="send-popup-background">
-              <div className={`sendbg ${connected && sendAmountIn > tokenBalances[sendTokenIn] ? 'exceed-balance' : ''}`}>
+              <div className={`sendbg ${connected && sendAmountIn > walletTokenBalances[address]?.[sendTokenIn] ? 'exceed-balance' : ''}`}>
 
                 <div className="sendbutton1container">
                   <div className="send-Send">{t('send')}</div>
@@ -14231,7 +14158,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 <div className="sendinputcontainer">
                   <input
                     inputMode="decimal"
-                    className={`send-input ${connected && sendAmountIn > tokenBalances[sendTokenIn] ? 'exceed-balance' : ''}`}
+                    className={`send-input ${connected && sendAmountIn > walletTokenBalances[address]?.[sendTokenIn] ? 'exceed-balance' : ''}`}
                     onCompositionStart={() => {
                       setIsComposing(true);
                     }}
@@ -14351,18 +14278,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   <div className="send-balance-max-container">
                     <div className="send-balance1">
                       <img src={walleticon} className="send-balance-wallet-icon" />{' '}
-                      {formatDisplayValue(tokenBalances[sendTokenIn], Number(tokendict[sendTokenIn].decimals))}
+                      {formatDisplayValue(walletTokenBalances[address]?.[sendTokenIn], Number(tokendict[sendTokenIn].decimals))}
                     </div>
                     <div
                       className="send-max-button"
                       onClick={() => {
-                        if (tokenBalances[sendTokenIn] != BigInt(0)) {
+                        if (walletTokenBalances[address]?.[sendTokenIn] != BigInt(0)) {
                           let amount =
                             (sendTokenIn == eth && !client)
-                              ? tokenBalances[sendTokenIn] - settings.chainConfig[activechain].gasamount > BigInt(0)
-                                ? tokenBalances[sendTokenIn] - settings.chainConfig[activechain].gasamount
+                              ? walletTokenBalances[address]?.[sendTokenIn] - settings.chainConfig[activechain].gasamount > BigInt(0)
+                                ? walletTokenBalances[address]?.[sendTokenIn] - settings.chainConfig[activechain].gasamount
                                 : BigInt(0)
-                              : tokenBalances[sendTokenIn];
+                              : walletTokenBalances[address]?.[sendTokenIn];
                           setSendAmountIn(amount);
                           setSendInputAmount(
                             customRound(Number(amount) / 10 ** Number(tokendict[sendTokenIn].decimals), 3).toString()
@@ -18450,7 +18377,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         {popup === 25 ? ( // deposit popup
           <div ref={popupref} className="send-popup-container">
             <div className="send-popup-background">
-              <div className={`sendbg ${connected && sendAmountIn > mainWalletBalances[sendTokenIn] && !txPending.current ? 'exceed-balance' : ''}`}>
+              <div className={`sendbg ${connected && sendAmountIn > walletTokenBalances[scaAddress]?.[sendTokenIn] && !txPending.current ? 'exceed-balance' : ''}`}>
 
                 <div className="sendbutton1container">
                   <div className="send-Send">{t('deposit')}</div>
@@ -18468,7 +18395,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 <div className="sendinputcontainer">
                   <input
                     inputMode="decimal"
-                    className={`send-input ${connected && sendAmountIn > mainWalletBalances[sendTokenIn] && !txPending.current ? 'exceed-balance' : ''}`}
+                    className={`send-input ${connected && sendAmountIn > walletTokenBalances[scaAddress]?.[sendTokenIn] && !txPending.current ? 'exceed-balance' : ''}`}
                     onCompositionStart={() => {
                       setIsComposing(true);
                     }}
@@ -18588,18 +18515,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   <div className="send-balance-max-container">
                     <div className="send-balance1">
                       <img src={walleticon} className="send-balance-wallet-icon" />{' '}
-                      {formatDisplayValue(mainWalletBalances[sendTokenIn] || 0, Number(tokendict[sendTokenIn].decimals))}
+                      {formatDisplayValue(walletTokenBalances[scaAddress]?.[sendTokenIn] || 0, Number(tokendict[sendTokenIn].decimals))}
                     </div>
                     <div
                       className="send-max-button"
                       onClick={() => {
-                        if (mainWalletBalances[sendTokenIn] != BigInt(0)) {
+                        if (walletTokenBalances[scaAddress]?.[sendTokenIn] != BigInt(0)) {
                           let amount =
                             (sendTokenIn == eth && !client)
-                              ? mainWalletBalances[sendTokenIn] - settings.chainConfig[activechain].gasamount > BigInt(0)
-                                ? mainWalletBalances[sendTokenIn] - settings.chainConfig[activechain].gasamount
+                              ? walletTokenBalances[scaAddress]?.[sendTokenIn] - settings.chainConfig[activechain].gasamount > BigInt(0)
+                                ? walletTokenBalances[scaAddress]?.[sendTokenIn] - settings.chainConfig[activechain].gasamount
                                 : BigInt(0)
-                              : mainWalletBalances[sendTokenIn];
+                              : walletTokenBalances[scaAddress]?.[sendTokenIn];
                           setSendAmountIn(amount);
                           setSendInputAmount(
                             customRound(Number(amount) / 10 ** Number(tokendict[sendTokenIn].decimals), 3).toString()
@@ -18802,7 +18729,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   }
                 }}
                 disabled={(sendAmountIn === BigInt(0) ||
-                  sendAmountIn > mainWalletBalances[sendTokenIn] ||
+                  sendAmountIn > walletTokenBalances[scaAddress]?.[sendTokenIn] ||
                   !/^(0x[0-9a-fA-F]{40})$/.test(oneCTDepositAddress)) &&
                   connected &&
                   userchain == activechain || isSigning}
@@ -18814,7 +18741,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   </div>
                 ) : sendAmountIn === BigInt(0) ? (
                   t('enterAmount')
-                ) : sendAmountIn > mainWalletBalances[sendTokenIn] ? (
+                ) : sendAmountIn > walletTokenBalances[scaAddress]?.[sendTokenIn] ? (
                   t('insufficient') +
                   (tokendict[sendTokenIn].ticker || '?') +
                   ' ' +
@@ -18921,7 +18848,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       </div>
                       <div className="token-right-content">
                         <div className="tokenlistbalance">
-                          {formatDisplayValue(mainWalletBalances[token.address], Number(token.decimals))}
+                          {formatDisplayValue(walletTokenBalances[scaAddress]?.[token.address] ?? 0, Number(token.decimals))}
                         </div>
                         <div className="token-address-container">
                           <span className="token-address">
@@ -25697,37 +25624,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             {simpleView ? t('swap') : t('market')}
           </Link>
           <Link
-            to="/limit"
-            className={`navlink ${location.pathname.slice(1) === 'limit' ? 'active' : ''}`}
+            to="/send"
+            className={`navlink ${location.pathname.slice(1) === 'send' || location.pathname.slice(1) === 'scale' ? 'active' : ''}`}
+            onClick={() => {
+              setShowSendDropdown(false);
+              setCurrentProText('send');
+            }}
           >
-            {t('limit')}
+            {t('send')}
           </Link>
-          <span
-            ref={(el: HTMLSpanElement | null) => {
-              sendButtonRef.current = el;
-            }}
-            className={`navlink ${location.pathname.slice(1) != 'swap' && location.pathname.slice(1) != 'limit' ? 'active' : ''}`}
-            onClick={(e: React.MouseEvent) => {
-              e.preventDefault();
-              setShowSendDropdown(!showSendDropdown);
-            }}
-          >
-            <span className="current-pro-text">{t(currentProText)}</span>
-            <svg
-              className={`dropdown-arrow ${showSendDropdown ? 'open' : ''}`}
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              width="12"
-              height="12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </span>
 
           {showSendDropdown && (
             <div className="navlink-dropdown" ref={sendDropdownRef}>
@@ -25769,7 +25674,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       </div>
       <div className="swapmodal">
         <div
-          className={`sendbg ${connected && amountIn > tokenBalances[tokenIn] && !txPending.current
+          className={`sendbg ${connected && amountIn > walletTokenBalances[address]?.[tokenIn] && !txPending.current
             ? 'exceed-balance'
             : ''
             }`}
@@ -25790,7 +25695,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             <input
               inputMode="decimal"
               className={`send-input ${connected &&
-                amountIn > tokenBalances[tokenIn] && !txPending.current
+                amountIn > walletTokenBalances[address]?.[tokenIn] && !txPending.current
                 ? 'exceed-balance'
                 : ''
                 }`}
@@ -25850,14 +25755,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       debouncedSetAmount(tokenBigInt);
                       setswitched(false);
 
-                      const percentage = !tokenBalances[tokenIn]
+                      const percentage = !walletTokenBalances[address]?.[tokenIn]
                         ? 0
                         : Math.min(
                           100,
                           Math.floor(
                             Number(
                               (tokenBigInt * BigInt(100)) /
-                              tokenBalances[tokenIn],
+                              walletTokenBalances[address]?.[tokenIn],
                             ),
                           ),
                         );
@@ -25903,14 +25808,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     ).toFixed(2);
                     setsendInputString(`$${usd}`);
 
-                    const percentage = !tokenBalances[tokenIn]
+                    const percentage = !walletTokenBalances[address]?.[tokenIn]
                       ? 0
                       : Math.min(
                         100,
                         Math.floor(
                           Number(
                             (tokenBigInt * BigInt(100)) /
-                            tokenBalances[tokenIn],
+                            walletTokenBalances[address]?.[tokenIn],
                           ),
                         ),
                       );
@@ -25987,14 +25892,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       debouncedSetAmount(tokenBigInt);
                       setswitched(false);
 
-                      const percentage = !tokenBalances[tokenIn]
+                      const percentage = !walletTokenBalances[address]?.[tokenIn]
                         ? 0
                         : Math.min(
                           100,
                           Math.floor(
                             Number(
                               (tokenBigInt * BigInt(100)) /
-                              tokenBalances[tokenIn],
+                              walletTokenBalances[address]?.[tokenIn],
                             ),
                           ),
                         );
@@ -26039,14 +25944,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     ).toFixed(2);
                     setsendInputString(`$${usd}`);
 
-                    const percentage = !tokenBalances[tokenIn]
+                    const percentage = !walletTokenBalances[address]?.[tokenIn]
                       ? 0
                       : Math.min(
                         100,
                         Math.floor(
                           Number(
                             (tokenBigInt * BigInt(100)) /
-                            tokenBalances[tokenIn],
+                            walletTokenBalances[address]?.[tokenIn],
                           ),
                         ),
                       );
@@ -26076,23 +25981,23 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               <div className="send-balance1">
                 <img src={walleticon} className="send-balance-wallet-icon" />{' '}
                 {formatSubscript(formatDisplayValue(
-                  tokenBalances[tokenIn],
+                  walletTokenBalances[address]?.[tokenIn],
                   Number(tokendict[tokenIn].decimals),
                 ))}
               </div>
               <div
                 className="send-max-button"
                 onClick={() => {
-                  if (tokenBalances[tokenIn] != BigInt(0)) {
+                  if (walletTokenBalances[address]?.[tokenIn] != BigInt(0)) {
                     let amount =
                       (tokenIn == eth && !client)
-                        ? tokenBalances[tokenIn] -
+                        ? walletTokenBalances[address]?.[tokenIn] -
                           settings.chainConfig[activechain].gasamount >
                           BigInt(0)
-                          ? tokenBalances[tokenIn] -
+                          ? walletTokenBalances[address]?.[tokenIn] -
                           settings.chainConfig[activechain].gasamount
                           : BigInt(0)
-                        : tokenBalances[tokenIn];
+                        : walletTokenBalances[address]?.[tokenIn];
                     debouncedSetAmount(BigInt(amount));
                     setswitched(false);
                     setInputString(
@@ -28344,6 +28249,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         perpsFilterOptions={perpsFilterOptions}
         externalUserStats={memeUserStats}
         lastNonceGroupFetch={lastNonceGroupFetch}
+        scaAddress={scaAddress}
       />
       <div className="app-container" style={{
         marginLeft: (() => {

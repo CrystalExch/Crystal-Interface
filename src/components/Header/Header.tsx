@@ -95,6 +95,7 @@ interface HeaderProps {
     valueNet: number;
   };
   lastNonceGroupFetch: any;
+  scaAddress: any;
 }
 
 const Tooltip: React.FC<{
@@ -296,7 +297,8 @@ const Header: React.FC<HeaderProps> = ({
   perpsMarketsData,
   perpsFilterOptions,
   externalUserStats,
-  lastNonceGroupFetch
+  lastNonceGroupFetch,
+  scaAddress
 }) => {
   const copyToClipboard = async (text: string, label = 'Address copied') => {
   const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -790,7 +792,7 @@ const Header: React.FC<HeaderProps> = ({
                         subWallets.reduce((total, wallet) =>
                           total + (getWalletBalance(wallet.address) * monUsdPrice),
                           0
-                        ), 2)}
+                        ) + getWalletBalance(scaAddress) * monUsdPrice, 2)}
                     </span>
                   </div>
                         <div className="header-wallet-dropdown-address"              

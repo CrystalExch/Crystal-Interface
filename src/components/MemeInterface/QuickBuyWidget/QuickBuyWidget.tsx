@@ -1878,7 +1878,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                   {editingIndex === index ? (
                     <input
                       ref={inputRef}
-                      type="text"
+                      type="decimal"
                       value={tempValue}
                       onChange={(e) => setTempValue(e.target.value)}
                       onKeyDown={handleInputKeyDown}
@@ -1991,7 +1991,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                     {editingIndex === index + 100 ? (
                       <input
                         ref={inputRef}
-                        type="text"
+                        type="decimal"
                         value={tempValue}
                         onChange={(e) => setTempValue(e.target.value)}
                         onKeyDown={handleInputKeyDown}

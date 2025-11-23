@@ -3301,17 +3301,30 @@ useEffect(() => {
         <div className="meme-trade-panel-content">
           <div className="meme-trade-input-wrapper">
             <input
-              type="number"
+              type="decimal"
               placeholder="0.00"
               value={tradeAmount}
               onChange={(e) => {
                 const value = e.target.value;
-                setTradeAmount(value);
-
-                // If in sell mode and percentage mode, update the slider
+                if (!/^\d*\.?\d{0,18}$/.test(value)) return;
                 if (activeTradeType === 'sell' && sellInputMode === 'percentage') {
                   const percent = parseFloat(value) || 0;
                   setSliderPercent(Math.min(100, Math.max(0, percent)));
+                  setTradeAmount(percent == 0 ? '' : Math.min(100, Math.max(0, percent)).toString());
+                }
+                else if (activeTradeType == 'buy') {
+                  const currentBalance = getTotalSelectedWalletsBalance();
+                  const currentAmount = parseFloat(value) || 0;
+                  const percentage = currentBalance > 0 ? (currentAmount / currentBalance) * 100 : 0;
+                  setSliderPercent(percentage);
+                  setTradeAmount(value);
+                }
+                else {
+                  const currentBalance = getTotalSelectedWalletsTokenBalance();
+                  const currentAmount = parseFloat(value) || 0;
+                  const percentage = currentBalance > 0 ? (currentAmount / currentBalance) * 100 : 0;
+                  setSliderPercent(percentage);
+                  setTradeAmount(value);
                 }
               }}
               className="meme-trade-input"
@@ -4833,7 +4846,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {isWalletDropdownOpen && (
+        {isWalletDropdownOpen && window.innerWidth < 1020 && (
           <div className="meme-mobile-wallets-panel" ref={walletDropdownPanelRef}>
             {(() => {
               const walletsWithToken = subWallets.filter(
