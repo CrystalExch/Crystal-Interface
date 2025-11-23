@@ -2157,7 +2157,28 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const memeRealtimeCallbackRef = useRef<any>({});
   const trackedWalletsRef = useRef<any>([]);
   const trackedWalletTradesRef = useRef<any>([]);
+  const wsPendingLogsRef = useRef(new Map());
   const [trackedWalletTrades, setTrackedWalletTrades] = useState<any[]>([]);
+
+  // reload if throttled
+  useEffect(() => {
+    let last = Date.now();
+    let triggered = false;
+  
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const delta = now - last;
+      last = now;
+  
+      if (!triggered && delta > 5000) { 
+        triggered = true;
+  
+        window.location.reload();
+      }
+    }, 1000);
+  
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const updateTrackedWalletsRef = () => {
@@ -4447,8 +4468,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     };
   }, [address]);
 
-  const wsPendingLogsRef = useRef(new Map());
-
   useEffect(() => {
     let cancelled = false;
     let startBlockNumber = '';
@@ -5777,26 +5796,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     };
   }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
 
-  useEffect(() => {
-    let last = Date.now();
-    let triggered = false;
-  
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const delta = now - last;
-      last = now;
-  
-      if (!triggered && delta > 5000) { 
-        // >5s means the tab was backgrounded + throttled
-        triggered = true;
-  
-        window.location.reload();
-      }
-    }, 1000);
-  
-    return () => clearInterval(interval);
-  }, []);  
-
   // memeinterface
   const [memeTrades, setMemeTrades] = useState<LaunchpadTrade[]>([]);
   const [memeHolders, setMemeHolders] = useState<Holder[]>([]);
@@ -6780,7 +6779,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         let totalValue = 0;
         tokenAddresses.forEach((tokenAddress, index) => {
           if (groupResults?.mainGroup?.[walletIndex]?.result?.[index]) {
-            balanceMap[tokenAddress] = groupResults?.mainGroup?.[walletIndex]?.result?.[index];
+            balanceMap[tokenAddress] = groupResults?.mainGroup?.[walletIndex]?.result?.[index] || 0n;
 
             try {
               const marketInfo = findMarketForToken(tokenAddress);
@@ -6796,6 +6795,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             } catch (error) {
               console.warn('Error calculating USD value for', tokenAddress, error);
             }
+          }
+          else {
+            balanceMap[tokenAddress] = 0n;
           }
         });
 
@@ -10667,6 +10669,57 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     }
   }, [popup, connected, scaAddress, user != null, loading]);
 
+  const { data: tempQueryData, isFetching: isQuoteFetching, dataUpdatedAt: quoteUpdatedAt, refetch: quoteRefetch } = useQuery({
+    queryKey: ['madhouse_quote', tokenIn, tokenOut, address, activechain, slippage.toString(), amountIn ? amountIn.toString() : null],
+    queryFn: async () => {
+      const allowanceBody = JSON.stringify({
+        jsonrpc:'2.0',
+        id:1,
+        method:'eth_call',
+        params:[{
+          to: tokenIn,
+          data:'0xdd62ed3e' + address.replace('0x','').padStart(64,'0') + settings.chainConfig[activechain]?.madHouseRouter.replace('0x','').padStart(64,'0')
+        },'latest']
+      })
+      const [aggregatorRes, allowanceRes] = await Promise.all([
+        fetch(`https://api.madhouse.ag/swap/v1/quote?chain=${activechain}&tokenIn=${tokenIn == eth ? '0x0000000000000000000000000000000000000000' : tokenIn}&tokenOut=${tokenOut == eth ? '0x0000000000000000000000000000000000000000' : tokenOut}&amountIn=${amountIn.toString()}&slippage=${(10000-Number(slippage)) / 10000}`).then(r => r.json()),
+        fetch(HTTP_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: allowanceBody }).then(r => r.json())
+      ])
+      return {aggregatorRes, allowanceRes: BigInt(allowanceRes?.result)}
+    },
+    enabled: !!tokenIn && !!tokenOut && !!address && !!activechain && !!amountIn && ['swap'].includes(location.pathname.split('/')[1]),
+    refetchInterval: 3000,
+    gcTime: 0
+  })
+  
+  useLayoutEffect(() => {
+    if (!isQuoteFetching && tempQueryData?.aggregatorRes) {
+      if (!txPending.current && !debounceTimerRef.current) {
+        if (tempQueryData?.allowanceRes != null) {
+          setallowance(tempQueryData?.allowanceRes);
+        }
+        if (tempQueryData?.aggregatorRes != null) {
+          setStateIsLoading(false);
+          setstateloading(false);
+          console.log(tempQueryData?.aggregatorRes)
+          setamountOutSwap(BigInt(tempQueryData?.aggregatorRes?.amountOut || 0))
+          setoutputString((Number(tempQueryData?.aggregatorRes?.amountOut || 0) / (10**Number(tokendict[tokenOut].decimals))).toString())
+        }
+      }
+    } else {
+    }
+  }, [tempQueryData, activechain, isQuoteFetching, quoteUpdatedAt, location.pathname.slice(1)]);
+
+  // changed to quoteRefetch
+  const handleRefreshQuote = useCallback(async (e: any) => {
+    e.preventDefault();
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    setStateIsLoading(true);
+    await quoteRefetch()
+    setIsRefreshing(false);
+  }, [isRefreshing, quoteRefetch]);
+
   const isValidInput = (value: string) => {
     const regex = /^[a-zA-Z0-9-]{0,20}$/;
     return regex.test(value);
@@ -10967,15 +11020,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     if (key.startsWith('F') && key.length <= 3) return key.toUpperCase();
     return key;
   };
-
-  const handleRefreshQuote = useCallback(async (e: any) => {
-    e.preventDefault();
-    if (isRefreshing) return;
-    setIsRefreshing(true);
-    setStateIsLoading(true);
-    await refetch()
-    setIsRefreshing(false);
-  }, [isRefreshing, refetch]);
 
   const handleCancelTopOrder = useCallback(async () => {
     if (!connected || userchain !== activechain || orders.length === 0 || isSigning) {
@@ -20054,10 +20098,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     </>
   );
 
-  useEffect(() => {
-    
-  }, []);
-  
   const tempswap = (
     <div className="rectangle">
       <div className="navlinkwrapper" onClick={() => {
@@ -20474,6 +20514,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               <input
                 inputMode="decimal"
                 className="output"
+                disabled
                 onCompositionStart={() => {
                   setIsComposing(true);
                 }}
@@ -21621,35 +21662,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             }}
           />
         </div>}
-        {!multihop && !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) && (
-          <div className="trade-fee">
-            <div className="label-container">
-              <TooltipLabel
-                label={t('partialFill')}
-                tooltipText={
-                  <div>
-                    <div className="tooltip-description">
-                      {t('partialFillSubtitle')}
-                    </div>
-                  </div>
-                }
-                className="impact-label"
-              />
-            </div>
-            <ToggleSwitch
-              checked={orderType === 0}
-              onChange={() => {
-                const newValue = orderType === 1 ? 0 : 1;
-                setorderType(newValue);
-                localStorage.setItem(
-                  'crystal_order_type',
-                  JSON.stringify(newValue),
-                );
-              }}
-            />
-          </div>
-        )}
-
         {!isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) && (
           <div className="slippage-row">
             <div className="label-container">
