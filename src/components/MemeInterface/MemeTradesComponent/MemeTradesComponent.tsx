@@ -9,7 +9,8 @@ import switchicon from '../../../assets/switch.svg';
 import TraderPortfolioPopup from './TraderPortfolioPopup/TraderPortfolioPopup';
 import TransactionFiltersPopup from './TransactionFiltersPopup';
 import { settings } from '../../../settings';
-import { formatSubscript } from '../../../utils/numberDisplayFormat';
+import { formatSubscript, FormattedNumber } from '../../../utils/numberDisplayFormat';
+import NumberDisplay from '../../NumberDisplay/NumberDisplay';
 
 import './MemeTradesComponent.css';
 
@@ -144,10 +145,10 @@ const Tooltip: React.FC<{
               top: `${tooltipPosition.top - 20}px`,
               left: `${tooltipPosition.left}px`,
               transform: `${position === 'top' || position === 'bottom'
-                  ? 'translateX(-50%)'
-                  : position === 'left' || position === 'right'
-                    ? 'translateY(-50%)'
-                    : 'none'
+                ? 'translateX(-50%)'
+                : position === 'left' || position === 'right'
+                  ? 'translateY(-50%)'
+                  : 'none'
                 } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
@@ -388,55 +389,8 @@ export default function MemeTradesComponent({
     [wethticker, ethticker],
   );
 
-  const SUB = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
-  const toSub = (n: number) =>
-    String(n)
-      .split('')
-      .map((d) => SUB[+d])
-      .join('');
 
-  function formatMemePrice(price: number): string {
-    if (!isFinite(price)) return '';
-    if (Math.abs(price) < 1e-18) return '0';
 
-    const neg = price < 0 ? '-' : '';
-    const abs = Math.abs(price);
-
-    if (abs >= 1_000_000_000)
-      return neg + (abs / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B';
-    if (abs >= 1_000_000)
-      return neg + (abs / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
-    if (abs >= 1_000)
-      return neg + (abs / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
-
-    if (abs >= 100) return neg + abs.toFixed(0).replace(/\.00$/, '');
-    if (abs >= 10) return neg + abs.toFixed(1).replace(/\.00$/, '');
-    if (abs >= 1) return neg + abs.toFixed(2).replace(/\.00$/, '');
-    if (abs >= 1e-1) return neg + abs.toFixed(3).replace(/\.00$/, '');
-    if (abs >= 1e-2) return neg + abs.toFixed(4).replace(/\.00$/, '');
-    if (abs >= 1e-3) return neg + abs.toFixed(5).replace(/\.00$/, '');
-    if (abs >= 1e-4) return neg + abs.toFixed(6).replace(/\.00$/, '');
-
-    const exp = Math.floor(Math.log10(abs));
-    let zeros = -exp - 1;
-    if (zeros < 0) zeros = 0;
-
-    const tailDigits = 2;
-    const factor = Math.pow(10, tailDigits);
-    let scaled = abs * Math.pow(10, zeros + 1);
-    let t = Math.round(scaled * factor);
-
-    if (t >= Math.pow(10, 1 + tailDigits)) {
-      zeros = Math.max(0, zeros - 1);
-      scaled = abs * Math.pow(10, zeros + 1);
-      t = Math.round(scaled * factor);
-    }
-
-    const s = t.toString().padStart(1 + tailDigits, '0');
-    const tail2 = s.slice(0, 3);
-
-    return `${neg}0.0${toSub(zeros)}${tail2}`;
-  }
 
   const viewTrades: ViewTrade[] = useMemo(() => {
     if (!displayTrades?.length) return [];
@@ -502,20 +456,20 @@ export default function MemeTradesComponent({
         subWalletSet.has(callerLower);
       const isTopHolder = top10HolderAddresses.has(callerLower);
       const isDev = Boolean(devAddressLower && callerLower === devAddressLower);
-      
+
       // Check if this is a tracked wallet
       const trackedWallet = trackedWalletsMap.get(callerLower);
       const isTracked = !!trackedWallet;
-      
+
       const sign = r.isBuy ? 1 : -1;
 
       let amountMON = sign * (r.nativeAmount ?? 0);
 
       const amountUSD = monUsdPrice > 0 ? amountMON * monUsdPrice : 0;
-      
+
       let short: string;
       let emoji: string | undefined;
-      
+
       if (isCurrentUser) {
         short = 'YOU';
       } else if (trackedWallet) {
@@ -524,7 +478,7 @@ export default function MemeTradesComponent({
       } else {
         short = r.caller.slice(2, 6);
       }
-      
+
       const tags: (
         | 'sniper'
         | 'dev'
@@ -596,7 +550,7 @@ export default function MemeTradesComponent({
     if (val >= 0.01) return val.toFixed(4);
     return val.toPrecision(3);
   };
-  
+
   const fmtTimeAgo = (ts: number) => {
     const now = Date.now() / 1000;
     const secondsAgo = Math.max(0, Math.floor(now - ts));
@@ -616,7 +570,7 @@ export default function MemeTradesComponent({
     if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(decimals)}K`;
     return `${sign}${abs.toFixed(1)}`;
   };
-  
+
   const handleApplyFilters = (filters: TransactionFilters) => {
     setTransactionFilters(filters);
   };
@@ -877,7 +831,7 @@ export default function MemeTradesComponent({
                         className="meme-trade-mon-logo"
                       />
                     )}
-                    {formatSubscript(fmtAmount(shownAmount))}
+                    <NumberDisplay formatted={formatSubscript(fmtAmount(shownAmount))} />
                   </div>
 
                   <div className="meme-trade-mc">
@@ -887,7 +841,7 @@ export default function MemeTradesComponent({
                       </span>
                     ) : (
                       <span>
-                        ${formatMemePrice(t.priceUSD)}
+                        $<NumberDisplay formatted={formatSubscript(t.priceUSD.toString())} />
                       </span>
                     )}
                   </div>
@@ -906,10 +860,10 @@ export default function MemeTradesComponent({
                     </div>
                     <span className="meme-trade-age">
                       <a
-                          href={`${settings.chainConfig[activechain].explorer}/tx/${t.id.split('-')[0]}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
+                        href={`${settings.chainConfig[activechain].explorer}/tx/${t.id.split('-')[0]}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         {fmtTimeAgo(t.timestamp)}
                       </a>
                     </span>

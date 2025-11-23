@@ -40,7 +40,7 @@ interface ChartHeaderProps {
   marketsData: any;
   simpleView: boolean;
   tradesByMarket: any;
-  isMemeToken?: boolean;
+isMemeToken?: boolean;
   memeTokenData?: {
     symbol: string;
     name: string;
@@ -54,6 +54,13 @@ interface ChartHeaderProps {
     twitterHandle?: string;
     telegramHandle?: string;
     discordHandle?: string;
+    graduatedTokens?: number;
+    launchedTokens?: number;
+    developerAddress?: string;
+    reserveQuote?: bigint;
+    reserveBase?: bigint;
+    bondingPercentage: number;
+    source?: 'nadfun' | 'crystal' | string;
   };
   isPerpsToken?: boolean;
   perpsActiveMarketKey: any;
@@ -135,13 +142,16 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
     }
   }, [orderdata]);
 
+  const priceChangeAmountStr = String(priceChangeAmount || '');
+  const priceChangePercentStr = String(priceChangePercent || '');
+
   const metrics = [
     {
       label: t('dayChange'),
       value: (
-        <span className={`price-change ${priceChangeAmount.trim().startsWith('-') ? 'negative' : priceChangeAmount.replace(/[^0-9]/g, '').split('').every(c => c == '0') ? 'neutral' : 'positive'}`}>
-          {priceChangeAmount !== 'N/A'
-            ? `${priceChangeAmount} / ${priceChangePercent}%`
+        <span className={`price-change ${priceChangeAmountStr.trim().startsWith('-') ? 'negative' : priceChangeAmountStr.replace(/[^0-9]/g, '').split('').every(c => c == '0') ? 'neutral' : 'positive'}`}>
+          {priceChangeAmountStr !== 'N/A'
+            ? `${priceChangeAmountStr} / ${priceChangePercentStr}%`
             : 'N/A'}
         </span>
       ),

@@ -19,8 +19,10 @@ import { TwitterHover } from '../../../TwitterHover/TwitterHover';
 import { useSharedContext } from '../../../../contexts/SharedContext';
 import {
   formatCommas,
+  formatSubscript,
+  FormattedNumber,
 } from '../../../../utils/numberDisplayFormat';
-import { formatSubscript } from '../../../../utils/numberDisplayFormat';
+import NumberDisplay from '../../../NumberDisplay/NumberDisplay';
 import { formatSig } from '../../../OrderCenter/utils/formatDisplay.ts';
 
 import { settings } from '../../../../settings.ts';
@@ -1587,7 +1589,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">Price</span>
                 <span className="meme-interface-metric-value meme-price-large">
-                  ${formatMemePrice((Number(price) * monUsdPrice))}
+  $<NumberDisplay formatted={formatSubscript((Number(price) * monUsdPrice).toString())} />
                 </span>
               </div>
 
@@ -2190,16 +2192,16 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                             isVisible={true}
                           />
                         </div>
-                        <div className="market-price-section">
-                          <div className="market-price">
-                            {formatSubscript(market.currentPrice)}
-                          </div>
-                          <div
-                            className={`market-change ${market.priceChange.startsWith('-') ? 'negative' : 'positive'}`}
-                          >
-                            {market.priceChange + '%'}
-                          </div>
-                        </div>
+                     <div className="market-price-section">
+  <div className="market-price">
+    <NumberDisplay formatted={formatSubscript(market.currentPrice)} />
+  </div>
+  <div
+    className={`market-change ${market.priceChange.startsWith('-') ? 'negative' : 'positive'}`}
+  >
+    {market.priceChange + '%'}
+  </div>
+</div>
                       </div>
                     </div>
                   ))
