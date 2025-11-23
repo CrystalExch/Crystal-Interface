@@ -1,7 +1,6 @@
 /* Fee Tier Section */
 .fee-tier-section {
   background: rgb(6, 6, 6);
-  border: 1px solid rgba(170, 174, 207, 0.1);
   border-radius: 12px;
   padding: 1.5rem 16px;
   margin-left: 10px;
@@ -22,6 +21,38 @@
   gap: 1rem;
 }
 
+.fee-tier-badge-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tier-nav-button {
+  background: rgba(170, 174, 207, 0.1);
+  border: 1px solid rgba(170, 174, 207, 0.2);
+  border-radius: 4px;
+  color: #aaaecf;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.tier-nav-button:hover {
+  background: rgba(170, 174, 207, 0.2);
+  border-color: rgba(170, 174, 207, 0.3);
+}
+
+.fee-tier-progress-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
 .fee-tier-next-info {
   display: flex;
   align-items: center;
@@ -36,8 +67,46 @@
 }
 
 .fee-tier-next-name {
-  color: #aaaecf;
   font-weight: 500;
+  background: linear-gradient(135deg, #aaaecf 0%, #7f82a1 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.fee-tier-next-name.tier-silver {
+  background: linear-gradient(135deg, #D4D4D4 0%, #7A7A7A 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.fee-tier-next-name.tier-gold {
+  background: linear-gradient(135deg, #F5D576 0%, #CC8400 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.fee-tier-next-name.tier-diamond {
+  background: linear-gradient(135deg, #B9F2FF 0%, #4DB8E8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.fee-tier-next-name.tier-netherite {
+  background: linear-gradient(135deg, #6B6B6B 0%, #4A4A4A 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.fee-tier-next-name.tier-enchanted-netherite {
+  background: linear-gradient(135deg, #9D4EDD 0%, #7B2CBF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .referrals-fee-tier-title {
@@ -99,12 +168,11 @@
 }
 
 .fee-tier-progress-bar {
-  width: 100%;
+  flex: 1;
   height: 8px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   overflow: hidden;
-  margin-bottom: 0.5rem;
 }
 
 .fee-tier-progress-fill {

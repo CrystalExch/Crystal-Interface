@@ -91,26 +91,29 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ address, displayName, isLoadi
 
   return (
     <div className="leaderboard-container">
-      {/* User Profile Section */}
-      <div className="leaderboard-user-section">
-        <img src={defaultPfp} className="leaderboard-user-pfp" alt="Profile" />
-        <div className="leaderboard-user-info">
+      {/* Leaderboard Table */}
+      <div className="leaderboard-table-section">
+        {/* User Profile Section - Top Right */}
+        <div className="leaderboard-user-badge">
           {isLoading ? (
             <>
-              <div className="referrals-skeleton leaderboard-username-skeleton"></div>
-              <div className="referrals-skeleton leaderboard-rank-skeleton"></div>
+              <div className="leaderboard-user-text">
+                <div className="referrals-skeleton leaderboard-username-skeleton"></div>
+                <div className="referrals-skeleton leaderboard-rank-skeleton"></div>
+              </div>
+              <div className="leaderboard-user-pfp-skeleton"></div>
             </>
           ) : (
             <>
-              <span className="leaderboard-username">{displayName}</span>
-              <div className="leaderboard-user-rank">Rank #{userRank}</div>
+              <div className="leaderboard-user-text">
+                <span className="leaderboard-username">{displayName}</span>
+                <span className="leaderboard-user-rank">Rank #{userRank}</span>
+              </div>
+              <img src={defaultPfp} className="leaderboard-user-pfp" alt="Profile" />
             </>
           )}
         </div>
-      </div>
 
-      {/* Leaderboard Table */}
-      <div className="leaderboard-table-section">
         <h2 className="leaderboard-title">Points Leaderboard</h2>
 
         <div className="leaderboard-table-wrapper">
