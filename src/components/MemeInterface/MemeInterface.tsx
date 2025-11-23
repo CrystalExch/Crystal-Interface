@@ -32,6 +32,8 @@ import slippage from '../../assets/slippage.svg';
 import trash from '../../assets/trash.svg';
 import walleticon from '../../assets/wallet_icon.svg';
 import { updateBuyPreset, updateSellPreset } from '../../utils/presetManager';
+import { zeroXAbi } from '../../abis/zeroXAbi.ts';
+import { zeroXActionsAbi } from '../../abis/zeroXActionsAbi.ts';
 
 import './MemeInterface.css';
 

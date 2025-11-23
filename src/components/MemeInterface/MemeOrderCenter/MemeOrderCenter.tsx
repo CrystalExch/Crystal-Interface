@@ -119,7 +119,8 @@ interface DevToken {
   price: number;
   marketCap: number;
   timestamp: number;
-  migrated: boolean;
+  status: boolean;
+  holders: number;
 }
 
 const fmt = (v: number, d = 2) => {
@@ -612,7 +613,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           price: mt.price,
           marketCap: mt.marketCap,
           timestamp: mt.timestamp,
-          migrated: mt.migrated,
+          status: mt.migrated,
+          holders: mt.holders,
         }));
 
     const seen = new Set<string>();
@@ -657,7 +659,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   const availableTabs = [
     ...(isTradesTabVisible ? [{ key: 'trades', label: `Trades` }] : []),
     { key: 'positions', label: `Positions (${positions.length})` },
-    { key: 'orders', label: `Orders (${mockOrders.length})` },
+   // { key: 'orders', label: `Orders (${mockOrders.length})` },
     { key: 'holders', label: `Holders (${holderRows.length})` },
     { key: 'topTraders', label: `Top Traders (${topTraderRows.length})` },
     { key: 'devTokens', label: `Dev Tokens (${devTokensToShow.length})` },
@@ -1525,7 +1527,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             <div className="meme-oc-dev-tokens-table">
               <div className="meme-oc-header">
                 <div className="meme-oc-header-cell">Token</div>
-                <div className="meme-oc-header-cell">Market Cap (MON)</div>
+                <div className="meme-oc-header-cell">Market Cap {amountMode === 'MON' ? '(MON)' : ''}</div>
                 <div className="meme-oc-header-cell">Migrated</div>
                 <div className="meme-oc-header-cell">Liquidity</div>
                 <div className="meme-oc-header-cell">Holders</div>
@@ -1592,6 +1594,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
                         <div className="meme-oc-cell">
                           <div className="meme-ordercenter-info">
+                            {amountMode === 'MON' ? <>
                             <img
                               className="meme-ordercenter-monad-icon"
                               src={monadicon}
@@ -1600,10 +1603,20 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                             <span className="meme-usd-amount">
                               {mc > 0 ? fmt(mc, 2) : '—'}
                             </span>
+                            </> : <>
+                            <span className="meme-usd-amount">
+                              {fmtAmount(
+                                mc,
+                                amountMode,
+                                monUsdPrice,
+                              )}
+                            </span>
+                            </>}
+                          
                           </div>
                         </div>
                         <div className="meme-oc-cell">
-                          {t.migrated ? (
+                          {t.status == true ? (
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               width="16"
@@ -1640,7 +1653,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                           $0
                         </div>
                         <div className="meme-oc-cell">
-                          <span>{liveHolders.length}</span>
+                          <span>{t.holders}</span>
                         </div>
                       </div>
                     );
@@ -1663,7 +1676,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                 <div className="meme-oc-dev-stats-migration">
                   <div className="meme-oc-migration-item migrated">
                     <span className="meme-oc-migration-indicator"></span>
-                    <span>Migrated: {token.graduatedTokens || devTokensToShow.filter(t => t.migrated).length}</span>
+                    <span>Migrated: {token.graduatedTokens || devTokensToShow.filter(t => t.status).length}</span>
                   </div>
                   <div className="meme-oc-migration-item non-migrated">
                     <span className="meme-oc-migration-indicator"></span>

@@ -1769,7 +1769,7 @@ const DisplayDropdown: React.FC<{
                           ['top10Holders', 'Top 10 Holders'],
                           ['devHolding', 'Dev Holding'],
                           ['snipers', 'Snipers'],
-                          ['insiders', 'Insiders'],
+                     //     ['insiders', 'Insiders'],
                         ] as Array<[keyof DisplaySettings['visibleRows'], string]>
                       ).map(([k, label]) => (
                         <div
@@ -3043,7 +3043,7 @@ const metricData = hasMetricColoring(displaySettings)
               </Tooltip>
             )}
 
-            {displaySettings.visibleRows.insiders && (
+            {displaySettings.visibleRows.insiders && false && (
               <Tooltip content="Insider Holding">
                 <div className="explorer-holding-item">
                   <svg

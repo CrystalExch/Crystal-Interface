@@ -78,6 +78,7 @@ interface DevToken {
   marketCap: number;
   timestamp: number;
   migrated: boolean;
+  holders: number;
 }
 
 export const mockPositions: Position[] = [];

@@ -6216,6 +6216,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               marketCap: devPrice * TOTAL_SUPPLY,
               timestamp: Number(t.timestamp ?? 0),
               status: t.migrated,
+              holders: t.holders,
             };
           });
 
