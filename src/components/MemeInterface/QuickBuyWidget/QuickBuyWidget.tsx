@@ -264,6 +264,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   createSubWallet,
   setOneCTDepositAddress,
 }) => {
+  if (window.innerWidth < 1020) return (<></>)
   const [position, setPosition] = useState(() => {
     try {
       const saved = localStorage.getItem('crystal_quickbuy_widget_position');

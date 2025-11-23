@@ -809,6 +809,7 @@
 
 .meme-oc-quickbuy-button.active {
   background-color: #b6b3f41f;
+  border: 1px solid#aaaecf;
 }
 
 @media(max-width: 1020px) {
@@ -820,7 +821,7 @@
 .meme-oc-quickbuy-button {
   align-items: center;
   background-color: rgba(201, 194, 243, .05);
-  border: 1px solid#aaaecf;
+  border: 1px solid#aaaecfa0;
   border-radius: 20px;
   color: #d8dcff;
   cursor: pointer;

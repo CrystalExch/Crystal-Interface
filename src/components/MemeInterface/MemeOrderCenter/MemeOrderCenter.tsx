@@ -79,7 +79,7 @@ interface MemeOrderCenterProps {
   onDragStart?: (e: React.MouseEvent) => void;
   onDragEnd?: () => void;
   isWidgetOpen?: boolean;
-  onToggleWidget?: () => void;
+  onToggleWidget: () => void;
   holders?: LiveHolder[];
   positions?: Position[];
   topTraders: LiveHolder[];
@@ -1934,108 +1934,107 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             </>
           </div>
 
-          {onToggleWidget && (
-            <div className="meme-oc-right-controls">
-              <button
-                onClick={onToggleWidget}
-                className={`meme-oc-quickbuy-button ${isWidgetOpen ? 'active' : ''}`}
-              >
-                <img className="memeordercenter-lightning" src={lightning} />
+          <div className="meme-oc-right-controls">
+            <button
+              onClick={onToggleWidget}
+              className={`meme-oc-quickbuy-button ${isWidgetOpen ? 'active' : ''}`}
+            >
+              <img className="memeordercenter-lightning" src={lightning} />
 
-                {windowWidth > 768 && (
-                  <span>
-                    {isWidgetOpen ? 'Instant Trade' : 'Instant Trade'}
-                  </span>
-                )}
-              </button>
-
-              <button
-                onClick={onToggleTradesTab}
-                className={`meme-oc-trades-toggle-button ${isTradesTabVisible ? 'active' : ''}`}
-              >
-                {isTradesTabVisible ? (
-
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="panel">
-                    <rect width="18" height="18" x="3" y="3" rx="2" />
-                    <path d="M15 3v18" />
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="panel">
-                    <rect width="18" height="18" x="3" y="3" rx="2" />
-                    <path d="M3 15h18" />
-                  </svg>
-                )}
-                {windowWidth > 768 && <span>{isTradesTabVisible ? 'Trades Panel' : 'Trades Table'}</span>}
-              </button>
-              {isTradesTabVisible && (
-                <div className="meme-oc-trades-filters">
-                  <button
-                    className={`meme-oc-trade-filter-btn ${devActive ? 'active' : ''}`}
-                    onClick={onFilterDev}
-                  >
-                    <img
-                      src={devActive ? filledcup : filtercup}
-                      alt="Filter"
-                      className="oc-filter-cup"
-                    />
-                    DEV
-                  </button>
-                  <button
-                    className={`meme-oc-trade-filter-btn ${trackedActive ? 'active' : ''}`}
-                    onClick={onFilterTracked}
-                  >
-                    <img
-                      src={trackedActive ? filledcup : filtercup}
-                      alt="Filter"
-                      className="oc-filter-cup"
-                    />
-                    TRACKED
-                  </button>
-                  <button
-                    className={`meme-oc-trade-filter-btn ${youActive ? 'active' : ''}`}
-                    onClick={onFilterYou}
-                  >
-                    <img
-                      src={youActive ? filledcup : filtercup}
-                      alt="Filter"
-                      className="oc-filter-cup"
-                    />
-                    YOU
-                  </button>
-                </div>
+              {windowWidth > 768 && (
+                <span>
+                  {'Instant Trade'}
+                </span>
               )}
+            </button>
 
-              <button
-                onClick={() =>
-                  setAmountMode((prev) => (prev === 'MON' ? 'USD' : 'MON'))
-                }
-                className="meme-oc-currency-toggle"
-              >
-                <img src={switchicon} className="meme-currency-switch-icon" />
-                {amountMode}
-              </button>
-              {isTradesTabVisible && (
+            <button
+              //onClick={onToggleTradesTab}
+              style={{cursor: 'not-allowed'}}
+              className={`meme-oc-trades-toggle-button ${isTradesTabVisible ? 'active' : ''}`}
+            >
+              {isTradesTabVisible ? (
 
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="panel">
+                  <rect width="18" height="18" x="3" y="3" rx="2" />
+                  <path d="M15 3v18" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="panel">
+                  <rect width="18" height="18" x="3" y="3" rx="2" />
+                  <path d="M3 15h18" />
+                </svg>
+              )}
+              {windowWidth > 768 && <span>{isTradesTabVisible ? 'Trades Panel' : 'Trades Table'}</span>}
+            </button>
+            {isTradesTabVisible && (
+              <div className="meme-oc-trades-filters">
                 <button
-                  className={`filter-icon-button ${hasActiveFilters ? 'active' : ''}`}
-                  onClick={() => setShowFiltersPopup(true)}
-                  style={{ paddingRight: "15px" }}
+                  className={`meme-oc-trade-filter-btn ${devActive ? 'active' : ''}`}
+                  onClick={onFilterDev}
                 >
                   <img
-                    className="filter-icon"
-                    src={filter}
-                    alt="Advanced Filters"
-                    style={{
-                      filter: hasActiveFilters
-                        ? 'brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%)'
-                        : undefined,
-                    }}
+                    src={devActive ? filledcup : filtercup}
+                    alt="Filter"
+                    className="oc-filter-cup"
                   />
-                  {hasActiveFilters && <span className="trades-filter-active-dot" />}
+                  DEV
                 </button>
-              )}
-            </div>
-          )}
+                <button
+                  className={`meme-oc-trade-filter-btn ${trackedActive ? 'active' : ''}`}
+                  onClick={onFilterTracked}
+                >
+                  <img
+                    src={trackedActive ? filledcup : filtercup}
+                    alt="Filter"
+                    className="oc-filter-cup"
+                  />
+                  TRACKED
+                </button>
+                <button
+                  className={`meme-oc-trade-filter-btn ${youActive ? 'active' : ''}`}
+                  onClick={onFilterYou}
+                >
+                  <img
+                    src={youActive ? filledcup : filtercup}
+                    alt="Filter"
+                    className="oc-filter-cup"
+                  />
+                  YOU
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={() =>
+                setAmountMode((prev) => (prev === 'MON' ? 'USD' : 'MON'))
+              }
+              className="meme-oc-currency-toggle"
+            >
+              <img src={switchicon} className="meme-currency-switch-icon" />
+              {amountMode}
+            </button>
+            {isTradesTabVisible && (
+
+              <button
+                className={`filter-icon-button ${hasActiveFilters ? 'active' : ''}`}
+                onClick={() => setShowFiltersPopup(true)}
+                style={{ paddingRight: "15px" }}
+              >
+                <img
+                  className="filter-icon"
+                  src={filter}
+                  alt="Advanced Filters"
+                  style={{
+                    filter: hasActiveFilters
+                      ? 'brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%)'
+                      : undefined,
+                  }}
+                />
+                {hasActiveFilters && <span className="trades-filter-active-dot" />}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
